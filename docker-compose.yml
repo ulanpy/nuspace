@@ -1,0 +1,50 @@
+services:
+
+  fastapi:
+    container_name: fastapi
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - signalling_server
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/backend  # Sync local backend folder with container's /app
+
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    networks:
+      - signalling_server
+    restart: always
+    ports:
+      - "80:80"  # Expose Nginx on port 80 of localhost
+    volumes:
+      - ./backend/core/configs/:/configs
+      - ./frontend/dist:/var/www/my-app/dist  # Make sure this folder exists in production builds
+    depends_on:
+      - fastapi
+    environment:
+      - ENVIRONMENT=development  # Change to 'production' as needed
+    command: ["/bin/sh", "-c", "apt update && apt install -y inotify-tools && if [ \"$$ENVIRONMENT\" = \"production\" ]; then CFG=/configs/nginx.conf; else CFG=/configs/nginx.dev.conf; fi && cp $$CFG /etc/nginx/nginx.conf && (while inotifywait -e modify $$CFG; do echo 'nginx config changed, copying and reloading Nginx...' && cp $$CFG /etc/nginx/nginx.conf && nginx -s reload; done) & nginx -g 'daemon off;'"]
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile_vite
+    restart: always
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app           # Mount all project files
+      - /app/node_modules         # Anonymous volume to store node_modules inside container
+    environment:
+      - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes (Docker-friendly)
+    networks:
+      - signalling_server
+
+networks:
+  signalling_server:
+    driver: bridge
