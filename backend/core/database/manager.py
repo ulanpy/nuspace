@@ -18,7 +18,6 @@ class AsyncDatabaseManager:
         self.async_session_maker = async_sessionmaker(
             bind=self.async_engine,
             expire_on_commit=False,
-            autocommit=True
         )
 
     async def create_all_tables(self) -> None:

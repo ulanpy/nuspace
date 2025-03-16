@@ -6,7 +6,7 @@ from .__init__ import *
 from backend.core.configs.config import frontend_host, nginx_port
 from backend.common.dependencies import get_jwt_data, get_db_session
 from backend.routes.auth.keycloak_manager import KeyCloakManager
-router = APIRouter(tags=['Auth Routes'])
+router = APIRouter(tags=['Auth Routes'], prefix="/api")
 
 
 @router.get("/login")
@@ -25,8 +25,8 @@ async def auth_callback(request: Request, response: Response, db_session: AsyncS
     Handle the OAuth2 callback to exchange authorization code for tokens and issue JWT.
     """
     await validate_access_token(creds["access_token"], request.app.state.kc_manager)
-    #user_schema: UserSchema = await create_user_schema(creds)
-    #await upsert_user(db_session, user_schema)
+    user_schema: UserSchema = await create_user_schema(creds)
+    await upsert_user(db_session, user_schema)
     frontend_url = f"{frontend_host}:{nginx_port}/robots"
     # response = RedirectResponse(url=frontend_url, status_code=303)
     set_auth_cookies(response, creds)
@@ -65,9 +65,3 @@ async def get_current_user(request: Request,
 
 
 
-@router.get("/logout", response_description="Logout user from the NU space")
-async def logout(response: Response, session: AsyncSession = Depends(get_db_session),
-                 jwt_data: JWTSchema = Depends(get_jwt_data)):
-    unset_auth_cookies(response)
-    await revoke_token(session, jwt_data)
-    return {"Logged out successfully": status.HTTP_200_OK}

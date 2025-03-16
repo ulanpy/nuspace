@@ -29,5 +29,6 @@ def get_jwt_data(request: Request) -> JWTSchema:
 
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
     """Retrieve the database session from the shared db_manager"""
-    db_manager: AsyncDatabaseManager = request.app.state.db_manager  # ✅ Get shared manager
-    return db_manager.get_async_session()  # ✅ Return the generator directly
+    db_manager: AsyncDatabaseManager = request.app.state.db_manager
+    async for session in db_manager.get_async_session():
+        yield session
