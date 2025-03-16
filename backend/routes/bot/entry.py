@@ -4,8 +4,8 @@ import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from .routes.user import router as user_router
-from config import TG_API_KEY
+from backend.routes.bot.routes.user import router as user_router
+from backend.routes.bot.config import TG_API_KEY
 
 logger = logging.getLogger(__name__)
 
