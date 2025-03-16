@@ -6,7 +6,7 @@ from .__init__ import *
 from backend.core.configs.config import frontend_host, nginx_port
 from backend.common.dependencies import get_jwt_data, get_db_session
 from backend.routes.auth.keycloak_manager import KeyCloakManager
-router = APIRouter(tags=['Auth Routes'], prefix="/api")
+router = APIRouter(tags=['Auth Routes'])
 
 
 @router.get("/login")
