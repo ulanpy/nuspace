@@ -12,7 +12,6 @@ async def lifespan(app: FastAPI):
         app.state.db_manager = AsyncDatabaseManager()
         app.state.kc_manager = KeyCloakManager()
         await app.state.db_manager.create_all_tables()
-        print("Application startup: AsyncDatabaseManager initialized")
         routers = [auth.router, clubs.router]
         for router in routers:
             app.include_router(router)
@@ -20,7 +19,7 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         await app.state.db_manager.async_engine.dispose()
-        print("Application shutdown: Database engine disposed")
+        print("Application shutdown:  Database engine disposed")
 
 
 origins = [
