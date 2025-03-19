@@ -6,6 +6,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from backend.routes.bot.config import TG_API_KEY, WEBHOOK_URL
 from backend.routes.bot.routes.user import router as user_router
+from backend.routes.bot.routes.user_callback import router as user_callback_router
 from backend.routes.bot.routes.webhook import web_router
 from backend.routes import get_admin, auth, clubs
 from backend.core.database.manager import AsyncDatabaseManager
@@ -22,6 +23,7 @@ async def lifespan(app: FastAPI):
         app.state.bot = Bot(token=TG_API_KEY)
         app.state.dp = Dispatcher(storage=MemoryStorage())
         app.state.dp.include_router(user_router)
+        app.state.dp.include_router(user_callback_router)
         await app.state.bot.set_webhook(url=WEBHOOK_URL,
                                         drop_pending_updates=True,
                                         allowed_updates=app.state.dp.resolve_used_update_types())
