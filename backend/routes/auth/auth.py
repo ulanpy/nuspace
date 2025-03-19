@@ -66,6 +66,3 @@ async def get_current_user(request: Request,
 
 
 
-@router.get("/logout")
-async def logout(request:Request, db_session: AsyncSession = Depends(get_db_session)):
-    pass

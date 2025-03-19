@@ -9,6 +9,7 @@ from backend.routes.auth.auth import KeyCloakManager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
+        app.state.bot = Bot()
         app.state.db_manager = AsyncDatabaseManager()
         app.state.kc_manager = KeyCloakManager()
         await app.state.db_manager.create_all_tables()
@@ -20,7 +21,6 @@ async def lifespan(app: FastAPI):
     finally:
         await app.state.db_manager.async_engine.dispose()
         print("Application shutdown:  Database engine disposed")
-
 
 origins = [
     "http://localhost:3000",
