@@ -18,16 +18,17 @@ async def login(request: Request):
     return await getattr(kc.oauth, kc.__class__.__name__.lower()).authorize_redirect(request, kc.KEYCLOAK_REDIRECT_URI)
 
 
-@router.get("/auth/callback", response_description="Redirect user")
+@router.get("/auth/callback", response_description="Redirect  user")
 async def auth_callback(request: Request, response: Response, db_session: AsyncSession = Depends(get_db_session),
                         creds: dict = Depends(exchange_code_for_credentials)):
     """
     Handle the OAuth2 callback to exchange authorization code for tokens and issue JWT.
     """
+
     await validate_access_token(creds["access_token"], request.app.state.kc_manager)
     user_schema: UserSchema = await create_user_schema(creds)
     await upsert_user(db_session, user_schema)
-    frontend_url = f"{frontend_host}:{nginx_port}/robots"
+    frontend_url = f"{frontend_host}:{nginx_port}/dashboard"
     # response = RedirectResponse(url=frontend_url, status_code=303)
     set_auth_cookies(response, creds)
     return creds
@@ -42,7 +43,7 @@ async def refresh_token(request: Request, response: Response,
     kc: KeyCloakManager = request.app.state.kc_manager
 
     if not refresh_token:
-        raise HTTPException(status_code=402, detail="No refresh token provided")
+        raise HTTPException(status_code=402, detail="No  refresh token provided")
 
     creds = await refresh_access_token(refresh_token, kc)
 
@@ -55,10 +56,10 @@ async def refresh_token(request: Request, response: Response,
 @router.get("/me")
 async def get_current_user(request: Request,
                            access_token: Annotated[str | None, Cookie(alias="access_token")] = None) -> dict:
-    kc = request.app.state.kc_manager
+    kc: KeyCloakManager = request.app.state.kc_manager
 
     if not access_token:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
 
     decoded_access_token = await validate_access_token(access_token, kc)
     return decoded_access_token

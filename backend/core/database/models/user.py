@@ -25,18 +25,19 @@ class UserScope(Enum):
 
 # Mapped[dtype] defaults parameters: nullable=False, unique=True, primary_key=False
 
+
 class User(Base):
     __tablename__ = 'users'
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    sub: Mapped[str] = mapped_column(primary_key=True, nullable=False, unique=True, index=True)
     email: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
     role: Mapped[UserRole] = mapped_column(SQLEnum(UserRole, name="userrole"), nullable=False)
     scope: Mapped[UserScope] = mapped_column(SQLEnum(UserScope, name="userscope"), nullable=False)
     name: Mapped[str] = mapped_column(nullable=False, index=True)
     surname: Mapped[str] = mapped_column(nullable=False, index=True)
     picture: Mapped[str] = mapped_column(nullable=True)
-    sub: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
 
     clubs_led = relationship("Club", back_populates="president_user")
 
