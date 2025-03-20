@@ -2,6 +2,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 import requests
 from aiogram import Dispatcher, Bot
 from fastapi import FastAPI, Request
+
+
 from backend.routes.bot.config import TG_API_KEY, ngrok_server_endpoint, url_webhook_endpoint
 from backend.routes.bot.routes.user import router as user_router
 from backend.routes.bot.routes.user_callback import router as user_callback_router

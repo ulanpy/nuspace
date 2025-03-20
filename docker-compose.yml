@@ -78,8 +78,10 @@ services:
     networks:
       - nuros
     restart: always
-    volumes:
-      - ./backend/core/configs/ngrok.yml:/home/ngrok/.ngrok2/ngrok.yml  # Mount the ngrok.yml file
+    environment:
+      NGROK_AUTH: "2uaEiN2JAlYzIyh7bNRwlH8Ngi2_4kbovwNcuwmbU5wmPcajz"  # Replace with your ngrok auth token
+      NGROK_PROTOCOL: http
+      NGROK_PORT: fastapi:8000
     ports:
       - "4040:4040"
     depends_on:
