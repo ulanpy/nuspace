@@ -5,6 +5,7 @@ from backend.routes.bot.keyboards.callback_factory import ConfirmTelegramUser
 
 router = Router(name="Private callback router")
 
+
 @router.callback_query(ConfirmTelegramUser.filter())
 async def confirmation_buttons(c: CallbackQuery,
                                callback_data: ConfirmTelegramUser):

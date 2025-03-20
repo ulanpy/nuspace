@@ -22,3 +22,4 @@ async def user_start_link(m: Message,
 @router.message(CommandStart(deep_link=False), F.chat.type == ChatType.PRIVATE)
 async def user_start(m: Message):
     await m.answer(f"Добро пожаловать в NUspace, перейди по ссылке ниже!", reply_markup=kb_webapp())
+

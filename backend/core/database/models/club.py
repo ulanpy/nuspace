@@ -39,7 +39,7 @@ class Club(Base):
     name: Mapped[str] = mapped_column(nullable=False, unique=True)
     type: Mapped[ClubType] = mapped_column(SQLEnum(ClubType, name="club_type"), nullable=False)
     description: Mapped[str] = mapped_column(nullable=False)
-    president: Mapped[str] = mapped_column(ForeignKey('users.id'), nullable=False)
+    president: Mapped[str] = mapped_column(ForeignKey('users.sub'), nullable=False)
     telegram_url: Mapped[str] = mapped_column(nullable=True, unique=False)
     instagram_url: Mapped[str] = mapped_column(nullable=True, unique=False)
     picture: Mapped[str] = mapped_column(nullable=True)

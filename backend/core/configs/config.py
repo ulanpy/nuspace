@@ -8,7 +8,7 @@ from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 from pydantic_settings import BaseSettings
 
-
+IS_BOT_DEV = True
 load_dotenv()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 session_middleware_key = 'your_secret_key'
