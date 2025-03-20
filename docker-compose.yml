@@ -48,6 +48,13 @@ services:
       - ENVIRONMENT=development  # Change to 'production' as needed
     command: ["/bin/sh", "-c", "apt update && apt install -y inotify-tools && if [ \"$$ENVIRONMENT\" = \"production\" ]; then CFG=/configs/nginx.conf; else CFG=/configs/nginx.dev.conf; fi && cp $$CFG /etc/nginx/nginx.conf && (while inotifywait -e modify $$CFG; do echo 'nginx config changed, copying and reloading Nginx...' && cp $$CFG /etc/nginx/nginx.conf && nginx -s reload; done) & nginx -g 'daemon off;'"]
 
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    container_name: meilisearch
+    ports:
+      - "7700:7700"
+    
+
 #  frontend:
 #    build:
 #      context: .

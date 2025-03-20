@@ -13,7 +13,6 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from enum import Enum
 from sqlalchemy import Integer, Enum as SQLEnum
-from .product import Product
 
 
 class UserRole(Enum):
@@ -40,6 +39,6 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     clubs_led = relationship("Club", back_populates="president_user")
-    products: Mapped[List["Product"]] = relationship(back_populates = "userId")
+    products: Mapped[List["Product"]] = relationship("Product",back_populates = "user")
 
 

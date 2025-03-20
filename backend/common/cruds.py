@@ -6,6 +6,7 @@ from sqlalchemy import select, func, delete, insert, update, bindparam
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from backend.core.database.models.view import ClubView
+from backend.core.database.models.product import Product
 
 # Initialize Redis connection
 r = aioredis.from_url("redis://localhost")
@@ -59,3 +60,7 @@ async def increment_pg_views(session: AsyncSession):
         await session.execute(stmt)
         await session.commit()
 
+async def show_products(session: AsyncSession, size: int, page:int):
+    offset = size * (page - 1)
+    products = await session.query(Product).offset(offset).limit(size).all()
+    return products
