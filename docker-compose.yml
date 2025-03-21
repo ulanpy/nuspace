@@ -48,13 +48,12 @@ services:
       - fastapi
       - pgadmin
     command: [ "/bin/sh", "-c", "
-      apt update && apt install -y inotify-tools && 
-      (while inotifywait -e modify /etc/nginx/nginx.conf; do 
-        echo 'nginx config changed, copying and reloading Nginx...' && 
-        nginx -t && nginx -s reload; 
-      done) & 
-      nginx -g 'daemon off;'
-    " ]
+      apt update && apt install -y inotify-tools &&
+      (while inotifywait -e modify /etc/nginx/nginx.conf; do
+        echo 'nginx config changed, copying and reloading Nginx...' &&
+        nginx -t && nginx -s reload;
+      done) &
+      nginx -g 'daemon off;'" ]
 
 
   pgadmin:

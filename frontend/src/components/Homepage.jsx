@@ -22,22 +22,25 @@ const Homepage = () => {
 
   return (
     <Router>
-      <div className="max-w-md m-auto font-sans bg-amber-50 min-h-screen flex flex-col">
+      <div className="max-w-md m-auto font-sans bg-white min-h-screen flex flex-col">
 
         <Header />
 
         <div className="h-px bg-blue-700 mx-4 mb-5"></div>
 
-        <div className="mx-4 border-2 border-blue-700 rounded p-4 flex flex-col items-center">
-          <div className="w-full mt-2">
+          <div className="w-96 mt-2 m-auto">
           <Carousel>
-            <div className="h-40 flex items-center justify-center bg-blue-50 text-blue-700">Event 1: Student Meetup</div>
-            <div className="h-40 flex items-center justify-center bg-blue-50 text-blue-700">Event 2: Career Fair</div>
-            <div className="h-40 flex items-center justify-center bg-blue-50 text-blue-700">Event 3: Hackathon</div>
-          </Carousel>
-          </div>
+          <div class="hidden duration-700 ease-in-out" data-carousel-item>
+            <img src="/docs/images/carousel/carousel-1.svg" class="absolute block w-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2" alt="..."></img>
         </div>
-
+        <div className="h-56 md:h-96 flex items-center justify-center bg-green-500 text-white">
+          Slide 2
+        </div>
+        <div className="h-56 md:h-96 flex items-center justify-center bg-red-500 text-white">
+          Slide 3
+        </div>
+      </Carousel>
+          </div>
         <div className="grid grid-cols-4 gap-3 p-4">
           {featureButtons.map(({ id, name, url, icon }) => (
             <FeatureButton key={id} name={name} url={url} icon={icon} />

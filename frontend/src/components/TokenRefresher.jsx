@@ -7,6 +7,7 @@ export function TokenRefresher() {
             refreshAccessToken();
         }, 5 * 1000);  // 5 seconds in milliseconds
 
+
         return () => clearInterval(interval);  // Clear interval on unmount
     }, []);
 

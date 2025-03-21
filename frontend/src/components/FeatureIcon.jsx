@@ -2,12 +2,8 @@ import React from 'react';
 
 // Events Icon
 export const EventsIcon = () => (
-  <div className="relative w-full h-full flex items-center justify-center">
-    <div
-      className="w-8 h-8 bg-red-600 absolute top-2"
-      style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}
-    ></div>
-    <div className="w-6 h-6 bg-blue-700 absolute bottom-1 rounded-sm"></div>
+  <div className="relative w-full h-full flex items-center justify-center text-gray-900 bg-gradient-to-r from-teal-200 to-lime-200 hover:bg-gradient-to-l hover:from-teal-200 hover:to-lime-200 focus:ring-4 focus:outline-none focus:ring-lime-200 dark:focus:ring-teal-700">
+    <span class="relative px-5 py-2.5 rounded-md">Events</span>
   </div>
 );
 

@@ -8,36 +8,81 @@ export default function Carousel({ children }) {
   const prevSlide = () => setActiveIndex((prev) => (prev - 1 + length) % length);
 
   return (
-    <div className="relative w-full overflow-hidden">
-      <div className="flex transition-transform" style={{ transform: `translateX(-${activeIndex * 100}%)` }}>
+    <div className="relative w-full overflow-hidden rounded-lg">
+      {/* Carousel Wrapper */}
+      <div
+        className="flex transition-transform duration-700 ease-in-out"
+        style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+      >
         {children.map((child, index) => (
-          <div key={index} className="w-full shrink-0">{child}</div>
+          <div
+            key={index}
+            className="w-full flex-shrink-0 transition-transform duration-700 ease-in-out"
+          >
+            {child}
+          </div>
         ))}
       </div>
 
-      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2">
+      {/* Slider Indicators */}
+      <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 space-x-2">
         {children.map((_, i) => (
-          <span
+          <button
             key={i}
-            className={`block h-2 w-2 cursor-pointer rounded-full border border-blue-700 transition-all ${
-              activeIndex === i ? "bg-blue-700" : ""
+            type="button"
+            className={`h-3 w-3 rounded-full transition-all ${
+              activeIndex === i ? 'bg-blue-700' : 'bg-white/50 hover:bg-white'
             }`}
+            aria-label={`Slide ${i + 1}`}
             onClick={() => setActiveIndex(i)}
           />
         ))}
       </div>
 
+      {/* Slider Controls */}
       <button
-        className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-blue-700 text-white px-2 py-1"
+        type="button"
+        className="absolute top-1/2 left-4 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/30 hover:bg-white/50 focus:outline-none focus:ring-4 focus:ring-white dark:bg-gray-800/30 dark:hover:bg-gray-800/60 dark:focus:ring-gray-800/70"
         onClick={prevSlide}
+        aria-label="Previous Slide"
       >
-        {"<"}
+        <svg
+          className="h-4 w-4 text-white dark:text-gray-800"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 6 10"
+        >
+          <path
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M5 1 1 5l4 4"
+          />
+        </svg>
       </button>
       <button
-        className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-blue-700 text-white px-2 py-1"
+        type="button"
+        className="absolute top-1/2 right-4 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/30 hover:bg-white/50 focus:outline-none focus:ring-4 focus:ring-white dark:bg-gray-800/30 dark:hover:bg-gray-800/60 dark:focus:ring-gray-800/70"
         onClick={nextSlide}
+        aria-label="Next Slide"
       >
-        {">"}
+        <svg
+          className="h-4 w-4 text-white dark:text-gray-800"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 6 10"
+        >
+          <path
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="m1 9 4-4-4-4"
+          />
+        </svg>
       </button>
     </div>
   );
