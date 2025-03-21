@@ -1,4 +1,4 @@
-from aiogram import Router
+from aiogram import Router, Bot, Dispatcher
 from aiogram.types import Message
 from aiogram.filters import CommandStart, CommandObject
 from aiogram.utils.deep_linking import decode_payload
@@ -15,9 +15,11 @@ async def user_start_link(m: Message,
     sub, confirmation_number = payload.split("&")
     await m.answer("Отлично, теперь выбери верный смайлик!", reply_markup=kb_confirmation(sub=sub, confirmation_number=confirmation_number))
 
+
 @router.message(CommandStart(deep_link=False))
 async def user_start(m: Message):
-    await m.answer("Добро пожаловать в NUspace, перейди по ссылке ниже!", reply_markup=kb_webapp())
-    # jwt = "e6ed2be3-917c-4b5e-93c0-a63f8f71c817&6"
-    # link = await create_start_link(m.bot, jwt, encode=True)
-    # await m.answer(link)
+    # Access URL from dispatcher's data
+    await m.answer(
+        "Добро пожаловать в NUspace, перейди по ссылке ниже!",
+        reply_markup=kb_webapp()
+    )

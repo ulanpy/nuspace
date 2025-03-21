@@ -6,7 +6,7 @@ def kb_webapp() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(row_width=1,
                                 inline_keyboard=[
                                     [
-                                        InlineKeyboardButton(text='NUspace', web_app=WebAppInfo(url=f'https://ya.ru/'))
+                                        InlineKeyboardButton(text='NUspace', web_app=WebAppInfo(url="https://docs.aiogram.dev/en/dev-3.x/dispatcher/dispatcher.html"))
                                     ]
                                 ])
 def kb_confirmation(sub: str, confirmation_number: int) -> InlineKeyboardMarkup:
