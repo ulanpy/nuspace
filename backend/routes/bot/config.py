@@ -1,8 +1,16 @@
-TG_API_KEY = "8156232977:AAG_Yk2R2nKksdXu35VvDbTaSfztwIYPyrU"
+from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+import os
 
-WEBAPP_HOST = 'localhost'
-WEBAPP_PORT = 3001
+load_dotenv()
 
-ngrok_server_endpoint = "http://ngrok:4040/api/tunnels"
 
-url_webhook_endpoint = ""
+class Config(BaseSettings):
+    TG_API_KEY: str
+    WEBAPP_HOST: str
+    WEBAPP_PORT: int
+    ngrok_server_endpoint: str
+    url_webhook_endpoint: str
+
+
+config = Config()

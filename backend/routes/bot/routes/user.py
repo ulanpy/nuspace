@@ -6,20 +6,28 @@ from aiogram.utils.deep_linking import decode_payload
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.routes.bot.cruds import get_telegram_id
 from backend.routes.bot.keyboards.kb import kb_webapp, kb_confirmation
 
 
 router = Router(name="Private message router")
 
+
 @router.message(CommandStart(deep_link=True), F.chat.type == ChatType.PRIVATE)
 async def user_start_link(m: Message,
-                          command: CommandObject):
+                          command: CommandObject,
+                          db_session: AsyncSession):
     args = command.args
     payload: str = decode_payload(args)
     sub, confirmation_number = payload.split("&")
-    await m.answer("Отлично, теперь выбери верный смайлик!", reply_markup=kb_confirmation(sub=sub, confirmation_number=confirmation_number))
+    if await get_telegram_id(session=db_session, sub=sub) is None:
+        await m.answer(f"Отлично, теперь выбери верный смайлик!", reply_markup=kb_confirmation(sub=sub, confirmation_number=confirmation_number))
+    else:
+        await m.answer("Ваш телеграм аккаунт уже привязан!")
+
 
 @router.message(CommandStart(deep_link=False), F.chat.type == ChatType.PRIVATE)
 async def user_start(m: Message):
     await m.answer(f"Добро пожаловать в NUspace, перейди по ссылке ниже!", reply_markup=kb_webapp())
+
 
