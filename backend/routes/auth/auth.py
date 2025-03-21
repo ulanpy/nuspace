@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse
 from typing import Annotated
 
 from .__init__ import *
-from backend.core.configs.config import frontend_host, nginx_port
+from backend.core.configs.config import config
 from backend.common.dependencies import get_jwt_data, get_db_session
 from backend.routes.auth.keycloak_manager import KeyCloakManager
 router = APIRouter(tags=['Auth Routes'])
@@ -28,7 +28,7 @@ async def auth_callback(request: Request, response: Response, db_session: AsyncS
     await validate_access_token(creds["access_token"], request.app.state.kc_manager)
     user_schema: UserSchema = await create_user_schema(creds)
     await upsert_user(db_session, user_schema)
-    frontend_url = f"{frontend_host}:{nginx_port}/dashboard"
+    frontend_url = f"{config.frontend_host}:{config.nginx_port}/dashboard"
     # response = RedirectResponse(url=frontend_url, status_code=303)
     set_auth_cookies(response, creds)
     return creds
