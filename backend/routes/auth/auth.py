@@ -50,7 +50,7 @@ async def refresh_token(request: Request, response: Response,
     await validate_access_token(creds.get("access_token"), kc)
     set_auth_cookies(response, creds)
 
-    return creds["userinfo"]
+    return creds
 
 
 @router.get("/me")

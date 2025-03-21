@@ -1,6 +1,5 @@
 TG_API_KEY = "8156232977:AAG_Yk2R2nKksdXu35VvDbTaSfztwIYPyrU"
 
-
 WEBAPP_HOST = 'localhost'
 WEBAPP_PORT = 3001
 

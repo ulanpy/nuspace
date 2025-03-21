@@ -1,12 +1,6 @@
 version: "2"
-web_addr: 0.0.0.0:4040  # Allow connections from any IP
+web_addr: 0.0.0.0:4040
 tunnels:
-  myapp:
+  fastapi:
     proto: http
     addr: fastapi:8000
-
-
-authtoken: 2uaEiN2JAlYzIyh7bNRwlH8Ngi2_4kbovwNcuwmbU5wmPcajz
-
-
-

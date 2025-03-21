@@ -9,7 +9,6 @@ from backend.core.database.manager import AsyncDatabaseManager
 from backend.core.configs.config import session_middleware_key, IS_BOT_DEV
 from backend.routes.auth.auth import KeyCloakManager
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
@@ -26,7 +25,8 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         await app.state.db_manager.async_engine.dispose()
-        await app.state.bot.delete_webhook()
+        if IS_BOT_DEV:
+            await app.state.bot.delete_webhook()
         print("Application shutdown: Database engine disposed")
 
 
