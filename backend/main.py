@@ -6,7 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend import lifespan, origins, session_middleware_key
 
-
 app = FastAPI(debug=True, lifespan=lifespan, root_path="/api")
 app.add_middleware(
     CORSMiddleware,

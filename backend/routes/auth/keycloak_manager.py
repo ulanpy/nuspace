@@ -10,8 +10,8 @@ from jwt import PyJWKClient
 from cachetools import TTLCache
 import httpx
 
-env_path = Path(__file__).resolve().parent.parent.parent.parent / "core/configs/.env"
-load_dotenv(env_path)
+from backend.core.configs.config import ENV_DIR
+load_dotenv(ENV_DIR)
 
 
 class KeyCloakManager(BaseSettings):
@@ -33,7 +33,7 @@ class KeyCloakManager(BaseSettings):
         return f"{self.KEYCLOAK_URL}/realms/{self.REALM}/protocol/openid-connect/certs"
 
     class Config:
-        env_file = Path("backend/core/configs/.env").resolve()
+        env_file = Path(".env").resolve()
         extra = "allow"
 
     @property
@@ -47,7 +47,7 @@ class KeyCloakManager(BaseSettings):
         return f"{self.KEYCLOAK_URL}/realms/{self.REALM}/.well-known/openid-configuration"
 
     def initialize_oauth(self):
-        """Initialize OAuth with Keycloak configured to use Google as the identity provider."""
+        """Initialize OAuth with Keycloak configured to use Google as the identity provider """
         self._oauth = OAuth()
         self._oauth.register(
             name=self.__class__.__name__.lower(),  # Dynamic provider name
@@ -56,9 +56,9 @@ class KeyCloakManager(BaseSettings):
             server_metadata_url=self.SERVER_METADATA_URL,
             client_kwargs=self.client_kwargs
         )
-        print("OAuth initialized.")
+        print("OAuth initialized successfully")
     async def get_pub_key(self, token: str):
-        """Fetch and cache Keycloak's public key for JWT validation."""
+        """Fetch and cache Keycloak's public key for JWT validation. """
         if "keys" not in self._jwks_cache:
             async with httpx.AsyncClient() as client:
                 response = await client.get(self.JWKS_URI)

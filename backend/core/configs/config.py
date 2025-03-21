@@ -1,16 +1,10 @@
 import os
-
-
 from dotenv import load_dotenv
-from pydantic import field_validator, Field
-from pathlib import Path
-from authlib.integrations.starlette_client import OAuth
-from starlette.config import Config
-from pydantic_settings import BaseSettings
+
+ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+load_dotenv(os.path.join(ENV_DIR, ".env"))
 
 
-load_dotenv()
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 session_middleware_key = 'your_secret_key'
 db_name = os.getenv("DB_NAME")
 db_user = os.getenv("DB_USER")
@@ -24,6 +18,8 @@ BUCKET_NAME = "nuspace_bucket"
 jwt_key = os.getenv("JWT_KEY")
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 2880
+IS_BOT_DEV = os.getenv("IS_BOT_DEV", "False").lower() == "true"
+
 
 
 frontend_host = os.getenv("FRONTEND_HOST", "http://localhost")
