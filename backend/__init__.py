@@ -24,6 +24,6 @@ async def lifespan(app: FastAPI):
 
 
 origins = [
-    "http://localhost:3000",
+    "*",
     "https://lh3.googleusercontent.com"
 ]
