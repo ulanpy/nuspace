@@ -11,7 +11,14 @@ router = Router(name="Private callback router")
 @router.callback_query(ConfirmTelegramUser.filter())
 async def confirmation_buttons(c: CallbackQuery,
                                callback_data: ConfirmTelegramUser,
-                               db_session: AsyncSession):
+                               db_session: AsyncSession) -> None:
+    """
+        Handles the callback query for Telegram user confirmation.
+        Checks if the user is already authorized by their sub (unique identifier).
+        If the confirmation number matches, updates the user's Telegram ID in the database.
+        If the confirmation number is incorrect, notifies the user.
+        Deletes the confirmation message after processing.
+    """
     user_id = c.from_user.id
     if await get_telegram_id(session=db_session, sub=callback_data.sub) is not None:
         await c.message.answer("Уже авторизирован!")

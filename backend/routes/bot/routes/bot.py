@@ -9,6 +9,12 @@ web_router = APIRouter()
 
 @web_router.post("/webhook")
 async def webhook(request:  Request, db_session: AsyncSession = Depends(get_db_session)) -> None:
+    """
+        Handles incoming webhook requests from Telegram.
+        Extracts the bot and dispatcher (dp) from the app state.
+        Attaches the database session to the dispatcher for use in handlers.
+        Validates the incoming update from Telegram and processes it using the dispatcher.
+    """
     bot = request.app.state.bot
     dp = request.app.state.dp
     dp["db_session"] = db_session
