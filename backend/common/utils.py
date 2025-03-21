@@ -1,6 +1,6 @@
 from google.cloud import storage
 from datetime import timedelta
-from backend.core.configs.config import BUCKET_NAME
+from backend.core.configs.config import config
 client = storage.Client()
 
 def generate_url(blob_name: str, expiration: timedelta = timedelta(hours=1)):
@@ -10,7 +10,7 @@ def generate_url(blob_name: str, expiration: timedelta = timedelta(hours=1)):
     """
 
     # Get the bucket and blob (object) from the bucket
-    bucket = client.bucket(BUCKET_NAME)
+    bucket = client.bucket(config.BUCKET_NAME)
     blob = bucket.blob(blob_name)
 
     # Generate the signed URL

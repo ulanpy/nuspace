@@ -1,27 +1,38 @@
-import os
+from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
+import os
 
+# Load environment variables from .env file
 ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 load_dotenv(os.path.join(ENV_DIR, ".env"))
 
 
-session_middleware_key = 'your_secret_key'
-db_name = os.getenv("DB_NAME")
-db_user = os.getenv("DB_USER")
-db_password = os.getenv("DB_PASSWORD")
-db_host = os.getenv("DB_HOST", "postgres")
-db_port = os.getenv("DB_PORT", "5432")
-redis_host = os.getenv("REDIS_HOST", "localhost")
-redis_port = os.getenv("REDIS_PORT", "6379")
-DATABASE_URL = f"postgresql+asyncpg://{db_name}:{db_password}@{db_host}:{db_port}/{db_user}"
-BUCKET_NAME = "nuspace_bucket"
-jwt_key = os.getenv("JWT_KEY")
-JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 2880
-IS_BOT_DEV = os.getenv("IS_BOT_DEV", "False").lower() == "true"
+class Config(BaseSettings):
+    session_middleware_key: str = "your_secret_key"
+    db_name: str
+    db_user: str
+    db_password: str
+    db_host: str = "postgres"
+    db_port: int = 5432
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    bucket_name: str = "nuspace_bucket"
+    jwt_key: str = "default_secret_key "
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 2880
+    IS_BOT_DEV: bool = False
+    frontend_host: str = "http://localhost"
+    nginx_port: int = 80
+
+    @property
+    def DATABASE_URL(self) -> str:
+        return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+
+    class Config:
+        env_file = os.path.join(ENV_DIR, ".env")
+        env_file_encoding = "utf-8"
+        extra = "allow"
 
 
-
-frontend_host = os.getenv("FRONTEND_HOST", "http://localhost")
-nginx_port = os.getenv("NGINX_PORT", 80)
-
+# Usage
+config = Config()
