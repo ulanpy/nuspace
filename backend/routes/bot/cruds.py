@@ -20,3 +20,9 @@ async def set_telegram_id(session: AsyncSession,
     await session.commit()
     return user_id
 
+
+async def check_user_by_telegram_id(session: AsyncSession,
+                                    user_id: int) -> bool:
+    result = await session.execute(select(User.email).filter_by(telegram_id=user_id))
+    user_email = result.scalars().first()
+    return bool(user_email)

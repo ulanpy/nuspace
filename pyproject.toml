@@ -27,6 +27,7 @@ google-cloud-storage = "^3.0.0"
 aioredis = "^2.0.1"
 pyjwt = "^2.10.1"
 aiogram = "^3.18.0"
+apscheduler = "^3.11.0"
 
 
 [build-system]
