@@ -2,7 +2,7 @@
 FROM node:20-alpine
 
 # Set working directory in container
-WORKDIR /app
+WORKDIR /nuros
 
 # Copy only package.json and package-lock.json for caching dependencies
 COPY ./frontend/package*.json ./
