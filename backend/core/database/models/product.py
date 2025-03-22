@@ -2,6 +2,8 @@ from .base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import List
 from sqlalchemy import String, Integer, ForeignKey, BigInteger
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 
 
 class Product(Base):
@@ -11,7 +13,7 @@ class Product(Base):
     name: Mapped[str] = mapped_column(String(255), index = True)
     description: Mapped[str] = mapped_column(String)
     price: Mapped[int] = mapped_column(Integer)
-    userId: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
+    userId: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("users.id"))
     
     user: Mapped["User"] = relationship(back_populates = "products") #how to connect to a parameter in another table?
     pictures: Mapped[List["ProductPicture"]] = relationship(back_populates = "product")
