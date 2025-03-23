@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from backend.routes.bot.routes.bot import web_router
 from backend.routes.bot.utils import initialize_bot
@@ -15,6 +15,7 @@ async def lifespan(app: FastAPI):
         app.state.db_manager = AsyncDatabaseManager()
         app.state.db_manager_sync = SyncDatabaseManager()
         app.state.kc_manager = KeyCloakManager()
+        app.state.scheduler = AsyncIOScheduler()
         await app.state.db_manager.create_all_tables()
         if config.IS_BOT_DEV:
             await initialize_bot(app)

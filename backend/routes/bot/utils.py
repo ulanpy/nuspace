@@ -1,14 +1,15 @@
 from aiogram.fsm.storage.memory import MemoryStorage
 import requests
 from aiogram import Dispatcher, Bot
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncEngine
 
 
 from backend.routes.bot.config import config
 from backend.routes.bot.routes.user import router as user_router
 from backend.routes.bot.routes.group import router as group_router
 from backend.routes.bot.routes.user_callback import router as user_callback_router
-
+from backend.common.dependencies import get_db_session
 
 def decide_webhook_url(dev_url: str = config.ngrok_server_endpoint, prod_url: str = config.url_webhook_endpoint, IS_DEBUG: bool = True) -> str:
     public_url = None
@@ -29,8 +30,8 @@ def decide_webhook_url(dev_url: str = config.ngrok_server_endpoint, prod_url: st
     return url_webhook
 
 
-async def initialize_bot(app: FastAPI, token: str = config.TG_API_KEY, dev_url: str = config.ngrok_server_endpoint,
-                         prod_url: str = config.url_webhook_endpoint):
+async def initialize_bot(app, token: str = config.TG_API_KEY, dev_url: str = config.ngrok_server_endpoint,
+                         prod_url: str = config.url_webhook_endpoint, db_session: AsyncSession = Depends(get_db_session)):
     app.state.bot = Bot(token=token)
     app.state.dp = Dispatcher(storage=MemoryStorage())
 
@@ -46,3 +47,7 @@ async def initialize_bot(app: FastAPI, token: str = config.TG_API_KEY, dev_url: 
     await app.state.bot.set_webhook(url=f"{url}/webhook",
                                     drop_pending_updates=True,
                                     allowed_updates=app.state.dp.resolve_used_update_types())
+    scheduler = app.state.scheduler
+    scheduler.start()
+    app.state.dp["scheduler_session"] = app.state.scheduler
+    app.state.dp["db_session"] = db_session

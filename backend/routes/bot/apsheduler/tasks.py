@@ -1,9 +1,8 @@
 from aiogram import Bot
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 
-def scheduler_session() -> AsyncIOScheduler:
-    return AsyncIOScheduler()
+
+
 
 
 async def kick_user(chat_id: int, user_id: int, bot: Bot):

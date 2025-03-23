@@ -1,4 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+
 
 from aiogram import Router, F
 from aiogram.types import Message, ContentType
@@ -22,5 +24,5 @@ async def new_member(m: Message,
 
     if not await check_user_by_telegram_id(session=db_session, user_id=m.from_user.id):
         await m.reply("Зарегайся в NUspace, иначе в течений 15 минут будешь исключен")
-        run_time = datetime.now() + timedelta(seconds=10)
+        run_time = datetime.now(timezone.utc) + timedelta(seconds=5)
         scheduler_session.add_job(kick_user, 'date', run_date=run_time, args=[m.chat.id, m.from_user.id, m.bot])
