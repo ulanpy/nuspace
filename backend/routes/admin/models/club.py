@@ -5,8 +5,8 @@ from markupsafe import Markup
 from sqladmin.models import ModelView
 
 from backend.routes.auth.utils import validate_access_token_sync
-from backend.routes.auth.cruds import get_user_role
-from backend.core.database.manager import AsyncDatabaseManager
+from backend.routes.auth.cruds import get_user_role_sync
+from backend.core.database.manager import SyncDatabaseManager
 class ClubAdmin(ModelView, model=Club):
     icon = "fa-solid fa-users"
     category = "Clubs"
@@ -45,7 +45,7 @@ class ClubAdmin(ModelView, model=Club):
 
     def is_accessible(self, request: Request):
         try:
-            db_manager: AsyncDatabaseManager = request.app.state.db_manager
+            db_manager_sync: SyncDatabaseManager = request.app.state.db_manager_sync
             kc_manager = request.app.state.kc_manager
 
             sub = validate_access_token_sync(
@@ -54,15 +54,15 @@ class ClubAdmin(ModelView, model=Club):
             )["sub"]
 
             # Use async with instead of async for
-            async with db_manager.get_async_session() as session:
-                user_role = await get_user_role(session, sub)
-
-            if str(user_role) == UserRole.admin.value:
-                return True
-            else:
-                raise HTTPException(status_code=403, detail="unauthorized")
+            with db_manager_sync.get_sync_session() as session:
+                user_role = get_user_role_sync(session, sub)
+                print(user_role)
+                if str(user_role) == UserRole.admin.value:
+                    return True
+                else:
+                    raise HTTPException(status_code=403, detail="unauthorized")
         except HTTPException as e:
             raise e
         except Exception as e:
             # Catch other potential errors
-            raise HTTPException(status_code=500, detail="Internal server error")
+            raise HTTPException(status_code=500, detail=f"Internal server error: {e}")

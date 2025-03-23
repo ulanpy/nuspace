@@ -28,6 +28,7 @@ aioredis = "^2.0.1"
 pyjwt = "^2.10.1"
 aiogram = "^3.18.0"
 gunicorn = "^23.0.0"
+psycopg2 = "^2.9.10"
 
 
 [build-system]
