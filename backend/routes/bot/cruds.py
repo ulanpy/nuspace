@@ -11,6 +11,13 @@ async def get_telegram_id(session: AsyncSession,
     return user_id
 
 
+async def check_existance_by_sub(session: AsyncSession,
+                                 sub: str) -> bool:
+    result = await session.execute(select(User.sub).filter_by(sub=sub))
+    user = result.scalars().first()
+    return True if user else False
+
+
 async def set_telegram_id(session: AsyncSession,
                           sub: str,
                           user_id: int) -> int:

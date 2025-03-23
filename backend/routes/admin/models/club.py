@@ -43,26 +43,26 @@ class ClubAdmin(ModelView, model=Club):
         "president": lambda m, c: m.president_user.name if m.president_user else "Unknown"
     }
 
-    def is_accessible(self, request: Request):
-        try:
-            db_manager: AsyncDatabaseManager = request.app.state.db_manager
-            kc_manager = request.app.state.kc_manager
-
-            sub = validate_access_token_sync(
-                request.cookies.get("access_token"),
-                kc_manager
-            )["sub"]
-
-            # Use async with instead of async for
-            async with db_manager.get_async_session() as session:
-                user_role = await get_user_role(session, sub)
-
-            if str(user_role) == UserRole.admin.value:
-                return True
-            else:
-                raise HTTPException(status_code=403, detail="unauthorized")
-        except HTTPException as e:
-            raise e
-        except Exception as e:
-            # Catch other potential errors
-            raise HTTPException(status_code=500, detail="Internal server error")
+    # def is_accessible(self, request: Request):
+    #     try:
+    #         db_manager: AsyncDatabaseManager = request.app.state.db_manager
+    #         kc_manager = request.app.state.kc_manager
+    #
+    #         sub = validate_access_token_sync(
+    #             request.cookies.get("access_token"),
+    #             kc_manager
+    #         )["sub"]
+    #
+    #         # Use async with instead of async for
+    #         async with db_manager.get_async_session() as session:
+    #             user_role = await get_user_role(session, sub)
+    #
+    #         if str(user_role) == UserRole.admin.value:
+    #             return True
+    #         else:
+    #             raise HTTPException(status_code=403, detail="unauthorized")
+    #     except HTTPException as e:
+    #         raise e
+    #     except Exception as e:
+    #         # Catch other potential errors
+    #         raise HTTPException(status_code=500, detail="Internal server error")

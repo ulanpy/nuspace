@@ -1,11 +1,16 @@
 from fastapi import APIRouter, Depends, status, Cookie
 from fastapi.responses import RedirectResponse
 from typing import Annotated
+from aiogram import Bot
+from aiogram.utils.deep_linking import create_start_link
+import random
 
 from .__init__ import *
+from backend.routes.auth.schemas import Sub
 from backend.core.configs.config import config
 from backend.common.dependencies import get_db_session
 from backend.routes.auth.keycloak_manager import KeyCloakManager
+
 router = APIRouter(tags=['Auth Routes'])
 
 
@@ -17,6 +22,17 @@ async def login(request: Request):
     kc: KeyCloakManager = request.app.state.kc_manager
     return await getattr(kc.oauth, kc.__class__.__name__.lower()).authorize_redirect(request, kc.KEYCLOAK_REDIRECT_URI)
 
+@router.post("/bingtg")
+async def bind_tg(request: Request, sub: Sub):
+    bot: Bot = request.app.state.bot
+    sub = sub.sub
+    correct_number = random.randrange(1,10)
+    link = await create_start_link(bot, f"{sub}&{correct_number}", encode=True)
+    return {
+                "link": link,
+                "correct_number": correct_number,
+                "sub": sub
+            }
 
 @router.get("/auth/callback", response_description="Redirect  user")
 async def auth_callback(request: Request, response: Response, db_session: AsyncSession = Depends(get_db_session),
