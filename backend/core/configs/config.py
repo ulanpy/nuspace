@@ -14,7 +14,7 @@ class Config(BaseSettings):
     db_password: str
     db_host: str = "postgres"
     db_port: int = 5432
-    redis_host: str = "localhost"
+    redis_host: str = "redis"
     redis_port: int = 6379
     bucket_name: str = "nuspace_bucket"
     IS_BOT_DEV: bool = False

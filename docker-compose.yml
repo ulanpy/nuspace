@@ -71,6 +71,7 @@ services:
       networks:
         - nuros
       volumes:
+        - pgadmin-data:/var/lib/pgadmin  # Named volume for persistent data
         - ./backend/core/configs/pgadmin_config/servers.json:/pgadmin4/servers.json  # Auto-connect to PostgreSQL
         - ./backend/core/configs/pgadmin_config/pgpass:/pgpass  # Auto-login credentials
 
@@ -93,6 +94,16 @@ services:
       depends_on:
         - fastapi
 
+  redis:
+    image: redis:latest
+    networks:
+      - nuros
+    container_name: redis
+    restart: always
+    volumes:
+      - redis-data:/data
+      - ./backend/core/configs/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
 
 #  frontend:
 #    build:
@@ -113,3 +124,6 @@ networks:
 
 volumes:
   postgres-data:
+  redis-data:
+    driver: local
+  pgadmin-data:
