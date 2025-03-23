@@ -1,6 +1,6 @@
 FROM python:latest
 ENV TZ=UTC
-WORKDIR /backend
+WORKDIR /nuros
 RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
@@ -15,13 +15,14 @@ ENV POETRY_NO_INTERACTION=1 \
 
 COPY . .
 
-ENV PYTHONPATH=/backend
+ENV PYTHONPATH=/nuros
 
 
 RUN poetry config virtualenvs.create false
 
 RUN poetry install --no-root
 
-EXPOSE 8000
 
 CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# CMD ["sh", "-c", "gunicorn -w ${WORKERS:-$(( $(nproc) * 2 + 1 ))} -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 backend.main:app"]
+#на проде

@@ -2,13 +2,13 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from typing import AsyncGenerator
 
 from backend.core.database.models import Base
-from backend.core.configs.config import DATABASE_URL
+from backend.core.configs.config import config
 
 
 class AsyncDatabaseManager:
     def __init__(self):
         self.async_engine = create_async_engine(
-            DATABASE_URL,
+            config.DATABASE_URL,
             query_cache_size=1200,
             pool_size=20,
             max_overflow=200,
