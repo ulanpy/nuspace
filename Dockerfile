@@ -22,6 +22,7 @@ RUN poetry config virtualenvs.create false
 
 RUN poetry install --no-root
 
-EXPOSE 8000
 
 CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# CMD ["sh", "-c", "gunicorn -w ${WORKERS:-$(( $(nproc) * 2 + 1 ))} -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 backend.main:app"]
+#на проде
