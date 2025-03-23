@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-
+from redis import asyncio as aioredis
 
 from backend.routes.bot.routes.bot import web_router
 from backend.routes.bot.utils import initialize_bot
@@ -13,6 +13,7 @@ from backend.routes.auth.auth import KeyCloakManager
 async def lifespan(app: FastAPI):
     try:
         app.state.db_manager = AsyncDatabaseManager()
+        app.state.redis = aioredis.from_url(config.REDIS_URL)
         app.state.db_manager_sync = SyncDatabaseManager()
         app.state.kc_manager = KeyCloakManager()
         await app.state.db_manager.create_all_tables()
