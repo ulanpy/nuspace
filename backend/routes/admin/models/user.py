@@ -13,12 +13,13 @@ from backend.core.database.manager import SyncDatabaseManager
 class UserAdmin(ModelView, model=User):
     icon = "fa-solid fa-user"
     category = "Accounts"
-    column_list = [User.email, User.picture, User.role, User.scope, User.name, User.surname, User.created_at, User.updated_at]
+    column_list = [User.email, User.picture, User.telegram_id, User.role, User.scope, User.name, User.surname, User.created_at, User.updated_at]
     column_sortable_list = [User.email, User.name, User.surname, User.created_at]
     column_searchable_list = [User.email, User.name, User.role, User.surname]
     column_details_list = [User.email, User.picture, User.role, User.scope, User.name, User.surname, User.created_at, User.updated_at]
 
     # Render the 'picture' column as an image
+
     @staticmethod
     def _format_photo_url(obj: User, context) -> str:
         if obj.picture:
