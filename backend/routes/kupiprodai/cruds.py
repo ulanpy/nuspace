@@ -3,6 +3,7 @@ from sqlalchemy import select
 
 from backend.core.database.models.product import Product, ProductPicture
 from backend.routes.kupiprodai.schemas import ProductPictureSchema, ProductSchema
+from backend.common.utils import add_meilisearch_data
 
 #create
 async def add_new_product(session: AsyncSession, product_schema: ProductSchema):
@@ -12,6 +13,10 @@ async def add_new_product(session: AsyncSession, product_schema: ProductSchema):
     await session.commit()
     await session.refresh(new_product)
 
+    await add_meilisearch_data(storage_name="products", json_values={
+        "id": new_product.id,
+        "product_name": new_product.name
+    })
     return new_product
 
 async def add_new_pictures(session: AsyncSession, product_picture_schemas: list[ProductPictureSchema]):
@@ -20,9 +25,10 @@ async def add_new_pictures(session: AsyncSession, product_picture_schemas: list[
     await session.commit()
 
 #Why to locate a function for showing the products in common folder? Does it make difference because Frontend can make a request to the backend to get the products
-async def search(session: AsyncSession, keyword: str):
-    pass
-    #5 most similar results
+async def show_products(session: AsyncSession, size: int, page:int):
+    offset = size * (page - 1)
+    products = await session.query(Product).offset(offset).limit(size).all()
+    return products
 
 #update
 async def update(session:AsyncSession, product_schema: ProductSchema):
@@ -30,6 +36,7 @@ async def update(session:AsyncSession, product_schema: ProductSchema):
     if product:
         for key, value in product_schema.model_dump().items():
             setattr(product, key, value)
+        #DO NOT FORGET TO UPDATE THE NAME OF THE OBJECT IN MEILISEARCH!!!
     else:
         return "The product was not found"
     await session.commit()
@@ -42,6 +49,7 @@ async def remove_product(session: AsyncSession, product_schema: ProductSchema):
     if product:
         await session.delete(product)
         await session.commit()
+        #DO NOT FORGET TO REMOVE THE OBJECT FROM MEILISEARCH STORAGE!!!
         return {"message": "Product was successfully removed"}
     else:
         return {"error": "Product was not found"}

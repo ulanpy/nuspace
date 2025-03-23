@@ -13,7 +13,7 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from enum import Enum
 from sqlalchemy import Integer, Enum as SQLEnum
-
+from .product import Product
 
 class UserRole(Enum):
     default = "default"

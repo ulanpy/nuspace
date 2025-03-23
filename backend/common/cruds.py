@@ -59,8 +59,3 @@ async def increment_pg_views(session: AsyncSession):
         )
         await session.execute(stmt)
         await session.commit()
-
-async def show_products(session: AsyncSession, size: int, page:int):
-    offset = size * (page - 1)
-    products = await session.query(Product).offset(offset).limit(size).all()
-    return products

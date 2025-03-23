@@ -1,6 +1,7 @@
 from google.cloud import storage
 from datetime import timedelta
 from backend.core.configs.config import config
+
 client = storage.Client()
 
 def generate_url(blob_name: str, expiration: timedelta = timedelta(hours=1)):
@@ -51,3 +52,36 @@ async def track_view(entity_type: str, entity_id: int, user_id: int, TTL: int = 
         # Execute the pipeline atomically
         await pipe.execute()
 
+#meilisearch methods
+import httpx
+async_client = httpx.AsyncCLient(base_url = config.meilisearch_url, headers = {"Authorization": f"Bearer {config.meilisearch_master_key}"})
+
+'''
+    To search for data, first, you should add key-value pairs to Meilisearch;
+    Do not forget to add id parameter to every pair inside the json_values;
+    After the values were added, Meilisearch implements search among these values;
+    Pass the previous storage_name you have used for adding data and keyword for searching;
+    These functions will return status code and response data;
+    The most 20 similar results will be returned inside 'hits' field of response data;
+    You can change the number of most similar results;
+    Use the id to get other values of the object.
+'''
+async def add_meilisearch_data(storage_name: str, json_values: dict):
+    response = await async_client.post(f"/indexes/{storage_name}/documents", json = json_values)
+    return {
+        "status_code": response.status_code,
+        "data": response.json() if response.status_code == 200 else response.text
+    }  
+ 
+async def search_for_meilisearch_data(storage_name: str, keyword: str):
+    response = await async_client.post(f"/indexes/{storage_name}/search", json = {"q": keyword})
+    return {
+        "status_code": response.status_code,
+        "data": response.json() if response.status_code == 200 else response.text
+    } 
+
+async def remove_meilisearch_data(storage_name: str):
+    pass
+
+async def update_meilisearch_data():
+    pass
