@@ -4,6 +4,11 @@ from fastapi import Request, HTTPException
 from markupsafe import Markup
 from sqladmin import ModelView
 
+
+from backend.routes.auth.utils import validate_access_token_sync
+from backend.routes.auth.cruds import get_user_role_sync
+from backend.core.database.manager import SyncDatabaseManager
+
 # Custom ModelView for User
 class UserAdmin(ModelView, model=User):
     icon = "fa-solid fa-user"
@@ -32,14 +37,26 @@ class UserAdmin(ModelView, model=User):
                      "created_at": "Created At (UTC)"  # Properly label the 'created_at' column
                      }  # Set a user-friendly label
 
-    # Override is_accessible to restrict access
-    # def is_accessible(self, request: Request):
-    #     try:
-    #         user: JWTSchema = get_jwt_data(request)
-    #         if str(user.role) == UserRole.admin.value:
-    #             return True
-    #         else:
-    #             raise HTTPException(status_code=403, detail="unauthorized")
-    #     except HTTPException as e:
-    #         raise e
+    def is_accessible(self, request: Request):
+        try:
+            db_manager_sync: SyncDatabaseManager = request.app.state.db_manager_sync
+            kc_manager = request.app.state.kc_manager
 
+            sub = validate_access_token_sync(
+                request.cookies.get("access_token"),
+                kc_manager
+            )["sub"]
+
+            # Use async with instead of async for
+            with db_manager_sync.get_sync_session() as session:
+                user_role = get_user_role_sync(session, sub)
+                print(user_role)
+                if str(user_role) == UserRole.admin.value:
+                    return True
+                else:
+                    raise HTTPException(status_code=403, detail="unauthorized")
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            # Catch other potential errors
+            raise HTTPException(status_code=500, detail=f"Internal server error: {e}")

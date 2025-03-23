@@ -25,6 +25,9 @@ class Config(BaseSettings):
     def DATABASE_URL(self) -> str:
         return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
+    @property
+    def DATABASE_URL_SYNC(self) -> str:
+        return f"postgresql+psycopg2://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
     class Config:
         env_file = os.path.join(ENV_DIR, ".env")
         env_file_encoding = "utf-8"
