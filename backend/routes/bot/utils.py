@@ -30,8 +30,10 @@ def decide_webhook_url(dev_url: str = config.ngrok_server_endpoint, prod_url: st
     return url_webhook
 
 
-async def initialize_bot(app, token: str = config.TG_API_KEY, dev_url: str = config.ngrok_server_endpoint,
-                         prod_url: str = config.url_webhook_endpoint, db_session: AsyncSession = Depends(get_db_session)):
+async def initialize_bot(app: FastAPI, token: str = config.TG_API_KEY, dev_url: str = config.ngrok_server_endpoint,
+                         prod_url: str = config.url_webhook_endpoint):
+
+
     app.state.bot = Bot(token=token)
     app.state.dp = Dispatcher(storage=MemoryStorage())
 
@@ -50,4 +52,4 @@ async def initialize_bot(app, token: str = config.TG_API_KEY, dev_url: str = con
     scheduler = app.state.scheduler
     scheduler.start()
     app.state.dp["scheduler_session"] = app.state.scheduler
-    app.state.dp["db_session"] = db_session
+    app.state.dp["db_manager"] = app.state.db_manager
