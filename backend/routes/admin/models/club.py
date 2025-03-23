@@ -1,11 +1,12 @@
 from backend.core.database.models import Club
 from backend.routes.auth import UserRole
-from backend.common.schemas import JWTSchema
-from backend.common.dependencies import get_jwt_data
-from sqladmin import ModelView
 from fastapi import Request, HTTPException
 from markupsafe import Markup
+from sqladmin.models import ModelView
 
+from backend.routes.auth.utils import validate_access_token_sync
+from backend.routes.auth.cruds import get_user_role
+from backend.core.database.manager import AsyncDatabaseManager
 class ClubAdmin(ModelView, model=Club):
     icon = "fa-solid fa-users"
     category = "Clubs"
@@ -44,10 +45,24 @@ class ClubAdmin(ModelView, model=Club):
 
     def is_accessible(self, request: Request):
         try:
-            user: JWTSchema = get_jwt_data(request)
-            if str(user.role) == UserRole.admin.value:
+            db_manager: AsyncDatabaseManager = request.app.state.db_manager
+            kc_manager = request.app.state.kc_manager
+
+            sub = validate_access_token_sync(
+                request.cookies.get("access_token"),
+                kc_manager
+            )["sub"]
+
+            # Use async with instead of async for
+            async with db_manager.get_async_session() as session:
+                user_role = await get_user_role(session, sub)
+
+            if str(user_role) == UserRole.admin.value:
                 return True
             else:
                 raise HTTPException(status_code=403, detail="unauthorized")
         except HTTPException as e:
             raise e
+        except Exception as e:
+            # Catch other potential errors
+            raise HTTPException(status_code=500, detail="Internal server error")

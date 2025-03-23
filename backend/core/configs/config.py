@@ -17,9 +17,6 @@ class Config(BaseSettings):
     redis_host: str = "localhost"
     redis_port: int = 6379
     bucket_name: str = "nuspace_bucket"
-    jwt_key: str = "default_secret_key "
-    jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 2880
     IS_BOT_DEV: bool = False
     frontend_host: str = "http://localhost"
     nginx_port: int = 80

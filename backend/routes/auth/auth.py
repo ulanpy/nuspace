@@ -4,7 +4,7 @@ from typing import Annotated
 
 from .__init__ import *
 from backend.core.configs.config import config
-from backend.common.dependencies import get_jwt_data, get_db_session
+from backend.common.dependencies import get_db_session
 from backend.routes.auth.keycloak_manager import KeyCloakManager
 router = APIRouter(tags=['Auth Routes'])
 

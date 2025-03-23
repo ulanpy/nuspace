@@ -1,6 +1,4 @@
 from backend.core.database.models import User, UserRole
-from backend.common.schemas import JWTSchema
-from backend.common.dependencies import get_jwt_data
 
 from fastapi import Request, HTTPException
 from markupsafe import Markup
@@ -35,13 +33,13 @@ class UserAdmin(ModelView, model=User):
                      }  # Set a user-friendly label
 
     # Override is_accessible to restrict access
-    def is_accessible(self, request: Request):
-        try:
-            user: JWTSchema = get_jwt_data(request)
-            if str(user.role) == UserRole.admin.value:
-                return True
-            else:
-                raise HTTPException(status_code=403, detail="unauthorized")
-        except HTTPException as e:
-            raise e
+    # def is_accessible(self, request: Request):
+    #     try:
+    #         user: JWTSchema = get_jwt_data(request)
+    #         if str(user.role) == UserRole.admin.value:
+    #             return True
+    #         else:
+    #             raise HTTPException(status_code=403, detail="unauthorized")
+    #     except HTTPException as e:
+    #         raise e
 

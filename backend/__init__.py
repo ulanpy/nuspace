@@ -21,8 +21,10 @@ async def lifespan(app: FastAPI):
         routers = [auth.router, clubs.router, web_router]
         for router in routers:
             app.include_router(router)
-        await get_admin(app)
+        print(app.state.kc_manager.KEYCLOAK_URL)
+        get_admin(app)
         yield
+
     finally:
         await app.state.db_manager.async_engine.dispose()
         if config.IS_BOT_DEV:
