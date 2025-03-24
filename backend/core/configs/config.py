@@ -14,12 +14,9 @@ class Config(BaseSettings):
     db_password: str
     db_host: str = "postgres"
     db_port: int = 5432
-    redis_host: str = "localhost"
+    redis_host: str = "redis"
     redis_port: int = 6379
     bucket_name: str = "nuspace_bucket"
-    jwt_key: str = "default_secret_key "
-    jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 2880
     IS_BOT_DEV: bool = False
     frontend_host: str = "http://localhost"
     nginx_port: int = 80
@@ -28,11 +25,16 @@ class Config(BaseSettings):
     def DATABASE_URL(self) -> str:
         return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
 
+    @property
+    def DATABASE_URL_SYNC(self) -> str:
+        return f"postgresql+psycopg2://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
     class Config:
         env_file = os.path.join(ENV_DIR, ".env")
         env_file_encoding = "utf-8"
         extra = "allow"
 
-
+    @property
+    def REDIS_URL(self):
+        return f"redis://{self.redis_host}:{self.redis_port}"
 # Usage
 config = Config()

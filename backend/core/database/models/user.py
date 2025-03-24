@@ -7,7 +7,7 @@ from typing import Optional
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum, BigInteger
 from datetime import datetime, UTC
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -38,6 +38,7 @@ class User(Base):
     picture: Mapped[str] = mapped_column(nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=True, index=True)
 
 
     clubs_led = relationship("Club", back_populates="president_user")
