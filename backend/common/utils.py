@@ -80,8 +80,17 @@ async def search_for_meilisearch_data(storage_name: str, keyword: str):
         "data": response.json() if response.status_code == 200 else response.text
     } 
 
-async def remove_meilisearch_data(storage_name: str):
-    pass
+async def remove_meilisearch_data(storage_name: str, object_id: str):
+    response = await async_client.delete(f"indexes/{storage_name}/documents/{object_id}")
+    return {
+        "status_code": response.status_code,
+        "data": response.json() if response.status_code == 200 else response.text
+    }    
 
-async def update_meilisearch_data():
-    pass
+async def update_meilisearch_data(storage_name: str, json_values: dict):
+    response = await async_client.post(f"/indexes/{storage_name}/documents", json = json_values)
+    return {
+        "status_code": response.status_code,
+        "data": response.json() if response.status_code == 200 else response.text
+    }  
+
