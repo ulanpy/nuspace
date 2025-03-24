@@ -9,6 +9,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from backend.routes.bot.apsheduler.tasks import kick_user
 from backend.routes.bot.keyboards.kb import kb_webapp
 from backend.routes.bot.cruds import check_user_by_telegram_id
+from backend.celery_app.tasks import schedule_kick
 
 router = Router(name="Group router")
 
@@ -23,4 +24,8 @@ async def new_member(m: Message,
     if not await check_user_by_telegram_id(session=db_session, user_id=m.from_user.id):
         await m.reply("Зарегайся в NUspace, иначе в течений 15 минут будешь исключен")
         run_time = datetime.now() + timedelta(seconds=10)
-        scheduler_session.add_job(kick_user, 'date', run_date=run_time, args=[m.chat.id, m.from_user.id, m.bot])
+        # Schedule task with 10 seconds delay
+        schedule_kick.apply_async(
+            args=[m.chat.id, m.from_user.id],
+            countdown=60  # Delay in seconds
+        )

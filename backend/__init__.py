@@ -4,7 +4,7 @@ from redis import asyncio as aioredis
 
 from backend.routes.bot.routes.bot import web_router
 from backend.routes.bot.utils import initialize_bot
-from backend.routes import get_admin, auth, clubs
+from backend.routes import routers, get_admin
 from backend.core.database.manager import AsyncDatabaseManager, SyncDatabaseManager
 from backend.core.configs.config import config
 from backend.routes.auth.auth import KeyCloakManager
@@ -19,11 +19,8 @@ async def lifespan(app: FastAPI):
         await app.state.db_manager.create_all_tables()
         if config.IS_BOT_DEV:
             await initialize_bot(app)
-        print("Application startup:AsyncDatabaseManager initialized")
-        routers = [auth.router, clubs.router, web_router]
         for router in routers:
             app.include_router(router)
-        print(app.state.kc_manager.KEYCLOAK_URL)
         get_admin(app)
         yield
 

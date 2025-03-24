@@ -105,6 +105,46 @@ services:
       - ./backend/core/configs/redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
 
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    networks:
+      - nuros
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "15672:15672"  # Management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile_celery
+    networks:
+      - nuros
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+      - redis
+      - fastapi
+    command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
+    environment:
+      - CELERY_WORKER_CONCURRENCY=4  # Adjust based on your needs
+      - CELERY_WORKER_PREFETCH_MULTIPLIER=1
+    deploy:
+      replicas: 2  # For scalability
+
+
 #  frontend:
 #    build:
 #      context: .
@@ -127,3 +167,4 @@ volumes:
   redis-data:
     driver: local
   pgadmin-data:
+  rabbitmq-data:  # Add this
