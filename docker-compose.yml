@@ -56,8 +56,7 @@ services:
         nginx -t && nginx -s reload; 
       done) & 
       nginx -g 'daemon off;'
-    " ]
-
+      "]
 
   pgadmin:
       image: dpage/pgadmin4
@@ -108,8 +107,6 @@ services:
   meilisearch:
     image: getmeili/meilisearch:latest
     container_name: meilisearch
-    ports:
-      - "7700:7700"
     
 
 #  frontend:
