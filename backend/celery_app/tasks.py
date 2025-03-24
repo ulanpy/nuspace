@@ -2,7 +2,6 @@ from .celery_config import celery_app
 from backend.core.configs.config import  config
 from aiogram import Bot
 import asyncio
-from backend.routes.bot.apsheduler.tasks import kick_user
 
 
 @celery_app.task
@@ -12,7 +11,8 @@ def schedule_kick(chat_id: int, user_id: int):
 
     async def kick_async(chat_id: int, user_id: int):
         bot = Bot(token=config.TG_API_KEY)
-        await kick_user(chat_id, user_id, bot)
+        await bot.ban_chat_member(chat_id, user_id)
+        await bot.unban_chat_member(chat_id, user_id)
 
     try:
         result = loop.run_until_complete(kick_async(chat_id, user_id))
