@@ -1,5 +1,5 @@
-import Homepage from './components/Homepage'
-import { TokenRefresher } from './components/TokenRefresher'
+import Homepage from './pages/Homepage'
+import { TokenRefresher } from './utils/TokenRefresher'
 
 function App() {
   return (

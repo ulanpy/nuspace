@@ -4,12 +4,13 @@ from aiogram import Dispatcher, Bot
 from fastapi import FastAPI
 
 
-from backend.routes.bot.config import TG_API_KEY, ngrok_server_endpoint, url_webhook_endpoint
+from backend.routes.bot.config import config
 from backend.routes.bot.routes.user import router as user_router
 from backend.routes.bot.routes.group import router as group_router
 from backend.routes.bot.routes.user_callback import router as user_callback_router
 
-def decide_webhook_url(dev_url: ngrok_server_endpoint, prod_url: url_webhook_endpoint, IS_DEBUG: bool = True) -> str:
+
+def decide_webhook_url(dev_url: str = config.ngrok_server_endpoint, prod_url: str = config.url_webhook_endpoint, IS_DEBUG: bool = True) -> str:
     public_url = None
     if IS_DEBUG:
         try:
@@ -28,8 +29,8 @@ def decide_webhook_url(dev_url: ngrok_server_endpoint, prod_url: url_webhook_end
     return url_webhook
 
 
-async def initialize_bot(app: FastAPI, token: str = TG_API_KEY, dev_url: str = ngrok_server_endpoint,
-                         prod_url: str = url_webhook_endpoint):
+async def initialize_bot(app: FastAPI, token: str = config.TG_API_KEY, dev_url: str = config.ngrok_server_endpoint,
+                         prod_url: str = config.url_webhook_endpoint):
     app.state.bot = Bot(token=token)
     app.state.dp = Dispatcher(storage=MemoryStorage())
 

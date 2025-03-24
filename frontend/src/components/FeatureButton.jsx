@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function FeatureButton({ name, url, icon }) {
+function Feature({ name, url, icon }) {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -21,4 +21,4 @@ function FeatureButton({ name, url, icon }) {
   );
 }
 
-export default FeatureButton;
+export default Feature;

@@ -16,4 +16,6 @@ class UserSchema(BaseModel):
     picture: str
     sub: str
 
+class Sub(BaseModel):
+    sub: str
 
