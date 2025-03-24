@@ -21,6 +21,6 @@ async def new_member(m: Message,
         return
 
     if not await check_user_by_telegram_id(session=db_session, user_id=m.from_user.id):
-        await m.reply("Зарегайся в NUspace, иначе в течений 15 минут будешь исключен")
+        await m.reply("Зарегайся в NUspace, иначе в течений 15 минут будешь исключен", reply_markup=kb_webapp())
         run_time = datetime.now() + timedelta(seconds=10)
         scheduler_session.add_job(kick_user, 'date', run_date=run_time, args=[m.chat.id, m.from_user.id, m.bot])

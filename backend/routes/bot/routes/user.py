@@ -3,7 +3,6 @@ from aiogram.types import Message
 from aiogram.enums import ChatType
 from aiogram.filters import CommandStart, CommandObject
 from aiogram.utils.deep_linking import decode_payload
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.routes.bot.cruds import get_telegram_id
