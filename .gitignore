@@ -33,4 +33,4 @@ configs/**/__pycache__/
 .DS_Store
 Thumbs.db
 
-.backend/core/configs/ngrok.yml
+

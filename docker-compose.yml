@@ -29,6 +29,8 @@ services:
       - .:/nuros  # Sync local backend folder with container's /app
     depends_on:
       - postgres
+    ports:
+      - "8000:8000"  # Expose Nginx on port 80 of localhost
     environment:
       - PYTHONUNBUFFERED=1
       - WORKERS=${GUNICORN_WORKERS} #not set this in prod and let decide on the fly
@@ -69,6 +71,7 @@ services:
       networks:
         - nuros
       volumes:
+        - pgadmin-data:/var/lib/pgadmin  # Named volume for persistent data
         - ./backend/core/configs/pgadmin_config/servers.json:/pgadmin4/servers.json  # Auto-connect to PostgreSQL
         - ./backend/core/configs/pgadmin_config/pgpass:/pgpass  # Auto-login credentials
 
@@ -91,6 +94,16 @@ services:
       depends_on:
         - fastapi
 
+  redis:
+    image: redis:latest
+    networks:
+      - nuros
+    container_name: redis
+    restart: always
+    volumes:
+      - redis-data:/data
+      - ./backend/core/configs/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
 
   meilisearch:
     image: getmeili/meilisearch:latest
@@ -118,3 +131,6 @@ networks:
 
 volumes:
   postgres-data:
+  redis-data:
+    driver: local
+  pgadmin-data:

@@ -24,11 +24,13 @@ redis = "^5.2.1"
 python-jose = "^3.3.0"
 sqladmin = "^0.20.1"
 google-cloud-storage = "^3.0.0"
-aioredis = "^2.0.1"
 pyjwt = "^2.10.1"
 gunicorn = "^23.0.0"
 aiogram = "^3.18.0"
-meilisearch = {extras = ["httpx"], version = "^0.34.0"}
+psycopg2 = "^2.9.10"
+apscheduler = "^3.11.0"
+
+
 
 
 [build-system]

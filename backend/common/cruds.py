@@ -9,7 +9,7 @@ from backend.core.database.models.view import ClubView
 from backend.core.database.models.product import Product
 
 # Initialize Redis connection
-r = aioredis.from_url("redis://localhost")
+r = aioredis.from_url()
 
 
 async def increment_pg_views(session: AsyncSession):
