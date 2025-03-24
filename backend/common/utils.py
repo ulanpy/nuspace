@@ -1,6 +1,10 @@
 from google.cloud import storage
 from datetime import timedelta
 from backend.core.configs.config import config
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.declarative import DeclarativeMeta
+from sqlalchemy import select
+from backend.core.database.models.base import Base
 
 client = storage.Client()
 
@@ -94,3 +98,8 @@ async def update_meilisearch_data(storage_name: str, json_values: dict):
         "data": response.json() if response.status_code == 200 else response.text
     }  
 
+async def import_data_from_database(storage_name: str, session: AsyncSession, model_name: str, columns_for_searching: list[str]):
+    model: DeclarativeMeta = Base.metadata.tables.get(model_name)
+    result = session.execute(select(*[getattr(model, col) for col in columns_for_searching])).all()
+
+    return [dict(zip(columns_for_searching, row)) for row in result]

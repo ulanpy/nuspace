@@ -7,7 +7,6 @@ from sqlalchemy.dialects.postgresql import UUID
 
 
 class Product(Base):
-    from backend.core.database.models.user import User
     __tablename__ = 'products'
     id: Mapped[int] = mapped_column(BigInteger, primary_key = True, index = True)
     name: Mapped[str] = mapped_column(String(255), index = True)
