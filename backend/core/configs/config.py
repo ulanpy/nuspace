@@ -20,6 +20,14 @@ class Config(BaseSettings):
     IS_BOT_DEV: bool = False
     frontend_host: str = "http://localhost"
     nginx_port: int = 80
+    CELERY_BROKER_URL: str
+    CELERY_RESULT_BACKEND: str
+
+    TG_API_KEY: str
+    WEBAPP_HOST: str = "localhost"
+    WEBAPP_PORT: int = 3001
+    ngrok_server_endpoint: str
+    url_webhook_endpoint: str = ""
 
     @property
     def DATABASE_URL(self) -> str:

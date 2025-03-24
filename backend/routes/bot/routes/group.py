@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # from backend.routes.bot.apsheduler.tasks import kick_user_task
 from backend.routes.bot.keyboards.kb import kb_register_groups
 from backend.routes.bot.cruds import check_user_by_telegram_id
+from backend.celery_app.tasks import schedule_kick
 
 
 router = Router(name="Group router")
@@ -19,7 +20,11 @@ async def new_member(m: Message,
     if m.from_user.id == m.bot.id:
         return
 
-    user_exists = await check_user_by_telegram_id(session=db_session, user_id=m.from_user.id)
-    if not user_exists:
-        await m.bot.send_message(m.chat.id, f"Зарегайся в NUspace, иначе в течение 15 минут будешь исключен", reply_markup=kb_register_groups())
-    # kick_user_task.apply_async(args=[m.chat.id, m.from_user.id, m.bot.token], countdown=10)
+    if not await check_user_by_telegram_id(session=db_session, user_id=m.from_user.id):
+        await m.reply("Зарегайся в NUspace, иначе в течений 15 минут будешь исключен")
+        run_time = datetime.now() + timedelta(seconds=10)
+        # Schedule task with 10 seconds delay
+        schedule_kick.apply_async(
+            args=[m.chat.id, m.from_user.id],
+            countdown=60  # Delay in seconds
+        )
