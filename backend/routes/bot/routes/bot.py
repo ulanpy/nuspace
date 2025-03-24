@@ -1,11 +1,5 @@
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request
 from aiogram.types import Update
-import asyncio
-from sqlalchemy.ext.asyncio import AsyncSession
-
-
-from backend.common.dependencies import get_db_session
-
 
 
 web_router = APIRouter()

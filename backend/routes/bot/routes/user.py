@@ -25,6 +25,7 @@ async def user_start_link(m: Message,
     args = command.args
     payload: str = decode_payload(args)
     sub, confirmation_number = payload.split("&")
+
     if await check_existance_by_sub(session=db_session, sub=sub):
         if await get_telegram_id(session=db_session, sub=sub) is None:
             await m.answer(f"Отлично, теперь выбери верный смайлик!", reply_markup=kb_confirmation(sub=sub, confirmation_number=confirmation_number))

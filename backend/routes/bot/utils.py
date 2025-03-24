@@ -4,14 +4,17 @@ from aiogram import Dispatcher, Bot
 from fastapi import FastAPI, Depends
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncEngine
 
-
+from backend.routes.bot.middlewares import DatabaseMiddleware
 from backend.routes.bot.config import config
 from backend.routes.bot.routes.user import router as user_router
 from backend.routes.bot.routes.group import router as group_router
 from backend.routes.bot.routes.user_callback import router as user_callback_router
 from backend.common.dependencies import get_db_session
 
-def decide_webhook_url(dev_url: str = config.ngrok_server_endpoint, prod_url: str = config.url_webhook_endpoint, IS_DEBUG: bool = True) -> str:
+
+def decide_webhook_url(dev_url: str = config.ngrok_server_endpoint,
+                       prod_url: str = config.url_webhook_endpoint,
+                       IS_DEBUG: bool = True) -> str:
     public_url = None
     if IS_DEBUG:
         try:
@@ -40,7 +43,8 @@ async def initialize_bot(app: FastAPI, token: str = config.TG_API_KEY, dev_url: 
     # Store URL in dispatcher's data
     url = decide_webhook_url(dev_url=dev_url, prod_url=prod_url)
 
-
+    app.state.dp.update.middleware(DatabaseMiddleware(app.state.db_manager))
+    app.state.dp.callback_query.middleware(DatabaseMiddleware(app.state.db_manager))
     app.state.dp.include_router(user_router)
     app.state.dp.include_router(group_router)
 
@@ -49,7 +53,4 @@ async def initialize_bot(app: FastAPI, token: str = config.TG_API_KEY, dev_url: 
     await app.state.bot.set_webhook(url=f"{url}/webhook",
                                     drop_pending_updates=True,
                                     allowed_updates=app.state.dp.resolve_used_update_types())
-    scheduler = app.state.scheduler
-    scheduler.start()
-    app.state.dp["scheduler_session"] = app.state.scheduler
-    app.state.dp["db_manager"] = app.state.db_manager
+
