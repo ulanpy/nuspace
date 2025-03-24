@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from backend.core.database.models.view import ClubView
 
 # Initialize Redis connection
-r = aioredis.from_url("redis://localhost")
+r = aioredis.from_url()
 
 
 async def increment_pg_views(session: AsyncSession):

@@ -33,6 +33,8 @@ class Config(BaseSettings):
         env_file_encoding = "utf-8"
         extra = "allow"
 
-
+    @property
+    def REDIS_URL(self):
+        return f"redis://{self.redis_host}:{self.redis_port}"
 # Usage
 config = Config()
