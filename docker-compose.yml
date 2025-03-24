@@ -12,8 +12,6 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
-    ports:
-      - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
@@ -25,13 +23,17 @@ services:
     networks:
       - nuros
     restart: always
-    ports:
-      - "8000:8000"
+    env_file:
+      - .env
     volumes:
       - .:/nuros  # Sync local backend folder with container's /app
     depends_on:
       - postgres
-
+    ports:
+      - "8000:8000"  # Expose Nginx on port 80 of localhost
+    environment:
+      - PYTHONUNBUFFERED=1
+      - WORKERS=${GUNICORN_WORKERS} #not set this in prod and let decide on the fly
 
   nginx:
     container_name: nginx
@@ -63,14 +65,13 @@ services:
       environment:
         PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
         PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-      ports:
-        - "5050:80"
       depends_on:
         - postgres
       restart: always
       networks:
         - nuros
       volumes:
+        - pgadmin-data:/var/lib/pgadmin  # Named volume for persistent data
         - ./backend/core/configs/pgadmin_config/servers.json:/pgadmin4/servers.json  # Auto-connect to PostgreSQL
         - ./backend/core/configs/pgadmin_config/pgpass:/pgpass  # Auto-login credentials
 
@@ -90,22 +91,28 @@ services:
         - NGROK_AUTHTOKEN=${NGROK_AUTH_TOKEN}  # Remove the underscore to match ngrok.yml
       volumes:
         - ./backend/core/configs/ngrok.yml:/etc/ngrok.yml
-      expose:
-        - 4040
       depends_on:
         - fastapi
 
+  redis:
+    image: redis:latest
+    networks:
+      - nuros
+    container_name: redis
+    restart: always
+    volumes:
+      - redis-data:/data
+      - ./backend/core/configs/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
 
 #  frontend:
 #    build:
 #      context: .
 #      dockerfile: Dockerfile_vite
 #    restart: always
-#    ports:
-#      - "5173:5173"
 #    volumes:
-#      - ./frontend:/app           # Mount all project files
-#      - /app/node_modules         # Anonymous volume to store node_modules inside container
+#      - ./frontend:/nuros           # Mount all project files
+#      - /nuros/node_modules         # Anonymous volume to store node_modules inside container
 #    environment:
 #      - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes (Docker-friendly)
 #    networks:
@@ -117,3 +124,6 @@ networks:
 
 volumes:
   postgres-data:
+  redis-data:
+    driver: local
+  pgadmin-data:

@@ -56,7 +56,7 @@ class KeyCloakManager(BaseSettings):
             server_metadata_url=self.SERVER_METADATA_URL,
             client_kwargs=self.client_kwargs
         )
-        print("OAuth initialized successfully")
+
     async def get_pub_key(self, token: str):
         """Fetch and cache Keycloak's public key for JWT validation. """
         if "keys" not in self._jwks_cache:
@@ -70,6 +70,21 @@ class KeyCloakManager(BaseSettings):
             self._jwks_client = PyJWKClient(self.JWKS_URI)
 
         return self._jwks_client.get_signing_key_from_jwt(token).key
+
+    def get_pub_key_sync(self, token: str):
+        """Fetch and cache Keycloak's public key for JWT validation synchronously. """
+        if "keys" not in self._jwks_cache:
+            with httpx.Client() as client:
+                response = client.get(self.JWKS_URI)
+                response.raise_for_status()
+                self._jwks_cache["keys"] = response.json()["keys"]
+
+        # Use PyJWKClient to extract the signing key from the cached keys
+        if not self._jwks_client:
+            self._jwks_client = PyJWKClient(self.JWKS_URI)
+
+        return self._jwks_client.get_signing_key_from_jwt(token).key
+
 
     async def refresh_access_token(self, refresh_token: str) -> dict:
         """Request a new access token using a refresh token."""

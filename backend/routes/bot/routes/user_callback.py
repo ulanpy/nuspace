@@ -22,6 +22,7 @@ async def confirmation_buttons(c: CallbackQuery,
     user_id = c.from_user.id
     if await get_telegram_id(session=db_session, sub=callback_data.sub) is not None:
         await c.message.answer("Уже авторизирован!")
+        await c.message.delete()
         return
 
     if callback_data.number == callback_data.confirmation_number:
