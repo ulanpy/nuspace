@@ -9,28 +9,20 @@ def kb_webapp() -> InlineKeyboardMarkup:
                                         InlineKeyboardButton(text='NUspace', web_app=WebAppInfo(url="https://docs.aiogram.dev/en/dev-3.x/dispatcher/dispatcher.html"))
                                     ]
                                 ])
+
+
 def kb_confirmation(sub: str, confirmation_number: int) -> InlineKeyboardMarkup:
+    emojis = ['🐬', '🦄', '🐖', '🐉', '🐁', '🐈', '🦍', '🐝', '🐺', '🐥']
     buttons = [
-        InlineKeyboardButton(text='🐬', callback_data=ConfirmTelegramUser(sub=sub, number=1,
-                                                                         confirmation_number=confirmation_number).pack()),
-        InlineKeyboardButton(text='🦄', callback_data=ConfirmTelegramUser(sub=sub, number=2,
-                                                                         confirmation_number=confirmation_number).pack()),
-        InlineKeyboardButton(text='🐖', callback_data=ConfirmTelegramUser(sub=sub, number=3,
-                                                                         confirmation_number=confirmation_number).pack()),
-        InlineKeyboardButton(text='🐉', callback_data=ConfirmTelegramUser(sub=sub, number=4,
-                                                                         confirmation_number=confirmation_number).pack()),
-        InlineKeyboardButton(text='🐁', callback_data=ConfirmTelegramUser(sub=sub, number=5,
-                                                                         confirmation_number=confirmation_number).pack()),
-        InlineKeyboardButton(text='🐈', callback_data=ConfirmTelegramUser(sub=sub, number=6,
-                                                                         confirmation_number=confirmation_number).pack()),
-        InlineKeyboardButton(text='🦍', callback_data=ConfirmTelegramUser(sub=sub, number=7,
-                                                                         confirmation_number=confirmation_number).pack()),
-        InlineKeyboardButton(text='🐝', callback_data=ConfirmTelegramUser(sub=sub, number=8,
-                                                                         confirmation_number=confirmation_number).pack()),
-        InlineKeyboardButton(text='🐺', callback_data=ConfirmTelegramUser(sub=sub, number=9,
-                                                                         confirmation_number=confirmation_number).pack()),
-        InlineKeyboardButton(text='🐥', callback_data=ConfirmTelegramUser(sub=sub, number=10,
-                                                                         confirmation_number=confirmation_number).pack()),
+        InlineKeyboardButton(
+            text=emoji,
+            callback_data=ConfirmTelegramUser(
+                sub=sub,
+                number=idx + 1,
+                confirmation_number=confirmation_number
+            ).pack()
+        )
+        for idx, emoji in enumerate(emojis)
     ]
 
     shuffle(buttons)

@@ -29,8 +29,6 @@ services:
       - .:/nuros  # Sync local backend folder with container's /app
     depends_on:
       - postgres
-    ports:
-      - "8000:8000"  # Expose Nginx on port 80 of localhost
     environment:
       - PYTHONUNBUFFERED=1
       - WORKERS=${GUNICORN_WORKERS} #not set this in prod and let decide on the fly
@@ -119,7 +117,7 @@ services:
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "status"]
+      test: ["CMD", "rabbitmq", "status"]
       interval: 30s
       timeout: 10s
       retries: 5
