@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from redis.asyncio import Redis, ConnectionPool
 from google.cloud import storage
 
+
 from backend.routes.bot.routes.bot import web_router
 from backend.routes.bot.utils import initialize_bot
 from backend.routes import routers, get_admin
@@ -15,7 +16,9 @@ from backend.routes.auth.auth import KeyCloakManager
 async def lifespan(app: FastAPI):
     try:
         app.state.config = Config()
-        app.state.storage_client = storage.Client()
+
+        app.state.storage_client = storage.Client(credentials=config.bucket_credentials)
+
         app.state.db_manager = AsyncDatabaseManager()
         app.state.db_manager_sync = SyncDatabaseManager()
         app.state.kc_manager = KeyCloakManager()
