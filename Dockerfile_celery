@@ -31,4 +31,4 @@ RUN poetry install --no-root --no-cache
 # Copy application code
 COPY . .
 
-RUN poetry install --no-root --no-cache -E celery
+RUN poetry install --no-root --no-cache

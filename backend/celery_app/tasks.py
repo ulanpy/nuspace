@@ -13,7 +13,7 @@ def schedule_kick(chat_id: int, user_id: int):
         bot = Bot(token=config.TG_API_KEY)
         await bot.ban_chat_member(chat_id, user_id)
         await bot.unban_chat_member(chat_id, user_id)
-
+        await bot.session.close()
     try:
         result = loop.run_until_complete(kick_async(chat_id, user_id))
         return result

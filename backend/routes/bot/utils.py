@@ -4,7 +4,7 @@ from aiogram import Dispatcher, Bot
 from fastapi import FastAPI, Depends
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncEngine
 
-from backend.routes.bot.middlewares import DatabaseMiddleware
+from backend.routes.bot.middlewares import DatabaseMiddleware, RedisMiddleware
 from backend.routes.bot.config import config
 from backend.routes.bot.routes.user import router as user_router
 from backend.routes.bot.routes.group import router as group_router
@@ -45,8 +45,12 @@ async def initialize_bot(app: FastAPI, token: str = config.TG_API_KEY, dev_url: 
 
     app.state.dp.update.middleware(DatabaseMiddleware(app.state.db_manager))
     app.state.dp.callback_query.middleware(DatabaseMiddleware(app.state.db_manager))
+    app.state.dp.update.middleware(RedisMiddleware(app.state.redis))
+    app.state.dp.callback_query.middleware(RedisMiddleware(app.state.redis))
+
     app.state.dp.include_router(user_router)
     app.state.dp.include_router(group_router)
+
 
     app.state.dp.include_router(user_callback_router)
     print(f"webhook {url}", flush=True)
