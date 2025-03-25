@@ -144,7 +144,6 @@ services:
       replicas: 2  # For scalability
 
 
-<<<<<<< HEAD
   frontend:
     build:
       context: .
@@ -159,20 +158,6 @@ services:
       - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes (Docker-friendly)
     networks:
       - nuros
-=======
-#  frontend:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile_vite
-#    restart: always
-#    volumes:
-#      - ./frontend:/nuros           # Mount all project files
-#      - /nuros/node_modules         # Anonymous volume to store node_modules inside container
-#    environment:
-#      - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes (Docker-friendly)
-#    networks:
-#      - nuros
->>>>>>> b51bca356404a37a8b65092a57da5bf526a78f1e
 
 networks:
   nuros:

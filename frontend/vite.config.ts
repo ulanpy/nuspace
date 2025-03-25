@@ -1,11 +1,12 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from "vite"
+import react from "@vitejs/plugin-react"
+import tailwindcss from 'tailwindcss'
+import path from "path"
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
-    tailwindcss(),
   ],
   define: {
     "import.meta.env.VITE_BASE_URL": JSON.stringify("localhost"),
@@ -24,5 +25,17 @@ export default defineConfig({
       }
     },
   },
-  base: "/",  // ⬅️ Ensures paths resolve correctly in dev mode
-});
+  css: {
+    postcss: {
+      plugins: [
+        tailwindcss(),
+      ],
+    },
+  },
+  base: "/",
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+})
