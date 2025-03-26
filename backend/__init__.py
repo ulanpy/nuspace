@@ -4,7 +4,7 @@ from redis.asyncio import Redis, ConnectionPool
 from google.cloud import storage
 
 
-from backend.routes.bot.routes.bot import web_router
+from backend.routes.bot.bot import web_router
 from backend.routes.bot.utils import initialize_bot
 from backend.routes import routers, get_admin
 from backend.core.database.manager import AsyncDatabaseManager, SyncDatabaseManager

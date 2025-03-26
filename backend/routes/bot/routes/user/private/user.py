@@ -36,11 +36,11 @@ async def user_start_link(m: Message,
 
 
 @router.message(CommandStart(deep_link=False), F.chat.type == ChatType.PRIVATE)
-async def user_start(m: Message):
+async def user_start(m: Message, public_url: str):
     """
         Handles the start command without a deep link for private chats.
         Welcomes the user to NUspace and provides a link to the web application.
     """
-    await m.answer(f"Добро пожаловать в NUspace, перейди по ссылке ниже!", reply_markup=kb_webapp())
+    await m.answer(f"Добро пожаловать в NUspace, перейди по ссылке ниже!", reply_markup=kb_webapp(url=public_url))
 
 

@@ -1,5 +1,5 @@
 from .celery_config import celery_app
-from backend.core.configs.config import  config
+from backend.core.configs.config import config
 from aiogram import Bot
 import asyncio
 

@@ -4,19 +4,19 @@ from random import shuffle
 from backend.routes.bot.keyboards.callback_factory import ConfirmTelegramUser
 
 
-def kb_webapp() -> InlineKeyboardMarkup:
+def kb_webapp(url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(row_width=1,
                                 inline_keyboard=[
                                     [
-                                        InlineKeyboardButton(text='NUspace', web_app=WebAppInfo(url="https://docs.aiogram.dev/en/dev-3.x/dispatcher/dispatcher.html"))
+                                        InlineKeyboardButton(text='NUspace', web_app=WebAppInfo(url=url))
                                     ]
                                 ])
 
 
-def kb_register_groups() -> InlineKeyboardMarkup:
+def kb_register_groups(url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text='NUspace', url="https://docs.aiogram.dev/en/dev-3.x/dispatcher/dispatcher.html")
+            InlineKeyboardButton(text='NUspace', url=url)
         ]
     ])
 
