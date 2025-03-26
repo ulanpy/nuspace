@@ -30,4 +30,4 @@ COPY pyproject.toml poetry.lock ./
 # Copy application code
 COPY . .
 
-RUN poetry install --no-root --no-cache -E
+RUN poetry install --no-root --no-cache
