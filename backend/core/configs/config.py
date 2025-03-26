@@ -1,6 +1,9 @@
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 import os
+from google.oauth2 import service_account
+import json
+
 
 # Load environment variables from .env file
 ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
@@ -8,6 +11,7 @@ load_dotenv(os.path.join(ENV_DIR, ".env"))
 
 
 class Config(BaseSettings):
+    GCP_CREDENTIALS_JSON: str
     session_middleware_key: str = "your_secret_key"
     db_name: str
     db_user: str
@@ -44,5 +48,10 @@ class Config(BaseSettings):
     @property
     def REDIS_URL(self):
         return f"redis://{self.redis_host}:{self.redis_port}"
+
+    @property
+    def bucket_credentials(self):
+         return service_account.Credentials.from_service_account_info(json.loads(self.GCP_CREDENTIALS_JSON))
+
 # Usage
 config = Config()

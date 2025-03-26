@@ -8,7 +8,7 @@ import random
 from .__init__ import *
 from backend.routes.auth.schemas import Sub
 from backend.core.configs.config import config
-from backend.common.dependencies import get_db_session
+from backend.common.dependencies import get_db_session, validate_access_token_dep
 from backend.routes.auth.keycloak_manager import KeyCloakManager
 
 router = APIRouter(tags=['Auth Routes'])
@@ -21,6 +21,8 @@ async def login(request: Request):
     """
     kc: KeyCloakManager = request.app.state.kc_manager
     return await getattr(kc.oauth, kc.__class__.__name__.lower()).authorize_redirect(request, kc.KEYCLOAK_REDIRECT_URI)
+
+
 
 @router.post("/bingtg")
 async def bind_tg(request: Request, sub: Sub):
@@ -70,15 +72,10 @@ async def refresh_token(request: Request, response: Response,
 
 
 @router.get("/me")
-async def get_current_user(request: Request,
-                           access_token: Annotated[str | None, Cookie(alias="access_token")] = None) -> dict:
-    kc: KeyCloakManager = request.app.state.kc_manager
-
-    if not access_token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-
-    decoded_access_token = await validate_access_token(access_token, kc)
-    return decoded_access_token
-
+async def get_current_user(
+    user: Annotated[dict, Depends(validate_access_token_dep)]
+) -> dict:
+    """Returns current user data from validated cookie token."""
+    return user
 
 
