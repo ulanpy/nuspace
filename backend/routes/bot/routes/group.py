@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.types import Message, ChatMemberOwner
 from aiogram.enums.chat_type import ChatType
-from aiogram. types. chat_permissions import ChatPermissions
+from aiogram.types.chat_permissions import ChatPermissions
 from sqlalchemy.ext.asyncio import AsyncSession
 from redis.asyncio import Redis
 
@@ -18,6 +18,10 @@ router = Router(name="Group router")
 async def new_member(m: Message,
                      db_session: AsyncSession,
                      redis: Redis):
+    member = await m.bot.get_chat_member(chat_id=m.chat.id, user_id=m.from_user.id)
+
+    if isinstance(member, ChatMemberOwner):
+        return
     if m.from_user.id == m.bot.id:
         return
 
@@ -46,6 +50,6 @@ async def new_member(m: Message,
         await redis.set(task_id, "pending")
         schedule_kick.apply_async(
             args=[m.chat.id, m.from_user.id],
-            countdown=5,
+            countdown=60,
             task_id=task_id
         )
