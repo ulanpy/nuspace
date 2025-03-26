@@ -103,7 +103,7 @@ services:
     volumes:
       - redis-data:/data
       - ./backend/core/configs/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
+    command: redis-server --bind 0.0.0.0 --protected-mode no
 
 
   rabbitmq:

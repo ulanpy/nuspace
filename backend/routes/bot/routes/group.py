@@ -43,7 +43,7 @@ async def new_member(m: Message,
                                                                     )
                                          )
         task_id = f"celery:kick:{m.from_user.id}:{m.chat.id}:{sent_m.message_id}"
-        await redis.ping()
+        await redis.set(task_id, "pending")
         schedule_kick.apply_async(
             args=[m.chat.id, m.from_user.id],
             countdown=5,

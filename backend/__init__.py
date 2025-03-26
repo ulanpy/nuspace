@@ -14,8 +14,6 @@ async def lifespan(app: FastAPI):
     try:
         app.state.db_manager = AsyncDatabaseManager()
         app.state.redis = aioredis.from_url(config.REDIS_URL)
-
-
         app.state.db_manager_sync = SyncDatabaseManager()
         app.state.kc_manager = KeyCloakManager()
         await app.state.db_manager.create_all_tables()

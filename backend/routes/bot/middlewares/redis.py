@@ -4,6 +4,7 @@ from typing import Callable, Awaitable, Any
 
 from redis.asyncio import Redis
 
+
 class RedisMiddleware(BaseMiddleware):
     def __init__(self, redis: Redis) -> None:
         self.redis = redis
