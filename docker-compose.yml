@@ -148,8 +148,8 @@ services:
       dockerfile: Dockerfile_vite
     restart: always
     volumes:
-      - ./frontend:/app           # Mount all project files
-      - /app/node_modules         # Anonymous volume to store node_modules inside container
+      - ./frontend:/nuros           # Mount all project files
+      - /nuros/node_modules         # Anonymous volume to store node_modules inside container
     environment:
       - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes (Docker-friendly)
     networks:
