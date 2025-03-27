@@ -3,6 +3,7 @@ import { ThemeToggle } from "../components/theme-toggle"
 import { AppGrid } from "../components/app-grid"
 import { GlowCarousel } from "@/components/glow-carousel"
 import { motion } from "framer-motion"
+import { PersonalizedDashboard } from "@/components/personalized-dasboard"
 
 const carouselItems = [
   {
@@ -118,9 +119,11 @@ export default function HomePage() {
         <GlowCarousel items={carouselItems}/>
       </div>
       <div className="flex flex-col items-center gap-8 sm:gap-12">
-          <AppGrid />
+      <div className="w-full mt-4 sm:mt-8">
+        <PersonalizedDashboard />
+      </div>
+      <AppGrid />
       </div>
     </div>
   )
 }
-
