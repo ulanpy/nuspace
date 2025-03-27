@@ -46,8 +46,8 @@ async def auth_callback(request: Request, response: Response, db_session: AsyncS
     await validate_access_token(creds["access_token"], request.app.state.kc_manager)
     user_schema: UserSchema = await create_user_schema(creds)
     await upsert_user(db_session, user_schema)
-    frontend_url = f"{config.frontend_host}:{config.nginx_port}/dashboard"
-    # response = RedirectResponse(url=frontend_url, status_code=303)
+    frontend_url = f"{config.FRONTEND_HOST}:{config.nginx_port}/"
+    response = RedirectResponse(url=frontend_url, status_code=303)
     set_auth_cookies(response, creds)
     return creds
 
