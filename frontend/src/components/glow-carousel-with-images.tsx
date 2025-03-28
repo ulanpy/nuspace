@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import * as React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -201,7 +201,13 @@ export function GlowCarouselWithImage({
             initial="enter"
             animate="center"
             exit="exit"
-            className="absolute inset-0 flex items-center justify-center p-6"
+            className={`absolute inset-0 flex items-center justify-center ${
+              React.isValidElement(currentItem.content) &&
+              React.isValidElement((currentItem.content as any).props?.children) &&
+              (currentItem.content as any).props?.children?.type === "img"
+                ? "p-0"
+                : "p-6"
+            }`}
           >
             {currentItem.content}
           </motion.div>
