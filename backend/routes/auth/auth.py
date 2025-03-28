@@ -49,7 +49,7 @@ async def auth_callback(request: Request, response: Response, db_session: AsyncS
     frontend_url = f"{config.FRONTEND_HOST}:{config.nginx_port}/"
     response = RedirectResponse(url=frontend_url, status_code=303)
     set_auth_cookies(response, creds)
-    return creds
+    return response
 
 
 @router.post("/refresh-token", response_description="Refresh token")
