@@ -1,9 +1,12 @@
-import { MenuBar } from "../components/menu-bar"
+"use client"
+
 import { ThemeToggle } from "../components/theme-toggle"
 import { AppGrid } from "../components/app-grid"
 import { GlowCarousel } from "@/components/glow-carousel"
 import { motion } from "framer-motion"
 import { PersonalizedDashboard } from "@/components/personalized-dasboard"
+import { LoginButton } from "../components/login-button"
+import { useAuth } from "../context/auth-context"
 
 const carouselItems = [
   {
@@ -109,12 +112,27 @@ const carouselItems = [
 ]
 
 export default function HomePage() {
+  const { user, isAuthenticated, isLoading } = useAuth()
+
   return (
-    <div className="bg-background flex flex-col items-center justify-center p-3 sm:p-4">
-      <div className="mb-2 sm:mb-[120px] flex flex-col items-center gap-6 sm:gap-8">
+    <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4">
+      {/* Header with login button */}
+      <header className="w-full flex justify-between items-center mb-8">
         <ThemeToggle />
-        <MenuBar />
-      </div>
+        <LoginButton />
+      </header>
+
+      <div className="flex-1 flex flex-col items-center">
+        {/* Greeting */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold mb-2">
+            {isAuthenticated ? `Welcome back, ${user?.given_name}!` : "Welcome to NU Space"}
+          </h1>
+          <p className="text-muted-foreground">
+            {isAuthenticated ? "Your personalized university dashboard" : "Login to access your personalized dashboard"}
+          </p>
+        </div>
+
       <div className="min-h-screen bg-background flex flex-col items-center justify-center">
         <GlowCarousel items={carouselItems}/>
       </div>
@@ -124,6 +142,8 @@ export default function HomePage() {
       </div>
       <AppGrid />
       </div>
+      </div>
     </div>
   )
 }
+

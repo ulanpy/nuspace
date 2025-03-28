@@ -4,9 +4,11 @@ import KupiProdaiPage from "./pages/apps/kupi-prodai"
 import NUEventsPage from "./pages/apps/nu-events"
 import DormEatsPage from "./pages/apps/dorm-eats"
 import AppsLayout from "./layouts/apps-layout"
+import { AuthProvider } from "./context/auth-context"
 
 function App() {
   return (
+    <AuthProvider>
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/apps" element={<AppsLayout />}>
@@ -15,6 +17,7 @@ function App() {
         <Route path="dorm-eats" element={<DormEatsPage />} />
       </Route>
     </Routes>
+    </AuthProvider>
   )
 }
 
