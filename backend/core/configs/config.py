@@ -22,7 +22,7 @@ class Config(BaseSettings):
     redis_port: int = 6379
     bucket_name: str = "nuspace_bucket"
     IS_BOT_DEV: bool = False
-    frontend_host: str = "http://localhost"
+    FRONTEND_HOST: str = "http://localhost"
     nginx_port: int = 80
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
