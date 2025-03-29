@@ -62,7 +62,6 @@ async def on_user_joined(event: ChatMemberUpdated):
 #             permissions=no_permissions
 #         )
 #         task_id = f"celery:kick:{user_id}:{chat_id}:{sent_m.message_id}"
-#         await redis.set(task_id, "pending", ex=15*60+1)
 #         schedule_kick.apply_async(
 #             args=[chat_id, user_id],
 #             countdown=900,
