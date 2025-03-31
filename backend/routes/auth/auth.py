@@ -77,7 +77,7 @@ async def get_current_user(
     db_session: AsyncSession = Depends(get_db_session)
 ):
     """Returns current user data"""
-    sub = user.get("sub")  # Extract the sub field
+    sub = user.get("sub")
     result = await db_session.execute(select(User.telegram_id).filter_by(sub=sub))
     tg_linked: bool = bool(result.scalars().first())
 
