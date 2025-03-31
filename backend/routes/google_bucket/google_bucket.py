@@ -9,7 +9,7 @@ router = APIRouter(tags=['Auth Routes'])
 
 
 @router.get(
-    "/generate-download-url/{filename}",
+    "/download-url/{filename}",
     response_model=SignedUrlResponse,
     summary="Generate secure download URL",
     description="Creates a time-limited URL for downloading a specific file from storage"
@@ -35,7 +35,7 @@ async def generate_download_url(
 
 
 @router.get(
-    "/generate-upload-url/{filename}",
+    "/upload-url/{filename}",
     response_model=SignedUrlResponse,
     summary="Generate secure upload URL for Google Cloud Storage Bucket",
     description="Creates a time-limited URL for uploading files directly to cloud storage"
