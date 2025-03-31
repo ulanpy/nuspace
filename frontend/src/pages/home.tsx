@@ -33,7 +33,8 @@ const homeCarouselItems = [
 
 export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth()
-
+  console.log(user);
+  console.log("Family name:", user?.user.family_name);
   return (
     <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4">
       {/* Header with login button */}
@@ -46,7 +47,7 @@ export default function HomePage() {
         {/* Greeting */}
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-            {isAuthenticated ? `Welcome back, ${user?.given_name}!` : "Welcome to NU Space"}
+          {isAuthenticated && user?.user.given_name ? `Welcome back, ${user.user.given_name}!` : "Welcome to NU Space"}
           </h1>
           <p className="text-muted-foreground">
             {isAuthenticated ? "Your personalized university dashboard" : "Login to access your personalized dashboard"}
