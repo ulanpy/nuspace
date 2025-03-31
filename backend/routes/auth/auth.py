@@ -6,7 +6,7 @@ from aiogram.utils.deep_linking import create_start_link
 import random
 
 from .__init__ import *
-from backend.routes.auth.schemas import Sub
+from backend.routes.auth.schemas import Sub, CurrentUserResponse
 from backend.core.configs.config import config
 from backend.common.dependencies import get_db_session, validate_access_token_dep
 from backend.routes.auth.keycloak_manager import KeyCloakManager
@@ -71,11 +71,16 @@ async def refresh_token(request: Request, response: Response,
     return creds
 
 
-@router.get("/me")
+@router.get("/me", response_model=CurrentUserResponse)
 async def get_current_user(
-    user: Annotated[dict, Depends(validate_access_token_dep)]
-) -> dict:
-    """Returns current user data from validated cookie token."""
-    return user
+    user: Annotated[dict, Depends(validate_access_token_dep)],
+    db_session: AsyncSession = Depends(get_db_session)
+):
+    """Returns current user data"""
+    sub = user.get("sub")  # Extract the sub field
+    result = await db_session.execute(select(User.telegram_id).filter_by(sub=sub))
+    tg_linked: bool = bool(result.scalars().first())
+
+    return CurrentUserResponse(user=user, tg_linked=tg_linked)
 
 
