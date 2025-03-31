@@ -12,7 +12,7 @@ export function LoginButton() {
     <div className="flex items-center gap-2">
       {isAuthenticated ? (
         <div className="flex items-center gap-2">
-          <span className="text-sm hidden sm:inline-block">{user?.given_name}</span>
+          <span className="text-sm hidden sm:inline-block">{user?.user.given_name}</span>
           <BindTelegramButton />
           <Button variant="ghost" size="sm" onClick={logout} className="flex items-center gap-1">
             <LogOut className="h-4 w-4" />
