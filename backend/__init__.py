@@ -4,7 +4,7 @@ from redis.asyncio import Redis, ConnectionPool
 from google.cloud import storage
 
 
-from backend.routes.bot.routes.bot import web_router
+from backend.routes.bot.bot import web_router
 from backend.routes.bot.utils import initialize_bot
 from backend.routes import routers, get_admin
 from backend.core.database.manager import AsyncDatabaseManager, SyncDatabaseManager
@@ -26,7 +26,6 @@ async def lifespan(app: FastAPI):
         redis_pool = ConnectionPool.from_url(
             config.REDIS_URL,
             max_connections=50,
-            min_connections=5,
             socket_connect_timeout=5,
             socket_timeout=10,
             health_check_interval=30,
@@ -47,6 +46,7 @@ async def lifespan(app: FastAPI):
 
     finally:
         if config.IS_BOT_DEV:
+            await app.state.bot.session.close()
             await app.state.bot.delete_webhook(drop_pending_updates=True)
 
         await app.state.redis.aclose()
