@@ -73,12 +73,11 @@ async def refresh_token(request: Request, response: Response,
 
 @router.get("/me", response_model=CurrentUserResponse)
 async def get_current_user(
-    sub: str,
     user: Annotated[dict, Depends(validate_access_token_dep)],
     db_session: AsyncSession = Depends(get_db_session)
 ):
     """Returns current user data"""
-
+    sub = user.get("sub")  # Extract the sub field
     result = await db_session.execute(select(User.telegram_id).filter_by(sub=sub))
     tg_linked: bool = bool(result.scalars().first())
 
