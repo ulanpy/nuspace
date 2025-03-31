@@ -40,13 +40,7 @@ def kb_confirmation(sub: str, confirmation_number: int) -> InlineKeyboardMarkup:
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
-@router.post("/linkedtg")
-async def get_telegram_id(request: Request,
-                          sub: str,
-                          db_session: AsyncSession = Depends(get_db_session)) -> bool:
-    result = await db_session.execute(select(User.telegram_id).filter_by(sub=sub))
-    user_exist: bool = bool(result.scalars().first())
-    return user_exist
+
 
 
 def kb_languages():
