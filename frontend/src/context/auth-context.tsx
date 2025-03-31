@@ -2,12 +2,34 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
+// Update the User interface to match the JWT token structure
 interface User {
+  sub: string
+  exp?: number
+  iat?: number
+  auth_time?: number
+  jti?: string
+  iss?: string
+  aud?: string
+  typ?: string
+  azp?: string
+  sid?: string
+  acr?: string
   name: string
   given_name: string
   family_name: string
   email: string
   preferred_username: string
+  email_verified?: boolean
+  scope?: string
+  realm_access?: {
+    roles: string[]
+  }
+  resource_access?: {
+    account: {
+      roles: string[]
+    }
+  }
 }
 
 interface AuthContextType {
@@ -47,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshToken = async () => {
     try {
-      await fetch("http://localhost/api/refresh-token", {
+      await fetch("http://localhost/api/refresh", {
         method: "POST",
         credentials: "include", // Important for cookies
       })
@@ -61,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUserData()
 
     // Set up token refresh interval
-    const refreshInterval = setInterval(refreshToken, 240*1000) // 4 minutes
+    const refreshInterval = setInterval(refreshToken, 5000) // 5 seconds
 
     return () => {
       clearInterval(refreshInterval)
