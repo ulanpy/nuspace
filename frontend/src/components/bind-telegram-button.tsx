@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { ExternalLink, Check } from "lucide-react"
 import { Button } from "./ui/button"
 import { Modal } from "./ui/modal"
@@ -21,50 +21,13 @@ export function BindTelegramButton() {
   const [telegramLink, setTelegramLink] = useState("")
   const [confirmationEmoji, setConfirmationEmoji] = useState("")
   const [error, setError] = useState("")
-  const [isLinked, setIsLinked] = useState(false)
-  const [checkingLinkStatus, setCheckingLinkStatus] = useState(true)
 
-  // Check if user is linked to Telegram
-  useEffect(() => {
-    const checkTelegramLink = async () => {
-      if (!user?.sub) {
-        setCheckingLinkStatus(false)
-        return
-      }
-
-      try {
-        const response = await fetch("http://localhost/api/linkedtg", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({ sub: user.sub }),
-        })
-
-        if (response.ok) {
-          const isUserLinked = await response.json()
-          setIsLinked(isUserLinked)
-        } else {
-          console.error("Failed to check Telegram link status")
-        }
-      } catch (error) {
-        console.error("Error checking Telegram link:", error)
-      } finally {
-        setCheckingLinkStatus(false)
-      }
-    }
-
-    if (isAuthenticated) {
-      checkTelegramLink()
-    } else {
-      setCheckingLinkStatus(false)
-    }
-  }, [user, isAuthenticated])
+  // Check if user is linked to Telegram directly from the user object
+  const isLinked = user?.tg_linked || false
 
   // Update the handleBindTelegram function to use the correct sub field
   const handleBindTelegram = async () => {
-    if (!user?.sub) {
+    if (!user?.user?.sub) {
       setError("User information not available")
       return
     }
@@ -80,7 +43,7 @@ export function BindTelegramButton() {
           "Content-Type": "application/json",
         },
         credentials: "include", // Important for cookies
-        body: JSON.stringify({ sub: user.sub }),
+        body: JSON.stringify({ sub: user.user.sub }),
       })
 
       if (!response.ok) {
@@ -105,14 +68,6 @@ export function BindTelegramButton() {
 
   if (!isAuthenticated) {
     return null
-  }
-
-  if (checkingLinkStatus) {
-    return (
-      <Button variant="outline" size="sm" disabled className="flex items-center gap-1">
-        <span className="animate-pulse">Checking...</span>
-      </Button>
-    )
   }
 
   if (isLinked) {
@@ -174,4 +129,5 @@ export function BindTelegramButton() {
     </>
   )
 }
+
 
