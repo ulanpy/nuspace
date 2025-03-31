@@ -6,7 +6,7 @@ from aiogram import Dispatcher, Bot
 from fastapi import FastAPI
 
 from backend.routes.bot.middlewares import setup_middlewares
-from backend.routes.bot.config import config
+from backend.core.configs.config import config
 from backend.routes.bot.routes import include_routers
 
 
@@ -43,7 +43,10 @@ async def initialize_bot(app: FastAPI, token: str = config.TG_API_KEY, dev_url: 
     public_url = url.replace("/api", "")
 
     #Middlewares
-    setup_middlewares(app.state.dp)
+    setup_middlewares(dp=app.state.dp,
+                      url=public_url,
+                      redis=app.state.redis,
+                      db_manager=app.state.db_manager)
 
     #Routers
     include_routers(app.state.dp)

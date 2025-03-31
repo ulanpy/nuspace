@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from random import shuffle
 
-from backend.routes.bot.keyboards.callback_factory import ConfirmTelegramUser
+from backend.routes.bot.keyboards.callback_factory import ConfirmTelegramUser, Languages
 
 
 def kb_webapp(url: str) -> InlineKeyboardMarkup:
@@ -39,4 +39,19 @@ def kb_confirmation(sub: str, confirmation_number: int) -> InlineKeyboardMarkup:
     keyboard = [buttons[i:i + 5] for i in range(0, len(buttons), 5)]
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def kb_languages():
+    emojis = ['🇰🇿', '🇷🇺', '🇺🇸']
+    callback_data = ['kz', 'ru', 'en']
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text=emoji,
+                callback_data=Languages(language=cb_data).pack()
+            )
+            for emoji, cb_data in zip(emojis, callback_data)
+        ]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
