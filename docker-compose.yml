@@ -29,8 +29,6 @@ services:
       - .:/nuros  # Sync local backend folder with container's /app
     depends_on:
       - postgres
-    ports:
-      - "8000:8000"  # Expose Nginx on port 80 of localhost
     environment:
       - PYTHONUNBUFFERED=1
       - WORKERS=${GUNICORN_WORKERS} #not set this in prod and let decide on the fly
@@ -56,7 +54,8 @@ services:
         nginx -t && nginx -s reload; 
       done) & 
       nginx -g 'daemon off;'
-      "]
+      " ]
+
 
   pgadmin:
       image: dpage/pgadmin4
@@ -112,22 +111,64 @@ services:
     ports:
       - 7700:7700
     
+    command: redis-server --bind 0.0.0.0 --protected-mode no
 
-#  frontend:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile_vite
-#    restart: always
-#    volumes:
-#      - ./frontend:/nuros           # Mount all project files
-#      - /nuros/node_modules         # Anonymous volume to store node_modules inside container
-#    environment:
-#      - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes (Docker-friendly)
-#    networks:
-#      - nuros
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    networks:
+      - nuros
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "15672:15672"  # Management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile_celery
+    networks:
+      - nuros
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+      - redis
+      - fastapi
+    command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
+    environment:
+      - CELERY_WORKER_CONCURRENCY=4  # Adjust based on your needs
+      - CELERY_WORKER_PREFETCH_MULTIPLIER=1
+    deploy:
+      replicas: 2  # For scalability
+
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile_vite
+    restart: always
+    volumes:
+      - ./frontend:/nuros           # Mount all project files
+      - /nuros/node_modules         # Anonymous volume to store node_modules inside container
+    environment:
+      - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes (Docker-friendly)
+    networks:
+      - nuros
 
 networks:
   nuros:
+    name: nuspace_nuros
     driver: bridge
 
 volumes:
@@ -135,3 +176,4 @@ volumes:
   redis-data:
     driver: local
   pgadmin-data:
+  rabbitmq-data:  # Add this
