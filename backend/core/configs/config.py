@@ -20,7 +20,7 @@ class Config(BaseSettings):
     IS_BOT_DEV: bool = False
     frontend_host: str = "http://localhost"
     nginx_port: int = 80
-    meilisearch_url: str
+    meilisearch_url: str 
     meilisearch_master_key: str
 
     @property

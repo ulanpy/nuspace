@@ -106,7 +106,11 @@ services:
 
   meilisearch:
     image: getmeili/meilisearch:latest
+    networks:
+      - nuros
     container_name: meilisearch
+    ports:
+      - 7700:7700
     
 
 #  frontend:

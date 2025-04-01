@@ -4,9 +4,14 @@ from backend.core.configs.config import config
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy import select
-from backend.core.database.models.base import Base
+from sqlalchemy.orm import DeclarativeBase
+from typing import Type
 
-client = storage.Client()
+
+from backend.core.database.manager import AsyncDatabaseManager
+
+
+# client = storage.Client()
 
 def generate_url(blob_name: str, expiration: timedelta = timedelta(hours=1)):
     """
@@ -27,11 +32,6 @@ def generate_url(blob_name: str, expiration: timedelta = timedelta(hours=1)):
 
     return signed_url
 
-
-import aioredis
-
-
-r = aioredis.from_url("redis://localhost")
 
 async def track_view(entity_type: str, entity_id: int, user_id: int, TTL: int = 432000):
     """Tracks a unique user view using Redis with atomicity and TTL handling."""
@@ -58,7 +58,7 @@ async def track_view(entity_type: str, entity_id: int, user_id: int, TTL: int = 
 
 #meilisearch methods
 import httpx
-async_client = httpx.AsyncCLient(base_url = config.meilisearch_url, headers = {"Authorization": f"Bearer {config.meilisearch_master_key}"})
+async_client = httpx.AsyncClient(base_url = config.meilisearch_url, headers = {"Authorization": f"Bearer {config.meilisearch_master_key}"})
 
 '''
     To search for data, first, you should add key-value pairs to Meilisearch;
@@ -98,8 +98,8 @@ async def update_meilisearch_data(storage_name: str, json_values: dict):
         "data": response.json() if response.status_code == 200 else response.text
     }  
 
-async def import_data_from_database(storage_name: str, session: AsyncSession, model_name: str, columns_for_searching: list[str]):
-    model: DeclarativeMeta = Base.metadata.tables.get(model_name)
-    result = session.execute(select(*[getattr(model, col) for col in columns_for_searching])).all()
-
-    return [dict(zip(columns_for_searching, row)) for row in result]
+async def import_data_from_database(storage_name: str, db_manager: AsyncDatabaseManager, model: Type[DeclarativeBase], columns_for_searching: list[str]):
+    async for session in db_manager.get_async_session(): 
+        result = await session.execute(select(*[getattr(model, col) for col in columns_for_searching]))
+        data = [dict(row) for row in result.mappings().all()]
+        return await add_meilisearch_data(storage_name = storage_name, json_values=data)
