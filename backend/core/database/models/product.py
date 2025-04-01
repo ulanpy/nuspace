@@ -34,4 +34,4 @@ class ProductPicture(Base):
 
 class ProductFeedback(Base):
     __tablename__ = 'product_feedbacks'
-    id: Mapped[int] = mapped_column(Integer, primary_key = )
+    id: Mapped[int] = mapped_column(Integer, primary_key = True)

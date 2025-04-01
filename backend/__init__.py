@@ -6,7 +6,7 @@ from google.cloud import storage
 
 from backend.routes.bot.bot import web_router
 from backend.routes.bot.utils import initialize_bot
-from backend.routes import routers, get_admin, product
+from backend.routes import auth, routers, get_admin, product, clubs
 from backend.core.database.manager import AsyncDatabaseManager, SyncDatabaseManager
 from backend.core.configs.config import config, Config
 from backend.routes.auth.auth import KeyCloakManager
