@@ -29,7 +29,8 @@ aiogram = "^3.18.0"
 gunicorn = "^23.0.0"
 psycopg2 = "^2.9.10"
 apscheduler = "^3.11.0"
-
+celery = "^5.4.0"
+polib = "^1.2.0"
 
 
 

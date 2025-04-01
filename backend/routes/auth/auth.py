@@ -6,9 +6,9 @@ from aiogram.utils.deep_linking import create_start_link
 import random
 
 from .__init__ import *
-from backend.routes.auth.schemas import Sub
+from backend.routes.auth.schemas import Sub, CurrentUserResponse
 from backend.core.configs.config import config
-from backend.common.dependencies import get_db_session
+from backend.common.dependencies import get_db_session, validate_access_token_dep
 from backend.routes.auth.keycloak_manager import KeyCloakManager
 
 router = APIRouter(tags=['Auth Routes'])
@@ -21,6 +21,8 @@ async def login(request: Request):
     """
     kc: KeyCloakManager = request.app.state.kc_manager
     return await getattr(kc.oauth, kc.__class__.__name__.lower()).authorize_redirect(request, kc.KEYCLOAK_REDIRECT_URI)
+
+
 
 @router.post("/bingtg")
 async def bind_tg(request: Request, sub: Sub):
@@ -44,10 +46,10 @@ async def auth_callback(request: Request, response: Response, db_session: AsyncS
     await validate_access_token(creds["access_token"], request.app.state.kc_manager)
     user_schema: UserSchema = await create_user_schema(creds)
     await upsert_user(db_session, user_schema)
-    frontend_url = f"{config.frontend_host}:{config.nginx_port}/dashboard"
-    # response = RedirectResponse(url=frontend_url, status_code=303)
+    frontend_url = f"{config.FRONTEND_HOST}:{config.nginx_port}/"
+    response = RedirectResponse(url=frontend_url, status_code=303)
     set_auth_cookies(response, creds)
-    return creds
+    return response
 
 
 @router.post("/refresh-token", response_description="Refresh token")
@@ -69,16 +71,16 @@ async def refresh_token(request: Request, response: Response,
     return creds
 
 
-@router.get("/me")
-async def get_current_user(request: Request,
-                           access_token: Annotated[str | None, Cookie(alias="access_token")] = None) -> dict:
-    kc: KeyCloakManager = request.app.state.kc_manager
+@router.get("/me", response_model=CurrentUserResponse)
+async def get_current_user(
+    user: Annotated[dict, Depends(validate_access_token_dep)],
+    db_session: AsyncSession = Depends(get_db_session)
+):
+    """Returns current user data"""
+    sub = user.get("sub")
+    result = await db_session.execute(select(User.telegram_id).filter_by(sub=sub))
+    tg_linked: bool = bool(result.scalars().first())
 
-    if not access_token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-
-    decoded_access_token = await validate_access_token(access_token, kc)
-    return decoded_access_token
-
+    return CurrentUserResponse(user=user, tg_linked=tg_linked)
 
 
