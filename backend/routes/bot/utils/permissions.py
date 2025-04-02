@@ -12,7 +12,7 @@ no_permissions = ChatPermissions(
                                 can_invite_users=False
                                 )
 
-yes_permissions = ChatPermissions(
+all_permissions = ChatPermissions(
                                 can_send_messages=True,
                                 can_send_audios=True,
                                 can_send_documents=True,
