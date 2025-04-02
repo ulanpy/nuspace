@@ -6,6 +6,7 @@ from backend.core.configs.config import config
 
 from backend import lifespan, origins
 
+
 app = FastAPI(debug=True, lifespan=lifespan, root_path="/api")
 
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True,)

@@ -41,6 +41,8 @@ def kb_confirmation(sub: str, confirmation_number: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
+
+
 def kb_languages():
     emojis = ['🇰🇿', '🇷🇺', '🇺🇸']
     callback_data = ['kz', 'ru', 'en']

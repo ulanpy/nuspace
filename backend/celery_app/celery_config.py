@@ -3,7 +3,7 @@ from celery import Celery
 from backend.core.configs.config import config
 
 celery_app = Celery(
-    'worker',
+    main='worker',
     broker=config.CELERY_BROKER_URL,
     include=['backend.celery_app.tasks'],
     broker_connection_retry_on_startup=True  # Important for Docker compatibility

@@ -24,6 +24,8 @@ class Config(BaseSettings):
     IS_BOT_DEV: bool = False
     FRONTEND_HOST: str = "http://localhost"
     nginx_port: int = 80
+    meilisearch_url: str 
+    meilisearch_master_key: str
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
 
