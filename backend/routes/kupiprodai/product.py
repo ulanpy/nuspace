@@ -12,9 +12,13 @@ async def import_from_database(request: Request, db_session: AsyncSession = Depe
     return await import_data_from_database(storage_name='products', db_manager = request.app.state.db_manager, model = Product, columns_for_searching=["id", "name"])
 
 @router.post("/new-product")
-async def add_new_product(product_data: ProductSchema,request: Request, db_session: AsyncSession = Depends(get_db_session)):
-    #return await add_meilisearch_data(storage_name='products', json_values={'id':product_id, 'name': product_name})
-    return await add_new_product_to_database(db_session, product_data)
+async def add_new_product(product_data: ProductSchema, request: Request, db_session: AsyncSession = Depends(get_db_session)):
+    try:
+        new_product = await add_new_product_to_database(db_session, product_data)
+        await add_meilisearch_data(storage_name='products', json_values={'id': new_product.id, 'name': new_product.name})
+        return True
+    except Exception as e:
+        return e.error()
 
 @router.get("/all-products")
 async def show_all_products(request: Request, db_session: AsyncSession = Depends(get_db_session)):
@@ -24,7 +28,15 @@ async def show_all_products(request: Request, db_session: AsyncSession = Depends
 async def remove_product(product_id: int, request: Request, db_session: AsyncSession = Depends(get_db_session)):
     return await remove_meilisearch_data(storage_name='products', object_id=product_id)
 
-@router.post("/update-product")
+@router.post("/deactivate-product")
+async def deactivate_product():
+    pass
+
+@router.post("/activate-product")
+async def activate_product():
+    pass 
+
+@router.put("/product")
 async def update_product(product_id: int, new_name: str, request: Request, db_session: AsyncSession = Depends(get_db_session)):
     return await update_meilisearch_data(storage_name= "products", json_values={"id": product_id, "name": new_name})
 
@@ -40,7 +52,19 @@ async def filter_products():
 async def retrieve_product_pictures():
     pass
 
-@router.get("/product-feedbacks")
-async def get_product_feedbacks():
+@router.delete('/pictures')
+async def remove_pictures():
+    pass
+
+@router.post("/new-product-feedback")
+async def store_new_product_feedback():
+    pass
+
+@router.get("/product_feedback")
+async def get_product_feedback():
+    pass
+
+@router.post("/new-product-report")
+async def store_new_product_report():
     pass
 

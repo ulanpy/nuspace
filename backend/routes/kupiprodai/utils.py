@@ -7,19 +7,3 @@ from backend.common.utils import add_meilisearch_data, search_for_meilisearch_da
 
 async def search(session: AsyncSession, keyword: str):
     return await search_for_meilisearch_data(storage_name="products", keyword=keyword)
-
-async def create_product_schema(id: int, name: str, description: str, price: int, userId: int, categoryId: int) -> ProductSchema:
-    return ProductSchema(
-        id = id,
-        name = name,
-        description = description,
-        price = price,
-        userId = userId,
-        categoryId = categoryId
-    )
-
-async def create_product_category_schema(id:int, name: str) ->  ProductCategorySchema:
-    return ProductCategorySchema(
-        id = id,
-        name = name
-    )
