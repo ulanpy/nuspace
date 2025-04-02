@@ -17,7 +17,7 @@ class Product(Base):
     name: Mapped[str] = mapped_column(String(255), index = True)
     description: Mapped[str] = mapped_column(String)
     price: Mapped[int] = mapped_column(Integer)
-    userId: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("users.id"))
+    user_sub: Mapped[str] = mapped_column(String, ForeignKey("users.sub"))
     categoryId: Mapped[int] = mapped_column(BigInteger, ForeignKey("product_category.id"))
 
     user: Mapped["User"] = relationship(back_populates = "products") #how to connect to a parameter in another table?

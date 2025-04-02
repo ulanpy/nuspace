@@ -1,18 +1,13 @@
-from google.cloud import storage
-from datetime import timedelta
-from backend.core.configs.config import config
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy import select
 from sqlalchemy.orm import DeclarativeBase
 from typing import Type
+import httpx
 
-
+from backend.core.configs.config import config
 from backend.core.database.manager import AsyncDatabaseManager
 
 
 #meilisearch methods
-import httpx
 async_client = httpx.AsyncClient(base_url = config.meilisearch_url, headers = {"Authorization": f"Bearer {config.meilisearch_master_key}"})
 
 '''

@@ -13,7 +13,6 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from enum import Enum
 from sqlalchemy import Integer, Enum as SQLEnum
-from .product import Product
 
 class MediaSection(Enum):
     kp = "kp"

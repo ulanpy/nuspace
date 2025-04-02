@@ -28,8 +28,8 @@ class UserScope(Enum):
 
 class User(Base):
     __tablename__ = 'users'
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    sub: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
+
+    sub: Mapped[str] = mapped_column(primary_key=True, nullable=False, unique=True, index=True)
     email: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
     role: Mapped[UserRole] = mapped_column(SQLEnum(UserRole, name="userrole"), nullable=False)
     scope: Mapped[UserScope] = mapped_column(SQLEnum(UserScope, name="userscope"), nullable=False)

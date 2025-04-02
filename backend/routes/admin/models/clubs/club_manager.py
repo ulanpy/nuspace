@@ -1,42 +1,43 @@
-from backend.core.database.models import User, UserRole
-
+from backend.core.database.models import ClubManager, Club
+from backend.routes.auth import UserRole
 from fastapi import Request, HTTPException
 from markupsafe import Markup
-from sqladmin import ModelView
-
+from sqladmin.models import ModelView
 
 from backend.routes.auth.utils import validate_access_token_sync
 from backend.routes.auth.cruds import get_user_role_sync
 from backend.core.database.manager import SyncDatabaseManager
+class ClubManagerAdmin(ModelView, model=ClubManager):
+    icon = "fa-solid fa-users"
+    category = "Clubs"
 
-# Custom ModelView for User
-class UserAdmin(ModelView, model=User):
-    icon = "fa-solid fa-user"
-    category = "Accounts"
-    column_list = [User.clubs_led, User.email, User.picture, User.telegram_id, User.role, User.scope, User.name, User.surname, User.created_at, User.updated_at]
-    column_sortable_list = [User.email, User.name, User.surname, User.created_at]
-    column_searchable_list = [User.email, User.name, User.role, User.surname]
-    column_details_list = [User.email, User.picture, User.role, User.scope, User.name, User.surname, User.created_at, User.updated_at]
+    # 1. Column Configuration
+    column_list = [
+        ClubManager.club_id,
+        ClubManager.sub,
+        ClubManager.club, # relationship
+    ]
 
-    # Render the 'picture' column as an image
+    column_searchable_list = [ClubManager.club, ClubManager.sub]
+
+    form_ajax_refs = {
+        "club": {
+            "fields": ("name",),
+            "order_by": ("name"),
+            "limit": 10
+        }
+    }
 
     @staticmethod
-    def _format_photo_url(obj: User, context) -> str:
-        if obj.picture:
-            # Use Markup to mark the HTML string as safe
-            return Markup(
-                f'<img src="{obj.picture}" alt="User Photo" width="50" height="50">'
-            )
+    def _format_photo_url(obj: ClubManager, context) -> str:
+        if obj:
+            return Markup(f'<img src="{obj.picture}" alt="Club Photo" width="50" height="50">')
         return "No Image"
 
     column_formatters = {
-        "picture": _format_photo_url,  # Apply the custom formatter to the column
-
+        "picture": _format_photo_url,
+        "president": lambda m, c: m.president_user.name if m.president_user else "Unknown"
     }
-    column_formatters_detail = column_formatters
-    column_labels = {"picture": "Photo",
-                     "created_at": "Created At (UTC)"  # Properly label the 'created_at' column
-                     }  # Set a user-friendly label
 
     def is_accessible(self, request: Request):
         try:
@@ -47,6 +48,7 @@ class UserAdmin(ModelView, model=User):
                 request.cookies.get("access_token"),
                 kc_manager
             )["sub"]
+
             # Use async with instead of async for
             with db_manager_sync.get_sync_session() as session:
                 user_role = get_user_role_sync(session, sub)

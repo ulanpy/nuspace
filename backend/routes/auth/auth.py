@@ -52,14 +52,13 @@ async def auth_callback(request: Request, response: Response, db_session: AsyncS
     return response
 
 
-@router.post("/refresh-token", response_description="Refresh token")
+@router.post("/refresh-token/", response_description="Refresh token")
 async def refresh_token(request: Request, response: Response,
                         refresh_token: Annotated[str | None, Cookie(alias="refresh_token")] = None):
     """
     Refresh access_token with refresh_token using HTTP-Only Cookie
     """
     kc: KeyCloakManager = request.app.state.kc_manager
-
     if not refresh_token:
         raise HTTPException(status_code=402, detail="No  refresh token provided")
 
@@ -82,5 +81,6 @@ async def get_current_user(
     tg_linked: bool = bool(result.scalars().first())
 
     return CurrentUserResponse(user=user, tg_linked=tg_linked)
+
 
 
