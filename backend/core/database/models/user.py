@@ -43,5 +43,6 @@ class User(Base):
 
     clubs_led = relationship("Club", back_populates="president_user")
     products: Mapped[List["Product"]] = relationship("Product",back_populates = "user")
+    products_feedbacks: Mapped[List["ProductFeedback"]] = relationship(back_populates = "user")
 
 

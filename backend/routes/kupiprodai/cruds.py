@@ -11,7 +11,6 @@ async def add_new_product_to_database(session: AsyncSession, product_schema: Pro
     session.add(new_product)
     await session.commit()
     await session.refresh(new_product)
-    return new_product
 
 async def add_new_pictures(session: AsyncSession, product_picture_schemas: list[ProductPictureSchema]):
     new_pictures = [ProductPicture(**product_picture_schema.model_dump()) for product_picture_schema in product_picture_schemas]
