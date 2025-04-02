@@ -36,6 +36,7 @@ async def bind_tg(request: Request, sub: Sub):
                 "sub": sub
             }
 
+
 @router.get("/auth/callback", response_description="Redirect  user")
 async def auth_callback(request: Request, response: Response, db_session: AsyncSession = Depends(get_db_session),
                         creds: dict = Depends(exchange_code_for_credentials)):

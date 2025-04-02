@@ -32,6 +32,7 @@ async def validate_access_token(access_token: str, kc: KeyCloakManager) -> dict 
     except JWTError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Auth failed")
 
+
 def validate_access_token_sync(access_token: str, kc: KeyCloakManager) -> dict | HTTPException:
     try:
         signing_key = kc.get_pub_key_sync(access_token)

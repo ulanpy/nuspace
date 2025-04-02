@@ -1,5 +1,5 @@
 
-from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.storage.redis import RedisStorage
 import requests
 from aiogram import Dispatcher, Bot
 
@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from backend.routes.bot.middlewares import setup_middlewares
 from backend.core.configs.config import config
 from backend.routes.bot.routes import include_routers
-
+from backend.routes.bot.hints_command import set_commands
 
 def decide_webhook_url(dev_url: str = config.ngrok_server_endpoint,
                        prod_url: str = config.url_webhook_endpoint,
@@ -36,7 +36,7 @@ async def initialize_bot(app: FastAPI, token: str = config.TG_API_KEY, dev_url: 
 
 
     app.state.bot = Bot(token=token)
-    app.state.dp = Dispatcher(storage=MemoryStorage())
+    app.state.dp = Dispatcher(storage=RedisStorage(app.state.redis))
 
     # Store URL in dispatcher's data
     url = decide_webhook_url(dev_url=dev_url, prod_url=prod_url)
@@ -51,6 +51,7 @@ async def initialize_bot(app: FastAPI, token: str = config.TG_API_KEY, dev_url: 
     #Routers
     include_routers(app.state.dp)
 
+   # await set_commands(app.state.bot)
     print(f"webhook {url}", flush=True)
     await app.state.bot.set_webhook(url=f"{url}/webhook",
                                     drop_pending_updates=True,
