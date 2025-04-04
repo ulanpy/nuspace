@@ -1,5 +1,16 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+from typing import Callable
 from random import shuffle
+import time
+
+from aiogram.types import (
+    ReplyKeyboardMarkup,
+    KeyboardButton,
+    KeyboardButtonRequestUsers,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    WebAppInfo
+)
+
 
 from backend.routes.bot.keyboards.callback_factory import ConfirmTelegramUser, Languages
 
@@ -41,8 +52,6 @@ def kb_confirmation(sub: str, confirmation_number: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
-
-
 def kb_languages():
     emojis = ['🇰🇿', '🇷🇺', '🇺🇸']
     callback_data = ['kz', 'ru', 'en']
@@ -57,3 +66,20 @@ def kb_languages():
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
+
+def get_user_selector_kb(_: Callable[[str], str]) -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(
+                    text=_("Выберите пользователя"),
+                    request_users=KeyboardButtonRequestUsers(
+                        request_id=int(time.time() * 1000) % (2**31 - 1),
+                        user_is_bot=False,
+                        max_quantity=1,
+                    ),
+                )
+            ]
+        ],
+        resize_keyboard=True,
+    )

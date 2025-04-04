@@ -1,2 +1,2 @@
-from .group import group_router
-from .private import private_message_router, private_callback_router
+from .private import setup_private_routers
+from .group import setup_group_routers

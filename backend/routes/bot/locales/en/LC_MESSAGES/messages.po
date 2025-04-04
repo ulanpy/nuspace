@@ -29,3 +29,15 @@ msgstr "The character you entered is incorrect!"
 
 msgid "Язык успешно изменен!"
 msgstr "Language successfully changed!"
+
+msgid "✅Есть в базе NUspace"
+msgstr "✅Exists in the NUspace database"
+
+msgid "⛔️Нету в базе NUspace"
+msgstr "⛔️Not in the NUspace database"
+
+msgid "⛔️К сожалению из-за настроек конфиденциальности пользователя это недоступно, но есть другой вариант!"
+msgstr "⛔️Unfortunately, due to the user's privacy settings, this is unavailable, but there is another option!"
+
+msgid "Выберите пользователя"
+msgstr "Select a user"

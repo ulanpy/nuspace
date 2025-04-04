@@ -1,9 +1,10 @@
 from aiogram import Dispatcher
 
-from .user import group_router, private_message_router, private_callback_router
+from .user import setup_private_routers, setup_group_routers
 
 
 def include_routers(dp: Dispatcher) -> None:
+    private_router = setup_private_routers()
+    group_router = setup_group_routers()
+    dp.include_router(private_router)
     dp.include_router(group_router)
-    dp.include_router(private_callback_router)
-    dp.include_router(private_message_router)
