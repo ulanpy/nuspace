@@ -6,12 +6,11 @@ from google.cloud import storage
 
 from backend.routes.bot.bot import web_router
 from backend.routes.bot.utils import initialize_bot
-from backend.routes import auth, routers, get_admin, product, clubs
+from backend.routes import auth, routers, get_admin, clubs
 from backend.core.database.manager import AsyncDatabaseManager, SyncDatabaseManager
 from backend.core.configs.config import config, Config
 from backend.routes.auth.auth import KeyCloakManager
 
-from backend.core.database.models import Product
 from backend.common.utils import import_data_from_database
 from backend.common.dependencies import get_db_session
 
@@ -41,7 +40,7 @@ async def lifespan(app: FastAPI):
         if config.IS_BOT_DEV:
             await initialize_bot(app)
         print("Application startup:AsyncDatabaseManager initialized")
-        routers = [auth.router, clubs.router, web_router, product.router]
+        routers = [auth.router, clubs.router, web_router]
         for router in routers:
             app.include_router(router)
 

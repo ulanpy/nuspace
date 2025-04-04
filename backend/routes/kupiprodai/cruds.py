@@ -1,8 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from backend.core.database.models.product import Product, ProductPicture, ProductCategory
-from backend.routes.kupiprodai.schemas import ProductPictureSchema, ProductSchema, ProductCategorySchema
+from backend.core.database.models.product import Product, ProductCategory
+from backend.core.database.models.media import Media
+from backend.routes.kupiprodai.schemas import ProductSchema, ProductCategorySchema
 from backend.common.utils import add_meilisearch_data
 
 #create
@@ -11,13 +12,6 @@ async def add_new_product_to_database(session: AsyncSession, product_schema: Pro
     session.add(new_product)
     await session.commit()
     await session.refresh(new_product)
-
-async def add_new_pictures(session: AsyncSession, product_picture_schemas: list[ProductPictureSchema]):
-    new_pictures = [ProductPicture(**product_picture_schema.model_dump()) for product_picture_schema in product_picture_schemas]
-    session.add_all(new_pictures)
-    await session.commit()
-    await session.refresh(new_pictures)
-    return new_pictures
 
 #Why to locate a function for showing the products in common folder? Does it make difference because Frontend can make a request to the backend to get the products
 async def show_products(session: AsyncSession, size: int, page:int):
@@ -42,23 +36,15 @@ async def update_product(session:AsyncSession, product_schema: ProductSchema):
 
 #delete
 async def remove_product(session: AsyncSession, product_schema: ProductSchema):
-    product = await session.execute(select(Product).filter_by(id = product_schema.id)).scalars().first()
+    product = await session.execute(select(Product).filter_by(id=product_schema.id)).scalars().first()
     if product:
         await session.delete(product)
         await session.commit()
         return True
     else:
         return False
-    
-async def remove_product_picture(session: AsyncSession, product_picture_schema: ProductPictureSchema):
-    product_picture = await session.execute(select(ProductPicture).filter_by(id = product_picture_schema.id)).scalars().first()
-    if product_picture:
-        await session.delete(product_picture)
-        await session.commit()
-        return True
-    else:
-        return False
-    
+
+
 async def add_new_product_category(session: AsyncSession, product_category_schema: ProductCategorySchema):
     new_category = Product(**product_category_schema.model_dump())
     session.add(new_category)
