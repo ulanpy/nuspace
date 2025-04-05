@@ -4,8 +4,6 @@ from typing import List
 from sqlalchemy import String, Integer, ForeignKey, BigInteger, DateTime, Column
 from sqlalchemy import Integer, Enum as SQLEnum
 
-import uuid
-from sqlalchemy.dialects.postgresql import UUID
 from enum import Enum
 from datetime import datetime, UTC
 
@@ -38,8 +36,9 @@ class Product(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    user: Mapped["User"] = relationship(back_populates="products")
-    feedbacks: Mapped[List["ProductFeedback"]] = relationship(back_populates="product")
+    user = relationship("User", back_populates="products")
+    feedbacks = relationship("ProductFeedback", back_populates="product")
+    reports = relationship("ProductReport", back_populates="product")  # Add this line
 
 
 class ProductFeedback(Base):
@@ -50,8 +49,8 @@ class ProductFeedback(Base):
     text: Mapped[str] = mapped_column(String)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    user: Mapped["User"] = relationship(back_populates="products_feedbacks")
-    product: Mapped["Product"] = relationship(back_populates="feedbacks")
+    user = relationship("User",back_populates="product_feedbacks")
+    product = relationship("Product", back_populates="feedbacks")
 
 
 class ProductReport(Base):
@@ -62,5 +61,5 @@ class ProductReport(Base):
     text: Mapped[str] = mapped_column(String)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    user: Mapped["User"] = relationship(back_populates="products_feedbacks")
-    product: Mapped["Product"] = relationship(back_populates="feedbacks")
+    user = relationship("User", back_populates="product_reports")
+    product = relationship("Product", back_populates="reports")

@@ -40,9 +40,10 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=True, index=True)
 
-
     clubs_led = relationship("Club", back_populates="president_user")
-    products: Mapped[List["Product"]] = relationship("Product",back_populates = "user")
-    products_feedbacks: Mapped[List["ProductFeedback"]] = relationship(back_populates = "user")
+
+    products = relationship("Product",back_populates = "user")
+    product_feedbacks = relationship("ProductFeedback",back_populates="user")
+    product_reports = relationship("ProductReport",back_populates="user")
 
 

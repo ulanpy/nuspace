@@ -40,7 +40,6 @@ async def lifespan(app: FastAPI):
         if config.IS_BOT_DEV:
             await initialize_bot(app)
         print("Application startup:AsyncDatabaseManager initialized")
-        routers = [auth.router, clubs.router, web_router]
         for router in routers:
             app.include_router(router)
 
