@@ -129,5 +129,3 @@ export function BindTelegramButton() {
     </>
   )
 }
-
-

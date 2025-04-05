@@ -1,24 +1,31 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { motion } from "framer-motion"
-import { useTheme } from "./theme-provider"
-import { ShoppingBag, Calendar, Coffee } from "lucide-react"
-import { Link } from "react-router-dom"
+import { motion } from "framer-motion";
+import { useTheme } from "./theme-provider";
+import { ShoppingBag, Calendar, Coffee } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface AppButtonProps {
-  icon: React.ReactNode
-  title: string
-  href: string
-  gradient: string
-  iconColor: string
-  delay?: number
+  icon: React.ReactNode;
+  title: string;
+  href: string;
+  gradient: string;
+  iconColor: string;
+  delay?: number;
 }
 
-const AppButton = ({ icon, title, href, gradient, iconColor, delay = 0 }: AppButtonProps) => {
-  const { theme } = useTheme()
-  const isDarkTheme = theme === "dark"
+const AppButton = ({
+  icon,
+  title,
+  href,
+  gradient,
+  iconColor,
+  delay = 0,
+}: AppButtonProps) => {
+  const { theme } = useTheme();
+  const isDarkTheme = theme === "dark";
 
   return (
     <motion.div
@@ -71,10 +78,12 @@ const AppButton = ({ icon, title, href, gradient, iconColor, delay = 0 }: AppBut
           <span className={`text-xl sm:text-2xl ${iconColor}`}>{icon}</span>
         </motion.div>
       </Link>
-      <span className="text-xs sm:text-sm font-medium text-foreground">{title}</span>
+      <span className="text-xs sm:text-sm font-medium text-foreground">
+        {title}
+      </span>
     </motion.div>
-  )
-}
+  );
+};
 
 export function AppGrid() {
   const apps: AppButtonProps[] = [
@@ -82,7 +91,8 @@ export function AppGrid() {
       icon: <ShoppingBag className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
       title: "Kupi&Prodai",
       href: "/apps/kupi-prodai",
-      gradient: "radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(37,99,235,0.15) 50%, rgba(29,78,216,0) 100%)",
+      gradient:
+        "radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(37,99,235,0.15) 50%, rgba(29,78,216,0) 100%)",
       iconColor: "text-blue-500",
       delay: 0.1,
     },
@@ -90,7 +100,8 @@ export function AppGrid() {
       icon: <Calendar className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
       title: "NU Events",
       href: "/apps/nu-events",
-      gradient: "radial-gradient(circle, rgba(249,115,22,0.3) 0%, rgba(234,88,12,0.15) 50%, rgba(194,65,12,0) 100%)",
+      gradient:
+        "radial-gradient(circle, rgba(249,115,22,0.3) 0%, rgba(234,88,12,0.15) 50%, rgba(194,65,12,0) 100%)",
       iconColor: "text-orange-500",
       delay: 0.2,
     },
@@ -98,11 +109,12 @@ export function AppGrid() {
       icon: <Coffee className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
       title: "Dorm Eats",
       href: "/apps/dorm-eats",
-      gradient: "radial-gradient(circle, rgba(34,197,94,0.3) 0%, rgba(22,163,74,0.15) 50%, rgba(21,128,61,0) 100%)",
+      gradient:
+        "radial-gradient(circle, rgba(34,197,94,0.3) 0%, rgba(22,163,74,0.15) 50%, rgba(21,128,61,0) 100%)",
       iconColor: "text-green-500",
       delay: 0.3,
     },
-  ]
+  ];
 
   return (
     <div className="grid grid-cols-3 gap-4 sm:gap-6 md:gap-8">
@@ -110,6 +122,5 @@ export function AppGrid() {
         <AppButton key={app.title} {...app} />
       ))}
     </div>
-  )
+  );
 }
-

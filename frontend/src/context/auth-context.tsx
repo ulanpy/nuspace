@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshToken = async () => {
     try {
-      await fetch("http://localhost/api/refresh", {
+      await fetch("http://localhost/api/refresh-token", {
         method: "POST",
         credentials: "include", // Important for cookies
       })
@@ -124,4 +124,3 @@ export function useAuth() {
   }
   return context
 }
-
