@@ -3,7 +3,7 @@ from .__init__ import *
 from backend.common.utils import *
 from backend.common.dependencies import get_db_session
 from backend.core.database.models import User, Product
-from .cruds import show_products, add_new_product_to_database
+from .cruds import show_products, add_new_product
 
 router = APIRouter(prefix="/products", tags=['Kupi-Prodai Routes'])
 
@@ -16,7 +16,7 @@ async def import_from_database(request: Request, db_session: AsyncSession = Depe
 @router.post("/")
 async def add_new_product(product_data: ProductSchema, request: Request, db_session: AsyncSession = Depends(get_db_session)):
     try:
-        new_product = await add_new_product_to_database(db_session, product_data)
+        new_product = await add_new_product(db_session, product_data)
         await add_meilisearch_data(storage_name='products', json_values={'id': new_product.id, 'name': new_product.name})
         return True
     except Exception as e:

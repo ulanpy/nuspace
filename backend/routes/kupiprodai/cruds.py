@@ -7,7 +7,7 @@ from backend.routes.kupiprodai.schemas import ProductSchema, ProductCategorySche
 from backend.common.utils import add_meilisearch_data
 
 #create
-async def add_new_product_to_database(session: AsyncSession, product_schema: ProductSchema):
+async def add_new_product(session: AsyncSession, product_schema: ProductSchema):
     new_product = Product(**product_schema.model_dump())
     session.add(new_product)
     await session.commit()
