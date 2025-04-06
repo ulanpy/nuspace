@@ -2,83 +2,30 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ChevronLeft, ChevronRight, Heart, ExternalLink, Star, Bell, Flag, X, Send } from "lucide-react"
+import { ChevronLeft, ChevronRight, Heart, ExternalLink, Bell, Flag, X, Send, MessageSquare, User } from "lucide-react"
 import { Button } from "../../../../components/ui/button"
 import { Badge } from "../../../../components/ui/badge"
 import { Card, CardContent } from "../../../../components/ui/card"
+import { useAuth } from "../../../../context/auth-context"
+import { format } from "date-fns"
+import { kupiProdaiApi, type Product } from "../../../../api/kupi-prodai-api"
+import { useToast } from "../../../../hooks/use-toast"
 
-interface ProductImage {
+interface Comment {
   id: number
-  url: string
-}
-
-interface Product {
-  id: number
-  title: string
-  price: number
-  category: string
-  condition: "New" | "Used" | "Like New"
-  images: ProductImage[]
-  seller: string
-  sellerRating?: number
-  location: string
-  likes: number
-  messages: number
-  description?: string
-  telegramUsername?: string
-  datePosted?: string
+  user: {
+    name: string
+    avatar?: string
+  }
+  text: string
+  timestamp: Date
   isOwner?: boolean
-  isSold?: boolean
 }
-
-// Sample products data with multiple images (same as in the main page)
-const products: Product[] = [
-  {
-    id: 1,
-    title: "Calculus Textbook",
-    price: 5000,
-    category: "Books",
-    condition: "Used",
-    images: [
-      { id: 1, url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Calculus+1" },
-      { id: 2, url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Calculus+2" },
-      { id: 3, url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Calculus+3" },
-    ],
-    seller: "Alex K.",
-    sellerRating: 4.8,
-    location: "Block 1A",
-    likes: 5,
-    messages: 2,
-    description:
-      "Slightly used calculus textbook for Math 101. Some highlighting inside but otherwise in good condition.",
-    telegramUsername: "alex_k",
-    datePosted: "2 days ago",
-  },
-  {
-    id: 2,
-    title: "Desk Lamp",
-    price: 3500,
-    category: "Home",
-    condition: "Like New",
-    images: [
-      { id: 1, url: "https://placehold.co/400x400/22c55e/FFFFFF?text=Lamp+1" },
-      { id: 2, url: "https://placehold.co/400x400/22c55e/FFFFFF?text=Lamp+2" },
-    ],
-    seller: "Maria S.",
-    sellerRating: 4.2,
-    location: "Block 3C",
-    likes: 3,
-    messages: 1,
-    description: "Modern LED desk lamp with adjustable brightness. Used for one semester only.",
-    telegramUsername: "maria_s",
-    datePosted: "1 week ago",
-  },
-  // Add more products as needed
-]
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user, isAuthenticated } = useAuth()
   const [product, setProduct] = useState<Product | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isLiked, setIsLiked] = useState(false)
@@ -88,45 +35,97 @@ export default function ProductDetailPage() {
   const [message, setMessage] = useState("")
   const [showImageModal, setShowImageModal] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(1)
+  const [comments, setComments] = useState<Comment[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
+  const { toast } = useToast()
+
+  // Fetch product data
   useEffect(() => {
-    // In a real app, you would fetch the product from an API
-    const foundProduct = products.find((p) => p.id === Number(id))
-    if (foundProduct) {
-      setProduct(foundProduct)
-    } else {
-      // Product not found, redirect to marketplace
-      navigate("/apps/kupi-prodai")
-    }
-  }, [id, navigate])
+    const fetchProduct = async () => {
+      if (!id) return
 
-  if (!product) {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const data = await kupiProdaiApi.getProduct(Number.parseInt(id))
+        setProduct(data)
+
+        // In a real app, you would fetch comments from an API
+        // For now, we'll use empty comments
+        setComments([])
+      } catch (err) {
+        console.error("Failed to fetch product:", err)
+        setError("Failed to fetch product details")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProduct()
+  }, [id])
+
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="flex justify-center items-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     )
   }
 
-  const getConditionColor = (condition: Product["condition"]) => {
+  if (error || !product) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <Button variant="ghost" className="mb-4 flex items-center gap-1" onClick={() => navigate("/apps/kupi-prodai")}>
+          <ChevronLeft className="h-4 w-4" />
+          <span>Back to Marketplace</span>
+        </Button>
+
+        <div className="text-center py-12">
+          <h2 className="text-xl font-bold text-destructive mb-4">{error || "Product not found"}</h2>
+          <Button onClick={() => navigate("/apps/kupi-prodai")}>Return to Marketplace</Button>
+        </div>
+      </div>
+    )
+  }
+
+  const getConditionDisplay = (condition: string) => {
     switch (condition) {
-      case "New":
+      case "new":
+        return "New"
+      case "like_new":
+        return "Like New"
+      case "used":
+        return "Used"
+      default:
+        return condition
+    }
+  }
+
+  const getConditionColor = (condition: string) => {
+    switch (condition) {
+      case "new":
         return "bg-green-500"
-      case "Like New":
+      case "like_new":
         return "bg-blue-500"
-      case "Used":
+      case "used":
         return "bg-orange-500"
       default:
         return "bg-gray-500"
     }
   }
 
+  const getCategoryDisplay = (category: string) => {
+    return category.charAt(0).toUpperCase() + category.slice(1)
+  }
+
   const nextImage = () => {
-    setCurrentImageIndex((prevIndex) => (prevIndex === product.images.length - 1 ? 0 : prevIndex + 1))
+    setCurrentImageIndex((prevIndex) => (prevIndex === product.media.length - 1 ? 0 : prevIndex + 1))
   }
 
   const prevImage = () => {
-    setCurrentImageIndex((prevIndex) => (prevIndex === 0 ? product.images.length - 1 : prevIndex - 1))
+    setCurrentImageIndex((prevIndex) => (prevIndex === 0 ? product.media.length - 1 : prevIndex - 1))
   }
 
   const toggleLike = () => {
@@ -139,29 +138,60 @@ export default function ProductDetailPage() {
 
   const handleReport = () => {
     if (!reportReason.trim()) {
-      alert("Please provide a reason for reporting")
+      toast({
+        title: "Error",
+        description: "Please provide a reason for reporting",
+        variant: "destructive",
+      })
       return
     }
 
-    alert(`Report submitted: ${reportReason}`)
+    // In a real app, you would send the report to an API
+    toast({
+      title: "Success",
+      description: "Report submitted successfully",
+    })
     setShowReportModal(false)
     setReportReason("")
   }
 
   const handleSendMessage = () => {
     if (!message.trim()) {
-      alert("Please enter a message")
+      toast({
+        title: "Error",
+        description: "Please enter a message",
+        variant: "destructive",
+      })
       return
     }
 
-    alert(`Message sent to ${product.seller}: ${message}`)
+    // Add the new comment to the comments array
+    const newComment: Comment = {
+      id: Date.now(),
+      user: {
+        name: user?.user?.given_name || "You",
+        avatar: "https://placehold.co/100/8b5cf6/FFFFFF?text=YOU",
+      },
+      text: message,
+      timestamp: new Date(),
+    }
+
+    setComments([...comments, newComment])
     setMessage("")
+
+    toast({
+      title: "Success",
+      description: "Message sent successfully",
+    })
   }
 
   const initiateContactWithSeller = () => {
-    if (product.telegramUsername) {
-      window.open(`https://t.me/${product.telegramUsername}`, "_blank")
-    }
+    // In a real app, you would have the seller's Telegram username
+    // For now, we'll just show a toast
+    toast({
+      title: "Contact Seller",
+      description: "This would open Telegram to contact the seller",
+    })
   }
 
   const openImageModal = () => {
@@ -176,6 +206,10 @@ export default function ProductDetailPage() {
     })
   }
 
+  const formatCommentDate = (date: Date) => {
+    return format(date, "MMM d, yyyy 'at' h:mm a")
+  }
+
   return (
     <div className="container mx-auto px-4 py-6">
       <Button variant="ghost" className="mb-4 flex items-center gap-1" onClick={() => navigate("/apps/kupi-prodai")}>
@@ -188,13 +222,13 @@ export default function ProductDetailPage() {
         <div className="relative">
           <div className="aspect-square rounded-lg overflow-hidden cursor-pointer" onClick={openImageModal}>
             <img
-              src={product.images[currentImageIndex]?.url || "/placeholder.svg"}
-              alt={product.title}
+              src={product.media[currentImageIndex]?.url || "/placeholder.svg?height=400&width=400"}
+              alt={product.name}
               className="w-full h-full object-contain"
             />
           </div>
 
-          {product.images.length > 1 && (
+          {product.media.length > 1 && (
             <>
               <Button
                 variant="outline"
@@ -222,9 +256,9 @@ export default function ProductDetailPage() {
           )}
 
           {/* Thumbnail Navigation */}
-          {product.images.length > 1 && (
+          {product.media.length > 1 && (
             <div className="flex justify-center mt-4 gap-2">
-              {product.images.map((image, index) => (
+              {product.media.map((image, index) => (
                 <button
                   key={image.id}
                   className={`w-16 h-16 rounded-md overflow-hidden border-2 ${
@@ -247,28 +281,24 @@ export default function ProductDetailPage() {
         <div className="space-y-4">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-2xl font-bold">{product.title}</h1>
+              <h1 className="text-2xl font-bold">{product.name}</h1>
               <p className="text-3xl font-bold mt-2">{product.price} ₸</p>
             </div>
-            <Badge className={`${getConditionColor(product.condition)} text-white`}>{product.condition}</Badge>
+            <Badge className={`${getConditionColor(product.condition)} text-white`}>
+              {getConditionDisplay(product.condition)}
+            </Badge>
           </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                {product.seller.charAt(0)}
+                <User className="h-5 w-5" />
               </div>
               <div>
                 <div className="flex items-center">
-                  <p className="font-medium">{product.seller}</p>
-                  {product.sellerRating && (
-                    <div className="flex items-center ml-2">
-                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                      <span className="ml-1">{product.sellerRating}</span>
-                    </div>
-                  )}
+                  <p className="font-medium">Seller</p>
                 </div>
-                <p className="text-sm text-muted-foreground">{product.location}</p>
+                <p className="text-sm text-muted-foreground">Location</p>
               </div>
             </div>
 
@@ -294,18 +324,16 @@ export default function ProductDetailPage() {
             <h2 className="font-medium mb-2">Details</h2>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="text-muted-foreground">Category</div>
-              <div>{product.category}</div>
-              <div className="text-muted-foreground">Posted</div>
-              <div>{product.datePosted || "Recently"}</div>
-              <div className="text-muted-foreground">Location</div>
-              <div>{product.location}</div>
+              <div>{getCategoryDisplay(product.category)}</div>
+              <div className="text-muted-foreground">Status</div>
+              <div>{product.status === "active" ? "Available" : "Sold"}</div>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2 mt-6">
             <Button variant="outline" className="flex items-center gap-1" onClick={toggleLike}>
               <Heart className={`h-4 w-4 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
-              <span>{isLiked ? product.likes + 1 : product.likes}</span>
+              <span>{isLiked ? "Liked" : "Like"}</span>
             </Button>
 
             <Button variant="outline" className="flex items-center gap-1" onClick={() => initiateContactWithSeller()}>
@@ -322,25 +350,66 @@ export default function ProductDetailPage() {
               <span>Report</span>
             </Button>
           </div>
-
-          <Card className="mt-4">
-            <CardContent className="p-4">
-              <h2 className="font-medium mb-3">Send Message</h2>
-              <div className="space-y-3">
-                <textarea
-                  className="w-full p-2 border rounded-md min-h-[100px] bg-background"
-                  placeholder="Write your message here..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                />
-                <Button className="w-full flex items-center justify-center gap-1" onClick={handleSendMessage}>
-                  <Send className="h-4 w-4" />
-                  <span>Send Message</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
+      </div>
+
+      {/* Comments Section */}
+      <div className="mt-8">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <MessageSquare className="h-5 w-5" />
+          <span>Comments ({comments.length})</span>
+        </h2>
+
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <h3 className="font-medium mb-3">Add a Comment</h3>
+            <div className="space-y-3">
+              <textarea
+                className="w-full p-2 border rounded-md min-h-[100px] bg-background"
+                placeholder="Write your message here..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+              <Button className="w-full flex items-center justify-center gap-1" onClick={handleSendMessage}>
+                <Send className="h-4 w-4" />
+                <span>Send Message</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {comments.length > 0 ? (
+          <div className="space-y-4">
+            {comments.map((comment) => (
+              <Card key={comment.id} className={comment.isOwner ? "border-primary/30 bg-primary/5" : ""}>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{comment.user.name}</span>
+                          {comment.isOwner && (
+                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                              Seller
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground">{formatCommentDate(comment.timestamp)}</span>
+                      </div>
+                      <p className="text-sm">{comment.text}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 border rounded-md bg-muted/20">
+            <MessageSquare className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+            <h3 className="text-lg font-medium mb-1">No comments yet</h3>
+            <p className="text-sm text-muted-foreground">Be the first to ask about this item</p>
+          </div>
+        )}
       </div>
 
       {/* Report Modal */}
@@ -396,7 +465,7 @@ export default function ProductDetailPage() {
               <X className="h-6 w-6" />
             </Button>
 
-            {product.images.length > 1 && (
+            {product.media.length > 1 && (
               <>
                 <Button
                   variant="ghost"
@@ -438,8 +507,8 @@ export default function ProductDetailPage() {
 
             <div className="w-full h-full flex items-center justify-center overflow-auto" style={{ cursor: "move" }}>
               <img
-                src={product.images[currentImageIndex]?.url || "/placeholder.svg"}
-                alt={product.title}
+                src={product.media[currentImageIndex]?.url || "/placeholder.svg?height=400&width=400"}
+                alt={product.name}
                 className="max-w-none"
                 style={{
                   transform: `scale(${zoomLevel})`,
@@ -453,6 +522,4 @@ export default function ProductDetailPage() {
     </div>
   )
 }
-
-
 
