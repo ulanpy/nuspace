@@ -28,4 +28,3 @@ export function LoginButton() {
     </div>
   )
 }
-

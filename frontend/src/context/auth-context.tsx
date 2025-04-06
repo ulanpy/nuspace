@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshToken = async () => {
     try {
-      await fetch("http://localhost/api/refresh", {
+      await fetch("http://localhost/api/refresh-token", {
         method: "POST",
         credentials: "include", // Important for cookies
       })
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUserData()
 
     // Set up token refresh interval
-    const refreshInterval = setInterval(refreshToken, 5000) // 5 seconds
+    const refreshInterval = setInterval(refreshToken, 240*1000) // 4 minutes
 
     return () => {
       clearInterval(refreshInterval)
