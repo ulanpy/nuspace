@@ -1,16 +1,17 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from fastapi import HTTPException, Request
 from backend.core.database.models.product import Product, ProductCategory
 from backend.core.database.models.media import Media
 from backend.core.database.models.product import ProductCondition, ProductCategory
-from backend.routes.kupiprodai.schemas import ProductResponseSchema, ProductCategorySchema, ProductUpdateSchema, ProductRequestSchema
+from backend.routes.kupiprodai.schemas import ProductResponseSchema, ProductUpdateSchema, ProductRequestSchema, ListResponseSchema
 from backend.common.utils import add_meilisearch_data,remove_meilisearch_data
 from typing import Literal, List
 from backend.core.database.models.product import ProductStatus
 from backend.common.utils import update_meilisearch_data
 from backend.routes.google_bucket.utils import generate_download_url, delete_bucket_object
 from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
+from sqlalchemy.orm import selectinload
 
 async def add_new_product_to_db(
         session: AsyncSession,
@@ -24,6 +25,12 @@ async def add_new_product_to_db(
     session.add(new_product)
     await session.commit()
     await session.refresh(new_product)
+
+    # Eagerly load the related user for the new product
+    query = select(Product).options(selectinload(Product.user)).filter(Product.id == new_product.id)
+    result = await session.execute(query)
+    new_product = result.scalars().first()
+
     await add_meilisearch_data(storage_name='products', json_values={'id': new_product.id, 'name': new_product.name})
     media_result = await session.execute(
         select(Media).filter(Media.entity_id == new_product.id,
@@ -46,11 +53,16 @@ async def add_new_product_to_db(
             id=new_product.id,
             name=new_product.name,
             description=new_product.description,
+            user_name=new_product.user.name,
+            user_surname=new_product.user.surname,
             price=new_product.price,
             category=new_product.category,
             condition=new_product.condition,
             status=new_product.status,
+            updated_at=new_product.updated_at,
+            created_at=new_product.created_at,
             media=media_responses
+
         )
 
 async def get_products_of_user_from_db(
@@ -60,7 +72,7 @@ async def get_products_of_user_from_db(
     media_section: MediaSection = MediaSection.kp
 ) -> List[ProductResponseSchema]:
     result = await session.execute(
-        select(Product).filter_by(user_sub=user_sub).order_by(Product.updated_at.desc())
+        select(Product).options(selectinload(Product.user)).filter_by(user_sub=user_sub).order_by(Product.updated_at.desc())
     )
     products = result.scalars().all()
 
@@ -90,10 +102,14 @@ async def get_products_of_user_from_db(
             id=product.id,
             name=product.name,
             description=product.description,
+            user_name=product.user.name,
+            user_surname=product.user.surname,
             price=product.price,
             category=product.category,
             condition=product.condition,
             status=product.status,
+            updated_at=product.updated_at,
+            created_at=product.created_at,
             media=media_responses
         ))
 
@@ -109,7 +125,7 @@ async def show_products_from_db(
     category: ProductCategory | None = None,
     condition: ProductCondition | None = None,
     media_section: MediaSection = MediaSection.kp
-) -> List[ProductResponseSchema]:
+) -> ListResponseSchema:
     offset = size * (page - 1)
     sql_conditions = [Product.status == ProductStatus.active]
 
@@ -118,8 +134,15 @@ async def show_products_from_db(
     if condition:
         sql_conditions.append(Product.condition == condition)
 
+    # Count total products
+    total_query = select(func.count()).where(*sql_conditions)
+    total_result = await session.execute(total_query)
+    total_count = total_result.scalar()
+    num_of_pages = max(1, (total_count + size - 1) // size)
+
     query = (
         select(Product)
+        .options(selectinload(Product.user))  # this is the fix
         .where(*sql_conditions)
         .offset(offset)
         .limit(size)
@@ -154,15 +177,18 @@ async def show_products_from_db(
             id=product.id,
             name=product.name,
             description=product.description,
+            user_name=product.user.name,
+            user_surname=product.user.surname,
             price=product.price,
             category=product.category,
             condition=product.condition,
             status=product.status,
+            updated_at=product.updated_at,
+            created_at=product.created_at,
             media=media_responses
         ))
 
-    return response
-
+    return ListResponseSchema(products=response, num_of_pages=num_of_pages)
 
 async def get_product_from_db(
         request:Request,
@@ -170,7 +196,7 @@ async def get_product_from_db(
         session: AsyncSession,
         media_section: MediaSection = MediaSection.kp
 ):
-    product = await session.execute(select(Product).filter_by(id=product_id))
+    product = await session.execute(select(Product).options(selectinload(Product.user)).filter(Product.id == product_id, Product.status == ProductStatus.active))
     product = product.scalars().first()
     if product:
         media_result = await session.execute(
@@ -194,10 +220,14 @@ async def get_product_from_db(
                 id=product.id,
                 name=product.name,
                 description=product.description,
+                user_name=product.user.name,
+                user_surname=product.user.surname,
                 price=product.price,
                 category=product.category,
                 condition=product.condition,
                 status=product.status,
+                updated_at=product.updated_at,
+                created_at=product.created_at,
                 media=media_responses
             )
 
@@ -217,10 +247,11 @@ async def update_product_from_database(product_id: int, product_schema: ProductR
 
 async def remove_product_from_db(
         request: Request,
+        user_sub: str,
         product_id: int,
         session: AsyncSession
 ):
-    result = await session.execute(select(Product).filter_by(id=product_id))
+    result = await session.execute(select(Product).filter(Product.id==product_id, Product.user_sub == user_sub))
     product = result.scalars().first()
     if product:
         media_result = await session.execute(
@@ -237,8 +268,16 @@ async def remove_product_from_db(
 
 
 
-async def update_product_in_db(product_update: ProductUpdateSchema, session: AsyncSession):
-    result = await session.execute(select(Product).where(Product.id == product_update.product_id))
+async def update_product_in_db(
+        product_update: ProductUpdateSchema,
+        user_sub: str,
+        session: AsyncSession):
+    result = await session.execute(
+        select(Product)
+        .where(
+            Product.id == product_update.product_id,
+            Product.user_sub == user_sub)
+    )
     product = result.scalars().first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
