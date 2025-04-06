@@ -5,48 +5,26 @@ from fastapi import HTTPException
 from google.cloud.exceptions import NotFound
 import uuid
 from datetime import datetime
-
-from backend.common.dependencies import validate_access_token_dep
+from backend.common.dependencies import check_token, get_db_session
 from .__init__ import SignedUrlResponse, UploadConfirmation
+from .cruds import confirm_uploaded_media_to_db
+from backend.core.database.models.media import Media, MediaPurpose, MediaSection
+from sqlalchemy.ext.asyncio import AsyncSession
+
 
 router = APIRouter(prefix="/bucket", tags=['Google Bucket Routes'])
 
 
-@router.get(
-    "/download-url/{filename}",
-    response_model=SignedUrlResponse,
-    summary="Generate secure download URL",
-    description="Creates a time-limited URL for downloading a specific file from storage"
-)
-async def generate_download_url(
-    request: Request,
-    filename: str,
-    user: Annotated[dict, Depends(validate_access_token_dep)]  # Add the dependency here
-):
-    """
-    Generates a signed download URL with:
-    - 15 minute expiration
-    - GET access only
-    - Requires valid JWT
-    """
-    blob = request.app.state.storage_client.bucket(request.app.state.config.bucket_name).blob(filename)
-    signed_url = blob.generate_signed_url(
-        version="v4",
-        expiration=timedelta(minutes=15),
-        method="GET",
-    )
-    return {"signed_url": signed_url}
-
 
 @router.get(
-    "/upload-url/objects",
+    "/upload",
     response_model=SignedUrlResponse,
     summary="Generate secure upload URL for Google Cloud Storage Bucket",
     description="Creates a time-limited URL for uploading files directly to cloud storage"
 )
 async def generate_upload_url(
         request: Request,
-        user: Annotated[dict, Depends(validate_access_token_dep)],
+        user: Annotated[dict, Depends(check_token)],
         file_count: int = 1
 ):
     """
@@ -64,7 +42,6 @@ async def generate_upload_url(
             detail=f"Cannot generate more than {10} upload URLs at a time."
         )
 
-
     urls = []
     timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%S")  # UTC timestamp
     for _ in range(file_count):
@@ -79,62 +56,30 @@ async def generate_upload_url(
         urls.append({"filename": filename, "upload_url": signed_url})
     return {"signed_urls": urls}
 
+
+
 @router.post(
-    "/upload/confirm",
-    summary="Confirm multiple file uploads",
-    description="After uploading, client confirms by sending a list of filenames and MIME types."
-)
+        "/upload/confirm",
+        summary="Confirm multiple file uploads",
+        description="After uploading, client confirms by sending a list of filenames and MIME types."
+    )
 async def confirm_uploads(
-        request: Request,
-        confirmations: List[UploadConfirmation],  # List of confirmations
-        user: dict = Depends(validate_access_token_dep)
-):
+            confirmations: List[UploadConfirmation],
+            user: dict = Depends(check_token),
+            db_session: AsyncSession = Depends(get_db_session)
+    ):
     """
-    Stores metadata for multiple uploaded files:
-    - Ensures the filenames were generated before
-    - Saves MIME types
-    - Marks files as uploaded
+    Processes a list of upload confirmations and creates corresponding Media records.
+    Each confirmation is expected to include:
+    - filename: the file's unique name (as generated during URL creation)
+    - mime_type: the file's MIME type
+    - entity_id: the associated product ID (or other entity identifier)
+    - media_purpose: indicates the image type (e.g., banner, thumbnail, etc.)
+    - (optionally) section: the media section (default is "kp" for Kupi-Prodai)
     """
-
-    failed_confirmations = []
-    successful_confirmations = []
-
-    for confirmation in confirmations:
-        filename = confirmation.filename
-
-        if filename not in UPLOAD_METADATA_DB:
-            failed_confirmations.append({"filename": filename, "error": "Invalid filename."})
-            continue
-
-        # Store MIME type and mark as uploaded
-        UPLOAD_METADATA_DB[filename] = {
-            "uploaded": True,
-            "mime_type": confirmation.mime_type
-        }
-        successful_confirmations.append({"filename": filename, "mime_type": confirmation.mime_type})
-
-    response = {"successful": successful_confirmations}
-
-    if failed_confirmations:
-        response["failed"] = failed_confirmations
-
-    return response
-
-
-@router.delete(
-    "/objects/{filename}",
-    summary="Delete an object from GCP bucket",
-)
-async def delete_object(
-    request: Request,
-    filename: str,
-    user: Annotated[dict, Depends(validate_access_token_dep)]
-):
-    blob = request.app.state.storage_client.bucket(request.app.state.config.bucket_name).blob(filename)
-    try:
-        blob.delete()
-        return {"status": "success", "deleted": filename}
-    except NotFound:
-        raise HTTPException(status_code=404, detail="File not found")
-
+    confirmed_media = await confirm_uploaded_media_to_db(confirmations, db_session)
+    return {
+        "status": "success",
+        "uploaded_media": [media.name for media in confirmed_media]
+    }
 
