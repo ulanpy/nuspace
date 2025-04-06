@@ -3,24 +3,42 @@ from typing import Literal, Annotated
 
 from .__init__ import *
 from backend.common.utils import *
-from backend.common.dependencies import get_db_session, check_token
+from backend.common.dependencies import get_db_session, check_token, check_tg
 from .cruds import show_products_from_db, add_new_product_to_db
 
 
 router = APIRouter(prefix="/products", tags=['Kupi-Prodai Routes'])
 
-
 @router.post("/new", response_model=ProductResponseSchema) #works
 async def add_new_product(
         request: Request,
         user: Annotated[dict, Depends(check_token)],
+        tg: Annotated[bool, Depends(check_tg)],
         product_data: ProductRequestSchema,
         db_session: AsyncSession = Depends(get_db_session)
 ):
     """
-    Adds a new product to the list of Kupi-Prodai products:
-        - In success returns product details
+    Creates a new product under the 'Kupi-Prodai' section.
+
+    **Requirements:**
+    - The user must be authenticated (`access_token` cookie required).
+
+    - The user must have a linked Telegram account (checked via dependency).
+
+    **Parameters:**
+    - `product_data`: JSON body containing product fields (name, description, price, category, condition, etc.)
+
+    - Automatically associates the product with the authenticated user.
+
+    **Returns:**
+    - The newly created product with full details including associated media (if any).
+
+    **Notes:**
+    - If Telegram is not linked, the request will fail with 403.
+
+    - The product is indexed in Meilisearch after creation.
     """
+
     try:
         new_product = await add_new_product_to_db(db_session, product_data, user_sub=user["sub"], request=request)
         return new_product
@@ -35,7 +53,20 @@ async def get_products_of_user(
         db_session: AsyncSession = Depends(get_db_session)
 ):
     """
-    Get list of ALL user's products' (both active and inactive) ordered by latest ones first
+    Retrieves a list of all products created by the currently authenticated user,
+    including both active and inactive items. Results are ordered by most recently updated.
+
+    **Parameters:**
+
+    - `access_token`: Required authentication token from cookies (via dependency).
+
+    **Returns:**
+    - A list of the user's own products, each with full product details and associated media.
+
+    **Notes:**
+    - Pagination is not yet implemented (all products are returned at once).
+
+    - Only products belonging to the authenticated user are included.
     """
     user_sub = user.get("sub")
     try:
@@ -46,9 +77,10 @@ async def get_products_of_user(
 
 
 
-@router.get("/list", response_model=List[ProductResponseSchema]) #works
+@router.get("/list", response_model=ListResponseSchema) #works
 async def get_products(
         request: Request,
+        user: Annotated[dict, Depends(check_token)],
         db_session: AsyncSession = Depends(get_db_session),
         size: int = 20,
         page: int = 1,
@@ -72,21 +104,41 @@ async def get_products(
     - A list of active products, sorted by most recently updated.
     """
 
-    return await show_products_from_db(request=request,
-                                       session=db_session,
-                                       size=size,
-                                       page=page,
-                                       category=category,
-                                       condition=condition
-                                       )
+    return await show_products_from_db(
+        request=request,
+        session=db_session,
+        size=size,
+        page=page,
+        category=category,
+        condition=condition
+    )
 
 
 @router.get("/{product_id}", response_model=ProductResponseSchema) #works
 async def get_product(
         request: Request,
+        user: Annotated[dict, Depends(check_token)],
         product_id: int,
         db_session: AsyncSession = Depends(get_db_session)
 ):
+    """
+    Retrieves a single active product by its unique ID, including its associated media files.
+
+    **Parameters:**
+
+    - `product_id`: The unique identifier of the product to retrieve.
+
+    - `access_token`: Required authentication token from cookies (via dependency).
+
+    **Returns:**
+    - A detailed product object if found, including its name, description, price, category, condition, and media URLs.
+
+    **Errors:**
+    - Returns `404 Not Found` if the product with the specified ID does not exist or is inactive.
+
+    - Returns `401 Unauthorized` if no valid access token is provided.
+    """
+
     product = await get_product_from_db(
         request=request,
         product_id=product_id,
@@ -102,12 +154,39 @@ async def get_product(
 @router.delete("/{product_id}")  #works
 async def remove_product(
         request: Request,
+        user: Annotated[dict, Depends(check_token)],
         product_id: int,
         db_session: AsyncSession = Depends(get_db_session)
 ):
+    """
+    Deletes a specific product owned by the authenticated user.
+
+    **Requirements:**
+    - The user must be authenticated (`access_token` cookie required).
+
+    - Only the owner of the product can delete it.
+
+    **Parameters:**
+    - `product_id`: The ID of the product to delete.
+
+    **Process:**
+    - Deletes the product entry from the database.
+    - Deletes all related media files from the storage bucket and their DB records.
+    - Removes the product from the Meilisearch index.
+
+    **Returns:**
+    - HTTP 204 No Content on successful deletion.
+
+    **Errors:**
+    - Returns 403 if the product does not belong to the user.
+    - Returns 404 if the product is not found.
+    - Returns 500 on internal error.
+    """
+
     try:
         await remove_product_from_db(
             request=request,
+            user_sub=user.get("sub"),
             product_id=product_id,
             session=db_session
         )
@@ -117,19 +196,51 @@ async def remove_product(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.patch("/{product_id}")  #works
+@router.patch("/")  #works
 async def update_product(
+    user: Annotated[dict, Depends(check_token)],
     product_update: ProductUpdateSchema,
     db_session: AsyncSession = Depends(get_db_session)
 ):
-    product_update = await update_product_in_db(product_update=product_update, session=db_session)
+    """
+    Updates fields of an existing product owned by the authenticated user.
+
+    **Requirements:**
+    - The user must be authenticated (`access_token` cookie required).
+
+    - Only the product owner can update their product.
+
+    **Parameters:**
+    - `product_id`: ID of the product to update (included in the request body).
+
+    - `name`, `description`, `price`, `category`, `condition`, `status` — any of these fields can be updated individually or together.
+
+    **Process:**
+    - Validates that the product exists and belongs to the user.
+    - Applies only the provided (non-null) updates.
+    - Updates Meilisearch index if the name changes.
+
+    **Returns:**
+    - A dictionary with the `product_id` and the updated fields.
+
+    **Errors:**
+    - Returns 404 if the product does not exist or doesn't belong to the user.
+    - Returns 500 on internal error.
+    """
+
+    product_update = await update_product_in_db(
+        product_update=product_update,
+        user_sub=user.get("sub"),
+        session=db_session
+    )
     return {"product_id": product_update.product_id, "updated_fields": product_update.dict(exclude_unset=True)}
 
 
 
-@router.get("/search/{keyword}", response_model=List[ProductResponseSchema])
+@router.get("/search/", response_model=List[ProductResponseSchema]) #works
 async def search(
         request: Request,
+        user: Annotated[dict, Depends(check_token)],
         keyword: str,
         db_session=Depends(get_db_session)
 ):
