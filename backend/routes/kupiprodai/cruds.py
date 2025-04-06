@@ -185,3 +185,50 @@ async def update_product_in_db(
     await session.commit()
     await session.refresh(product)
     return product_update
+
+
+async def add_new_product_feedback_to_db(
+        feedback_data: ProductFeedbackSchema,
+        user_sub: str,
+        session: AsyncSession
+    ) -> ProductFeedback:
+    new_feedback = ProductFeedback(**feedback_data.dict(), user_sub=user_sub)
+    session.add(new_feedback)
+    await session.commit()
+    await session.refresh(new_feedback)
+    return new_feedback
+
+async def get_product_feedbacks_from_db(
+        product_id: int,
+        session: AsyncSession,
+        size: int = 20,
+        page: int = 1
+    ):
+    offset = size * (page - 1)
+    query = (
+        select(ProductFeedback)
+        .filter_by(product_id = product_id)
+        .offset(offset)
+        .limit(size)
+        .order_by(ProductFeedback.created_at.desc())
+    )
+    result = await session.execute(query)
+    product_feedbacks = result.scalars().all()
+    return product_feedbacks
+
+async def remove_product_feedback_from_db(feedback_id: int, session: AsyncSession):
+    result = await session.execute(select(ProductFeedback).filter_by(product_id = feedback_id))
+    product_feedback = result.scalars().first()
+    if product_feedback:
+        await session.delete(product_feedback)
+        await session.commit()
+        return True
+    else:
+        return False
+
+async def add_product_report(report_data: ProductReportSchema, user_sub: str, session: AsyncSession):
+    new_report = ProductReport(**report_data.dict(), user_sub=user_sub)
+    session.add(new_report)
+    await session.commit()
+    await session.refresh(new_report)
+    return new_report

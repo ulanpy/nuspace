@@ -266,17 +266,35 @@ async def search(
     return product_objects
 
 
-@router.post("/{product_id}/feedback")
-async def store_new_product_feedback(product_id: int):
-    pass
+@router.post("/feedback/{product_id}")
+async def store_new_product_feedback(
+    feedback_data: ProductFeedbackSchema,
+    user_sub: str,
+    request: Request,
+    db_session = Depends(get_db_session)
+):
+    await add_new_product_feedback_to_db(feedback_data=feedback_data, user_sub=user_sub, session=db_session)
 
+@router.get("/feedback/{product_id}")
+async def get_product_feedbacks(
+    product_id:int,
+    db_session = Depends(get_db_session),
+    size: int = 20,
+    page: int = 1
+):
+    return await get_product_feedbacks_from_db(product_id=product_id, session=db_session, size=size, page=page)
 
-@router.get("/{product_id}/feedback")
-async def get_product_feedback(product_id: int):
-    pass
+@router.delete("/feedback/{feedback_id}")
+async def remove_product_feedback(feedback_id: int, db_session = Depends(get_db_session)):
+    await remove_product_feedback_from_db(feedback_id=feedback_id, session=db_session)
 
 
 @router.post("/{product_id}/report")
-async def store_new_product_report(product_id: int, request: Request):
-    pass
+async def store_new_product_report(
+    report_data: ProductReportSchema,
+    user_sub: str,
+    request: Request,
+    db_session = Depends(get_db_session
+)):
+    await add_product_report(report_data=report_data, user_sub = user_sub, session = db_session)
 
