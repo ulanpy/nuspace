@@ -34,7 +34,6 @@ class ProductStatus(Enum):
     inactive = "inactive"
     active = "active"
 
-
 class Product(Base):
     __tablename__ = 'products'
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, index=True, nullable=False)
