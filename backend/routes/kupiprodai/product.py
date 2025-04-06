@@ -4,7 +4,7 @@ from typing import Literal, Annotated
 from .__init__ import *
 from backend.common.utils import *
 from backend.common.dependencies import get_db_session, validate_access_token_dep
-from .cruds import show_products_from_db, add__new_product_to_db
+from .cruds import show_products_from_db, add_new_product_to_db
 
 
 router = APIRouter(prefix="/products", tags=['Kupi-Prodai Routes'])
@@ -22,7 +22,7 @@ async def add_new_product(
         - In success returns product details
     """
     try:
-        new_product = await add__new_product_to_db(db_session, product_data, user_sub=user["sub"])
+        new_product = await add_new_product_to_db(db_session, product_data, user_sub=user["sub"])
         await add_meilisearch_data(storage_name='products', json_values={'id': new_product.id, 'name': new_product.name})
         return new_product
     except HTTPException as e:
@@ -122,17 +122,35 @@ async def remove_pictures(product_id: int):
     pass
 
 
-@router.post("/{product_id}/feedback")
-async def store_new_product_feedback(product_id: int):
-    pass
+@router.post("/feedback/{product_id}")
+async def store_new_product_feedback(
+    feedback_data: ProductFeedbackSchema, 
+    user_sub: str, 
+    request: Request,
+    db_session = Depends(get_db_session)
+):
+    await add_new_product_feedback_to_db(feedback_data=feedback_data, user_sub=user_sub, session=db_session)
 
+@router.get("/feedback/{product_id}")
+async def get_product_feedbacks(
+    product_id:int, 
+    db_session = Depends(get_db_session), 
+    size: int = 20, 
+    page: int = 1
+):
+    return await get_product_feedbacks_from_db(product_id=product_id, session=db_session, size=size, page=page)
 
-@router.get("/{product_id}/feedback")
-async def get_product_feedback(product_id: int):
-    pass
+@router.delete("/feedback/{feedback_id}")
+async def remove_product_feedback(feedback_id: int, db_session = Depends(get_db_session)):
+    await remove_product_feedback_from_db(feedback_id=feedback_id, session=db_session)
 
 
 @router.post("/{product_id}/report")
-async def store_new_product_report(product_id: int, request: Request):
-    pass
+async def store_new_product_report(
+    report_data: ProductReportSchema, 
+    user_sub: str, 
+    request: Request, 
+    db_session = Depends(get_db_session
+)):
+    await add_product_report(report_data=report_data, user_sub = user_sub, session = db_session)
 

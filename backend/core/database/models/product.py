@@ -49,7 +49,7 @@ class ProductFeedback(Base):
     text: Mapped[str] = mapped_column(String)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    user = relationship("User",back_populates="product_feedbacks")
+    user = relationship("User", back_populates="product_feedbacks")
     product = relationship("Product", back_populates="feedbacks")
 
 

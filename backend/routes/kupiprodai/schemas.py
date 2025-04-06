@@ -26,11 +26,12 @@ class ProductUpdateSchema(BaseModel):
 
     class Config:
         from_attributes = True  # Make sure it can be used with SQLAlchemy models
-
-
-class ProductCategorySchema(BaseModel):
-    id: int
-    name: str
     
+class ProductFeedbackSchema(BaseModel):
+    product_id: int
+    text: str
 
+class ProductReportSchema(BaseModel):
+    product_id: int
+    text: str
 
