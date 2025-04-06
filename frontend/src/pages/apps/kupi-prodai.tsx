@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useRef } from "react"
-import { motion } from "framer-motion"
+import { useState, useRef } from "react";
+import { motion } from "framer-motion";
 import {
   Search,
   Filter,
@@ -15,36 +15,42 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react"
-import { Input } from "../../components/ui/input"
-import { Button } from "../../components/ui/button"
-import { Card, CardContent } from "../../components/ui/card"
-import { Badge } from "../../components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
-import { useNavigate } from "react-router-dom"
+} from "lucide-react";
+import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent } from "../../components/ui/card";
+import { Badge } from "../../components/ui/badge";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs";
+import { useNavigate } from "react-router-dom";
+import { useProducts } from "@/hooks/use-product";
 
 interface ProductImage {
-  id: number
-  url: string
+  id: number;
+  url: string;
 }
 
 interface Product {
-  id: number
-  title: string
-  price: number
-  category: string
-  condition: "New" | "Used" | "Like New"
-  images: ProductImage[]
-  seller: string
-  sellerRating?: number
-  location: string
-  likes: number
-  messages: number
-  description?: string
-  telegramUsername?: string
-  datePosted?: string
-  isOwner?: boolean
-  isSold?: boolean
+  id: number;
+  title: string;
+  price: number;
+  category: string;
+  condition: "New" | "Used" | "Like New";
+  images: ProductImage[];
+  seller: string;
+  sellerRating?: number;
+  location: string;
+  likes: number;
+  messages: number;
+  description?: string;
+  telegramUsername?: string;
+  datePosted?: string;
+  isOwner?: boolean;
+  isSold?: boolean;
 }
 
 // Sample products data with multiple images
@@ -56,9 +62,18 @@ const initialProducts: Product[] = [
     category: "Books",
     condition: "Used",
     images: [
-      { id: 1, url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Calculus+1" },
-      { id: 2, url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Calculus+2" },
-      { id: 3, url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Calculus+3" },
+      {
+        id: 1,
+        url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Calculus+1",
+      },
+      {
+        id: 2,
+        url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Calculus+2",
+      },
+      {
+        id: 3,
+        url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Calculus+3",
+      },
     ],
     seller: "Alex K.",
     sellerRating: 4.8,
@@ -85,7 +100,8 @@ const initialProducts: Product[] = [
     location: "Block 3C",
     likes: 3,
     messages: 1,
-    description: "Modern LED desk lamp with adjustable brightness. Used for one semester only.",
+    description:
+      "Modern LED desk lamp with adjustable brightness. Used for one semester only.",
     telegramUsername: "maria_s",
     datePosted: "1 week ago",
   },
@@ -95,13 +111,19 @@ const initialProducts: Product[] = [
     price: 8000,
     category: "Electronics",
     condition: "New",
-    images: [{ id: 1, url: "https://placehold.co/400x400/f97316/FFFFFF?text=Calculator" }],
+    images: [
+      {
+        id: 1,
+        url: "https://placehold.co/400x400/f97316/FFFFFF?text=Calculator",
+      },
+    ],
     seller: "Timur A.",
     sellerRating: 5.0,
     location: "Block 2B",
     likes: 7,
     messages: 4,
-    description: "Brand new scientific calculator, still in original packaging. Perfect for engineering courses.",
+    description:
+      "Brand new scientific calculator, still in original packaging. Perfect for engineering courses.",
     telegramUsername: "timur_a",
     datePosted: "3 days ago",
   },
@@ -112,15 +134,22 @@ const initialProducts: Product[] = [
     category: "Clothing",
     condition: "Used",
     images: [
-      { id: 1, url: "https://placehold.co/400x400/ef4444/FFFFFF?text=Jacket+Front" },
-      { id: 2, url: "https://placehold.co/400x400/ef4444/FFFFFF?text=Jacket+Back" },
+      {
+        id: 1,
+        url: "https://placehold.co/400x400/ef4444/FFFFFF?text=Jacket+Front",
+      },
+      {
+        id: 2,
+        url: "https://placehold.co/400x400/ef4444/FFFFFF?text=Jacket+Back",
+      },
     ],
     seller: "Aisha N.",
     sellerRating: 4.5,
     location: "Block 4A",
     likes: 2,
     messages: 0,
-    description: "Warm winter jacket, size M. Used for one winter season, still in good condition.",
+    description:
+      "Warm winter jacket, size M. Used for one winter season, still in good condition.",
     telegramUsername: "aisha_n",
     datePosted: "5 days ago",
   },
@@ -131,16 +160,26 @@ const initialProducts: Product[] = [
     category: "Electronics",
     condition: "Like New",
     images: [
-      { id: 1, url: "https://placehold.co/400x400/8b5cf6/FFFFFF?text=Headphones+1" },
-      { id: 2, url: "https://placehold.co/400x400/8b5cf6/FFFFFF?text=Headphones+2" },
-      { id: 3, url: "https://placehold.co/400x400/8b5cf6/FFFFFF?text=Headphones+3" },
+      {
+        id: 1,
+        url: "https://placehold.co/400x400/8b5cf6/FFFFFF?text=Headphones+1",
+      },
+      {
+        id: 2,
+        url: "https://placehold.co/400x400/8b5cf6/FFFFFF?text=Headphones+2",
+      },
+      {
+        id: 3,
+        url: "https://placehold.co/400x400/8b5cf6/FFFFFF?text=Headphones+3",
+      },
     ],
     seller: "Ruslan M.",
     sellerRating: 4.7,
     location: "Block 1C",
     likes: 9,
     messages: 3,
-    description: "High-quality wireless headphones with noise cancellation. Used for a few months, works perfectly.",
+    description:
+      "High-quality wireless headphones with noise cancellation. Used for a few months, works perfectly.",
     telegramUsername: "ruslan_m",
     datePosted: "1 day ago",
   },
@@ -150,13 +189,19 @@ const initialProducts: Product[] = [
     price: 2000,
     category: "Books",
     condition: "Used",
-    images: [{ id: 1, url: "https://placehold.co/400x400/ec4899/FFFFFF?text=Physics+Notes" }],
+    images: [
+      {
+        id: 1,
+        url: "https://placehold.co/400x400/ec4899/FFFFFF?text=Physics+Notes",
+      },
+    ],
     seller: "Dana K.",
     sellerRating: 4.0,
     location: "Block 3B",
     likes: 4,
     messages: 2,
-    description: "Comprehensive physics notes for PHY201. Includes all formulas and example problems.",
+    description:
+      "Comprehensive physics notes for PHY201. Includes all formulas and example problems.",
     telegramUsername: "dana_k",
     datePosted: "2 weeks ago",
   },
@@ -166,13 +211,19 @@ const initialProducts: Product[] = [
     price: 4000,
     category: "Electronics",
     condition: "New",
-    images: [{ id: 1, url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Laptop+Stand" }],
+    images: [
+      {
+        id: 1,
+        url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Laptop+Stand",
+      },
+    ],
     seller: "Kanat B.",
     sellerRating: 4.9,
     location: "Block 2A",
     likes: 6,
     messages: 3,
-    description: "Adjustable laptop stand, perfect for online classes. Brand new in box.",
+    description:
+      "Adjustable laptop stand, perfect for online classes. Brand new in box.",
     telegramUsername: "kanat_b",
     datePosted: "4 days ago",
   },
@@ -182,17 +233,23 @@ const initialProducts: Product[] = [
     price: 4500,
     category: "Books",
     condition: "Like New",
-    images: [{ id: 1, url: "https://placehold.co/400x400/22c55e/FFFFFF?text=Chemistry" }],
+    images: [
+      {
+        id: 1,
+        url: "https://placehold.co/400x400/22c55e/FFFFFF?text=Chemistry",
+      },
+    ],
     seller: "Alina M.",
     sellerRating: 4.3,
     location: "Block 1B",
     likes: 2,
     messages: 1,
-    description: "Chemistry textbook for CHEM101, barely used. Like new condition.",
+    description:
+      "Chemistry textbook for CHEM101, barely used. Like new condition.",
     telegramUsername: "alina_m",
     datePosted: "1 week ago",
   },
-]
+];
 
 // Sample user's listings
 const initialMyListings: Product[] = [
@@ -202,12 +259,18 @@ const initialMyListings: Product[] = [
     price: 4500,
     category: "Books",
     condition: "Like New",
-    images: [{ id: 1, url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Programming" }],
+    images: [
+      {
+        id: 1,
+        url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Programming",
+      },
+    ],
     seller: "You",
     location: "Block 2A",
     likes: 2,
     messages: 1,
-    description: "Introduction to Programming textbook. Used for one semester, like new condition.",
+    description:
+      "Introduction to Programming textbook. Used for one semester, like new condition.",
     isOwner: true,
     datePosted: "1 week ago",
   },
@@ -217,12 +280,18 @@ const initialMyListings: Product[] = [
     price: 1500,
     category: "Home",
     condition: "New",
-    images: [{ id: 1, url: "https://placehold.co/400x400/22c55e/FFFFFF?text=Organizer" }],
+    images: [
+      {
+        id: 1,
+        url: "https://placehold.co/400x400/22c55e/FFFFFF?text=Organizer",
+      },
+    ],
     seller: "You",
     location: "Block 2A",
     likes: 0,
     messages: 0,
-    description: "New desk organizer, still in packaging. Decided I don't need it.",
+    description:
+      "New desk organizer, still in packaging. Decided I don't need it.",
     isOwner: true,
     datePosted: "3 days ago",
   },
@@ -232,7 +301,12 @@ const initialMyListings: Product[] = [
     price: 1000,
     category: "Books",
     condition: "Used",
-    images: [{ id: 1, url: "https://placehold.co/400x400/ef4444/FFFFFF?text=Math+Notes" }],
+    images: [
+      {
+        id: 1,
+        url: "https://placehold.co/400x400/ef4444/FFFFFF?text=Math+Notes",
+      },
+    ],
     seller: "You",
     location: "Block 2A",
     likes: 1,
@@ -242,9 +316,17 @@ const initialMyListings: Product[] = [
     isSold: true,
     datePosted: "2 weeks ago",
   },
-]
+];
 
-const categories = ["All Categories", "Books", "Electronics", "Clothing", "Home", "Sports", "Other"]
+const categories = [
+  "All Categories",
+  "Books",
+  "Electronics",
+  "Clothing",
+  "Home",
+  "Sports",
+  "Other",
+];
 
 const locations = [
   "All Locations",
@@ -263,9 +345,9 @@ const locations = [
   "Main Building",
   "Library",
   "Sports Center",
-]
+];
 
-const conditions = ["All Conditions", "New", "Like New", "Used"]
+const conditions = ["All Conditions", "New", "Like New", "Used"];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -275,7 +357,7 @@ const containerVariants = {
       staggerChildren: 0.1,
     },
   },
-}
+};
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
@@ -288,151 +370,102 @@ const itemVariants = {
       damping: 15,
     },
   },
-}
+};
 
 export default function KupiProdaiPage() {
-  const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState("buy")
-  const [likedProducts, setLikedProducts] = useState<number[]>([])
-  const [subscribedSellers, setSubscribedSellers] = useState<string[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("All Categories")
-  const [selectedCondition, setSelectedCondition] = useState("All Conditions")
-  const [showFilters, setShowFilters] = useState(false)
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("buy");
+  const [likedProducts, setLikedProducts] = useState<number[]>([]);
+  const [subscribedSellers, setSubscribedSellers] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [selectedCondition, setSelectedCondition] = useState("All Conditions");
+  const [showFilters, setShowFilters] = useState(false);
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(6)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
 
   // Products state (for CRUD operations)
-  const [products, setProducts] = useState<Product[]>(initialProducts)
-  const [myListings, setMyListings] = useState<Product[]>(initialMyListings)
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [myListings, setMyListings] = useState<Product[]>(initialMyListings);
 
   // New listing form state
-  const [newListing, setNewListing] = useState({
-    title: "",
-    price: "",
-    category: "",
-    condition: "",
-    location: "",
-    description: "",
-    telegramUsername: "",
-  })
-  const [previewImages, setPreviewImages] = useState<string[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const {
+    newListing,
+    previewImages,
+    setNewListing,
+    setPreviewImages,
+    handleImageUpload,
+    removeImage,
+    onCreateProduct,
+    onUpdateProduct,
+    onRemoveProduct,
+    onGetMyProducts,
+  } = useProducts();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Edit listing state
-  const [editingListing, setEditingListing] = useState<Product | null>(null)
-  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingListing, setEditingListing] = useState<Product | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const toggleLike = (id: number) => {
     if (likedProducts.includes(id)) {
-      setLikedProducts(likedProducts.filter((productId) => productId !== id))
+      setLikedProducts(likedProducts.filter((productId) => productId !== id));
     } else {
-      setLikedProducts([...likedProducts, id])
+      setLikedProducts([...likedProducts, id]);
     }
-  }
+  };
 
   const toggleSubscribe = (seller: string) => {
     if (subscribedSellers.includes(seller)) {
-      setSubscribedSellers(subscribedSellers.filter((s) => s !== seller))
+      setSubscribedSellers(subscribedSellers.filter((s) => s !== seller));
     } else {
-      setSubscribedSellers([...subscribedSellers, seller])
+      setSubscribedSellers([...subscribedSellers, seller]);
     }
-  }
+  };
 
   const getConditionColor = (condition: Product["condition"]) => {
     switch (condition) {
       case "New":
-        return "bg-green-500"
+        return "bg-green-500";
       case "Like New":
-        return "bg-blue-500"
+        return "bg-blue-500";
       case "Used":
-        return "bg-orange-500"
+        return "bg-orange-500";
       default:
-        return "bg-gray-500"
+        return "bg-gray-500";
     }
-  }
+  };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files && files.length > 0) {
-      const newPreviewImages = [...previewImages]
-
-      Array.from(files).forEach((file) => {
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          newPreviewImages.push(reader.result as string)
-          setPreviewImages([...newPreviewImages])
-        }
-        reader.readAsDataURL(file)
-      })
-    }
-  }
-
-  const removeImage = (index: number) => {
-    const newPreviewImages = [...previewImages]
-    newPreviewImages.splice(index, 1)
-    setPreviewImages(newPreviewImages)
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setNewListing((prev) => ({ ...prev, [name]: value }))
-  }
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setNewListing((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setNewListing((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setNewListing((prev) => ({ ...prev, [name]: value }));
+  };
 
-  const handleSubmitListing = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmitListing = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    if (previewImages.length === 0) {
-      alert("Please upload at least one image")
-      return
-    }
-
-    // Create new product
-    const newProduct: Product = {
-      id: Date.now(), // Use timestamp as ID
-      title: newListing.title,
-      price: Number(newListing.price),
-      category: newListing.category,
-      condition: newListing.condition as "New" | "Used" | "Like New",
-      images: previewImages.map((url, index) => ({ id: index + 1, url })),
-      seller: "You",
-      location: newListing.location,
-      likes: 0,
-      messages: 0,
-      description: newListing.description,
-      telegramUsername: newListing.telegramUsername,
-      datePosted: "Just now",
-      isOwner: true,
-    }
+    const newProduct: Product | null = await onCreateProduct();
+    if (!newProduct) return;
 
     // Add to my listings
-    setMyListings([newProduct, ...myListings])
+    setMyListings([newProduct, ...myListings]);
+    setPreviewImages([]);
+    setActiveTab("my-listings");
 
-    // Reset form
-    setNewListing({
-      title: "",
-      price: "",
-      category: "",
-      condition: "",
-      location: "",
-      description: "",
-      telegramUsername: "",
-    })
-    setPreviewImages([])
-    setActiveTab("my-listings")
-
-    alert("Listing created successfully!")
-  }
+    alert("Listing created successfully!");
+  };
 
   const handleEditListing = (product: Product) => {
-    setEditingListing(product)
+    setEditingListing(product);
     setNewListing({
       title: product.title,
       price: product.price.toString(),
@@ -441,34 +474,29 @@ export default function KupiProdaiPage() {
       location: product.location,
       description: product.description || "",
       telegramUsername: product.telegramUsername || "",
-    })
-    setPreviewImages(product.images.map((img) => img.url))
-    setShowEditModal(true)
-  }
+    });
+    setPreviewImages(product.images.map((img) => img.url));
+    setShowEditModal(true);
+  };
 
-  const handleUpdateListing = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleUpdateListing = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    if (!editingListing) return
+    if (!editingListing) return;
 
     // Update the listing
-    const updatedListing: Product = {
-      ...editingListing,
-      title: newListing.title,
-      price: Number(newListing.price),
-      category: newListing.category,
-      condition: newListing.condition as "New" | "Used" | "Like New",
-      images: previewImages.map((url, index) => ({ id: index + 1, url })),
-      location: newListing.location,
-      description: newListing.description,
-      telegramUsername: newListing.telegramUsername,
-    }
+    const updatedListing: Product | null = await onUpdateProduct(editingListing)
 
     // Update in my listings
-    setMyListings(myListings.map((listing) => (listing.id === editingListing.id ? updatedListing : listing)))
+    if(!updatedListing) return
+    setMyListings(
+      myListings.map((listing) =>
+        listing.id === editingListing.id ? updatedListing : listing
+      )
+    );
 
     // Reset form and close modal
-    setEditingListing(null)
+    setEditingListing(null);
     setNewListing({
       title: "",
       price: "",
@@ -477,56 +505,72 @@ export default function KupiProdaiPage() {
       location: "",
       description: "",
       telegramUsername: "",
-    })
-    setPreviewImages([])
-    setShowEditModal(false)
+    });
+    setPreviewImages([]);
+    setShowEditModal(false);
 
-    alert("Listing updated successfully!")
-  }
+    alert("Listing updated successfully!");
+  };
 
-  const handleDeleteListing = (id: number) => {
+  const handleDeleteListing = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this listing?")) {
-      setMyListings(myListings.filter((listing) => listing.id !== id))
+      await onRemoveProduct(id);
+      // const myProducts: Types.Product[] | null = await onGetMyProducts();
+      // if(myProducts) setMyListings(myProducts)
+      setMyListings(myListings.filter((listing) => listing.id !== id));
     }
-  }
+  };
 
   const handleMarkAsSold = (id: number) => {
-    setMyListings(myListings.map((listing) => (listing.id === id ? { ...listing, isSold: true } : listing)))
-  }
+    setMyListings(
+      myListings.map((listing) =>
+        listing.id === id ? { ...listing, isSold: true } : listing
+      )
+    );
+  };
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
       searchQuery === "" ||
       product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      product.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesCategory = selectedCategory === "All Categories" || product.category === selectedCategory
-    const matchesCondition = selectedCondition === "All Conditions" || product.condition === selectedCondition
+    const matchesCategory =
+      selectedCategory === "All Categories" ||
+      product.category === selectedCategory;
+    const matchesCondition =
+      selectedCondition === "All Conditions" ||
+      product.condition === selectedCondition;
 
-    return matchesSearch && matchesCategory && matchesCondition
-  })
+    return matchesSearch && matchesCategory && matchesCondition;
+  });
 
   // Pagination logic
-  const indexOfLastItem = currentPage * itemsPerPage
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem)
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredProducts.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
   const paginate = (pageNumber: number) => {
     if (pageNumber > 0 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber)
+      setCurrentPage(pageNumber);
     }
-  }
+  };
 
   // Active and sold listings
-  const activeListings = myListings.filter((listing) => !listing.isSold)
-  const soldListings = myListings.filter((listing) => listing.isSold)
+  const activeListings = myListings.filter((listing) => !listing.isSold);
+  const soldListings = myListings.filter((listing) => listing.isSold);
 
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col space-y-1 sm:space-y-2">
         <h1 className="text-2xl sm:text-3xl font-bold">Kupi&Prodai</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Buy and sell items within the university community</p>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Buy and sell items within the university community
+        </p>
       </div>
 
       <Tabs defaultValue="buy" className="w-full" onValueChange={setActiveTab}>
@@ -537,7 +581,10 @@ export default function KupiProdaiPage() {
         </TabsList>
 
         {/* BUY SECTION */}
-        <TabsContent value="buy" className="space-y-3 sm:space-y-4 pt-3 sm:pt-4">
+        <TabsContent
+          value="buy"
+          className="space-y-3 sm:space-y-4 pt-3 sm:pt-4"
+        >
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -603,8 +650,8 @@ export default function KupiProdaiPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setSelectedCategory("All Categories")
-                    setSelectedCondition("All Conditions")
+                    setSelectedCategory("All Categories");
+                    setSelectedCondition("All Conditions");
                   }}
                 >
                   Reset
@@ -628,7 +675,9 @@ export default function KupiProdaiPage() {
                   <motion.div key={product.id} variants={itemVariants}>
                     <Card
                       className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => navigate(`/apps/kupi-prodai/product/${product.id}`)}
+                      onClick={() =>
+                        navigate(`/apps/kupi-prodai/product/${product.id}`)
+                      }
                     >
                       <div className="aspect-square relative">
                         <img
@@ -637,7 +686,9 @@ export default function KupiProdaiPage() {
                           className="object-cover w-full h-full"
                         />
                         <Badge
-                          className={`absolute top-2 right-2 ${getConditionColor(product.condition)} text-white text-xs`}
+                          className={`absolute top-2 right-2 ${getConditionColor(
+                            product.condition
+                          )} text-white text-xs`}
                         >
                           {product.condition}
                         </Badge>
@@ -645,8 +696,12 @@ export default function KupiProdaiPage() {
                       <CardContent className="p-2 sm:p-3">
                         <div className="flex justify-between items-start mb-1">
                           <div>
-                            <h3 className="font-medium text-xs sm:text-sm line-clamp-1">{product.title}</h3>
-                            <p className="text-sm sm:text-base font-bold">{product.price} ₸</p>
+                            <h3 className="font-medium text-xs sm:text-sm line-clamp-1">
+                              {product.title}
+                            </h3>
+                            <p className="text-sm sm:text-base font-bold">
+                              {product.price} ₸
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center text-[10px] sm:text-xs text-muted-foreground mb-1">
@@ -655,7 +710,9 @@ export default function KupiProdaiPage() {
                             {product.sellerRating && (
                               <div className="flex items-center ml-1">
                                 <Star className="h-2.5 w-2.5 text-yellow-500 fill-yellow-500" />
-                                <span className="ml-0.5">{product.sellerRating}</span>
+                                <span className="ml-0.5">
+                                  {product.sellerRating}
+                                </span>
                               </div>
                             )}
                           </div>
@@ -666,15 +723,21 @@ export default function KupiProdaiPage() {
                             size="sm"
                             className="flex gap-1 text-muted-foreground hover:text-foreground h-6 px-1.5"
                             onClick={(e) => {
-                              e.stopPropagation()
-                              toggleLike(product.id)
+                              e.stopPropagation();
+                              toggleLike(product.id);
                             }}
                           >
                             <Heart
-                              className={`h-3 w-3 ${likedProducts.includes(product.id) ? "fill-red-500 text-red-500" : ""}`}
+                              className={`h-3 w-3 ${
+                                likedProducts.includes(product.id)
+                                  ? "fill-red-500 text-red-500"
+                                  : ""
+                              }`}
                             />
                             <span className="text-[10px]">
-                              {likedProducts.includes(product.id) ? product.likes + 1 : product.likes}
+                              {likedProducts.includes(product.id)
+                                ? product.likes + 1
+                                : product.likes}
                             </span>
                           </Button>
                           <Button
@@ -682,12 +745,16 @@ export default function KupiProdaiPage() {
                             size="sm"
                             className="flex gap-1 text-muted-foreground hover:text-foreground h-6 px-1.5"
                             onClick={(e) => {
-                              e.stopPropagation()
-                              navigate(`/apps/kupi-prodai/product/${product.id}`)
+                              e.stopPropagation();
+                              navigate(
+                                `/apps/kupi-prodai/product/${product.id}`
+                              );
                             }}
                           >
                             <MessageSquare className="h-3 w-3" />
-                            <span className="text-[10px]">{product.messages}</span>
+                            <span className="text-[10px]">
+                              {product.messages}
+                            </span>
                           </Button>
                         </div>
                       </CardContent>
@@ -736,7 +803,8 @@ export default function KupiProdaiPage() {
               <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No items found</h3>
               <p className="text-sm text-muted-foreground max-w-md">
-                Try adjusting your search or filters to find what you're looking for.
+                Try adjusting your search or filters to find what you're looking
+                for.
               </p>
             </div>
           )}
@@ -866,7 +934,10 @@ export default function KupiProdaiPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="telegramUsername" className="text-sm font-medium">
+                  <label
+                    htmlFor="telegramUsername"
+                    className="text-sm font-medium"
+                  >
                     Telegram Username (for contact)
                   </label>
                   <div className="flex">
@@ -915,8 +986,12 @@ export default function KupiProdaiPage() {
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <Camera className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-sm font-medium mb-1">Upload images</p>
-                        <p className="text-xs text-muted-foreground">Click to browse or drag and drop</p>
+                        <p className="text-sm font-medium mb-1">
+                          Upload images
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Click to browse or drag and drop
+                        </p>
                         <input
                           type="file"
                           ref={fileInputRef}
@@ -928,7 +1003,9 @@ export default function KupiProdaiPage() {
                       </div>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">You can upload up to 5 images</p>
+                  <p className="text-xs text-muted-foreground">
+                    You can upload up to 5 images
+                  </p>
                 </div>
 
                 <Button type="submit" className="w-full">
@@ -963,7 +1040,9 @@ export default function KupiProdaiPage() {
                           className="object-cover w-full h-full"
                         />
                         <Badge
-                          className={`absolute top-2 right-2 ${getConditionColor(product.condition)} text-white text-xs`}
+                          className={`absolute top-2 right-2 ${getConditionColor(
+                            product.condition
+                          )} text-white text-xs`}
                         >
                           {product.condition}
                         </Badge>
@@ -971,8 +1050,12 @@ export default function KupiProdaiPage() {
                       <CardContent className="p-3 sm:p-4">
                         <div className="flex justify-between items-start mb-1 sm:mb-2">
                           <div>
-                            <h3 className="font-medium text-sm sm:text-base">{product.title}</h3>
-                            <p className="text-base sm:text-lg font-bold">{product.price} ₸</p>
+                            <h3 className="font-medium text-sm sm:text-base">
+                              {product.title}
+                            </h3>
+                            <p className="text-base sm:text-lg font-bold">
+                              {product.price} ₸
+                            </p>
                           </div>
                           <Badge variant="outline" className="text-xs">
                             {product.category}
@@ -986,17 +1069,27 @@ export default function KupiProdaiPage() {
                         </div>
                         <div className="flex justify-between">
                           <div className="flex gap-2">
-                            <Badge variant="secondary" className="flex items-center gap-1">
+                            <Badge
+                              variant="secondary"
+                              className="flex items-center gap-1"
+                            >
                               <Heart className="h-3 w-3" />
                               <span>{product.likes}</span>
                             </Badge>
-                            <Badge variant="secondary" className="flex items-center gap-1">
+                            <Badge
+                              variant="secondary"
+                              className="flex items-center gap-1"
+                            >
                               <MessageSquare className="h-3 w-3" />
                               <span>{product.messages}</span>
                             </Badge>
                           </div>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditListing(product)}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditListing(product)}
+                            >
                               Edit
                             </Button>
                             <Button
@@ -1007,7 +1100,11 @@ export default function KupiProdaiPage() {
                             >
                               Delete
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleMarkAsSold(product.id)}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleMarkAsSold(product.id)}
+                            >
                               Mark as Sold
                             </Button>
                           </div>
@@ -1019,11 +1116,16 @@ export default function KupiProdaiPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No active listings</h3>
+                  <h3 className="text-lg font-medium mb-2">
+                    No active listings
+                  </h3>
                   <p className="text-sm text-muted-foreground max-w-md mb-6">
-                    You don't have any active listings. Create a new listing to start selling.
+                    You don't have any active listings. Create a new listing to
+                    start selling.
                   </p>
-                  <Button onClick={() => setActiveTab("sell")}>Create Listing</Button>
+                  <Button onClick={() => setActiveTab("sell")}>
+                    Create Listing
+                  </Button>
                 </div>
               )}
             </TabsContent>
@@ -1032,7 +1134,10 @@ export default function KupiProdaiPage() {
               {soldListings.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {soldListings.map((product) => (
-                    <Card key={product.id} className="overflow-hidden h-full opacity-75">
+                    <Card
+                      key={product.id}
+                      className="overflow-hidden h-full opacity-75"
+                    >
                       <div className="aspect-square relative">
                         <img
                           src={product.images[0]?.url || "/placeholder.svg"}
@@ -1040,14 +1145,20 @@ export default function KupiProdaiPage() {
                           className="object-cover w-full h-full"
                         />
                         <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
-                          <Badge className="bg-green-500 text-white text-sm px-3 py-1">SOLD</Badge>
+                          <Badge className="bg-green-500 text-white text-sm px-3 py-1">
+                            SOLD
+                          </Badge>
                         </div>
                       </div>
                       <CardContent className="p-3 sm:p-4">
                         <div className="flex justify-between items-start mb-1 sm:mb-2">
                           <div>
-                            <h3 className="font-medium text-sm sm:text-base">{product.title}</h3>
-                            <p className="text-base sm:text-lg font-bold">{product.price} ₸</p>
+                            <h3 className="font-medium text-sm sm:text-base">
+                              {product.title}
+                            </h3>
+                            <p className="text-base sm:text-lg font-bold">
+                              {product.price} ₸
+                            </p>
                           </div>
                           <Badge variant="outline" className="text-xs">
                             {product.category}
@@ -1067,7 +1178,9 @@ export default function KupiProdaiPage() {
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium mb-2">No sold items</h3>
-                  <p className="text-sm text-muted-foreground max-w-md">Items you've sold will appear here.</p>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    Items you've sold will appear here.
+                  </p>
                 </div>
               )}
             </TabsContent>
@@ -1086,9 +1199,9 @@ export default function KupiProdaiPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setShowEditModal(false)
-                    setEditingListing(null)
-                    setPreviewImages([])
+                    setShowEditModal(false);
+                    setEditingListing(null);
+                    setPreviewImages([]);
                   }}
                 >
                   <X className="h-5 w-5" />
@@ -1127,7 +1240,10 @@ export default function KupiProdaiPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="edit-category" className="text-sm font-medium">
+                    <label
+                      htmlFor="edit-category"
+                      className="text-sm font-medium"
+                    >
                       Category
                     </label>
                     <select
@@ -1152,7 +1268,10 @@ export default function KupiProdaiPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label htmlFor="edit-condition" className="text-sm font-medium">
+                    <label
+                      htmlFor="edit-condition"
+                      className="text-sm font-medium"
+                    >
                       Condition
                     </label>
                     <select
@@ -1175,7 +1294,10 @@ export default function KupiProdaiPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="edit-location" className="text-sm font-medium">
+                    <label
+                      htmlFor="edit-location"
+                      className="text-sm font-medium"
+                    >
                       Location
                     </label>
                     <select
@@ -1199,7 +1321,10 @@ export default function KupiProdaiPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="edit-description" className="text-sm font-medium">
+                  <label
+                    htmlFor="edit-description"
+                    className="text-sm font-medium"
+                  >
                     Description
                   </label>
                   <textarea
@@ -1214,7 +1339,10 @@ export default function KupiProdaiPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="edit-telegramUsername" className="text-sm font-medium">
+                  <label
+                    htmlFor="edit-telegramUsername"
+                    className="text-sm font-medium"
+                  >
                     Telegram Username (for contact)
                   </label>
                   <div className="flex">
@@ -1263,8 +1391,12 @@ export default function KupiProdaiPage() {
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <Camera className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-sm font-medium mb-1">Upload images</p>
-                        <p className="text-xs text-muted-foreground">Click to browse or drag and drop</p>
+                        <p className="text-sm font-medium mb-1">
+                          Upload images
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Click to browse or drag and drop
+                        </p>
                         <input
                           type="file"
                           ref={fileInputRef}
@@ -1283,9 +1415,9 @@ export default function KupiProdaiPage() {
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setShowEditModal(false)
-                      setEditingListing(null)
-                      setPreviewImages([])
+                      setShowEditModal(false);
+                      setEditingListing(null);
+                      setPreviewImages([]);
                     }}
                   >
                     Cancel
@@ -1298,8 +1430,5 @@ export default function KupiProdaiPage() {
         </div>
       )}
     </div>
-  )
+  );
 }
-
-
-
