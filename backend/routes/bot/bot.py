@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request
 from aiogram.types import Update
 
 
-web_router = APIRouter()
+web_router = APIRouter(tags=['Bot Routes'])
 
 
 @web_router.post("/webhook")

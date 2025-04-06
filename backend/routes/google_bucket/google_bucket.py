@@ -9,7 +9,7 @@ from datetime import datetime
 from backend.common.dependencies import validate_access_token_dep
 from .__init__ import SignedUrlResponse, UploadConfirmation
 
-router = APIRouter(prefix="/bucket", tags=['Auth Routes'])
+router = APIRouter(prefix="/bucket", tags=['Google Bucket Routes'])
 
 
 @router.get(

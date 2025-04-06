@@ -10,8 +10,8 @@ from backend.routes import auth, routers, get_admin, clubs
 from backend.core.database.manager import AsyncDatabaseManager, SyncDatabaseManager
 from backend.core.configs.config import config, Config
 from backend.routes.auth.auth import KeyCloakManager
-
-from backend.common.utils import import_data_from_database
+from backend.core.database.models import Product
+from backend.common.utils import import_data_from_db
 from backend.common.dependencies import get_db_session
 
 @asynccontextmanager
@@ -44,8 +44,8 @@ async def lifespan(app: FastAPI):
             app.include_router(router)
 
         get_admin(app)  # SQLAdmin Admin Panel
-        #import_data_from_database functions needs to be runned on only one FastAPI app
-        #await import_data_from_database(storage_name="products", db_manager=app.state.db_manager, model = Product, columns_for_searching=['id', 'name']) 
+        await import_data_from_db(storage_name="products", db_manager=app.state.db_manager, model=Product,
+                                  columns_for_searching=['id', 'name'])
         yield
 
     finally:

@@ -1,49 +1,66 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-
+from fastapi import HTTPException
 from backend.core.database.models.product import Product, ProductCategory
 from backend.core.database.models.media import Media
-from backend.routes.kupiprodai.schemas import ProductSchema, ProductCategorySchema
+from backend.core.database.models.product import ProductCondition, ProductCategory
+from backend.routes.kupiprodai.schemas import ProductSchema, ProductCategorySchema, ProductUpdateSchema
 from backend.common.utils import add_meilisearch_data
 from typing import Literal
 from backend.core.database.models.product import ProductStatus
-import pytz
+from backend.common.utils import update_meilisearch_data
 
-ConditionType = Literal['Used', 'New', 'Like New', 'Any']
 
-#create
-async def add_new_product(session: AsyncSession, product_schema: ProductSchema):
-    new_product = Product(**product_schema.model_dump())
+async def add__new_product_to_db(
+        session: AsyncSession,
+        product_data: ProductSchema,
+        user_sub: str
+) -> Product:
+    new_product = Product(**product_data.dict(), user_sub=user_sub)
     session.add(new_product)
     await session.commit()
     await session.refresh(new_product)
     return new_product
 
 
-#Why to locate a function for showing the products in common folder? Does it make difference because Frontend can make a request to the backend to get the products
-async def show_products(categoryId: int | None,  session: AsyncSession, size: int, page:int, condition: ConditionType = 'Any'):
+async def show_products_from_db(
+    session: AsyncSession,
+    size: int,
+    page: int,
+    category: ProductCategory | None = None,
+    condition: ProductCondition | None = None
+):
     offset = size * (page - 1)
-    command = select(Product).offset(offset).limit(size)
-    if categoryId:
-        if condition != 'Any':
-           command = select(Product).filter_by(categoryId = categoryId, condition = condition).offset(offset).limit(size)
-        else:
-            command = select(Product).filter_by(categoryId = categoryId).offset(offset).limit(size)
-    elif condition != 'Any':
-        command = select(Product).filter_by(condition = condition).offset(offset).limit(size)
+    sql_conditions = [Product.status == ProductStatus.active]
 
-    result = await session.execute(command)
-    products = result.scalars().all() 
+    if category:
+        sql_conditions.append(Product.category == category)
+    if condition:
+        sql_conditions.append(Product.condition == condition)
+
+    query = (
+        select(Product)
+        .where(*sql_conditions)
+        .offset(offset)
+        .limit(size)
+        .order_by(Product.updated_at.desc())
+    )
+    result = await session.execute(query)
+    products = result.scalars().all()
     return products
 
-async def get_products_of_user_from_database(user_sub: int, status: ProductStatus, session: AsyncSession):
-    result = await session.execute(select(Product).filter_by(user_sub = user_sub, status = status))
+async def get_products_of_user_from_db(
+        user_sub: str,
+        session: AsyncSession
+):
+    # Use the enum member 'status' directly instead of 'status.value'
+    result = await session.execute(select(Product).filter_by(user_sub=user_sub).order_by(Product.updated_at.desc()))
     products = result.scalars().all()
     return products
 
 
-async def get_product_from_database(product_id: int, session: AsyncSession):
-    product = await session.execute(select(Product).filter_by(id = product_id))
+async def get_product_from_db(product_id: int, session: AsyncSession):
+    product = await session.execute(select(Product).filter_by(id=product_id))
     return product.scalars().first()
 
 #update
@@ -56,14 +73,13 @@ async def update_product_from_database(product_id: int, product_schema: ProductS
             setattr(product, key, value)
     else:
         return False
-    setattr(product, "updated_at", datetime.now(pytz.timezone("Asia/Almaty")))
     await session.commit()
     await session.refresh(product)
     return product
 
 #delete
-async def remove_product_from_database(product_id: int, session: AsyncSession):
-    result = await session.execute(select(Product).filter_by(id = product_id))
+async def remove_product_from_db(product_id: int, session: AsyncSession):
+    result = await session.execute(select(Product).filter_by(id=product_id))
     product = result.scalars().first()
     if product:
         await session.delete(product)
@@ -101,19 +117,28 @@ async def update_product_category(session: AsyncSession, product_category_schema
     await session.refresh(category)
     return True
 
-async def deactivate_product_in_database(product_id: int, session: AsyncSession):
-    result = await session.execute(select(Product).filter_by(id = product_id))
+async def update_product_in_db(product_id: int, product_update: ProductUpdateSchema, session: AsyncSession):
+    result = await session.execute(select(Product).where(Product.id == product_id))
     product = result.scalars().first()
-    setattr(product, "status", ProductStatus.sold)
-    setattr(product, "updated_at", datetime.now(pytz.timezone("Asia/Almaty")))
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Directly assign the status instead of using setattr
+    if product_update.name is not None:
+        product.name = product_update.name
+        await update_meilisearch_data(storage_name="products",
+                                      json_values={"id": product_id, "name": product.name})
+    if product_update.description is not None:
+        product.description = product_update.description
+    if product_update.price is not None:
+        product.price = product_update.price
+    if product_update.status is not None:
+        product.status = product_update.status
+    if product_update.condition is not None:
+        product.condition = product_update.condition
+    if product_update.category is not None:
+        product.category = product_update.category
     await session.commit()
     await session.refresh(product)
 
-async def activate_product_in_database(product_id: int, session: AsyncSession):
-    result = await session.execute(select(Product).filter_by(id = product_id))
-    product = result.scalars().first()
-    setattr(product, "status", ProductStatus.active)
-    setattr(product, "updated_at", datetime.now(pytz.timezone("Asia/Almaty")))
-
-    await session.commit()
-    await session.refresh(product)
+    return product_update

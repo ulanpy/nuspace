@@ -1,95 +1,138 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException, status
+from typing import Literal, Annotated
+
 from .__init__ import *
 from backend.common.utils import *
-from backend.common.dependencies import get_db_session
-from backend.core.database.models import User, Product
-from .cruds import show_products, add_new_product
-from typing import Literal
+from backend.common.dependencies import get_db_session, validate_access_token_dep
+from .cruds import show_products_from_db, add__new_product_to_db
+
 
 router = APIRouter(prefix="/products", tags=['Kupi-Prodai Routes'])
-ConditionType = Literal['Used', 'New', 'Like New', 'Any']
-
-@router.post("/import") #works
-async def import_from_database(request: Request, db_session: AsyncSession = Depends(get_db_session)):
-    return await import_data_from_database(storage_name='products', db_manager = request.app.state.db_manager, model = Product, columns_for_searching=["id", "name"])
 
 
-@router.post("/")
-async def add_new_product(product_data: ProductSchema, request: Request, db_session: AsyncSession = Depends(get_db_session)):
+@router.post("/new") #works
+async def add_new_product(
+        request: Request,
+        user: Annotated[dict, Depends(validate_access_token_dep)],
+        product_data: ProductSchema,
+        db_session: AsyncSession = Depends(get_db_session)
+):
+    """
+    Adds a new product to the list of Kupi-Prodai products:
+        - In success returns product details
+    """
     try:
-        new_product = await add_new_product(db_session, product_data)
+        new_product = await add__new_product_to_db(db_session, product_data, user_sub=user["sub"])
         await add_meilisearch_data(storage_name='products', json_values={'id': new_product.id, 'name': new_product.name})
-        return True
-    except Exception as e:
-        return {'error': str(e)}
+        return new_product
+    except HTTPException as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.get("/products/{product_id}") #works
-async def get_product(product_id: int, request: Request, db_session: AsyncSession = Depends(get_db_session)):
-    product = await get_product_from_database(product_id = product_id, session = db_session)
+
+@router.get('/user') #works #todo add pagination
+async def get_products_of_user(
+        request: Request,
+        user: Annotated[dict, Depends(validate_access_token_dep)],
+        db_session: AsyncSession = Depends(get_db_session)
+):
+    """
+    Get list of ALL user's products' (both active and inactive) ordered by latest ones first
+    """
+    user_sub = user.get("sub")
+    try:
+        return await get_products_of_user_from_db(user_sub=user_sub, session=db_session)
+    except HTTPException as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
+
+
+
+
+@router.get("/list") #works
+async def get_products(
+        request: Request,
+        db_session: AsyncSession = Depends(get_db_session),
+        size: int = 20,
+        page: int = 1,
+        category: ProductCategory = None,
+        condition: ProductCondition = None
+):
+    """
+        Gets list of active products/services:
+        - Will NOT show deactivated products
+    """
+
+    return await show_products_from_db(session=db_session, size=size, page=page, category=category, condition=condition)
+
+@router.get("/{product_id}") #works
+async def get_product(
+        request: Request,
+        product_id: int,
+        db_session: AsyncSession = Depends(get_db_session)
+):
+    product = await get_product_from_db(product_id=product_id, session=db_session)
     return product
 
-@router.get("/products") #works
-async def get_products(request: Request, db_session: AsyncSession = Depends(get_db_session), categoryId: int = None, size: int = 20, page: int = 1, condition: ConditionType = "Any"):
-    return await show_products(categoryId = categoryId, condition = condition, session = db_session, size = size, page = page)
 
-@router.get('/products/user/{user_sub}') #works
-async def get_products_of_user(user_sub: str, request: Request, db_session: AsyncSession = Depends(get_db_session), status: ProductStatus = ProductStatus.active):
-    return await get_products_of_user_from_database(user_sub = user_sub, status = status, session = db_session)
+@router.delete("/{product_id}") #works
+async def remove_product(
+        product_id: int,
+        db_session: AsyncSession = Depends(get_db_session)
+):
+    try:
+        await remove_meilisearch_data(storage_name='products', object_id=product_id)
+        await remove_product_from_db(product_id=product_id, session=db_session)
 
-@router.delete("/products/{product_id}") #works
-async def remove_product(product_id: int, request: Request, db_session: AsyncSession = Depends(get_db_session)):
-    await remove_meilisearch_data(storage_name='products', object_id=product_id)
-    await remove_product_from_database(product_id=product_id, session=db_session)
+        return status.HTTP_204_NO_CONTENT
+    except HTTPException as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.put("/products/deactivate/{product_id}") #works
-async def deactivate_product(product_id: int, db_session: AsyncSession = Depends(get_db_session)):
-    await deactivate_product_in_database(product_id=product_id, session = db_session)
 
-@router.put("/products/activate/{product_id}") #works
-async def activate_product(product_id: int, db_session: AsyncSession = Depends(get_db_session)):
-    await activate_product_in_database(product_id=product_id, session = db_session)
+@router.patch("/{product_id}")
+async def update_product(
+    product_id: int,
+    product_update: ProductUpdateSchema,
+    db_session: AsyncSession = Depends(get_db_session)
+):
+    # Update the product's status in the database
+    product_update = await update_product_in_db(product_id=product_id, product_update=product_update, session=db_session)
+    return {"product_id": product_id, "updated_fields": product_update.dict(exclude_unset=True)}
 
-@router.put("/product/{product_id}") #works
-async def update_product(product_id: int, product_schema: ProductSchema, request: Request, db_session: AsyncSession = Depends(get_db_session)):
-    await update_meilisearch_data(storage_name= "products", json_values={"id": product_id, "name": product_schema.name})
-    await update_product_from_database(product_id = product_id, product_schema=product_schema, session=db_session)
 
-@router.get("/products/search/{keyword}") #works
-async def search(keyword: str, request: Request, db_session = Depends(get_db_session)):
+
+@router.get("/search/{keyword}") #works
+async def search(
+        keyword: str,
+        request: Request,
+        db_session = Depends(get_db_session)
+):
     result = await search_for_meilisearch_data(storage_name="products", keyword=keyword)
     products = result['data']['hits']
     product_objects = []
     for product in products:
-        product_objects.append(await get_product_from_database(product_id=product['id'], session=db_session))
+        product_objects.append(await get_product_from_db(product_id=product['id'], session=db_session))
     return product_objects
-
-#method for retriving products of a user
-#updating the time updated_at inside update function
-
-
-
 
 @router.get("/product-pictures")
 async def retrieve_product_pictures():
     pass
 
 
-@router.delete('{product_id}/pictures')
+@router.delete('/{product_id}/pictures')
 async def remove_pictures(product_id: int):
     pass
 
 
-@router.post("{product_id}/feedback")
+@router.post("/{product_id}/feedback")
 async def store_new_product_feedback(product_id: int):
     pass
 
 
-@router.get("{product_id}/feedback")
+@router.get("/{product_id}/feedback")
 async def get_product_feedback(product_id: int):
     pass
 
 
-@router.post("{product_id}/report")
+@router.post("/{product_id}/report")
 async def store_new_product_report(product_id: int, request: Request):
     pass
 
