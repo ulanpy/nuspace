@@ -129,6 +129,7 @@ async def update_product(
 
 @router.get("/search/{keyword}", response_model=List[ProductResponseSchema])
 async def search(
+        request: Request,
         keyword: str,
         db_session=Depends(get_db_session)
 ):
@@ -150,7 +151,7 @@ async def search(
     products = result['data']['hits']
     product_objects = []
     for product in products:
-        product_objects.append(await get_product_from_db(product_id=product['id'], session=db_session))
+        product_objects.append(await get_product_from_db(request=request, product_id=product['id'], session=db_session))
     return product_objects
 
 
