@@ -28,7 +28,7 @@ async def add_meilisearch_data(storage_name: str, json_values: dict):
     }  
  
 async def search_for_meilisearch_data(storage_name: str, keyword: str):
-    response = await async_client.post(f"/indexes/{storage_name}/search", json = {"q": keyword})
+    response = await async_client.post(f"/indexes/{storage_name}/search", json = {"q": keyword, "limit":10})
     return {
         "status_code": response.status_code,
         "data": response.json() if response.status_code == 200 else response.text
@@ -48,8 +48,9 @@ async def update_meilisearch_data(storage_name: str, json_values: dict):
         "data": response.json() if response.status_code == 200 else response.text
     }  
 
-async def import_data_from_database(storage_name: str, db_manager: AsyncDatabaseManager, model: Type[DeclarativeBase], columns_for_searching: list[str]):
+async def import_data_from_db(storage_name: str, db_manager: AsyncDatabaseManager, model: Type[DeclarativeBase], columns_for_searching: list[str]):
     async for session in db_manager.get_async_session(): 
         result = await session.execute(select(*[getattr(model, col) for col in columns_for_searching]))
         data = [dict(row) for row in result.mappings().all()]
+        await async_client.delete(f"/indexes/{storage_name}")
         return await add_meilisearch_data(storage_name = storage_name, json_values=data)

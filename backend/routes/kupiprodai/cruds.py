@@ -1,37 +1,211 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from fastapi import HTTPException, Request
+from backend.core.database.models.product import Product, ProductCategory
+from backend.core.database.models.media import Media
+from backend.core.database.models.product import ProductCondition, ProductCategory
+from backend.routes.kupiprodai.schemas import ProductResponseSchema, ProductCategorySchema, ProductUpdateSchema, ProductRequestSchema
+from backend.common.utils import add_meilisearch_data,remove_meilisearch_data
+from typing import Literal, List
+from backend.core.database.models.product import ProductStatus
+from backend.common.utils import update_meilisearch_data
+from backend.routes.google_bucket.utils import generate_download_url, delete_bucket_object
+from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
 
-from backend.core.database.models.product import Product, ProductPicture, ProductCategory
-from backend.routes.kupiprodai.schemas import ProductPictureSchema, ProductSchema, ProductCategorySchema
-from backend.common.utils import add_meilisearch_data
+async def add_new_product_to_db(
+        session: AsyncSession,
+        product_data: ProductRequestSchema,
+        user_sub: str,
+        request: Request,
+        media_section: MediaSection = MediaSection.kp
 
-#create
-async def add_new_product_to_database(session: AsyncSession, product_schema: ProductSchema):
-    new_product = Product(**product_schema.model_dump())
+) -> ProductResponseSchema:
+    new_product = Product(**product_data.dict(), user_sub=user_sub)
     session.add(new_product)
     await session.commit()
     await session.refresh(new_product)
-    return new_product
-
-async def add_new_pictures(session: AsyncSession, product_picture_schemas: list[ProductPictureSchema]):
-    new_pictures = [ProductPicture(**product_picture_schema.model_dump()) for product_picture_schema in product_picture_schemas]
-    session.add_all(new_pictures)
-    await session.commit()
-    await session.refresh(new_pictures)
-    return new_pictures
-
-#Why to locate a function for showing the products in common folder? Does it make difference because Frontend can make a request to the backend to get the products
-async def show_products(session: AsyncSession, size: int, page:int):
-    offset = size * (page - 1)
-    result = await session.execute(
-        select(Product).offset(offset).limit(size)
+    await add_meilisearch_data(storage_name='products', json_values={'id': new_product.id, 'name': new_product.name})
+    media_result = await session.execute(
+        select(Media).filter(Media.entity_id == new_product.id,
+                             Media.section == media_section)
     )
-    products = result.scalars().all() 
-    return products
+    media_objects = media_result.scalars().all()
+    media_responses = []
+    for media in media_objects:
+        url_data = await generate_download_url(request, media.name)
+        media_responses.append(MediaResponse(
+            id=media.id,
+            url=url_data["signed_url"],
+            mime_type=media.mime_type,
+            section=media.section,
+            entity_id=media.entity_id,
+            media_purpose=media.media_purpose,
+            media_order=media.media_order
+        ))
+    return ProductResponseSchema(
+            id=new_product.id,
+            name=new_product.name,
+            description=new_product.description,
+            price=new_product.price,
+            category=new_product.category,
+            condition=new_product.condition,
+            status=new_product.status,
+            media=media_responses
+        )
+
+async def get_products_of_user_from_db(
+    user_sub: str,
+    session: AsyncSession,
+    request: Request,
+    media_section: MediaSection = MediaSection.kp
+) -> List[ProductResponseSchema]:
+    result = await session.execute(
+        select(Product).filter_by(user_sub=user_sub).order_by(Product.updated_at.desc())
+    )
+    products = result.scalars().all()
+
+    response = []
+
+    for product in products:
+        media_result = await session.execute(
+            select(Media).filter(Media.entity_id==product.id,
+                                 Media.section == media_section)
+        )
+        media_objects = media_result.scalars().all()
+
+        media_responses = []
+        for media in media_objects:
+            url_data = await generate_download_url(request, media.name)
+            media_responses.append(MediaResponse(
+                id=media.id,
+                url=url_data["signed_url"],
+                mime_type=media.mime_type,
+                section=media.section,
+                entity_id=media.entity_id,
+                media_purpose=media.media_purpose,
+                media_order=media.media_order
+            ))
+
+        response.append(ProductResponseSchema(
+            id=product.id,
+            name=product.name,
+            description=product.description,
+            price=product.price,
+            category=product.category,
+            condition=product.condition,
+            status=product.status,
+            media=media_responses
+        ))
+
+    return response
+
+
+
+async def show_products_from_db(
+    session: AsyncSession,
+    size: int,
+    page: int,
+    request: Request,
+    category: ProductCategory | None = None,
+    condition: ProductCondition | None = None,
+    media_section: MediaSection = MediaSection.kp
+) -> List[ProductResponseSchema]:
+    offset = size * (page - 1)
+    sql_conditions = [Product.status == ProductStatus.active]
+
+    if category:
+        sql_conditions.append(Product.category == category)
+    if condition:
+        sql_conditions.append(Product.condition == condition)
+
+    query = (
+        select(Product)
+        .where(*sql_conditions)
+        .offset(offset)
+        .limit(size)
+        .order_by(Product.updated_at.desc())
+    )
+    result = await session.execute(query)
+    products = result.scalars().all()
+    response = []
+
+
+    for product in products:
+        media_result = await session.execute(
+            select(Media).filter(Media.entity_id == product.id,
+                                 Media.section == media_section)
+        )
+        media_objects = media_result.scalars().all()
+
+        media_responses = []
+        for media in media_objects:
+            url_data = await generate_download_url(request, media.name)
+            media_responses.append(MediaResponse(
+                id=media.id,
+                url=url_data["signed_url"],
+                mime_type=media.mime_type,
+                section=media.section,
+                entity_id=media.entity_id,
+                media_purpose=media.media_purpose,
+                media_order=media.media_order
+            ))
+
+        response.append(ProductResponseSchema(
+            id=product.id,
+            name=product.name,
+            description=product.description,
+            price=product.price,
+            category=product.category,
+            condition=product.condition,
+            status=product.status,
+            media=media_responses
+        ))
+
+    return response
+
+
+async def get_product_from_db(
+        request:Request,
+        product_id: int,
+        session: AsyncSession,
+        media_section: MediaSection = MediaSection.kp
+):
+    product = await session.execute(select(Product).filter_by(id=product_id))
+    product = product.scalars().first()
+    if product:
+        media_result = await session.execute(
+                select(Media).filter(Media.entity_id == product.id,
+                                     Media.section == media_section)
+            )
+        media_objects = media_result.scalars().all()
+        media_responses = []
+        for media in media_objects:
+            url_data = await generate_download_url(request, media.name)
+            media_responses.append(MediaResponse(
+                id=media.id,
+                url=url_data["signed_url"],
+                mime_type=media.mime_type,
+                section=media.section,
+                entity_id=media.entity_id,
+                media_purpose=media.media_purpose,
+                media_order=media.media_order
+            ))
+        return ProductResponseSchema(
+                id=product.id,
+                name=product.name,
+                description=product.description,
+                price=product.price,
+                category=product.category,
+                condition=product.condition,
+                status=product.status,
+                media=media_responses
+            )
 
 #update
-async def update_product(session:AsyncSession, product_schema: ProductSchema):
-    product = await session.execute(select(Product).filter_by(id = product_schema.id)).scalars().first()
+async def update_product_from_database(product_id: int, product_schema: ProductRequestSchema, session:AsyncSession):
+    result = await session.execute(select(Product).filter_by(id = product_id))
+    product = result.scalars().first()
+
     if product:
         for key, value in product_schema.model_dump().items():
             setattr(product, key, value)
@@ -41,56 +215,50 @@ async def update_product(session:AsyncSession, product_schema: ProductSchema):
     await session.refresh(product)
     return product
 
-#delete
-async def remove_product(session: AsyncSession, product_schema: ProductSchema):
-    product = await session.execute(select(Product).filter_by(id = product_schema.id)).scalars().first()
+async def remove_product_from_db(
+        request: Request,
+        product_id: int,
+        session: AsyncSession
+):
+    result = await session.execute(select(Product).filter_by(id=product_id))
+    product = result.scalars().first()
     if product:
+        media_result = await session.execute(
+            select(Media).filter(Media.entity_id == product.id,
+                                 Media.section == MediaSection.kp)
+        )
+        media_objects = media_result.scalars().all()
+        for media in media_objects:
+            await delete_bucket_object(request, media.name)
+            await session.delete(media)
         await session.delete(product)
         await session.commit()
-        return True
-    else:
-        return False
-    
-async def remove_product_picture(session: AsyncSession, product_picture_schema: ProductPictureSchema):
-    product_picture = await session.execute(select(ProductPicture).filter_by(id = product_picture_schema.id)).scalars().first()
-    if product_picture:
-        await session.delete(product_picture)
-        await session.commit()
-        return True
-    else:
-        return False
-    
-async def add_new_product_category(session: AsyncSession, product_category_schema: ProductCategorySchema):
-    new_category = Product(**product_category_schema.model_dump())
-    session.add(new_category)
-    await session.commit()
-    await session.refresh(new_category)
-    return new_category
+        await remove_meilisearch_data(storage_name='products', object_id=str(product_id))
 
-async def remove_product_category(session: AsyncSession, product_category_schema: ProductCategorySchema):
-    category = await session.execute(select(ProductCategory).filter_by(id = product_category_schema.id)).scalars().first()
-    if category:
-        await session.delete(category)
-        await session.commit()
-        return True
-    else:
-        return False
-    
-async def update_product_category(session: AsyncSession, product_category_schema: ProductCategorySchema):
-    category = await session.execute(select(Product).filter_by(id = product_category_schema.id)).scalars().first()
-    if category:
-        for key, value in product_category_schema.model_dump().items():
-            setattr(category, key, value)
-    else:
-        return False
-    await session.commit()
-    await session.refresh(category)
-    return True
 
-async def filter_products_by_category(session: AsyncSession, size: int, page: int, product_category_schema: ProductCategorySchema):
-    offset = size * (page - 1)
-    result = await session.execute(
-        select(Product).filter_by(categoryId = product_category_schema.id).offset(offset).limit(size)
-    )
-    products = result.scalars().all()
-    return products
+
+async def update_product_in_db(product_update: ProductUpdateSchema, session: AsyncSession):
+    result = await session.execute(select(Product).where(Product.id == product_update.product_id))
+    product = result.scalars().first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Directly assign the status instead of using setattr
+    if product_update.name is not None:
+        product.name = product_update.name
+        await update_meilisearch_data(storage_name="products",
+                                      json_values={"id": product_update.product_id, "name": product.name})
+    if product_update.description is not None:
+        product.description = product_update.description
+    if product_update.price is not None:
+        product.price = product_update.price
+    if product_update.status is not None:
+        product.status = product_update.status
+    if product_update.condition is not None:
+        product.condition = product_update.condition
+    if product_update.category is not None:
+        product.category = product_update.category
+    await session.commit()
+    await session.refresh(product)
+
+    return product_update

@@ -1,37 +1,65 @@
 from .base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import List
-from sqlalchemy import String, Integer, ForeignKey, BigInteger
-import uuid
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import String, Integer, ForeignKey, BigInteger, DateTime, Column
+from sqlalchemy import Integer, Enum as SQLEnum
 
-class ProductCategory(Base):
-    __tablename__ = 'product_category'
-    id: Mapped[int] = mapped_column(BigInteger, primary_key = True, index = True)
-    name: Mapped[str] = mapped_column(String(255), index = True)
-    products: Mapped[List["Product"]] = relationship(back_populates = "category")
+from enum import Enum
+from datetime import datetime, UTC
+
+class ProductCondition(Enum):
+    new = "new"
+    like_new = "like_new"
+    used = "used"
+
+
+class ProductCategory(Enum):
+    books = "books"
+    electronics = "electronics"
+
+
+class ProductStatus(Enum):
+    sold = "sold"
+    active = "active"
+
 
 class Product(Base):
     __tablename__ = 'products'
-    id: Mapped[int] = mapped_column(BigInteger, primary_key = True, index = True)
-    name: Mapped[str] = mapped_column(String(255), index = True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
     description: Mapped[str] = mapped_column(String)
-    price: Mapped[int] = mapped_column(Integer)
-    user_sub: Mapped[str] = mapped_column(String, ForeignKey("users.sub"))
-    categoryId: Mapped[int] = mapped_column(BigInteger, ForeignKey("product_category.id"))
+    price: Mapped[int] = mapped_column(Integer, nullable=False)
+    user_sub: Mapped[str] = mapped_column(String, ForeignKey("users.sub"), nullable=False)
+    category: Mapped["ProductCategory"] = mapped_column(SQLEnum(ProductCategory, name="product_category"), nullable=False)
+    condition: Mapped["ProductCondition"] = mapped_column(SQLEnum(ProductCondition, name="product_condition"), nullable=False)
+    status: Mapped["ProductStatus"] = mapped_column(SQLEnum(ProductStatus, name="product_status"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    user: Mapped["User"] = relationship(back_populates = "products") #how to connect to a parameter in another table?
-    category: Mapped["ProductCategory"] = relationship(back_populates = "products")
-    pictures: Mapped[List["ProductPicture"]] = relationship(back_populates = "product")
-    
-class ProductPicture(Base):
-    __tablename__ = 'product_picture'
-    id: Mapped[int] = mapped_column(Integer, primary_key = True)
-    productId: Mapped[int] = mapped_column(Integer, ForeignKey("products.id")) #connect with id of the product
-    url: Mapped[str] = mapped_column(String)
-    
-    product: Mapped["Product"] = relationship(back_populates = "pictures")
+    user = relationship("User", back_populates="products")
+    feedbacks = relationship("ProductFeedback", back_populates="product")
+    reports = relationship("ProductReport", back_populates="product")  # Add this line
+
 
 class ProductFeedback(Base):
     __tablename__ = 'product_feedbacks'
-    id: Mapped[int] = mapped_column(Integer, primary_key = True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_sub: Mapped[str] = mapped_column(ForeignKey('users.sub'), nullable=False)
+    product_id: Mapped[int] = mapped_column(Integer, ForeignKey("products.id"))
+    text: Mapped[str] = mapped_column(String)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    user = relationship("User",back_populates="product_feedbacks")
+    product = relationship("Product", back_populates="feedbacks")
+
+
+class ProductReport(Base):
+    __tablename__ = 'product_reports'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_sub: Mapped[str] = mapped_column(ForeignKey('users.sub'), nullable=False)
+    product_id: Mapped[int] = mapped_column(Integer, ForeignKey("products.id"))
+    text: Mapped[str] = mapped_column(String)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    user = relationship("User", back_populates="product_reports")
+    product = relationship("Product", back_populates="reports")

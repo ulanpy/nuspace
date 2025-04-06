@@ -20,7 +20,7 @@ async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]
 
 
 
-async def validate_access_token_dep(
+async def check_token(
     request: Request,
     access_token: Annotated[str | None, Cookie(alias="access_token")] = None
 ) -> dict:

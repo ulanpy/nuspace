@@ -1,28 +1,49 @@
 from pydantic import BaseModel, ConfigDict
-from ..auth.schemas import UserSchema
 from typing import List
 import uuid
+from backend.core.database.models.product import ProductCategory, ProductCondition, ProductStatus
+from backend.routes.google_bucket.schemas import MediaResponse
 
-class ProductSchema(BaseModel):
+class ProductRequestSchema(BaseModel):
+    name: str
+    description: str
+    price: int
+    category: ProductCategory
+    condition: ProductCondition
+    status: ProductStatus = ProductStatus.active
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ProductResponseSchema(BaseModel):
+    id: int
     name: str 
     description: str
     price: int
-    userId: uuid.UUID
-    categoryId: int
+    category: ProductCategory
+    condition: ProductCondition
+    status: ProductStatus = ProductStatus.active
+    media: List[MediaResponse] = []
 
-    model_config = ConfigDict(from_attributes = True)
-    
-class ProductPictureSchema(BaseModel):
-    id: int
-    productId: int
-    url: str
+    model_config = ConfigDict(from_attributes=True)
 
-    model_config = ConfigDict(from_attributes = True)
+
+class ProductUpdateSchema(BaseModel):
+    product_id: int
+    name: str | None = None
+    description: str | None = None
+    price: int | None = None
+    category: ProductCategory | None = None
+    condition: ProductCondition | None = None
+    status: ProductStatus | None = None
+
+    class Config:
+        from_attributes = True  # Make sure it can be used with SQLAlchemy models
+
 
 class ProductCategorySchema(BaseModel):
     id: int
     name: str
     
-ProductSchema.model_rebuild()
-ProductPictureSchema.model_rebuild()
+
 
