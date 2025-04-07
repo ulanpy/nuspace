@@ -9,12 +9,6 @@ from backend.routes.google_bucket.utils import generate_download_url
 from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
 import asyncio
 
-
-
-
-
-
-
 async def get_media_responses(
     session: AsyncSession,
     request: Request,
