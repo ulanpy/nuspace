@@ -6,6 +6,7 @@ import NUEventsPage from "./pages/apps/nu-events"
 import DormEatsPage from "./pages/apps/dorm-eats"
 import AppsLayout from "./layouts/apps-layout"
 import { AuthProvider } from "./context/auth-context"
+import { Toasts } from "./components/ui/toast"
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="dorm-eats" element={<DormEatsPage />} />
       </Route>
     </Routes>
+    <Toasts />
     </AuthProvider>
   )
 }
