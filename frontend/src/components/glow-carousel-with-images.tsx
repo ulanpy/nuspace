@@ -264,4 +264,3 @@ export function GlowCarouselWithImage({
     </div>
   )
 }
-

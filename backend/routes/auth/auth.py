@@ -8,7 +8,7 @@ import random
 from .__init__ import *
 from backend.routes.auth.schemas import Sub, CurrentUserResponse
 from backend.core.configs.config import config
-from backend.common.dependencies import get_db_session, validate_access_token_dep
+from backend.common.dependencies import get_db_session, check_token
 from backend.routes.auth.keycloak_manager import KeyCloakManager
 
 router = APIRouter(tags=['Auth Routes'])
@@ -73,7 +73,7 @@ async def refresh_token(request: Request, response: Response,
 
 @router.get("/me", response_model=CurrentUserResponse)
 async def get_current_user(
-    user: Annotated[dict, Depends(validate_access_token_dep)],
+    user: Annotated[dict, Depends(check_token)],
     db_session: AsyncSession = Depends(get_db_session)
 ):
     """Returns current user data"""

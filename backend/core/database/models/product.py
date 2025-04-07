@@ -16,19 +16,30 @@ class ProductCondition(Enum):
 class ProductCategory(Enum):
     books = "books"
     electronics = "electronics"
+    clothing = "clothing"
+    furniture = "furniture"
+    appliances = "appliances"
+    sports = "sports"
+    stationery = "stationery"
+    art_supplies = "art_supplies"
+    beauty = "beauty"
+    services = "services"
+    food = "food"
+    tickets = "tickets"
+    transport = "transport"
+    others = "others"
 
 
 class ProductStatus(Enum):
-    sold = "sold"
+    inactive = "inactive"
     active = "active"
-
 
 class Product(Base):
     __tablename__ = 'products'
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, index=True, nullable=False)
     name: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
     description: Mapped[str] = mapped_column(String)
-    price: Mapped[int] = mapped_column(Integer, nullable=False)
+    price: Mapped[int] = mapped_column(BigInteger, nullable=False)
     user_sub: Mapped[str] = mapped_column(String, ForeignKey("users.sub"), nullable=False)
     category: Mapped["ProductCategory"] = mapped_column(SQLEnum(ProductCategory, name="product_category"), nullable=False)
     condition: Mapped["ProductCondition"] = mapped_column(SQLEnum(ProductCondition, name="product_condition"), nullable=False)
