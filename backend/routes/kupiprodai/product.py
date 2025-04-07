@@ -269,15 +269,16 @@ async def search(
 @router.post("/feedback/{product_id}")
 async def store_new_product_feedback(
     feedback_data: ProductFeedbackSchema,
-    user_sub: str,
+    user: Annotated[dict, Depends(check_token)],
     request: Request,
     db_session = Depends(get_db_session)
 ):
+    user_sub = user.get("sub")
     await add_new_product_feedback_to_db(feedback_data=feedback_data, user_sub=user_sub, session=db_session)
 
 @router.get("/feedback/{product_id}")
 async def get_product_feedbacks(
-    product_id:int,
+    product_id: int,
     db_session = Depends(get_db_session),
     size: int = 20,
     page: int = 1
@@ -292,9 +293,10 @@ async def remove_product_feedback(feedback_id: int, db_session = Depends(get_db_
 @router.post("/{product_id}/report")
 async def store_new_product_report(
     report_data: ProductReportSchema,
-    user_sub: str,
+    user: Annotated[dict, Depends(check_token)],
     request: Request,
-    db_session = Depends(get_db_session
+    db_session=Depends(get_db_session
 )):
+    user_sub = user.get("sub")
     await add_product_report(report_data=report_data, user_sub = user_sub, session = db_session)
 

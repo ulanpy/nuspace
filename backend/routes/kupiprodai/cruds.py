@@ -1,10 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from fastapi import HTTPException, Request
-from backend.core.database.models.product import Product, ProductCategory
+from backend.core.database.models.product import Product, ProductFeedback, ProductReport
 from backend.core.database.models.media import Media
 from backend.core.database.models.product import ProductCondition, ProductCategory
-from backend.routes.kupiprodai.schemas import ProductResponseSchema, ProductUpdateSchema, ProductRequestSchema, ListResponseSchema
+from backend.routes.kupiprodai.schemas import ProductResponseSchema, ProductUpdateSchema, ProductRequestSchema, ListResponseSchema, ProductReportSchema, ProductFeedbackSchema
 from backend.common.utils import add_meilisearch_data,remove_meilisearch_data
 from typing import Literal, List
 from backend.core.database.models.product import ProductStatus
