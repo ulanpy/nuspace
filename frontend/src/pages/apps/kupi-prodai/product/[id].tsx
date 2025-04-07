@@ -24,6 +24,8 @@ interface Comment {
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const { user_name } = useParams<{ user_name: string }>()
+  const { user_surname } = useParams<{ user_surname: string }>()
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuth()
   const [product, setProduct] = useState<Product | null>(null)
@@ -296,21 +298,10 @@ export default function ProductDetailPage() {
               </div>
               <div>
                 <div className="flex items-center">
-                  <p className="font-medium">Seller</p>
+                  <p className="font-medium">{`${product.user_name} ${product.user_surname[0]}.`}</p>
                 </div>
-                <p className="text-sm text-muted-foreground">Location</p>
               </div>
             </div>
-
-            <Button
-              variant={isSubscribed ? "default" : "outline"}
-              size="sm"
-              className="flex items-center gap-1"
-              onClick={toggleSubscribe}
-            >
-              <Bell className="h-4 w-4" />
-              <span>{isSubscribed ? "Subscribed" : "Subscribe"}</span>
-            </Button>
           </div>
 
           <div className="h-px w-full bg-border my-4" />
@@ -331,10 +322,6 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-2 mt-6">
-            <Button variant="outline" className="flex items-center gap-1" onClick={toggleLike}>
-              <Heart className={`h-4 w-4 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
-              <span>{isLiked ? "Liked" : "Like"}</span>
-            </Button>
 
             <Button variant="outline" className="flex items-center gap-1" onClick={() => initiateContactWithSeller()}>
               <ExternalLink className="h-4 w-4" />
@@ -354,63 +341,6 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Comments Section */}
-      <div className="mt-8">
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          <span>Comments ({comments.length})</span>
-        </h2>
-
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <h3 className="font-medium mb-3">Add a Comment</h3>
-            <div className="space-y-3">
-              <textarea
-                className="w-full p-2 border rounded-md min-h-[100px] bg-background"
-                placeholder="Write your message here..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-              />
-              <Button className="w-full flex items-center justify-center gap-1" onClick={handleSendMessage}>
-                <Send className="h-4 w-4" />
-                <span>Send Message</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {comments.length > 0 ? (
-          <div className="space-y-4">
-            {comments.map((comment) => (
-              <Card key={comment.id} className={comment.isOwner ? "border-primary/30 bg-primary/5" : ""}>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center mb-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{comment.user.name}</span>
-                          {comment.isOwner && (
-                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-                              Seller
-                            </Badge>
-                          )}
-                        </div>
-                        <span className="text-xs text-muted-foreground">{formatCommentDate(comment.timestamp)}</span>
-                      </div>
-                      <p className="text-sm">{comment.text}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 border rounded-md bg-muted/20">
-            <MessageSquare className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-            <h3 className="text-lg font-medium mb-1">No comments yet</h3>
-            <p className="text-sm text-muted-foreground">Be the first to ask about this item</p>
-          </div>
-        )}
-      </div>
 
       {/* Report Modal */}
       {showReportModal && (

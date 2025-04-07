@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   User,
+  AlertTriangle,
 } from "lucide-react"
 import { Input } from "../../components/ui/input"
 import { Button } from "../../components/ui/button"
@@ -23,9 +24,15 @@ import { Badge } from "../../components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../../context/auth-context"
-import { kupiProdaiApi, type Product, type NewProductRequest } from "../../api/kupi-prodai-api"
-import { defaultSize, defaultPage} from "../../api/kupi-prodai-api"
+import {
+  kupiProdaiApi,
+  type Product,
+  type NewProductRequest,
+  defaultSize,
+  defaultPage,
+} from "../../api/kupi-prodai-api"
 import { useToast } from "../../hooks/use-toast"
+import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert"
 
 // Define categories and conditions
 const categories = ["All Categories", "books", "electronics", "clothing", "home", "sports", "other"]
@@ -92,11 +99,11 @@ export default function KupiProdaiPage() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(defaultPage)
   const [itemsPerPage, setItemsPerPage] = useState(defaultSize)
+  const [totalPages, setTotalPages] = useState(1)
 
   // Products state
   const [products, setProducts] = useState<Product[]>([])
   const [myProducts, setMyProducts] = useState<Product[]>([])
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
 
   // New listing form state
   const [newListing, setNewListing] = useState<NewProductRequest>({
@@ -143,12 +150,8 @@ export default function KupiProdaiPage() {
       const condition = selectedCondition !== "All Conditions" ? selectedCondition.toLowerCase() : undefined
 
       const data = await kupiProdaiApi.getProducts(currentPage, itemsPerPage, category, condition)
-      setProducts(data)
-      setFilteredProducts(data)
-
-      // Calculate total pages (assuming we know the total count)
-      // In a real app, the API would return the total count
-      setTotalPages(Math.ceil(data.length / itemsPerPage))
+      setProducts(data.products)
+      setTotalPages(data.num_of_pages)
     } catch (err) {
       setError("Failed to fetch products")
       console.error(err)
@@ -177,8 +180,8 @@ export default function KupiProdaiPage() {
     try {
       setIsLoading(true)
       const data = await kupiProdaiApi.searchProducts(keyword)
-      setFilteredProducts(data)
-      setTotalPages(Math.ceil(data.length / itemsPerPage))
+      setProducts(data)
+      setTotalPages(1) // Search results are not paginated in the API
     } catch (err) {
       console.error("Search failed:", err)
       setError("Search failed")
@@ -223,9 +226,22 @@ export default function KupiProdaiPage() {
     setNewListing((prev) => ({ ...prev, [name]: value }))
   }
 
+  // Check if user has Telegram linked
+  const isTelegramLinked = user?.tg_linked || false
+
   // Create new product
   const handleSubmitListing = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Check if Telegram is linked
+    if (!isTelegramLinked) {
+      toast({
+        title: "Telegram Required",
+        description: "You need to link your Telegram account before selling items.",
+        variant: "destructive",
+      })
+      return
+    }
 
     if (previewImages.length === 0) {
       toast({
@@ -281,7 +297,7 @@ export default function KupiProdaiPage() {
       price: product.price,
       category: product.category,
       condition: product.condition,
-      status: product.status,
+      status: "active",
     })
     setPreviewImages(product.media.map((m) => m.url))
     setShowEditModal(true)
@@ -429,11 +445,6 @@ export default function KupiProdaiPage() {
   const activeListings = myProducts.filter((p) => p.status === "active")
   const soldListings = myProducts.filter((p) => p.status === "sold")
 
-  // Current page items
-  const indexOfLastItem = currentPage * itemsPerPage
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem)
-
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col space-y-1 sm:space-y-2">
@@ -539,7 +550,7 @@ export default function KupiProdaiPage() {
                 Try Again
               </Button>
             </div>
-          ) : currentItems.length > 0 ? (
+          ) : products.length > 0 ? (
             <>
               <motion.div
                 className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3"
@@ -547,7 +558,7 @@ export default function KupiProdaiPage() {
                 initial="hidden"
                 animate="visible"
               >
-                {currentItems.map((product) => (
+                {products.map((product) => (
                   <motion.div key={product.id} variants={itemVariants}>
                     <Card
                       className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"
@@ -663,6 +674,17 @@ export default function KupiProdaiPage() {
             <CardContent className="p-4 sm:p-6">
               {isAuthenticated ? (
                 <>
+                  {!isTelegramLinked && (
+                    <Alert variant="destructive" className="mb-4">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Telegram Required</AlertTitle>
+                      <AlertDescription>
+                        You need to link your Telegram account before you can sell items. Please go to your profile and
+                        bind your Telegram account.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
                   <h2 className="text-xl font-bold mb-4">Create a New Listing</h2>
                   <form onSubmit={handleSubmitListing} className="space-y-4">
                     <div className="space-y-2">
@@ -803,18 +825,10 @@ export default function KupiProdaiPage() {
                       <p className="text-xs text-muted-foreground">You can upload up to 5 images</p>
                     </div>
 
-                    <Button type="submit" className="w-full">
-                      Create Listing
+                    <Button type="submit" className="w-full" disabled={!isTelegramLinked}>
+                      {isTelegramLinked ? "Create Listing" : "Telegram Binding Required"}
                     </Button>
                   </form>
-
-                  {/* Add a note about the temporary removal of Telegram binding */}
-                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 text-sm">
-                    <p>
-                      <strong>Note:</strong> Telegram binding requirement has been temporarily disabled for testing
-                      purposes.
-                    </p>
-                  </div>
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 sm:py-12 text-center">
