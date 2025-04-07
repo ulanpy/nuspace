@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import type React from "react";
+import type React from "react"
 
-import { useState, useRef } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef, useEffect } from "react"
+import { motion } from "framer-motion"
 import {
   Search,
   Filter,
@@ -12,321 +12,34 @@ import {
   MessageSquare,
   X,
   Camera,
-  Star,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react";
-import { Input } from "../../components/ui/input";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
+  User,
+  AlertTriangle,
+} from "lucide-react"
+import { Input } from "../../components/ui/input"
+import { Button } from "../../components/ui/button"
+import { Card, CardContent } from "../../components/ui/card"
+import { Badge } from "../../components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
+import { useNavigate } from "react-router-dom"
+import { useAuth } from "../../context/auth-context"
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../../components/ui/tabs";
-import { useNavigate } from "react-router-dom";
-import { useProducts } from "@/hooks/use-product";
+  kupiProdaiApi,
+  type Product,
+  type NewProductRequest,
+  defaultSize,
+  defaultPage,
+} from "../../api/kupi-prodai-api"
+import { useToast } from "../../hooks/use-toast"
+import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert"
 
-interface ProductImage {
-  id: number;
-  url: string;
-}
+// Define categories and conditions
+const categories = ["All Categories", "books", "electronics", "clothing", "home", "sports", "other"]
+const displayCategories = ["All Categories", "Books", "Electronics", "Clothing", "Home", "Sports", "Other"]
 
-interface Product {
-  id: number;
-  title: string;
-  price: number;
-  category: string;
-  condition: "New" | "Used" | "Like New";
-  images: ProductImage[];
-  seller: string;
-  sellerRating?: number;
-  location: string;
-  likes: number;
-  messages: number;
-  description?: string;
-  telegramUsername?: string;
-  datePosted?: string;
-  isOwner?: boolean;
-  isSold?: boolean;
-}
-
-// Sample products data with multiple images
-const initialProducts: Product[] = [
-  {
-    id: 1,
-    title: "Calculus Textbook",
-    price: 5000,
-    category: "Books",
-    condition: "Used",
-    images: [
-      {
-        id: 1,
-        url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Calculus+1",
-      },
-      {
-        id: 2,
-        url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Calculus+2",
-      },
-      {
-        id: 3,
-        url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Calculus+3",
-      },
-    ],
-    seller: "Alex K.",
-    sellerRating: 4.8,
-    location: "Block 1A",
-    likes: 5,
-    messages: 2,
-    description:
-      "Slightly used calculus textbook for Math 101. Some highlighting inside but otherwise in good condition.",
-    telegramUsername: "alex_k",
-    datePosted: "2 days ago",
-  },
-  {
-    id: 2,
-    title: "Desk Lamp",
-    price: 3500,
-    category: "Home",
-    condition: "Like New",
-    images: [
-      { id: 1, url: "https://placehold.co/400x400/22c55e/FFFFFF?text=Lamp+1" },
-      { id: 2, url: "https://placehold.co/400x400/22c55e/FFFFFF?text=Lamp+2" },
-    ],
-    seller: "Maria S.",
-    sellerRating: 4.2,
-    location: "Block 3C",
-    likes: 3,
-    messages: 1,
-    description:
-      "Modern LED desk lamp with adjustable brightness. Used for one semester only.",
-    telegramUsername: "maria_s",
-    datePosted: "1 week ago",
-  },
-  {
-    id: 3,
-    title: "Scientific Calculator",
-    price: 8000,
-    category: "Electronics",
-    condition: "New",
-    images: [
-      {
-        id: 1,
-        url: "https://placehold.co/400x400/f97316/FFFFFF?text=Calculator",
-      },
-    ],
-    seller: "Timur A.",
-    sellerRating: 5.0,
-    location: "Block 2B",
-    likes: 7,
-    messages: 4,
-    description:
-      "Brand new scientific calculator, still in original packaging. Perfect for engineering courses.",
-    telegramUsername: "timur_a",
-    datePosted: "3 days ago",
-  },
-  {
-    id: 4,
-    title: "Winter Jacket",
-    price: 12000,
-    category: "Clothing",
-    condition: "Used",
-    images: [
-      {
-        id: 1,
-        url: "https://placehold.co/400x400/ef4444/FFFFFF?text=Jacket+Front",
-      },
-      {
-        id: 2,
-        url: "https://placehold.co/400x400/ef4444/FFFFFF?text=Jacket+Back",
-      },
-    ],
-    seller: "Aisha N.",
-    sellerRating: 4.5,
-    location: "Block 4A",
-    likes: 2,
-    messages: 0,
-    description:
-      "Warm winter jacket, size M. Used for one winter season, still in good condition.",
-    telegramUsername: "aisha_n",
-    datePosted: "5 days ago",
-  },
-  {
-    id: 5,
-    title: "Wireless Headphones",
-    price: 15000,
-    category: "Electronics",
-    condition: "Like New",
-    images: [
-      {
-        id: 1,
-        url: "https://placehold.co/400x400/8b5cf6/FFFFFF?text=Headphones+1",
-      },
-      {
-        id: 2,
-        url: "https://placehold.co/400x400/8b5cf6/FFFFFF?text=Headphones+2",
-      },
-      {
-        id: 3,
-        url: "https://placehold.co/400x400/8b5cf6/FFFFFF?text=Headphones+3",
-      },
-    ],
-    seller: "Ruslan M.",
-    sellerRating: 4.7,
-    location: "Block 1C",
-    likes: 9,
-    messages: 3,
-    description:
-      "High-quality wireless headphones with noise cancellation. Used for a few months, works perfectly.",
-    telegramUsername: "ruslan_m",
-    datePosted: "1 day ago",
-  },
-  {
-    id: 6,
-    title: "Physics Notes",
-    price: 2000,
-    category: "Books",
-    condition: "Used",
-    images: [
-      {
-        id: 1,
-        url: "https://placehold.co/400x400/ec4899/FFFFFF?text=Physics+Notes",
-      },
-    ],
-    seller: "Dana K.",
-    sellerRating: 4.0,
-    location: "Block 3B",
-    likes: 4,
-    messages: 2,
-    description:
-      "Comprehensive physics notes for PHY201. Includes all formulas and example problems.",
-    telegramUsername: "dana_k",
-    datePosted: "2 weeks ago",
-  },
-  {
-    id: 7,
-    title: "Laptop Stand",
-    price: 4000,
-    category: "Electronics",
-    condition: "New",
-    images: [
-      {
-        id: 1,
-        url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Laptop+Stand",
-      },
-    ],
-    seller: "Kanat B.",
-    sellerRating: 4.9,
-    location: "Block 2A",
-    likes: 6,
-    messages: 3,
-    description:
-      "Adjustable laptop stand, perfect for online classes. Brand new in box.",
-    telegramUsername: "kanat_b",
-    datePosted: "4 days ago",
-  },
-  {
-    id: 8,
-    title: "Chemistry Textbook",
-    price: 4500,
-    category: "Books",
-    condition: "Like New",
-    images: [
-      {
-        id: 1,
-        url: "https://placehold.co/400x400/22c55e/FFFFFF?text=Chemistry",
-      },
-    ],
-    seller: "Alina M.",
-    sellerRating: 4.3,
-    location: "Block 1B",
-    likes: 2,
-    messages: 1,
-    description:
-      "Chemistry textbook for CHEM101, barely used. Like new condition.",
-    telegramUsername: "alina_m",
-    datePosted: "1 week ago",
-  },
-];
-
-// Sample user's listings
-const initialMyListings: Product[] = [
-  {
-    id: 101,
-    title: "Programming Textbook",
-    price: 4500,
-    category: "Books",
-    condition: "Like New",
-    images: [
-      {
-        id: 1,
-        url: "https://placehold.co/400x400/3b82f6/FFFFFF?text=Programming",
-      },
-    ],
-    seller: "You",
-    location: "Block 2A",
-    likes: 2,
-    messages: 1,
-    description:
-      "Introduction to Programming textbook. Used for one semester, like new condition.",
-    isOwner: true,
-    datePosted: "1 week ago",
-  },
-  {
-    id: 102,
-    title: "Desk Organizer",
-    price: 1500,
-    category: "Home",
-    condition: "New",
-    images: [
-      {
-        id: 1,
-        url: "https://placehold.co/400x400/22c55e/FFFFFF?text=Organizer",
-      },
-    ],
-    seller: "You",
-    location: "Block 2A",
-    likes: 0,
-    messages: 0,
-    description:
-      "New desk organizer, still in packaging. Decided I don't need it.",
-    isOwner: true,
-    datePosted: "3 days ago",
-  },
-  {
-    id: 103,
-    title: "Math Notes",
-    price: 1000,
-    category: "Books",
-    condition: "Used",
-    images: [
-      {
-        id: 1,
-        url: "https://placehold.co/400x400/ef4444/FFFFFF?text=Math+Notes",
-      },
-    ],
-    seller: "You",
-    location: "Block 2A",
-    likes: 1,
-    messages: 0,
-    description: "Detailed notes from Math 201. Very helpful for exams.",
-    isOwner: true,
-    isSold: true,
-    datePosted: "2 weeks ago",
-  },
-];
-
-const categories = [
-  "All Categories",
-  "Books",
-  "Electronics",
-  "Clothing",
-  "Home",
-  "Sports",
-  "Other",
-];
+const conditions = ["All Conditions", "new", "like_new", "used"]
+const displayConditions = ["All Conditions", "New", "Like New", "Used"]
 
 const locations = [
   "All Locations",
@@ -345,9 +58,7 @@ const locations = [
   "Main Building",
   "Library",
   "Sports Center",
-];
-
-const conditions = ["All Conditions", "New", "Like New", "Used"];
+]
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -357,7 +68,7 @@ const containerVariants = {
       staggerChildren: 0.1,
     },
   },
-};
+}
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
@@ -370,207 +81,375 @@ const itemVariants = {
       damping: 15,
     },
   },
-};
+}
 
 export default function KupiProdaiPage() {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("buy");
-  const [likedProducts, setLikedProducts] = useState<number[]>([]);
-  const [subscribedSellers, setSubscribedSellers] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All Categories");
-  const [selectedCondition, setSelectedCondition] = useState("All Conditions");
-  const [showFilters, setShowFilters] = useState(false);
+  const navigate = useNavigate()
+  const { user, isAuthenticated, login } = useAuth()
+  const { toast } = useToast()
+  const [activeTab, setActiveTab] = useState("buy")
+  const [likedProducts, setLikedProducts] = useState<number[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("All Categories")
+  const [selectedCondition, setSelectedCondition] = useState("All Conditions")
+  const [showFilters, setShowFilters] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [currentPage, setCurrentPage] = useState(defaultPage)
+  const [itemsPerPage, setItemsPerPage] = useState(defaultSize)
+  const [totalPages, setTotalPages] = useState(1)
 
-  // Products state (for CRUD operations)
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [myListings, setMyListings] = useState<Product[]>(initialMyListings);
+  // Products state
+  const [products, setProducts] = useState<Product[]>([])
+  const [myProducts, setMyProducts] = useState<Product[]>([])
 
   // New listing form state
-  const {
-    newListing,
-    previewImages,
-    setNewListing,
-    setPreviewImages,
-    handleImageUpload,
-    removeImage,
-    onCreateProduct,
-    onUpdateProduct,
-    onRemoveProduct,
-    onGetMyProducts,
-  } = useProducts();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newListing, setNewListing] = useState<NewProductRequest>({
+    name: "",
+    description: "",
+    price: 0,
+    category: "books",
+    condition: "new",
+    status: "active",
+  })
+  const [previewImages, setPreviewImages] = useState<string[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Edit listing state
-  const [editingListing, setEditingListing] = useState<Product | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingListing, setEditingListing] = useState<Product | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+
+  // Fetch products on component mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchProducts()
+      fetchUserProducts()
+    }
+  }, [isAuthenticated])
+
+  // Fetch products when filters change
+  useEffect(() => {
+    if (activeTab === "buy") {
+      if (searchQuery.trim()) {
+        searchProducts(searchQuery)
+      } else {
+        fetchProducts()
+      }
+    }
+  }, [activeTab, selectedCategory, selectedCondition, currentPage, searchQuery])
+
+  // Fetch products from API
+  const fetchProducts = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const category = selectedCategory !== "All Categories" ? selectedCategory.toLowerCase() : undefined
+      const condition = selectedCondition !== "All Conditions" ? selectedCondition.toLowerCase() : undefined
+
+      const data = await kupiProdaiApi.getProducts(currentPage, itemsPerPage, category, condition)
+      setProducts(data.products)
+      setTotalPages(data.num_of_pages)
+    } catch (err) {
+      setError("Failed to fetch products")
+      console.error(err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Fetch user's products
+  const fetchUserProducts = async () => {
+    try {
+      const data = await kupiProdaiApi.getUserProducts()
+      setMyProducts(data)
+    } catch (err) {
+      console.error("Failed to fetch user products:", err)
+    }
+  }
+
+  // Search products
+  const searchProducts = async (keyword: string) => {
+    if (!keyword.trim()) {
+      fetchProducts()
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      const data = await kupiProdaiApi.searchProducts(keyword)
+      setProducts(data)
+      setTotalPages(1) // Search results are not paginated in the API
+    } catch (err) {
+      console.error("Search failed:", err)
+      setError("Search failed")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Handle image upload
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      const newPreviewImages = [...previewImages]
+
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          newPreviewImages.push(reader.result as string)
+          setPreviewImages([...newPreviewImages])
+        }
+        reader.readAsDataURL(file)
+      })
+    }
+  }
+
+  const removeImage = (index: number) => {
+    const newPreviewImages = [...previewImages]
+    newPreviewImages.splice(index, 1)
+    setPreviewImages(newPreviewImages)
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setNewListing((prev) => ({
+      ...prev,
+      [name]: name === "price" ? Number.parseFloat(value) : value,
+    }))
+  }
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setNewListing((prev) => ({ ...prev, [name]: value }))
+  }
+
+  // Check if user has Telegram linked
+  const isTelegramLinked = user?.tg_linked || false
+
+  // Create new product
+  const handleSubmitListing = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Check if Telegram is linked
+    if (!isTelegramLinked) {
+      toast({
+        title: "Telegram Required",
+        description: "You need to link your Telegram account before selling items.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (previewImages.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please upload at least one image",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // In a real app, you would upload the images first and get URLs
+      // Then create the product with those URLs
+      const createdProduct = await kupiProdaiApi.createProduct(newListing)
+
+      // Refresh user products
+      fetchUserProducts()
+
+      // Reset form
+      setNewListing({
+        name: "",
+        description: "",
+        price: 0,
+        category: "books",
+        condition: "new",
+        status: "active",
+      })
+      setPreviewImages([])
+
+      // Navigate to my-listings tab
+      setActiveTab("my-listings")
+
+      toast({
+        title: "Success",
+        description: "Product created successfully",
+      })
+    } catch (err) {
+      console.error("Failed to create product:", err)
+      toast({
+        title: "Error",
+        description: "Failed to create product",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Update product
+  const handleEditListing = (product: Product) => {
+    setEditingListing(product)
+    setNewListing({
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category: product.category,
+      condition: product.condition,
+      status: "active",
+    })
+    setPreviewImages(product.media.map((m) => m.url))
+    setShowEditModal(true)
+  }
+
+  const handleUpdateListing = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!editingListing) return
+
+    try {
+      await kupiProdaiApi.updateProduct({
+        product_id: editingListing.id,
+        name: newListing.name,
+        description: newListing.description,
+        price: newListing.price,
+        category: newListing.category,
+        condition: newListing.condition,
+      })
+
+      // Refresh user products
+      fetchUserProducts()
+
+      // Reset form and close modal
+      setEditingListing(null)
+      setNewListing({
+        name: "",
+        description: "",
+        price: 0,
+        category: "books",
+        condition: "new",
+        status: "active",
+      })
+      setPreviewImages([])
+      setShowEditModal(false)
+
+      toast({
+        title: "Success",
+        description: "Product updated successfully",
+      })
+    } catch (err) {
+      console.error("Failed to update product:", err)
+      toast({
+        title: "Error",
+        description: "Failed to update product",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Delete product
+  const handleDeleteListing = async (id: number) => {
+    if (window.confirm("Are you sure you want to delete this listing?")) {
+      try {
+        await kupiProdaiApi.deleteProduct(id)
+
+        // Refresh user products
+        fetchUserProducts()
+
+        toast({
+          title: "Success",
+          description: "Product deleted successfully",
+        })
+      } catch (err) {
+        console.error("Failed to delete product:", err)
+        toast({
+          title: "Error",
+          description: "Failed to delete product",
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
+  // Mark product as sold
+  const handleMarkAsSold = async (id: number) => {
+    try {
+      await kupiProdaiApi.updateProduct({
+        product_id: id,
+        status: "sold",
+      })
+
+      // Refresh user products
+      fetchUserProducts()
+
+      toast({
+        title: "Success",
+        description: "Product marked as sold",
+      })
+    } catch (err) {
+      console.error("Failed to mark product as sold:", err)
+      toast({
+        title: "Error",
+        description: "Failed to mark product as sold",
+        variant: "destructive",
+      })
+    }
+  }
 
   const toggleLike = (id: number) => {
     if (likedProducts.includes(id)) {
-      setLikedProducts(likedProducts.filter((productId) => productId !== id));
+      setLikedProducts(likedProducts.filter((productId) => productId !== id))
     } else {
-      setLikedProducts([...likedProducts, id]);
+      setLikedProducts([...likedProducts, id])
     }
-  };
+  }
 
-  const toggleSubscribe = (seller: string) => {
-    if (subscribedSellers.includes(seller)) {
-      setSubscribedSellers(subscribedSellers.filter((s) => s !== seller));
-    } else {
-      setSubscribedSellers([...subscribedSellers, seller]);
-    }
-  };
-
-  const getConditionColor = (condition: Product["condition"]) => {
+  const getConditionDisplay = (condition: string) => {
     switch (condition) {
-      case "New":
-        return "bg-green-500";
-      case "Like New":
-        return "bg-blue-500";
-      case "Used":
-        return "bg-orange-500";
+      case "new":
+        return "New"
+      case "like_new":
+        return "Like New"
+      case "used":
+        return "Used"
       default:
-        return "bg-gray-500";
+        return condition
     }
-  };
+  }
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setNewListing((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setNewListing((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmitListing = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const newProduct: Product | null = await onCreateProduct();
-    if (!newProduct) return;
-
-    // Add to my listings
-    setMyListings([newProduct, ...myListings]);
-    setPreviewImages([]);
-    setActiveTab("my-listings");
-
-    alert("Listing created successfully!");
-  };
-
-  const handleEditListing = (product: Product) => {
-    setEditingListing(product);
-    setNewListing({
-      title: product.title,
-      price: product.price.toString(),
-      category: product.category,
-      condition: product.condition,
-      location: product.location,
-      description: product.description || "",
-      telegramUsername: product.telegramUsername || "",
-    });
-    setPreviewImages(product.images.map((img) => img.url));
-    setShowEditModal(true);
-  };
-
-  const handleUpdateListing = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!editingListing) return;
-
-    // Update the listing
-    const updatedListing: Product | null = await onUpdateProduct(editingListing)
-
-    // Update in my listings
-    if(!updatedListing) return
-    setMyListings(
-      myListings.map((listing) =>
-        listing.id === editingListing.id ? updatedListing : listing
-      )
-    );
-
-    // Reset form and close modal
-    setEditingListing(null);
-    setNewListing({
-      title: "",
-      price: "",
-      category: "",
-      condition: "",
-      location: "",
-      description: "",
-      telegramUsername: "",
-    });
-    setPreviewImages([]);
-    setShowEditModal(false);
-
-    alert("Listing updated successfully!");
-  };
-
-  const handleDeleteListing = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this listing?")) {
-      await onRemoveProduct(id);
-      // const myProducts: Types.Product[] | null = await onGetMyProducts();
-      // if(myProducts) setMyListings(myProducts)
-      setMyListings(myListings.filter((listing) => listing.id !== id));
+  const getConditionColor = (condition: string) => {
+    switch (condition) {
+      case "new":
+        return "bg-green-500"
+      case "like_new":
+        return "bg-blue-500"
+      case "used":
+        return "bg-orange-500"
+      default:
+        return "bg-gray-500"
     }
-  };
+  }
 
-  const handleMarkAsSold = (id: number) => {
-    setMyListings(
-      myListings.map((listing) =>
-        listing.id === id ? { ...listing, isSold: true } : listing
-      )
-    );
-  };
-
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesCategory =
-      selectedCategory === "All Categories" ||
-      product.category === selectedCategory;
-    const matchesCondition =
-      selectedCondition === "All Conditions" ||
-      product.condition === selectedCondition;
-
-    return matchesSearch && matchesCategory && matchesCondition;
-  });
-
-  // Pagination logic
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredProducts.slice(
-    indexOfFirstItem,
-    indexOfLastItem
-  );
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const getCategoryDisplay = (category: string) => {
+    return category.charAt(0).toUpperCase() + category.slice(1)
+  }
 
   const paginate = (pageNumber: number) => {
     if (pageNumber > 0 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
+      setCurrentPage(pageNumber)
     }
-  };
+  }
 
   // Active and sold listings
-  const activeListings = myListings.filter((listing) => !listing.isSold);
-  const soldListings = myListings.filter((listing) => listing.isSold);
+  const activeListings = myProducts.filter((p) => p.status === "active")
+  const soldListings = myProducts.filter((p) => p.status === "sold")
 
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col space-y-1 sm:space-y-2">
         <h1 className="text-2xl sm:text-3xl font-bold">Kupi&Prodai</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Buy and sell items within the university community
-        </p>
+        <p className="text-sm sm:text-base text-muted-foreground">Buy and sell items within the university community</p>
       </div>
 
       <Tabs defaultValue="buy" className="w-full" onValueChange={setActiveTab}>
@@ -581,10 +460,7 @@ export default function KupiProdaiPage() {
         </TabsList>
 
         {/* BUY SECTION */}
-        <TabsContent
-          value="buy"
-          className="space-y-3 sm:space-y-4 pt-3 sm:pt-4"
-        >
+        <TabsContent value="buy" className="space-y-3 sm:space-y-4 pt-3 sm:pt-4">
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -619,9 +495,9 @@ export default function KupiProdaiPage() {
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                 >
-                  {categories.map((category) => (
+                  {categories.map((category, index) => (
                     <option key={category} value={category}>
-                      {category}
+                      {displayCategories[index]}
                     </option>
                   ))}
                 </select>
@@ -637,9 +513,9 @@ export default function KupiProdaiPage() {
                   value={selectedCondition}
                   onChange={(e) => setSelectedCondition(e.target.value)}
                 >
-                  {conditions.map((condition) => (
+                  {conditions.map((condition, index) => (
                     <option key={condition} value={condition}>
-                      {condition}
+                      {displayConditions[index]}
                     </option>
                   ))}
                 </select>
@@ -650,8 +526,8 @@ export default function KupiProdaiPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setSelectedCategory("All Categories");
-                    setSelectedCondition("All Conditions");
+                    setSelectedCategory("All Categories")
+                    setSelectedCondition("All Conditions")
                   }}
                 >
                   Reset
@@ -663,7 +539,18 @@ export default function KupiProdaiPage() {
             </div>
           )}
 
-          {currentItems.length > 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 text-destructive">
+              <p>{error}</p>
+              <Button variant="outline" className="mt-4" onClick={fetchProducts}>
+                Try Again
+              </Button>
+            </div>
+          ) : products.length > 0 ? (
             <>
               <motion.div
                 className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3"
@@ -671,50 +558,34 @@ export default function KupiProdaiPage() {
                 initial="hidden"
                 animate="visible"
               >
-                {currentItems.map((product) => (
+                {products.map((product) => (
                   <motion.div key={product.id} variants={itemVariants}>
                     <Card
                       className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() =>
-                        navigate(`/apps/kupi-prodai/product/${product.id}`)
-                      }
+                      onClick={() => navigate(`/apps/kupi-prodai/product/${product.id}`)}
                     >
                       <div className="aspect-square relative">
                         <img
-                          src={product.images[0]?.url || "/placeholder.svg"}
-                          alt={product.title}
+                          src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                          alt={product.name}
                           className="object-cover w-full h-full"
                         />
                         <Badge
-                          className={`absolute top-2 right-2 ${getConditionColor(
-                            product.condition
-                          )} text-white text-xs`}
+                          className={`absolute top-2 right-2 ${getConditionColor(product.condition)} text-white text-xs`}
                         >
-                          {product.condition}
+                          {getConditionDisplay(product.condition)}
                         </Badge>
                       </div>
                       <CardContent className="p-2 sm:p-3">
                         <div className="flex justify-between items-start mb-1">
                           <div>
-                            <h3 className="font-medium text-xs sm:text-sm line-clamp-1">
-                              {product.title}
-                            </h3>
-                            <p className="text-sm sm:text-base font-bold">
-                              {product.price} ₸
-                            </p>
+                            <h3 className="font-medium text-xs sm:text-sm line-clamp-1">{product.name}</h3>
+                            <p className="text-sm sm:text-base font-bold">{product.price} ₸</p>
                           </div>
                         </div>
                         <div className="flex items-center text-[10px] sm:text-xs text-muted-foreground mb-1">
                           <div className="flex items-center">
-                            <span>{product.seller}</span>
-                            {product.sellerRating && (
-                              <div className="flex items-center ml-1">
-                                <Star className="h-2.5 w-2.5 text-yellow-500 fill-yellow-500" />
-                                <span className="ml-0.5">
-                                  {product.sellerRating}
-                                </span>
-                              </div>
-                            )}
+                            <span>{product.category && getCategoryDisplay(product.category)}</span>
                           </div>
                         </div>
                         <div className="flex justify-between">
@@ -723,38 +594,26 @@ export default function KupiProdaiPage() {
                             size="sm"
                             className="flex gap-1 text-muted-foreground hover:text-foreground h-6 px-1.5"
                             onClick={(e) => {
-                              e.stopPropagation();
-                              toggleLike(product.id);
+                              e.stopPropagation()
+                              toggleLike(product.id)
                             }}
                           >
                             <Heart
-                              className={`h-3 w-3 ${
-                                likedProducts.includes(product.id)
-                                  ? "fill-red-500 text-red-500"
-                                  : ""
-                              }`}
+                              className={`h-3 w-3 ${likedProducts.includes(product.id) ? "fill-red-500 text-red-500" : ""}`}
                             />
-                            <span className="text-[10px]">
-                              {likedProducts.includes(product.id)
-                                ? product.likes + 1
-                                : product.likes}
-                            </span>
+                            <span className="text-[10px]">{likedProducts.includes(product.id) ? "Liked" : "Like"}</span>
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             className="flex gap-1 text-muted-foreground hover:text-foreground h-6 px-1.5"
                             onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(
-                                `/apps/kupi-prodai/product/${product.id}`
-                              );
+                              e.stopPropagation()
+                              navigate(`/apps/kupi-prodai/product/${product.id}`)
                             }}
                           >
                             <MessageSquare className="h-3 w-3" />
-                            <span className="text-[10px]">
-                              {product.messages}
-                            </span>
+                            <span className="text-[10px]">Details</span>
                           </Button>
                         </div>
                       </CardContent>
@@ -803,8 +662,7 @@ export default function KupiProdaiPage() {
               <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No items found</h3>
               <p className="text-sm text-muted-foreground max-w-md">
-                Try adjusting your search or filters to find what you're looking
-                for.
+                Try adjusting your search or filters to find what you're looking for.
               </p>
             </div>
           )}
@@ -814,204 +672,177 @@ export default function KupiProdaiPage() {
         <TabsContent value="sell" className="pt-3 sm:pt-4">
           <Card>
             <CardContent className="p-4 sm:p-6">
-              <h2 className="text-xl font-bold mb-4">Create a New Listing</h2>
-              <form onSubmit={handleSubmitListing} className="space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor="title" className="text-sm font-medium">
-                    Title
-                  </label>
-                  <Input
-                    id="title"
-                    name="title"
-                    placeholder="What are you selling?"
-                    value={newListing.title}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
+              {isAuthenticated ? (
+                <>
+                  {!isTelegramLinked && (
+                    <Alert variant="destructive" className="mb-4">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Telegram Required</AlertTitle>
+                      <AlertDescription>
+                        You need to link your Telegram account before you can sell items. Please go to your profile and
+                        bind your Telegram account.
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor="price" className="text-sm font-medium">
-                      Price (₸)
-                    </label>
-                    <Input
-                      id="price"
-                      name="price"
-                      type="number"
-                      placeholder="0"
-                      value={newListing.price}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="category" className="text-sm font-medium">
-                      Category
-                    </label>
-                    <select
-                      id="category"
-                      name="category"
-                      className="w-full p-2 border rounded-md bg-background"
-                      value={newListing.category}
-                      onChange={handleSelectChange}
-                      required
-                    >
-                      <option value="" disabled>
-                        Select category
-                      </option>
-                      {categories.slice(1).map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor="condition" className="text-sm font-medium">
-                      Condition
-                    </label>
-                    <select
-                      id="condition"
-                      name="condition"
-                      className="w-full p-2 border rounded-md bg-background"
-                      value={newListing.condition}
-                      onChange={handleSelectChange}
-                      required
-                    >
-                      <option value="" disabled>
-                        Select condition
-                      </option>
-                      {conditions.slice(1).map((condition) => (
-                        <option key={condition} value={condition}>
-                          {condition}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="location" className="text-sm font-medium">
-                      Location
-                    </label>
-                    <select
-                      id="location"
-                      name="location"
-                      className="w-full p-2 border rounded-md bg-background"
-                      value={newListing.location}
-                      onChange={handleSelectChange}
-                      required
-                    >
-                      <option value="" disabled>
-                        Select location
-                      </option>
-                      {locations.slice(1).map((location) => (
-                        <option key={location} value={location}>
-                          {location}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="description" className="text-sm font-medium">
-                    Description
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    placeholder="Describe your item in detail"
-                    className="w-full min-h-[100px] p-2 border rounded-md bg-background"
-                    value={newListing.description}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    htmlFor="telegramUsername"
-                    className="text-sm font-medium"
-                  >
-                    Telegram Username (for contact)
-                  </label>
-                  <div className="flex">
-                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
-                      @
-                    </span>
-                    <Input
-                      id="telegramUsername"
-                      name="telegramUsername"
-                      placeholder="your_username"
-                      className="rounded-l-none"
-                      value={newListing.telegramUsername}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Upload Images</label>
-                  <div className="border-2 border-dashed border-input rounded-md p-4">
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      {previewImages.map((image, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={image || "/placeholder.svg"}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-md"
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-1 right-1 h-5 w-5"
-                            onClick={() => removeImage(index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
+                  <h2 className="text-xl font-bold mb-4">Create a New Listing</h2>
+                  <form onSubmit={handleSubmitListing} className="space-y-4">
+                    <div className="space-y-2">
+                      <label htmlFor="name" className="text-sm font-medium">
+                        Title
+                      </label>
+                      <Input
+                        id="name"
+                        name="name"
+                        placeholder="What are you selling?"
+                        value={newListing.name}
+                        onChange={handleInputChange}
+                        required
+                      />
                     </div>
 
-                    {previewImages.length < 5 && (
-                      <div
-                        className="flex flex-col items-center justify-center py-4 cursor-pointer border border-dashed border-input rounded-md"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        <Camera className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-sm font-medium mb-1">
-                          Upload images
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Click to browse or drag and drop
-                        </p>
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          className="hidden"
-                          accept="image/*"
-                          multiple
-                          onChange={handleImageUpload}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="price" className="text-sm font-medium">
+                          Price (₸)
+                        </label>
+                        <Input
+                          id="price"
+                          name="price"
+                          type="number"
+                          placeholder="0"
+                          value={newListing.price}
+                          onChange={handleInputChange}
+                          required
                         />
                       </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    You can upload up to 5 images
-                  </p>
-                </div>
 
-                <Button type="submit" className="w-full">
-                  Create Listing
-                </Button>
-              </form>
+                      <div className="space-y-2">
+                        <label htmlFor="category" className="text-sm font-medium">
+                          Category
+                        </label>
+                        <select
+                          id="category"
+                          name="category"
+                          className="w-full p-2 border rounded-md bg-background"
+                          value={newListing.category}
+                          onChange={handleSelectChange}
+                          required
+                        >
+                          <option value="" disabled>
+                            Select category
+                          </option>
+                          {categories.slice(1).map((category, index) => (
+                            <option key={category} value={category}>
+                              {displayCategories[index + 1]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="condition" className="text-sm font-medium">
+                        Condition
+                      </label>
+                      <select
+                        id="condition"
+                        name="condition"
+                        className="w-full p-2 border rounded-md bg-background"
+                        value={newListing.condition}
+                        onChange={handleSelectChange}
+                        required
+                      >
+                        <option value="" disabled>
+                          Select condition
+                        </option>
+                        {conditions.slice(1).map((condition, index) => (
+                          <option key={condition} value={condition}>
+                            {displayConditions[index + 1]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="description" className="text-sm font-medium">
+                        Description
+                      </label>
+                      <textarea
+                        id="description"
+                        name="description"
+                        placeholder="Describe your item in detail"
+                        className="w-full min-h-[100px] p-2 border rounded-md bg-background"
+                        value={newListing.description}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Upload Images</label>
+                      <div className="border-2 border-dashed border-input rounded-md p-4">
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                          {previewImages.map((image, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={image || "/placeholder.svg"}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-24 object-cover rounded-md"
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="icon"
+                                className="absolute top-1 right-1 h-5 w-5"
+                                onClick={() => removeImage(index)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+
+                        {previewImages.length < 5 && (
+                          <div
+                            className="flex flex-col items-center justify-center py-4 cursor-pointer border border-dashed border-input rounded-md"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <Camera className="h-8 w-8 text-muted-foreground mb-2" />
+                            <p className="text-sm font-medium mb-1">Upload images</p>
+                            <p className="text-xs text-muted-foreground">Click to browse or drag and drop</p>
+                            <input
+                              type="file"
+                              ref={fileInputRef}
+                              className="hidden"
+                              accept="image/*"
+                              multiple
+                              onChange={handleImageUpload}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">You can upload up to 5 images</p>
+                    </div>
+
+                    <Button type="submit" className="w-full" disabled={!isTelegramLinked}>
+                      {isTelegramLinked ? "Create Listing" : "Telegram Binding Required"}
+                    </Button>
+                  </form>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 sm:py-12 text-center">
+                  <ShoppingBag className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
+                  <h3 className="text-lg sm:text-xl font-medium mb-1 sm:mb-2">Login to Sell Items</h3>
+                  <p className="text-sm text-muted-foreground mb-4 sm:mb-6 max-w-md">
+                    You need to login before you can sell items on the marketplace
+                  </p>
+                  <Button size="sm" onClick={login} className="flex gap-2">
+                    <User className="h-4 w-4" />
+                    <span>Login</span>
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -1029,67 +860,42 @@ export default function KupiProdaiPage() {
             </TabsList>
 
             <TabsContent value="active" className="pt-4">
-              {activeListings.length > 0 ? (
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : activeListings.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {activeListings.map((product) => (
                     <Card key={product.id} className="overflow-hidden h-full">
                       <div className="aspect-square relative">
                         <img
-                          src={product.images[0]?.url || "/placeholder.svg"}
-                          alt={product.title}
+                          src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                          alt={product.name}
                           className="object-cover w-full h-full"
                         />
                         <Badge
-                          className={`absolute top-2 right-2 ${getConditionColor(
-                            product.condition
-                          )} text-white text-xs`}
+                          className={`absolute top-2 right-2 ${getConditionColor(product.condition)} text-white text-xs`}
                         >
-                          {product.condition}
+                          {getConditionDisplay(product.condition)}
                         </Badge>
                       </div>
                       <CardContent className="p-3 sm:p-4">
                         <div className="flex justify-between items-start mb-1 sm:mb-2">
                           <div>
-                            <h3 className="font-medium text-sm sm:text-base">
-                              {product.title}
-                            </h3>
-                            <p className="text-base sm:text-lg font-bold">
-                              {product.price} ₸
-                            </p>
+                            <h3 className="font-medium text-sm sm:text-base">{product.name}</h3>
+                            <p className="text-base sm:text-lg font-bold">{product.price} ₸</p>
                           </div>
                           <Badge variant="outline" className="text-xs">
-                            {product.category}
+                            {getCategoryDisplay(product.category)}
                           </Badge>
                         </div>
-                        <div className="flex items-center text-xs sm:text-sm text-muted-foreground mb-2">
-                          <span>Posted {product.datePosted}</span>
-                        </div>
                         <div className="flex items-center text-xs sm:text-sm text-muted-foreground mb-3">
-                          <span>{product.location}</span>
+                          <p className="line-clamp-2">{product.description}</p>
                         </div>
-                        <div className="flex justify-between">
-                          <div className="flex gap-2">
-                            <Badge
-                              variant="secondary"
-                              className="flex items-center gap-1"
-                            >
-                              <Heart className="h-3 w-3" />
-                              <span>{product.likes}</span>
-                            </Badge>
-                            <Badge
-                              variant="secondary"
-                              className="flex items-center gap-1"
-                            >
-                              <MessageSquare className="h-3 w-3" />
-                              <span>{product.messages}</span>
-                            </Badge>
-                          </div>
+                        <div className="flex justify-end">
                           <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditListing(product)}
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => handleEditListing(product)}>
                               Edit
                             </Button>
                             <Button
@@ -1100,11 +906,7 @@ export default function KupiProdaiPage() {
                             >
                               Delete
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleMarkAsSold(product.id)}
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => handleMarkAsSold(product.id)}>
                               Mark as Sold
                             </Button>
                           </div>
@@ -1116,59 +918,46 @@ export default function KupiProdaiPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">
-                    No active listings
-                  </h3>
+                  <h3 className="text-lg font-medium mb-2">No active listings</h3>
                   <p className="text-sm text-muted-foreground max-w-md mb-6">
-                    You don't have any active listings. Create a new listing to
-                    start selling.
+                    You don't have any active listings. Create a new listing to start selling.
                   </p>
-                  <Button onClick={() => setActiveTab("sell")}>
-                    Create Listing
-                  </Button>
+                  <Button onClick={() => setActiveTab("sell")}>Create Listing</Button>
                 </div>
               )}
             </TabsContent>
 
             <TabsContent value="sold" className="pt-4">
-              {soldListings.length > 0 ? (
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : soldListings.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {soldListings.map((product) => (
-                    <Card
-                      key={product.id}
-                      className="overflow-hidden h-full opacity-75"
-                    >
+                    <Card key={product.id} className="overflow-hidden h-full opacity-75">
                       <div className="aspect-square relative">
                         <img
-                          src={product.images[0]?.url || "/placeholder.svg"}
-                          alt={product.title}
+                          src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                          alt={product.name}
                           className="object-cover w-full h-full"
                         />
                         <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
-                          <Badge className="bg-green-500 text-white text-sm px-3 py-1">
-                            SOLD
-                          </Badge>
+                          <Badge className="bg-green-500 text-white text-sm px-3 py-1">SOLD</Badge>
                         </div>
                       </div>
                       <CardContent className="p-3 sm:p-4">
                         <div className="flex justify-between items-start mb-1 sm:mb-2">
                           <div>
-                            <h3 className="font-medium text-sm sm:text-base">
-                              {product.title}
-                            </h3>
-                            <p className="text-base sm:text-lg font-bold">
-                              {product.price} ₸
-                            </p>
+                            <h3 className="font-medium text-sm sm:text-base">{product.name}</h3>
+                            <p className="text-base sm:text-lg font-bold">{product.price} ₸</p>
                           </div>
                           <Badge variant="outline" className="text-xs">
-                            {product.category}
+                            {getCategoryDisplay(product.category)}
                           </Badge>
                         </div>
-                        <div className="flex items-center text-xs sm:text-sm text-muted-foreground mb-2">
-                          <span>Posted {product.datePosted}</span>
-                        </div>
                         <div className="flex items-center text-xs sm:text-sm text-muted-foreground mb-3">
-                          <span>{product.location}</span>
+                          <p className="line-clamp-2">{product.description}</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -1178,9 +967,7 @@ export default function KupiProdaiPage() {
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium mb-2">No sold items</h3>
-                  <p className="text-sm text-muted-foreground max-w-md">
-                    Items you've sold will appear here.
-                  </p>
+                  <p className="text-sm text-muted-foreground max-w-md">Items you've sold will appear here.</p>
                 </div>
               )}
             </TabsContent>
@@ -1199,9 +986,9 @@ export default function KupiProdaiPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setShowEditModal(false);
-                    setEditingListing(null);
-                    setPreviewImages([]);
+                    setShowEditModal(false)
+                    setEditingListing(null)
+                    setPreviewImages([])
                   }}
                 >
                   <X className="h-5 w-5" />
@@ -1210,14 +997,14 @@ export default function KupiProdaiPage() {
 
               <form onSubmit={handleUpdateListing} className="space-y-4">
                 <div className="space-y-2">
-                  <label htmlFor="edit-title" className="text-sm font-medium">
+                  <label htmlFor="edit-name" className="text-sm font-medium">
                     Title
                   </label>
                   <Input
-                    id="edit-title"
-                    name="title"
+                    id="edit-name"
+                    name="name"
                     placeholder="What are you selling?"
-                    value={newListing.title}
+                    value={newListing.name}
                     onChange={handleInputChange}
                     required
                   />
@@ -1240,10 +1027,7 @@ export default function KupiProdaiPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label
-                      htmlFor="edit-category"
-                      className="text-sm font-medium"
-                    >
+                    <label htmlFor="edit-category" className="text-sm font-medium">
                       Category
                     </label>
                     <select
@@ -1257,63 +1041,9 @@ export default function KupiProdaiPage() {
                       <option value="" disabled>
                         Select category
                       </option>
-                      {categories.slice(1).map((category) => (
+                      {categories.slice(1).map((category, index) => (
                         <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="edit-condition"
-                      className="text-sm font-medium"
-                    >
-                      Condition
-                    </label>
-                    <select
-                      id="edit-condition"
-                      name="condition"
-                      className="w-full p-2 border rounded-md bg-background"
-                      value={newListing.condition}
-                      onChange={handleSelectChange}
-                      required
-                    >
-                      <option value="" disabled>
-                        Select condition
-                      </option>
-                      {conditions.slice(1).map((condition) => (
-                        <option key={condition} value={condition}>
-                          {condition}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="edit-location"
-                      className="text-sm font-medium"
-                    >
-                      Location
-                    </label>
-                    <select
-                      id="edit-location"
-                      name="location"
-                      className="w-full p-2 border rounded-md bg-background"
-                      value={newListing.location}
-                      onChange={handleSelectChange}
-                      required
-                    >
-                      <option value="" disabled>
-                        Select location
-                      </option>
-                      {locations.slice(1).map((location) => (
-                        <option key={location} value={location}>
-                          {location}
+                          {displayCategories[index + 1]}
                         </option>
                       ))}
                     </select>
@@ -1321,10 +1051,30 @@ export default function KupiProdaiPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label
-                    htmlFor="edit-description"
-                    className="text-sm font-medium"
+                  <label htmlFor="edit-condition" className="text-sm font-medium">
+                    Condition
+                  </label>
+                  <select
+                    id="edit-condition"
+                    name="condition"
+                    className="w-full p-2 border rounded-md bg-background"
+                    value={newListing.condition}
+                    onChange={handleSelectChange}
+                    required
                   >
+                    <option value="" disabled>
+                      Select condition
+                    </option>
+                    {conditions.slice(1).map((condition, index) => (
+                      <option key={condition} value={condition}>
+                        {displayConditions[index + 1]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="edit-description" className="text-sm font-medium">
                     Description
                   </label>
                   <textarea
@@ -1336,29 +1086,6 @@ export default function KupiProdaiPage() {
                     onChange={handleInputChange}
                     required
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    htmlFor="edit-telegramUsername"
-                    className="text-sm font-medium"
-                  >
-                    Telegram Username (for contact)
-                  </label>
-                  <div className="flex">
-                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
-                      @
-                    </span>
-                    <Input
-                      id="edit-telegramUsername"
-                      name="telegramUsername"
-                      placeholder="your_username"
-                      className="rounded-l-none"
-                      value={newListing.telegramUsername}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -1391,12 +1118,8 @@ export default function KupiProdaiPage() {
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <Camera className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-sm font-medium mb-1">
-                          Upload images
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Click to browse or drag and drop
-                        </p>
+                        <p className="text-sm font-medium mb-1">Upload images</p>
+                        <p className="text-xs text-muted-foreground">Click to browse or drag and drop</p>
                         <input
                           type="file"
                           ref={fileInputRef}
@@ -1415,9 +1138,9 @@ export default function KupiProdaiPage() {
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setShowEditModal(false);
-                      setEditingListing(null);
-                      setPreviewImages([]);
+                      setShowEditModal(false)
+                      setEditingListing(null)
+                      setPreviewImages([])
                     }}
                   >
                     Cancel
@@ -1430,5 +1153,6 @@ export default function KupiProdaiPage() {
         </div>
       )}
     </div>
-  );
+  )
 }
+

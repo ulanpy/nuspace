@@ -33,8 +33,6 @@ const homeCarouselItems = [
 
 export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth()
-  console.log(user);
-  console.log("Family name:", user?.user.family_name);
   return (
     <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4">
       {/* Header with login button */}
@@ -49,9 +47,6 @@ export default function HomePage() {
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">
           {isAuthenticated && user?.user.given_name ? `Welcome back, ${user.user.given_name}!` : "Welcome to NU Space"}
           </h1>
-          <p className="text-muted-foreground">
-            {isAuthenticated ? "Your personalized university dashboard" : "Login to access your personalized dashboard"}
-          </p>
         </div>
 
         {/* Carousel - properly positioned */}
@@ -61,13 +56,6 @@ export default function HomePage() {
 
         <div className="flex flex-col items-center gap-8 sm:gap-12 w-full">
           <AppGrid />
-
-          {/* Show personalized dashboard only if authenticated */}
-          {isAuthenticated && (
-            <div className="w-full mt-4 sm:mt-8">
-              <PersonalizedDashboard />
-            </div>
-          )}
         </div>
       </div>
 

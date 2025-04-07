@@ -1,9 +1,43 @@
-import { Link, Outlet } from "react-router-dom"
+"use client"
+
+import { useState, useEffect } from "react"
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
 import { ThemeToggle } from "../components/theme-toggle"
 import { LoginButton } from "../components/login-button"
+import { useAuth } from "../context/auth-context"
+import { LoginRequirementModal } from "../components/login-requirement-modal"
 
 export default function AppsLayout() {
+  const { isAuthenticated, login } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [showLoginModal, setShowLoginModal] = useState(false)
+
+  // Check if the current path is for Kupi&Prodai
+  const isKupiProdaiPath = location.pathname.includes("/apps/kupi-prodai")
+
+  // Show login modal for unauthenticated users trying to access Kupi&Prodai
+  useEffect(() => {
+    if (!isAuthenticated && isKupiProdaiPath) {
+      setShowLoginModal(true)
+    } else {
+      setShowLoginModal(false)
+    }
+  }, [isAuthenticated, isKupiProdaiPath])
+
+  // Handle login from the modal
+  const handleLogin = () => {
+    login()
+    setShowLoginModal(false)
+  }
+
+  // Handle modal dismissal
+  const handleDismiss = () => {
+    setShowLoginModal(false)
+    navigate("/")
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-lg">
@@ -23,9 +57,18 @@ export default function AppsLayout() {
       </header>
       <main className="flex-1 container py-4 sm:py-6 px-3 sm:px-4">
         <Outlet />
+
+        {/* Login Requirement Modal */}
+        {showLoginModal && (
+          <LoginRequirementModal
+            title="Login Required"
+            description="You need to login to access the Kupi&Prodai marketplace. Login to browse and sell items within the university community."
+            onLogin={handleLogin}
+            onDismiss={handleDismiss}
+          />
+        )}
       </main>
     </div>
   )
 }
-
 
