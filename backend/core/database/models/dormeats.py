@@ -33,3 +33,14 @@ class Meal():
     canteen_id: Mapped[int] = mapped_column(Integer, nullable=False)
 
     canteen = relationship("Canteen", back_populates="meals")
+
+class Product():
+    __tablename__= 'products'
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(nullable=False)
+    description: Mapped[str] = mapped_column(nullable=False)
+class Ingredient():
+    __tablename__= 'ingredient'
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+    meal_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('meals.id'), nullable=False)
+    product_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('products.id'), nullable=False)
