@@ -14,6 +14,8 @@ from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
 from sqlalchemy.orm import selectinload
 from .utils import build_product_response
 import asyncio
+from .schemas import *
+from backend.core.database.models.product import *
 
 
 async def add_new_product_to_db(
