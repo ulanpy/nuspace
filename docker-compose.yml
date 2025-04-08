@@ -8,6 +8,8 @@ services:
       - nuros
     restart: always
     container_name: postgres
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -25,6 +27,8 @@ services:
     restart: always
     env_file:
       - .env
+    ports:
+      - "8000:8000"
     volumes:
       - .:/nuros  # Sync local backend folder with container's /app
     depends_on:
