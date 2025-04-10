@@ -11,11 +11,10 @@ import {
   Heart,
   MessageSquare,
   X,
-  Camera,
   ChevronLeft,
   ChevronRight,
-  User,
-  AlertTriangle,
+  RefreshCw,
+  ImageIcon,
 } from "lucide-react"
 import { Input } from "../../components/ui/input"
 import { Button } from "../../components/ui/button"
@@ -33,32 +32,48 @@ import {
 } from "../../api/kupi-prodai-api"
 import { useToast } from "../../hooks/use-toast"
 import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert"
+import { Progress } from "../../components/ui/progress"
+import { Skeleton } from "../../components/ui/skeleton"
 
 // Define categories and conditions
-const categories = ["All Categories", "books", "electronics", "clothing", "home", "sports", "other"]
-const displayCategories = ["All Categories", "Books", "Electronics", "Clothing", "Home", "Sports", "Other"]
+const categories = [
+  "All Categories",
+  "books",
+  "electronics",
+  "clothing",
+  "furniture",
+  "appliances",
+  "sports",
+  "stationery",
+  "art_supplies",
+  "beauty",
+  "services",
+  "food",
+  "tickets",
+  "transport",
+  "others",
+]
+
+const displayCategories = [
+  "All Categories",
+  "Books",
+  "Electronics",
+  "Clothing",
+  "Furniture",
+  "Appliances",
+  "Sports",
+  "Stationery",
+  "Art Supplies",
+  "Beauty",
+  "Services",
+  "Food",
+  "Tickets",
+  "Transport",
+  "Others",
+]
 
 const conditions = ["All Conditions", "new", "like_new", "used"]
 const displayConditions = ["All Conditions", "New", "Like New", "Used"]
-
-const locations = [
-  "All Locations",
-  "Block 1A",
-  "Block 1B",
-  "Block 1C",
-  "Block 2A",
-  "Block 2B",
-  "Block 2C",
-  "Block 3A",
-  "Block 3B",
-  "Block 3C",
-  "Block 4A",
-  "Block 4B",
-  "Block 4C",
-  "Main Building",
-  "Library",
-  "Sports Center",
-]
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -95,6 +110,9 @@ export default function KupiProdaiPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(defaultPage)
@@ -115,7 +133,9 @@ export default function KupiProdaiPage() {
     status: "active",
   })
   const [previewImages, setPreviewImages] = useState<string[]>([])
+  const [imageFiles, setImageFiles] = useState<File[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const dropZoneRef = useRef<HTMLDivElement>(null)
 
   // Edit listing state
   const [editingListing, setEditingListing] = useState<Product | null>(null)
@@ -194,31 +214,88 @@ export default function KupiProdaiPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files && files.length > 0) {
-      const newPreviewImages = [...previewImages]
+      processFiles(Array.from(files))
+    }
+  }
 
-      Array.from(files).forEach((file) => {
+  // Process files for upload
+  const processFiles = (files: File[]) => {
+    const newPreviewImages = [...previewImages]
+    const newImageFiles = [...imageFiles]
+
+    files.forEach((file) => {
+      if (file.type.startsWith("image/")) {
         const reader = new FileReader()
         reader.onloadend = () => {
           newPreviewImages.push(reader.result as string)
+          newImageFiles.push(file)
           setPreviewImages([...newPreviewImages])
+          setImageFiles([...newImageFiles])
         }
         reader.readAsDataURL(file)
-      })
+      } else {
+        toast({
+          title: "Invalid file type",
+          description: "Only image files are allowed",
+          variant: "destructive",
+        })
+      }
+    })
+  }
+
+  // Handle drag and drop
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(false)
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(Array.from(e.dataTransfer.files))
     }
   }
 
   const removeImage = (index: number) => {
     const newPreviewImages = [...previewImages]
+    const newImageFiles = [...imageFiles]
     newPreviewImages.splice(index, 1)
+    newImageFiles.splice(index, 1)
     setPreviewImages(newPreviewImages)
+    setImageFiles(newImageFiles)
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setNewListing((prev) => ({
-      ...prev,
-      [name]: name === "price" ? Number.parseFloat(value) : value,
-    }))
+
+    if (name === "price") {
+      // Handle price input specially to avoid leading zeros and negative values
+      const numValue = value === "" ? 0 : Math.max(0, Number.parseInt(value, 10))
+      setNewListing((prev) => ({ ...prev, [name]: numValue }))
+    } else {
+      setNewListing((prev) => ({ ...prev, [name]: value }))
+    }
+  }
+
+  const handlePriceInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Clear the input when it's focused and the value is 0
+    if (e.target.value === "0") {
+      e.target.value = ""
+    }
+  }
+
+  const handlePriceInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    // If the input is empty when blurred, set it back to 0
+    if (e.target.value === "") {
+      setNewListing((prev) => ({ ...prev, price: 0 }))
+    }
   }
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -229,7 +306,7 @@ export default function KupiProdaiPage() {
   // Check if user has Telegram linked
   const isTelegramLinked = user?.tg_linked || false
 
-  // Create new product
+  // Create new product and upload images
   const handleSubmitListing = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -243,22 +320,38 @@ export default function KupiProdaiPage() {
       return
     }
 
-    if (previewImages.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please upload at least one image",
-        variant: "destructive",
-      })
-      return
-    }
-
     try {
-      // In a real app, you would upload the images first and get URLs
-      // Then create the product with those URLs
-      const createdProduct = await kupiProdaiApi.createProduct(newListing)
+      setIsUploading(true)
+      setUploadProgress(10)
 
-      // Refresh user products
-      fetchUserProducts()
+      // Step 1: Create the product
+      const createdProduct = await kupiProdaiApi.createProduct(newListing)
+      setUploadProgress(30)
+
+      // Step 2: Upload images if there are any
+      if (imageFiles.length > 0) {
+        // Get signed URLs for image uploads
+        const signedUrlsResponse = await kupiProdaiApi.getSignedUrls(imageFiles.length)
+        setUploadProgress(50)
+
+        // Upload each image
+        const uploadPromises = imageFiles.map((file, index) => {
+          const signedUrl = signedUrlsResponse.signed_urls[index]
+          return kupiProdaiApi.uploadImage(
+            file,
+            signedUrl.filename,
+            createdProduct.id,
+            index + 1, // Media order starts from 1
+          )
+        })
+
+        await Promise.all(uploadPromises)
+        setUploadProgress(90)
+      }
+
+      // Step 3: Refresh user products to show the updated product with images
+      await fetchUserProducts()
+      setUploadProgress(100)
 
       // Reset form
       setNewListing({
@@ -270,6 +363,7 @@ export default function KupiProdaiPage() {
         status: "active",
       })
       setPreviewImages([])
+      setImageFiles([])
 
       // Navigate to my-listings tab
       setActiveTab("my-listings")
@@ -279,12 +373,15 @@ export default function KupiProdaiPage() {
         description: "Product created successfully",
       })
     } catch (err) {
-      console.error("Failed to create product:", err)
+      console.error("Failed to create product or upload images:", err)
       toast({
         title: "Error",
-        description: "Failed to create product",
+        description: "Failed to create product or upload images",
         variant: "destructive",
       })
+    } finally {
+      setIsUploading(false)
+      setUploadProgress(0)
     }
   }
 
@@ -332,6 +429,7 @@ export default function KupiProdaiPage() {
         status: "active",
       })
       setPreviewImages([])
+      setImageFiles([])
       setShowEditModal(false)
 
       toast({
@@ -372,12 +470,14 @@ export default function KupiProdaiPage() {
     }
   }
 
-  // Mark product as sold
-  const handleMarkAsSold = async (id: number) => {
+  // Mark product as sold/active
+  const handleToggleProductStatus = async (id: number, currentStatus: string) => {
     try {
+      const newStatus = currentStatus === "active" ? "inactive" : "active"
+
       await kupiProdaiApi.updateProduct({
         product_id: id,
-        status: "sold",
+        status: newStatus,
       })
 
       // Refresh user products
@@ -385,13 +485,13 @@ export default function KupiProdaiPage() {
 
       toast({
         title: "Success",
-        description: "Product marked as sold",
+        description: newStatus === "active" ? "Product marked as active" : "Product marked as inactive",
       })
     } catch (err) {
-      console.error("Failed to mark product as sold:", err)
+      console.error("Failed to update product status:", err)
       toast({
         title: "Error",
-        description: "Failed to mark product as sold",
+        description: "Failed to update product status",
         variant: "destructive",
       })
     }
@@ -432,7 +532,7 @@ export default function KupiProdaiPage() {
   }
 
   const getCategoryDisplay = (category: string) => {
-    return category.charAt(0).toUpperCase() + category.slice(1)
+    return category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, " ")
   }
 
   const paginate = (pageNumber: number) => {
@@ -441,9 +541,52 @@ export default function KupiProdaiPage() {
     }
   }
 
-  // Active and sold listings
+  // Active and inactive listings
   const activeListings = myProducts.filter((p) => p.status === "active")
-  const soldListings = myProducts.filter((p) => p.status === "sold")
+  const inactiveListings = myProducts.filter((p) => p.status === "inactive")
+  const soldListings = myProducts.filter((p) => p.status === "inactive")
+
+  // Product skeleton for loading state
+  const ProductSkeleton = () => (
+    <Card className="overflow-hidden h-full">
+      <Skeleton className="aspect-square w-full" />
+      <CardContent className="p-3 sm:p-4">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-6 w-1/3" />
+          <div className="flex justify-between items-center pt-2">
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-4 w-1/4" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  // Add this function to renew a sold product
+  const handleRenewListing = async (id: number) => {
+    try {
+      await kupiProdaiApi.updateProduct({
+        product_id: id,
+        status: "active",
+      })
+
+      // Refresh user products
+      fetchUserProducts()
+
+      toast({
+        title: "Success",
+        description: "Product renewed and is now active",
+      })
+    } catch (err) {
+      console.error("Failed to renew product:", err)
+      toast({
+        title: "Error",
+        description: "Failed to renew product",
+        variant: "destructive",
+      })
+    }
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -452,7 +595,7 @@ export default function KupiProdaiPage() {
         <p className="text-sm sm:text-base text-muted-foreground">Buy and sell items within the university community</p>
       </div>
 
-      <Tabs defaultValue="buy" className="w-full" onValueChange={setActiveTab}>
+      <Tabs defaultValue="buy" className="w-full" onValueChange={setActiveTab} value={activeTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="buy">Buy</TabsTrigger>
           <TabsTrigger value="sell">Sell</TabsTrigger>
@@ -486,12 +629,12 @@ export default function KupiProdaiPage() {
           {showFilters && (
             <div className="p-4 border rounded-md bg-background space-y-3">
               <div className="space-y-1">
-                <label htmlFor="category" className="text-sm font-medium">
+                <label htmlFor="category" className="block text-sm font-medium">
                   Category
                 </label>
                 <select
                   id="category"
-                  className="w-full p-2 border rounded-md bg-background"
+                  className="w-full p-2 border rounded-md bg-background text-foreground"
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                 >
@@ -504,12 +647,12 @@ export default function KupiProdaiPage() {
               </div>
 
               <div className="space-y-1">
-                <label htmlFor="condition" className="text-sm font-medium">
+                <label htmlFor="condition" className="block text-sm font-medium">
                   Condition
                 </label>
                 <select
                   id="condition"
-                  className="w-full p-2 border rounded-md bg-background"
+                  className="w-full p-2 border rounded-md bg-background text-foreground"
                   value={selectedCondition}
                   onChange={(e) => setSelectedCondition(e.target.value)}
                 >
@@ -540,8 +683,10 @@ export default function KupiProdaiPage() {
           )}
 
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <ProductSkeleton key={index} />
+              ))}
             </div>
           ) : error ? (
             <div className="text-center py-12 text-destructive">
@@ -592,28 +737,18 @@ export default function KupiProdaiPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="flex gap-1 text-muted-foreground hover:text-foreground h-6 px-1.5"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleLike(product.id)
-                            }}
+                            className="flex gap-1 text-muted-foreground hover:text-primary"
                           >
-                            <Heart
-                              className={`h-3 w-3 ${likedProducts.includes(product.id) ? "fill-red-500 text-red-500" : ""}`}
-                            />
-                            <span className="text-[10px]">{likedProducts.includes(product.id) ? "Liked" : "Like"}</span>
+                            <Heart className="h-4 w-4" />
+                            <span>Like</span>
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="flex gap-1 text-muted-foreground hover:text-foreground h-6 px-1.5"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              navigate(`/apps/kupi-prodai/product/${product.id}`)
-                            }}
+                            className="flex gap-1 text-muted-foreground hover:text-primary"
                           >
-                            <MessageSquare className="h-3 w-3" />
-                            <span className="text-[10px]">Details</span>
+                            <MessageSquare className="h-4 w-4" />
+                            <span>Message</span>
                           </Button>
                         </div>
                       </CardContent>
@@ -624,447 +759,137 @@ export default function KupiProdaiPage() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex justify-center items-center mt-4 gap-1">
+                <div className="flex justify-center mt-4">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => paginate(currentPage - 1)}
                     disabled={currentPage === 1}
+                    onClick={() => paginate(currentPage - 1)}
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-4 w-4 mr-2" />
+                    Previous
                   </Button>
-
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <Button
-                      key={i + 1}
-                      variant={currentPage === i + 1 ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => paginate(i + 1)}
-                      className="w-8 h-8 p-0"
-                    >
-                      {i + 1}
-                    </Button>
-                  ))}
-
+                  <span className="mx-2 text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => paginate(currentPage + 1)}
                     disabled={currentPage === totalPages}
+                    onClick={() => paginate(currentPage + 1)}
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
               )}
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No items found</h3>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Try adjusting your search or filters to find what you're looking for.
-              </p>
+            <div className="text-center py-12">
+              <p>No products found.</p>
             </div>
           )}
         </TabsContent>
 
         {/* SELL SECTION */}
-        <TabsContent value="sell" className="pt-3 sm:pt-4">
-          <Card>
-            <CardContent className="p-4 sm:p-6">
-              {isAuthenticated ? (
-                <>
-                  {!isTelegramLinked && (
-                    <Alert variant="destructive" className="mb-4">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertTitle>Telegram Required</AlertTitle>
-                      <AlertDescription>
-                        You need to link your Telegram account before you can sell items. Please go to your profile and
-                        bind your Telegram account.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  <h2 className="text-xl font-bold mb-4">Create a New Listing</h2>
-                  <form onSubmit={handleSubmitListing} className="space-y-4">
-                    <div className="space-y-2">
-                      <label htmlFor="name" className="text-sm font-medium">
-                        Title
-                      </label>
-                      <Input
-                        id="name"
-                        name="name"
-                        placeholder="What are you selling?"
-                        value={newListing.name}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label htmlFor="price" className="text-sm font-medium">
-                          Price (₸)
-                        </label>
-                        <Input
-                          id="price"
-                          name="price"
-                          type="number"
-                          placeholder="0"
-                          value={newListing.price}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label htmlFor="category" className="text-sm font-medium">
-                          Category
-                        </label>
-                        <select
-                          id="category"
-                          name="category"
-                          className="w-full p-2 border rounded-md bg-background"
-                          value={newListing.category}
-                          onChange={handleSelectChange}
-                          required
-                        >
-                          <option value="" disabled>
-                            Select category
-                          </option>
-                          {categories.slice(1).map((category, index) => (
-                            <option key={category} value={category}>
-                              {displayCategories[index + 1]}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label htmlFor="condition" className="text-sm font-medium">
-                        Condition
-                      </label>
-                      <select
-                        id="condition"
-                        name="condition"
-                        className="w-full p-2 border rounded-md bg-background"
-                        value={newListing.condition}
-                        onChange={handleSelectChange}
-                        required
-                      >
-                        <option value="" disabled>
-                          Select condition
-                        </option>
-                        {conditions.slice(1).map((condition, index) => (
-                          <option key={condition} value={condition}>
-                            {displayConditions[index + 1]}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label htmlFor="description" className="text-sm font-medium">
-                        Description
-                      </label>
-                      <textarea
-                        id="description"
-                        name="description"
-                        placeholder="Describe your item in detail"
-                        className="w-full min-h-[100px] p-2 border rounded-md bg-background"
-                        value={newListing.description}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Upload Images</label>
-                      <div className="border-2 border-dashed border-input rounded-md p-4">
-                        <div className="grid grid-cols-3 gap-2 mb-3">
-                          {previewImages.map((image, index) => (
-                            <div key={index} className="relative">
-                              <img
-                                src={image || "/placeholder.svg"}
-                                alt={`Preview ${index + 1}`}
-                                className="w-full h-24 object-cover rounded-md"
-                              />
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                size="icon"
-                                className="absolute top-1 right-1 h-5 w-5"
-                                onClick={() => removeImage(index)}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-
-                        {previewImages.length < 5 && (
-                          <div
-                            className="flex flex-col items-center justify-center py-4 cursor-pointer border border-dashed border-input rounded-md"
-                            onClick={() => fileInputRef.current?.click()}
-                          >
-                            <Camera className="h-8 w-8 text-muted-foreground mb-2" />
-                            <p className="text-sm font-medium mb-1">Upload images</p>
-                            <p className="text-xs text-muted-foreground">Click to browse or drag and drop</p>
-                            <input
-                              type="file"
-                              ref={fileInputRef}
-                              className="hidden"
-                              accept="image/*"
-                              multiple
-                              onChange={handleImageUpload}
-                            />
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">You can upload up to 5 images</p>
-                    </div>
-
-                    <Button type="submit" className="w-full" disabled={!isTelegramLinked}>
-                      {isTelegramLinked ? "Create Listing" : "Telegram Binding Required"}
-                    </Button>
-                  </form>
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 sm:py-12 text-center">
-                  <ShoppingBag className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
-                  <h3 className="text-lg sm:text-xl font-medium mb-1 sm:mb-2">Login to Sell Items</h3>
-                  <p className="text-sm text-muted-foreground mb-4 sm:mb-6 max-w-md">
-                    You need to login before you can sell items on the marketplace
-                  </p>
-                  <Button size="sm" onClick={login} className="flex gap-2">
-                    <User className="h-4 w-4" />
-                    <span>Login</span>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* MY LISTINGS SECTION */}
-        <TabsContent value="my-listings" className="pt-3 sm:pt-4">
-          <Tabs defaultValue="active">
-            <TabsList className="w-full">
-              <TabsTrigger value="active" className="flex-1">
-                Active Listings ({activeListings.length})
-              </TabsTrigger>
-              <TabsTrigger value="sold" className="flex-1">
-                Sold Items ({soldListings.length})
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="active" className="pt-4">
-              {isLoading ? (
-                <div className="flex justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-                </div>
-              ) : activeListings.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  {activeListings.map((product) => (
-                    <Card key={product.id} className="overflow-hidden h-full">
-                      <div className="aspect-square relative">
-                        <img
-                          src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
-                          alt={product.name}
-                          className="object-cover w-full h-full"
-                        />
-                        <Badge
-                          className={`absolute top-2 right-2 ${getConditionColor(product.condition)} text-white text-xs`}
-                        >
-                          {getConditionDisplay(product.condition)}
-                        </Badge>
-                      </div>
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="flex justify-between items-start mb-1 sm:mb-2">
-                          <div>
-                            <h3 className="font-medium text-sm sm:text-base">{product.name}</h3>
-                            <p className="text-base sm:text-lg font-bold">{product.price} ₸</p>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {getCategoryDisplay(product.category)}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center text-xs sm:text-sm text-muted-foreground mb-3">
-                          <p className="line-clamp-2">{product.description}</p>
-                        </div>
-                        <div className="flex justify-end">
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditListing(product)}>
-                              Edit
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive"
-                              onClick={() => handleDeleteListing(product.id)}
-                            >
-                              Delete
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleMarkAsSold(product.id)}>
-                              Mark as Sold
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No active listings</h3>
-                  <p className="text-sm text-muted-foreground max-w-md mb-6">
-                    You don't have any active listings. Create a new listing to start selling.
-                  </p>
-                  <Button onClick={() => setActiveTab("sell")}>Create Listing</Button>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="sold" className="pt-4">
-              {isLoading ? (
-                <div className="flex justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-                </div>
-              ) : soldListings.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  {soldListings.map((product) => (
-                    <Card key={product.id} className="overflow-hidden h-full opacity-75">
-                      <div className="aspect-square relative">
-                        <img
-                          src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
-                          alt={product.name}
-                          className="object-cover w-full h-full"
-                        />
-                        <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
-                          <Badge className="bg-green-500 text-white text-sm px-3 py-1">SOLD</Badge>
-                        </div>
-                      </div>
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="flex justify-between items-start mb-1 sm:mb-2">
-                          <div>
-                            <h3 className="font-medium text-sm sm:text-base">{product.name}</h3>
-                            <p className="text-base sm:text-lg font-bold">{product.price} ₸</p>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {getCategoryDisplay(product.category)}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center text-xs sm:text-sm text-muted-foreground mb-3">
-                          <p className="line-clamp-2">{product.description}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No sold items</h3>
-                  <p className="text-sm text-muted-foreground max-w-md">Items you've sold will appear here.</p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-      </Tabs>
-
-      {/* Edit Listing Modal */}
-      {showEditModal && editingListing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-background rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-auto">
-            <div className="p-4 sm:p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Edit Listing</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowEditModal(false)
-                    setEditingListing(null)
-                    setPreviewImages([])
-                  }}
-                >
-                  <X className="h-5 w-5" />
+        <TabsContent value="sell" className="space-y-4 pt-4">
+          {!isAuthenticated ? (
+            <Alert variant="destructive">
+              <AlertTitle>Authentication Required</AlertTitle>
+              <AlertDescription>
+                You must be logged in to create a listing.
+                <Button variant="link" onClick={() => login()}>
+                  Login
                 </Button>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <form onSubmit={handleSubmitListing} className="space-y-4">
+              {/* Name */}
+              <div className="space-y-2">
+                <label htmlFor="name" className="block text-sm font-medium">
+                  Name
+                </label>
+                <Input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={newListing.name}
+                  onChange={handleInputChange}
+                  required
+                  className="bg-background text-foreground"
+                  placeholder="What are you selling?"
+                />
               </div>
 
-              <form onSubmit={handleUpdateListing} className="space-y-4">
+              {/* Description */}
+              <div className="space-y-2">
+                <label htmlFor="description" className="block text-sm font-medium">
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={newListing.description}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full p-2 border rounded-md bg-background text-foreground"
+                  placeholder="Describe your item..."
+                />
+              </div>
+
+              {/* Price, Category, and Condition */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="edit-name" className="text-sm font-medium">
-                    Title
+                  <label htmlFor="price" className="block text-sm font-medium">
+                    Price (₸)
                   </label>
                   <Input
-                    id="edit-name"
-                    name="name"
-                    placeholder="What are you selling?"
-                    value={newListing.name}
+                    type="number"
+                    id="price"
+                    name="price"
+                    value={newListing.price === 0 ? "" : newListing.price}
                     onChange={handleInputChange}
+                    onFocus={handlePriceInputFocus}
+                    onBlur={handlePriceInputBlur}
+                    min="0"
+                    step="1"
                     required
+                    className="bg-background text-foreground"
+                    placeholder="0"
                   />
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor="edit-price" className="text-sm font-medium">
-                      Price (₸)
-                    </label>
-                    <Input
-                      id="edit-price"
-                      name="price"
-                      type="number"
-                      placeholder="0"
-                      value={newListing.price}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="edit-category" className="text-sm font-medium">
-                      Category
-                    </label>
-                    <select
-                      id="edit-category"
-                      name="category"
-                      className="w-full p-2 border rounded-md bg-background"
-                      value={newListing.category}
-                      onChange={handleSelectChange}
-                      required
-                    >
-                      <option value="" disabled>
-                        Select category
-                      </option>
-                      {categories.slice(1).map((category, index) => (
-                        <option key={category} value={category}>
-                          {displayCategories[index + 1]}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
                 <div className="space-y-2">
-                  <label htmlFor="edit-condition" className="text-sm font-medium">
+                  <label htmlFor="category" className="block text-sm font-medium">
+                    Category
+                  </label>
+                  <select
+                    id="category"
+                    name="category"
+                    value={newListing.category}
+                    onChange={handleSelectChange}
+                    className="w-full p-2 border rounded-md bg-background text-foreground"
+                    required
+                  >
+                    {categories.slice(1).map((category, index) => (
+                      <option key={category} value={category}>
+                        {displayCategories[index + 1]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="condition" className="block text-sm font-medium">
                     Condition
                   </label>
                   <select
-                    id="edit-condition"
+                    id="condition"
                     name="condition"
-                    className="w-full p-2 border rounded-md bg-background"
                     value={newListing.condition}
                     onChange={handleSelectChange}
+                    className="w-full p-2 border rounded-md bg-background text-foreground"
                     required
                   >
-                    <option value="" disabled>
-                      Select condition
-                    </option>
                     {conditions.slice(1).map((condition, index) => (
                       <option key={condition} value={condition}>
                         {displayConditions[index + 1]}
@@ -1072,77 +897,364 @@ export default function KupiProdaiPage() {
                     ))}
                   </select>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="edit-description" className="text-sm font-medium">
-                    Description
-                  </label>
-                  <textarea
-                    id="edit-description"
-                    name="description"
-                    placeholder="Describe your item in detail"
-                    className="w-full min-h-[100px] p-2 border rounded-md bg-background"
-                    value={newListing.description}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Images</label>
-                  <div className="border-2 border-dashed border-input rounded-md p-4">
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      {previewImages.map((image, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={image || "/placeholder.svg"}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-md"
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-1 right-1 h-5 w-5"
-                            onClick={() => removeImage(index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-
-                    {previewImages.length < 5 && (
-                      <div
-                        className="flex flex-col items-center justify-center py-4 cursor-pointer border border-dashed border-input rounded-md"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        <Camera className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-sm font-medium mb-1">Upload images</p>
-                        <p className="text-xs text-muted-foreground">Click to browse or drag and drop</p>
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          className="hidden"
-                          accept="image/*"
-                          multiple
-                          onChange={handleImageUpload}
-                        />
-                      </div>
-                    )}
+              {/* Image Upload with Drag and Drop */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">Images</label>
+                <div
+                  ref={dropZoneRef}
+                  className={`border-2 ${
+                    isDragging ? "border-primary" : "border-dashed"
+                  } rounded-md p-6 transition-colors duration-200 ease-in-out`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-sm font-medium mb-1">Upload a file or drag and drop</p>
+                    <p className="text-xs text-muted-foreground mb-4">PNG, JPG, GIF up to 10MB</p>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      className="hidden"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                    />
+                    <Button type="button" variant="outline" size="sm">
+                      Upload a file
+                    </Button>
                   </div>
                 </div>
 
+                {/* Image Preview */}
+                {previewImages.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-4">
+                    {previewImages.map((src, index) => (
+                      <div key={index} className="relative aspect-square rounded-md overflow-hidden">
+                        <img
+                          src={src || "/placeholder.svg"}
+                          alt={`Preview ${index + 1}`}
+                          className="object-cover w-full h-full"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-1 right-1 h-6 w-6"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            removeImage(index)
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <Button type="submit" disabled={isUploading} className="w-full">
+                {isUploading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <RefreshCw className="animate-spin h-4 w-4" />
+                    <span>Uploading... {uploadProgress}%</span>
+                  </div>
+                ) : (
+                  "Create Listing"
+                )}
+              </Button>
+
+              {isUploading && <Progress value={uploadProgress} className="mt-2" />}
+            </form>
+          )}
+        </TabsContent>
+
+        {/* MY LISTINGS SECTION */}
+        <TabsContent value="my-listings" className="space-y-4 pt-4">
+          {!isAuthenticated ? (
+            <Alert variant="destructive">
+              <AlertTitle>Authentication Required</AlertTitle>
+              <AlertDescription>
+                You must be logged in to view your listings.
+                <Button variant="link" onClick={() => login()}>
+                  Login
+                </Button>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              {/* Active Listings */}
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold">Active Listings</h2>
+                {activeListings.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {activeListings.map((product) => (
+                      <Card key={product.id} className="overflow-hidden">
+                        <div className="aspect-square relative">
+                          <img
+                            src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                            alt={product.name}
+                            className="object-cover w-full h-full"
+                          />
+                          <Badge
+                            className={`absolute top-2 right-2 ${getConditionColor(product.condition)} text-white text-xs`}
+                          >
+                            {getConditionDisplay(product.condition)}
+                          </Badge>
+                        </div>
+                        <CardContent className="p-3">
+                          <h3 className="font-medium text-sm line-clamp-1">{product.name}</h3>
+                          <p className="text-sm font-bold">{product.price} ₸</p>
+                          <div className="flex justify-between mt-2">
+                            <Button variant="outline" size="sm" onClick={() => handleEditListing(product)}>
+                              Edit
+                            </Button>
+                            <Button variant="destructive" size="sm" onClick={() => handleDeleteListing(product.id)}>
+                              Delete
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleToggleProductStatus(product.id, product.status)}
+                            >
+                              Mark as Sold
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <p>No active listings found.</p>
+                )}
+              </div>
+
+              {/* Inactive Listings */}
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold">Inactive Listings</h2>
+                {inactiveListings.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {inactiveListings.map((product) => (
+                      <Card key={product.id} className="overflow-hidden">
+                        <div className="aspect-square relative">
+                          <img
+                            src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                            alt={product.name}
+                            className="object-cover w-full h-full"
+                          />
+                          <Badge
+                            className={`absolute top-2 right-2 ${getConditionColor(product.condition)} text-white text-xs`}
+                          >
+                            {getConditionDisplay(product.condition)}
+                          </Badge>
+                        </div>
+                        <CardContent className="p-3">
+                          <h3 className="font-medium text-sm line-clamp-1">{product.name}</h3>
+                          <p className="text-sm font-bold">{product.price} ₸</p>
+                          <div className="flex justify-between mt-2">
+                            <Button variant="outline" size="sm" onClick={() => handleEditListing(product)}>
+                              Edit
+                            </Button>
+                            <Button variant="destructive" size="sm" onClick={() => handleDeleteListing(product.id)}>
+                              Delete
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleToggleProductStatus(product.id, product.status)}
+                            >
+                              Mark as Active
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <p>No inactive listings found.</p>
+                )}
+              </div>
+            </>
+          )}
+        </TabsContent>
+
+        {/* Update the sold items section */}
+        <TabsContent value="sold" className="pt-4">
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : soldListings.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {soldListings.map((product) => (
+                <Card
+                  key={product.id}
+                  className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => navigate(`/apps/kupi-prodai/product/${product.id}`)}
+                >
+                  <div className="aspect-square relative">
+                    <img
+                      src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                      alt={product.name}
+                      className="object-cover w-full h-full"
+                    />
+                    <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+                      <Badge className="bg-green-500 text-white text-sm px-3 py-1">SOLD</Badge>
+                    </div>
+                  </div>
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex justify-between items-start mb-1 sm:mb-2">
+                      <div>
+                        <h3 className="font-medium text-sm sm:text-base">{product.name}</h3>
+                        <p className="text-base sm:text-lg font-bold">{product.price} ₸</p>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {getCategoryDisplay(product.category)}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center text-xs sm:text-sm text-muted-foreground mb-3">
+                      <p className="line-clamp-2">{product.description}</p>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRenewListing(product.id)
+                        }}
+                        className="text-green-600 border-green-200 hover:bg-green-50"
+                      >
+                        Renew Listing
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">No sold items</h3>
+              <p className="text-sm text-muted-foreground max-w-md">Items you've sold will appear here.</p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Edit Listing Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 text-center">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+
+            <div
+              className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="modal-headline"
+            >
+              <form onSubmit={handleUpdateListing} className="space-y-4 p-4">
+                <h2 className="text-lg font-semibold">Edit Listing</h2>
+
+                {/* Name and Description */}
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                    Name
+                  </label>
+                  <Input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={newListing.name}
+                    onChange={handleInputChange}
+                    required
+                    className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={newListing.description}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md"
+                  />
+                </div>
+
+                {/* Price, Category, and Condition */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+                      Price (₸)
+                    </label>
+                    <Input
+                      type="number"
+                      id="price"
+                      name="price"
+                      value={newListing.price === 0 ? "" : newListing.price}
+                      onChange={handleInputChange}
+                      onFocus={handlePriceInputFocus}
+                      onBlur={handlePriceInputBlur}
+                      min="0"
+                      step="1"
+                      required
+                      className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+                      Category
+                    </label>
+                    <select
+                      id="category"
+                      name="category"
+                      value={newListing.category}
+                      onChange={handleSelectChange}
+                      className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md"
+                    >
+                      {categories.slice(1).map((category) => (
+                        <option key={category} value={category}>
+                          {displayCategories[categories.indexOf(category)]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="condition" className="block text-sm font-medium text-gray-700">
+                      Condition
+                    </label>
+                    <select
+                      id="condition"
+                      name="condition"
+                      value={newListing.condition}
+                      onChange={handleSelectChange}
+                      className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md"
+                    >
+                      {conditions.slice(1).map((condition) => (
+                        <option key={condition} value={condition}>
+                          {displayConditions[conditions.indexOf(condition)]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
                 <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setShowEditModal(false)
-                      setEditingListing(null)
-                      setPreviewImages([])
-                    }}
-                  >
+                  <Button type="button" variant="ghost" onClick={() => setShowEditModal(false)}>
                     Cancel
                   </Button>
                   <Button type="submit">Update Listing</Button>
@@ -1155,4 +1267,3 @@ export default function KupiProdaiPage() {
     </div>
   )
 }
-

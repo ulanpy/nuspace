@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ExternalLink, Check } from "lucide-react"
 import { Button } from "./ui/button"
 import { Modal } from "./ui/modal"
 import { useAuth } from "../context/auth-context"
 import { Badge } from "./ui/badge"
+import { useToast } from "../hooks/use-toast"
 
 // Emoji mapping based on the backend logic
 const numberToEmoji = (num: number): string => {
@@ -21,9 +22,74 @@ export function BindTelegramButton() {
   const [telegramLink, setTelegramLink] = useState("")
   const [confirmationEmoji, setConfirmationEmoji] = useState("")
   const [error, setError] = useState("")
+  const [isLinked, setIsLinked] = useState(user?.tg_linked || false)
+  const { toast } = useToast()
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Check if user is linked to Telegram directly from the user object
-  const isLinked = user?.tg_linked || false
+  useEffect(() => {
+    setIsLinked(user?.tg_linked || false)
+  }, [user])
+
+  // Clean up polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+      }
+    }
+  }, [])
+
+  // Start polling for Telegram status when modal is shown
+  useEffect(() => {
+    if (showModal && !isLinked) {
+      startPollingTelegramStatus()
+    } else if (!showModal && pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+      pollingIntervalRef.current = null
+    }
+  }, [showModal, isLinked])
+
+  const startPollingTelegramStatus = () => {
+    // Clear any existing interval
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+    }
+
+    // Start polling every 2 seconds
+    pollingIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await fetch("http://localhost/api/me", {
+          method: "GET",
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const userData = await response.json()
+
+          // If Telegram is now linked, update UI and stop polling
+          if (userData.tg_linked) {
+            setIsLinked(true)
+            setShowModal(false)
+
+            toast({
+              title: "Success",
+              description: "Your Telegram account has been linked successfully!",
+              variant: "success",
+            })
+
+            // Stop polling
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current)
+              pollingIntervalRef.current = null
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking Telegram status:", error)
+      }
+    }, 2000)
+  }
 
   // Update the handleBindTelegram function to use the correct sub field
   const handleBindTelegram = async () => {
@@ -96,7 +162,13 @@ export function BindTelegramButton() {
 
       <Modal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => {
+          setShowModal(false)
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current)
+            pollingIntervalRef.current = null
+          }
+        }}
         title="Bind Your Telegram Account"
         description="Click the link below to open Telegram and confirm your account."
       >
