@@ -11,10 +11,6 @@ import asyncio
 
 
 
-
-
-
-
 async def get_media_responses(
     session: AsyncSession,
     request: Request,
