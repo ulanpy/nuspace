@@ -44,7 +44,7 @@ async def confirm_uploaded_media_to_db(
 
 
 async def delete_media(session: AsyncSession, media_id: int):
-    result = await session.execute(select(Media).filter_by(id=media_id))
+    result = await session.execute(select(Media).filter_by(id=int(media_id)))
     result = result.scalars().first()
     if result:
         await session.delete(result)
@@ -54,6 +54,6 @@ async def delete_media(session: AsyncSession, media_id: int):
         return False
 
 async def get_filename(session: AsyncSession, media_id: int):
-    result = await session.execute(select(Media.name).filter_by(id=media_id))
+    result = await session.execute(select(Media.name).filter_by(id=int(media_id)))
     result = result.scalars().first()
     return result

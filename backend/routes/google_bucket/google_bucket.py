@@ -155,7 +155,7 @@ async def gcs_webhook(
 @router.delete("/{filename}")
 async def delete_bucket_object(
     request: Request,
-    media_id,
+    media_id:int,
     db_session: AsyncSession = Depends(get_db_session)
 ):
     filename = await get_filename(db_session, media_id)
