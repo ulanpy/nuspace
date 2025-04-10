@@ -52,3 +52,8 @@ async def delete_media(session: AsyncSession, media_id: int):
         return True
     else:
         return False
+
+async def get_filename(session: AsyncSession, media_id: int):
+    result = await session.execute(select(Media.name).filter_by(id=media_id))
+    result = result.scalars().first()
+    return result
