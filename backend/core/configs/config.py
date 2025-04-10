@@ -30,6 +30,7 @@ class Config(BaseSettings):
     CELERY_RESULT_BACKEND: str
 
     TG_API_KEY: str
+    SECRET_TOKEN: str
     WEBAPP_HOST: str = "localhost"
     WEBAPP_PORT: int = 3001
     ngrok_server_endpoint: str

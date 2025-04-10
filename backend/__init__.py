@@ -54,7 +54,6 @@ async def lifespan(app: FastAPI):
             await app.state.bot.delete_webhook(drop_pending_updates=True)
 
         await app.state.redis.aclose()
-
         await app.state.db_manager.async_engine.dispose()
         app.state.db_manager_sync.sync_engine.dispose()
 

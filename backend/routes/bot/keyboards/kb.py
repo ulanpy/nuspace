@@ -83,3 +83,12 @@ def get_user_selector_kb(_: Callable[[str], str]) -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True,
     )
+
+def user_profile_button(user_id: int, _: Callable[[str], str]):
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text=_("Профиль пользователя"),
+            url=f"tg://user?id={user_id}"
+        )]
+    ])
+    return keyboard

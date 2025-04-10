@@ -41,3 +41,6 @@ msgstr "⛔️Unfortunately, due to the user's privacy settings, this is unavail
 
 msgid "Выберите пользователя"
 msgstr "Select a user"
+
+msgid "Профиль пользователя"
+msgstr "User Profile"
