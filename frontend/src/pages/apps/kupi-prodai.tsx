@@ -15,6 +15,10 @@ import {
   ChevronRight,
   RefreshCw,
   ImageIcon,
+  ChevronUp,
+  ChevronDown,
+  Trash2,
+  Plus,
 } from "lucide-react"
 import { Input } from "../../components/ui/input"
 import { Button } from "../../components/ui/button"
@@ -29,6 +33,7 @@ import {
   type NewProductRequest,
   defaultSize,
   defaultPage,
+  type ProductMedia,
 } from "../../api/kupi-prodai-api"
 import { useToast } from "../../hooks/use-toast"
 import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert"
@@ -140,6 +145,12 @@ export default function KupiProdaiPage() {
   // Edit listing state
   const [editingListing, setEditingListing] = useState<Product | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
+
+  // Add these state variables after the other state declarations
+  const [originalMedia, setOriginalMedia] = useState<ProductMedia[]>([])
+  const [mediaToDelete, setMediaToDelete] = useState<number[]>([])
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0)
+  const [reorderedMedia, setReorderedMedia] = useState<ProductMedia[]>([])
 
   // Fetch products on component mount
   useEffect(() => {
@@ -385,7 +396,7 @@ export default function KupiProdaiPage() {
     }
   }
 
-  // Update product
+  // Find the handleEditListing function and update it to properly handle the media
   const handleEditListing = (product: Product) => {
     setEditingListing(product)
     setNewListing({
@@ -394,18 +405,99 @@ export default function KupiProdaiPage() {
       price: product.price,
       category: product.category,
       condition: product.condition,
-      status: "active",
+      status: product.status || "active",
     })
+
+    // Store the initial media state for comparison later
     setPreviewImages(product.media.map((m) => m.url))
+    setImageFiles([])
+
+    // Store the original media for tracking changes
+    setOriginalMedia(product.media)
+    setCurrentMediaIndex(0)
     setShowEditModal(true)
   }
 
+  // Add this function to handle image deletion in the edit modal
+  const handleDeleteImage = (mediaId: number) => {
+    // Add the media ID to the list of media to delete
+    setMediaToDelete([...mediaToDelete, mediaId])
+
+    // Remove the image from the preview images
+    const mediaIndex = originalMedia.findIndex((m) => m.id === mediaId)
+    if (mediaIndex !== -1) {
+      const newPreviewImages = [...previewImages]
+      newPreviewImages.splice(mediaIndex, 1)
+      setPreviewImages(newPreviewImages)
+
+      // Update reordered media
+      const newReorderedMedia =
+        reorderedMedia.length > 0
+          ? reorderedMedia.filter((m) => m.id !== mediaId)
+          : originalMedia.filter((m) => m.id !== mediaId)
+      setReorderedMedia(newReorderedMedia)
+
+      // Adjust current index if needed
+      if (currentMediaIndex >= newPreviewImages.length && newPreviewImages.length > 0) {
+        setCurrentMediaIndex(newPreviewImages.length - 1)
+      }
+    }
+  }
+
+  // Add these functions to handle image reordering
+  const moveImageUp = (index: number) => {
+    if (index <= 0) return
+
+    // Initialize reorderedMedia if it's empty
+    const mediaToReorder =
+      reorderedMedia.length > 0 ? [...reorderedMedia] : [...originalMedia.filter((m) => !mediaToDelete.includes(m.id))]
+
+    // Swap the images
+    const temp = mediaToReorder[index]
+    mediaToReorder[index] = mediaToReorder[index - 1]
+    mediaToReorder[index - 1] = temp
+
+    // Update the preview images to match
+    const newPreviewImages = mediaToReorder.map((m) => m.url)
+    const newImageFiles = [...imageFiles]
+
+    setReorderedMedia(mediaToReorder)
+    setPreviewImages(newPreviewImages)
+    setCurrentMediaIndex(index - 1)
+  }
+
+  const moveImageDown = (index: number) => {
+    // Initialize reorderedMedia if it's empty
+    const mediaToReorder =
+      reorderedMedia.length > 0 ? [...reorderedMedia] : [...originalMedia.filter((m) => !mediaToDelete.includes(m.id))]
+
+    if (index >= mediaToReorder.length - 1) return
+
+    // Swap the images
+    const temp = mediaToReorder[index]
+    mediaToReorder[index] = mediaToReorder[index + 1]
+    mediaToReorder[index + 1] = temp
+
+    // Update the preview images to match
+    const newPreviewImages = mediaToReorder.map((m) => m.url)
+    const newImageFiles = [...imageFiles]
+
+    setReorderedMedia(mediaToReorder)
+    setPreviewImages(newPreviewImages)
+    setCurrentMediaIndex(index + 1)
+  }
+
+  // Update the handleUpdateListing function to handle media changes
   const handleUpdateListing = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!editingListing) return
 
     try {
+      setIsUploading(true)
+      setUploadProgress(10)
+
+      // Step 1: Update the product details
       await kupiProdaiApi.updateProduct({
         product_id: editingListing.id,
         name: newListing.name,
@@ -413,10 +505,55 @@ export default function KupiProdaiPage() {
         price: newListing.price,
         category: newListing.category,
         condition: newListing.condition,
+        status: newListing.status,
       })
 
-      // Refresh user products
-      fetchUserProducts()
+      setUploadProgress(30)
+
+      // Step 2: Delete images that were removed
+      if (mediaToDelete.length > 0) {
+        const deletePromises = mediaToDelete.map((mediaId) => {
+          return fetch(`http://localhost/api/bucket/delete?media_id=${mediaId}`, {
+            method: "DELETE",
+            credentials: "include",
+          })
+        })
+
+        await Promise.all(deletePromises)
+        setUploadProgress(50)
+      }
+
+      // Step 3: Upload new images if there are any
+      if (imageFiles.length > 0) {
+        // Get signed URLs for image uploads
+        const signedUrlsResponse = await kupiProdaiApi.getSignedUrls(imageFiles.length)
+        setUploadProgress(60)
+
+        // Upload each image
+        const uploadPromises = imageFiles.map((file, index) => {
+          const signedUrl = signedUrlsResponse.signed_urls[index]
+          return kupiProdaiApi.uploadImage(
+            file,
+            signedUrl.filename,
+            editingListing.id,
+            // Use the next available order number
+            originalMedia.length + index + 1,
+          )
+        })
+
+        await Promise.all(uploadPromises)
+        setUploadProgress(80)
+      }
+
+      // Step 4: Update image order if needed
+      // This would require an API endpoint to update image order
+      // For now, we'll assume the order is determined by the media_order field
+      // and the backend handles this when images are uploaded
+
+      // Step 5: Refresh user products to show the updated product with images
+      const updatedProducts = await kupiProdaiApi.getUserProducts()
+      setMyProducts(updatedProducts)
+      setUploadProgress(100)
 
       // Reset form and close modal
       setEditingListing(null)
@@ -430,6 +567,9 @@ export default function KupiProdaiPage() {
       })
       setPreviewImages([])
       setImageFiles([])
+      setOriginalMedia([])
+      setMediaToDelete([])
+      setReorderedMedia([])
       setShowEditModal(false)
 
       toast({
@@ -443,6 +583,9 @@ export default function KupiProdaiPage() {
         description: "Failed to update product",
         variant: "destructive",
       })
+    } finally {
+      setIsUploading(false)
+      setUploadProgress(0)
     }
   }
 
@@ -583,7 +726,6 @@ export default function KupiProdaiPage() {
       toast({
         title: "Error",
         description: "Failed to renew product",
-        variant: "destructive",
       })
     }
   }
@@ -1148,117 +1290,330 @@ export default function KupiProdaiPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Edit Listing Modal */}
+      {/* Replace the Edit Listing Modal with this enhanced version */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4 text-center">
+          <div className="flex items-center justify-center min-h-screen px-4 py-6 text-center">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
 
             <div
-              className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+              className="inline-block w-full max-w-4xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-background rounded-lg shadow-xl"
               role="dialog"
               aria-modal="true"
               aria-labelledby="modal-headline"
             >
-              <form onSubmit={handleUpdateListing} className="space-y-4 p-4">
-                <h2 className="text-lg font-semibold">Edit Listing</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold" id="modal-headline">
+                  Edit Listing
+                </h2>
+                <Button variant="ghost" size="sm" onClick={() => setShowEditModal(false)}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
 
-                {/* Name and Description */}
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                    Name
-                  </label>
-                  <Input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={newListing.name}
-                    onChange={handleInputChange}
-                    required
-                    className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                    Description
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={newListing.description}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md"
-                  />
+              <form onSubmit={handleUpdateListing} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left column: Product details */}
+                  <div className="space-y-4">
+                    {/* Name */}
+                    <div className="space-y-2">
+                      <label htmlFor="edit-name" className="block text-sm font-medium">
+                        Name
+                      </label>
+                      <Input
+                        type="text"
+                        id="edit-name"
+                        name="name"
+                        value={newListing.name}
+                        onChange={handleInputChange}
+                        required
+                        className="bg-background text-foreground"
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-2">
+                      <label htmlFor="edit-description" className="block text-sm font-medium">
+                        Description
+                      </label>
+                      <textarea
+                        id="edit-description"
+                        name="description"
+                        value={newListing.description}
+                        onChange={handleInputChange}
+                        rows={4}
+                        className="w-full p-2 border rounded-md bg-background text-foreground"
+                      />
+                    </div>
+
+                    {/* Price, Category, and Condition */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="edit-price" className="block text-sm font-medium">
+                          Price (₸)
+                        </label>
+                        <Input
+                          type="number"
+                          id="edit-price"
+                          name="price"
+                          value={newListing.price === 0 ? "" : newListing.price}
+                          onChange={handleInputChange}
+                          onFocus={handlePriceInputFocus}
+                          onBlur={handlePriceInputBlur}
+                          min="0"
+                          step="1"
+                          required
+                          className="bg-background text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="edit-category" className="block text-sm font-medium">
+                          Category
+                        </label>
+                        <select
+                          id="edit-category"
+                          name="category"
+                          value={newListing.category}
+                          onChange={handleSelectChange}
+                          className="w-full p-2 border rounded-md bg-background text-foreground"
+                        >
+                          {categories.slice(1).map((category, index) => (
+                            <option key={category} value={category}>
+                              {displayCategories[index + 1]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="edit-condition" className="block text-sm font-medium">
+                          Condition
+                        </label>
+                        <select
+                          id="edit-condition"
+                          name="condition"
+                          value={newListing.condition}
+                          onChange={handleSelectChange}
+                          className="w-full p-2 border rounded-md bg-background text-foreground"
+                        >
+                          {conditions.slice(1).map((condition, index) => (
+                            <option key={condition} value={condition}>
+                              {displayConditions[index + 1]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right column: Image carousel and controls */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium">Images</label>
+
+                      {/* Image carousel */}
+                      <div className="relative aspect-square rounded-md overflow-hidden border border-border">
+                        {previewImages.length > 0 ? (
+                          <>
+                            <img
+                              src={previewImages[currentMediaIndex] || "/placeholder.svg"}
+                              alt={`Product image ${currentMediaIndex + 1}`}
+                              className="object-contain w-full h-full"
+                            />
+
+                            {/* Image navigation */}
+                            {previewImages.length > 1 && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-background/80"
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    setCurrentMediaIndex((prev) => (prev === 0 ? previewImages.length - 1 : prev - 1))
+                                  }}
+                                  type="button"
+                                >
+                                  <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-background/80"
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    setCurrentMediaIndex((prev) => (prev === previewImages.length - 1 ? 0 : prev + 1))
+                                  }}
+                                  type="button"
+                                >
+                                  <ChevronRight className="h-4 w-4" />
+                                </Button>
+
+                                {/* Image indicators */}
+                                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                                  {previewImages.map((_, index) => (
+                                    <button
+                                      key={index}
+                                      type="button"
+                                      className={`w-2 h-2 rounded-full ${
+                                        index === currentMediaIndex ? "bg-primary" : "bg-background/80"
+                                      }`}
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setCurrentMediaIndex(index)
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              </>
+                            )}
+
+                            {/* Image actions */}
+                            <div className="absolute top-2 right-2 flex gap-1">
+                              {/* Always show delete button */}
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                className="h-8 w-8 rounded-full bg-background/80"
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const mediaToRemove = originalMedia.find(
+                                    (m) => m.url === previewImages[currentMediaIndex],
+                                  )
+                                  if (mediaToRemove) {
+                                    handleDeleteImage(mediaToRemove.id)
+                                  } else {
+                                    // This is a newly added image
+                                    const newImageFiles = [...imageFiles]
+                                    const newPreviewImages = [...previewImages]
+                                    newImageFiles.splice(currentMediaIndex - originalMedia.length, 1)
+                                    newPreviewImages.splice(currentMediaIndex, 1)
+                                    setImageFiles(newImageFiles)
+                                    setPreviewImages(newPreviewImages)
+                                    if (currentMediaIndex >= newPreviewImages.length && newPreviewImages.length > 0) {
+                                      setCurrentMediaIndex(newPreviewImages.length - 1)
+                                    }
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+
+                              {/* Reordering buttons */}
+                              {previewImages.length > 1 && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-full bg-background/80"
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      moveImageUp(currentMediaIndex)
+                                    }}
+                                    disabled={currentMediaIndex === 0}
+                                  >
+                                    <ChevronUp className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-full bg-background/80"
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      moveImageDown(currentMediaIndex)
+                                    }}
+                                    disabled={currentMediaIndex === previewImages.length - 1}
+                                  >
+                                    <ChevronDown className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                            <ImageIcon className="h-12 w-12 mb-2" />
+                            <p>No images</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Image thumbnails */}
+                      {previewImages.length > 0 && (
+                        <div className="flex overflow-x-auto gap-2 py-2">
+                          {previewImages.map((src, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              className={`relative w-16 h-16 rounded-md overflow-hidden border-2 ${
+                                index === currentMediaIndex ? "border-primary" : "border-transparent"
+                              }`}
+                              onClick={() => setCurrentMediaIndex(index)}
+                            >
+                              <img
+                                src={src || "/placeholder.svg"}
+                                alt={`Thumbnail ${index + 1}`}
+                                className="object-cover w-full h-full"
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add new images */}
+                      <div
+                        ref={dropZoneRef}
+                        className={`border-2 ${
+                          isDragging ? "border-primary" : "border-dashed"
+                        } rounded-md p-4 transition-colors duration-200 ease-in-out`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <Plus className="h-8 w-8 text-muted-foreground mb-2" />
+                          <p className="text-sm font-medium mb-1">Add more images</p>
+                          <p className="text-xs text-muted-foreground">Click or drag and drop</p>
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            multiple
+                            onChange={handleImageUpload}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Price, Category, and Condition */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                      Price (₸)
-                    </label>
-                    <Input
-                      type="number"
-                      id="price"
-                      name="price"
-                      value={newListing.price === 0 ? "" : newListing.price}
-                      onChange={handleInputChange}
-                      onFocus={handlePriceInputFocus}
-                      onBlur={handlePriceInputBlur}
-                      min="0"
-                      step="1"
-                      required
-                      className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-                      Category
-                    </label>
-                    <select
-                      id="category"
-                      name="category"
-                      value={newListing.category}
-                      onChange={handleSelectChange}
-                      className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md"
-                    >
-                      {categories.slice(1).map((category) => (
-                        <option key={category} value={category}>
-                          {displayCategories[categories.indexOf(category)]}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="condition" className="block text-sm font-medium text-gray-700">
-                      Condition
-                    </label>
-                    <select
-                      id="condition"
-                      name="condition"
-                      value={newListing.condition}
-                      onChange={handleSelectChange}
-                      className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md"
-                    >
-                      {conditions.slice(1).map((condition) => (
-                        <option key={condition} value={condition}>
-                          {displayConditions[conditions.indexOf(condition)]}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="ghost" onClick={() => setShowEditModal(false)}>
+                {/* Submit buttons */}
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit">Update Listing</Button>
+                  <Button type="submit" disabled={isUploading} className="min-w-[120px]">
+                    {isUploading ? (
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        <span>{uploadProgress}%</span>
+                      </div>
+                    ) : (
+                      "Update Listing"
+                    )}
+                  </Button>
                 </div>
+
+                {isUploading && <Progress value={uploadProgress} className="mt-2" />}
               </form>
             </div>
           </div>
