@@ -3,9 +3,8 @@ from celery import Celery
 from backend.core.configs.config import config
 
 celery_app = Celery(
-    'worker',
+    main='worker',
     broker=config.CELERY_BROKER_URL,
-    backend=config.CELERY_RESULT_BACKEND,  # Better to use Redis for results
     include=['backend.celery_app.tasks'],
     broker_connection_retry_on_startup=True  # Important for Docker compatibility
 )

@@ -13,7 +13,7 @@ from backend.core.database.manager import SyncDatabaseManager
 class UserAdmin(ModelView, model=User):
     icon = "fa-solid fa-user"
     category = "Accounts"
-    column_list = [User.email, User.picture, User.telegram_id, User.role, User.scope, User.name, User.surname, User.created_at, User.updated_at]
+    column_list = [User.clubs_led, User.email, User.picture, User.telegram_id, User.role, User.scope, User.name, User.surname, User.created_at, User.updated_at]
     column_sortable_list = [User.email, User.name, User.surname, User.created_at]
     column_searchable_list = [User.email, User.name, User.role, User.surname]
     column_details_list = [User.email, User.picture, User.role, User.scope, User.name, User.surname, User.created_at, User.updated_at]
@@ -47,7 +47,6 @@ class UserAdmin(ModelView, model=User):
                 request.cookies.get("access_token"),
                 kc_manager
             )["sub"]
-
             # Use async with instead of async for
             with db_manager_sync.get_sync_session() as session:
                 user_role = get_user_role_sync(session, sub)

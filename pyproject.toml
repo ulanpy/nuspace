@@ -25,12 +25,13 @@ python-jose = "^3.3.0"
 sqladmin = "^0.20.1"
 google-cloud-storage = "^3.0.0"
 pyjwt = "^2.10.1"
-aiogram = "^3.18.0"
 gunicorn = "^23.0.0"
+aiogram = "^3.18.0"
 psycopg2 = "^2.9.10"
 apscheduler = "^3.11.0"
 celery = "^5.4.0"
-
+polib = "^1.2.0"
+pytz = "^2025.2"
 
 
 

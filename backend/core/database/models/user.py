@@ -13,7 +13,7 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from enum import Enum
 from sqlalchemy import Integer, Enum as SQLEnum
-
+from .product import Product
 
 class UserRole(Enum):
     default = "default"
@@ -28,8 +28,8 @@ class UserScope(Enum):
 
 class User(Base):
     __tablename__ = 'users'
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    sub: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
+
+    sub: Mapped[str] = mapped_column(primary_key=True, nullable=False, unique=True, index=True)
     email: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
     role: Mapped[UserRole] = mapped_column(SQLEnum(UserRole, name="userrole"), nullable=False)
     scope: Mapped[UserScope] = mapped_column(SQLEnum(UserScope, name="userscope"), nullable=False)
@@ -40,7 +40,10 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=True, index=True)
 
-
     clubs_led = relationship("Club", back_populates="president_user")
+
+    products = relationship("Product",back_populates = "user")
+    product_feedbacks = relationship("ProductFeedback",back_populates="user")
+    product_reports = relationship("ProductReport",back_populates="user")
 
 

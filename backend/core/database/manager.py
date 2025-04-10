@@ -1,6 +1,5 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncEngine
 from typing import AsyncGenerator
-from contextlib import contextmanager
 
 from backend.core.database.models import Base
 from backend.core.configs.config import config
@@ -25,7 +24,6 @@ class AsyncDatabaseManager:
         async with self.async_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         await self.async_engine.dispose()
-
 
     # this function returns async session used in fastapi dependency injections
     async def get_async_session(self) -> AsyncGenerator[AsyncSession, None]:

@@ -1,15 +1,14 @@
-from aiogram.fsm.storage.memory import MemoryStorage
 import requests
+from aiogram.fsm.storage.redis import RedisStorage
 from aiogram import Dispatcher, Bot
-from aiogram.enums import UpdateType
-
+from aiogram.webhook.aiohttp_server import setup_application
 from fastapi import FastAPI
 
-from backend.routes.bot.middlewares import DatabaseMiddleware, RedisMiddleware, UrlMiddleware
-from backend.routes.bot.config import config
-from backend.routes.bot.routes.user.private.user import router as user_router
-from backend.routes.bot.routes.user.group.group import router as group_router
-from backend.routes.bot.routes.user.private.user_callback import router as user_callback_router
+from backend.routes.bot.middlewares import setup_middlewares
+from backend.core.configs.config import config
+from backend.routes.bot.routes import include_routers
+from backend.routes.bot.bot import webhook
+from backend.routes.bot.hints_command import set_commands
 
 
 def decide_webhook_url(dev_url: str = config.ngrok_server_endpoint,
@@ -35,43 +34,31 @@ def decide_webhook_url(dev_url: str = config.ngrok_server_endpoint,
 
 async def initialize_bot(app: FastAPI, token: str = config.TG_API_KEY, dev_url: str = config.ngrok_server_endpoint,
                          prod_url: str = config.url_webhook_endpoint):
-
-
     app.state.bot = Bot(token=token)
-    app.state.dp = Dispatcher(storage=MemoryStorage())
+    app.state.dp = Dispatcher(storage=RedisStorage(app.state.redis))
 
     # Store URL in dispatcher's data
     url = decide_webhook_url(dev_url=dev_url, prod_url=prod_url)
     public_url = url.replace("/api", "")
 
     #Middlewares
-    middlewares = [
-        DatabaseMiddleware(app.state.db_manager),
-        RedisMiddleware(app.state.redis),
-        UrlMiddleware(public_url)
-    ]
-
-    for middleware in middlewares:
-        app.state.dp.update.middleware(middleware)
-        app.state.dp.message.middleware(middleware)
-        app.state.dp.callback_query.middleware(middleware)
-        app.state.dp.chat_member.middleware(middleware)
+    setup_middlewares(
+        dp=app.state.dp,
+        url=public_url,
+        redis=app.state.redis,
+        db_manager=app.state.db_manager,
+        storage_client=app.state.storage_client
+    )
 
     #Routers
-    app.state.dp.include_router(user_router)
-    app.state.dp.include_router(group_router)
-    app.state.dp.include_router(user_callback_router)
+    include_routers(app.state.dp)
 
-    used_updates = [
-        UpdateType.MESSAGE,
-        UpdateType.CALLBACK_QUERY,
-        UpdateType.CHAT_MEMBER,  # Добавлено
-        UpdateType.MY_CHAT_MEMBER  # Добавлено
-    ]
+   # await set_commands(app.state.bot)
     print(f"webhook {url}", flush=True)
     await app.state.bot.set_webhook(url=f"{url}/webhook",
                                     drop_pending_updates=True,
-                                    allowed_updates=used_updates)
+                                    allowed_updates=app.state.dp.resolve_used_update_types(),
+                                    secret_token=config.SECRET_TOKEN)
 
 
 

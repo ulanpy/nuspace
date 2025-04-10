@@ -1,5 +1,5 @@
 from sqladmin import Admin
-from backend.routes.admin.models import UserAdmin, ClubAdmin
+from backend.routes.admin.models import UserAdmin, ClubAdmin, ClubManagerAdmin
 
 
 def get_admin(app):
@@ -13,5 +13,5 @@ def get_admin(app):
 
     admin.add_view(UserAdmin)
     admin.add_view(ClubAdmin)
-
+    admin.add_view(ClubManagerAdmin)
     return admin
