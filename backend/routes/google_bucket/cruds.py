@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import select, func
 from fastapi import HTTPException
 from backend.core.database.models.media import Media, MediaSection, MediaPurpose
 from .schemas import UploadConfirmation
@@ -14,7 +15,7 @@ async def confirm_uploaded_media_to_db(
 
     try:
         try:
-            section = MediaSection(confirmation.section) if hasattr(confirmation, "section") else MediaSection.kp
+            section = MediaSection(confirmation.section)
         except ValueError:
             raise HTTPException(status_code=400, detail=f"Invalid media section: {confirmation.section}")
 
@@ -40,3 +41,14 @@ async def confirm_uploaded_media_to_db(
     except SQLAlchemyError as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Database error while confirming uploads: {str(e)}")
+
+
+async def delete_media(session: AsyncSession, media_id: int):
+    result = await session.execute(select(Media).filter_by(id=media_id))
+    result = result.scalars().first()
+    if result:
+        await session.delete(result)
+        await session.commit()
+        return True
+    else:
+        return False
