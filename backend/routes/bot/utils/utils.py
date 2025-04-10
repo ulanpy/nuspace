@@ -9,6 +9,7 @@ from backend.routes.bot.middlewares import setup_middlewares
 from backend.core.configs.config import config
 from backend.routes.bot.routes import include_routers
 from backend.routes.bot.hints_command import set_commands
+from backend.routes.google_bucket.utils import update_push_endpoint
 
 def decide_webhook_url(dev_url: str = config.ngrok_server_endpoint,
                        prod_url: str = config.url_webhook_endpoint,
@@ -21,6 +22,8 @@ def decide_webhook_url(dev_url: str = config.ngrok_server_endpoint,
             tunnels = response.json()["tunnels"]
             public_url = tunnels[0]["public_url"]
             print(f"Ngrok public URL: {public_url}")
+
+            update_push_endpoint(f"{public_url}/bucket/gcs-hook")
         except Exception as e:
             public_url = None
             print(f"Error fetching Ngrok URL: {e}")
