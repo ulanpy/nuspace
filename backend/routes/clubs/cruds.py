@@ -8,3 +8,16 @@ from typing import AsyncGenerator
 import os
 from backend.core.configs.config import *
 
+
+async def add_new_club():
+    pass
+
+async def add_new_event():
+    pass
+
+async def get_events():
+    pass
+
+async def get_event(even_id: int):
+    pass
+
