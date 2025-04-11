@@ -41,6 +41,7 @@ interface AuthContextType {
   isLoading: boolean
   login: () => void
   logout: () => void
+  refreshUserData: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -68,6 +69,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const refreshUserData = async () => {
+    try {
+      const response = await fetch("http://localhost/api/me", {
+        method: "GET",
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        setUser(userData)
+        return userData
+      }
+    } catch (error) {
+      console.error("Error refreshing user data:", error)
+    }
+    return null
   }
 
   const refreshToken = async () => {
@@ -110,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         logout,
+        refreshUserData,
       }}
     >
       {children}
@@ -124,4 +144,3 @@ export function useAuth() {
   }
   return context
 }
-

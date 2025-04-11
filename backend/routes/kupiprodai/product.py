@@ -270,8 +270,8 @@ async def search(
 
 @router.post("/feedback/{product_id}") #added description
 async def store_new_product_feedback(
-    feedback_data: ProductFeedbackSchema, 
-    user_sub: str, 
+    feedback_data: ProductFeedbackSchema,
+    user: Annotated[dict, Depends(check_token)],
     request: Request,
     db_session = Depends(get_db_session)
 ):

@@ -1,1 +1,1 @@
-from .schemas import SignedUrlResponse, UploadConfirmation
+from .schemas import SignedUrlResponse, UploadConfirmation, ConfirmUploadRequest
