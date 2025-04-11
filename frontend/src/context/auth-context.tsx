@@ -46,6 +46,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Add this to the AuthContext to expose the refreshUserData function
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -73,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUserData = async () => {
     try {
+      setIsLoading(true)
       const response = await fetch("http://localhost/api/me", {
         method: "GET",
         credentials: "include",
@@ -85,6 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Error refreshing user data:", error)
+    } finally {
+      setIsLoading(false)
     }
     return null
   }
@@ -105,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUserData()
 
     // Set up token refresh interval
-    const refreshInterval = setInterval(refreshToken, 240*1000) // 4 minutes
+    const refreshInterval = setInterval(refreshToken, 240*1000) // 5 seconds
 
     return () => {
       clearInterval(refreshInterval)

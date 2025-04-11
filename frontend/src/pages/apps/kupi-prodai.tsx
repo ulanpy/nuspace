@@ -80,6 +80,24 @@ const displayCategories = [
 const conditions = ["All Conditions", "new", "like_new", "used"]
 const displayConditions = ["All Conditions", "New", "Like New", "Used"]
 
+// Default placeholder for products without images
+const DEFAULT_PLACEHOLDER = {
+  books: "/placeholder.svg?height=200&width=200&text=Books",
+  electronics: "/placeholder.svg?height=200&width=200&text=Electronics",
+  clothing: "/placeholder.svg?height=200&width=200&text=Clothing",
+  furniture: "/placeholder.svg?height=200&width=200&text=Furniture",
+  appliances: "/placeholder.svg?height=200&width=200&text=Appliances",
+  sports: "/placeholder.svg?height=200&width=200&text=Sports",
+  stationery: "/placeholder.svg?height=200&width=200&text=Stationery",
+  art_supplies: "/placeholder.svg?height=200&width=200&text=Art+Supplies",
+  beauty: "/placeholder.svg?height=200&width=200&text=Beauty",
+  services: "/placeholder.svg?height=200&width=200&text=Services",
+  food: "/placeholder.svg?height=200&width=200&text=Food",
+  tickets: "/placeholder.svg?height=200&width=200&text=Tickets",
+  transport: "/placeholder.svg?height=200&width=200&text=Transport",
+  others: "/placeholder.svg?height=200&width=200&text=Item+For+Sale",
+}
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -362,6 +380,12 @@ export default function KupiProdaiPage() {
 
       // Step 3: Refresh user products to show the updated product with images
       await fetchUserProducts()
+
+      // Also refresh the main products list if we're in the buy tab
+      if (activeTab === "buy") {
+        await fetchProducts()
+      }
+
       setUploadProgress(100)
 
       // Reset form
@@ -553,6 +577,12 @@ export default function KupiProdaiPage() {
       // Step 5: Refresh user products to show the updated product with images
       const updatedProducts = await kupiProdaiApi.getUserProducts()
       setMyProducts(updatedProducts)
+
+      // Also refresh the main products list if we're in the buy tab
+      if (activeTab === "buy") {
+        await fetchProducts()
+      }
+
       setUploadProgress(100)
 
       // Reset form and close modal
@@ -730,6 +760,34 @@ export default function KupiProdaiPage() {
     }
   }
 
+  // Add this function after the other helper functions like getConditionDisplay
+  const getPlaceholderImage = (product: Product) => {
+    if (product.media && product.media.length > 0 && product.media[0]?.url) {
+      return product.media[0].url
+    }
+    return (
+      DEFAULT_PLACEHOLDER[product.category as keyof typeof DEFAULT_PLACEHOLDER] ||
+      "/placeholder.svg?height=200&width=200&text=No+Image"
+    )
+  }
+
+  // Add a useEffect to check Telegram binding status when the component mounts
+  useEffect(() => {
+    // Check if the user is authenticated and if Telegram is linked
+    if (isAuthenticated) {
+      const checkTelegramStatus = async () => {
+        try {
+          const { tg_linked } = await kupiProdaiApi.checkTelegramStatus()
+          // This will update the isTelegramLinked variable
+        } catch (err) {
+          console.error("Failed to check Telegram status:", err)
+        }
+      }
+
+      checkTelegramStatus()
+    }
+  }, [isAuthenticated, user])
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col space-y-1 sm:space-y-2">
@@ -853,7 +911,7 @@ export default function KupiProdaiPage() {
                     >
                       <div className="aspect-square relative">
                         <img
-                          src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                          src={getPlaceholderImage(product) || "/placeholder.svg"}
                           alt={product.name}
                           className="object-cover w-full h-full"
                         />
@@ -1140,7 +1198,7 @@ export default function KupiProdaiPage() {
                       <Card key={product.id} className="overflow-hidden">
                         <div className="aspect-square relative">
                           <img
-                            src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                            src={getPlaceholderImage(product) || "/placeholder.svg"}
                             alt={product.name}
                             className="object-cover w-full h-full"
                           />
@@ -1186,7 +1244,7 @@ export default function KupiProdaiPage() {
                       <Card key={product.id} className="overflow-hidden">
                         <div className="aspect-square relative">
                           <img
-                            src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                            src={getPlaceholderImage(product) || "/placeholder.svg"}
                             alt={product.name}
                             className="object-cover w-full h-full"
                           />
@@ -1242,7 +1300,7 @@ export default function KupiProdaiPage() {
                 >
                   <div className="aspect-square relative">
                     <img
-                      src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                      src={getPlaceholderImage(product) || "/placeholder.svg"}
                       alt={product.name}
                       className="object-cover w-full h-full"
                     />
@@ -1417,7 +1475,7 @@ export default function KupiProdaiPage() {
                         {previewImages.length > 0 ? (
                           <>
                             <img
-                              src={previewImages[currentMediaIndex] || "/placeholder.svg"}
+                              src={previewImages[currentMediaIndex] || getPlaceholderImage(editingListing!)}
                               alt={`Product image ${currentMediaIndex + 1}`}
                               className="object-contain w-full h-full"
                             />
@@ -1541,6 +1599,7 @@ export default function KupiProdaiPage() {
                           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                             <ImageIcon className="h-12 w-12 mb-2" />
                             <p>No images</p>
+                            <p className="text-xs mt-2">Upload images to showcase your product</p>
                           </div>
                         )}
                       </div>

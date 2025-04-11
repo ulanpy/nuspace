@@ -34,7 +34,7 @@ export function Modal({ isOpen, onClose, title, description, children, className
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className={cn("bg-background rounded-lg shadow-lg w-full max-w-md overflow-hidden", className)}>
+      <div className={cn("bg-background rounded-lg shadow-lg w-full max-w-md overflow-hidden relative", className)}>
         <div className="flex justify-between items-center p-4 border-b">
           <div>
             {title && <h2 className="text-lg font-semibold">{title}</h2>}
@@ -49,4 +49,3 @@ export function Modal({ isOpen, onClose, title, description, children, className
     </div>
   )
 }
-
