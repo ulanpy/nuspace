@@ -217,8 +217,8 @@ async def get_product_feedbacks_from_db(
     product_feedbacks = result.scalars().all()
     return product_feedbacks
 
-async def remove_product_feedback_from_db(feedback_id: int, session: AsyncSession):
-    result = await session.execute(select(ProductFeedback).filter_by(product_id = feedback_id))
+async def remove_product_feedback_from_db(feedback_id: int, user_sub: str, session: AsyncSession):
+    result = await session.execute(select(ProductFeedback).filter_by(product_id = feedback_id, user_sub = user_sub))
     product_feedback = result.scalars().first()
     if product_feedback:
         await session.delete(product_feedback)

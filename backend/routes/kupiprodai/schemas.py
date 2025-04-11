@@ -52,6 +52,16 @@ class ProductUpdateSchema(BaseModel):
 class ProductFeedbackSchema(BaseModel):
     product_id: int
     text: str
+class ProductFeedbackResponseSchema(BaseModel):
+    id: int
+    user_sub: str
+    product_id: int
+    text: str
+    created_at = datetime
+
+class ListProductFeedbackResponseSchema(BaseModel):
+    product_feedbacks: List[ProductFeedbackResponseSchema]
+    num_of_pages: int
 
 class ProductReportSchema(BaseModel):
     product_id: int
