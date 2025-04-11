@@ -55,7 +55,8 @@ class ProductFeedbackSchema(BaseModel):
     
 class ProductFeedbackResponseSchema(BaseModel):
     id: int
-    user_sub: str
+    user_name: str
+    user_surname: str
     product_id: int
     text: str
     created_at = datetime

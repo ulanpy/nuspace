@@ -69,9 +69,11 @@ async def build_product_response(
 async def build_product_feedbacks_response(
         feedback: ProductFeedback
 ) -> ProductFeedbackResponseSchema:
+    
     return ProductFeedbackResponseSchema(
         id = feedback.id,
-        user_sub = feedback.user_sub,
+        user_name = feedback.user.name,
+        user_surname = feedback.user.surname,
         product_id = feedback.product_id,
         text = feedback.text,
         created_at = feedback.created_at

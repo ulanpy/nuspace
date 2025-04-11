@@ -233,9 +233,6 @@ async def remove_product_feedback_from_db(feedback_id: int, user_sub: str, sessi
     if product_feedback:
         await session.delete(product_feedback)
         await session.commit()
-        return True
-    else:
-        return False
 
 async def add_product_report(report_data: ProductReportSchema, user_sub: str, session: AsyncSession):
     new_report = ProductReport(**report_data.dict(), user_sub=user_sub)

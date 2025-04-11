@@ -289,7 +289,7 @@ async def store_new_product_feedback(
     '''
 
     try:
-        new_product_feedback = await add_new_product_feedback_to_db(feedback_data=feedback_data, user_sub=user_sub, session=db_session)
+        new_product_feedback = await add_new_product_feedback_to_db(feedback_data=feedback_data, user_sub=user.get('sub'), session=db_session)
         return new_product_feedback
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
@@ -302,7 +302,7 @@ async def get_product_feedbacks(
     db_session = Depends(get_db_session), 
     size: int = 20, 
     page: int = 1,
-    response_model=List[ProductFeedbackResponseSchema]
+    response_model=ListProductFeedbackResponseSchema
 ):
     """
     Retrieves a paginated list of feedbacks of the product.
@@ -316,7 +316,7 @@ async def get_product_feedbacks(
     - `product_id`: ID of the product
 
     **Returns:**
-    - A list of feedbacks of the product, sorted by most recently updated.
+    - A list of feedbacks of the product, sorted by most recently added.
     """
     return await get_product_feedbacks_from_db(product_id=product_id, session=db_session, size=size, page=page)
     
