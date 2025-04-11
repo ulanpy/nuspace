@@ -14,6 +14,7 @@ class ClubResponseSchema(BaseModel):
     type: ClubType
     description: str
     president: User
+    picture: MediaResponse
     telegram_url: HttpUrl | None = None
     instagram_url: HttpUrl | None = None
     created_at: datetime
@@ -24,6 +25,7 @@ class ClubRequestSchema(BaseModel):
     type: ClubType
     description: str
     president: User
+    picture: MediaResponse
     telegram_url: HttpUrl | None = None
     instagram_url: HttpUrl | None = None
     created_at: datetime
@@ -32,7 +34,7 @@ class ClubRequestSchema(BaseModel):
 
 class ClubEventSchema(BaseModel):
     id: int
-    club_id: Club
+    club_id: int
     picture: List[MediaResponse]
     policy: EventPolicy
     name: str
@@ -45,7 +47,7 @@ class ClubEventSchema(BaseModel):
 
 class ClubAnnouncement(BaseModel):
     id: int
-    club_id: Club
+    club_id: int
     banner: List[MediaResponse]
     description: str
     created_at: datetime
@@ -54,5 +56,5 @@ class ClubAnnouncement(BaseModel):
 class ClubManagers(BaseModel):
     id: int
     club_id: Club
-    sub: User
+    sub: str
     updated_at: datetime
