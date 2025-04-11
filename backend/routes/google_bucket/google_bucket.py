@@ -4,11 +4,12 @@ from datetime import timedelta, datetime
 import uuid
 from backend.common.dependencies import check_token, get_db_session
 from .__init__ import SignedUrlResponse, UploadConfirmation
-from .cruds import confirm_uploaded_media_to_db
+from .cruds import confirm_uploaded_media_to_db, delete_media, get_filename
 from backend.core.database.models.media import MediaPurpose, MediaSection
 from sqlalchemy.ext.asyncio import AsyncSession
 import base64
 import json
+from google.cloud.exceptions import NotFound
 
 router = APIRouter(prefix="/bucket", tags=['Google Bucket Routes'])
 
@@ -97,9 +98,6 @@ async def upload_image(
     return {"message": "Upload successful"}
 
 
-
-
-
 @router.post("/gcs-hook")
 async def gcs_webhook(
     request: Request,
@@ -154,3 +152,17 @@ async def gcs_webhook(
         "uploaded_media": confirmed_media
     }
 
+@router.delete("/{filename}")
+async def delete_bucket_object(
+    request: Request,
+    media_id:int,
+    db_session: AsyncSession = Depends(get_db_session)
+):
+    filename = await get_filename(db_session, media_id)
+    blob = request.app.state.storage_client.bucket(request.app.state.config.bucket_name).blob(filename)
+    try:
+        blob.delete()
+        await delete_media(db_session, media_id)
+        return {"status": "success", "deleted": filename}
+    except NotFound:
+        raise HTTPException(status_code=404, detail="File not found")

@@ -12,14 +12,47 @@ export interface PaginatedResponse<T> {
   num_of_pages: number
 }
 
+// Updated enums to match backend
+export type ProductCondition = "new" | "like_new" | "used"
+export type ProductCategory =
+  | "books"
+  | "electronics"
+  | "clothing"
+  | "furniture"
+  | "appliances"
+  | "sports"
+  | "stationery"
+  | "art_supplies"
+  | "beauty"
+  | "services"
+  | "food"
+  | "tickets"
+  | "transport"
+  | "others"
+export type ProductStatus = "inactive" | "active" | "sold"
+
 export interface Product {
   id: number
   name: string
   description: string
   price: number
-  category: "books" | "electronics" | "clothing" | "home" | "sports" | "other"
+  category:
+    | "books"
+    | "electronics"
+    | "clothing"
+    | "furniture"
+    | "appliances"
+    | "sports"
+    | "stationery"
+    | "art_supplies"
+    | "beauty"
+    | "services"
+    | "food"
+    | "tickets"
+    | "transport"
+    | "others"
   condition: "new" | "like_new" | "used"
-  status: "active" | "inactive"
+  status: "inactive" | "active"
   media: ProductMedia[]
   user_name?: string
   user_surname?: string
@@ -31,7 +64,21 @@ export interface NewProductRequest {
   name: string
   description: string
   price: number
-  category: "books" | "electronics" | "clothing" | "home" | "sports" | "other"
+  category:
+    | "books"
+    | "electronics"
+    | "clothing"
+    | "furniture"
+    | "appliances"
+    | "sports"
+    | "stationery"
+    | "art_supplies"
+    | "beauty"
+    | "services"
+    | "food"
+    | "tickets"
+    | "transport"
+    | "others"
   condition: "new" | "like_new" | "used"
   status: "active"
 }
@@ -41,21 +88,45 @@ export interface UpdateProductRequest {
   name?: string
   description?: string
   price?: number
-  category?: "books" | "electronics" | "clothing" | "home" | "sports" | "other"
+  category?:
+    | "books"
+    | "electronics"
+    | "clothing"
+    | "furniture"
+    | "appliances"
+    | "sports"
+    | "stationery"
+    | "art_supplies"
+    | "beauty"
+    | "services"
+    | "food"
+    | "tickets"
+    | "transport"
+    | "others"
   condition?: "new" | "like_new" | "used"
-  status?: "active" | "inactive"
+  status?: "inactive" | "active"
+}
+
+export interface SignedUrl {
+  filename: string
+  upload_url: string
+}
+
+export interface SignedUrlResponse {
+  signed_urls: SignedUrl[]
 }
 
 // API base URL
 const API_BASE_URL = "http://localhost/api"
 
+// Helper function for API calls
 async function apiCall<T>(endpoint: string, method = "GET", body?: any): Promise<T> {
   const options: RequestInit = {
     method,
     headers: {
       "Content-Type": "application/json",
     },
-    credentials: "include",
+    credentials: "include", // Important for cookies
   }
 
   if (body) {
@@ -63,29 +134,14 @@ async function apiCall<T>(endpoint: string, method = "GET", body?: any): Promise
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, options)
-  const text = await response.text()
-
-  let json: any = null
-  try {
-    json = JSON.parse(text)
-  } catch {
-    // Не JSON — логируем как текст
-    if (!response.ok) {
-      console.error("Server returned non-JSON error:", text)
-      throw new Error(`Server error ${response.status}: ${text}`)
-    }
-    console.error("Invalid JSON from server:", text)
-    throw new Error("Invalid JSON response")
-  }
 
   if (!response.ok) {
-    const detail = json?.detail || JSON.stringify(json)
-    throw new Error(`API error ${response.status}: ${detail}`)
+    const errorData = await response.json()
+    throw new Error(errorData.detail || "API request failed")
   }
 
-  return json as T
+  return response.json()
 }
-
 
 // API functions
 export const kupiProdaiApi = {
@@ -117,9 +173,9 @@ export const kupiProdaiApi = {
     return apiCall<Product>("/products/new", "POST", product)
   },
 
-  // Update a product
-  updateProduct: async (product: UpdateProductRequest): Promise<string> => {
-    return apiCall<string>(`/products/`, "PATCH", product)
+  // Update a product - Fixed to use the correct endpoint and method
+  updateProduct: async (product: UpdateProductRequest): Promise<any> => {
+    return apiCall<any>("/products/", "PATCH", product)
   },
 
   // Delete a product
@@ -131,5 +187,39 @@ export const kupiProdaiApi = {
   searchProducts: async (keyword: string): Promise<Product[]> => {
     return apiCall<Product[]>(`/products/search/${keyword}`)
   },
-}
 
+  // Get signed URLs for uploading images
+  getSignedUrls: async (fileCount: number): Promise<SignedUrlResponse> => {
+    return apiCall<SignedUrlResponse>(`/bucket/upload-url?file_count=${fileCount}`)
+  },
+
+  // Upload an image to the bucket
+  uploadImage: async (file: File, filename: string, entityId: number, mediaOrder: number): Promise<string> => {
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("filename", filename)
+    formData.append("mime_type", file.type)
+    formData.append("section", "kp") // kp for Kupi&Prodai
+    formData.append("entity_id", entityId.toString())
+    formData.append("media_purpose", "banner")
+    formData.append("media_order", mediaOrder.toString())
+
+    const response = await fetch(`${API_BASE_URL}/bucket/upload-image/`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.detail || "Image upload failed")
+    }
+
+    return response.json()
+  },
+
+  // Check Telegram binding status
+  checkTelegramStatus: async (): Promise<{ tg_linked: boolean }> => {
+    return apiCall<{ tg_linked: boolean }>("/me/tg-status")
+  },
+}
