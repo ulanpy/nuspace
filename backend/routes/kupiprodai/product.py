@@ -295,7 +295,7 @@ async def store_new_product_feedback(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
 
-@router.get("/feedback/{product_id}") #needs to be finished
+@router.get("/feedback/{product_id}") #added description
 async def get_product_feedbacks(
     product_id:int, 
     user: Annotated[dict, Depends(check_token)],
@@ -305,24 +305,21 @@ async def get_product_feedbacks(
     response_model=List[ProductFeedbackResponseSchema]
 ):
     """
-    Retrieves a list of all feedbacks of the product,
+    Retrieves a paginated list of feedbacks of the product.
 
     **Parameters:**
 
-    - `access_token`: Required authentication token from cookies (via dependency).
+    - `size`: Number of products per page (default: 20)
+
+    - `page`: Page number (default: 1)
+
+    - `product_id`: ID of the product
 
     **Returns:**
-    - A list of the user's own products, each with full product details and associated media.
-
-    **Notes:**
-    - Pagination is not yet implemented (all products are returned at once).
-
-    - Only products belonging to the authenticated user are included.
+    - A list of feedbacks of the product, sorted by most recently updated.
     """
-    product_feedbacks = await get_product_feedbacks_from_db(product_id=product_id, session=db_session, size=size, page=page)
-    if product_feedbacks is None:
-        raise HTTPException(status_code=404, detail="Product feedbacks not found")
-    return product_feedbacks
+    return await get_product_feedbacks_from_db(product_id=product_id, session=db_session, size=size, page=page)
+    
 
 
 @router.delete("/feedback/{feedback_id}") #added description
@@ -371,7 +368,7 @@ async def store_new_product_report(
     db_session = Depends(get_db_session
 )):
     """
-    Creates a new product report.
+    Adds a new product report.
 
     ***Requirements:***
     - The user must be authenticated (`access_token` cookie required).

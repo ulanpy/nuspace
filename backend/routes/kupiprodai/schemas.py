@@ -52,6 +52,7 @@ class ProductUpdateSchema(BaseModel):
 class ProductFeedbackSchema(BaseModel):
     product_id: int
     text: str
+    
 class ProductFeedbackResponseSchema(BaseModel):
     id: int
     user_sub: str

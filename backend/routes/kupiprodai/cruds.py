@@ -12,7 +12,7 @@ from backend.common.utils import update_meilisearch_data
 from backend.routes.google_bucket.utils import generate_download_url, delete_bucket_object
 from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
 from sqlalchemy.orm import selectinload
-from .utils import build_product_response
+from .utils import build_product_response, build_product_feedbacks_response
 import asyncio
 from .schemas import *
 from backend.core.database.models.product import *
@@ -206,6 +206,13 @@ async def get_product_feedbacks_from_db(
         page: int = 1
     ):
     offset = size * (page - 1)
+    sql_conditions = [ProductFeedback.product_id == product_id]
+
+    total_query = select(func.count()).where(*sql_conditions)
+    total_result = await session.execute(total_query)
+    total_count = total_result.scalar()
+    num_of_pages = max(1, (total_count + size - 1) // size)
+    
     query = (
         select(ProductFeedback)
         .filter_by(product_id = product_id)
@@ -215,7 +222,9 @@ async def get_product_feedbacks_from_db(
     )
     result = await session.execute(query)
     product_feedbacks = result.scalars().all()
-    return product_feedbacks
+    product_feedbacks_response = await asyncio.gather(*(build_product_feedbacks_response(feedback = feedback)
+                                                for feedback in product_feedbacks))
+    return ListProductFeedbackResponseSchema(product_feedbacks=product_feedbacks_response, num_of_pages=num_of_pages)
 
 async def remove_product_feedback_from_db(feedback_id: int, user_sub: str, session: AsyncSession):
     result = await session.execute(select(ProductFeedback).filter_by(product_id = feedback_id, user_sub = user_sub))
