@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from backend.core.database.models import Club
-from backend.core.database.models.media import MediaSection, Media
+from backend.core.database.models.media import MediaSection, Media, MediaPurpose
 from .schemas import ClubResponseSchema
 from backend.routes.google_bucket.schemas import MediaResponse
 from backend.routes.google_bucket.utils import generate_download_url
@@ -28,13 +28,17 @@ async def get_media_response(
     session: AsyncSession,
     request: Request,
     club_id: int,
-    media_section: MediaSection
+    media_section: MediaSection = MediaSection.ev
 ) -> MediaResponse | None:
     """
     Возвращает MediaResponse для заданного клуба.
     """
     media_result = await session.execute(
-        select(Media).filter(Media.entity_id == club_id, Media.section == media_section)
+        select(Media).filter(
+                Media.entity_id == club_id,
+                        Media.section == media_section,
+                        Media.media_purpose == MediaPurpose.club_profile
+        )
     )
     media_object = media_result.scalars().first()
     if media_object:
@@ -46,7 +50,7 @@ async def build_club_response(
     club: Club,
     session: AsyncSession,
     request: Request,
-    media_section: MediaSection
+    media_section: MediaSection = MediaSection.ev
 ) -> ClubResponseSchema:
     media_response = await get_media_response(session, request, club.id, media_section)
     return ClubResponseSchema(
