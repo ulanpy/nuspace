@@ -40,11 +40,11 @@ services:
       - nuros
     restart: always
     ports:
-      - "80:80"  # Expose Nginx on port 80 of localhost
-      - "443:443" # with tls termination
+      - "80:80"
+      - "443:443"
     volumes:
       - ./backend/core/configs/nginx.conf:/etc/nginx/nginx.conf
-      - ./frontend/dist:/var/www/my-app/dist  # Make sure this folder exists in production builds
+      - ./frontend/dist:/var/www/my-app/dist
       - /etc/letsencrypt/www:/var/www/certbot:ro
       - /etc/letsencrypt/conf:/etc/letsencrypt:ro
       - /etc/letsencrypt/reload:/reload
@@ -53,12 +53,12 @@ services:
       - pgadmin
     command: >
       /bin/sh -c "
-      apt update && apt install -y inotify-tools && 
-      (while inotifywait -e modify /etc/nginx/nginx.conf; do 
-        echo 'nginx config changed, copying and reloading Nginx...' && 
-        nginx -t && nginx -s reload; 
-      done) & 
-      nginx -g 'daemon off;'"
+        apt update && apt install -y inotify-tools && 
+        (while inotifywait -e modify /etc/nginx/nginx.conf; do 
+          echo 'nginx config changed, copying and reloading Nginx...' && 
+          nginx -t && nginx -s reload; 
+        done) & 
+        nginx -g 'daemon off;'"
   
   
   
@@ -145,11 +145,11 @@ services:
 
 networks:
   nuros:
-    name: nuspace_nuros
+    name: nuros
     driver: bridge
 
 volumes:
   postgres-data:
   redis-data:
     driver: local
-  rabbitmq-data:  # Add this
+  rabbitmq-data:
