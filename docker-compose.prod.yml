@@ -58,9 +58,6 @@ services:
           nginx -t && nginx -s reload; 
         done) & 
         nginx -g 'daemon off;'"
-  
-  
-  
 
   redis:
     image: redis:latest
