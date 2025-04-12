@@ -43,11 +43,11 @@ class Meal(Base):
     canteen_id: Mapped[int] = mapped_column(Integer, ForeignKey('canteen.id'), nullable=False)
 
     canteen = relationship("Canteen", back_populates="meals")
-    available_meals = relationship("AvailableMeals", back_populates="meals")
+    available_meals = relationship("AvailableMeals", back_populates="meal")
     
 
-class Product(Base):
-    __tablename__= 'products'
+class CanteenProduct(Base):
+    __tablename__= 'canteen_products'
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(nullable=False)
@@ -73,7 +73,7 @@ class AvailableMeals(Base):
 class CanteenFeedback(Base):
     __tablename__ = "canteen_feedback"
     __table_args__ = (
-        CheckConstraint('rating >= 1 AND rating <= 5', name="rating_range")
+        CheckConstraint('rating >= 1 AND rating <= 5', name="rating_range"),
     )
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     canteen_id: Mapped[int] = mapped_column(Integer, ForeignKey('canteen.id'), nullable=False)
