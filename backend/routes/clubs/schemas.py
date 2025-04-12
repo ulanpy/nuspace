@@ -1,30 +1,27 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel
-import uuid
-from backend.core.database.models.user import UserRole, UserScope, User
-from backend.core.database.models.club import ClubType, Club, EventPolicy
+
 from pydantic import BaseModel, HttpUrl, EmailStr
-from typing import Dict
+
 from backend.routes.google_bucket.schemas import MediaResponse
+from backend.core.database.models.club import ClubType, Club, EventPolicy
+
 
 class ClubResponseSchema(BaseModel):
     id: int
     name: str
     type: ClubType
     description: str
-    president: User
-    picture: MediaResponse
+    president_sub: str
     telegram_url: HttpUrl | None = None
     instagram_url: HttpUrl | None = None
-    created_at: datetime
-    updated_at: datetime
+
 
 class ClubRequestSchema(BaseModel):
     name: str
     type: ClubType
     description: str
-    president: User
+    president_sub: str
     picture: MediaResponse
     telegram_url: HttpUrl | None = None
     instagram_url: HttpUrl | None = None
@@ -45,6 +42,7 @@ class ClubEventSchema(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class ClubAnnouncement(BaseModel):
     id: int
     club_id: int
@@ -53,8 +51,9 @@ class ClubAnnouncement(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class ClubManagers(BaseModel):
     id: int
-    club_id: Club
+    club_id: int
     sub: str
     updated_at: datetime
