@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, HTTPException, Depends, Response, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import get_db_session
+from backend.common.dependencies import get_db_session, check_token
 from typing import Optional, Annotated, List
 
 from .cruds import add_new_club
@@ -15,6 +15,7 @@ router = APIRouter(tags=['Club Routes'])
 async def add_club(
     request: Request,
     club: ClubRequestSchema,
+    user: Annotated[dict, Depends(check_token)],
     db_session: AsyncSession = Depends(get_db_session)
 ) -> ClubResponseSchema:
     try:
