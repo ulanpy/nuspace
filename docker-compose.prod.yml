@@ -49,6 +49,7 @@ services:
       - ./ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key  # Cloudflare private key
     depends_on:
       - fastapi
+      - frontend-builder
     command: >
       /bin/sh -c "
         apt update && apt install -y inotify-tools && 
@@ -117,6 +118,16 @@ services:
     deploy:
       replicas: 2  # For scalability
 
+  frontend-builder:
+    container_name: frontend-builder
+    build:
+      context: ./frontend  # Path to your frontend code
+      dockerfile: Dockerfile_static_builder  # Production Dockerfile for frontend
+    networks:
+      - nuros
+    volumes:
+      - ./frontend/dist:/app/dist  # Mount dist to host directory
+    restart: "no"  # Do not restart after build
 
 networks:
   nuros:
