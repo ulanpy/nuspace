@@ -1,5 +1,5 @@
 FROM node:20-alpine
-WORKDIR /app
+WORKDIR /nuros
 COPY package*.json ./
 RUN npm install --omit=dev  # Install only production dependencies
 COPY . .
