@@ -537,7 +537,7 @@ export default function KupiProdaiPage() {
       // Step 2: Delete images that were removed
       if (mediaToDelete.length > 0) {
         const deletePromises = mediaToDelete.map((mediaId) => {
-          return fetch(`http://localhost/api/bucket/delete?media_id=${mediaId}`, {
+          return fetch(`http://api/bucket/delete?media_id=${mediaId}`, {
             method: "DELETE",
             credentials: "include",
           })
@@ -759,34 +759,6 @@ export default function KupiProdaiPage() {
       })
     }
   }
-
-  // Add this function after the other helper functions like getConditionDisplay
-  const getPlaceholderImage = (product: Product) => {
-    if (product.media && product.media.length > 0 && product.media[0]?.url) {
-      return product.media[0].url
-    }
-    return (
-      DEFAULT_PLACEHOLDER[product.category as keyof typeof DEFAULT_PLACEHOLDER] ||
-      "/placeholder.svg?height=200&width=200&text=No+Image"
-    )
-  }
-
-  // Add a useEffect to check Telegram binding status when the component mounts
-  useEffect(() => {
-    // Check if the user is authenticated and if Telegram is linked
-    if (isAuthenticated) {
-      const checkTelegramStatus = async () => {
-        try {
-          const { tg_linked } = await kupiProdaiApi.checkTelegramStatus()
-          // This will update the isTelegramLinked variable
-        } catch (err) {
-          console.error("Failed to check Telegram status:", err)
-        }
-      }
-
-      checkTelegramStatus()
-    }
-  }, [isAuthenticated, user])
 
   return (
     <div className="space-y-4 sm:space-y-6">

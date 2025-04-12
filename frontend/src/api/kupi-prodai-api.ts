@@ -117,7 +117,7 @@ export interface SignedUrlResponse {
 }
 
 // API base URL
-const API_BASE_URL = "http://localhost/api"
+const API_BASE_URL = "http://api"
 
 // Helper function for API calls
 async function apiCall<T>(endpoint: string, method = "GET", body?: any): Promise<T> {
