@@ -216,6 +216,7 @@ async def get_product_feedbacks_from_db(
     
     query = (
         select(ProductFeedback)
+        .options(selectinload(ProductFeedback.user))
         .filter_by(product_id = product_id)
         .offset(offset)
         .limit(size)

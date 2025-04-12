@@ -57,6 +57,7 @@ async def build_product_response(
         description=product.description,
         user_name=product.user.name,
         user_surname=product.user.surname,
+        user_telegram_id = product.user.telegram_id,
         price=product.price,
         category=product.category,
         condition=product.condition,
