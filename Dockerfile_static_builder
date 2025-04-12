@@ -1,6 +1,14 @@
 FROM node:20-alpine
-WORKDIR /nuros
-COPY package*.json ./
-RUN npm install --omit=dev  # Install only production dependencies
+WORKDIR /app
+
+# Copy package files from frontend directory
+COPY ./package*.json ./
+
+# Install production dependencies
+RUN npm install --omit=dev
+
+# Copy frontend source code
 COPY . .
-RUN npm run build  # Generates dist/
+
+# Build the project
+RUN npm run build

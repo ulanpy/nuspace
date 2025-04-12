@@ -121,13 +121,13 @@ services:
   frontend-builder:
     container_name: frontend-builder
     build:
-      context: .  # Path to your frontend code
-      dockerfile: Dockerfile_static_builder  # Production Dockerfile for frontend
+      context: .  # Root directory now!
+      dockerfile: Dockerfile_static_builder  # Explicit path to Dockerfile
     networks:
       - nuros
     volumes:
-      - ./frontend/dist:/app/dist  # Mount dist to host directory
-    restart: "no"  # Do not restart after build
+      - ./frontend/dist:/app/dist  # Mount dist to host
+    restart: "no"
 
 networks:
   nuros:
