@@ -41,7 +41,6 @@ async def add_new_product(
 
     try:
         new_product = await add_new_product_to_db(db_session, product_data, user_sub=user["sub"], request=request)
-        new_product = await add_new_product_to_db(db_session, product_data, user_sub=user["sub"])
         await add_meilisearch_data(storage_name='products', json_values={'id': new_product.id, 'name': new_product.name})
         return new_product
     except HTTPException as e:

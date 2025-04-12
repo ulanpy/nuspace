@@ -59,7 +59,7 @@ class ProductFeedbackResponseSchema(BaseModel):
     user_surname: str
     product_id: int
     text: str
-    created_at = datetime
+    created_at: datetime
 
 class ListProductFeedbackResponseSchema(BaseModel):
     product_feedbacks: List[ProductFeedbackResponseSchema]

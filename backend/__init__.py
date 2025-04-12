@@ -38,8 +38,7 @@ async def lifespan(app: FastAPI):
         await app.state.db_manager.create_all_tables()
 
         if config.IS_BOT_DEV:
-            await initialize_bot(app)
-        print("Application startup:AsyncDatabaseManager initialized")
+            await initialize_bot(app, IS_DEBUG=config.IS_DEBUG)
         for router in routers:
             app.include_router(router)
 
@@ -60,8 +59,4 @@ async def lifespan(app: FastAPI):
         print("Application shutdown: Resources released")
 
 
-origins = [
-    "*",
-    "https://lh3.googleusercontent.com"
-    "https://kazgptbot.ru"
-]
+origins = ["*"]
