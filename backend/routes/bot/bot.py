@@ -1,11 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Request, Depends,  Response, status
+from fastapi import APIRouter, Request, Depends, Response, status, HTTPException
 from aiogram.types import Update
 from aiogram.utils.deep_linking import create_start_link
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.routes.bot.cruds import get_telegram_id
+from backend.core.database.models import Product
+from backend.routes.bot.cruds import get_telegram_id, find_product
 from backend.core.configs.config import config
 from backend.common.dependencies import get_db_session, check_token
 
@@ -35,7 +36,11 @@ async def webhook(request:  Request) -> Response:
 async def contact(
     request: Request,
     product_id: int,
-    user: Annotated[dict, Depends(check_token)]
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session)
 ) -> str:
-    link: str = await create_start_link(request.app.state.bot, f"contact&{product_id}", encode=True)
-    return link
+    product: Product | None = await find_product(db_session, int(product_id))
+    if product:
+        link: str = await create_start_link(request.app.state.bot, f"contact&{product_id}", encode=True)
+        return link
+    raise HTTPException(status_code=404, detail="Does not exist!")

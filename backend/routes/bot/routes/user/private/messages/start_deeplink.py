@@ -31,20 +31,24 @@ async def get_contact_seller(
     media: Media | None = await find_media(db_session, int(product_id))
     product: Product | None = await find_product(db_session, int(product_id))
 
-    if (not product) or (not media):
-        return await m.answer("Error: Not Found, missing product")
-
-    filename: str = media.name
-    url: str = await generate_download_url(storage_client, filename)
     caption: str = f"{product.name}"
     seller_user_id: int = await get_telegram_id(db_session, product.user_sub)
 
-    await m.bot.send_photo(
-        m.chat.id,
-        photo=url,
-        caption=caption,
-        reply_markup=user_profile_button(seller_user_id, _)
-    )
+    if not product:
+        await m.answer("Error: Not Found, missing product")
+    elif product and media:
+        filename: str = media.name
+        url: str = await generate_download_url(storage_client, filename)
+
+        await m.bot.send_photo(
+            m.chat.id,
+            photo=url,
+            caption=caption,
+            reply_markup=user_profile_button(seller_user_id, _)
+        )
+    elif product:
+        await m.answer(caption, reply_markup=user_profile_button(seller_user_id, _))
+
 
 
 @router.message(CommandStart(deep_link=True))
