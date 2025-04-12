@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://api";
+const API_BASE_URL = "/api";
 
 type FetchOptions = RequestInit & {
   params?: Record<string, string | number>;

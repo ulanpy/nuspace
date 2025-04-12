@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserData = async () => {
     try {
-      const response = await fetch("http://api/me", {
+      const response = await fetch("/api/me", {
         method: "GET",
         credentials: "include", // Important for cookies
       })
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUserData = async () => {
     try {
-      const response = await fetch("http://api/me", {
+      const response = await fetch("/api/me", {
         method: "GET",
         credentials: "include",
       })
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshToken = async () => {
     try {
-      await fetch("http://api/refresh-token", {
+      await fetch("/api/refresh-token", {
         method: "POST",
         credentials: "include", // Important for cookies
       })
@@ -116,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = () => {
-    window.location.href = "http://api/login"
+    window.location.href = "/api/login"
   }
 
   const logout = () => {

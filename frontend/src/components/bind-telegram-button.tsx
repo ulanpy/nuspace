@@ -60,7 +60,7 @@ export function BindTelegramButton() {
     // Start polling every 2 seconds
     pollingIntervalRef.current = setInterval(async () => {
       try {
-        const response = await fetch("http://api/me", {
+        const response = await fetch("/api/me", {
           method: "GET",
           credentials: "include",
         })
@@ -110,7 +110,7 @@ export function BindTelegramButton() {
 
     try {
       // Use the correct sub field from the user object
-      const response = await fetch("http://api/bingtg", {
+      const response = await fetch("/api/bingtg", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
