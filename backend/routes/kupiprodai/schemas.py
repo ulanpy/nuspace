@@ -22,6 +22,7 @@ class ProductResponseSchema(BaseModel):
     description: str
     user_name: str
     user_surname: str
+    user_telegram_id: int
     price: int
     category: ProductCategory
     condition: ProductCondition
