@@ -50,7 +50,6 @@ services:
       - /etc/letsencrypt/reload:/reload
     depends_on:
       - fastapi
-      - pgadmin
     command: >
       /bin/sh -c "
         apt update && apt install -y inotify-tools && 
