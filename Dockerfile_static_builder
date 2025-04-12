@@ -1,14 +1,13 @@
-# Updated Dockerfile_static_builder
 FROM node:20-alpine
 WORKDIR /app
 
-# Copy ONLY frontend package files
+# Copy package files from frontend directory
 COPY ./frontend/package*.json ./
 
-# Install production dependencies
-RUN npm install --omit=dev
+# Install ALL dependencies (including devDependencies)
+RUN npm install
 
-# Copy ONLY frontend source code
+# Copy frontend source code
 COPY ./frontend .
 
 # Build the project
