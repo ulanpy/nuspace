@@ -41,7 +41,7 @@ services:
     restart: always
     ports:
       - "80:80"  # Expose Nginx on port 80 of localhost
-      - "443:443"
+      - "443:443" # with tls termination
     volumes:
       - ./backend/core/configs/nginx.conf:/etc/nginx/nginx.conf
       - ./frontend/dist:/var/www/my-app/dist  # Make sure this folder exists in production builds
@@ -51,16 +51,17 @@ services:
     depends_on:
       - fastapi
       - pgadmin
-    command: [ "/bin/sh", "-c", "
+    command: >
+      /bin/sh -c "
       apt update && apt install -y inotify-tools && 
       (while inotifywait -e modify /etc/nginx/nginx.conf; do 
         echo 'nginx config changed, copying and reloading Nginx...' && 
         nginx -t && nginx -s reload; 
       done) & 
-      nginx -g 'daemon off;'
-      " ]
-
-
+      nginx -g 'daemon off;'"
+  
+  
+  
 
   redis:
     image: redis:latest
