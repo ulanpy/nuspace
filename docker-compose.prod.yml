@@ -121,7 +121,7 @@ services:
   frontend-builder:
     container_name: frontend-builder
     build:
-      context: ./frontend  # Path to your frontend code
+      context: .  # Path to your frontend code
       dockerfile: Dockerfile_static_builder  # Production Dockerfile for frontend
     networks:
       - nuros
