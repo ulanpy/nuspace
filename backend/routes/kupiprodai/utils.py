@@ -1,15 +1,13 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import Request
-from backend.core.database.models.product import Product
+from backend.core.database.models.product import Product, ProductFeedback
 from backend.core.database.models.media import Media
-from backend.routes.kupiprodai.schemas import ProductResponseSchema
+from backend.routes.kupiprodai.schemas import ProductResponseSchema, ProductFeedbackResponseSchema
 from typing import List
 from backend.routes.google_bucket.utils import generate_download_url
 from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
 import asyncio
-
-
 
 async def get_media_responses(
     session: AsyncSession,
@@ -66,4 +64,17 @@ async def build_product_response(
         updated_at=product.updated_at,
         created_at=product.created_at,
         media=media_responses
+    )
+
+async def build_product_feedbacks_response(
+        feedback: ProductFeedback
+) -> ProductFeedbackResponseSchema:
+    
+    return ProductFeedbackResponseSchema(
+        id = feedback.id,
+        user_name = feedback.user.name,
+        user_surname = feedback.user.surname,
+        product_id = feedback.product_id,
+        text = feedback.text,
+        created_at = feedback.created_at
     )

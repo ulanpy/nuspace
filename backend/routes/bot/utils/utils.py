@@ -32,16 +32,17 @@ def decide_webhook_url(dev_url: str = config.ngrok_server_endpoint,
         url_webhook = f"{public_url}/api"
     else:
         url_webhook = prod_url
+        update_push_endpoint(f"{public_url}/bucket/gcs-hook")
     return url_webhook
 
 
 async def initialize_bot(app: FastAPI, token: str = config.TG_API_KEY, dev_url: str = config.ngrok_server_endpoint,
-                         prod_url: str = config.url_webhook_endpoint):
+                         prod_url: str = config.url_webhook_endpoint, IS_DEBUG: bool = True):
     app.state.bot = Bot(token=token)
     app.state.dp = Dispatcher(storage=RedisStorage(app.state.redis))
 
     # Store URL in dispatcher's data
-    url = decide_webhook_url(dev_url=dev_url, prod_url=prod_url)
+    url = decide_webhook_url(dev_url=dev_url, prod_url=prod_url, IS_DEBUG=IS_DEBUG)
     public_url = url.replace("/api", "")
 
     #Middlewares

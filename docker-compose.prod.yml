@@ -1,0 +1,142 @@
+services:
+
+  postgres:
+    image: postgres
+    env_file:
+      - .env
+    networks:
+      - nuros
+    restart: always
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  fastapi:
+    container_name: fastapi
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - nuros
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - .:/nuros  # Sync local backend folder with container's /app
+    depends_on:
+      - postgres
+    environment:
+      - PYTHONUNBUFFERED=1
+      - WORKERS=${GUNICORN_WORKERS} #not set this in prod and let decide on the fly
+
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    networks:
+      - nuros
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./backend/core/configs/nginx.conf:/etc/nginx/nginx.conf
+      - ./frontend/dist:/var/www/my-app/dist
+      - ./ssl/cloudflare.crt:/etc/ssl/cloudflare/origin.crt  # Cloudflare origin certificate
+      - ./ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key  # Cloudflare private key
+    depends_on:
+      - fastapi
+      - frontend-builder
+    command: >
+      /bin/sh -c "
+        apt update && apt install -y inotify-tools && 
+        (while inotifywait -e modify /etc/nginx/nginx.conf; do 
+          echo 'nginx config changed, copying and reloading Nginx...' && 
+          nginx -t && nginx -s reload; 
+        done) & 
+        nginx -g 'daemon off;'"
+
+  redis:
+    image: redis:latest
+    networks:
+      - nuros
+    container_name: redis
+    restart: always
+    volumes:
+      - redis-data:/data
+      - ./backend/core/configs/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server --bind 0.0.0.0 --protected-mode no
+
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    networks:
+      - nuros
+    container_name: meilisearch
+    ports:
+      - 7700:7700
+
+
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    networks:
+      - nuros
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "15672:15672"  # Management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile_celery
+    networks:
+      - nuros
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+      - redis
+      - fastapi
+    command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
+    environment:
+      - CELERY_WORKER_CONCURRENCY=4  # Adjust based on your needs
+      - CELERY_WORKER_PREFETCH_MULTIPLIER=1
+    deploy:
+      replicas: 2  # For scalability
+
+  frontend-builder:
+    container_name: frontend-builder
+    build:
+      context: .
+      dockerfile: Dockerfile_static_builder
+    networks:
+      - nuros
+    volumes:
+      - ./frontend/dist:/app/dist  # Ensure host directory exists
+    command: sh -c "npm run build"  # Run build command on container start
+    restart: "no"
+
+networks:
+  nuros:
+    name: nuros
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+    driver: local
+  rabbitmq-data:
