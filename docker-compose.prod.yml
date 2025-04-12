@@ -130,12 +130,7 @@ services:
     depends_on:
       - nginx
     command: sh -c "
-      echo 'Waiting for Nginx...' && sleep 15 && # Add sleep
-      # Obtain initial certificate
-      echo 'Attempting initial certificate acquisition...' &&
       certbot certonly --webroot -w /var/www/certbot -d nuspace.kz --email ulan.sharipov@nu.edu.kz --agree-tos --non-interactive --no-eff-email &&
-      echo 'Initial certificate acquired successfully. Starting renewal loop...' &&
-      # Renew certificates periodically and signal Nginx
       trap exit TERM; while :; do
       certbot renew --post-hook 'touch /reload/reload.signal'
       sleep 12h
