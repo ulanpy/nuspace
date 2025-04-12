@@ -34,7 +34,7 @@ class Config(BaseSettings):
     WEBAPP_HOST: str = "localhost"
     WEBAPP_PORT: int = 3001
     ngrok_server_endpoint: str
-    url_webhook_endpoint: str = ""
+    url_webhook_endpoint: str
 
 
     @property
