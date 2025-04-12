@@ -6,7 +6,7 @@ from google.cloud import storage
 
 from backend.routes.bot.bot import web_router
 from backend.routes.bot.utils import initialize_bot
-from backend.routes import auth, routers, get_admin, clubs
+from backend.routes import auth, routers, clubs
 from backend.core.database.manager import AsyncDatabaseManager, SyncDatabaseManager
 from backend.core.configs.config import config, Config
 from backend.routes.auth.auth import KeyCloakManager
@@ -42,7 +42,7 @@ async def lifespan(app: FastAPI):
         for router in routers:
             app.include_router(router)
 
-        get_admin(app)  # SQLAdmin Admin Panel
+
         await import_data_from_db(storage_name="products", db_manager=app.state.db_manager, model=Product,
                                   columns_for_searching=['id', 'name'])
         yield

@@ -1,10 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Request
+from fastapi import Request, HTTPException
 
 
-from .schemas import ClubResponseSchema, ClubRequestSchema, ClubEventSchema
+from .schemas import ClubResponseSchema, ClubRequestSchema
 from .utils import build_club_response
-
 from ...core.database.models import Club
 from ...core.database.models.media import MediaSection
 
@@ -22,19 +21,5 @@ async def add_new_club(
 
 
 
-async def add_new_event(
-    event: ClubEventSchema,
-    session: AsyncSession
-) -> ClubEventSchema:
-    pass
 
-
-async def get_events() -> list[ClubEventSchema]:
-    pass
-
-
-async def get_event(
-    event_id: int, session: AsyncSession
-) -> ClubEventSchema:
-    pass
 
