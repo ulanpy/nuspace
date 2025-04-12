@@ -124,17 +124,34 @@ services:
     networks:
       - nuros
     volumes:
-      - /etc/letsencrypt/www:/var/www/certbot
-      - /etc/letsencrypt/conf:/etc/letsencrypt
-      - /etc/letsencrypt/reload:/reload
+      - /etc/letsencrypt/www:/var/www/certbot # Shared with Nginx for challenges
+      - /etc/letsencrypt/conf:/etc/letsencrypt # Shared with Nginx for certs
+      - /etc/letsencrypt/reload:/reload       # Shared with Nginx for signaling
     depends_on:
-      - nginx
-    command: sh -c "
-      certbot certonly --webroot -w /var/www/certbot -d nuspace.kz --email ulan.sharipov@nu.edu.kz --agree-tos --non-interactive --no-eff-email &&
-      trap exit TERM; while :; do
-      certbot renew --post-hook 'touch /reload/reload.signal'
-      sleep 12h
-      done"
+      - nginx # Depends on Nginx for webroot challenge, but Nginx needs to start first (initially maybe without HTTPS)
+    entrypoint: |
+      /bin/sh -c '
+      trap exit TERM;
+
+      # Loop indefinitely until certificates are obtained for the first time
+      until certbot certonly --webroot -w /var/www/certbot -d nuspace.kz --email ulan.sharipov@nu.edu.kz --agree-tos --non-interactive --no-eff-email; do
+        echo "Certbot failed. Retrying in 1 hour...";
+        sleep 3600; # Sleep for an hour before retrying
+      done
+
+      echo "Initial certificates obtained successfully.";
+      # Signal Nginx to reload after initial success
+      touch /reload/reload.signal;
+
+      # Start the renewal loop
+      while :; do
+        echo "Attempting certificate renewal...";
+        certbot renew --post-hook "touch /reload/reload.signal";
+        echo "Sleeping for 12 hours...";
+        sleep 12h;
+      done
+      '
+    # No command needed as entrypoint handles everything
 
 
 networks:
