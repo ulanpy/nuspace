@@ -118,25 +118,25 @@ services:
     deploy:
       replicas: 2  # For scalability
 
-  certbot:
-    image: certbot/certbot
-    container_name: certbot
-    networks:
-      - nuros
-    volumes:
-      - /etc/letsencrypt/www:/var/www/certbot
-      - /etc/letsencrypt/conf:/etc/letsencrypt
-      - /etc/letsencrypt/reload:/reload
-    depends_on:
-      - nginx
-    command: sh -c "
-      # Obtain initial certificate
-      certbot certonly --webroot -w /var/www/certbot -d nuspace.kz --email ulan.sharipov@nu.edu.kz --agree-tos --non-interactive --no-eff-email &&
-      # Renew certificates periodically and signal Nginx
-      trap exit TERM; while :; do
-      certbot renew --post-hook 'touch /reload/reload.signal'
-      sleep 12h
-      done"
+#  certbot:
+#    image: certbot/certbot
+#    container_name: certbot
+#    networks:
+#      - nuros
+#    volumes:
+#      - /etc/letsencrypt/www:/var/www/certbot
+#      - /etc/letsencrypt/conf:/etc/letsencrypt
+#      - /etc/letsencrypt/reload:/reload
+#    depends_on:
+#      - nginx
+#    command: sh -c "
+#      # Obtain initial certificate
+#      certbot certonly --webroot -w /var/www/certbot -d nuspace.kz --email ulan.sharipov@nu.edu.kz --agree-tos --non-interactive --no-eff-email &&
+#      # Renew certificates periodically and signal Nginx
+#      trap exit TERM; while :; do
+#      certbot renew --post-hook 'touch /reload/reload.signal'
+#      sleep 12h
+#      done"
 
 
 networks:
