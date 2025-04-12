@@ -117,7 +117,7 @@ export interface SignedUrlResponse {
 }
 
 // API base URL
-const API_BASE_URL = "http://localhost/api"
+const API_BASE_URL = "/api"
 
 // Helper function for API calls
 async function apiCall<T>(endpoint: string, method = "GET", body?: any): Promise<T> {
@@ -220,6 +220,6 @@ export const kupiProdaiApi = {
 
   // Check Telegram binding status
   checkTelegramStatus: async (): Promise<{ tg_linked: boolean }> => {
-    return apiCall<{ tg_linked: boolean }>("/me/tg-status")
+    return apiCall<{ tg_linked: boolean }>("/me")
   },
 }

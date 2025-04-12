@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Trash2,
   Plus,
+  ExternalLink,
 } from "lucide-react"
 import { Input } from "../../components/ui/input"
 import { Button } from "../../components/ui/button"
@@ -80,6 +81,34 @@ const displayCategories = [
 const conditions = ["All Conditions", "new", "like_new", "used"]
 const displayConditions = ["All Conditions", "New", "Like New", "Used"]
 
+// Default placeholder for products without images
+const DEFAULT_PLACEHOLDER = {
+  books: "/placeholder.svg?height=200&width=200&text=Books",
+  electronics: "/placeholder.svg?height=200&width=200&text=Electronics",
+  clothing: "/placeholder.svg?height=200&width=200&text=Clothing",
+  furniture: "/placeholder.svg?height=200&width=200&text=Furniture",
+  appliances: "/placeholder.svg?height=200&width=200&text=Appliances",
+  sports: "/placeholder.svg?height=200&width=200&text=Sports",
+  stationery: "/placeholder.svg?height=200&width=200&text=Stationery",
+  art_supplies: "/placeholder.svg?height=200&width=200&text=Art+Supplies",
+  beauty: "/placeholder.svg?height=200&width=200&text=Beauty",
+  services: "/placeholder.svg?height=200&width=200&text=Services",
+  food: "/placeholder.svg?height=200&width=200&text=Food",
+  tickets: "/placeholder.svg?height=200&width=200&text=Tickets",
+  transport: "/placeholder.svg?height=200&width=200&text=Transport",
+  others: "/placeholder.svg?height=200&width=200&text=Item+For+Sale",
+}
+
+const getPlaceholderImage = (product: Product) => {
+  if (product.media && product.media.length > 0 && product.media[0]?.url) {
+    return product.media[0].url
+  }
+  return (
+    DEFAULT_PLACEHOLDER[product.category as keyof typeof DEFAULT_PLACEHOLDER] ||
+    "/placeholder.svg?height=200&width=200&text=No+Image"
+  )
+}
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -105,7 +134,7 @@ const itemVariants = {
 
 export default function KupiProdaiPage() {
   const navigate = useNavigate()
-  const { user, isAuthenticated, login } = useAuth()
+  const { user, isAuthenticated, login, refreshUserData } = useAuth()
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState("buy")
   const [likedProducts, setLikedProducts] = useState<number[]>([])
@@ -152,6 +181,10 @@ export default function KupiProdaiPage() {
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0)
   const [reorderedMedia, setReorderedMedia] = useState<ProductMedia[]>([])
 
+  // Add a reference for the polling interval if it's not already there
+  // Add this with the other useRef declarations
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
   // Fetch products on component mount
   useEffect(() => {
     if (isAuthenticated) {
@@ -180,6 +213,9 @@ export default function KupiProdaiPage() {
       const category = selectedCategory !== "All Categories" ? selectedCategory.toLowerCase() : undefined
       const condition = selectedCondition !== "All Conditions" ? selectedCondition.toLowerCase() : undefined
 
+      // Add a timestamp to prevent caching
+      const timestamp = new Date().getTime()
+
       const data = await kupiProdaiApi.getProducts(currentPage, itemsPerPage, category, condition)
       setProducts(data.products)
       setTotalPages(data.num_of_pages)
@@ -194,6 +230,9 @@ export default function KupiProdaiPage() {
   // Fetch user's products
   const fetchUserProducts = async () => {
     try {
+      // Add a timestamp to prevent caching
+      const timestamp = new Date().getTime()
+
       const data = await kupiProdaiApi.getUserProducts()
       setMyProducts(data)
     } catch (err) {
@@ -360,8 +399,17 @@ export default function KupiProdaiPage() {
         setUploadProgress(90)
       }
 
-      // Step 3: Refresh user products to show the updated product with images
+      // Step 3: Add a small delay to ensure the server has processed the images
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // Step 4: Refresh user products to show the updated product with images
       await fetchUserProducts()
+
+      // Also refresh the main products list if we're in the buy tab
+      if (activeTab === "buy") {
+        await fetchProducts()
+      }
+
       setUploadProgress(100)
 
       // Reset form
@@ -545,14 +593,18 @@ export default function KupiProdaiPage() {
         setUploadProgress(80)
       }
 
-      // Step 4: Update image order if needed
-      // This would require an API endpoint to update image order
-      // For now, we'll assume the order is determined by the media_order field
-      // and the backend handles this when images are uploaded
+      // Step 4: Add a small delay to ensure the server has processed the images
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
       // Step 5: Refresh user products to show the updated product with images
       const updatedProducts = await kupiProdaiApi.getUserProducts()
       setMyProducts(updatedProducts)
+
+      // Also refresh the main products list if we're in the buy tab
+      if (activeTab === "buy") {
+        await fetchProducts()
+      }
+
       setUploadProgress(100)
 
       // Reset form and close modal
@@ -730,6 +782,111 @@ export default function KupiProdaiPage() {
     }
   }
 
+  // Add this function after the other helper functions like getConditionDisplay
+
+  // Add a useEffect to check Telegram binding status when the component mounts
+  useEffect(() => {
+    // Check if the user is authenticated and if Telegram is linked
+    if (isAuthenticated) {
+      const checkTelegramStatus = async () => {
+        try {
+          const { tg_linked } = await kupiProdaiApi.checkTelegramStatus()
+          // This will update the isTelegramLinked variable
+        } catch (err) {
+          console.error("Failed to check Telegram status:", err)
+        }
+      }
+
+      checkTelegramStatus()
+    }
+  }, [isAuthenticated, user])
+
+  // Add the handleBindTelegram function if it's not already there
+  // Add this function after the other handler functions
+  const handleBindTelegram = async () => {
+    if (!user?.user?.sub) {
+      toast({
+        title: "Error",
+        description: "User information not available",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // Use the correct sub field from the user object
+      const response = await fetch("http://localhost/api/bingtg", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // Important for cookies
+        body: JSON.stringify({ sub: user.user.sub }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to bind Telegram account")
+      }
+
+      const data = await response.json()
+
+      // Open the Telegram link in a new window
+      window.open(data.link, "_blank", "width=600,height=600")
+
+      // Start polling for Telegram status
+      startPollingTelegramStatus()
+    } catch (error) {
+      console.error("Error binding Telegram:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Add the startPollingTelegramStatus function if it's not already there
+  const startPollingTelegramStatus = () => {
+    // Clear any existing interval
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+    }
+
+    // Start polling every 2 seconds
+    pollingIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await fetch("http://localhost/api/me", {
+          method: "GET",
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const userData = await response.json()
+
+          // If Telegram is now linked, update UI and stop polling
+          if (userData.tg_linked) {
+            // Force refresh the auth context
+            await refreshUserData()
+
+            toast({
+              title: "Success",
+              description: "Your Telegram account has been linked successfully!",
+              variant: "success",
+            })
+
+            // Stop polling
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current)
+              pollingIntervalRef.current = null
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking Telegram status:", error)
+      }
+    }, 2000)
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col space-y-1 sm:space-y-2">
@@ -853,7 +1010,7 @@ export default function KupiProdaiPage() {
                     >
                       <div className="aspect-square relative">
                         <img
-                          src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                          src={getPlaceholderImage(product) || "/placeholder.svg"}
                           alt={product.name}
                           className="object-cover w-full h-full"
                         />
@@ -943,6 +1100,30 @@ export default function KupiProdaiPage() {
                 <Button variant="link" onClick={() => login()}>
                   Login
                 </Button>
+              </AlertDescription>
+            </Alert>
+          ) : !isTelegramLinked ? (
+            <Alert
+              variant="warning"
+              className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900"
+            >
+              <AlertTitle className="flex items-center gap-2">
+                <ExternalLink className="h-4 w-4" />
+                Telegram Required
+              </AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>You need to link your Telegram account before selling items.</p>
+                <div className="mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1 border-yellow-300 hover:bg-yellow-100"
+                    onClick={handleBindTelegram}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    <span>Bind to Telegram</span>
+                  </Button>
+                </div>
               </AlertDescription>
             </Alert>
           ) : (
@@ -1101,7 +1282,7 @@ export default function KupiProdaiPage() {
               </div>
 
               {/* Submit Button */}
-              <Button type="submit" disabled={isUploading} className="w-full">
+              <Button type="submit" disabled={isUploading || !isTelegramLinked} className="w-full">
                 {isUploading ? (
                   <div className="flex items-center justify-center gap-2">
                     <RefreshCw className="animate-spin h-4 w-4" />
@@ -1140,7 +1321,7 @@ export default function KupiProdaiPage() {
                       <Card key={product.id} className="overflow-hidden">
                         <div className="aspect-square relative">
                           <img
-                            src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                            src={getPlaceholderImage(product) || "/placeholder.svg"}
                             alt={product.name}
                             className="object-cover w-full h-full"
                           />
@@ -1186,7 +1367,7 @@ export default function KupiProdaiPage() {
                       <Card key={product.id} className="overflow-hidden">
                         <div className="aspect-square relative">
                           <img
-                            src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                            src={getPlaceholderImage(product) || "/placeholder.svg"}
                             alt={product.name}
                             className="object-cover w-full h-full"
                           />
@@ -1242,7 +1423,7 @@ export default function KupiProdaiPage() {
                 >
                   <div className="aspect-square relative">
                     <img
-                      src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                      src={getPlaceholderImage(product) || "/placeholder.svg"}
                       alt={product.name}
                       className="object-cover w-full h-full"
                     />
@@ -1417,7 +1598,7 @@ export default function KupiProdaiPage() {
                         {previewImages.length > 0 ? (
                           <>
                             <img
-                              src={previewImages[currentMediaIndex] || "/placeholder.svg"}
+                              src={previewImages[currentMediaIndex] || getPlaceholderImage(editingListing!)}
                               alt={`Product image ${currentMediaIndex + 1}`}
                               className="object-contain w-full h-full"
                             />
@@ -1541,6 +1722,7 @@ export default function KupiProdaiPage() {
                           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                             <ImageIcon className="h-12 w-12 mb-2" />
                             <p>No images</p>
+                            <p className="text-xs mt-2">Upload images to showcase your product</p>
                           </div>
                         )}
                       </div>

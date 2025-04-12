@@ -22,19 +22,18 @@ class Config(BaseSettings):
     redis_port: int = 6379
     bucket_name: str = "nuspace_bucket"
     IS_BOT_DEV: bool = False
-    FRONTEND_HOST: str = "http://localhost"
+    FRONTEND_HOST: str
     nginx_port: int = 80
     meilisearch_url: str 
     meilisearch_master_key: str
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
-
+    IS_DEBUG: bool = True
     TG_API_KEY: str
     SECRET_TOKEN: str
-    WEBAPP_HOST: str = "localhost"
-    WEBAPP_PORT: int = 3001
     ngrok_server_endpoint: str
-    url_webhook_endpoint: str = ""
+    url_webhook_endpoint: str
+
 
     @property
     def DATABASE_URL(self) -> str:
