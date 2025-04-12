@@ -28,7 +28,8 @@ async def get_media_response(
     session: AsyncSession,
     request: Request,
     club_id: int,
-    media_section: MediaSection = MediaSection.ev
+    media_section: MediaSection,
+    media_purpose: MediaPurpose
 ) -> MediaResponse | None:
     """
     Возвращает MediaResponse для заданного клуба.
@@ -37,7 +38,7 @@ async def get_media_response(
         select(Media).filter(
                 Media.entity_id == club_id,
                         Media.section == media_section,
-                        Media.media_purpose == MediaPurpose.club_profile
+                        Media.media_purpose == media_purpose
         )
     )
     media_object = media_result.scalars().first()
@@ -50,9 +51,10 @@ async def build_club_response(
     club: Club,
     session: AsyncSession,
     request: Request,
-    media_section: MediaSection = MediaSection.ev
+    media_section: MediaSection,
+    media_purpose: MediaPurpose
 ) -> ClubResponseSchema:
-    media_response = await get_media_response(session, request, club.id, media_section)
+    media_response = await get_media_response(session, request, club.id, media_section, media_purpose)
     return ClubResponseSchema(
         id=club.id,
         name=club.name,
