@@ -32,7 +32,7 @@ def decide_webhook_url(dev_url: str = config.ngrok_server_endpoint,
         url_webhook = f"{public_url}/api"
     else:
         url_webhook = prod_url
-        update_push_endpoint(f"{public_url}/bucket/gcs-hook")
+        update_push_endpoint(f"{prod_url}/bucket/gcs-hook")
     return url_webhook
 
 
