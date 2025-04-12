@@ -33,7 +33,7 @@ async def get_contact_seller(
 
     caption: str = f"{product.name}"
     seller_user_id: int = await get_telegram_id(db_session, product.user_sub)
-
+    print(media.entity_id, product.id)
     if not product:
         await m.answer("Error: Not Found, missing product")
     elif product and media:

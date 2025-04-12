@@ -40,7 +40,7 @@ async def check_user_by_telegram_id(session: AsyncSession,
 
 async def find_media(session: AsyncSession,
                      product_id: int,
-                     media_order: int = 1,
+                     media_order: int = 0,
                      section: MediaSection = MediaSection.kp) -> Media | None:
     query = (
         select(Media).filter(Media.entity_id == product_id,
