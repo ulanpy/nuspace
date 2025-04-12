@@ -123,10 +123,10 @@ services:
     container_name: certbot
     networks:
       - nuros
-    volumes:
-      - /etc/letsencrypt/www:/var/www/certbot
-      - /etc/letsencrypt/conf:/etc/letsencrypt
-      - /etc/letsencrypt/reload:/reload
+#    volumes:
+#      - /etc/letsencrypt/www:/var/www/certbot
+#      - /etc/letsencrypt/conf:/etc/letsencrypt
+#      - /etc/letsencrypt/reload:/reload
     depends_on:
       - nginx
     command: sh -c "
