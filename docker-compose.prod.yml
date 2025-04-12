@@ -121,12 +121,13 @@ services:
   frontend-builder:
     container_name: frontend-builder
     build:
-      context: .  # Root directory now!
-      dockerfile: Dockerfile_static_builder  # Explicit path to Dockerfile
+      context: .
+      dockerfile: Dockerfile_static_builder
     networks:
       - nuros
     volumes:
-      - ./frontend/dist:/app/dist  # Mount dist to host
+      - ./frontend/dist:/app/dist  # Ensure host directory exists
+    command: sh -c "npm run build"  # Run build command on container start
     restart: "no"
 
 networks:

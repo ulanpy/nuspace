@@ -4,11 +4,8 @@ WORKDIR /app
 # Copy package files from frontend directory
 COPY ./frontend/package*.json ./
 
-# Install ALL dependencies (including devDependencies)
+# Install dependencies
 RUN npm install
 
-# Copy frontend source code
+# Copy frontend source code (build is done in the container command)
 COPY ./frontend .
-
-# Build the project
-RUN npm run build
