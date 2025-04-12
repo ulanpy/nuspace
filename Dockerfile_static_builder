@@ -2,7 +2,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Copy package files from frontend directory
-COPY ./package*.json ./
+COPY ./frontend/package*.json ./
 
 # Install production dependencies
 RUN npm install --omit=dev
