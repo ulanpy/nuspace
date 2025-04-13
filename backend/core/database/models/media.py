@@ -26,6 +26,8 @@ class MediaPurpose(Enum):
     large_image = "large_image"
     thumbnail = "thumbnail"
     club_profile = "club_profile"
+    club_event = "club_event"
+
 
 # Mapped[dtype] defaults parameters: nullable=False, unique=True, primary_key=False
 class Media(Base):

@@ -1,11 +1,14 @@
+import asyncio
+from typing import List
+
 from fastapi import Request
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from backend.core.database.models import Club
+from backend.core.database.models import Club, ClubEvent
 from backend.core.database.models.media import MediaSection, Media, MediaPurpose
-from .schemas import ClubResponseSchema
+from .schemas import ClubResponseSchema, ClubEventResponseSchema
 from backend.routes.google_bucket.schemas import MediaResponse
 from backend.routes.google_bucket.utils import generate_download_url
 
@@ -66,4 +69,51 @@ async def build_club_response(
         created_at=club.created_at,
         updated_at=club.updated_at,
         media=media_response
+    )
+
+
+async def get_media_responses(
+    session: AsyncSession,
+    request: Request,
+    event_id: int,
+    media_section: MediaSection,
+    media_purpose: MediaPurpose
+) -> List[MediaResponse] | None:
+    """
+    Возвращает MediaResponse для заданного клуба.
+    """
+    media_result = await session.execute(
+        select(Media).filter(
+                Media.entity_id == event_id,
+                        Media.section == media_section,
+                        Media.media_purpose == media_purpose
+        )
+    )
+    media_objects = media_result.scalars().all()
+
+    if media_objects:
+        return [await build_media_response(request, media_object) for media_object in media_objects]
+    return []
+
+
+async def build_event_response(
+    event: ClubEvent,
+    session: AsyncSession,
+    request: Request,
+    media_section: MediaSection,
+    media_purpose: MediaPurpose
+) -> ClubEventResponseSchema:
+    media_responses = await get_media_responses(session, request, event.id, media_section, media_purpose)
+    return ClubEventResponseSchema(
+        id=event.id,
+        club_id=event.club_id,
+        policy=event.policy,
+        name=event.name,
+        place=event.place,
+        event_datetime=event.event_datetime,
+        description=event.description,
+        duration=event.duration,
+        created_at=event.created_at,
+        updated_at=event.updated_at,
+        media=media_responses
     )

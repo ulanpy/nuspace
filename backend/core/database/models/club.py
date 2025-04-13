@@ -64,7 +64,6 @@ class ClubEvent(Base):
     __tablename__ = 'club_events'
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     club_id: Mapped[str] = mapped_column(ForeignKey('clubs.id'), nullable=False, unique=False)
-    picture: Mapped[str] = mapped_column(nullable=False)
     policy: Mapped[EventPolicy] = mapped_column(SQLEnum(EventPolicy, name="event_policy"), nullable=False)
     name: Mapped[str] = mapped_column(nullable=False, unique=False)
     place: Mapped[str] = mapped_column(nullable=False, unique=False)
@@ -75,9 +74,6 @@ class ClubEvent(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     club = relationship("Club", back_populates="events")
-
-
-
 
 
 class ClubAnnouncement(Base):
