@@ -16,7 +16,7 @@ const numberToEmoji = (num: number): string => {
 }
 
 export function BindTelegramButton() {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, refreshUserData } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [telegramLink, setTelegramLink] = useState("")
@@ -50,6 +50,7 @@ export function BindTelegramButton() {
     }
   }, [showModal, isLinked])
 
+  // Find the startPollingTelegramStatus function and update it to refresh the auth context
   const startPollingTelegramStatus = () => {
     // Clear any existing interval
     if (pollingIntervalRef.current) {
@@ -59,7 +60,7 @@ export function BindTelegramButton() {
     // Start polling every 2 seconds
     pollingIntervalRef.current = setInterval(async () => {
       try {
-        const response = await fetch("http://localhost/api/me", {
+        const response = await fetch("/api/me", {
           method: "GET",
           credentials: "include",
         })
@@ -71,6 +72,12 @@ export function BindTelegramButton() {
           if (userData.tg_linked) {
             setIsLinked(true)
             setShowModal(false)
+
+            // Refresh the auth context to update the user data
+            if (typeof window !== "undefined") {
+              // Force refresh the auth context
+              await refreshUserData()
+            }
 
             toast({
               title: "Success",
@@ -103,7 +110,7 @@ export function BindTelegramButton() {
 
     try {
       // Use the correct sub field from the user object
-      const response = await fetch("http://localhost/api/bingtg", {
+      const response = await fetch("/api/bingtg", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -160,6 +167,7 @@ export function BindTelegramButton() {
         <span>{isLoading ? "Processing..." : "Bind to Telegram"}</span>
       </Button>
 
+      {/* Update the Modal component to position it better */}
       <Modal
         isOpen={showModal}
         onClose={() => {
@@ -171,6 +179,7 @@ export function BindTelegramButton() {
         }}
         title="Bind Your Telegram Account"
         description="Click the link below to open Telegram and confirm your account."
+        className="fixed inset-0 z-[100] flex items-center justify-center"
       >
         <div className="space-y-4 py-2">
           <div className="flex flex-col items-center gap-2 text-center">

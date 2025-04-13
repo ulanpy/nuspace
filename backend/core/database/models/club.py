@@ -42,7 +42,6 @@ class Club(Base):
     president: Mapped[str] = mapped_column(ForeignKey('users.sub'), nullable=False)
     telegram_url: Mapped[str] = mapped_column(nullable=True, unique=False)
     instagram_url: Mapped[str] = mapped_column(nullable=True, unique=False)
-    picture: Mapped[str] = mapped_column(nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

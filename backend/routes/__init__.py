@@ -1,4 +1,4 @@
-from .admin.admin import get_admin
+
 from .auth import auth
 from .clubs import clubs
 from backend.routes.bot.bot import web_router

@@ -1,24 +1,26 @@
-from datetime import datetime, timedelta
-from typing import Optional, List, Tuple, Union
-from backend.core.database import *
-from backend.routes.auth.schemas import *
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, delete, insert, update, text, Interval, cast
-from typing import AsyncGenerator
-import os
-from backend.core.configs.config import *
-from .schemas import ClubRequestSchema, ClubEventSchema, ClubResponseSchema
+from fastapi import Request, HTTPException
 
 
-async def add_new_club(club_data: ClubRequestSchema, session: AsyncSession) -> ClubResponseSchema:
-    pass
+from .schemas import ClubResponseSchema, ClubRequestSchema
+from .utils import build_club_response
+from ...core.database.models import Club
+from ...core.database.models.media import MediaSection, MediaPurpose
 
-async def add_new_event(event_data: ClubEventSchema, session: AsyncSession) -> ClubEventSchema:
-    pass
 
-async def get_events() -> list[ClubEventSchema]:
-    pass
+async def add_new_club(
+    request: Request,
+    club: ClubRequestSchema,
+    session: AsyncSession,
+    media_section: MediaSection = MediaSection.ev,
+    media_purpose: MediaPurpose = MediaPurpose.club_profile
+) -> ClubResponseSchema:
+    new_club = Club(**club.dict())
+    session.add(new_club)
+    await session.commit()
+    return await build_club_response(new_club, session, request, media_section, media_purpose)
 
-async def get_event(even_id: int, event_data: ClubEventSchema, session: AsyncSession) -> ClubEventSchema:
-    pass
+
+
+
 
