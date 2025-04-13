@@ -64,6 +64,9 @@ class ClubEventRequestSchema(BaseModel):
     event_datetime: datetime
     policy: EventPolicy
 
+class ListEventSchema(BaseModel):
+    events: List[ClubEventResponseSchema]
+    num_of_pages: int
 
 
 # class ClubAnnouncement(BaseModel):

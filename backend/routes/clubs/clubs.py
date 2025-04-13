@@ -29,13 +29,20 @@ async def add_club(
 async def add_event():
     pass
 
-@router.get("/api/clubs/{club_id}/events")
+@router.get("/clubs/{club_id}/events")
 async def get_events(
     club_id: int,
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     db_session: AsyncSession = Depends(get_db_session),
+    size: int = 20,
+    page: int = 1,
 ):
 
-    return await get_club_events(club_id, request, db_session)
+    return await get_club_events(
+        club_id, request,
+        db_session,
+        size=size,
+        page=page,
+    )
 
