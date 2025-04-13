@@ -43,6 +43,7 @@ class ClubRequestSchema(BaseModel):
 
 
 class ClubEventResponseSchema(BaseModel):
+    id: int 
     club_id: int
     name: str
     place: str
@@ -55,7 +56,6 @@ class ClubEventResponseSchema(BaseModel):
     media: List[MediaResponse] = []
     
 class ClubEventRequestSchema(BaseModel):
-    id: int
     club_id: int
     name: str
     place: str
@@ -63,8 +63,6 @@ class ClubEventRequestSchema(BaseModel):
     duration: int
     event_datetime: datetime
     policy: EventPolicy
-    created_at: datetime
-    updated_at: datetime
 
 
 
