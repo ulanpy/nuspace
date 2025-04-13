@@ -241,3 +241,33 @@ async def add_product_report(report_data: ProductReportSchema, user_sub: str, se
     await session.commit()
     await session.refresh(new_report)
     return new_report
+
+async def show_products_for_search(
+    session: AsyncSession,
+    size: int,
+    page: int,
+    num_of_products: int,
+    product_ids:list[int],
+    request: Request,
+    media_section: MediaSection = MediaSection.kp
+) -> ListResponseSchema:
+    offset = size * (page - 1)
+
+    # Подсчет общего числа продуктов
+    num_of_pages = max(1, (num_of_products + size - 1) // size)
+
+    query = (
+        select(Product)
+        .options(selectinload(Product.user))
+        .where(Product.id.in_(product_ids))
+        .offset(offset)
+        .limit(size)
+        .order_by(Product.updated_at.desc())
+    )
+    result = await session.execute(query)
+    products = result.scalars().all()
+
+    # Собираем ответы для всех продуктов
+    products_response = await asyncio.gather(*(build_product_response(product, session, request, media_section)
+                                                for product in products))
+    return ListResponseSchema(products=products_response, num_of_pages=num_of_pages)
