@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, Field
 
 
 from backend.routes.google_bucket.schemas import MediaResponse
@@ -55,15 +55,28 @@ class ClubEventResponseSchema(BaseModel):
     updated_at: datetime
     media: List[MediaResponse] = []
     
+
 class ClubEventRequestSchema(BaseModel):
     club_id: int
+    policy: EventPolicy
     name: str
     place: str
+    event_datetime: datetime
     description: str
     duration: int
-    event_datetime: datetime
-    policy: EventPolicy
 
+    @field_validator('duration')
+    def validate_url(cls, value):
+        if value <= 0:
+            raise ValueError('Duration should be positive')
+        return value
+
+    @field_validator('event_datetime')
+    def validate_event_datetime(cls, value):
+        if value <= datetime.now():
+            raise ValueError('Event datetime must be in the future')
+        return value
+    
 class ListEventSchema(BaseModel):
     events: List[ClubEventResponseSchema]
     num_of_pages: int

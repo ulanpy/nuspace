@@ -76,9 +76,6 @@ class ClubEvent(Base):
     club = relationship("Club", back_populates="events")
 
 
-
-
-
 class ClubAnnouncement(Base):
     __tablename__ = "club_announcements"
     id: Mapped[BigInteger] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)

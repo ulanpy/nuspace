@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.common.dependencies import get_db_session, check_token
 from typing import Annotated, List
 
-from .cruds import add_new_club, get_club_events
-from .schemas import ClubRequestSchema, ClubResponseSchema, ListEventSchema
+from .cruds import add_new_club, add_new_event, get_club_events
+from .schemas import ClubRequestSchema, ClubResponseSchema, ClubEventRequestSchema, ClubEventResponseSchema, ListEventSchema
 
 router = APIRouter(tags=['Club Routes'])
 
@@ -22,12 +22,21 @@ async def add_club(
         return await add_new_club(request, club, db_session)
     except IntegrityError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="db rejected the request: probably there are unique issues")
+                            detail="db rejected the request: probably there are duplication issues")
 
 
 @router.post("/events/add")
-async def add_event():
-    pass
+async def add_event(
+    request: Request,
+    event: ClubEventRequestSchema,
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session)
+) -> ClubEventResponseSchema:
+    try:
+        return await add_new_event(request, event, db_session)
+    except IntegrityError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="probably non-exist club_id")
 
 @router.get("/clubs/{club_id}/events", response_model=ListEventSchema)
 async def get_events(
