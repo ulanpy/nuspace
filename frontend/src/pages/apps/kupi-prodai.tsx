@@ -114,12 +114,13 @@ const itemVariants = {
 
 export default function KupiProdaiPage() {
   const navigate = useNavigate();
-  const { isAuthenticated, login } = useAuth();
+  const { user, isAuthenticated, login } = useAuth();
   const { toast } = useToast();
   const [likedProducts, setLikedProducts] = useState<number[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [error] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const isTelegramLinked = user?.tg_linked || false
 
   // Pagination state
   const [totalPages] = useState(1);
@@ -839,7 +840,7 @@ export default function KupiProdaiPage() {
               </div>
 
               {/* Submit Button */}
-              <Button type="submit" disabled={isUploading} className="w-full">
+              <Button type="submit" disabled={isUploading || !isTelegramLinked} className="w-full">
                 {isUploading ? (
                   <div className="flex items-center justify-center gap-2">
                     <RefreshCw className="animate-spin h-4 w-4" />
@@ -1283,7 +1284,7 @@ export default function KupiProdaiPage() {
                                 {/* Image indicators */}
                                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
                                   {previewImages.map((_, index) => (
-                                    <button
+                                    <Button
                                       key={index}
                                       type="button"
                                       className={`w-2 h-2 rounded-full ${
@@ -1387,6 +1388,7 @@ export default function KupiProdaiPage() {
                           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                             <ImageIcon className="h-12 w-12 mb-2" />
                             <p>No images</p>
+                            <p className="text-xs mt-2">Upload images to showcase your product</p>
                           </div>
                         )}
                       </div>

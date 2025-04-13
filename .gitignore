@@ -15,7 +15,7 @@ node_modules/
 
 # Build output (Vite/React)
 dist/
-
+ssl/
 # Static folder pycache
 static/**/__pycache__/
 
@@ -24,6 +24,7 @@ configs/**/__pycache__/
 
 # Environmental files
 .env
+
 
 
 # Log files

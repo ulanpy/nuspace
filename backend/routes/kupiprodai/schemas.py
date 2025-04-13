@@ -22,6 +22,7 @@ class ProductResponseSchema(BaseModel):
     description: str
     user_name: str
     user_surname: str
+    user_telegram_id: int
     price: int
     category: ProductCategory
     condition: ProductCondition
@@ -48,12 +49,22 @@ class ProductUpdateSchema(BaseModel):
 
     class Config:
         from_attributes = True  # Make sure it can be used with SQLAlchemy models
-
-
-
+    
 class ProductFeedbackSchema(BaseModel):
     product_id: int
     text: str
+    
+class ProductFeedbackResponseSchema(BaseModel):
+    id: int
+    user_name: str
+    user_surname: str
+    product_id: int
+    text: str
+    created_at: datetime
+
+class ListProductFeedbackResponseSchema(BaseModel):
+    product_feedbacks: List[ProductFeedbackResponseSchema]
+    num_of_pages: int
 
 class ProductReportSchema(BaseModel):
     product_id: int
