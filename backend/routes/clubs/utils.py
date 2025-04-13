@@ -110,11 +110,11 @@ async def build_event_response(
     session: AsyncSession,
     request: Request,
     media_section: MediaSection,
-    media_purpose: MediaPurpose
 ) -> ClubEventResponseSchema:
-    media_reponses = await get_media_responses(session, request, event.id, media_section, media_purpose)
+    media_reponses = await get_media_responses(session, request, event.id, media_section)
     return ClubEventResponseSchema(
         id=event.id,
+        club_id=event.club_id,
         name=event.name,
         place=event.place,
         description=event.description,

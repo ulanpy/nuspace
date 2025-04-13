@@ -6,7 +6,7 @@ from backend.common.dependencies import get_db_session, check_token
 from typing import Annotated, List
 
 from .cruds import add_new_club, get_club_events
-from .schemas import ClubRequestSchema, ClubResponseSchema
+from .schemas import ClubRequestSchema, ClubResponseSchema, ListEventSchema
 
 router = APIRouter(tags=['Club Routes'])
 
@@ -29,7 +29,7 @@ async def add_club(
 async def add_event():
     pass
 
-@router.get("/clubs/{club_id}/events")
+@router.get("/clubs/{club_id}/events", response_model=ListEventSchema)
 async def get_events(
     club_id: int,
     request: Request,
