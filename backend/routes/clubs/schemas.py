@@ -62,7 +62,6 @@ class ClubEventResponseSchema(BaseModel):
     description: str
     duration: int
     event_datetime: datetime
-    media: List[MediaResponse] = []
     policy: EventPolicy
     created_at: datetime
     updated_at: datetime
