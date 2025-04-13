@@ -42,20 +42,31 @@ class ClubRequestSchema(BaseModel):
         return value
 
 
-# class ClubEventSchema(BaseModel):
-#     id: int
-#     club_id: int
-#     picture: List[MediaResponse]
-#     policy: EventPolicy
-#     name: str
-#     place: str
-#     event_datetime: datetime
-#     description: str
-#     duration: int
-#     created_at: datetime
-#     updated_at: datetime
-#
-#
+class ClubEventRequestSchema(BaseModel):
+    id: int
+    club_id: int
+    name: str
+    place: str
+    description: str
+    duration: int
+    event_datetime: datetime
+    media: List[MediaResponse] = []
+    policy: EventPolicy
+    created_at: datetime
+    updated_at: datetime
+
+class ClubEventResponseSchema(BaseModel):
+    club_id: int
+    name: str
+    place: str
+    description: str
+    duration: int
+    event_datetime: datetime
+    media: List[MediaResponse] = []
+    policy: EventPolicy
+    created_at: datetime
+    updated_at: datetime
+
 # class ClubAnnouncement(BaseModel):
 #     id: int
 #     club_id: int
