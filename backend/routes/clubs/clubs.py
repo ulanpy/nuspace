@@ -24,5 +24,5 @@ async def get_club_events(club_id: int, db_sesssion: AsyncSession = Depends(get_
     pass
 
 @router.get("/api/events/search", response_model=ClubEventSchema)
-async def search(keyword: str, db_session: Depends(get_db_session)):
+async def search(keyword: str, db_session: AsyncSession = Depends(get_db_session)):
     pass
