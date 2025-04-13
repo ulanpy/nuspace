@@ -4,9 +4,10 @@ from fastapi import Request, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from .schemas import ClubResponseSchema, ClubRequestSchema, ClubEventResponseSchema
-from .utils import build_club_response
+from .utils import build_club_response, build_event_response
 from ...core.database.models import Club, ClubEvent
 from ...core.database.models.media import MediaSection, MediaPurpose
+import asyncio
 
 
 async def add_new_club(
@@ -26,6 +27,7 @@ async def get_club_events(
     club_id: int,
     request: Request,
     session: AsyncSession,
+    media_section: MediaSection = MediaSection.ev
 ) -> ClubEventResponseSchema:
     query = (
         select(ClubEvent)
@@ -35,7 +37,8 @@ async def get_club_events(
     )
     result  = await session.execute(query)
     events = result.scalars().all()
-    return events
+    return list(await asyncio.gather(*(build_event_response(event, session, request, media_section)
+                                  for event in events)))
 
 
 

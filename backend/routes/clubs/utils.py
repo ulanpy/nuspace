@@ -118,6 +118,7 @@ async def build_event_response(
         name=event.name,
         place=event.place,
         description=event.description,
+        duration=event.duration,
         event_datetime=event.event_datetime,
         policy=event.policy,
         created_at=event.created_at,

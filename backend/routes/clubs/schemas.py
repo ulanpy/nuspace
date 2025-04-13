@@ -42,6 +42,18 @@ class ClubRequestSchema(BaseModel):
         return value
 
 
+class ClubEventResponseSchema(BaseModel):
+    club_id: int
+    name: str
+    place: str
+    description: str
+    duration: int
+    event_datetime: datetime
+    policy: EventPolicy
+    created_at: datetime
+    updated_at: datetime
+    media: List[MediaResponse] = []
+    
 class ClubEventRequestSchema(BaseModel):
     id: int
     club_id: int
@@ -54,17 +66,7 @@ class ClubEventRequestSchema(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-class ClubEventResponseSchema(BaseModel):
-    club_id: int
-    name: str
-    place: str
-    description: str
-    duration: int
-    event_datetime: datetime
-    media: List[MediaResponse] = []
-    policy: EventPolicy
-    created_at: datetime
-    updated_at: datetime
+
 
 # class ClubAnnouncement(BaseModel):
 #     id: int
