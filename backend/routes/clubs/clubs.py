@@ -36,9 +36,6 @@ async def get_events(
     user: Annotated[dict, Depends(check_token)],
     db_session: AsyncSession = Depends(get_db_session),
 ):
-    try:
-        return await get_club_events(club_id, request, db_session)
-    except IntegrityError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="db rejected the request: probably there are unique issues")
+
+    return await get_club_events(club_id, request, db_session)
 
