@@ -43,14 +43,16 @@ class Meal(Base): #create, read, update, delete
     canteen_id: Mapped[int] = mapped_column(Integer, ForeignKey('canteen.id'), nullable=False)
 
     canteen = relationship("Canteen", back_populates="meals")
-    available_meals = relationship("AvailableMeals", back_populates="meal")
-    
+    available_meals = relationship("AvailableMeals", back_populates="meals")
+    ingredient = relationship("Ingredient", back_populates="meals")
 
-class CanteenProduct(Base): #create, read, update, delete
-    __tablename__= 'canteen_products'
+class CanteenProduct(Base):
+    __tablename__= 'canteenproducts'
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(nullable=False)
+
+    ingredient = relationship("Ingredient", back_populates="canteenproducts")
 
 # Ingredient and Product classes aren't the same? Both are about ingredients (onion, carrot, etc...)
 # what is the purpose of product and ingredient classes?
@@ -60,7 +62,10 @@ class Ingredient(Base): #create, read, update, delete
     meal_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('meals.id'), nullable=False)
     product_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('products.id'), nullable=False)
 
-class AvailableMeals(Base): #create, read, update, delete
+    canteenproducts = relationship("CanteenProduct", back_populates="ingredient")
+    meals = relationship("Meal", back_populates="ingredient")
+
+class AvailableMeals(Base):
     __tablename__ = "available_meals"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     canteen_id: Mapped[int] = mapped_column(Integer, ForeignKey('canteen.id'), nullable=False)
