@@ -5,19 +5,24 @@ from backend.core.database.models.product import ProductCategory, ProductConditi
 from backend.routes.google_bucket.schemas import MediaResponse
 from datetime import datetime
 
-async def AvailableMealsSchema(BaseModel):
+class CanteenSchema(BaseModel):
+    id: int
+    name: str
+    description: str
+
+class AvailableMealsSchema(BaseModel):
     id: int
     canteen_id: int
     meal_id: int
     status: bool
 
-async def CanteenFeedbackSchema(BaseModel):
+class CanteenFeedbackSchema(BaseModel):
     id: int
     canteen_id: int
     feedback: str
     rating: int
 
-async def CanteenReportSchema(BaseModel):
+class CanteenReportSchema(BaseModel):
     id: int
     canteen_id: int
     report: str
