@@ -268,35 +268,129 @@ async def search(
     return product_objects
 
 
-@router.post("/feedback/{product_id}")
+@router.post("/feedback/{product_id}") #added description
 async def store_new_product_feedback(
     feedback_data: ProductFeedbackSchema, 
     user_sub: str, 
     request: Request,
     db_session = Depends(get_db_session)
 ):
-    await add_new_product_feedback_to_db(feedback_data=feedback_data, user_sub=user_sub, session=db_session)
+    '''
+    Adds new feedback to the product
+    
+    ***Parameters:***
+    - `feedback_data`: json object with values for product_id and text of the feedback.
 
-@router.get("/feedback/{product_id}")
+    ***Returns:***
+    - The newly added product feedback with all of its values;
+
+    ***Errors:***
+    - Returns 500 on internal error.
+    '''
+
+    try:
+        new_product_feedback = await add_new_product_feedback_to_db(feedback_data=feedback_data, user_sub=user_sub, session=db_session)
+        return new_product_feedback
+    except HTTPException as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+
+@router.get("/feedback/{product_id}") #needs to be finished
 async def get_product_feedbacks(
     product_id:int, 
+    user: Annotated[dict, Depends(check_token)],
     db_session = Depends(get_db_session), 
     size: int = 20, 
-    page: int = 1
+    page: int = 1,
+    response_model=List[ProductFeedbackResponseSchema]
 ):
-    return await get_product_feedbacks_from_db(product_id=product_id, session=db_session, size=size, page=page)
+    """
+    Retrieves a list of all feedbacks of the product,
 
-@router.delete("/feedback/{feedback_id}")
-async def remove_product_feedback(feedback_id: int, db_session = Depends(get_db_session)):
-    await remove_product_feedback_from_db(feedback_id=feedback_id, session=db_session)
+    **Parameters:**
+
+    - `access_token`: Required authentication token from cookies (via dependency).
+
+    **Returns:**
+    - A list of the user's own products, each with full product details and associated media.
+
+    **Notes:**
+    - Pagination is not yet implemented (all products are returned at once).
+
+    - Only products belonging to the authenticated user are included.
+    """
+    product_feedbacks = await get_product_feedbacks_from_db(product_id=product_id, session=db_session, size=size, page=page)
+    if product_feedbacks is None:
+        raise HTTPException(status_code=404, detail="Product feedbacks not found")
+    return product_feedbacks
 
 
-@router.post("/{product_id}/report")
+@router.delete("/feedback/{feedback_id}") #added description
+async def remove_product_feedback(
+    feedback_id: int,
+    user: Annotated[dict, Depends(check_token)],
+    db_session = Depends(get_db_session),
+):
+    """
+    Deletes a specific product feedback added by the authenticated user.
+
+    **Requirements:**
+    - The user must be authenticated (`access_token` cookie required).
+
+    - Only the owner of the product feedback can delete it.
+
+    **Parameters:**
+    - `feedback_id`: The ID of the product feedback to delete.
+
+    **Process:**
+    - Deletes the product feedback from the database.
+
+    **Returns:**
+    - HTTP 204 No Content on successful deletion.
+
+    **Errors:**
+    - Returns 403 if the product does not belong to the user.
+    - Returns 404 if the product is not found.
+    - Returns 500 on internal error.
+    """
+    try:
+        await remove_product_feedback_from_db(
+            feedback_id=feedback_id,
+            user_sub=user.get("sub"),
+            session=db_session
+        )
+        return status.HTTP_204_NO_CONTENT
+    except HTTPException as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+@router.post("/{product_id}/report") #added description
 async def store_new_product_report(
     report_data: ProductReportSchema, 
-    user_sub: str, 
+    user: Annotated[dict, Depends(check_token)],
     request: Request, 
     db_session = Depends(get_db_session
 )):
-    await add_product_report(report_data=report_data, user_sub = user_sub, session = db_session)
+    """
+    Creates a new product report.
+
+    ***Requirements:***
+    - The user must be authenticated (`access_token` cookie required).
+
+    ***Parameters:***
+    - `report_data`: JSON body containing product fields (product_id, text)
+
+    - Automatically associates the product report with the authenticated user.
+
+    ***Returns:***
+    - The newly created product report with full details including associated media (if any).
+
+    ***Errors:***
+    - Returns 500 on internal error.
+    """
+
+    try:
+        new_product_report = await add_product_report(report_data=report_data, user_sub = user.get("sub"), session = db_session)
+        return new_product_report
+    except HTTPException as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 

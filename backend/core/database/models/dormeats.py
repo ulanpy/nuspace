@@ -9,16 +9,16 @@ from statistics import mean
 from enum import Enum
 from datetime import datetime, UTC
 
-class Canteen(Base):
+class Canteen(Base): #create, read, update, delete
     __tablename__ = 'canteen'
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
-    name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     description: Mapped[str] = mapped_column(String, nullable=False)
 
     meals = relationship("Meal", back_populates="canteen")
     available_meals = relationship("AvailableMeals", back_populates="canteen")
-    canteen_feedback = relationship("CanteenFeedback", back_populates="canteen")
-    canteen_report = relationship("CanteenReport", back_populates="canteen")
+    canteen_feedbacks = relationship("CanteenFeedback", back_populates="canteen")
+    canteen_reports = relationship("CanteenReport", back_populates="canteen")
 
     @hybrid_property
     def average_rating(self):
@@ -33,7 +33,7 @@ class Category(Enum):
     desserts = "desserts"
     meals = "meals"
 
-class Meal(Base):
+class Meal(Base): #create, read, update, delete
     __tablename__ = 'meals'
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
@@ -56,7 +56,7 @@ class CanteenProduct(Base):
 
 # Ingredient and Product classes aren't the same? Both are about ingredients (onion, carrot, etc...)
 # what is the purpose of product and ingredient classes?
-class Ingredient(Base):
+class Ingredient(Base): #create, read, update, delete
     __tablename__= 'ingredient'
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     meal_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('meals.id'), nullable=False)
@@ -75,10 +75,10 @@ class AvailableMeals(Base):
     canteen = relationship("Canteen", back_populates="available_meals")
     meal = relationship("Meal", back_populates="available_meals")
 
-class CanteenFeedback(Base):
+class CanteenFeedback(Base): #create, read, update, delete
     __tablename__ = "canteen_feedback"
     __table_args__ = (
-        CheckConstraint('rating >= 1 AND rating <= 5', name="rating_range")
+        CheckConstraint('rating >= 1 AND rating <= 5', name="rating_range"),
     )
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     canteen_id: Mapped[int] = mapped_column(Integer, ForeignKey('canteen.id'), nullable=False)
@@ -87,7 +87,7 @@ class CanteenFeedback(Base):
 
     canteen = relationship("Canteen", back_populates="canteen_feedback")
 
-class CanteenReport(Base):
+class CanteenReport(Base): #create, read, update, delete
     __tablename__ = "canteen_report"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     canteen_id: Mapped[int] = mapped_column(Integer, ForeignKey('canteen.id'), nullable=False)
