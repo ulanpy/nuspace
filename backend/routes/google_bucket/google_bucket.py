@@ -113,7 +113,6 @@ async def gcs_webhook(
 
         decoded_data = base64.b64decode(data_b64).decode("utf-8")
         gcs_event = json.loads(decoded_data)
-        print(gcs_event)
         bucket_name = gcs_event["bucket"]
         object_name = gcs_event["name"]
 
@@ -125,7 +124,6 @@ async def gcs_webhook(
             raise HTTPException(status_code=404, detail="Blob not found in GCS.")
 
         metadata = blob.metadata or {}
-        print(f"Metadata: {metadata}")
         confirmation = UploadConfirmation(
             filename=metadata.get("filename", object_name),
             mime_type=metadata.get("mime-type", blob.content_type or "application/octet-stream"),
