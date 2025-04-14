@@ -76,7 +76,8 @@ class ClubEventRequestSchema(BaseModel):
         if value <= datetime.now():
             raise ValueError('Event datetime must be in the future')
         return value
-    
+
+
 class ListEventSchema(BaseModel):
     events: List[ClubEventResponseSchema]
     num_of_pages: int

@@ -7,9 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from backend.core.database.models import Club, ClubEvent
-from backend.core.database.models import Club, ClubEvent
 from backend.core.database.models.media import MediaSection, Media, MediaPurpose
-from .schemas import ClubResponseSchema, ClubEventResponseSchema
 from .schemas import ClubResponseSchema, ClubEventResponseSchema
 from backend.routes.google_bucket.schemas import MediaResponse
 from backend.routes.google_bucket.utils import generate_download_url
@@ -77,37 +75,28 @@ async def build_club_response(
     )
 
 
-
-
 async def get_media_responses(
-    session: AsyncSession,
-    request: Request,
-    event_id: int,
-    media_section: MediaSection
-) -> List[MediaResponse]:
+        session: AsyncSession,
+        request: Request,
+        event_id: int,
+        media_section: MediaSection,
+        media_purpose: MediaPurpose
+) -> List[MediaResponse] | None:
     """
-    Возвращает список MediaResponse для заданного продукта.
+    Возвращает MediaResponse для заданного клуба.
     """
     media_result = await session.execute(
-        select(Media).filter(Media.entity_id == event_id, Media.section == media_section)
+        select(Media).filter(
+            Media.entity_id == event_id,
+            Media.section == media_section,
+            Media.media_purpose == media_purpose
+        )
     )
     media_objects = media_result.scalars().all()
 
-    # Если есть необходимость параллельной генерации URL, можно использовать asyncio.gather:
-    async def build_media_response(media: Media) -> MediaResponse:
-        url_data = await generate_download_url(request, media.name)
-        return MediaResponse(
-            id=media.id,
-            url=url_data["signed_url"],
-            mime_type=media.mime_type,
-            section=media.section,
-            entity_id=media.entity_id,
-            media_purpose=media.media_purpose,
-            media_order=media.media_order
-        )
-
-    # Параллельное выполнение (опционально)
-    return list(await asyncio.gather(*(build_media_response(media) for media in media_objects)))
+    if media_objects:
+        return [await build_media_response(request, media_object) for media_object in media_objects]
+    return []
 
 
 async def build_event_response(
@@ -115,8 +104,9 @@ async def build_event_response(
     session: AsyncSession,
     request: Request,
     media_section: MediaSection,
+    media_purpose: MediaPurpose
 ) -> ClubEventResponseSchema:
-    media_reponses = await get_media_responses(session, request, event.id, media_section)
+    media_responses = await get_media_responses(session, request, event.id, media_section, media_purpose)
     return ClubEventResponseSchema(
         id=event.id,
         club_id=event.club_id,
@@ -128,5 +118,5 @@ async def build_event_response(
         policy=event.policy,
         created_at=event.created_at,
         updated_at=event.updated_at,
-        media=media_reponses,
+        media=media_responses
     )

@@ -1,6 +1,6 @@
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Request, HTTPException
+from fastapi import Request
 from sqlalchemy.orm import selectinload
 
 from .schemas import ClubResponseSchema, ClubRequestSchema, ClubEventResponseSchema, ListEventSchema, ClubEventRequestSchema
@@ -42,7 +42,8 @@ async def get_club_events(
     session: AsyncSession,
     size: int,
     page: int,
-    media_section: MediaSection = MediaSection.ev
+    media_section: MediaSection = MediaSection.ev,
+    media_purpose: MediaPurpose = MediaPurpose.club_event
 ) -> ListEventSchema:
     offset = size * (page - 1)
     total_query = select(func.count(ClubEvent.id)).filter_by(club_id=club_id)
@@ -57,11 +58,30 @@ async def get_club_events(
         .limit(size)
         .order_by(ClubEvent.created_at.desc())
     )
-    result  = await session.execute(query)
+    result = await session.execute(query)
     events = result.scalars().all()
-    events_response = list(await asyncio.gather(*(build_event_response(event, session, request, media_section)
-                                  for event in events)))
+    events_response = list(await asyncio.gather(*(build_event_response(event,
+                                                                       session,
+                                                                       request,
+                                                                       media_section,
+                                                                       media_purpose) for event in events)))
 
     return ListEventSchema(events=events_response, num_of_pages=num_of_pages)
 
 
+async def get_event_db(
+    event_id: int,
+    request: Request,
+    session: AsyncSession,
+    media_section: MediaSection = MediaSection.ev,
+    media_purpose: MediaPurpose = MediaPurpose.club_event
+) -> ClubEventResponseSchema | None:
+    query = (
+        select(ClubEvent)
+        .filter_by(id=event_id)
+    )
+    result = await session.execute(query)
+    event: ClubEvent = result.scalars().first()
+    if event:
+        return await build_event_response(event, session, request, media_section, media_purpose)
+    return None
