@@ -31,8 +31,10 @@ class Config(BaseSettings):
     IS_DEBUG: bool = True
     TG_API_KEY: str
     SECRET_TOKEN: str
-    ngrok_server_endpoint: str
-    url_webhook_endpoint: str
+    CLOUDFLARED_TUNNEL_URL: str  # Maps to http://localhost:80 (e.g. Nginx container)
+    NUSPACE: str
+    GCP_PROJECT_ID: str
+    GCP_TOPIC_ID: str
 
 
     @property
@@ -52,8 +54,12 @@ class Config(BaseSettings):
         return f"redis://{self.redis_host}:{self.redis_port}"
 
     @property
-    def bucket_credentials(self):
+    def BUCKET_CREDENTIALS(self):
          return service_account.Credentials.from_service_account_info(json.loads(self.GCP_CREDENTIALS_JSON))
 
+    @property
+    def ROUTING_PREFIX(self) -> str:
+        raw_url = self.NUSPCE if not self.IS_DEBUG else self.CLOUDFLARED_TUNNEL_URL
+        return raw_url.split("https://", 1)[1]
 # Usage
 config = Config()
