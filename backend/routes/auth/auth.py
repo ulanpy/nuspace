@@ -23,7 +23,6 @@ async def login(request: Request):
     return await getattr(kc.oauth, kc.__class__.__name__.lower()).authorize_redirect(request, kc.KEYCLOAK_REDIRECT_URI)
 
 
-
 @router.post("/bingtg")
 async def bind_tg(request: Request, sub: Sub):
     bot: Bot = request.app.state.bot

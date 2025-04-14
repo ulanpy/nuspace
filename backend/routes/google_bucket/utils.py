@@ -4,6 +4,7 @@ from backend.common.dependencies import check_token
 from datetime import timedelta
 from google.cloud.exceptions import NotFound
 from google.pubsub_v1.types import Subscription, PushConfig
+from google.api_core.exceptions import AlreadyExists
 
 async def generate_download_url(
     request: Request,
@@ -39,13 +40,23 @@ async def delete_bucket_object(
 from google.cloud import pubsub_v1
 from backend.core.configs.config import config
 
-def update_push_endpoint(new_url: str):
-    client = pubsub_v1.SubscriberClient(credentials=config.bucket_credentials)
-    subscription_path = client.subscription_path("responsive-city-389909", "gcs-object-created-sub")
 
-    push_config = pubsub_v1.types.PushConfig(push_endpoint=new_url)
+def update_bucket_push_endpoint():
+    client = pubsub_v1.SubscriberClient(credentials=config.BUCKET_CREDENTIALS)
+    topic_path = client.topic_path(config.GCP_PROJECT_ID, config.GCP_TOPIC_ID)
+    subscription_path = client.subscription_path(
+        project=config.GCP_PROJECT_ID,
+        subscription=f"gcs-object-created-sub-{config.ROUTING_PREFIX}")
+    try:
+        subscription = client.create_subscription(
+            name=subscription_path,
+            topic=topic_path,
+        )
+        print(f"Subscription created: {subscription.name}")
+    except AlreadyExists:
+        print(f"Subscription already exists: {subscription_path}")
 
-    # The field mask tells which fields we want to update (just push_config here)
+    push_config = pubsub_v1.types.PushConfig(push_endpoint=f"https://{config.ROUTING_PREFIX}/api/bucket/gcs-hook")
     update_mask = {"paths": ["push_config"]}
 
     response = client.update_subscription(
