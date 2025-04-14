@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useRef, useEffect } from "react"
-import { motion } from "framer-motion"
+import { useState, useRef } from "react";
+import { motion } from "framer-motion";
 import {
   Search,
   Filter,
@@ -19,27 +19,35 @@ import {
   ChevronDown,
   Trash2,
   Plus,
-  ExternalLink,
-} from "lucide-react"
-import { Input } from "../../components/ui/input"
-import { Button } from "../../components/ui/button"
-import { Card, CardContent } from "../../components/ui/card"
-import { Badge } from "../../components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
-import { useNavigate } from "react-router-dom"
-import { useAuth } from "../../context/auth-context"
+} from "lucide-react";
+import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent } from "../../components/ui/card";
+import { Badge } from "../../components/ui/badge";
 import {
-  kupiProdaiApi,
-  type Product,
-  type NewProductRequest,
-  defaultSize,
-  defaultPage,
-  type ProductMedia,
-} from "../../api/kupi-prodai-api"
-import { useToast } from "../../hooks/use-toast"
-import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert"
-import { Progress } from "../../components/ui/progress"
-import { Skeleton } from "../../components/ui/skeleton"
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/auth-context";
+import { useToast } from "../../hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
+import { Progress } from "../../components/ui/progress";
+import { Skeleton } from "../../components/ui/skeleton";
+import { useProducts } from "@/modules/kupi-prodai/hooks/use-products";
+import { useUserProducts } from "@/modules/kupi-prodai/hooks/use-user-products";
+import { useCreateProduct } from "@/modules/kupi-prodai/hooks/use-create-product";
+import { useDeleteProduct } from "@/modules/kupi-prodai/hooks/use-delete-product";
+import { useUpdateProduct } from "@/modules/kupi-prodai/hooks/use-update-product";
+import { useEditModal } from "@/modules/kupi-prodai/form/use-edit-modal";
+import { useToggleProduct } from "@/modules/kupi-prodai/hooks/use-toggle-product";
+import { useListingState } from "@/context/listing-context";
+import { useImageContext } from "@/context/image-context";
+import { useMediaContext } from "@/context/media-context";
+import { useSearchProduct } from "@/modules/kupi-prodai/hooks/use-search-product";
+import { useKupiProdaiTab } from "@/modules/kupi-prodai/hooks/use-tab";
 
 // Define categories and conditions
 const categories = [
@@ -58,7 +66,7 @@ const categories = [
   "tickets",
   "transport",
   "others",
-]
+];
 
 const displayCategories = [
   "All Categories",
@@ -76,38 +84,10 @@ const displayCategories = [
   "Tickets",
   "Transport",
   "Others",
-]
+];
 
-const conditions = ["All Conditions", "new", "like_new", "used"]
-const displayConditions = ["All Conditions", "New", "Like New", "Used"]
-
-// Default placeholder for products without images
-const DEFAULT_PLACEHOLDER = {
-  books: "/placeholder.svg?height=200&width=200&text=Books",
-  electronics: "/placeholder.svg?height=200&width=200&text=Electronics",
-  clothing: "/placeholder.svg?height=200&width=200&text=Clothing",
-  furniture: "/placeholder.svg?height=200&width=200&text=Furniture",
-  appliances: "/placeholder.svg?height=200&width=200&text=Appliances",
-  sports: "/placeholder.svg?height=200&width=200&text=Sports",
-  stationery: "/placeholder.svg?height=200&width=200&text=Stationery",
-  art_supplies: "/placeholder.svg?height=200&width=200&text=Art+Supplies",
-  beauty: "/placeholder.svg?height=200&width=200&text=Beauty",
-  services: "/placeholder.svg?height=200&width=200&text=Services",
-  food: "/placeholder.svg?height=200&width=200&text=Food",
-  tickets: "/placeholder.svg?height=200&width=200&text=Tickets",
-  transport: "/placeholder.svg?height=200&width=200&text=Transport",
-  others: "/placeholder.svg?height=200&width=200&text=Item+For+Sale",
-}
-
-const getPlaceholderImage = (product: Product) => {
-  if (product.media && product.media.length > 0 && product.media[0]?.url) {
-    return product.media[0].url
-  }
-  return (
-    DEFAULT_PLACEHOLDER[product.category as keyof typeof DEFAULT_PLACEHOLDER] ||
-    "/placeholder.svg?height=200&width=200&text=No+Image"
-  )
-}
+const conditions = ["All Conditions", "new", "like_new", "used"];
+const displayConditions = ["All Conditions", "New", "Like New", "Used"];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -117,7 +97,7 @@ const containerVariants = {
       staggerChildren: 0.1,
     },
   },
-}
+};
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
@@ -130,616 +110,297 @@ const itemVariants = {
       damping: 15,
     },
   },
-}
+};
 
 export default function KupiProdaiPage() {
-  const navigate = useNavigate()
-  const { user, isAuthenticated, login, refreshUserData } = useAuth()
-  const { toast } = useToast()
-  const [activeTab, setActiveTab] = useState("buy")
-  const [likedProducts, setLikedProducts] = useState<number[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("All Categories")
-  const [selectedCondition, setSelectedCondition] = useState("All Conditions")
-  const [showFilters, setShowFilters] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
-  const [isDragging, setIsDragging] = useState(false)
+  const navigate = useNavigate();
+  const { user, isAuthenticated, login } = useAuth();
+  const { toast } = useToast();
+  const [likedProducts, setLikedProducts] = useState<number[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [error] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const isTelegramLinked = user?.tg_linked || false
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(defaultPage)
-  const [itemsPerPage, setItemsPerPage] = useState(defaultSize)
-  const [totalPages, setTotalPages] = useState(1)
+  const [totalPages] = useState(1);
 
-  // Products state
-  const [products, setProducts] = useState<Product[]>([])
-  const [myProducts, setMyProducts] = useState<Product[]>([])
+  // Products state [CRUD Hooks]
+  const {
+    productItems,
+    isLoading,
+    selectedCategory,
+    selectedCondition,
+    setSelectedCategory,
+    setSelectedCondition,
+  } = useProducts();
+  const { myProducts } = useUserProducts();
+  const { handleCreate } = useCreateProduct();
+  const {
+    isUploading,
+    imageFiles,
+    previewImages,
+    setPreviewImages,
+    setImageFiles,
+  } = useImageContext();
+  const { getIsPendingDeleteMutation, handleDelete } = useDeleteProduct();
+  const { handleUpdateListing } = useUpdateProduct();
+  const { handleToggleProductStatus, getIsPendingToggleMutation } =
+    useToggleProduct();
 
-  // New listing form state
-  const [newListing, setNewListing] = useState<NewProductRequest>({
-    name: "",
-    description: "",
-    price: 0,
-    category: "books",
-    condition: "new",
-    status: "active",
-  })
-  const [previewImages, setPreviewImages] = useState<string[]>([])
-  const [imageFiles, setImageFiles] = useState<File[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const dropZoneRef = useRef<HTMLDivElement>(null)
+  const { searchedProducts } = useSearchProduct();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
-  // Edit listing state
-  const [editingListing, setEditingListing] = useState<Product | null>(null)
-  const [showEditModal, setShowEditModal] = useState(false)
-
-  // Add these state variables after the other state declarations
-  const [originalMedia, setOriginalMedia] = useState<ProductMedia[]>([])
-  const [mediaToDelete, setMediaToDelete] = useState<number[]>([])
-  const [currentMediaIndex, setCurrentMediaIndex] = useState(0)
-  const [reorderedMedia, setReorderedMedia] = useState<ProductMedia[]>([])
-
-  // Add a reference for the polling interval if it's not already there
-  // Add this with the other useRef declarations
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
-
-  // Fetch products on component mount
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchProducts()
-      fetchUserProducts()
-    }
-  }, [isAuthenticated])
-
-  // Fetch products when filters change
-  useEffect(() => {
-    if (activeTab === "buy") {
-      if (searchQuery.trim()) {
-        searchProducts(searchQuery)
-      } else {
-        fetchProducts()
-      }
-    }
-  }, [activeTab, selectedCategory, selectedCondition, currentPage, searchQuery])
-
-  // Fetch products from API
-  const fetchProducts = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const category = selectedCategory !== "All Categories" ? selectedCategory.toLowerCase() : undefined
-      const condition = selectedCondition !== "All Conditions" ? selectedCondition.toLowerCase() : undefined
-
-      // Add a timestamp to prevent caching
-      const timestamp = new Date().getTime()
-
-      const data = await kupiProdaiApi.getProducts(currentPage, itemsPerPage, category, condition)
-      setProducts(data.products)
-      setTotalPages(data.num_of_pages)
-    } catch (err) {
-      setError("Failed to fetch products")
-      console.error(err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Fetch user's products
-  const fetchUserProducts = async () => {
-    try {
-      // Add a timestamp to prevent caching
-      const timestamp = new Date().getTime()
-
-      const data = await kupiProdaiApi.getUserProducts()
-      setMyProducts(data)
-    } catch (err) {
-      console.error("Failed to fetch user products:", err)
-    }
-  }
-
-  // Search products
-  const searchProducts = async (keyword: string) => {
-    if (!keyword.trim()) {
-      fetchProducts()
-      return
-    }
-
-    try {
-      setIsLoading(true)
-      const data = await kupiProdaiApi.searchProducts(keyword)
-      setProducts(data)
-      setTotalPages(1) // Search results are not paginated in the API
-    } catch (err) {
-      console.error("Search failed:", err)
-      setError("Search failed")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
+  // Edit listing state [Form Hooks]
+  const { handleEditListing, closeEditModal } = useEditModal();
+  const {
+    originalMedia,
+    mediaToDelete,
+    currentMediaIndex,
+    reorderedMedia,
+    setCurrentMediaIndex,
+    setMediaToDelete,
+    setReorderedMedia,
+  } = useMediaContext();
+  const {
+    uploadProgress,
+    searchQuery,
+    newListing,
+    showEditModal,
+    currentPage,
+    activeTab,
+    setActiveTab,
+    setCurrentPage,
+    setNewListing,
+    setSearchQuery,
+  } = useListingState();
   // Handle image upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
+    const files = e.target.files;
     if (files && files.length > 0) {
-      processFiles(Array.from(files))
+      processFiles(Array.from(files));
     }
-  }
+  };
 
   // Process files for upload
   const processFiles = (files: File[]) => {
-    const newPreviewImages = [...previewImages]
-    const newImageFiles = [...imageFiles]
+    const newPreviewImages = [...previewImages];
+    const newImageFiles = [...imageFiles];
 
     files.forEach((file) => {
       if (file.type.startsWith("image/")) {
-        const reader = new FileReader()
+        const reader = new FileReader();
         reader.onloadend = () => {
-          newPreviewImages.push(reader.result as string)
-          newImageFiles.push(file)
-          setPreviewImages([...newPreviewImages])
-          setImageFiles([...newImageFiles])
-        }
-        reader.readAsDataURL(file)
+          newPreviewImages.push(reader.result as string);
+          newImageFiles.push(file);
+          setPreviewImages([...newPreviewImages]);
+          setImageFiles([...newImageFiles]);
+        };
+        reader.readAsDataURL(file);
       } else {
         toast({
           title: "Invalid file type",
           description: "Only image files are allowed",
           variant: "destructive",
-        })
+        });
       }
-    })
-  }
+    });
+  };
 
   // Handle drag and drop
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
+    e.preventDefault();
+    setIsDragging(true);
+  };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }
+    e.preventDefault();
+    setIsDragging(false);
+  };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragging(false)
+    e.preventDefault();
+    setIsDragging(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      processFiles(Array.from(e.dataTransfer.files))
+      processFiles(Array.from(e.dataTransfer.files));
     }
-  }
+  };
 
   const removeImage = (index: number) => {
-    const newPreviewImages = [...previewImages]
-    const newImageFiles = [...imageFiles]
-    newPreviewImages.splice(index, 1)
-    newImageFiles.splice(index, 1)
-    setPreviewImages(newPreviewImages)
-    setImageFiles(newImageFiles)
-  }
+    const newPreviewImages = [...previewImages];
+    const newImageFiles = [...imageFiles];
+    newPreviewImages.splice(index, 1);
+    newImageFiles.splice(index, 1);
+    setPreviewImages(newPreviewImages);
+    setImageFiles(newImageFiles);
+  };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
 
     if (name === "price") {
       // Handle price input specially to avoid leading zeros and negative values
-      const numValue = value === "" ? 0 : Math.max(0, Number.parseInt(value, 10))
-      setNewListing((prev) => ({ ...prev, [name]: numValue }))
+      const numValue =
+        value === "" ? 0 : Math.max(0, Number.parseInt(value, 10));
+      setNewListing((prev) => ({ ...prev, [name]: numValue }));
     } else {
-      setNewListing((prev) => ({ ...prev, [name]: value }))
+      setNewListing((prev) => ({ ...prev, [name]: value }));
     }
-  }
+  };
 
   const handlePriceInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     // Clear the input when it's focused and the value is 0
     if (e.target.value === "0") {
-      e.target.value = ""
+      e.target.value = "";
     }
-  }
+  };
 
   const handlePriceInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     // If the input is empty when blurred, set it back to 0
     if (e.target.value === "") {
-      setNewListing((prev) => ({ ...prev, price: 0 }))
+      setNewListing((prev) => ({ ...prev, price: 0 }));
     }
-  }
+  };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setNewListing((prev) => ({ ...prev, [name]: value }))
-  }
-
-  // Check if user has Telegram linked
-  const isTelegramLinked = user?.tg_linked || false
-
-  // Create new product and upload images
-  const handleSubmitListing = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    // Check if Telegram is linked
-    if (!isTelegramLinked) {
-      toast({
-        title: "Telegram Required",
-        description: "You need to link your Telegram account before selling items.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      setIsUploading(true)
-      setUploadProgress(10)
-
-      // Step 1: Create the product
-      const createdProduct = await kupiProdaiApi.createProduct(newListing)
-      setUploadProgress(30)
-
-      // Step 2: Upload images if there are any
-      if (imageFiles.length > 0) {
-        // Get signed URLs for image uploads
-        const signedUrlsResponse = await kupiProdaiApi.getSignedUrls(imageFiles.length)
-        setUploadProgress(50)
-
-        // Upload each image
-        const uploadPromises = imageFiles.map((file, index) => {
-          const signedUrl = signedUrlsResponse.signed_urls[index]
-          return kupiProdaiApi.uploadImage(
-            file,
-            signedUrl.filename,
-            createdProduct.id,
-            index + 1, // Media order starts from 1
-          )
-        })
-
-        await Promise.all(uploadPromises)
-        setUploadProgress(90)
-      }
-
-      // Step 3: Add a small delay to ensure the server has processed the images
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Step 4: Refresh user products to show the updated product with images
-      await fetchUserProducts()
-
-      // Also refresh the main products list if we're in the buy tab
-      if (activeTab === "buy") {
-        await fetchProducts()
-      }
-
-      setUploadProgress(100)
-
-      // Reset form
-      setNewListing({
-        name: "",
-        description: "",
-        price: 0,
-        category: "books",
-        condition: "new",
-        status: "active",
-      })
-      setPreviewImages([])
-      setImageFiles([])
-
-      // Navigate to my-listings tab
-      setActiveTab("my-listings")
-
-      toast({
-        title: "Success",
-        description: "Product created successfully",
-      })
-    } catch (err) {
-      console.error("Failed to create product or upload images:", err)
-      toast({
-        title: "Error",
-        description: "Failed to create product or upload images",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUploading(false)
-      setUploadProgress(0)
-    }
-  }
-
-  // Find the handleEditListing function and update it to properly handle the media
-  const handleEditListing = (product: Product) => {
-    setEditingListing(product)
-    setNewListing({
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      category: product.category,
-      condition: product.condition,
-      status: product.status || "active",
-    })
-
-    // Store the initial media state for comparison later
-    setPreviewImages(product.media.map((m) => m.url))
-    setImageFiles([])
-
-    // Store the original media for tracking changes
-    setOriginalMedia(product.media)
-    setCurrentMediaIndex(0)
-    setShowEditModal(true)
-  }
+    const { name, value } = e.target;
+    setNewListing((prev) => ({ ...prev, [name]: value }));
+  };
 
   // Add this function to handle image deletion in the edit modal
   const handleDeleteImage = (mediaId: number) => {
     // Add the media ID to the list of media to delete
-    setMediaToDelete([...mediaToDelete, mediaId])
+    setMediaToDelete([...mediaToDelete, mediaId]);
 
     // Remove the image from the preview images
-    const mediaIndex = originalMedia.findIndex((m) => m.id === mediaId)
+    const mediaIndex = originalMedia.findIndex((m) => m.id === mediaId);
     if (mediaIndex !== -1) {
-      const newPreviewImages = [...previewImages]
-      newPreviewImages.splice(mediaIndex, 1)
-      setPreviewImages(newPreviewImages)
+      const newPreviewImages = [...previewImages];
+      newPreviewImages.splice(mediaIndex, 1);
+      setPreviewImages(newPreviewImages);
 
       // Update reordered media
       const newReorderedMedia =
         reorderedMedia.length > 0
           ? reorderedMedia.filter((m) => m.id !== mediaId)
-          : originalMedia.filter((m) => m.id !== mediaId)
-      setReorderedMedia(newReorderedMedia)
+          : originalMedia.filter((m) => m.id !== mediaId);
+      setReorderedMedia(newReorderedMedia);
 
       // Adjust current index if needed
-      if (currentMediaIndex >= newPreviewImages.length && newPreviewImages.length > 0) {
-        setCurrentMediaIndex(newPreviewImages.length - 1)
+      if (
+        currentMediaIndex >= newPreviewImages.length &&
+        newPreviewImages.length > 0
+      ) {
+        setCurrentMediaIndex(newPreviewImages.length - 1);
       }
     }
-  }
+  };
 
   // Add these functions to handle image reordering
   const moveImageUp = (index: number) => {
-    if (index <= 0) return
+    if (index <= 0) return;
 
     // Initialize reorderedMedia if it's empty
     const mediaToReorder =
-      reorderedMedia.length > 0 ? [...reorderedMedia] : [...originalMedia.filter((m) => !mediaToDelete.includes(m.id))]
+      reorderedMedia.length > 0
+        ? [...reorderedMedia]
+        : [...originalMedia.filter((m) => !mediaToDelete.includes(m.id))];
 
     // Swap the images
-    const temp = mediaToReorder[index]
-    mediaToReorder[index] = mediaToReorder[index - 1]
-    mediaToReorder[index - 1] = temp
+    const temp = mediaToReorder[index];
+    mediaToReorder[index] = mediaToReorder[index - 1];
+    mediaToReorder[index - 1] = temp;
 
     // Update the preview images to match
-    const newPreviewImages = mediaToReorder.map((m) => m.url)
-    const newImageFiles = [...imageFiles]
+    const newPreviewImages = mediaToReorder.map((m) => m.url);
 
-    setReorderedMedia(mediaToReorder)
-    setPreviewImages(newPreviewImages)
-    setCurrentMediaIndex(index - 1)
-  }
+    setReorderedMedia(mediaToReorder);
+    setPreviewImages(newPreviewImages);
+    setCurrentMediaIndex(index - 1);
+  };
 
   const moveImageDown = (index: number) => {
     // Initialize reorderedMedia if it's empty
     const mediaToReorder =
-      reorderedMedia.length > 0 ? [...reorderedMedia] : [...originalMedia.filter((m) => !mediaToDelete.includes(m.id))]
+      reorderedMedia.length > 0
+        ? [...reorderedMedia]
+        : [...originalMedia.filter((m) => !mediaToDelete.includes(m.id))];
 
-    if (index >= mediaToReorder.length - 1) return
+    if (index >= mediaToReorder.length - 1) return;
 
     // Swap the images
-    const temp = mediaToReorder[index]
-    mediaToReorder[index] = mediaToReorder[index + 1]
-    mediaToReorder[index + 1] = temp
+    const temp = mediaToReorder[index];
+    mediaToReorder[index] = mediaToReorder[index + 1];
+    mediaToReorder[index + 1] = temp;
 
     // Update the preview images to match
-    const newPreviewImages = mediaToReorder.map((m) => m.url)
-    const newImageFiles = [...imageFiles]
+    const newPreviewImages = mediaToReorder.map((m) => m.url);
 
-    setReorderedMedia(mediaToReorder)
-    setPreviewImages(newPreviewImages)
-    setCurrentMediaIndex(index + 1)
-  }
+    setReorderedMedia(mediaToReorder);
+    setPreviewImages(newPreviewImages);
+    setCurrentMediaIndex(index + 1);
+  };
 
-  // Update the handleUpdateListing function to handle media changes
-  const handleUpdateListing = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!editingListing) return
-
-    try {
-      setIsUploading(true)
-      setUploadProgress(10)
-
-      // Step 1: Update the product details
-      await kupiProdaiApi.updateProduct({
-        product_id: editingListing.id,
-        name: newListing.name,
-        description: newListing.description,
-        price: newListing.price,
-        category: newListing.category,
-        condition: newListing.condition,
-        status: newListing.status,
-      })
-
-      setUploadProgress(30)
-
-      // Step 2: Delete images that were removed
-      if (mediaToDelete.length > 0) {
-        const deletePromises = mediaToDelete.map((mediaId) => {
-          return fetch(`http://localhost/api/bucket/delete?media_id=${mediaId}`, {
-            method: "DELETE",
-            credentials: "include",
-          })
-        })
-
-        await Promise.all(deletePromises)
-        setUploadProgress(50)
-      }
-
-      // Step 3: Upload new images if there are any
-      if (imageFiles.length > 0) {
-        // Get signed URLs for image uploads
-        const signedUrlsResponse = await kupiProdaiApi.getSignedUrls(imageFiles.length)
-        setUploadProgress(60)
-
-        // Upload each image
-        const uploadPromises = imageFiles.map((file, index) => {
-          const signedUrl = signedUrlsResponse.signed_urls[index]
-          return kupiProdaiApi.uploadImage(
-            file,
-            signedUrl.filename,
-            editingListing.id,
-            // Use the next available order number
-            originalMedia.length + index + 1,
-          )
-        })
-
-        await Promise.all(uploadPromises)
-        setUploadProgress(80)
-      }
-
-      // Step 4: Add a small delay to ensure the server has processed the images
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Step 5: Refresh user products to show the updated product with images
-      const updatedProducts = await kupiProdaiApi.getUserProducts()
-      setMyProducts(updatedProducts)
-
-      // Also refresh the main products list if we're in the buy tab
-      if (activeTab === "buy") {
-        await fetchProducts()
-      }
-
-      setUploadProgress(100)
-
-      // Reset form and close modal
-      setEditingListing(null)
-      setNewListing({
-        name: "",
-        description: "",
-        price: 0,
-        category: "books",
-        condition: "new",
-        status: "active",
-      })
-      setPreviewImages([])
-      setImageFiles([])
-      setOriginalMedia([])
-      setMediaToDelete([])
-      setReorderedMedia([])
-      setShowEditModal(false)
-
-      toast({
-        title: "Success",
-        description: "Product updated successfully",
-      })
-    } catch (err) {
-      console.error("Failed to update product:", err)
-      toast({
-        title: "Error",
-        description: "Failed to update product",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUploading(false)
-      setUploadProgress(0)
-    }
-  }
+  // Update the handleUpdateListingListing function to handle media changes
 
   // Delete product
-  const handleDeleteListing = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this listing?")) {
-      try {
-        await kupiProdaiApi.deleteProduct(id)
-
-        // Refresh user products
-        fetchUserProducts()
-
-        toast({
-          title: "Success",
-          description: "Product deleted successfully",
-        })
-      } catch (err) {
-        console.error("Failed to delete product:", err)
-        toast({
-          title: "Error",
-          description: "Failed to delete product",
-          variant: "destructive",
-        })
-      }
-    }
-  }
 
   // Mark product as sold/active
-  const handleToggleProductStatus = async (id: number, currentStatus: string) => {
-    try {
-      const newStatus = currentStatus === "active" ? "inactive" : "active"
-
-      await kupiProdaiApi.updateProduct({
-        product_id: id,
-        status: newStatus,
-      })
-
-      // Refresh user products
-      fetchUserProducts()
-
-      toast({
-        title: "Success",
-        description: newStatus === "active" ? "Product marked as active" : "Product marked as inactive",
-      })
-    } catch (err) {
-      console.error("Failed to update product status:", err)
-      toast({
-        title: "Error",
-        description: "Failed to update product status",
-        variant: "destructive",
-      })
-    }
-  }
 
   const toggleLike = (id: number) => {
     if (likedProducts.includes(id)) {
-      setLikedProducts(likedProducts.filter((productId) => productId !== id))
+      setLikedProducts(likedProducts.filter((productId) => productId !== id));
     } else {
-      setLikedProducts([...likedProducts, id])
+      setLikedProducts([...likedProducts, id]);
     }
-  }
+  };
 
   const getConditionDisplay = (condition: string) => {
     switch (condition) {
       case "new":
-        return "New"
+        return "New";
       case "like_new":
-        return "Like New"
+        return "Like New";
       case "used":
-        return "Used"
+        return "Used";
       default:
-        return condition
+        return condition;
     }
-  }
+  };
 
   const getConditionColor = (condition: string) => {
     switch (condition) {
       case "new":
-        return "bg-green-500"
+        return "bg-green-500";
       case "like_new":
-        return "bg-blue-500"
+        return "bg-blue-500";
       case "used":
-        return "bg-orange-500"
+        return "bg-orange-500";
       default:
-        return "bg-gray-500"
+        return "bg-gray-500";
     }
-  }
+  };
 
   const getCategoryDisplay = (category: string) => {
-    return category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, " ")
-  }
+    return (
+      category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, " ")
+    );
+  };
 
   const paginate = (pageNumber: number) => {
     if (pageNumber > 0 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber)
+      setCurrentPage(pageNumber);
     }
-  }
+  };
 
   // Active and inactive listings
-  const activeListings = myProducts.filter((p) => p.status === "active")
-  const inactiveListings = myProducts.filter((p) => p.status === "inactive")
-  const soldListings = myProducts.filter((p) => p.status === "inactive")
+  const activeListings = myProducts?.filter((p) => p.status === "active");
+  const inactiveListings = myProducts?.filter((p) => p.status === "inactive");
+  const soldListings = myProducts?.filter((p) => p.status === "inactive");
 
   // Product skeleton for loading state
   const ProductSkeleton = () => (
@@ -756,145 +417,25 @@ export default function KupiProdaiPage() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 
   // Add this function to renew a sold product
-  const handleRenewListing = async (id: number) => {
-    try {
-      await kupiProdaiApi.updateProduct({
-        product_id: id,
-        status: "active",
-      })
-
-      // Refresh user products
-      fetchUserProducts()
-
-      toast({
-        title: "Success",
-        description: "Product renewed and is now active",
-      })
-    } catch (err) {
-      console.error("Failed to renew product:", err)
-      toast({
-        title: "Error",
-        description: "Failed to renew product",
-      })
-    }
-  }
-
-  // Add this function after the other helper functions like getConditionDisplay
-
-  // Add a useEffect to check Telegram binding status when the component mounts
-  useEffect(() => {
-    // Check if the user is authenticated and if Telegram is linked
-    if (isAuthenticated) {
-      const checkTelegramStatus = async () => {
-        try {
-          const { tg_linked } = await kupiProdaiApi.checkTelegramStatus()
-          // This will update the isTelegramLinked variable
-        } catch (err) {
-          console.error("Failed to check Telegram status:", err)
-        }
-      }
-
-      checkTelegramStatus()
-    }
-  }, [isAuthenticated, user])
-
-  // Add the handleBindTelegram function if it's not already there
-  // Add this function after the other handler functions
-  const handleBindTelegram = async () => {
-    if (!user?.user?.sub) {
-      toast({
-        title: "Error",
-        description: "User information not available",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      // Use the correct sub field from the user object
-      const response = await fetch("http://localhost/api/bingtg", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // Important for cookies
-        body: JSON.stringify({ sub: user.user.sub }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to bind Telegram account")
-      }
-
-      const data = await response.json()
-
-      // Open the Telegram link in a new window
-      window.open(data.link, "_blank", "width=600,height=600")
-
-      // Start polling for Telegram status
-      startPollingTelegramStatus()
-    } catch (error) {
-      console.error("Error binding Telegram:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-        variant: "destructive",
-      })
-    }
-  }
-
-  // Add the startPollingTelegramStatus function if it's not already there
-  const startPollingTelegramStatus = () => {
-    // Clear any existing interval
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current)
-    }
-
-    // Start polling every 2 seconds
-    pollingIntervalRef.current = setInterval(async () => {
-      try {
-        const response = await fetch("http://localhost/api/me", {
-          method: "GET",
-          credentials: "include",
-        })
-
-        if (response.ok) {
-          const userData = await response.json()
-
-          // If Telegram is now linked, update UI and stop polling
-          if (userData.tg_linked) {
-            // Force refresh the auth context
-            await refreshUserData()
-
-            toast({
-              title: "Success",
-              description: "Your Telegram account has been linked successfully!",
-              variant: "success",
-            })
-
-            // Stop polling
-            if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current)
-              pollingIntervalRef.current = null
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error checking Telegram status:", error)
-      }
-    }, 2000)
-  }
 
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col space-y-1 sm:space-y-2">
         <h1 className="text-2xl sm:text-3xl font-bold">Kupi&Prodai</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Buy and sell items within the university community</p>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Buy and sell items within the university community
+        </p>
       </div>
 
-      <Tabs defaultValue="buy" className="w-full" onValueChange={setActiveTab} value={activeTab}>
+      <Tabs
+        defaultValue="buy"
+        className="w-full"
+        onValueChange={(value) => setActiveTab(value as Types.ActiveTab)}
+        value={activeTab}
+      >
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="buy">Buy</TabsTrigger>
           <TabsTrigger value="sell">Sell</TabsTrigger>
@@ -902,14 +443,17 @@ export default function KupiProdaiPage() {
         </TabsList>
 
         {/* BUY SECTION */}
-        <TabsContent value="buy" className="space-y-3 sm:space-y-4 pt-3 sm:pt-4">
+        <TabsContent
+          value="buy"
+          className="space-y-3 sm:space-y-4 pt-3 sm:pt-4"
+        >
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search items..."
                 className="pl-9 text-sm"
-                value={searchQuery}
+                value={searchQuery.trim()}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
@@ -946,7 +490,10 @@ export default function KupiProdaiPage() {
               </div>
 
               <div className="space-y-1">
-                <label htmlFor="condition" className="block text-sm font-medium">
+                <label
+                  htmlFor="condition"
+                  className="block text-sm font-medium"
+                >
                   Condition
                 </label>
                 <select
@@ -968,8 +515,8 @@ export default function KupiProdaiPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setSelectedCategory("All Categories")
-                    setSelectedCondition("All Conditions")
+                    setSelectedCategory("All Categories");
+                    setSelectedCondition("All Conditions");
                   }}
                 >
                   Reset
@@ -990,11 +537,15 @@ export default function KupiProdaiPage() {
           ) : error ? (
             <div className="text-center py-12 text-destructive">
               <p>{error}</p>
-              <Button variant="outline" className="mt-4" onClick={fetchProducts}>
+              <Button
+                variant="outline"
+                className="mt-4"
+                // onClick={fetchProducts}
+              >
                 Try Again
               </Button>
             </div>
-          ) : products.length > 0 ? (
+          ) : (productItems?.products?.length ?? 0) > 0 ? (
             <>
               <motion.div
                 className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3"
@@ -1002,20 +553,27 @@ export default function KupiProdaiPage() {
                 initial="hidden"
                 animate="visible"
               >
-                {products.map((product) => (
+                {productItems?.products.map((product) => (
                   <motion.div key={product.id} variants={itemVariants}>
                     <Card
                       className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => navigate(`/apps/kupi-prodai/product/${product.id}`)}
+                      onClick={() =>
+                        navigate(`/apps/kupi-prodai/product/${product.id}`)
+                      }
                     >
                       <div className="aspect-square relative">
                         <img
-                          src={getPlaceholderImage(product) || "/placeholder.svg"}
+                          src={
+                            product.media[0]?.url ||
+                            "/placeholder.svg?height=200&width=200"
+                          }
                           alt={product.name}
                           className="object-cover w-full h-full"
                         />
                         <Badge
-                          className={`absolute top-2 right-2 ${getConditionColor(product.condition)} text-white text-xs`}
+                          className={`absolute top-2 right-2 ${getConditionColor(
+                            product.condition
+                          )} text-white text-xs`}
                         >
                           {getConditionDisplay(product.condition)}
                         </Badge>
@@ -1023,13 +581,20 @@ export default function KupiProdaiPage() {
                       <CardContent className="p-2 sm:p-3">
                         <div className="flex justify-between items-start mb-1">
                           <div>
-                            <h3 className="font-medium text-xs sm:text-sm line-clamp-1">{product.name}</h3>
-                            <p className="text-sm sm:text-base font-bold">{product.price} ₸</p>
+                            <h3 className="font-medium text-xs sm:text-sm line-clamp-1">
+                              {product.name}
+                            </h3>
+                            <p className="text-sm sm:text-base font-bold">
+                              {product.price} ₸
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center text-[10px] sm:text-xs text-muted-foreground mb-1">
                           <div className="flex items-center">
-                            <span>{product.category && getCategoryDisplay(product.category)}</span>
+                            <span>
+                              {product.category &&
+                                getCategoryDisplay(product.category)}
+                            </span>
                           </div>
                         </div>
                         <div className="flex justify-between">
@@ -1102,32 +667,8 @@ export default function KupiProdaiPage() {
                 </Button>
               </AlertDescription>
             </Alert>
-          ) : !isTelegramLinked ? (
-            <Alert
-              variant="warning"
-              className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900"
-            >
-              <AlertTitle className="flex items-center gap-2">
-                <ExternalLink className="h-4 w-4" />
-                Telegram Required
-              </AlertTitle>
-              <AlertDescription className="space-y-2">
-                <p>You need to link your Telegram account before selling items.</p>
-                <div className="mt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-1 border-yellow-300 hover:bg-yellow-100"
-                    onClick={handleBindTelegram}
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    <span>Bind to Telegram</span>
-                  </Button>
-                </div>
-              </AlertDescription>
-            </Alert>
           ) : (
-            <form onSubmit={handleSubmitListing} className="space-y-4">
+            <form onSubmit={handleCreate} className="space-y-4">
               {/* Name */}
               <div className="space-y-2">
                 <label htmlFor="name" className="block text-sm font-medium">
@@ -1147,7 +688,10 @@ export default function KupiProdaiPage() {
 
               {/* Description */}
               <div className="space-y-2">
-                <label htmlFor="description" className="block text-sm font-medium">
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium"
+                >
                   Description
                 </label>
                 <textarea
@@ -1183,7 +727,10 @@ export default function KupiProdaiPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="category" className="block text-sm font-medium">
+                  <label
+                    htmlFor="category"
+                    className="block text-sm font-medium"
+                  >
                     Category
                   </label>
                   <select
@@ -1202,7 +749,10 @@ export default function KupiProdaiPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="condition" className="block text-sm font-medium">
+                  <label
+                    htmlFor="condition"
+                    className="block text-sm font-medium"
+                  >
                     Condition
                   </label>
                   <select
@@ -1237,10 +787,15 @@ export default function KupiProdaiPage() {
                 >
                   <div className="flex flex-col items-center justify-center text-center">
                     <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-sm font-medium mb-1">Upload a file or drag and drop</p>
-                    <p className="text-xs text-muted-foreground mb-4">PNG, JPG, GIF up to 10MB</p>
+                    <p className="text-sm font-medium mb-1">
+                      Upload a file or drag and drop
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      PNG, JPG, GIF up to 10MB
+                    </p>
                     <input
                       type="file"
+                      name="images"
                       ref={fileInputRef}
                       className="hidden"
                       accept="image/*"
@@ -1257,7 +812,10 @@ export default function KupiProdaiPage() {
                 {previewImages.length > 0 && (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-4">
                     {previewImages.map((src, index) => (
-                      <div key={index} className="relative aspect-square rounded-md overflow-hidden">
+                      <div
+                        key={index}
+                        className="relative aspect-square rounded-md overflow-hidden"
+                      >
                         <img
                           src={src || "/placeholder.svg"}
                           alt={`Preview ${index + 1}`}
@@ -1269,8 +827,8 @@ export default function KupiProdaiPage() {
                           size="icon"
                           className="absolute top-1 right-1 h-6 w-6"
                           onClick={(e) => {
-                            e.stopPropagation()
-                            removeImage(index)
+                            e.stopPropagation();
+                            removeImage(index);
                           }}
                         >
                           <X className="h-3 w-3" />
@@ -1293,7 +851,9 @@ export default function KupiProdaiPage() {
                 )}
               </Button>
 
-              {isUploading && <Progress value={uploadProgress} className="mt-2" />}
+              {isUploading && (
+                <Progress value={uploadProgress} className="mt-2" />
+              )}
             </form>
           )}
         </TabsContent>
@@ -1315,36 +875,58 @@ export default function KupiProdaiPage() {
               {/* Active Listings */}
               <div className="space-y-2">
                 <h2 className="text-lg font-semibold">Active Listings</h2>
-                {activeListings.length > 0 ? (
+                {(activeListings?.length ?? 0) > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {activeListings.map((product) => (
-                      <Card key={product.id} className="overflow-hidden">
+                    {activeListings?.map((product) => (
+                      <Card key={product.id} className="overflow-hidden ">
                         <div className="aspect-square relative">
                           <img
-                            src={getPlaceholderImage(product) || "/placeholder.svg"}
+                            src={
+                              product.media[0]?.url ||
+                              "/placeholder.svg?height=200&width=200"
+                            }
                             alt={product.name}
                             className="object-cover w-full h-full"
                           />
                           <Badge
-                            className={`absolute top-2 right-2 ${getConditionColor(product.condition)} text-white text-xs`}
+                            className={`absolute top-2 right-2 ${getConditionColor(
+                              product.condition
+                            )} text-white text-xs`}
                           >
                             {getConditionDisplay(product.condition)}
                           </Badge>
                         </div>
                         <CardContent className="p-3">
-                          <h3 className="font-medium text-sm line-clamp-1">{product.name}</h3>
+                          <h3 className="font-medium text-sm line-clamp-1">
+                            {product.name}
+                          </h3>
                           <p className="text-sm font-bold">{product.price} ₸</p>
                           <div className="flex justify-between mt-2">
-                            <Button variant="outline" size="sm" onClick={() => handleEditListing(product)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditListing(product)}
+                            >
                               Edit
                             </Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleDeleteListing(product.id)}>
+                            <Button
+                              disabled={getIsPendingDeleteMutation(product.id)}
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(product.id)}
+                            >
                               Delete
                             </Button>
                             <Button
+                              disabled={getIsPendingToggleMutation(product.id)}
                               variant="secondary"
                               size="sm"
-                              onClick={() => handleToggleProductStatus(product.id, product.status)}
+                              onClick={() =>
+                                handleToggleProductStatus(
+                                  product.id,
+                                  product.status
+                                )
+                              }
                             >
                               Mark as Sold
                             </Button>
@@ -1361,36 +943,58 @@ export default function KupiProdaiPage() {
               {/* Inactive Listings */}
               <div className="space-y-2">
                 <h2 className="text-lg font-semibold">Inactive Listings</h2>
-                {inactiveListings.length > 0 ? (
+                {(inactiveListings?.length ?? 0) > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {inactiveListings.map((product) => (
+                    {inactiveListings?.map((product) => (
                       <Card key={product.id} className="overflow-hidden">
                         <div className="aspect-square relative">
                           <img
-                            src={getPlaceholderImage(product) || "/placeholder.svg"}
+                            src={
+                              product.media[0]?.url ||
+                              "/placeholder.svg?height=200&width=200"
+                            }
                             alt={product.name}
                             className="object-cover w-full h-full"
                           />
                           <Badge
-                            className={`absolute top-2 right-2 ${getConditionColor(product.condition)} text-white text-xs`}
+                            className={`absolute top-2 right-2 ${getConditionColor(
+                              product.condition
+                            )} text-white text-xs`}
                           >
                             {getConditionDisplay(product.condition)}
                           </Badge>
                         </div>
                         <CardContent className="p-3">
-                          <h3 className="font-medium text-sm line-clamp-1">{product.name}</h3>
+                          <h3 className="font-medium text-sm line-clamp-1">
+                            {product.name}
+                          </h3>
                           <p className="text-sm font-bold">{product.price} ₸</p>
                           <div className="flex justify-between mt-2">
-                            <Button variant="outline" size="sm" onClick={() => handleEditListing(product)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditListing(product)}
+                            >
                               Edit
                             </Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleDeleteListing(product.id)}>
+                            <Button
+                              disabled={getIsPendingDeleteMutation(product.id)}
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(product.id)}
+                            >
                               Delete
                             </Button>
                             <Button
+                              disabled={getIsPendingToggleMutation(product.id)}
                               variant="secondary"
                               size="sm"
-                              onClick={() => handleToggleProductStatus(product.id, product.status)}
+                              onClick={() =>
+                                handleToggleProductStatus(
+                                  product.id,
+                                  product.status
+                                )
+                              }
                             >
                               Mark as Active
                             </Button>
@@ -1413,29 +1017,40 @@ export default function KupiProdaiPage() {
             <div className="flex justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
             </div>
-          ) : soldListings.length > 0 ? (
+          ) : (soldListings?.length ?? 0) > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {soldListings.map((product) => (
+              {soldListings?.map((product) => (
                 <Card
                   key={product.id}
                   className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => navigate(`/apps/kupi-prodai/product/${product.id}`)}
+                  onClick={() =>
+                    navigate(`/apps/kupi-prodai/product/${product.id}`)
+                  }
                 >
                   <div className="aspect-square relative">
                     <img
-                      src={getPlaceholderImage(product) || "/placeholder.svg"}
+                      src={
+                        product.media[0]?.url ||
+                        "/placeholder.svg?height=200&width=200"
+                      }
                       alt={product.name}
                       className="object-cover w-full h-full"
                     />
                     <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
-                      <Badge className="bg-green-500 text-white text-sm px-3 py-1">SOLD</Badge>
+                      <Badge className="bg-green-500 text-white text-sm px-3 py-1">
+                        SOLD
+                      </Badge>
                     </div>
                   </div>
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex justify-between items-start mb-1 sm:mb-2">
                       <div>
-                        <h3 className="font-medium text-sm sm:text-base">{product.name}</h3>
-                        <p className="text-base sm:text-lg font-bold">{product.price} ₸</p>
+                        <h3 className="font-medium text-sm sm:text-base">
+                          {product.name}
+                        </h3>
+                        <p className="text-base sm:text-lg font-bold">
+                          {product.price} ₸
+                        </p>
                       </div>
                       <Badge variant="outline" className="text-xs">
                         {getCategoryDisplay(product.category)}
@@ -1449,8 +1064,8 @@ export default function KupiProdaiPage() {
                         variant="outline"
                         size="sm"
                         onClick={(e) => {
-                          e.stopPropagation()
-                          handleRenewListing(product.id)
+                          e.stopPropagation();
+                          handleToggleProductStatus(product.id, "active");
                         }}
                         className="text-green-600 border-green-200 hover:bg-green-50"
                       >
@@ -1465,7 +1080,9 @@ export default function KupiProdaiPage() {
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No sold items</h3>
-              <p className="text-sm text-muted-foreground max-w-md">Items you've sold will appear here.</p>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Items you've sold will appear here.
+              </p>
             </div>
           )}
         </TabsContent>
@@ -1475,7 +1092,10 @@ export default function KupiProdaiPage() {
       {showEditModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4 py-6 text-center">
-            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div
+              className="fixed inset-0 transition-opacity"
+              aria-hidden="true"
+            >
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
 
@@ -1489,7 +1109,7 @@ export default function KupiProdaiPage() {
                 <h2 className="text-xl font-semibold" id="modal-headline">
                   Edit Listing
                 </h2>
-                <Button variant="ghost" size="sm" onClick={() => setShowEditModal(false)}>
+                <Button variant="ghost" size="sm" onClick={closeEditModal}>
                   <X className="h-5 w-5" />
                 </Button>
               </div>
@@ -1500,7 +1120,10 @@ export default function KupiProdaiPage() {
                   <div className="space-y-4">
                     {/* Name */}
                     <div className="space-y-2">
-                      <label htmlFor="edit-name" className="block text-sm font-medium">
+                      <label
+                        htmlFor="edit-name"
+                        className="block text-sm font-medium"
+                      >
                         Name
                       </label>
                       <Input
@@ -1516,7 +1139,10 @@ export default function KupiProdaiPage() {
 
                     {/* Description */}
                     <div className="space-y-2">
-                      <label htmlFor="edit-description" className="block text-sm font-medium">
+                      <label
+                        htmlFor="edit-description"
+                        className="block text-sm font-medium"
+                      >
                         Description
                       </label>
                       <textarea
@@ -1532,7 +1158,10 @@ export default function KupiProdaiPage() {
                     {/* Price, Category, and Condition */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <label htmlFor="edit-price" className="block text-sm font-medium">
+                        <label
+                          htmlFor="edit-price"
+                          className="block text-sm font-medium"
+                        >
                           Price (₸)
                         </label>
                         <Input
@@ -1550,7 +1179,10 @@ export default function KupiProdaiPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label htmlFor="edit-category" className="block text-sm font-medium">
+                        <label
+                          htmlFor="edit-category"
+                          className="block text-sm font-medium"
+                        >
                           Category
                         </label>
                         <select
@@ -1568,7 +1200,10 @@ export default function KupiProdaiPage() {
                         </select>
                       </div>
                       <div className="space-y-2">
-                        <label htmlFor="edit-condition" className="block text-sm font-medium">
+                        <label
+                          htmlFor="edit-condition"
+                          className="block text-sm font-medium"
+                        >
                           Condition
                         </label>
                         <select
@@ -1591,14 +1226,19 @@ export default function KupiProdaiPage() {
                   {/* Right column: Image carousel and controls */}
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="block text-sm font-medium">Images</label>
+                      <label className="block text-sm font-medium">
+                        Images
+                      </label>
 
                       {/* Image carousel */}
                       <div className="relative aspect-square rounded-md overflow-hidden border border-border">
                         {previewImages.length > 0 ? (
                           <>
                             <img
-                              src={previewImages[currentMediaIndex] || getPlaceholderImage(editingListing!)}
+                              src={
+                                previewImages[currentMediaIndex] ||
+                                "/placeholder.svg"
+                              }
                               alt={`Product image ${currentMediaIndex + 1}`}
                               className="object-contain w-full h-full"
                             />
@@ -1611,9 +1251,13 @@ export default function KupiProdaiPage() {
                                   size="icon"
                                   className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-background/80"
                                   onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    setCurrentMediaIndex((prev) => (prev === 0 ? previewImages.length - 1 : prev - 1))
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setCurrentMediaIndex((prev) =>
+                                      prev === 0
+                                        ? previewImages.length - 1
+                                        : prev - 1
+                                    );
                                   }}
                                   type="button"
                                 >
@@ -1624,9 +1268,13 @@ export default function KupiProdaiPage() {
                                   size="icon"
                                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-background/80"
                                   onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    setCurrentMediaIndex((prev) => (prev === previewImages.length - 1 ? 0 : prev + 1))
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setCurrentMediaIndex((prev) =>
+                                      prev === previewImages.length - 1
+                                        ? 0
+                                        : prev + 1
+                                    );
                                   }}
                                   type="button"
                                 >
@@ -1636,16 +1284,18 @@ export default function KupiProdaiPage() {
                                 {/* Image indicators */}
                                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
                                   {previewImages.map((_, index) => (
-                                    <button
+                                    <Button
                                       key={index}
                                       type="button"
                                       className={`w-2 h-2 rounded-full ${
-                                        index === currentMediaIndex ? "bg-primary" : "bg-background/80"
+                                        index === currentMediaIndex
+                                          ? "bg-primary"
+                                          : "bg-background/80"
                                       }`}
                                       onClick={(e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        setCurrentMediaIndex(index)
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setCurrentMediaIndex(index);
                                       }}
                                     />
                                   ))}
@@ -1662,22 +1312,35 @@ export default function KupiProdaiPage() {
                                 className="h-8 w-8 rounded-full bg-background/80"
                                 type="button"
                                 onClick={(e) => {
-                                  e.stopPropagation()
+                                  e.stopPropagation();
                                   const mediaToRemove = originalMedia.find(
-                                    (m) => m.url === previewImages[currentMediaIndex],
-                                  )
+                                    (m) =>
+                                      m.url === previewImages[currentMediaIndex]
+                                  );
                                   if (mediaToRemove) {
-                                    handleDeleteImage(mediaToRemove.id)
+                                    handleDeleteImage(mediaToRemove.id);
                                   } else {
                                     // This is a newly added image
-                                    const newImageFiles = [...imageFiles]
-                                    const newPreviewImages = [...previewImages]
-                                    newImageFiles.splice(currentMediaIndex - originalMedia.length, 1)
-                                    newPreviewImages.splice(currentMediaIndex, 1)
-                                    setImageFiles(newImageFiles)
-                                    setPreviewImages(newPreviewImages)
-                                    if (currentMediaIndex >= newPreviewImages.length && newPreviewImages.length > 0) {
-                                      setCurrentMediaIndex(newPreviewImages.length - 1)
+                                    const newImageFiles = [...imageFiles];
+                                    const newPreviewImages = [...previewImages];
+                                    newImageFiles.splice(
+                                      currentMediaIndex - originalMedia.length,
+                                      1
+                                    );
+                                    newPreviewImages.splice(
+                                      currentMediaIndex,
+                                      1
+                                    );
+                                    setImageFiles(newImageFiles);
+                                    setPreviewImages(newPreviewImages);
+                                    if (
+                                      currentMediaIndex >=
+                                        newPreviewImages.length &&
+                                      newPreviewImages.length > 0
+                                    ) {
+                                      setCurrentMediaIndex(
+                                        newPreviewImages.length - 1
+                                      );
                                     }
                                   }
                                 }}
@@ -1694,8 +1357,8 @@ export default function KupiProdaiPage() {
                                     className="h-8 w-8 rounded-full bg-background/80"
                                     type="button"
                                     onClick={(e) => {
-                                      e.stopPropagation()
-                                      moveImageUp(currentMediaIndex)
+                                      e.stopPropagation();
+                                      moveImageUp(currentMediaIndex);
                                     }}
                                     disabled={currentMediaIndex === 0}
                                   >
@@ -1707,10 +1370,13 @@ export default function KupiProdaiPage() {
                                     className="h-8 w-8 rounded-full bg-background/80"
                                     type="button"
                                     onClick={(e) => {
-                                      e.stopPropagation()
-                                      moveImageDown(currentMediaIndex)
+                                      e.stopPropagation();
+                                      moveImageDown(currentMediaIndex);
                                     }}
-                                    disabled={currentMediaIndex === previewImages.length - 1}
+                                    disabled={
+                                      currentMediaIndex ===
+                                      previewImages.length - 1
+                                    }
                                   >
                                     <ChevronDown className="h-4 w-4" />
                                   </Button>
@@ -1735,7 +1401,9 @@ export default function KupiProdaiPage() {
                               key={index}
                               type="button"
                               className={`relative w-16 h-16 rounded-md overflow-hidden border-2 ${
-                                index === currentMediaIndex ? "border-primary" : "border-transparent"
+                                index === currentMediaIndex
+                                  ? "border-primary"
+                                  : "border-transparent"
                               }`}
                               onClick={() => setCurrentMediaIndex(index)}
                             >
@@ -1762,8 +1430,12 @@ export default function KupiProdaiPage() {
                       >
                         <div className="flex flex-col items-center justify-center text-center">
                           <Plus className="h-8 w-8 text-muted-foreground mb-2" />
-                          <p className="text-sm font-medium mb-1">Add more images</p>
-                          <p className="text-xs text-muted-foreground">Click or drag and drop</p>
+                          <p className="text-sm font-medium mb-1">
+                            Add more images
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Click or drag and drop
+                          </p>
                           <input
                             type="file"
                             ref={fileInputRef}
@@ -1780,10 +1452,18 @@ export default function KupiProdaiPage() {
 
                 {/* Submit buttons */}
                 <div className="flex justify-end gap-2 pt-4 border-t">
-                  <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={closeEditModal}
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isUploading} className="min-w-[120px]">
+                  <Button
+                    type="submit"
+                    disabled={isUploading}
+                    className="min-w-[120px]"
+                  >
                     {isUploading ? (
                       <div className="flex items-center gap-2">
                         <RefreshCw className="h-4 w-4 animate-spin" />
@@ -1795,12 +1475,14 @@ export default function KupiProdaiPage() {
                   </Button>
                 </div>
 
-                {isUploading && <Progress value={uploadProgress} className="mt-2" />}
+                {isUploading && (
+                  <Progress value={uploadProgress} className="mt-2" />
+                )}
               </form>
             </div>
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

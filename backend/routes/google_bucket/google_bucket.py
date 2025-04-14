@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException, status
 from datetime import timedelta, datetime
 import uuid
 from backend.common.dependencies import check_token, get_db_session
@@ -31,8 +31,13 @@ async def generate_upload_url(
 
     urls = []
     timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%S")
+    config = request.app.state.config
+    base_url = config.CLOUDFLARED_TUNNEL_URL if config.IS_DEBUG else config.NUSPACE
+    base_url = base_url.split(sep="https://", maxsplit=1)[1]
+
     for i in range(file_count):
-        filename = f"{user.get('sub')}_{timestamp}_{uuid.uuid4().hex}"
+
+        filename = f"{base_url}/{user.get('sub')}/{timestamp}/{uuid.uuid4().hex}"
         blob = request.app.state.storage_client.bucket(request.app.state.config.bucket_name).blob(filename)
 
         # List headers that will be included in the signed URL (values are ignored)
@@ -105,34 +110,31 @@ async def gcs_webhook(
 ):
     try:
         body = await request.json()
-        print(body)
-        pubsub_message = body.get("message", {})
-        data_b64 = pubsub_message.get("data")
+        data_b64 = body.get("message").get("data")
+
         if not data_b64:
             raise HTTPException(status_code=400, detail="Missing 'data' in Pub/Sub message.")
 
         decoded_data = base64.b64decode(data_b64).decode("utf-8")
         gcs_event = json.loads(decoded_data)
-        print(gcs_event)
-        bucket_name = gcs_event["bucket"]
-        object_name = gcs_event["name"]
 
-        # Fetch object from GCS to get full metadata
-        bucket = request.app.state.storage_client.bucket(bucket_name)
-        blob = bucket.get_blob(object_name)
+        parts = gcs_event["name"].split("/", maxsplit=1)
+        if len(parts) < 2 or parts[0] != request.app.state.config.ROUTING_PREFIX:
+            raise HTTPException(status_code=404)
+
+        bucket = request.app.state.storage_client.bucket(gcs_event["bucket"])
+        blob = bucket.get_blob(gcs_event["name"])
 
         if blob is None:
             raise HTTPException(status_code=404, detail="Blob not found in GCS.")
 
-        metadata = blob.metadata or {}
-        print(f"Metadata: {metadata}")
         confirmation = UploadConfirmation(
-            filename=metadata.get("filename", object_name),
-            mime_type=metadata.get("mime-type", blob.content_type or "application/octet-stream"),
-            section=MediaSection(metadata.get("section", "kp")),
-            entity_id=int(metadata["entity-id"]),
-            media_purpose=MediaPurpose(metadata["media-purpose"]),
-            media_order=int(metadata.get("media-order", 0))
+            filename=blob.metadata.get("filename"),
+            mime_type=blob.metadata.get("mime-type"),
+            section=MediaSection(blob.metadata.get("section")),
+            entity_id=int(blob.metadata["entity-id"]),
+            media_purpose=MediaPurpose(blob.metadata["media-purpose"]),
+            media_order=int(blob.metadata.get("media-order"))
         )
 
     except KeyError as e:
@@ -146,11 +148,9 @@ async def gcs_webhook(
             detail=f"Invalid data or metadata: {str(e)}"
         )
 
-    confirmed_media = await confirm_uploaded_media_to_db(confirmation, db_session)
-    return {
-        "status": "success",
-        "uploaded_media": confirmed_media
-    }
+    await confirm_uploaded_media_to_db(confirmation, db_session)
+    return {"status": "ok"}
+
 
 @router.delete("/{filename}")
 async def delete_bucket_object(
