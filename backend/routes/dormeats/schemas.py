@@ -7,20 +7,20 @@ from backend.core.database.models.user import UserRole, UserScope
 
 from pydantic import BaseModel, HttpUrl, EmailStr
 from typing import Dict
-from .dormeats import Category
+from .dormeats import *
 
 class MealSchema(BaseModel):
     id: int
     name: str
     description: str
     price: int
-    category: Category
+    category: MealCategory
     canteen_id: int
 
 class CanteenProductSchema(BaseModel):
     id: int
     name: str
-    description: str
+    category: CanteenProductCategory
 
 class IngredientSchema(BaseModel):
     id: int
