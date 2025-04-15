@@ -39,7 +39,7 @@ class Club(Base):
     name: Mapped[str] = mapped_column(nullable=False, unique=True)
     type: Mapped[ClubType] = mapped_column(SQLEnum(ClubType, name="club_type"), nullable=False)
     description: Mapped[str] = mapped_column(nullable=False)
-    president: Mapped[str] = mapped_column(ForeignKey('users.id'), nullable=False)
+    president: Mapped[str] = mapped_column(ForeignKey('users.sub'), nullable=False)
     telegram_url: Mapped[str] = mapped_column(nullable=True, unique=False)
     instagram_url: Mapped[str] = mapped_column(nullable=True, unique=False)
     picture: Mapped[str] = mapped_column(nullable=True)
@@ -48,7 +48,6 @@ class Club(Base):
 
     managers = relationship("ClubManager", back_populates="club")
     events = relationship('ClubEvent', back_populates='club')
-    stories = relationship('ClubStories', back_populates='club')
     announcements = relationship('ClubAnnouncement', back_populates='club')
     president_user = relationship("User", back_populates="clubs_led")
 
@@ -79,16 +78,7 @@ class ClubEvent(Base):
     club = relationship("Club", back_populates="events")
 
 
-class ClubStories(Base):
-    __tablename__ = "club_stories"
-    id: Mapped[BigInteger] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
-    club_id: Mapped[str] = mapped_column(ForeignKey('clubs.id'), nullable=False, unique=False)
-    media: Mapped[str] = mapped_column(nullable=False, unique=True)
-    text: Mapped[str] = mapped_column(nullable=True, unique=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    club = relationship("Club", back_populates="stories")
 
 
 class ClubAnnouncement(Base):

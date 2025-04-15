@@ -15,7 +15,7 @@ node_modules/
 
 # Build output (Vite/React)
 dist/
-
+ssl/
 # Static folder pycache
 static/**/__pycache__/
 
@@ -26,9 +26,12 @@ configs/**/__pycache__/
 .env
 
 
+
 # Log files
 *.log
 
 # OS-specific files
 .DS_Store
 Thumbs.db
+
+

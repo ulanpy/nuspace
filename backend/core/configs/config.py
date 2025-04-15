@@ -1,31 +1,65 @@
-import os
-
-
-from dotenv import load_dotenv
-from pydantic import field_validator, Field
-from pathlib import Path
-from authlib.integrations.starlette_client import OAuth
-from starlette.config import Config
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+import os
+from google.oauth2 import service_account
+import json
 
 
-load_dotenv()
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-session_middleware_key = 'your_secret_key'
-db_name = os.getenv("DB_NAME")
-db_user = os.getenv("DB_USER")
-db_password = os.getenv("DB_PASSWORD")
-db_host = os.getenv("DB_HOST", "postgres")
-db_port = os.getenv("DB_PORT", "5432")
-redis_host = os.getenv("REDIS_HOST", "localhost")
-redis_port = os.getenv("REDIS_PORT", "6379")
-DATABASE_URL = f"postgresql+asyncpg://{db_name}:{db_password}@{db_host}:{db_port}/{db_user}"
-BUCKET_NAME = "nuspace_bucket"
-jwt_key = os.getenv("JWT_KEY")
-JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 2880
+# Load environment variables from .env file
+ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+load_dotenv(os.path.join(ENV_DIR, ".env"))
 
 
-frontend_host = os.getenv("FRONTEND_HOST", "http://localhost")
-nginx_port = os.getenv("NGINX_PORT", 80)
+class Config(BaseSettings):
+    GCP_CREDENTIALS_JSON: str
+    session_middleware_key: str = "your_secret_key"
+    db_name: str
+    db_user: str
+    db_password: str
+    db_host: str = "postgres"
+    db_port: int = 5432
+    redis_host: str = "redis"
+    redis_port: int = 6379
+    bucket_name: str = "nuspace_bucket"
+    IS_BOT_DEV: bool = False
+    FRONTEND_HOST: str
+    nginx_port: int = 80
+    meilisearch_url: str 
+    meilisearch_master_key: str
+    CELERY_BROKER_URL: str
+    CELERY_RESULT_BACKEND: str
+    IS_DEBUG: bool = True
+    TG_API_KEY: str
+    SECRET_TOKEN: str
+    CLOUDFLARED_TUNNEL_URL: str  # Maps to http://localhost:80 (e.g. Nginx container)
+    NUSPACE: str
+    GCP_PROJECT_ID: str
+    GCP_TOPIC_ID: str
 
+
+    @property
+    def DATABASE_URL(self) -> str:
+        return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+
+    @property
+    def DATABASE_URL_SYNC(self) -> str:
+        return f"postgresql+psycopg2://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+    class Config:
+        env_file = os.path.join(ENV_DIR, ".env")
+        env_file_encoding = "utf-8"
+        extra = "allow"
+
+    @property
+    def REDIS_URL(self):
+        return f"redis://{self.redis_host}:{self.redis_port}"
+
+    @property
+    def BUCKET_CREDENTIALS(self):
+         return service_account.Credentials.from_service_account_info(json.loads(self.GCP_CREDENTIALS_JSON))
+
+    @property
+    def ROUTING_PREFIX(self) -> str:
+        raw_url = self.NUSPACE if not self.IS_DEBUG else self.CLOUDFLARED_TUNNEL_URL
+        return raw_url.split("https://", 1)[1]
+# Usage
+config = Config()

@@ -2,16 +2,16 @@ services:
 
   postgres:
     image: postgres
+    env_file:
+      - .env
     networks:
       - nuros
     restart: always
     container_name: postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123
-      POSTGRES_DB: postgres
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
@@ -23,13 +23,15 @@ services:
     networks:
       - nuros
     restart: always
-    ports:
-      - "8000:8000"
+    env_file:
+      - .env
     volumes:
-      - .:/backend  # Sync local backend folder with container's /app
+      - .:/nuros  # Sync local backend folder with container's /app
     depends_on:
       - postgres
-
+    environment:
+      - PYTHONUNBUFFERED=1
+      - WORKERS=${GUNICORN_WORKERS} #not set this in prod and let decide on the fly
 
   nginx:
     container_name: nginx
@@ -40,32 +42,133 @@ services:
     ports:
       - "80:80"  # Expose Nginx on port 80 of localhost
     volumes:
-      - ./backend/core/configs/:/configs
+      - ./backend/core/configs/nginx.dev.conf:/etc/nginx/nginx.conf
       - ./frontend/dist:/var/www/my-app/dist  # Make sure this folder exists in production builds
     depends_on:
       - fastapi
-    environment:
-      - ENVIRONMENT=development  # Change to 'production' as needed
-    command: ["/bin/sh", "-c", "apt update && apt install -y inotify-tools && if [ \"$$ENVIRONMENT\" = \"production\" ]; then CFG=/configs/nginx.conf; else CFG=/configs/nginx.dev.conf; fi && cp $$CFG /etc/nginx/nginx.conf && (while inotifywait -e modify $$CFG; do echo 'nginx config changed, copying and reloading Nginx...' && cp $$CFG /etc/nginx/nginx.conf && nginx -s reload; done) & nginx -g 'daemon off;'"]
+      - pgadmin
+    command: [ "/bin/sh", "-c", "
+      apt update && apt install -y inotify-tools && 
+      (while inotifywait -e modify /etc/nginx/nginx.conf; do 
+        echo 'nginx config changed, copying and reloading Nginx...' && 
+        nginx -t && nginx -s reload; 
+      done) & 
+      nginx -g 'daemon off;'
+      " ]
 
-#  frontend:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile_vite
-#    restart: always
-#    ports:
-#      - "5173:5173"
-#    volumes:
-#      - ./frontend:/app           # Mount all project files
-#      - /app/node_modules         # Anonymous volume to store node_modules inside container
-#    environment:
-#      - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes (Docker-friendly)
-#    networks:
-#      - nuros
+
+  pgadmin:
+      image: dpage/pgadmin4
+      container_name: pgadmin
+      environment:
+        PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+        PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      depends_on:
+        - postgres
+      restart: always
+      networks:
+        - nuros
+      volumes:
+        - pgadmin-data:/var/lib/pgadmin  # Named volume for persistent data
+        - ./backend/core/configs/pgadmin_config/servers.json:/pgadmin4/servers.json  # Auto-connect to PostgreSQL
+        - ./backend/core/configs/pgadmin_config/pgpass:/pgpass  # Auto-login credentials
+
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    networks:
+      - nuros
+    restart: always
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARED_TOKEN}  # Each developer sets their token
+    command: tunnel run
+    depends_on:
+      - nginx  # Ensure nginx is up before starting tunnel
+
+
+  redis:
+    image: redis:latest
+    networks:
+      - nuros
+    container_name: redis
+    restart: always
+    volumes:
+      - redis-data:/data
+      - ./backend/core/configs/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server --bind 0.0.0.0 --protected-mode no
+
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    networks:
+      - nuros
+    container_name: meilisearch
+    ports:
+      - 7700:7700
+    
+    
+
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    networks:
+      - nuros
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "15672:15672"  # Management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile_celery
+    networks:
+      - nuros
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+      - redis
+      - fastapi
+    command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
+    environment:
+      - CELERY_WORKER_CONCURRENCY=4  # Adjust based on your needs
+      - CELERY_WORKER_PREFETCH_MULTIPLIER=1
+    deploy:
+      replicas: 2  # For scalability
+
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile_vite
+    restart: always
+    volumes:
+      - ./frontend:/nuros           # Mount all project files
+      - /nuros/node_modules         # Anonymous volume to store node_modules inside container
+    environment:
+      - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes (Docker-friendly)
+    networks:
+      - nuros
 
 networks:
   nuros:
+    name: nuspace_nuros
     driver: bridge
 
 volumes:
   postgres-data:
+  redis-data:
+    driver: local
+  pgadmin-data:
+  rabbitmq-data:  # Add this

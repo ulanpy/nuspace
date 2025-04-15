@@ -1,13 +1,17 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, delete, insert, update, text, Interval, cast
+from sqlalchemy import select, func, delete, insert, update, text, Interval, cast, or_
+from sqlalchemy.orm import Session
 
 from backend.core.database.models import User
 from backend.routes.auth.schemas import UserSchema
-from backend.common.schemas import JWTSchema
 
 async def upsert_user(session: AsyncSession, user_schema: UserSchema):
     # Query if the user already exists using the 'sub' field
-    result = await session.execute(select(User).filter_by(sub=user_schema.sub))
+    result = await session.execute(
+        select(User).filter(
+            or_(User.sub == user_schema.sub, User.email == user_schema.email)
+        )
+    )
     user_db = result.scalars().first()
 
     if user_db:
@@ -26,14 +30,17 @@ async def upsert_user(session: AsyncSession, user_schema: UserSchema):
 
     return user_db
 
-
-
-async def get_user_refresh_token(session: AsyncSession, jwtdata: JWTSchema) -> str | None:
-    result = await session.execute(select(User.refresh_token).filter_by(sub=jwtdata.sub))
-    refresh_token = result.scalars().first()
-    return refresh_token
-
 async def get_user_role(session: AsyncSession, sub: str) -> str | None:
     result = await session.execute(select(User.role).filter_by(sub=sub))
+    user_role = result.scalars().first()
+    return user_role.value if user_role else None  # Convert enum to string
+
+
+
+
+# SYNC VERSION (for SyncDatabaseManager)
+def get_user_role_sync(session: Session, sub: str) -> str | None:
+    result = session.execute(select(User.role).filter_by(sub=sub))
+    # Sync execute
     user_role = result.scalars().first()
     return user_role.value if user_role else None  # Convert enum to string
