@@ -112,6 +112,12 @@ export const kupiProdaiApi = {
     });
   },
 
+  getProduct: async (product_id: number): Promise<Product> => {
+    return apiCall<Product>(`/products/${product_id}`, {
+      method: "GET"
+    });
+  },
+
   // Get all products of the current user
   getUserProductsQueryOptions: () => {
     return queryOptions({
