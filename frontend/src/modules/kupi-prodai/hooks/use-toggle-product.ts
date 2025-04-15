@@ -6,8 +6,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 export const useToggleProduct = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  useListingState;
-  const { currentPage, itemsPerPage } = useListingState();
 
   const toggleProductMutation = useMutation({
     mutationFn: kupiProdaiApi.updateProduct,
@@ -30,24 +28,9 @@ export const useToggleProduct = () => {
               product.id === product_id ? { ...product, status } : product
             )
         );
-        queryClient.setQueryData(
-          kupiProdaiApi.getProductsQueryOptions({
-            page: currentPage,
-            size: itemsPerPage,
-          }).queryKey,
-          (old) => {
-            if (!old) return old;
-
-            if (status === "inactive") {
-              return {
-                ...old,
-                products: old.products.filter(
-                  (product) => product.status === "active"
-                ),
-              };
-            }
-          }
-        );
+        queryClient.invalidateQueries({
+          queryKey: [kupiProdaiApi.baseKey, "list"],
+        });
       }
       toast({
         title: "Success",
@@ -72,7 +55,7 @@ export const useToggleProduct = () => {
     },
   });
 
-  const handleToggleProductStatus = (id: number, currentStatus: Status) => {
+  const handleToggleProductStatus = (id: number, currentStatus: Types.Status) => {
     const newStatus = currentStatus === "active" ? "inactive" : "active";
 
     toggleProductMutation.mutate({

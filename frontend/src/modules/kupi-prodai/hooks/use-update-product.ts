@@ -126,7 +126,6 @@ export const useUpdateProduct = () => {
         setUploadProgress(80);
       }
       setUploadProgress(100);
-
       // Reset form and close modal
       setEditingListing(null);
       setNewListing({
