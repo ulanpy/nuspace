@@ -238,7 +238,7 @@ async def update_product(
 
 
 
-@router.get("/search/", response_model=List[ProductResponseSchema]) #works
+@router.get("/search/", response_model=ListResponseSchema) #works
 async def search(
         request: Request,
         user: Annotated[dict, Depends(check_token)],
