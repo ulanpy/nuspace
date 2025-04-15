@@ -565,7 +565,7 @@ export default function KupiProdaiPage() {
                         <img
                           src={
                             product.media[0]?.url ||
-                            "/placeholder.svg?height=200&width=200"
+                            "https://placehold.co/200x200?text=No+Image"
                           }
                           alt={product.name}
                           className="object-cover w-full h-full"
@@ -892,12 +892,16 @@ export default function KupiProdaiPage() {
                 {(activeListings?.length ?? 0) > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {activeListings?.map((product) => (
-                      <Card key={product.id} className="overflow-hidden ">
+                      <Card
+                        key={product.id}
+                        className="overflow-hidden"
+                        onClick={() => navigate(`/apps/kupi-prodai/product/${product.id}`)}
+                      >
                         <div className="aspect-square relative">
                           <img
                             src={
                               product.media[0]?.url ||
-                              "/placeholder.svg?height=200&width=200"
+                              "https://placehold.co/200x200?text=No+Image"
                             }
                             alt={product.name}
                             className="object-cover w-full h-full"
@@ -911,15 +915,16 @@ export default function KupiProdaiPage() {
                           </Badge>
                         </div>
                         <CardContent className="p-3">
-                          <h3 className="font-medium text-sm line-clamp-1">
-                            {product.name}
-                          </h3>
+                          <h3 className="font-medium text-sm line-clamp-1">{product.name}</h3>
                           <p className="text-sm font-bold">{product.price} ₸</p>
                           <div className="flex justify-between mt-2">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleEditListing(product)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditListing(product);
+                              }}
                             >
                               Edit
                             </Button>
@@ -927,7 +932,10 @@ export default function KupiProdaiPage() {
                               disabled={getIsPendingDeleteMutation(product.id)}
                               variant="destructive"
                               size="sm"
-                              onClick={() => handleDelete(product.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(product.id);
+                              }}
                             >
                               Delete
                             </Button>
@@ -935,18 +943,17 @@ export default function KupiProdaiPage() {
                               disabled={getIsPendingToggleMutation(product.id)}
                               variant="secondary"
                               size="sm"
-                              onClick={() =>
-                                handleToggleProductStatus(
-                                  product.id,
-                                  product.status
-                                )
-                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleProductStatus(product.id, product.status);
+                              }}
                             >
                               Mark as Sold
                             </Button>
                           </div>
                         </CardContent>
                       </Card>
+
                     ))}
                   </div>
                 ) : (
@@ -965,7 +972,7 @@ export default function KupiProdaiPage() {
                           <img
                             src={
                               product.media[0]?.url ||
-                              "/placeholder.svg?height=200&width=200"
+                              "https://placehold.co/200x200?text=No+Image"
                             }
                             alt={product.name}
                             className="object-cover w-full h-full"
@@ -1045,7 +1052,7 @@ export default function KupiProdaiPage() {
                     <img
                       src={
                         product.media[0]?.url ||
-                        "/placeholder.svg?height=200&width=200"
+                        "https://placehold.co/200x200?text=No+Image"
                       }
                       alt={product.name}
                       className="object-cover w-full h-full"
