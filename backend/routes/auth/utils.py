@@ -51,6 +51,7 @@ def validate_access_token_sync(access_token: str, kc: KeyCloakManager) -> dict |
 
 
 async def exchange_code_for_credentials(request: Request):
+    print("Session content:", request.session)
     kc: KeyCloakManager = request.app.state.kc_manager
     token = await getattr(kc.oauth, kc.__class__.__name__.lower()).authorize_access_token(request)
     return token

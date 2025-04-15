@@ -74,23 +74,18 @@ services:
         - ./backend/core/configs/pgadmin_config/pgpass:/pgpass  # Auto-login credentials
 
 
-  ngrok:
-      image: ngrok/ngrok:latest
-      profiles:
-        - ngrok
-      restart: always
-      container_name: ngrok
-      networks:
-        - nuros
-      env_file:
-        - .env
-      environment:
-        - NGROK_CONFIG=/etc/ngrok.yml
-        - NGROK_AUTHTOKEN=${NGROK_AUTH_TOKEN}  # Remove the underscore to match ngrok.yml
-      volumes:
-        - ./backend/core/configs/ngrok.yml:/etc/ngrok.yml
-      depends_on:
-        - fastapi
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    networks:
+      - nuros
+    restart: always
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARED_TOKEN}  # Each developer sets their token
+    command: tunnel run
+    depends_on:
+      - nginx  # Ensure nginx is up before starting tunnel
+
 
   redis:
     image: redis:latest
