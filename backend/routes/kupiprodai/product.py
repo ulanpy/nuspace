@@ -236,9 +236,13 @@ async def update_product(
     )
     return {"product_id": product_update.product_id, "updated_fields": product_update.dict(exclude_unset=True)}
 
+@router.get('/{}')
+async def get_products_by_id(
+    product_ids: list[int]
+):
+    
 
-
-@router.get("/search/", response_model=ListResponseSchema) #works
+@router.get("/search/", response_model='!!!') #works
 async def search(
         request: Request,
         user: Annotated[dict, Depends(check_token)],
@@ -264,11 +268,10 @@ async def search(
     - Products will be returned with their full details (from the database).
     """
     result = await search_for_meilisearch_data(storage_name="products", keyword=keyword)
-    products = result['data']['hits']
-    product_ids = []
-    for product in products:
-        product_ids.append(product['id'])
+    return result['data']['hits']
+    
 
+    '''
     return await show_products_for_search(
         request=request,
         session=db_session,
@@ -276,7 +279,7 @@ async def search(
         page=page,
         num_of_products = len(product_ids),
         product_ids=product_ids
-    )
+    '''
 
 @router.post("/feedback/{product_id}") #added description
 async def store_new_product_feedback(
