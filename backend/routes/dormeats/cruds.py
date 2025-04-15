@@ -21,7 +21,7 @@ async def add_new_meal_to_db(
         session: AsyncSession,
         meal_data: MealSchema,
         request: Request,
-        media_section: MediaSection = MediaSection.kp
+        media_section: MediaSection = MediaSection.de
 ):
     new_meal = Meal(**meal_data.dict())
     session.add(new_meal)
