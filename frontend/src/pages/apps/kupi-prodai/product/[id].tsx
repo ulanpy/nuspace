@@ -10,6 +10,7 @@ import { useAuth } from "../../../../context/auth-context"
 import { format } from "date-fns"
 import { kupiProdaiApi, type Product } from "../../../../api/kupi-prodai-api"
 import { useToast } from "../../../../hooks/use-toast"
+import CommentsSection from "../comment-section"
 
 interface Comment {
   id: number
@@ -278,7 +279,7 @@ export default function ProductDetailPage() {
                   onClick={() => setCurrentImageIndex(index)}
                 >
                   <img
-                    src={image.url || "https://placehold.co/400x400?text=No+Image"}
+                    src={image.url || "https://placehold.co/400x00"}
                     alt={`Thumbnail ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
