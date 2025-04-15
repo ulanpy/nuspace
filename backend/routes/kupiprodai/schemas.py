@@ -22,6 +22,7 @@ class ProductResponseSchema(BaseModel):
     description: str
     user_name: str
     user_surname: str
+    user_telegram_id: int
     price: int
     category: ProductCategory
     condition: ProductCondition
@@ -52,9 +53,11 @@ class ProductUpdateSchema(BaseModel):
 class ProductFeedbackSchema(BaseModel):
     product_id: int
     text: str
+    
 class ProductFeedbackResponseSchema(BaseModel):
     id: int
-    user_sub: str
+    user_name: str
+    user_surname: str
     product_id: int
     text: str
     created_at: datetime

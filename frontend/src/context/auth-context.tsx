@@ -41,17 +41,19 @@ interface AuthContextType {
   isLoading: boolean
   login: () => void
   logout: () => void
+  refreshUserData: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Add this to the AuthContext to expose the refreshUserData function
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchUserData = async () => {
     try {
-      const response = await fetch("http://localhost/api/me", {
+      const response = await fetch("/api/me", {
         method: "GET",
         credentials: "include", // Important for cookies
       })
@@ -70,9 +72,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const refreshUserData = async () => {
+    try {
+      const response = await fetch("/api/me", {
+        method: "GET",
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        setUser(userData)
+        return userData
+      }
+    } catch (error) {
+      console.error("Error refreshing user data:", error)
+    } finally {
+      setIsLoading(false)
+    }
+    return null
+  }
+
   const refreshToken = async () => {
     try {
-      await fetch("http://localhost/api/refresh-token", {
+      await fetch("/api/refresh-token", {
         method: "POST",
         credentials: "include", // Important for cookies
       })
@@ -86,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUserData()
 
     // Set up token refresh interval
-    const refreshInterval = setInterval(refreshToken, 240*1000) // 4 minutes
+    const refreshInterval = setInterval(refreshToken, 240*1000) // 5 seconds
 
     return () => {
       clearInterval(refreshInterval)
@@ -94,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = () => {
-    window.location.href = "http://localhost/api/login"
+    window.location.href = "/api/login"
   }
 
   const logout = () => {
@@ -110,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         logout,
+        refreshUserData,
       }}
     >
       {children}
@@ -124,4 +147,3 @@ export function useAuth() {
   }
   return context
 }
-

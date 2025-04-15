@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ExternalLink, Check } from "lucide-react"
 import { Button } from "./ui/button"
 import { Modal } from "./ui/modal"
 import { useAuth } from "../context/auth-context"
 import { Badge } from "./ui/badge"
+import { useToast } from "../hooks/use-toast"
 
 // Emoji mapping based on the backend logic
 const numberToEmoji = (num: number): string => {
@@ -15,15 +16,87 @@ const numberToEmoji = (num: number): string => {
 }
 
 export function BindTelegramButton() {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, refreshUserData } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [telegramLink, setTelegramLink] = useState("")
   const [confirmationEmoji, setConfirmationEmoji] = useState("")
   const [error, setError] = useState("")
+  const [isLinked, setIsLinked] = useState(user?.tg_linked || false)
+  const { toast } = useToast()
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Check if user is linked to Telegram directly from the user object
-  const isLinked = user?.tg_linked || false
+  useEffect(() => {
+    setIsLinked(user?.tg_linked || false)
+  }, [user])
+
+  // Clean up polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+      }
+    }
+  }, [])
+
+  // Start polling for Telegram status when modal is shown
+  useEffect(() => {
+    if (showModal && !isLinked) {
+      startPollingTelegramStatus()
+    } else if (!showModal && pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+      pollingIntervalRef.current = null
+    }
+  }, [showModal, isLinked])
+
+  // Find the startPollingTelegramStatus function and update it to refresh the auth context
+  const startPollingTelegramStatus = () => {
+    // Clear any existing interval
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+    }
+
+    // Start polling every 2 seconds
+    pollingIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await fetch("/api/me", {
+          method: "GET",
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const userData = await response.json()
+
+          // If Telegram is now linked, update UI and stop polling
+          if (userData.tg_linked) {
+            setIsLinked(true)
+            setShowModal(false)
+
+            // Refresh the auth context to update the user data
+            if (typeof window !== "undefined") {
+              // Force refresh the auth context
+              await refreshUserData()
+            }
+
+            toast({
+              title: "Success",
+              description: "Your Telegram account has been linked successfully!",
+              variant: "success",
+            })
+
+            // Stop polling
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current)
+              pollingIntervalRef.current = null
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking Telegram status:", error)
+      }
+    }, 2000)
+  }
 
   // Update the handleBindTelegram function to use the correct sub field
   const handleBindTelegram = async () => {
@@ -37,7 +110,7 @@ export function BindTelegramButton() {
 
     try {
       // Use the correct sub field from the user object
-      const response = await fetch("http://localhost/api/bingtg", {
+      const response = await fetch("/api/bingtg", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -94,11 +167,19 @@ export function BindTelegramButton() {
         <span>{isLoading ? "Processing..." : "Bind to Telegram"}</span>
       </Button>
 
+      {/* Update the Modal component to position it better */}
       <Modal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        onClose={() => {
+          setShowModal(false)
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current)
+            pollingIntervalRef.current = null
+          }
+        }}
         title="Bind Your Telegram Account"
         description="Click the link below to open Telegram and confirm your account."
+        className="fixed inset-0 z-[100] flex items-center justify-center"
       >
         <div className="space-y-4 py-2">
           <div className="flex flex-col items-center gap-2 text-center">

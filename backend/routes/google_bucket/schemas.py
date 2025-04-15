@@ -1,12 +1,18 @@
-from pydantic import BaseModel, Field
+# schemas.py
+from pydantic import BaseModel, Field, HttpUrl
 from typing import List
-# Add response models
-
 from backend.core.database.models.media import MediaSection, MediaPurpose
 
-class SignedUrlResponse(BaseModel):
-    signed_urls: List[dict]
+# Keep original if you adapt /upload-url to handle lists of mime_types
 
+
+# New response for single URL generation
+class SingleSignedUrlResponse(BaseModel):
+    filename: str
+    upload_url: HttpUrl
+
+class SignedUrlResponse(BaseModel):
+   signed_urls: List[SingleSignedUrlResponse]
 
 class UploadConfirmation(BaseModel):
     filename: str
@@ -16,6 +22,9 @@ class UploadConfirmation(BaseModel):
     media_purpose: MediaPurpose
     media_order: int
 
+class ConfirmUploadRequest(BaseModel):
+    filename: str
+    url: HttpUrl
 
 class MediaResponse(BaseModel):
     id: int
