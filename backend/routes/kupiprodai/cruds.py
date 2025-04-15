@@ -1,10 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from fastapi import HTTPException, Request
-from backend.core.database.models.product import Product, ProductCategory
+from backend.core.database.models.product import Product, ProductFeedback, ProductReport
 from backend.core.database.models.media import Media
 from backend.core.database.models.product import ProductCondition, ProductCategory
-from backend.routes.kupiprodai.schemas import ProductResponseSchema, ProductUpdateSchema, ProductRequestSchema, ListResponseSchema
+from backend.routes.kupiprodai.schemas import ProductResponseSchema, ProductUpdateSchema, ProductRequestSchema, ListResponseSchema, ProductReportSchema, ProductFeedbackSchema
 from backend.common.utils import add_meilisearch_data,remove_meilisearch_data
 from typing import Literal, List
 from backend.core.database.models.product import ProductStatus
@@ -12,7 +12,7 @@ from backend.common.utils import update_meilisearch_data
 from backend.routes.google_bucket.utils import generate_download_url, delete_bucket_object
 from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
 from sqlalchemy.orm import selectinload
-from .utils import build_product_response
+from .utils import build_product_response, build_product_feedbacks_response
 import asyncio
 from .schemas import *
 from backend.core.database.models.product import *
@@ -188,9 +188,10 @@ async def update_product_in_db(
     await session.refresh(product)
     return product_update
 
+
 async def add_new_product_feedback_to_db(
-        feedback_data: ProductFeedbackSchema, 
-        user_sub: str, 
+        feedback_data: ProductFeedbackSchema,
+        user_sub: str,
         session: AsyncSession
     ) -> ProductFeedback:
     new_feedback = ProductFeedback(**feedback_data.dict(), user_sub=user_sub)
@@ -200,14 +201,22 @@ async def add_new_product_feedback_to_db(
     return new_feedback
 
 async def get_product_feedbacks_from_db(
-        product_id: int, 
-        session: AsyncSession, 
-        size: int = 20, 
+        product_id: int,
+        session: AsyncSession,
+        size: int = 20,
         page: int = 1
     ):
     offset = size * (page - 1)
+    sql_conditions = [ProductFeedback.product_id == product_id]
+
+    total_query = select(func.count()).where(*sql_conditions)
+    total_result = await session.execute(total_query)
+    total_count = total_result.scalar()
+    num_of_pages = max(1, (total_count + size - 1) // size)
+    
     query = (
         select(ProductFeedback)
+        .options(selectinload(ProductFeedback.user))
         .filter_by(product_id = product_id)
         .offset(offset)
         .limit(size)
@@ -215,7 +224,9 @@ async def get_product_feedbacks_from_db(
     )
     result = await session.execute(query)
     product_feedbacks = result.scalars().all()
-    return product_feedbacks
+    product_feedbacks_response = await asyncio.gather(*(build_product_feedbacks_response(feedback = feedback)
+                                                for feedback in product_feedbacks))
+    return ListProductFeedbackResponseSchema(product_feedbacks=product_feedbacks_response, num_of_pages=num_of_pages)
 
 async def remove_product_feedback_from_db(feedback_id: int, user_sub: str, session: AsyncSession):
     result = await session.execute(select(ProductFeedback).filter_by(product_id = feedback_id, user_sub = user_sub))
@@ -223,9 +234,6 @@ async def remove_product_feedback_from_db(feedback_id: int, user_sub: str, sessi
     if product_feedback:
         await session.delete(product_feedback)
         await session.commit()
-        return True
-    else:
-        return False
 
 async def add_product_report(report_data: ProductReportSchema, user_sub: str, session: AsyncSession):
     new_report = ProductReport(**report_data.dict(), user_sub=user_sub)
@@ -233,3 +241,33 @@ async def add_product_report(report_data: ProductReportSchema, user_sub: str, se
     await session.commit()
     await session.refresh(new_report)
     return new_report
+
+async def show_products_for_search(
+    session: AsyncSession,
+    size: int,
+    page: int,
+    num_of_products: int,
+    product_ids:list[int],
+    request: Request,
+    media_section: MediaSection = MediaSection.kp
+) -> ListResponseSchema:
+    offset = size * (page - 1)
+
+    # Подсчет общего числа продуктов
+    num_of_pages = max(1, (num_of_products + size - 1) // size)
+
+    query = (
+        select(Product)
+        .options(selectinload(Product.user))
+        .where(Product.id.in_(product_ids))
+        .offset(offset)
+        .limit(size)
+        .order_by(Product.updated_at.desc())
+    )
+    result = await session.execute(query)
+    products = result.scalars().all()
+
+    # Собираем ответы для всех продуктов
+    products_response = await asyncio.gather(*(build_product_response(product, session, request, media_section)
+                                                for product in products))
+    return ListResponseSchema(products=products_response, num_of_pages=num_of_pages)

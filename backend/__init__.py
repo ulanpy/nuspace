@@ -13,14 +13,13 @@ from backend.routes.auth.auth import KeyCloakManager
 from backend.core.database.models import Product
 from backend.common.utils import import_data_from_db
 from backend.common.dependencies import get_db_session
+from backend.routes.google_bucket.utils import update_bucket_push_endpoint
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
         app.state.config = Config()
-
-        app.state.storage_client = storage.Client(credentials=config.bucket_credentials)
-
+        app.state.storage_client = storage.Client(credentials=config.BUCKET_CREDENTIALS)
         app.state.db_manager = AsyncDatabaseManager()
         app.state.db_manager_sync = SyncDatabaseManager()
         app.state.kc_manager = KeyCloakManager()
@@ -36,10 +35,9 @@ async def lifespan(app: FastAPI):
         )
         app.state.redis = Redis(connection_pool=redis_pool)
         await app.state.db_manager.create_all_tables()
+        update_bucket_push_endpoint()
+        await initialize_bot(app)
 
-        if config.IS_BOT_DEV:
-            await initialize_bot(app)
-        print("Application startup:AsyncDatabaseManager initialized")
         for router in routers:
             app.include_router(router)
 
@@ -49,20 +47,14 @@ async def lifespan(app: FastAPI):
         yield
 
     finally:
-        if config.IS_BOT_DEV:
-            await app.state.bot.session.close()
-            await app.state.bot.delete_webhook(drop_pending_updates=True)
+        await app.state.bot.session.close()
+        await app.state.bot.delete_webhook(drop_pending_updates=True)
 
         await app.state.redis.aclose()
-
         await app.state.db_manager.async_engine.dispose()
         app.state.db_manager_sync.sync_engine.dispose()
 
         print("Application shutdown: Resources released")
 
 
-origins = [
-    "*",
-    "https://lh3.googleusercontent.com"
-    "https://kazgptbot.ru"
-]
+origins = ["*"]

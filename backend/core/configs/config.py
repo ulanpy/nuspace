@@ -22,18 +22,20 @@ class Config(BaseSettings):
     redis_port: int = 6379
     bucket_name: str = "nuspace_bucket"
     IS_BOT_DEV: bool = False
-    FRONTEND_HOST: str = "http://localhost"
+    FRONTEND_HOST: str
     nginx_port: int = 80
     meilisearch_url: str 
     meilisearch_master_key: str
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
-
+    IS_DEBUG: bool = True
     TG_API_KEY: str
-    WEBAPP_HOST: str = "localhost"
-    WEBAPP_PORT: int = 3001
-    ngrok_server_endpoint: str
-    url_webhook_endpoint: str = ""
+    SECRET_TOKEN: str
+    CLOUDFLARED_TUNNEL_URL: str  # Maps to http://localhost:80 (e.g. Nginx container)
+    NUSPACE: str
+    GCP_PROJECT_ID: str
+    GCP_TOPIC_ID: str
+
 
     @property
     def DATABASE_URL(self) -> str:
@@ -52,8 +54,12 @@ class Config(BaseSettings):
         return f"redis://{self.redis_host}:{self.redis_port}"
 
     @property
-    def bucket_credentials(self):
+    def BUCKET_CREDENTIALS(self):
          return service_account.Credentials.from_service_account_info(json.loads(self.GCP_CREDENTIALS_JSON))
 
+    @property
+    def ROUTING_PREFIX(self) -> str:
+        raw_url = self.NUSPACE if not self.IS_DEBUG else self.CLOUDFLARED_TUNNEL_URL
+        return raw_url.split("https://", 1)[1]
 # Usage
 config = Config()
