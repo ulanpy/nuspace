@@ -120,7 +120,7 @@ export default function KupiProdaiPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [error] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const isTelegramLinked = user?.tg_linked || false
+  const isTelegramLinked = user?.tg_linked || false;
 
   // Pagination state
   const [totalPages] = useState(1);
@@ -840,7 +840,11 @@ export default function KupiProdaiPage() {
               </div>
 
               {/* Submit Button */}
-              <Button type="submit" disabled={isUploading || !isTelegramLinked} className="w-full">
+              <Button
+                type="submit"
+                disabled={isUploading || !isTelegramLinked}
+                className="w-full"
+              >
                 {isUploading ? (
                   <div className="flex items-center justify-center gap-2">
                     <RefreshCw className="animate-spin h-4 w-4" />
@@ -1063,8 +1067,7 @@ export default function KupiProdaiPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        onClick={() => {
                           handleToggleProductStatus(product.id, "active");
                         }}
                         className="text-green-600 border-green-200 hover:bg-green-50"
@@ -1388,7 +1391,9 @@ export default function KupiProdaiPage() {
                           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                             <ImageIcon className="h-12 w-12 mb-2" />
                             <p>No images</p>
-                            <p className="text-xs mt-2">Upload images to showcase your product</p>
+                            <p className="text-xs mt-2">
+                              Upload images to showcase your product
+                            </p>
                           </div>
                         )}
                       </div>

@@ -11,6 +11,8 @@ export function useUserProducts() {
   } = useQuery({
     ...kupiProdaiApi.getUserProductsQueryOptions(),
     enabled: isAuthenticated,
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 60 * 24,
   });
 
   return { myProducts, isError, isLoading };
