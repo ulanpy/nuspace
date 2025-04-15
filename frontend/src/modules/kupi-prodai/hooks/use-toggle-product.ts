@@ -1,5 +1,4 @@
 import { kupiProdaiApi } from "@/api/kupi-prodai-api";
-import { useListingState } from "@/context/listing-context";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
