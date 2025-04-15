@@ -238,11 +238,13 @@ async def update_product(
 
 
 
-@router.get("/search/", response_model=List[ProductResponseSchema]) #works
+@router.get("/search/", response_model=ListResponseSchema) #works
 async def search(
         request: Request,
         user: Annotated[dict, Depends(check_token)],
         keyword: str,
+        size: int = 20, 
+        page: int = 1,
         db_session=Depends(get_db_session)
 ):
     """
@@ -254,6 +256,8 @@ async def search(
 
     **Parameters:**
     - `keyword`: The search term used to find products. It will be used for querying in Meilisearch.
+    - `size`: Number of products per page (default: 20)
+    - `page`: Page number (default: 1)
 
     **Returns:**
     - A list of product objects that match the keyword from the search.
@@ -261,11 +265,18 @@ async def search(
     """
     result = await search_for_meilisearch_data(storage_name="products", keyword=keyword)
     products = result['data']['hits']
-    product_objects = []
+    product_ids = []
     for product in products:
-        product_objects.append(await get_product_from_db(request=request, product_id=product['id'], session=db_session))
-    return product_objects
+        product_ids.append(product['id'])
 
+    return await show_products_for_search(
+        request=request,
+        session=db_session,
+        size=size,
+        page=page,
+        num_of_products = len(product_ids),
+        product_ids=product_ids
+    )
 
 @router.post("/feedback/{product_id}") #added description
 async def store_new_product_feedback(
