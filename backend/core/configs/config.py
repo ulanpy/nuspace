@@ -59,7 +59,7 @@ class Config(BaseSettings):
 
     @property
     def ROUTING_PREFIX(self) -> str:
-        raw_url = self.NUSPCE if not self.IS_DEBUG else self.CLOUDFLARED_TUNNEL_URL
+        raw_url = self.NUSPACE if not self.IS_DEBUG else self.CLOUDFLARED_TUNNEL_URL
         return raw_url.split("https://", 1)[1]
 # Usage
 config = Config()

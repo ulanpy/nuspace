@@ -20,7 +20,6 @@ class KeyCloakManager(BaseSettings):
     KEYCLOAK_CLIENT_ID: str
     KEYCLOAK_CLIENT_SECRET: str
     KEYCLOAK_REDIRECT_URI: str
-    KEYCLOAK_REDIRECT_URI_TUNNEL: str
     client_kwargs: dict = {
         "scope": "openid profile email",
     }
