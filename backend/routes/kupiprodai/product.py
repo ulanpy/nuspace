@@ -86,7 +86,7 @@ async def get_products(
         size: int = 20,
         page: int = 1,
         category: ProductCategory = None,
-        condition: ProductCondition = None
+        condition: ProductCondition = None,
 ):
     """
     Retrieves a paginated list of active products, with optional filtering by category and condition.
@@ -113,7 +113,6 @@ async def get_products(
         category=category,
         condition=condition
     )
-
 
 @router.get("/{product_id}", response_model=ProductResponseSchema) #works
 async def get_product(
@@ -152,7 +151,7 @@ async def get_product(
     return product
 
 
-@router.delete("/{product_id}")  #works
+@router.delete("/{product_id}") #works
 async def remove_product(
         request: Request,
         user: Annotated[dict, Depends(check_token)],
@@ -274,9 +273,10 @@ async def search(
         session=db_session,
         size=size,
         page=page,
-        num_of_products = len(product_ids),
+        num_of_products=len(product_ids),
         product_ids=product_ids
     )
+
 
 @router.post("/feedback/{product_id}") #added description
 async def store_new_product_feedback(
