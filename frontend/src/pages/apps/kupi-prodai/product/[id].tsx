@@ -63,6 +63,7 @@ export default function ProductDetailPage() {
         setError("Failed to fetch product details")
       } finally {
         setIsLoading(false)
+        console.log('somethinh')
       }
     }
 
