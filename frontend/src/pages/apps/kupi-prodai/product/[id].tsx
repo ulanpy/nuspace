@@ -10,9 +10,9 @@ import { useAuth } from "../../../../context/auth-context"
 import { format } from "date-fns"
 import { kupiProdaiApi, type Product } from "../../../../api/kupi-prodai-api"
 import { useToast } from "../../../../hooks/use-toast"
-import CommentsSection from "../comment-section"
+import { Modal } from "../../../../components/ui/modal"
 
-interface Comment {
+interface Feedback {
   id: number
   user: {
     name: string
@@ -38,9 +38,12 @@ export default function ProductDetailPage() {
   const [message, setMessage] = useState("")
   const [showImageModal, setShowImageModal] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(1)
-  const [comments, setComments] = useState<Comment[]>([])
+  const [comments, setComments] = useState<Feedback[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false)
+  const [telegramLink, setTelegramLink] = useState("")
+  const [isContactLoading, setIsContactLoading] = useState(false)
 
   const { toast } = useToast()
 
@@ -55,20 +58,39 @@ export default function ProductDetailPage() {
         const data = await kupiProdaiApi.getProduct(Number.parseInt(id))
         setProduct(data)
 
-        // In a real app, you would fetch comments from an API
-        // For now, we'll use empty comments
-        setComments([])
+        // Fetch comments/feedback
+        await fetchFeedback()
       } catch (err) {
         console.error("Failed to fetch product:", err)
         setError("Failed to fetch product details")
       } finally {
         setIsLoading(false)
-        console.log('somethinh')
       }
     }
 
     fetchProduct()
   }, [id])
+
+  const fetchFeedback = async () => {
+    if (!id) return
+
+    try {
+      const response = await fetch(`/api/products/feedback/${id}?size=100&page=1`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setComments(data.items || [])
+      }
+    } catch (err) {
+      console.error("Failed to fetch feedback:", err)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -140,7 +162,7 @@ export default function ProductDetailPage() {
     setIsSubscribed(!isSubscribed)
   }
 
-  const handleReport = () => {
+  const handleReport = async () => {
     if (!reportReason.trim()) {
       toast({
         title: "Error",
@@ -150,16 +172,39 @@ export default function ProductDetailPage() {
       return
     }
 
-    // In a real app, you would send the report to an API
-    toast({
-      title: "Success",
-      description: "Report submitted successfully",
-    })
-    setShowReportModal(false)
-    setReportReason("")
+    try {
+      const response = await fetch(`/api/products/${product.id}/report`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          product_id: product.id,
+          text: reportReason,
+        }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Report submitted successfully",
+        })
+        setShowReportModal(false)
+        setReportReason("")
+      } else {
+        throw new Error("Failed to submit report")
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit report. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!message.trim()) {
       toast({
         title: "Error",
@@ -169,33 +214,67 @@ export default function ProductDetailPage() {
       return
     }
 
-    // Add the new comment to the comments array
-    const newComment: Comment = {
-      id: Date.now(),
-      user: {
-        name: user?.user?.given_name || "You",
-        avatar: "https://placehold.co/100/8b5cf6/FFFFFF?text=YOU",
-      },
-      text: message,
-      timestamp: new Date(),
+    try {
+      const response = await fetch(`/api/products/feedback/${product.id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          product_id: product.id,
+          text: message,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to send message")
+      }
+
+      // Refresh feedback list
+      await fetchFeedback()
+
+      setMessage("")
+
+      toast({
+        title: "Success",
+        description: "Message sent successfully",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      })
     }
-
-    setComments([...comments, newComment])
-    setMessage("")
-
-    toast({
-      title: "Success",
-      description: "Message sent successfully",
-    })
   }
 
-  const initiateContactWithSeller = () => {
-    // In a real app, you would have the seller's Telegram username
-    // For now, we'll just show a toast
-    toast({
-      title: "Contact Seller",
-      description: "This would open Telegram to contact the seller",
-    })
+  const initiateContactWithSeller = async () => {
+    if (!id) return
+
+    try {
+      setIsContactLoading(true)
+      const response = await fetch(`/api/contact/${id}`, {
+        method: "POST",
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to get contact link")
+      }
+
+      const telegramUrl = await response.json()
+      setTelegramLink(telegramUrl)
+      setIsContactModalOpen(true)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate contact link. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsContactLoading(false)
+    }
   }
 
   const openImageModal = () => {
@@ -210,7 +289,8 @@ export default function ProductDetailPage() {
     })
   }
 
-  const formatCommentDate = (date: Date) => {
+  const formatCommentDate = (dateStr: string) => {
+    const date = new Date(dateStr)
     return format(date, "MMM d, yyyy 'at' h:mm a")
   }
 
@@ -218,9 +298,7 @@ export default function ProductDetailPage() {
     if (product.media && product.media.length > 0 && product.media[currentImageIndex]?.url) {
       return product.media[currentImageIndex].url
     }
-    return (
-      "https://placehold.co/400x400?text=No+Image"
-    )
+    return "https://placehold.co/400x400?text=No+Image"
   }
 
   return (
@@ -280,7 +358,7 @@ export default function ProductDetailPage() {
                   onClick={() => setCurrentImageIndex(index)}
                 >
                   <img
-                    src={image.url || "https://placehold.co/400x00"}
+                    src={image.url || "https://placehold.co/400x400?text=No+Image"}
                     alt={`Thumbnail ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -348,9 +426,14 @@ export default function ProductDetailPage() {
               <span>{isLiked ? "Liked" : "Like"}</span>
             </Button>
 
-            <Button variant="outline" className="flex items-center gap-1" onClick={() => initiateContactWithSeller()}>
+            <Button
+              variant="outline"
+              className="flex items-center gap-1"
+              onClick={initiateContactWithSeller}
+              disabled={isContactLoading}
+            >
               <ExternalLink className="h-4 w-4" />
-              <span>Contact on Telegram</span>
+              <span>{isContactLoading ? "Loading..." : "Contact on Telegram"}</span>
             </Button>
 
             <Button
@@ -425,41 +508,58 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Report Modal */}
-      {showReportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-background rounded-lg shadow-lg w-full max-w-md">
-            <div className="p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Report Listing</h2>
-                <Button variant="ghost" size="sm" onClick={() => setShowReportModal(false)}>
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
+      <Modal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        title="Report Listing"
+        description="Please explain why you're reporting this listing"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Reason for reporting</label>
+            <textarea
+              className="w-full p-2 border rounded-md min-h-[100px] bg-background"
+              placeholder="Please explain why you're reporting this listing..."
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+            />
+          </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Reason for reporting</label>
-                  <textarea
-                    className="w-full p-2 border rounded-md min-h-[100px] bg-background"
-                    placeholder="Please explain why you're reporting this listing..."
-                    value={reportReason}
-                    onChange={(e) => setReportReason(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setShowReportModal(false)}>
-                    Cancel
-                  </Button>
-                  <Button variant="destructive" onClick={handleReport}>
-                    Report
-                  </Button>
-                </div>
-              </div>
-            </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowReportModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleReport}>
+              Report
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
+
+      {/* Contact Telegram Modal */}
+      <Modal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
+        title="Contact Seller"
+        description="Click the button below to contact the seller on Telegram"
+      >
+        <div className="space-y-4 py-2 flex flex-col items-center">
+          <p className="text-sm text-muted-foreground">
+            You will be redirected to Telegram to chat with the seller about this item
+          </p>
+
+          <Button
+            className="flex items-center gap-2"
+            onClick={() => {
+              window.open(telegramLink, "_blank");
+              setIsContactModalOpen(false);
+            }}
+          >
+            <ExternalLink className="h-4 w-4" />
+            Open in Telegram
+          </Button>
+        </div>
+      </Modal>
 
       {/* Image Modal with Zoom */}
       {showImageModal && (
