@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { kupiProdaiApi } from "@/api/kupi-prodai-api";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useListingState } from "@/context/listing-context";
 

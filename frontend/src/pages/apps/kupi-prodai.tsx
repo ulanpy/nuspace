@@ -47,7 +47,6 @@ import { useListingState } from "@/context/listing-context";
 import { useImageContext } from "@/context/image-context";
 import { useMediaContext } from "@/context/media-context";
 import { useSearchProduct } from "@/modules/kupi-prodai/hooks/use-search-product";
-import { useKupiProdaiTab } from "@/modules/kupi-prodai/hooks/use-tab";
 
 // Define categories and conditions
 const categories = [
