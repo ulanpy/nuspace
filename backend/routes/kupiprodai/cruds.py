@@ -247,7 +247,7 @@ async def show_products_for_search(
     size: int,
     page: int,
     num_of_products: int,
-    product_ids:list[int],
+    product_ids: list[int],
     request: Request,
     media_section: MediaSection = MediaSection.kp
 ) -> ListResponseSchema:
@@ -271,3 +271,4 @@ async def show_products_for_search(
     products_response = await asyncio.gather(*(build_product_response(product, session, request, media_section)
                                                 for product in products))
     return ListResponseSchema(products=products_response, num_of_pages=num_of_pages)
+
