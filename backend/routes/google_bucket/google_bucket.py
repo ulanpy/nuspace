@@ -110,7 +110,8 @@ async def gcs_webhook(
 ):
     try:
         body = await request.json()
-        data_b64 = body.get("message").get("data")
+        message = body.get("message", {})
+        data_b64 = message.get("data")
 
         if not data_b64:
             raise HTTPException(status_code=400, detail="Missing 'data' in Pub/Sub message.")
@@ -118,9 +119,15 @@ async def gcs_webhook(
         decoded_data = base64.b64decode(data_b64).decode("utf-8")
         gcs_event = json.loads(decoded_data)
 
-        parts = gcs_event["name"].split("/", maxsplit=1)
+        object_name = gcs_event.get("name")
+        bucket_name = gcs_event.get("bucket")
+
+        if not object_name or not bucket_name:
+            raise HTTPException(status_code=400, detail="Missing 'name' or 'bucket' in event data.")
+
+        parts = object_name.split("/", maxsplit=1)
         if len(parts) < 2 or parts[0] != request.app.state.config.ROUTING_PREFIX:
-            raise HTTPException(status_code=404)
+            return {"status": "ok"}
 
         bucket = request.app.state.storage_client.bucket(gcs_event["bucket"])
         blob = bucket.get_blob(gcs_event["name"])
@@ -136,20 +143,11 @@ async def gcs_webhook(
             media_purpose=MediaPurpose(blob.metadata["media-purpose"]),
             media_order=int(blob.metadata.get("media-order"))
         )
+        await confirm_uploaded_media_to_db(confirmation, db_session)
+        return {"status": "ok"}
 
-    except KeyError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Missing required metadata field: {e.args[0]}"
-        )
     except (ValueError, json.JSONDecodeError) as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid data or metadata: {str(e)}"
-        )
-
-    await confirm_uploaded_media_to_db(confirmation, db_session)
-    return {"status": "ok"}
+        raise HTTPException(status_code=400, detail=f"Invalid data or metadata: {str(e)}")
 
 
 @router.delete("/{filename}")
