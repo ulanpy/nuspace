@@ -70,3 +70,9 @@ class ProductReportSchema(BaseModel):
     product_id: int
     text: str
 
+class SearchResponseSchema(BaseModel):
+    id: int
+    name: str
+
+class ListSearchResponseSchema(BaseModel):
+    search_result: List[SearchResponseSchema]

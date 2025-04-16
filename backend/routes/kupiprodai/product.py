@@ -236,13 +236,23 @@ async def update_product(
     )
     return {"product_id": product_update.product_id, "updated_fields": product_update.dict(exclude_unset=True)}
 
-@router.get('/{}')
+@router.get('/multiple/')
 async def get_products_by_id(
-    product_ids: list[int]
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    search_result: ListSearchResponseSchema,
+    size: int = 20,
+    page: int = 1,
+    db_session=Depends(get_db_session)
 ):
+    product_ids = []
+    for product in search_result:
+        product_ids.append(product['id'])
+    return await show_products_for_search(session=db_session,size=size,page=page,product_ids=product_ids, num_of_products=len(product))
+    
     
 
-@router.get("/search/", response_model='!!!') #works
+@router.get("/search/") #response_model = ListSearchResponseSchema
 async def search(
         request: Request,
         user: Annotated[dict, Depends(check_token)],
@@ -267,20 +277,11 @@ async def search(
     - A list of product objects that match the keyword from the search.
     - Products will be returned with their full details (from the database).
     """
-    result = await search_for_meilisearch_data(storage_name="products", keyword=keyword)
-    return result['data']['hits']
+    results = await search_for_meilisearch_data(storage_name="products", keyword=keyword)
+    search_responses = await asyncio.gather(*(build_search_response(search_result=search_result)
+                                  for search_result in results['data']['hits']))
+    return ListSearchResponseSchema(search_result=search_responses)
     
-
-    '''
-    return await show_products_for_search(
-        request=request,
-        session=db_session,
-        size=size,
-        page=page,
-        num_of_products = len(product_ids),
-        product_ids=product_ids
-    '''
-
 @router.post("/feedback/{product_id}") #added description
 async def store_new_product_feedback(
     feedback_data: ProductFeedbackSchema,
