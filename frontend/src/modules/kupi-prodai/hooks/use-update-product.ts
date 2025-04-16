@@ -89,7 +89,7 @@ export const useUpdateProduct = () => {
       if (mediaToDelete.length > 0) {
         const deletePromises = mediaToDelete.map((mediaId) => {
           return fetch(
-            `http://localhost/api/bucket/delete?media_id=${mediaId}`,
+            `/api/bucket/delete?media_id=${mediaId}`,
             {
               method: "DELETE",
               credentials: "include",
@@ -126,7 +126,6 @@ export const useUpdateProduct = () => {
         setUploadProgress(80);
       }
       setUploadProgress(100);
-
       // Reset form and close modal
       setEditingListing(null);
       setNewListing({

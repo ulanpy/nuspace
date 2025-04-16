@@ -51,7 +51,7 @@ async def bind_tg(request: Request, sub: Sub):
             }
 
 
-@router.post("/refresh-token/", response_description="Refresh token")
+@router.post("/refresh-token", response_description="Refresh token")
 async def refresh_token(request: Request, response: Response,
                         refresh_token: Annotated[str | None, Cookie(alias="refresh_token")] = None):
     """

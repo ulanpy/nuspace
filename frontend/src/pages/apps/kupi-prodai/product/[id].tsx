@@ -10,24 +10,7 @@ import { useAuth } from "../../../../context/auth-context"
 import { format } from "date-fns"
 import { kupiProdaiApi, type Product } from "../../../../api/kupi-prodai-api"
 import { useToast } from "../../../../hooks/use-toast"
-
-// Default placeholder images based on category
-const DEFAULT_PLACEHOLDER = {
-  books: "/placeholder.svg?height=400&width=400&text=Books",
-  electronics: "/placeholder.svg?height=400&width=400&text=Electronics",
-  clothing: "/placeholder.svg?height=400&width=400&text=Clothing",
-  furniture: "/placeholder.svg?height=400&width=400&text=Furniture",
-  appliances: "/placeholder.svg?height=400&width=400&text=Appliances",
-  sports: "/placeholder.svg?height=400&width=400&text=Sports",
-  stationery: "/placeholder.svg?height=400&width=400&text=Stationery",
-  art_supplies: "/placeholder.svg?height=400&width=400&text=Art+Supplies",
-  beauty: "/placeholder.svg?height=400&width=400&text=Beauty",
-  services: "/placeholder.svg?height=400&width=400&text=Services",
-  food: "/placeholder.svg?height=400&width=400&text=Food",
-  tickets: "/placeholder.svg?height=400&width=400&text=Tickets",
-  transport: "/placeholder.svg?height=400&width=400&text=Transport",
-  others: "/placeholder.svg?height=400&width=400&text=Item+For+Sale",
-}
+import CommentsSection from "../comment-section"
 
 interface Comment {
   id: number
@@ -235,8 +218,7 @@ export default function ProductDetailPage() {
       return product.media[currentImageIndex].url
     }
     return (
-      DEFAULT_PLACEHOLDER[product.category as keyof typeof DEFAULT_PLACEHOLDER] ||
-      "/placeholder.svg?height=400&width=400&text=No+Image"
+      "https://placehold.co/400x400?text=No+Image"
     )
   }
 
@@ -297,7 +279,7 @@ export default function ProductDetailPage() {
                   onClick={() => setCurrentImageIndex(index)}
                 >
                   <img
-                    src={image.url || "/placeholder.svg"}
+                    src={image.url || "https://placehold.co/400x00"}
                     alt={`Thumbnail ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
