@@ -82,5 +82,31 @@ async def get_current_user(
 
     return CurrentUserResponse(user=user, tg_linked=tg_linked)
 
+@router.get("/logout")
+async def logout(
+        request: Request,
+        response: Response,
+        refresh_token: Annotated[str | None, Cookie(alias="refresh_token")] = None
+):
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No refresh token found in cookies",
+        )
+    kc: KeyCloakManager = request.app.state.kc_manager
+
+    try:
+        await kc.refresh_access_token(refresh_token)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Error revoking token: {e}"
+        )
+
+    unset_auth_cookies(response)
+
+    return status.HTTP_200_OK
+
 
 
