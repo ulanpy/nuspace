@@ -1,14 +1,13 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { MessageSquare, Send, X, ChevronLeft, ChevronRight, User } from "lucide-react"
-import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { formatRelativeTime } from "@/utils/date-formatter"
 
 interface Comment {
   id: number
@@ -22,8 +21,8 @@ interface Comment {
 
 interface CommentsSectionProps {
   productId: number
-  sellerName?: string // Made optional
-  currentUser: any // Using any to accommodate your auth structure
+  sellerName?: string
+  currentUser: any
   isAuthenticated: boolean
 }
 
@@ -166,20 +165,6 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ productId, sellerName
     setCurrentPage(page)
   }
 
-  const formatCommentDate = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr)
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        return "Invalid date"
-      }
-      return format(date, "MMM d, yyyy 'at' h:mm a")
-    } catch (error) {
-      console.error("Error formatting date:", error)
-      return "Invalid date"
-    }
-  }
-
   // Helper function to check if the current user is the comment owner
   const isCommentOwner = (comment: Comment) => {
     if (!currentUser) return false
@@ -252,7 +237,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ productId, sellerName
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">{formatCommentDate(comment.created_at)}</span>
+                        <span className="text-xs text-muted-foreground">{formatRelativeTime(comment.created_at)}</span>
                         {/* Show delete button only for the comment owner */}
                         {isCommentOwner(comment) && (
                           <Button
@@ -325,4 +310,3 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ productId, sellerName
 }
 
 export default CommentsSection
-

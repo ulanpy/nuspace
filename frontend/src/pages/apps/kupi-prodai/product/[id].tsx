@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ChevronLeft, ChevronRight, Heart, ExternalLink, Bell, Flag, X, User } from "lucide-react"
+import { ChevronLeft, ChevronRight, ExternalLink, Flag, X, User, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/context/auth-context"
@@ -10,6 +10,7 @@ import { kupiProdaiApi, type Product } from "@/api/kupi-prodai-api"
 import { useToast } from "@/hooks/use-toast"
 import { Modal } from "@/components/ui/modal"
 import CommentsSection from "../comment-section"
+import { formatDateWithContext, formatRelativeTime } from "@/utils/date-formatter"
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -19,8 +20,6 @@ export default function ProductDetailPage() {
   const { user, isAuthenticated } = useAuth()
   const [product, setProduct] = useState<Product | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [isLiked, setIsLiked] = useState(false)
-  const [isSubscribed, setIsSubscribed] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
   const [reportReason, setReportReason] = useState("")
   const [showImageModal, setShowImageModal] = useState(false)
@@ -116,14 +115,6 @@ export default function ProductDetailPage() {
     setCurrentImageIndex((prevIndex) => (prevIndex === 0 ? product.media.length - 1 : prevIndex - 1))
   }
 
-  const toggleLike = () => {
-    setIsLiked(!isLiked)
-  }
-
-  const toggleSubscribe = () => {
-    setIsSubscribed(!isSubscribed)
-  }
-
   const handleReport = async () => {
     if (!reportReason.trim()) {
       toast({
@@ -212,6 +203,15 @@ export default function ProductDetailPage() {
     }
     return "https://placehold.co/400x400?text=No+Image"
   }
+
+  // Format the created_at and updated_at dates
+  const formattedCreatedAt = product.created_at ? formatDateWithContext(product.created_at) : "Unknown date"
+  const wasUpdated =
+    product.updated_at &&
+    product.created_at &&
+    new Date(product.updated_at).getTime() > new Date(product.created_at).getTime()
+  const formattedUpdatedAt =
+    wasUpdated && product.updated_at ? `Updated ${formatRelativeTime(product.updated_at)}` : null
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -303,17 +303,15 @@ export default function ProductDetailPage() {
                 </div>
               </div>
             </div>
-
-            <Button
-              variant={isSubscribed ? "default" : "outline"}
-              size="sm"
-              className="flex items-center gap-1"
-              onClick={toggleSubscribe}
-            >
-              <Bell className="h-4 w-4" />
-              <span>{isSubscribed ? "Subscribed" : "Subscribe"}</span>
-            </Button>
           </div>
+
+          {/* Listing Date Information */}
+          <div className="flex items-center text-sm text-muted-foreground gap-1.5">
+            <Clock className="h-4 w-4" />
+            <span>{formattedCreatedAt}</span>
+          </div>
+
+          {formattedUpdatedAt && <div className="text-sm text-muted-foreground italic">{formattedUpdatedAt}</div>}
 
           <div className="h-px w-full bg-border my-4" />
 
@@ -333,11 +331,6 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-2 mt-6">
-            <Button variant="outline" className="flex items-center gap-1" onClick={toggleLike}>
-              <Heart className={`h-4 w-4 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
-              <span>{isLiked ? "Liked" : "Like"}</span>
-            </Button>
-
             <Button
               variant="outline"
               className="flex items-center gap-1"
