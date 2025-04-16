@@ -262,7 +262,7 @@ async def post_search(
     
     
 
-@router.get("/pre_search/")
+@router.get("/pre_search/", response_model = list[str])
 async def pre_search(
         request: Request,
         user: Annotated[dict, Depends(check_token)],
@@ -278,24 +278,24 @@ async def pre_search(
 
     **Parameters:**
     - `keyword`: The search term used to find products. It will be used for querying in Meilisearch.
-    - `size`: Number of products per page (default: 20)
-    - `page`: Page number (default: 1)
 
     **Returns:**
     - A list of product objects that match the keyword from the search.
     """
     distinct_keywords = []
-    page = 0
+    seen = set()
+    page = 1
     while len(distinct_keywords) < 5:
-        result = await search_for_meilisearch_data(request = request, storage_name="products", keyword=keyword, page = page + 1, size = 20)
-        #return result['hits']
+        result = await search_for_meilisearch_data(request = request, storage_name="products", keyword=keyword, page = page, size = 20)
         for object in result['hits']:
-            if object['name'] not in distinct_keywords:
+            if object['name'] not in seen:
+                seen.add(object['name'])
                 distinct_keywords.append(object['name'])
             if len(distinct_keywords) >= 5:
                 break
         else:
             break
+        page += 1
     return distinct_keywords
 
 
