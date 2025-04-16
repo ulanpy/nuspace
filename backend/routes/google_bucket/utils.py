@@ -29,11 +29,8 @@ async def delete_bucket_object(
     filename: str,
 ):
     blob = request.app.state.storage_client.bucket(request.app.state.config.bucket_name).blob(filename)
-    try:
-        blob.delete()
-        return {"status": "success", "deleted": filename}
-    except NotFound:
-        raise HTTPException(status_code=404, detail="File not found")
+    blob.delete()
+
 
 
 
