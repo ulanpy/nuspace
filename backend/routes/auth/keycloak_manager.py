@@ -67,7 +67,18 @@ class KeyCloakManager(BaseSettings):
 
         # Use PyJWKClient to extract the signing key from the cached keys
         if not self._jwks_client:
-            self._jwks_client = PyJWKClient(self.JWKS_URI)
+            custom_headers = {
+            # Use a common browser User-Agent or one identifying your app
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
+            # Alternatively: "User-Agent": "NurosBackend/1.0 (Authentication Key Fetch)"
+        }
+
+            # Pass headers during PyJWKClient initialization
+            # Make sure to include any other options you were already using (like cache_jwk_set, lifespan)
+            self._jwks_client = PyJWKClient(
+                self.JWKS_URI,
+                headers=custom_headers # <-- Add this
+            )
 
         return self._jwks_client.get_signing_key_from_jwt(token).key
 

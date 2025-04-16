@@ -51,7 +51,6 @@ def validate_access_token_sync(access_token: str, kc: KeyCloakManager) -> dict |
 
 
 async def exchange_code_for_credentials(request: Request):
-    print("Session content:", request.session)
     kc: KeyCloakManager = request.app.state.kc_manager
     token = await getattr(kc.oauth, kc.__class__.__name__.lower()).authorize_access_token(request)
     return token
@@ -102,7 +101,6 @@ def unset_auth_cookies(response: Response):
             samesite="Lax"        # Mitigate CSRF attacks
         )
 
-from httpx import AsyncClient
 async def refresh_access_token(refresh_token: str, kc: KeyCloakManager) -> dict | HTTPException:
     """Refresh access token using KeycloakManager's OAuth client."""
     print("Refreshing access token... ")

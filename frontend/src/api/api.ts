@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost/api";
+const API_BASE_URL = "/api";
 
 class ApiError extends Error {
   constructor(public response: Response) {

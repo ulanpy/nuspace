@@ -47,7 +47,6 @@ import { useListingState } from "@/context/listing-context";
 import { useImageContext } from "@/context/image-context";
 import { useMediaContext } from "@/context/media-context";
 import { useSearchProduct } from "@/modules/kupi-prodai/hooks/use-search-product";
-import { useKupiProdaiTab } from "@/modules/kupi-prodai/hooks/use-tab";
 
 // Define categories and conditions
 const categories = [
@@ -120,7 +119,7 @@ export default function KupiProdaiPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [error] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const isTelegramLinked = user?.tg_linked || false
+  const isTelegramLinked = user?.tg_linked || false;
 
   // Pagination state
   const [totalPages] = useState(1);
@@ -565,7 +564,7 @@ export default function KupiProdaiPage() {
                         <img
                           src={
                             product.media[0]?.url ||
-                            "/placeholder.svg?height=200&width=200"
+                            "https://placehold.co/200x200?text=No+Image"
                           }
                           alt={product.name}
                           className="object-cover w-full h-full"
@@ -667,7 +666,21 @@ export default function KupiProdaiPage() {
                 </Button>
               </AlertDescription>
             </Alert>
-          ) : (
+          ) : !isTelegramLinked ? (
+            <Alert
+            variant="warning"
+            className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900"
+          >
+            <AlertTitle className="flex items-center gap-2">
+              Telegram Required
+            </AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p>You need to link your Telegram account before selling items.</p>
+            </AlertDescription>
+          </Alert>
+          )
+
+          : (
             <form onSubmit={handleCreate} className="space-y-4">
               {/* Name */}
               <div className="space-y-2">
@@ -840,7 +853,11 @@ export default function KupiProdaiPage() {
               </div>
 
               {/* Submit Button */}
-              <Button type="submit" disabled={isUploading || !isTelegramLinked} className="w-full">
+              <Button
+                type="submit"
+                disabled={isUploading || !isTelegramLinked}
+                className="w-full"
+              >
                 {isUploading ? (
                   <div className="flex items-center justify-center gap-2">
                     <RefreshCw className="animate-spin h-4 w-4" />
@@ -878,12 +895,16 @@ export default function KupiProdaiPage() {
                 {(activeListings?.length ?? 0) > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {activeListings?.map((product) => (
-                      <Card key={product.id} className="overflow-hidden ">
+                      <Card
+                        key={product.id}
+                        className="overflow-hidden"
+                        onClick={() => navigate(`/apps/kupi-prodai/product/${product.id}`)}
+                      >
                         <div className="aspect-square relative">
                           <img
                             src={
                               product.media[0]?.url ||
-                              "/placeholder.svg?height=200&width=200"
+                              "https://placehold.co/200x200?text=No+Image"
                             }
                             alt={product.name}
                             className="object-cover w-full h-full"
@@ -897,15 +918,16 @@ export default function KupiProdaiPage() {
                           </Badge>
                         </div>
                         <CardContent className="p-3">
-                          <h3 className="font-medium text-sm line-clamp-1">
-                            {product.name}
-                          </h3>
+                          <h3 className="font-medium text-sm line-clamp-1">{product.name}</h3>
                           <p className="text-sm font-bold">{product.price} ₸</p>
                           <div className="flex justify-between mt-2">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleEditListing(product)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditListing(product);
+                              }}
                             >
                               Edit
                             </Button>
@@ -913,7 +935,10 @@ export default function KupiProdaiPage() {
                               disabled={getIsPendingDeleteMutation(product.id)}
                               variant="destructive"
                               size="sm"
-                              onClick={() => handleDelete(product.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(product.id);
+                              }}
                             >
                               Delete
                             </Button>
@@ -921,18 +946,17 @@ export default function KupiProdaiPage() {
                               disabled={getIsPendingToggleMutation(product.id)}
                               variant="secondary"
                               size="sm"
-                              onClick={() =>
-                                handleToggleProductStatus(
-                                  product.id,
-                                  product.status
-                                )
-                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleProductStatus(product.id, product.status);
+                              }}
                             >
                               Mark as Sold
                             </Button>
                           </div>
                         </CardContent>
                       </Card>
+
                     ))}
                   </div>
                 ) : (
@@ -951,7 +975,7 @@ export default function KupiProdaiPage() {
                           <img
                             src={
                               product.media[0]?.url ||
-                              "/placeholder.svg?height=200&width=200"
+                              "https://placehold.co/200x200?text=No+Image"
                             }
                             alt={product.name}
                             className="object-cover w-full h-full"
@@ -1031,7 +1055,7 @@ export default function KupiProdaiPage() {
                     <img
                       src={
                         product.media[0]?.url ||
-                        "/placeholder.svg?height=200&width=200"
+                        "https://placehold.co/200x200?text=No+Image"
                       }
                       alt={product.name}
                       className="object-cover w-full h-full"
@@ -1063,8 +1087,7 @@ export default function KupiProdaiPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        onClick={() => {
                           handleToggleProductStatus(product.id, "active");
                         }}
                         className="text-green-600 border-green-200 hover:bg-green-50"
@@ -1388,7 +1411,9 @@ export default function KupiProdaiPage() {
                           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                             <ImageIcon className="h-12 w-12 mb-2" />
                             <p>No images</p>
-                            <p className="text-xs mt-2">Upload images to showcase your product</p>
+                            <p className="text-xs mt-2">
+                              Upload images to showcase your product
+                            </p>
                           </div>
                         )}
                       </div>

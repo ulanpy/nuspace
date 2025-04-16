@@ -9,7 +9,7 @@ import { useAuth } from "../context/auth-context"
 import { LoginRequirementModal } from "../components/login-requirement-modal"
 
 export default function AppsLayout() {
-  const { isAuthenticated, login, refreshUserData } = useAuth()
+  const { isAuthenticated, login } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [showLoginModal, setShowLoginModal] = useState(false)
@@ -26,12 +26,6 @@ export default function AppsLayout() {
     }
   }, [isAuthenticated, isKupiProdaiPath])
 
-  // Refresh user data when the component mounts
-  useEffect(() => {
-    if (isAuthenticated) {
-      refreshUserData()
-    }
-  }, [isAuthenticated, location.pathname])
 
   // Handle login from the modal
   const handleLogin = () => {
