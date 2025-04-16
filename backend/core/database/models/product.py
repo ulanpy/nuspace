@@ -48,8 +48,8 @@ class Product(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     user = relationship("User", back_populates="products")
-    feedbacks = relationship("ProductFeedback", back_populates="product")
-    reports = relationship("ProductReport", back_populates="product")  # Add this line
+    feedbacks = relationship("ProductFeedback", back_populates="product", cascade="all, delete-orphan")
+    reports = relationship("ProductReport", back_populates="product", cascade="all, delete-orphan")
 
 
 class ProductFeedback(Base):
