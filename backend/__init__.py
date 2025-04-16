@@ -14,6 +14,7 @@ from backend.core.database.models import Product
 from backend.common.utils import import_data_from_db
 from backend.common.dependencies import get_db_session
 from backend.routes.google_bucket.utils import update_bucket_push_endpoint
+import httpx
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -23,6 +24,8 @@ async def lifespan(app: FastAPI):
         app.state.db_manager = AsyncDatabaseManager()
         app.state.db_manager_sync = SyncDatabaseManager()
         app.state.kc_manager = KeyCloakManager()
+        app.state.meilisearch_client  = httpx.AsyncClient(base_url = config.meilisearch_url, headers = {"Authorization": f"Bearer {config.meilisearch_master_key}"})
+
 
         redis_pool = ConnectionPool.from_url(
             config.REDIS_URL,
@@ -42,7 +45,7 @@ async def lifespan(app: FastAPI):
             app.include_router(router)
 
         get_admin(app)  # SQLAdmin Admin Panel
-        await import_data_from_db(storage_name="products", db_manager=app.state.db_manager, model=Product,
+        await import_data_from_db(meilisearch_client=app.state.meilisearch_client, storage_name="products", db_manager=app.state.db_manager, model=Product,
                                   columns_for_searching=['id', 'name'])
         yield
 

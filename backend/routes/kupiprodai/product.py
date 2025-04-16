@@ -41,7 +41,6 @@ async def add_new_product(
 
     try:
         new_product = await add_new_product_to_db(db_session, product_data, user_sub=user["sub"], request=request)
-        await add_meilisearch_data(storage_name='products', json_values={'id': new_product.id, 'name': new_product.name})
         return new_product
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
@@ -239,7 +238,7 @@ async def update_product(
 async def post_search(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
-    search_result: ListSearchResponseSchema,
+    keyword: str,
     size: int = 20,
     page: int = 1,
     db_session=Depends(get_db_session)
@@ -257,20 +256,17 @@ async def post_search(
     - A list of product objects that match the keyword from the search.
     - Products will be returned with their full details (from the database).
     """
-    product_ids = []
-    for product in search_result.search_result:
-        product_ids.append(product.id)
-    return await show_products_for_search(request = request, session=db_session,size=size,page=page,product_ids=product_ids, num_of_products=len(product_ids))
+    search_results = await search_for_meilisearch_data(keyword=keyword, request=request, page=page,size=size, storage_name = 'products')
+    product_ids = [product['id'] for product in search_results['hits']]
+    return await show_products_for_search(size = size, request = request, session=db_session, product_ids=product_ids, num_of_products=search_results['estimatedTotalHits'])
     
     
 
-@router.get("/pre_search/", response_model = ListSearchResponseSchema)
+@router.get("/pre_search/")
 async def pre_search(
         request: Request,
         user: Annotated[dict, Depends(check_token)],
         keyword: str,
-        size: int = 20, 
-        page: int = 1,
         db_session=Depends(get_db_session)
 ):
     """
@@ -288,11 +284,22 @@ async def pre_search(
     **Returns:**
     - A list of product objects that match the keyword from the search.
     """
-    results = await search_for_meilisearch_data(storage_name="products", keyword=keyword)
-    search_responses = await asyncio.gather(*(build_search_response(search_result=search_result)
-                                  for search_result in results['data']['hits']))
-    return ListSearchResponseSchema(search_result=search_responses)
-    
+    distinct_keywords = []
+    page = 0
+    while len(distinct_keywords) < 5:
+        result = await search_for_meilisearch_data(request = request, storage_name="products", keyword=keyword, page = page + 1, size = 20)
+        #return result['hits']
+        for object in result['hits']:
+            if object['name'] not in distinct_keywords:
+                distinct_keywords.append(object['name'])
+            if len(distinct_keywords) >= 5:
+                break
+        else:
+            break
+    return distinct_keywords
+
+
+
 @router.post("/feedback/{product_id}") #added description
 async def store_new_product_feedback(
     feedback_data: ProductFeedbackSchema,
