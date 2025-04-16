@@ -235,8 +235,8 @@ async def update_product(
     )
     return {"product_id": product_update.product_id, "updated_fields": product_update.dict(exclude_unset=True)}
 
-@router.get('/multiple/')
-async def get_products_by_id(
+@router.post('/post_search/', response_model = ListResponseSchema)
+async def post_search(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     search_result: ListSearchResponseSchema,
@@ -244,15 +244,28 @@ async def get_products_by_id(
     page: int = 1,
     db_session=Depends(get_db_session)
 ):
+    """
+    Retrieves product objects from database based on the search result of pre_search router.
+    - The returned products contain details such as id, name, description, price, condition, and category.
+
+    **Parameters:**
+    - `search_result`: result of pre_search router
+    - `size`: Number of products per page (default: 20)
+    - `page`: Page number (default: 1)
+
+    **Returns:**
+    - A list of product objects that match the keyword from the search.
+    - Products will be returned with their full details (from the database).
+    """
     product_ids = []
-    for product in search_result:
-        product_ids.append(product['id'])
-    return await show_products_for_search(session=db_session,size=size,page=page,product_ids=product_ids, num_of_products=len(product))
+    for product in search_result.search_result:
+        product_ids.append(product.id)
+    return await show_products_for_search(request = request, session=db_session,size=size,page=page,product_ids=product_ids, num_of_products=len(product_ids))
     
     
 
-@router.get("/search/") #response_model = ListSearchResponseSchema
-async def search(
+@router.get("/pre_search/", response_model = ListSearchResponseSchema)
+async def pre_search(
         request: Request,
         user: Annotated[dict, Depends(check_token)],
         keyword: str,
@@ -274,7 +287,6 @@ async def search(
 
     **Returns:**
     - A list of product objects that match the keyword from the search.
-    - Products will be returned with their full details (from the database).
     """
     results = await search_for_meilisearch_data(storage_name="products", keyword=keyword)
     search_responses = await asyncio.gather(*(build_search_response(search_result=search_result)
