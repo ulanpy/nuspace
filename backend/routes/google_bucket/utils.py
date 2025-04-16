@@ -29,8 +29,10 @@ async def delete_bucket_object(
     filename: str,
 ):
     blob = request.app.state.storage_client.bucket(request.app.state.config.bucket_name).blob(filename)
-    blob.delete()
-
+    try:
+        blob.delete()
+    except:
+        pass
 
 
 
