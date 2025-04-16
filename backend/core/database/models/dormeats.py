@@ -25,7 +25,7 @@ class Canteen(Base): #create, read, update, delete
         ratings = [feedback.rating for feedback in self.canteen_feedback]
         return round(mean(ratings), 1) if ratings else None
 
-class Category(Enum):
+class MealCategory(Enum):
     smoothies = "smoothies"
     salads = "salads"
     bowls = "bowls"
@@ -39,18 +39,23 @@ class Meal(Base): #create, read, update, delete
     name: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(String, nullable=False)
     price: Mapped[int] = mapped_column(Integer, nullable=False)
-    category: Mapped["Category"] = mapped_column(SQLEnum(Category, name='meal_category'), nullable=False) 
+    category: Mapped["MealCategory"] = mapped_column(SQLEnum(MealCategory, name='meal_category'), nullable=False) 
     canteen_id: Mapped[int] = mapped_column(Integer, ForeignKey('canteen.id'), nullable=False)
 
     canteen = relationship("Canteen", back_populates="meals")
     available_meals = relationship("AvailableMeals", back_populates="meals")
     ingredient = relationship("Ingredient", back_populates="meals")
 
+class CanteenProductCategory(Enum):
+    veggies = "Овощи"
+    fruits = "Фрукты"
+    cerial = "Крупы"
+
 class CanteenProduct(Base):
     __tablename__= 'canteenproducts'
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
-    name: Mapped[str] = mapped_column(nullable=False)
-    description: Mapped[str] = mapped_column(nullable=False)
+    name: Mapped[str] = mapped_column(nullable=False, unique = True)
+    category: Mapped["CanteenProductCategory"] = mapped_column(SQLEnum(CanteenProductCategory, name='canteenproduct_category'), nullable = False)
 
     ingredient = relationship("Ingredient", back_populates="canteenproducts")
 
@@ -73,7 +78,7 @@ class AvailableMeals(Base):
     status: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
     canteen = relationship("Canteen", back_populates="available_meals")
-    meal = relationship("Meal", back_populates="available_meals")
+    meals = relationship("Meal", back_populates="available_meals")
 
 class CanteenFeedback(Base): #create, read, update, delete
     __tablename__ = "canteen_feedback"
