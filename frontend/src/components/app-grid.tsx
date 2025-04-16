@@ -90,7 +90,7 @@ const AppButton = ({
         </Link>
         {comingSoon && (
           <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 px-2 py-1 text-xs rounded bg-muted text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
-            Coming Soon
+            Coming Soon :)
           </div>
         )}
       </div>
