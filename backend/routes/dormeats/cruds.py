@@ -38,8 +38,4 @@ async def filter_canteenproducts_from_db(
         session: AsyncSession,
         category: CanteenProductCategory
 ):
-    
-    
-
-
-
+        pass
