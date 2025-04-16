@@ -4,9 +4,9 @@ import { useState, useEffect, useRef } from "react"
 import { ExternalLink, Check } from "lucide-react"
 import { Button } from "./ui/button"
 import { Modal } from "./ui/modal"
-import { useAuth } from "../context/auth-context"
 import { Badge } from "./ui/badge"
 import { useToast } from "../hooks/use-toast"
+import { useUser } from "@/hooks/use-user"
 
 // Emoji mapping based on the backend logic
 const numberToEmoji = (num: number): string => {
@@ -16,7 +16,7 @@ const numberToEmoji = (num: number): string => {
 }
 
 export function BindTelegramButton() {
-  const { user, isAuthenticated, refreshUserData } = useAuth()
+  const {user, isAuthenticated, refetchUser} = useUser()
   const [isLoading, setIsLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [telegramLink, setTelegramLink] = useState("")
@@ -73,7 +73,7 @@ export function BindTelegramButton() {
             setShowModal(false)
 
             // Refresh the auth context to update the user data
-            await refreshUserData()
+            await refetchUser()
 
             toast({
               title: "Success",
