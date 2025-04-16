@@ -248,7 +248,7 @@ async def post_search(
     - The returned products contain details such as id, name, description, price, condition, and category.
 
     **Parameters:**
-    - `search_result`: result of pre_search router
+    - `keyword`: word for searching products
     - `size`: Number of products per page (default: 20)
     - `page`: Page number (default: 1)
 
