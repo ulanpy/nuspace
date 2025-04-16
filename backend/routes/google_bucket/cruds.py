@@ -6,7 +6,7 @@ from backend.core.database.models.media import Media, MediaSection, MediaPurpose
 from .schemas import UploadConfirmation
 from typing import List
 
-
+# idenpotence + upsert
 async def confirm_uploaded_media_to_db(
     confirmation: UploadConfirmation,
     session: AsyncSession

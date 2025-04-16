@@ -130,12 +130,13 @@ async def remove_product_from_db(
             select(Media).filter(Media.entity_id == product.id, Media.section == MediaSection.kp)
         )
         media_objects = media_result.scalars().all()
-        for media in media_objects:
-            await delete_bucket_object(request, media.name)
-            await session.delete(media)
-        await session.delete(product)
-        await session.commit()
-        await remove_meilisearch_data(request = Request, storage_name='products', object_id=str(product_id))
+        if media_objects:
+            for media in media_objects:
+                await delete_bucket_object(request, media.name)
+                await session.delete(media)
+            await session.delete(product)
+            await session.commit()
+            await remove_meilisearch_data(request = request, storage_name='products', object_id=str(product_id))
 
 
 async def update_product_in_db(

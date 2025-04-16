@@ -2,26 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ChevronLeft, ChevronRight, Heart, ExternalLink, Bell, Flag, X, Send, MessageSquare, User } from "lucide-react"
-import { Button } from "../../../../components/ui/button"
-import { Badge } from "../../../../components/ui/badge"
-import { Card, CardContent } from "../../../../components/ui/card"
-import { useAuth } from "../../../../context/auth-context"
-import { format } from "date-fns"
-import { kupiProdaiApi, type Product } from "../../../../api/kupi-prodai-api"
-import { useToast } from "../../../../hooks/use-toast"
+import { ChevronLeft, ChevronRight, Heart, ExternalLink, Bell, Flag, X, User } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { useAuth } from "@/context/auth-context"
+import { kupiProdaiApi, type Product } from "@/api/kupi-prodai-api"
+import { useToast } from "@/hooks/use-toast"
+import { Modal } from "@/components/ui/modal"
 import CommentsSection from "../comment-section"
-
-interface Comment {
-  id: number
-  user: {
-    name: string
-    avatar?: string
-  }
-  text: string
-  timestamp: Date
-  isOwner?: boolean
-}
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -35,12 +23,13 @@ export default function ProductDetailPage() {
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
   const [reportReason, setReportReason] = useState("")
-  const [message, setMessage] = useState("")
   const [showImageModal, setShowImageModal] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(1)
-  const [comments, setComments] = useState<Comment[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false)
+  const [telegramLink, setTelegramLink] = useState("")
+  const [isContactLoading, setIsContactLoading] = useState(false)
 
   const { toast } = useToast()
 
@@ -54,10 +43,6 @@ export default function ProductDetailPage() {
         setError(null)
         const data = await kupiProdaiApi.getProduct(Number.parseInt(id))
         setProduct(data)
-
-        // In a real app, you would fetch comments from an API
-        // For now, we'll use empty comments
-        setComments([])
       } catch (err) {
         console.error("Failed to fetch product:", err)
         setError("Failed to fetch product details")
@@ -139,7 +124,7 @@ export default function ProductDetailPage() {
     setIsSubscribed(!isSubscribed)
   }
 
-  const handleReport = () => {
+  const handleReport = async () => {
     if (!reportReason.trim()) {
       toast({
         title: "Error",
@@ -149,52 +134,64 @@ export default function ProductDetailPage() {
       return
     }
 
-    // In a real app, you would send the report to an API
-    toast({
-      title: "Success",
-      description: "Report submitted successfully",
-    })
-    setShowReportModal(false)
-    setReportReason("")
-  }
+    try {
+      const response = await fetch(`/api/products/${product.id}/report`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          product_id: product.id,
+          text: reportReason,
+        }),
+      })
 
-  const handleSendMessage = () => {
-    if (!message.trim()) {
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Report submitted successfully",
+        })
+        setShowReportModal(false)
+        setReportReason("")
+      } else {
+        throw new Error("Failed to submit report")
+      }
+    } catch (error) {
       toast({
         title: "Error",
-        description: "Please enter a message",
+        description: "Failed to submit report. Please try again.",
         variant: "destructive",
       })
-      return
     }
-
-    // Add the new comment to the comments array
-    const newComment: Comment = {
-      id: Date.now(),
-      user: {
-        name: user?.user?.given_name || "You",
-        avatar: "https://placehold.co/100/8b5cf6/FFFFFF?text=YOU",
-      },
-      text: message,
-      timestamp: new Date(),
-    }
-
-    setComments([...comments, newComment])
-    setMessage("")
-
-    toast({
-      title: "Success",
-      description: "Message sent successfully",
-    })
   }
 
-  const initiateContactWithSeller = () => {
-    // In a real app, you would have the seller's Telegram username
-    // For now, we'll just show a toast
-    toast({
-      title: "Contact Seller",
-      description: "This would open Telegram to contact the seller",
-    })
+  const initiateContactWithSeller = async () => {
+    if (!id) return
+
+    try {
+      setIsContactLoading(true)
+      const response = await fetch(`/api/contact/${id}`, {
+        method: "POST",
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to get contact link")
+      }
+
+      const telegramUrl = await response.json()
+      setTelegramLink(telegramUrl)
+      setIsContactModalOpen(true)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate contact link. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsContactLoading(false)
+    }
   }
 
   const openImageModal = () => {
@@ -209,17 +206,11 @@ export default function ProductDetailPage() {
     })
   }
 
-  const formatCommentDate = (date: Date) => {
-    return format(date, "MMM d, yyyy 'at' h:mm a")
-  }
-
   const getPlaceholderImage = (product: Product) => {
     if (product.media && product.media.length > 0 && product.media[currentImageIndex]?.url) {
       return product.media[currentImageIndex].url
     }
-    return (
-      "https://placehold.co/400x400?text=No+Image"
-    )
+    return "https://placehold.co/400x400?text=No+Image"
   }
 
   return (
@@ -279,7 +270,7 @@ export default function ProductDetailPage() {
                   onClick={() => setCurrentImageIndex(index)}
                 >
                   <img
-                    src={image.url || "https://placehold.co/400x00"}
+                    src={image.url || "https://placehold.co/400x400?text=No+Image"}
                     alt={`Thumbnail ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
@@ -347,9 +338,14 @@ export default function ProductDetailPage() {
               <span>{isLiked ? "Liked" : "Like"}</span>
             </Button>
 
-            <Button variant="outline" className="flex items-center gap-1" onClick={() => initiateContactWithSeller()}>
+            <Button
+              variant="outline"
+              className="flex items-center gap-1"
+              onClick={initiateContactWithSeller}
+              disabled={isContactLoading}
+            >
               <ExternalLink className="h-4 w-4" />
-              <span>Contact on Telegram</span>
+              <span>{isContactLoading ? "Loading..." : "Contact on Telegram"}</span>
             </Button>
 
             <Button
@@ -365,100 +361,66 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Comments Section */}
-      <div className="mt-8">
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          <span>Comments ({comments.length})</span>
-        </h2>
-
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <h3 className="font-medium mb-3">Add a Comment</h3>
-            <div className="space-y-3">
-              <textarea
-                className="w-full p-2 border rounded-md min-h-[100px] bg-background"
-                placeholder="Write your message here..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-              />
-              <Button className="w-full flex items-center justify-center gap-1" onClick={handleSendMessage}>
-                <Send className="h-4 w-4" />
-                <span>Send Message</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {comments.length > 0 ? (
-          <div className="space-y-4">
-            {comments.map((comment) => (
-              <Card key={comment.id} className={comment.isOwner ? "border-primary/30 bg-primary/5" : ""}>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center mb-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{comment.user.name}</span>
-                          {comment.isOwner && (
-                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-                              Seller
-                            </Badge>
-                          )}
-                        </div>
-                        <span className="text-xs text-muted-foreground">{formatCommentDate(comment.timestamp)}</span>
-                      </div>
-                      <p className="text-sm">{comment.text}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 border rounded-md bg-muted/20">
-            <MessageSquare className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-            <h3 className="text-lg font-medium mb-1">No comments yet</h3>
-            <p className="text-sm text-muted-foreground">Be the first to ask about this item</p>
-          </div>
-        )}
-      </div>
+      <CommentsSection
+        productId={product.id}
+        sellerName={product.user_name}
+        currentUser={user}
+        isAuthenticated={isAuthenticated}
+      />
 
       {/* Report Modal */}
-      {showReportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-background rounded-lg shadow-lg w-full max-w-md">
-            <div className="p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Report Listing</h2>
-                <Button variant="ghost" size="sm" onClick={() => setShowReportModal(false)}>
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
+      <Modal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        title="Report Listing"
+        description="Please explain why you're reporting this listing"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Reason for reporting</label>
+            <textarea
+              className="w-full p-2 border rounded-md min-h-[100px] bg-background"
+              placeholder="Please explain why you're reporting this listing..."
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+            />
+          </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Reason for reporting</label>
-                  <textarea
-                    className="w-full p-2 border rounded-md min-h-[100px] bg-background"
-                    placeholder="Please explain why you're reporting this listing..."
-                    value={reportReason}
-                    onChange={(e) => setReportReason(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setShowReportModal(false)}>
-                    Cancel
-                  </Button>
-                  <Button variant="destructive" onClick={handleReport}>
-                    Report
-                  </Button>
-                </div>
-              </div>
-            </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowReportModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleReport}>
+              Report
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
+
+      {/* Contact Telegram Modal */}
+      <Modal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
+        title="Contact Seller"
+        description="Click the button below to contact the seller on Telegram"
+      >
+        <div className="space-y-4 py-2 flex flex-col items-center">
+          <p className="text-sm text-muted-foreground">
+            You will be redirected to Telegram to chat with the seller about this item
+          </p>
+
+          <Button
+            className="flex items-center gap-2"
+            onClick={() => {
+              window.open(telegramLink, "_blank")
+              setIsContactModalOpen(false)
+            }}
+          >
+            <ExternalLink className="h-4 w-4" />
+            Open in Telegram
+          </Button>
+        </div>
+      </Modal>
 
       {/* Image Modal with Zoom */}
       {showImageModal && (
