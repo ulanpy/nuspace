@@ -3,7 +3,7 @@ from sqlalchemy import select
 from fastapi import Request
 from backend.core.database.models.product import Product, ProductFeedback
 from backend.core.database.models.media import Media
-from backend.routes.kupiprodai.schemas import ProductResponseSchema, ProductFeedbackResponseSchema
+from backend.routes.kupiprodai.schemas import *
 from typing import List
 from backend.routes.google_bucket.utils import generate_download_url
 from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
@@ -79,3 +79,12 @@ async def build_product_feedbacks_response(
         text = feedback.text,
         created_at = feedback.created_at
     )
+
+async def build_search_response(
+        search_result: SearchResponseSchema
+) -> SearchResponseSchema:
+    return SearchResponseSchema(
+        id = search_result['id'],
+        name = search_result['name']
+    )
+    
