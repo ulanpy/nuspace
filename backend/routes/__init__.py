@@ -4,7 +4,8 @@ from .clubs import clubs
 from backend.routes.bot.bot import web_router
 from .google_bucket import google_bucket
 from .kupiprodai import product
+from .dormeats import dormeats
 
 
 # FastAPI routers
-routers = [auth.router, clubs.router, web_router, google_bucket.router, product.router]
+routers = [auth.router, clubs.router, web_router, google_bucket.router, product.router, dormeats.router]

@@ -44,7 +44,6 @@ class MealCategory(Enum):
     meals = "meals"
 
 class Meal(Base): #create, read, update, delete
-class Meal(Base): #create, read, update, delete
     __tablename__ = 'meals'
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
@@ -76,7 +75,7 @@ class Ingredient(Base): #create, read, update, delete
     __tablename__= 'ingredient'
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     meal_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('meals.id'), nullable=False)
-    product_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('products.id'), nullable=False)
+    product_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('canteenproducts.id'), nullable=False)
 
     canteenproducts = relationship("CanteenProduct", back_populates="ingredient")
     meals = relationship("Meal", back_populates="ingredient")
@@ -101,7 +100,7 @@ class CanteenFeedback(Base): #create, read, update, delete
     feedback: Mapped[str] = mapped_column(String, nullable=False)
     rating: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    canteen = relationship("Canteen", back_populates="canteen_feedback")
+    canteen = relationship("Canteen", back_populates="canteen_feedbacks")
 
 class CanteenReport(Base): #create, read, update, delete
     __tablename__ = "canteen_report"
@@ -109,4 +108,4 @@ class CanteenReport(Base): #create, read, update, delete
     canteen_id: Mapped[int] = mapped_column(Integer, ForeignKey('canteen.id'), nullable=False)
     report: Mapped[str] = mapped_column(String, nullable=False)
 
-    canteen = relationship("Canteen", back_populates="canteen_report")
+    canteen = relationship("Canteen", back_populates="canteen_reports")

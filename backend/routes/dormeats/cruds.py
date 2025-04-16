@@ -12,11 +12,9 @@ from backend.common.utils import update_meilisearch_data
 from backend.routes.google_bucket.utils import generate_download_url, delete_bucket_object
 from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
 from sqlalchemy.orm import selectinload
-from .utils import build_product_response
 import asyncio
-from .schemas import *
 from backend.core.database.models.dormeats import *
-from .utils import *
+
 
 # create read update delete
 # add get update delete
@@ -26,6 +24,8 @@ async def add_new_canteenproduct_to_db(
         product_data: CanteenProductRequestSchema,
         media_section: MediaSection = MediaSection.de
 ) -> CanteenProductResponseSchema: 
+    from .schemas import CanteenProductResponseSchema
+    from .utils import build_canteen_product_response
     new_canteenproduct = CanteenProduct(**product_data.dict())
     session.add(new_canteenproduct)
     await session.commit()
@@ -41,7 +41,7 @@ async def filter_canteenproducts_from_db(
         category: CanteenProductCategory
 ):
     pass
-    
+
     
     
 
