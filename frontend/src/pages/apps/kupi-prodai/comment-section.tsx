@@ -2,16 +2,12 @@
 
 import type React from "react"
 
-{
-  /* Comments Section */
-}
-import { MessageSquare, Send, X, ChevronLeft, ChevronRight } from "lucide-react"
+import { useState, useEffect } from "react"
+import { MessageSquare, Send, X, ChevronLeft, ChevronRight, User } from "lucide-react"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { useState } from "react"
-import { useAuth } from "@/context/auth-context"
 import { useToast } from "@/hooks/use-toast"
 
 interface Comment {
@@ -19,56 +15,66 @@ interface Comment {
   user_id: number
   user_name: string
   user_surname: string
+  product_id: number
   text: string
   created_at: string
 }
 
-interface Product {
-  user_name: string
-  id: number
-}
-
-interface User {
-  user: {
-    sub: string
-  }
-}
-
 interface CommentsSectionProps {
-  comments: Comment[]
-  totalComments: number
-  product: Product
-  onDeleteComment: (commentId: number) => void
-  onSendMessage: (message: string) => void
-  currentPage: number
-  totalPages: number
-  handlePageChange: (page: number) => void
-  commentsPerPage: number
-  fetchFeedback: (page: number, limit: number) => Promise<{ data: Comment[]; total: number }>
-  setCurrentPage: (page: number) => void
-  setTotalComments: (total: number) => void
-  setTotalPages: (totalPages: number) => void
+  productId: number
+  sellerName?: string // Made optional
+  currentUser: any // Using any to accommodate your auth structure
+  isAuthenticated: boolean
 }
 
-const { toast } = useToast()
-
-const CommentsSection: React.FC<CommentsSectionProps> = ({
-  comments,
-  totalComments,
-  product,
-  onDeleteComment,
-  onSendMessage,
-  currentPage,
-  totalPages,
-  handlePageChange,
-  commentsPerPage,
-  fetchFeedback,
-  setCurrentPage,
-  setTotalComments,
-  setTotalPages,
-}) => {
+const CommentsSection: React.FC<CommentsSectionProps> = ({ productId, sellerName, currentUser, isAuthenticated }) => {
   const [message, setMessage] = useState("")
-  const { isAuthenticated, user } = useAuth()
+  const [comments, setComments] = useState<Comment[]>([])
+  const [totalComments, setTotalComments] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [isLoading, setIsLoading] = useState(false)
+  const commentsPerPage = 5
+
+  const { toast } = useToast()
+
+  // Fetch comments on component mount and when page changes
+  useEffect(() => {
+    fetchComments(currentPage)
+  }, [productId, currentPage])
+
+  const fetchComments = async (page: number) => {
+    if (!productId) return
+
+    try {
+      setIsLoading(true)
+      const response = await fetch(`/api/products/feedback/${productId}?size=${commentsPerPage}&page=${page}`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch comments")
+      }
+
+      const data = await response.json()
+      setComments(data.product_feedbacks || [])
+      setTotalPages(data.num_of_pages || 1)
+      setTotalComments((data.product_feedbacks || []).length * (data.num_of_pages || 1))
+    } catch (error) {
+      console.error("Error fetching comments:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load comments. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSendMessage = async () => {
     if (!message.trim()) {
@@ -90,14 +96,14 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
     }
 
     try {
-      const response = await fetch(`http://localhost/api/products/feedback/${product.id}`, {
+      const response = await fetch(`/api/products/feedback/${productId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
         body: JSON.stringify({
-          product_id: product.id,
+          product_id: productId,
           text: message,
         }),
       })
@@ -109,28 +115,55 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
       // Reset message
       setMessage("")
 
-      // Refresh feedback list with current pagination
-      const feedbackData = await fetchFeedback(1, commentsPerPage) // Go to first page after adding comment
-      setCurrentPage(1) // Reset to first page
-      setTotalComments(feedbackData.total)
-      setTotalPages(Math.ceil(feedbackData.total / commentsPerPage))
+      // Refresh comments (go to first page after adding a new comment)
+      setCurrentPage(1)
+      fetchComments(1)
 
       toast({
         title: "Success",
-        description: "Message sent successfully",
+        description: "Comment added successfully",
       })
     } catch (error) {
       console.error("Error sending message:", error)
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: "Failed to send comment. Please try again.",
         variant: "destructive",
       })
     }
   }
 
-  const handleDeleteComment = (commentId: number) => {
-    onDeleteComment(commentId)
+  const handleDeleteComment = async (commentId: number) => {
+    try {
+      const response = await fetch(`/api/products/feedback/${commentId}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to delete comment")
+      }
+
+      // Refresh comments on current page
+      // If this was the last comment on the page, we might need to go back a page
+      fetchComments(comments.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage)
+
+      toast({
+        title: "Success",
+        description: "Comment deleted successfully",
+      })
+    } catch (error) {
+      console.error("Error deleting comment:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete comment. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
   }
 
   const formatCommentDate = (dateStr: string) => {
@@ -145,6 +178,22 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
       console.error("Error formatting date:", error)
       return "Invalid date"
     }
+  }
+
+  // Helper function to check if the current user is the comment owner
+  const isCommentOwner = (comment: Comment) => {
+    if (!currentUser) return false
+
+    // Check different possible structures of the user object
+    if (currentUser.sub && currentUser.sub === String(comment.user_id)) {
+      return true
+    }
+
+    if (currentUser.user && currentUser.user.sub && currentUser.user.sub === String(comment.user_id)) {
+      return true
+    }
+
+    return false
   }
 
   return (
@@ -170,7 +219,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
               disabled={!isAuthenticated}
             >
               <Send className="h-4 w-4" />
-              <span>Send Message</span>
+              <span>Send Comment</span>
             </Button>
             {!isAuthenticated && (
               <p className="text-xs text-muted-foreground text-center mt-2">You need to be logged in to comment</p>
@@ -179,20 +228,24 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
         </CardContent>
       </Card>
 
-      {comments.length > 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      ) : comments.length > 0 ? (
         <div className="space-y-4">
           {comments.map((comment) => (
-            <Card
-              key={comment.id}
-              className={comment.user_name === product.user_name ? "border-primary/30 bg-primary/5" : ""}
-            >
+            <Card key={comment.id} className={comment.user_name === sellerName ? "border-primary/30 bg-primary/5" : ""}>
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <User className="h-5 w-5" />
+                  </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-center mb-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{`${comment.user_name} ${comment.user_surname[0]}.`}</span>
-                        {comment.user_name === product.user_name && (
+                        {comment.user_name === sellerName && (
                           <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
                             Seller
                           </Badge>
@@ -201,7 +254,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">{formatCommentDate(comment.created_at)}</span>
                         {/* Show delete button only for the comment owner */}
-                        {user?.user?.sub === comment.user_id.toString() && (
+                        {isCommentOwner(comment) && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -209,6 +262,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
                             onClick={() => handleDeleteComment(comment.id)}
                           >
                             <X className="h-4 w-4" />
+                            <span className="sr-only">Delete comment</span>
                           </Button>
                         )}
                       </div>
@@ -230,6 +284,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
                 disabled={currentPage === 1}
               >
                 <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">Previous page</span>
               </Button>
 
               <div className="flex items-center gap-1">
@@ -253,6 +308,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
                 disabled={currentPage === totalPages}
               >
                 <ChevronRight className="h-4 w-4" />
+                <span className="sr-only">Next page</span>
               </Button>
             </div>
           )}
@@ -269,3 +325,4 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
 }
 
 export default CommentsSection
+
