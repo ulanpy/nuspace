@@ -78,7 +78,7 @@ class AvailableMeals(Base):
     status: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
     canteen = relationship("Canteen", back_populates="available_meals")
-    meal = relationship("Meal", back_populates="available_meals")
+    meals = relationship("Meal", back_populates="available_meals")
 
 class CanteenFeedback(Base): #create, read, update, delete
     __tablename__ = "canteen_feedback"
