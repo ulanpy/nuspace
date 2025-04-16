@@ -89,6 +89,16 @@ type QueryParams = {
 export const kupiProdaiApi = {
   // Get a paginated list of products
   baseKey: "products",
+  getUserQueryOptions: () => {
+    return queryOptions({
+      queryKey: ["user"],
+      queryFn: () =>
+        apiCall<Types.User>("/me", {
+          method: "GET",
+          credentials: "include",
+        }),
+    });
+  },
   getProductsQueryOptions: ({
     page = defaultPage,
     size = defaultSize,
@@ -122,11 +132,17 @@ export const kupiProdaiApi = {
     });
   },
 
+  getProduct: async (product_id: number): Promise<Product> => {
+    return apiCall<Product>(`/products/${product_id}`, {
+      method: "GET",
+    });
+  },
+
   // Create a new product
   createProduct: async (product: NewProductRequest): Promise<Product> => {
     return apiCall<Product>("/products/new", {
       method: "POST",
-      json: product
+      json: product,
     });
   },
 
@@ -134,14 +150,14 @@ export const kupiProdaiApi = {
   updateProduct: async (product: UpdateProductRequest): Promise<any> => {
     return apiCall<any>("/products/", {
       method: "PATCH",
-      json: product
+      json: product,
     });
   },
 
   // Delete a product
   deleteProduct: async (productId: number): Promise<string> => {
     return apiCall<string>(`/products/${productId}`, {
-      method: "DELETE"
+      method: "DELETE",
     });
   },
 
@@ -149,8 +165,10 @@ export const kupiProdaiApi = {
   getSearchProductQueryOptions: (keyword: string) => {
     return queryOptions({
       queryKey: ["search-products", keyword],
-      queryFn: ({signal}) => {
-        return apiCall<Product[]>(`/products/search/?keyword=${keyword}`, {signal});
+      queryFn: ({ signal }) => {
+        return apiCall<Product[]>(`/products/search/?keyword=${keyword}`, {
+          signal,
+        });
       },
     });
   },
@@ -184,9 +202,9 @@ export const kupiProdaiApi = {
       body: formData,
     });
 
-    console.log('response', response)
+    console.log("response", response);
 
-    return response as string
+    return response as string;
   },
 
   // Check Telegram binding status
