@@ -1,10 +1,20 @@
-from sqlalchemy import select
 from sqlalchemy.orm import DeclarativeBase
 from typing import Type
 import httpx
 
 from backend.core.configs.config import config
 from backend.core.database.manager import AsyncDatabaseManager
+from backend.routes.google_bucket.utils import generate_download_url
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from fastapi import Request
+from backend.core.database.models.product import Product, ProductFeedback
+from backend.core.database.models.media import Media
+from backend.routes.kupiprodai.schemas import ProductResponseSchema, ProductFeedbackResponseSchema
+from typing import List
+from backend.routes.google_bucket.utils import generate_download_url
+from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
+import asyncio
 
 
 #meilisearch methods
@@ -54,3 +64,34 @@ async def import_data_from_db(storage_name: str, db_manager: AsyncDatabaseManage
         data = [dict(row) for row in result.mappings().all()]
         await async_client.delete(f"/indexes/{storage_name}")
         return await add_meilisearch_data(storage_name = storage_name, json_values=data)
+    
+
+async def get_media_responses(
+    session: AsyncSession,
+    request: Request,
+    entity_id: int,
+    media_section: MediaSection
+) -> List[MediaResponse]:
+    """
+    Возвращает список MediaResponse для заданного продукта.
+    """
+    media_result = await session.execute(
+        select(Media).filter(Media.entity_id == entity_id, Media.section == media_section)
+    )
+    media_objects = media_result.scalars().all()
+
+    # Если есть необходимость параллельной генерации URL, можно использовать asyncio.gather:
+    async def build_media_response(media: Media) -> MediaResponse:
+        url_data = await generate_download_url(request, media.name)
+        return MediaResponse(
+            id=media.id,
+            url=url_data["signed_url"],
+            mime_type=media.mime_type,
+            section=media.section,
+            entity_id=media.entity_id,
+            media_purpose=media.media_purpose,
+            media_order=media.media_order
+        )
+
+    # Параллельное выполнение (опционально)
+    return list(await asyncio.gather(*(build_media_response(media) for media in media_objects)))

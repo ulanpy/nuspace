@@ -31,7 +31,7 @@ class ProductResponseSchema(BaseModel):
     created_at: datetime
     media: List[MediaResponse] = []
 
-    model_config = ConfigDict(from_attributes=True)
+    
 
 
 class ListResponseSchema(BaseModel):

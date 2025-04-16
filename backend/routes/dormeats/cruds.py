@@ -16,21 +16,23 @@ from .utils import build_product_response
 import asyncio
 from .schemas import *
 from backend.core.database.models.dormeats import *
+from .utils import *
 
 # create read update delete
 # add get update delete
 async def add_new_canteenproduct_to_db(
         session: AsyncSession, 
         request: Request, 
-        product_data: CanteenProductSchema
-): 
+        product_data: CanteenProductRequestSchema,
+        media_section: MediaSection = MediaSection.de
+) -> CanteenProductResponseSchema: 
     new_canteenproduct = CanteenProduct(**product_data.dict())
     session.add(new_canteenproduct)
     await session.commit()
     await session.refresh(new_canteenproduct)
+    
+    return await build_canteen_product_response(canteen_product = new_canteenproduct, session = session, request = request, media_section = media_section)
 
-    # does this model need search function
-    return new_canteenproduct
 
 
 # front: scales like in small veggies section
@@ -38,6 +40,8 @@ async def filter_canteenproducts_from_db(
         session: AsyncSession,
         category: CanteenProductCategory
 ):
+    pass
+    
     
     
 
