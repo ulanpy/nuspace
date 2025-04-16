@@ -17,13 +17,29 @@ import asyncio
 from .schemas import *
 from backend.core.database.models.dormeats import *
 
-async def add_new_meal_to_db(
-        session: AsyncSession,
-        meal_data: MealSchema,
-        request: Request,
-        media_section: MediaSection = MediaSection.de
-):
-    new_meal = Meal(**meal_data.dict())
-    session.add(new_meal)
+# create read update delete
+# add get update delete
+async def add_new_canteenproduct_to_db(
+        session: AsyncSession, 
+        request: Request, 
+        product_data: CanteenProductSchema
+): 
+    new_canteenproduct = CanteenProduct(**product_data.dict())
+    session.add(new_canteenproduct)
     await session.commit()
-    await session.refresh(new_meal)
+    await session.refresh(new_canteenproduct)
+
+    # does this model need search function
+    return new_canteenproduct
+
+
+# front: scales like in small veggies section
+async def filter_canteenproducts_from_db(
+        session: AsyncSession,
+        category: CanteenProductCategory
+):
+    
+    
+
+
+
