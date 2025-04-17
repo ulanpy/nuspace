@@ -12,7 +12,9 @@ target-version = ['py311']
 [tool.ruff]
 line-length = 88
 target-version = "py311"
-select = ["E", "F", "I"]  # E: pycodestyle, F: pyflakes, I: isort
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
 ignore = ["D", "ANN101", "ANN102"]  # <-- можешь включить при желании
 
 [tool.poetry.dependencies]
