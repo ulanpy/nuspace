@@ -127,7 +127,7 @@ services:
     networks:
       - nuros
     volumes:
-      - ./frontend/dist:/app/dist  # Ensure host directory exists
+      - ./frontend/dist:/app/dist  
     command: sh -c "npm run build"  # Run build command on container start
     restart: "no"
 

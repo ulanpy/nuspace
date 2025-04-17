@@ -6,42 +6,52 @@ from backend.core.database.models.media import Media, MediaSection, MediaPurpose
 from .schemas import UploadConfirmation
 from typing import List
 
-
+# idenpotence + upsert
 async def confirm_uploaded_media_to_db(
     confirmation: UploadConfirmation,
     session: AsyncSession
 ) -> List[Media]:
-    created_media = []
-
     try:
-        try:
-            section = MediaSection(confirmation.section)
-        except ValueError:
-            raise HTTPException(status_code=400, detail=f"Invalid media section: {confirmation.section}")
+        section = MediaSection(confirmation.section)
+        media_purpose = MediaPurpose(confirmation.media_purpose)
 
-        try:
-            media_purpose = MediaPurpose(confirmation.media_purpose)
-        except ValueError:
-            raise HTTPException(status_code=400, detail=f"Invalid media purpose: {confirmation.media_purpose}")
-
-        media_record = Media(
-            name=confirmation.filename,
-            mime_type=confirmation.mime_type,
-            section=section,
-            entity_id=confirmation.entity_id,
-            media_purpose=media_purpose,
-            media_order=0
+        # Check if it already exists (based on unique constraints)
+        stmt = select(Media).where(
+            Media.name == confirmation.filename,
+            Media.section == section,
+            Media.entity_id == confirmation.entity_id,
+            Media.media_purpose == media_purpose,
         )
-        session.add(media_record)
-        created_media.append(media_record)
+        result = await session.execute(stmt)
+        media_record = result.scalar_one_or_none()
+
+        if media_record:
+            # 🔄 Update existing record
+            media_record.name = confirmation.filename
+            media_record.mime_type = confirmation.mime_type
+            media_record.media_order = confirmation.media_order
+            media_record.section = confirmation.section
+            media_record.entity_id = confirmation.entity_id
+            media_record.media_purpose = confirmation.media_purpose
+            media_record.media_order = confirmation.media_order
+        else:
+            # ➕ Create new record
+            media_record = Media(
+                name=confirmation.filename,
+                mime_type=confirmation.mime_type,
+                section=section,
+                entity_id=confirmation.entity_id,
+                media_purpose=media_purpose,
+                media_order=confirmation.media_order,
+            )
+            session.add(media_record)
 
         await session.commit()
-        return created_media
+        return [media_record]
 
     except SQLAlchemyError as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Database error while confirming uploads: {str(e)}")
-
 
 async def delete_media(session: AsyncSession, media_id: int):
     result = await session.execute(select(Media).filter_by(id=int(media_id)))

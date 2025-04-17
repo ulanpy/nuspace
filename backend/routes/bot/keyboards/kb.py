@@ -19,7 +19,7 @@ def kb_webapp(url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(row_width=1,
                                 inline_keyboard=[
                                     [
-                                        InlineKeyboardButton(text='NUspace', web_app=WebAppInfo(url=url))
+                                        InlineKeyboardButton(text='NUspace', url=url)
                                     ]
                                 ])
 

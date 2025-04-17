@@ -22,6 +22,22 @@ async def login(request: Request):
     kc: KeyCloakManager = request.app.state.kc_manager
     return await getattr(kc.oauth, kc.__class__.__name__.lower()).authorize_redirect(request, kc.KEYCLOAK_REDIRECT_URI)
 
+@router.get("/auth/callback", response_description="Redirect  user")
+async def auth_callback(request: Request, response: Response, db_session: AsyncSession = Depends(get_db_session),
+                        creds: dict = Depends(exchange_code_for_credentials)):
+    """
+    Handle the OAuth2 callback to exchange authorization code for tokens and issue JWT.
+    """
+
+    await validate_access_token(response, creds["access_token"], creds["refresh_token"], request.app.state.kc_manager)
+    user_schema: UserSchema = await create_user_schema(creds)
+    await upsert_user(db_session, user_schema)
+    # return creds
+
+    frontend_url = f"{config.FRONTEND_HOST}"
+    response = RedirectResponse(url=frontend_url, status_code=303)
+    set_auth_cookies(response, creds)
+    return response
 
 
 @router.post("/bingtg")
@@ -37,23 +53,7 @@ async def bind_tg(request: Request, sub: Sub):
             }
 
 
-@router.get("/auth/callback", response_description="Redirect  user")
-async def auth_callback(request: Request, response: Response, db_session: AsyncSession = Depends(get_db_session),
-                        creds: dict = Depends(exchange_code_for_credentials)):
-    """
-    Handle the OAuth2 callback to exchange authorization code for tokens and issue JWT.
-    """
-
-    await validate_access_token(creds["access_token"], request.app.state.kc_manager)
-    user_schema: UserSchema = await create_user_schema(creds)
-    await upsert_user(db_session, user_schema)
-    frontend_url = f"{config.FRONTEND_HOST}"
-    response = RedirectResponse(url=frontend_url, status_code=303)
-    set_auth_cookies(response, creds)
-    return response
-
-
-@router.post("/refresh-token/", response_description="Refresh token")
+@router.post("/refresh-token", response_description="Refresh token")
 async def refresh_token(request: Request, response: Response,
                         refresh_token: Annotated[str | None, Cookie(alias="refresh_token")] = None):
     """
@@ -63,9 +63,8 @@ async def refresh_token(request: Request, response: Response,
     if not refresh_token:
         raise HTTPException(status_code=402, detail="No  refresh token provided")
 
-    creds = await refresh_access_token(refresh_token, kc)
-
-    await validate_access_token(creds.get("access_token"), kc)
+    creds = await kc.refresh_access_token(refresh_token)
+    await validate_access_token(response, creds.get("access_token"), creds.get("refresh_token"), kc)
     set_auth_cookies(response, creds)
 
     return creds
@@ -82,6 +81,32 @@ async def get_current_user(
     tg_linked: bool = bool(result.scalars().first())
 
     return CurrentUserResponse(user=user, tg_linked=tg_linked)
+
+@router.get("/logout")
+async def logout(
+        request: Request,
+        response: Response,
+        refresh_token: Annotated[str | None, Cookie(alias="refresh_token")] = None
+):
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No refresh token found in cookies",
+        )
+    kc: KeyCloakManager = request.app.state.kc_manager
+
+    try:
+        await kc.refresh_access_token(refresh_token)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Error revoking token: {e}"
+        )
+
+    unset_auth_cookies(response)
+
+    return status.HTTP_200_OK
 
 
 
