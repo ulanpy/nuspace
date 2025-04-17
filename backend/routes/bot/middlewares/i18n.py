@@ -1,27 +1,29 @@
-import os
 import gettext
+import os
 from pathlib import Path
+from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
-from aiogram.types import TelegramObject, Message, CallbackQuery
-from typing import Callable, Awaitable, Any
-
+from aiogram.types import CallbackQuery, Message, TelegramObject
 from redis.asyncio import Redis
 
 
 def get_translator(lang: str):
     LOCALES_DIR = os.path.join(Path(__file__).parent.parent, "locales")
-    translator = gettext.translation("messages", localedir=LOCALES_DIR, languages=[lang])
+    translator = gettext.translation(
+        "messages", localedir=LOCALES_DIR, languages=[lang]
+    )
     return translator.gettext
 
 
 class I18N(BaseMiddleware):
 
     async def __call__(
-            self,
-            handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
-            event: TelegramObject,
-            data: dict[str, Any]) -> Any:
+        self,
+        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
+        event: TelegramObject,
+        data: dict[str, Any],
+    ) -> Any:
         user_id = None
 
         if isinstance(event, Message):
@@ -37,5 +39,5 @@ class I18N(BaseMiddleware):
         redis: Redis = data.get("redis")
         language: str = await redis.get(key) or "en"
         _ = get_translator(language)
-        data['_'] = _
+        data["_"] = _
         return await handler(event, data)

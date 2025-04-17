@@ -5,10 +5,7 @@ from google.cloud import storage
 from backend.core.configs.config import config
 
 
-async def generate_download_url(
-    storage_client: storage.Client,
-    filename: str
-):
+async def generate_download_url(storage_client: storage.Client, filename: str):
     """
     Generates a signed download URL with:
     - 15 minute expiration
@@ -21,6 +18,6 @@ async def generate_download_url(
         version="v4",
         expiration=timedelta(minutes=15),
         method="GET",
-        response_type='image/jpeg'
+        response_type="image/jpeg",
     )
     return signed_url

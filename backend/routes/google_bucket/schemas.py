@@ -1,7 +1,9 @@
 # schemas.py
-from pydantic import BaseModel, Field, HttpUrl
 from typing import List
-from backend.core.database.models.media import MediaSection, MediaPurpose
+
+from pydantic import BaseModel, HttpUrl
+
+from backend.core.database.models.media import MediaPurpose, MediaSection
 
 # Keep original if you adapt /upload-url to handle lists of mime_types
 
@@ -11,8 +13,10 @@ class SingleSignedUrlResponse(BaseModel):
     filename: str
     upload_url: HttpUrl
 
+
 class SignedUrlResponse(BaseModel):
-   signed_urls: List[SingleSignedUrlResponse]
+    signed_urls: List[SingleSignedUrlResponse]
+
 
 class UploadConfirmation(BaseModel):
     filename: str
@@ -22,9 +26,11 @@ class UploadConfirmation(BaseModel):
     media_purpose: MediaPurpose
     media_order: int
 
+
 class ConfirmUploadRequest(BaseModel):
     filename: str
     url: HttpUrl
+
 
 class MediaResponse(BaseModel):
     id: int

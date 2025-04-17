@@ -1,6 +1,7 @@
+from typing import Any, Awaitable, Callable
+
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
-from typing import Callable, Awaitable, Any
 
 
 class UrlMiddleware(BaseMiddleware):
@@ -11,6 +12,7 @@ class UrlMiddleware(BaseMiddleware):
         self,
         handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
         event: TelegramObject,
-        data: dict[str, Any]) -> Any:
-            data['public_url'] = self.url
-            return await handler(event, data)
+        data: dict[str, Any],
+    ) -> Any:
+        data["public_url"] = self.url
+        return await handler(event, data)

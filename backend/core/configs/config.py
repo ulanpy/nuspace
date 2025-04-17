@@ -1,9 +1,9 @@
-from pydantic_settings import BaseSettings
-from dotenv import load_dotenv
-import os
-from google.oauth2 import service_account
 import json
+import os
 
+from dotenv import load_dotenv
+from google.oauth2 import service_account
+from pydantic_settings import BaseSettings
 
 # Load environment variables from .env file
 ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
@@ -24,7 +24,7 @@ class Config(BaseSettings):
     IS_BOT_DEV: bool = False
     FRONTEND_HOST: str
     nginx_port: int = 80
-    meilisearch_url: str 
+    meilisearch_url: str
     meilisearch_master_key: str
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
@@ -36,7 +36,6 @@ class Config(BaseSettings):
     GCP_PROJECT_ID: str
     GCP_TOPIC_ID: str
 
-
     @property
     def DATABASE_URL(self) -> str:
         return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
@@ -44,6 +43,7 @@ class Config(BaseSettings):
     @property
     def DATABASE_URL_SYNC(self) -> str:
         return f"postgresql+psycopg2://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+
     class Config:
         env_file = os.path.join(ENV_DIR, ".env")
         env_file_encoding = "utf-8"
@@ -55,11 +55,15 @@ class Config(BaseSettings):
 
     @property
     def BUCKET_CREDENTIALS(self):
-         return service_account.Credentials.from_service_account_info(json.loads(self.GCP_CREDENTIALS_JSON))
+        return service_account.Credentials.from_service_account_info(
+            json.loads(self.GCP_CREDENTIALS_JSON)
+        )
 
     @property
     def ROUTING_PREFIX(self) -> str:
         raw_url = self.NUSPACE if not self.IS_DEBUG else self.CLOUDFLARED_TUNNEL_URL
         return raw_url.split("https://", 1)[1]
+
+
 # Usage
 config = Config()
