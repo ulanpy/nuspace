@@ -1,17 +1,21 @@
 from typing import Callable
 
-from aiogram import Router, html
+from aiogram import Router
+from aiogram.filters import CommandObject, CommandStart
 from aiogram.types import Message
-from aiogram.filters import CommandStart, CommandObject
 from aiogram.utils.deep_linking import decode_payload
-from sqlalchemy.ext.asyncio import AsyncSession
 from google.cloud import storage
+from sqlalchemy.ext.asyncio import AsyncSession
 
-
-from backend.core.database.models import Product, Media
-from backend.routes.bot.keyboards.kb import kb_confirmation, user_profile_button
-from backend.routes.bot.cruds import get_telegram_id, check_existance_by_sub, find_product, find_media
+from backend.core.database.models import Media, Product
+from backend.routes.bot.cruds import (
+    check_existance_by_sub,
+    find_media,
+    find_product,
+    get_telegram_id,
+)
 from backend.routes.bot.filters import EncodedDeepLinkFilter
+from backend.routes.bot.keyboards.kb import kb_confirmation, user_profile_button
 from backend.routes.bot.utils.google_bucket import generate_download_url
 
 router = Router()
@@ -23,7 +27,7 @@ async def get_contact_seller(
     command: CommandObject,
     db_session: AsyncSession,
     _: Callable[[str], str],
-    storage_client: storage.Client
+    storage_client: storage.Client,
 ):
     payload: str = decode_payload(command.args)
     _prefix, product_id = payload.split("&")
@@ -42,7 +46,7 @@ async def get_contact_seller(
             m.chat.id,
             photo=url,
             caption=caption,
-            reply_markup=user_profile_button(seller_user_id, _)
+            reply_markup=user_profile_button(seller_user_id, _),
         )
     elif product:
         caption: str = f"{product.name}"
@@ -52,10 +56,10 @@ async def get_contact_seller(
 
 @router.message(CommandStart(deep_link=True))
 async def user_start_link(
-        m: Message,
-        command: CommandObject,
-        db_session: AsyncSession,
-        _: Callable[[str], str]
+    m: Message,
+    command: CommandObject,
+    db_session: AsyncSession,
+    _: Callable[[str], str],
 ) -> Message:
     args = command.args
     payload: str = decode_payload(args)
@@ -63,7 +67,11 @@ async def user_start_link(
 
     if await check_existance_by_sub(session=db_session, sub=sub):
         if await get_telegram_id(session=db_session, sub=sub) is None:
-            return await m.answer(_("Отлично, теперь выбери верный смайлик!"),
-                                  reply_markup=kb_confirmation(sub=sub, confirmation_number=confirmation_number))
+            return await m.answer(
+                _("Отлично, теперь выбери верный смайлик!"),
+                reply_markup=kb_confirmation(
+                    sub=sub, confirmation_number=confirmation_number
+                ),
+            )
         return await m.answer(_("Ваш телеграм аккаунт уже привязан!"))
     return await m.answer(_("Некорректная ссылка"))

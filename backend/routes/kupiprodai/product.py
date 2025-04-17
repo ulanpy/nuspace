@@ -1,21 +1,23 @@
-from fastapi import APIRouter, Depends, Request, HTTPException, status
-from typing import Literal, Annotated
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+
+from backend.common.dependencies import check_tg, check_token, get_db_session
+from backend.common.utils import *
 
 from .__init__ import *
-from backend.common.utils import *
-from backend.common.dependencies import get_db_session, check_token, check_tg
-from .cruds import show_products_from_db, add_new_product_to_db
+from .cruds import add_new_product_to_db, show_products_from_db
+
+router = APIRouter(prefix="/products", tags=["Kupi-Prodai Routes"])
 
 
-router = APIRouter(prefix="/products", tags=['Kupi-Prodai Routes'])
-
-@router.post("/new", response_model=ProductResponseSchema) #works
+@router.post("/new", response_model=ProductResponseSchema)  # works
 async def add_new_product(
-        request: Request,
-        user: Annotated[dict, Depends(check_token)],
-        tg: Annotated[bool, Depends(check_tg)],
-        product_data: ProductRequestSchema,
-        db_session: AsyncSession = Depends(get_db_session)
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    tg: Annotated[bool, Depends(check_tg)],
+    product_data: ProductRequestSchema,
+    db_session: AsyncSession = Depends(get_db_session),
 ):
     """
     Creates a new product under the 'Kupi-Prodai' section.
@@ -40,17 +42,23 @@ async def add_new_product(
     """
 
     try:
-        new_product = await add_new_product_to_db(db_session, product_data, user_sub=user["sub"], request=request)
+        new_product = await add_new_product_to_db(
+            db_session, product_data, user_sub=user["sub"], request=request
+        )
         return new_product
     except HTTPException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
-@router.get('/user', response_model=List[ProductResponseSchema]) #works # todo add pagination
+@router.get(
+    "/user", response_model=List[ProductResponseSchema]
+)  # works # todo add pagination
 async def get_products_of_user(
-        request: Request,
-        user: Annotated[dict, Depends(check_token)],
-        db_session: AsyncSession = Depends(get_db_session)
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session),
 ):
     """
     Retrieves a list of all products created by the currently authenticated user,
@@ -70,22 +78,22 @@ async def get_products_of_user(
     """
     user_sub = user.get("sub")
     try:
-        return await get_products_of_user_from_db(request=request, user_sub=user_sub, session=db_session)
+        return await get_products_of_user_from_db(
+            request=request, user_sub=user_sub, session=db_session
+        )
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
 
 
-
-
-@router.get("/list", response_model=ListResponseSchema) #works
+@router.get("/list", response_model=ListResponseSchema)  # works
 async def get_products(
-        request: Request,
-        user: Annotated[dict, Depends(check_token)],
-        db_session: AsyncSession = Depends(get_db_session),
-        size: int = 20,
-        page: int = 1,
-        category: ProductCategory = None,
-        condition: ProductCondition = None,
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session),
+    size: int = 20,
+    page: int = 1,
+    category: ProductCategory = None,
+    condition: ProductCondition = None,
 ):
     """
     Retrieves a paginated list of active products, with optional filtering by category and condition.
@@ -110,15 +118,16 @@ async def get_products(
         size=size,
         page=page,
         category=category,
-        condition=condition
+        condition=condition,
     )
 
-@router.get("/{product_id}", response_model=ProductResponseSchema) #works
+
+@router.get("/{product_id}", response_model=ProductResponseSchema)  # works
 async def get_product(
-        request: Request,
-        user: Annotated[dict, Depends(check_token)],
-        product_id: int,
-        db_session: AsyncSession = Depends(get_db_session)
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    product_id: int,
+    db_session: AsyncSession = Depends(get_db_session),
 ):
     """
     Retrieves a single active product by its unique ID, including its associated media files.
@@ -139,9 +148,7 @@ async def get_product(
     """
 
     product = await get_product_from_db(
-        request=request,
-        product_id=product_id,
-        session=db_session
+        request=request, product_id=product_id, session=db_session
     )
 
     if product is None:
@@ -150,12 +157,12 @@ async def get_product(
     return product
 
 
-@router.delete("/{product_id}") #works
+@router.delete("/{product_id}")  # works
 async def remove_product(
-        request: Request,
-        user: Annotated[dict, Depends(check_token)],
-        product_id: int,
-        db_session: AsyncSession = Depends(get_db_session)
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    product_id: int,
+    db_session: AsyncSession = Depends(get_db_session),
 ):
     """
     Deletes a specific product owned by the authenticated user.
@@ -187,19 +194,21 @@ async def remove_product(
             request=request,
             user_sub=user.get("sub"),
             product_id=product_id,
-            session=db_session
+            session=db_session,
         )
         return status.HTTP_204_NO_CONTENT
 
     except HTTPException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
-@router.patch("/")  #works
+@router.patch("/")  # works
 async def update_product(
     user: Annotated[dict, Depends(check_token)],
     product_update: ProductUpdateSchema,
-    db_session: AsyncSession = Depends(get_db_session)
+    db_session: AsyncSession = Depends(get_db_session),
 ):
     """
     Updates fields of an existing product owned by the authenticated user.
@@ -228,20 +237,22 @@ async def update_product(
     """
 
     product_update = await update_product_in_db(
-        product_update=product_update,
-        user_sub=user.get("sub"),
-        session=db_session
+        product_update=product_update, user_sub=user.get("sub"), session=db_session
     )
-    return {"product_id": product_update.product_id, "updated_fields": product_update.dict(exclude_unset=True)}
+    return {
+        "product_id": product_update.product_id,
+        "updated_fields": product_update.dict(exclude_unset=True),
+    }
 
-@router.post('/post_search/', response_model = ListResponseSchema)
+
+@router.post("/post_search/", response_model=ListResponseSchema)
 async def post_search(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     keyword: str,
     size: int = 20,
     page: int = 1,
-    db_session=Depends(get_db_session)
+    db_session=Depends(get_db_session),
 ):
     """
     Retrieves product objects from database based on the search result of pre_search router.
@@ -256,18 +267,25 @@ async def post_search(
     - A list of product objects that match the keyword from the search.
     - Products will be returned with their full details (from the database).
     """
-    search_results = await search_for_meilisearch_data(keyword=keyword, request=request, page=page,size=size, storage_name = 'products')
-    product_ids = [product['id'] for product in search_results['hits']]
-    return await show_products_for_search(size = size, request = request, session=db_session, product_ids=product_ids, num_of_products=search_results['estimatedTotalHits'])
-    
-    
+    search_results = await search_for_meilisearch_data(
+        keyword=keyword, request=request, page=page, size=size, storage_name="products"
+    )
+    product_ids = [product["id"] for product in search_results["hits"]]
+    return await show_products_for_search(
+        size=size,
+        request=request,
+        session=db_session,
+        product_ids=product_ids,
+        num_of_products=search_results["estimatedTotalHits"],
+    )
 
-@router.get("/pre_search/", response_model = list[str])
+
+@router.get("/pre_search/", response_model=list[str])
 async def pre_search(
-        request: Request,
-        user: Annotated[dict, Depends(check_token)],
-        keyword: str,
-        db_session=Depends(get_db_session)
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    keyword: str,
+    db_session=Depends(get_db_session),
 ):
     """
     Searches for products based on the provided keyword:
@@ -286,11 +304,17 @@ async def pre_search(
     seen = set()
     page = 1
     while len(distinct_keywords) < 5:
-        result = await search_for_meilisearch_data(request = request, storage_name="products", keyword=keyword, page = page, size = 20)
-        for object in result['hits']:
-            if object['name'] not in seen:
-                seen.add(object['name'])
-                distinct_keywords.append(object['name'])
+        result = await search_for_meilisearch_data(
+            request=request,
+            storage_name="products",
+            keyword=keyword,
+            page=page,
+            size=20,
+        )
+        for object in result["hits"]:
+            if object["name"] not in seen:
+                seen.add(object["name"])
+                distinct_keywords.append(object["name"])
             if len(distinct_keywords) >= 5:
                 break
         else:
@@ -299,17 +323,16 @@ async def pre_search(
     return distinct_keywords
 
 
-
-@router.post("/feedback/{product_id}") #added description
+@router.post("/feedback/{product_id}")  # added description
 async def store_new_product_feedback(
     feedback_data: ProductFeedbackSchema,
     user: Annotated[dict, Depends(check_token)],
     request: Request,
-    db_session = Depends(get_db_session)
+    db_session=Depends(get_db_session),
 ):
-    '''
+    """
     Adds new feedback to the product
-    
+
     ***Parameters:***
     - `feedback_data`: json object with values for product_id and text of the feedback.
 
@@ -318,23 +341,27 @@ async def store_new_product_feedback(
 
     ***Errors:***
     - Returns 500 on internal error.
-    '''
+    """
 
     try:
-        new_product_feedback = await add_new_product_feedback_to_db(feedback_data=feedback_data, user_sub=user.get('sub'), session=db_session)
+        new_product_feedback = await add_new_product_feedback_to_db(
+            feedback_data=feedback_data, user_sub=user.get("sub"), session=db_session
+        )
         return new_product_feedback
     except HTTPException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-    
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
-@router.get("/feedback/{product_id}") #added description
+
+@router.get("/feedback/{product_id}")  # added description
 async def get_product_feedbacks(
-    product_id:int, 
+    product_id: int,
     user: Annotated[dict, Depends(check_token)],
-    db_session = Depends(get_db_session), 
-    size: int = 20, 
+    db_session=Depends(get_db_session),
+    size: int = 20,
     page: int = 1,
-    response_model=ListProductFeedbackResponseSchema
+    response_model=ListProductFeedbackResponseSchema,
 ):
     """
     Retrieves a paginated list of feedbacks of the product.
@@ -350,15 +377,16 @@ async def get_product_feedbacks(
     **Returns:**
     - A list of feedbacks of the product, sorted by most recently added.
     """
-    return await get_product_feedbacks_from_db(product_id=product_id, session=db_session, size=size, page=page)
-    
+    return await get_product_feedbacks_from_db(
+        product_id=product_id, session=db_session, size=size, page=page
+    )
 
 
-@router.delete("/feedback/{feedback_id}") #added description
+@router.delete("/feedback/{feedback_id}")  # added description
 async def remove_product_feedback(
     feedback_id: int,
     user: Annotated[dict, Depends(check_token)],
-    db_session = Depends(get_db_session),
+    db_session=Depends(get_db_session),
 ):
     """
     Deletes a specific product feedback added by the authenticated user.
@@ -384,21 +412,22 @@ async def remove_product_feedback(
     """
     try:
         await remove_product_feedback_from_db(
-            feedback_id=feedback_id,
-            user_sub=user.get("sub"),
-            session=db_session
+            feedback_id=feedback_id, user_sub=user.get("sub"), session=db_session
         )
         return status.HTTP_204_NO_CONTENT
     except HTTPException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
-@router.post("/{product_id}/report") #added description
+
+@router.post("/{product_id}/report")  # added description
 async def store_new_product_report(
-    report_data: ProductReportSchema, 
+    report_data: ProductReportSchema,
     user: Annotated[dict, Depends(check_token)],
-    request: Request, 
-    db_session = Depends(get_db_session
-)):
+    request: Request,
+    db_session=Depends(get_db_session),
+):
     """
     Adds a new product report.
 
@@ -418,8 +447,11 @@ async def store_new_product_report(
     """
 
     try:
-        new_product_report = await add_product_report(report_data=report_data, user_sub = user.get("sub"), session = db_session)
+        new_product_report = await add_product_report(
+            report_data=report_data, user_sub=user.get("sub"), session=db_session
+        )
         return new_product_report
     except HTTPException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )

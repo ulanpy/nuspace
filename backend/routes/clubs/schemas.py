@@ -1,11 +1,10 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import List
 
-from pydantic import BaseModel, field_validator, Field
+from pydantic import BaseModel, field_validator
 
-
+from backend.core.database.models.club import ClubType, EventPolicy
 from backend.routes.google_bucket.schemas import MediaResponse
-from backend.core.database.models.club import ClubType, Club, EventPolicy
 
 
 class ClubResponseSchema(BaseModel):
@@ -20,10 +19,10 @@ class ClubResponseSchema(BaseModel):
     updated_at: datetime
     media: MediaResponse | List = []
 
-    @field_validator('telegram_url', 'instagram_url')
+    @field_validator("telegram_url", "instagram_url")
     def validate_url(cls, value):
-        if not value.startswith(('http://', 'https://')):
-            raise ValueError('Invalid URL format')
+        if not value.startswith(("http://", "https://")):
+            raise ValueError("Invalid URL format")
         return value
 
 
@@ -35,15 +34,15 @@ class ClubRequestSchema(BaseModel):
     telegram_url: str | None = None
     instagram_url: str | None = None
 
-    @field_validator('telegram_url', 'instagram_url')
+    @field_validator("telegram_url", "instagram_url")
     def validate_url(cls, value):
-        if not value.startswith(('http://', 'https://')):
-            raise ValueError('Invalid URL format')
+        if not value.startswith(("http://", "https://")):
+            raise ValueError("Invalid URL format")
         return value
 
 
 class ClubEventResponseSchema(BaseModel):
-    id: int 
+    id: int
     club_id: int
     name: str
     place: str
@@ -54,7 +53,7 @@ class ClubEventResponseSchema(BaseModel):
     created_at: datetime
     updated_at: datetime
     media: List[MediaResponse] = []
-    
+
 
 class ClubEventRequestSchema(BaseModel):
     club_id: int
@@ -65,16 +64,16 @@ class ClubEventRequestSchema(BaseModel):
     description: str
     duration: int
 
-    @field_validator('duration')
+    @field_validator("duration")
     def validate_url(cls, value):
         if value <= 0:
-            raise ValueError('Duration should be positive')
+            raise ValueError("Duration should be positive")
         return value
 
-    @field_validator('event_datetime')
+    @field_validator("event_datetime")
     def validate_event_datetime(cls, value):
         if value <= datetime.now():
-            raise ValueError('Event datetime must be in the future')
+            raise ValueError("Event datetime must be in the future")
         return value
 
 
@@ -86,7 +85,6 @@ class ListEventSchema(BaseModel):
 class ListClubSchema(BaseModel):
     events: List[ClubResponseSchema]
     num_of_pages: int
-
 
 
 # class ClubAnnouncement(BaseModel):

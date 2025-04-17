@@ -1,4 +1,4 @@
-from aiogram import Router, F
+from aiogram import F, Router
 from aiogram.types import Message
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,13 +14,11 @@ router = Router()
     ~F.migrate_to_chat_id,  # Исключаем миграцию чата
     ~F.migrate_from_chat_id,
     ~F.chat_shared,  # Исключаем shared чаты
-    ~F.user_shared
+    ~F.user_shared,
 )
 async def user_message(
-        m: Message,
-        db_session: AsyncSession,
-        redis: Redis,
-        public_url: str) -> None:
+    m: Message, db_session: AsyncSession, redis: Redis, public_url: str
+) -> None:
     if m.from_user.is_bot:
         return
 
@@ -31,6 +29,5 @@ async def user_message(
         db_session=db_session,
         redis=redis,
         public_url=public_url,
-        message=m
+        message=m,
     )
-
