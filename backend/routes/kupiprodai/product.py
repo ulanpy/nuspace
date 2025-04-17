@@ -1,11 +1,31 @@
-from typing import Annotated
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from backend.common.dependencies import check_tg, check_token, get_db_session
-from backend.common.utils import *
+from backend.common.utils import search_for_meilisearch_data
 
-from .__init__ import *
+from .__init__ import (
+    AsyncSession,
+    ListProductFeedbackResponseSchema,
+    ListResponseSchema,
+    ProductCategory,
+    ProductCondition,
+    ProductFeedbackSchema,
+    ProductReportSchema,
+    ProductRequestSchema,
+    ProductResponseSchema,
+    ProductUpdateSchema,
+    add_new_product_feedback_to_db,
+    add_product_report,
+    get_product_feedbacks_from_db,
+    get_product_from_db,
+    get_products_of_user_from_db,
+    remove_product_feedback_from_db,
+    remove_product_from_db,
+    show_products_for_search,
+    update_product_in_db,
+)
 from .cruds import add_new_product_to_db, show_products_from_db
 
 router = APIRouter(prefix="/products", tags=["Kupi-Prodai Routes"])
@@ -28,7 +48,8 @@ async def add_new_product(
     - The user must have a linked Telegram account (checked via dependency).
 
     **Parameters:**
-    - `product_data`: JSON body containing product fields (name, description, price, category, condition, etc.)
+    - `product_data`: JSON body containing product fields
+    (name, description, price, category, condition, etc.)
 
     - Automatically associates the product with the authenticated user.
 
@@ -62,14 +83,16 @@ async def get_products_of_user(
 ):
     """
     Retrieves a list of all products created by the currently authenticated user,
-    including both active and inactive items. Results are ordered by most recently updated.
+    including both active and inactive items.
+    Results are ordered by most recently updated.
 
     **Parameters:**
 
     - `access_token`: Required authentication token from cookies (via dependency).
 
     **Returns:**
-    - A list of the user's own products, each with full product details and associated media.
+    - A list of the user's own products, each with full
+    product details and associated media.
 
     **Notes:**
     - Pagination is not yet implemented (all products are returned at once).
@@ -96,7 +119,8 @@ async def get_products(
     condition: ProductCondition = None,
 ):
     """
-    Retrieves a paginated list of active products, with optional filtering by category and condition.
+    Retrieves a paginated list of active products, with optional filtering
+    by category and condition.
 
     **Parameters:**
 
@@ -130,7 +154,8 @@ async def get_product(
     db_session: AsyncSession = Depends(get_db_session),
 ):
     """
-    Retrieves a single active product by its unique ID, including its associated media files.
+    Retrieves a single active product by its unique ID, including
+    its associated media files.
 
     **Parameters:**
 
@@ -139,10 +164,12 @@ async def get_product(
     - `access_token`: Required authentication token from cookies (via dependency).
 
     **Returns:**
-    - A detailed product object if found, including its name, description, price, category, condition, and media URLs.
+    - A detailed product object if found, including its name, description,
+    price, category, condition, and media URLs.
 
     **Errors:**
-    - Returns `404 Not Found` if the product with the specified ID does not exist or is inactive.
+    - Returns `404 Not Found` if the product with the specified ID
+    does not exist or is inactive.
 
     - Returns `401 Unauthorized` if no valid access token is provided.
     """
@@ -206,6 +233,7 @@ async def remove_product(
 
 @router.patch("/")  # works
 async def update_product(
+    request: Request,
     user: Annotated[dict, Depends(check_token)],
     product_update: ProductUpdateSchema,
     db_session: AsyncSession = Depends(get_db_session),
@@ -221,7 +249,8 @@ async def update_product(
     **Parameters:**
     - `product_id`: ID of the product to update (included in the request body).
 
-    - `name`, `description`, `price`, `category`, `condition`, `status` — any of these fields can be updated individually or together.
+    - `name`, `description`, `price`, `category`, `condition`, `status` —
+    any of these fields can be updated individually or together.
 
     **Process:**
     - Validates that the product exists and belongs to the user.
@@ -237,7 +266,10 @@ async def update_product(
     """
 
     product_update = await update_product_in_db(
-        product_update=product_update, user_sub=user.get("sub"), session=db_session
+        request=request,
+        product_update=product_update,
+        user_sub=user.get("sub"),
+        session=db_session,
     )
     return {
         "product_id": product_update.product_id,
@@ -255,8 +287,10 @@ async def post_search(
     db_session=Depends(get_db_session),
 ):
     """
-    Retrieves product objects from database based on the search result of pre_search router.
-    - The returned products contain details such as id, name, description, price, condition, and category.
+    Retrieves product objects from database based on the
+    search result of pre_search router.
+    - The returned products contain details such as id, name,
+    description, price, condition, and category.
 
     **Parameters:**
     - `keyword`: word for searching products
@@ -292,10 +326,12 @@ async def pre_search(
     - Uses Meilisearch to find matching products.
     - Will return active products only that match the keyword.
     - The search results are then used to fetch product details from the database.
-    - The returned products contain details such as id, name, description, price, condition, and category.
+    - The returned products contain details such as id, name,
+    description, price, condition, and category.
 
     **Parameters:**
-    - `keyword`: The search term used to find products. It will be used for querying in Meilisearch.
+    - `keyword`: The search term used to find products.
+    It will be used for querying in Meilisearch.
 
     **Returns:**
     - A list of product objects that match the keyword from the search.
@@ -440,7 +476,8 @@ async def store_new_product_report(
     - Automatically associates the product report with the authenticated user.
 
     ***Returns:***
-    - The newly created product report with full details including associated media (if any).
+    - The newly created product report with full details including associated
+    media (if any).
 
     ***Errors:***
     - Returns 500 on internal error.

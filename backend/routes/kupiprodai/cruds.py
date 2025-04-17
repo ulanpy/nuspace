@@ -12,7 +12,6 @@ from backend.common.utils import (
     update_meilisearch_data,
 )
 from backend.core.database.models.media import Media
-from backend.core.database.models.product import *
 from backend.core.database.models.product import (
     Product,
     ProductCategory,
@@ -26,6 +25,7 @@ from backend.routes.google_bucket.utils import (
     delete_bucket_object,
 )
 from backend.routes.kupiprodai.schemas import (
+    ListProductFeedbackResponseSchema,
     ListResponseSchema,
     ProductFeedbackSchema,
     ProductReportSchema,
@@ -34,7 +34,6 @@ from backend.routes.kupiprodai.schemas import (
     ProductUpdateSchema,
 )
 
-from .schemas import *
 from .utils import build_product_feedbacks_response, build_product_response
 
 
@@ -182,7 +181,10 @@ async def remove_product_from_db(
 
 
 async def update_product_in_db(
-    product_update: ProductUpdateSchema, user_sub: str, session: AsyncSession
+    request: Request,
+    product_update: ProductUpdateSchema,
+    user_sub: str,
+    session: AsyncSession,
 ):
     query = select(Product).where(
         Product.id == product_update.product_id, Product.user_sub == user_sub
@@ -195,7 +197,7 @@ async def update_product_in_db(
     if product_update.name is not None:
         product.name = product_update.name
         await update_meilisearch_data(
-            request=Request,
+            request=request,
             storage_name="products",
             json_values={"id": product_update.product_id, "name": product.name},
         )
