@@ -3,8 +3,7 @@ from markupsafe import Markup
 from sqladmin.models import ModelView
 
 from backend.core.database.manager import SyncDatabaseManager
-from backend.core.database.models import Club
-from backend.routes.auth import UserRole
+from backend.core.database.models import Club, UserRole
 from backend.routes.auth.cruds import get_user_role_sync
 from backend.routes.auth.utils import validate_access_token_sync
 

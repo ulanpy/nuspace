@@ -1,20 +1,20 @@
 from datetime import datetime
-from enum import Enum
+from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, DateTime, Enum, ForeignKey
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
 
-class EventPolicy(Enum):
+class EventPolicy(PyEnum):
     open = "open"
     free_ticket = "free_ticket"
     paid_ticket = "paid_ticket"
 
 
-class ClubType(Enum):
+class ClubType(PyEnum):
     academic = "academic"
     professional = "professional"
     recreational = "recreational"
