@@ -41,7 +41,6 @@ async def add_new_product(
 
     try:
         new_product = await add_new_product_to_db(db_session, product_data, user_sub=user["sub"], request=request)
-        await add_meilisearch_data(storage_name='products', json_values={'id': new_product.id, 'name': new_product.name})
         return new_product
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
@@ -235,15 +234,39 @@ async def update_product(
     )
     return {"product_id": product_update.product_id, "updated_fields": product_update.dict(exclude_unset=True)}
 
+@router.post('/post_search/', response_model = ListResponseSchema)
+async def post_search(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    keyword: str,
+    size: int = 20,
+    page: int = 1,
+    db_session=Depends(get_db_session)
+):
+    """
+    Retrieves product objects from database based on the search result of pre_search router.
+    - The returned products contain details such as id, name, description, price, condition, and category.
 
+    **Parameters:**
+    - `keyword`: word for searching products
+    - `size`: Number of products per page (default: 20)
+    - `page`: Page number (default: 1)
 
-@router.get("/search/", response_model=ListResponseSchema) #works
-async def search(
+    **Returns:**
+    - A list of product objects that match the keyword from the search.
+    - Products will be returned with their full details (from the database).
+    """
+    search_results = await search_for_meilisearch_data(keyword=keyword, request=request, page=page,size=size, storage_name = 'products')
+    product_ids = [product['id'] for product in search_results['hits']]
+    return await show_products_for_search(size = size, request = request, session=db_session, product_ids=product_ids, num_of_products=search_results['estimatedTotalHits'])
+    
+    
+
+@router.get("/pre_search/", response_model = list[str])
+async def pre_search(
         request: Request,
         user: Annotated[dict, Depends(check_token)],
         keyword: str,
-        size: int = 20, 
-        page: int = 1,
         db_session=Depends(get_db_session)
 ):
     """
@@ -255,27 +278,26 @@ async def search(
 
     **Parameters:**
     - `keyword`: The search term used to find products. It will be used for querying in Meilisearch.
-    - `size`: Number of products per page (default: 20)
-    - `page`: Page number (default: 1)
 
     **Returns:**
     - A list of product objects that match the keyword from the search.
-    - Products will be returned with their full details (from the database).
     """
-    result = await search_for_meilisearch_data(storage_name="products", keyword=keyword)
-    products = result['data']['hits']
-    product_ids = []
-    for product in products:
-        product_ids.append(product['id'])
+    distinct_keywords = []
+    seen = set()
+    page = 1
+    while len(distinct_keywords) < 5:
+        result = await search_for_meilisearch_data(request = request, storage_name="products", keyword=keyword, page = page, size = 20)
+        for object in result['hits']:
+            if object['name'] not in seen:
+                seen.add(object['name'])
+                distinct_keywords.append(object['name'])
+            if len(distinct_keywords) >= 5:
+                break
+        else:
+            break
+        page += 1
+    return distinct_keywords
 
-    return await show_products_for_search(
-        request=request,
-        session=db_session,
-        size=size,
-        page=page,
-        num_of_products=len(product_ids),
-        product_ids=product_ids
-    )
 
 
 @router.post("/feedback/{product_id}") #added description

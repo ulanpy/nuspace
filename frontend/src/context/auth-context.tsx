@@ -48,12 +48,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = "/api/login"
   }
 
-  const logout = () => {
-    // Implement logout if needed
-    queryClient.removeQueries({queryKey: kupiProdaiApi.getUserQueryOptions().queryKey})
-    queryClient.removeQueries({queryKey: kupiProdaiApi.getUserProductsQueryOptions().queryKey})
+  const logout = async () => {
+    try {
+      const res = await fetch("/api/logout", {
+        method: "GET",
+        credentials: "include", // Ensure cookies like refresh_token are sent
+      });
 
-  }
+      if (!res.ok) {
+        console.error("Logout failed", await res.json());
+      }
+
+      // Clear user-related cache
+      queryClient.removeQueries({
+        queryKey: kupiProdaiApi.getUserQueryOptions().queryKey,
+      });
+      queryClient.removeQueries({
+        queryKey: kupiProdaiApi.getUserProductsQueryOptions().queryKey,
+      });
+
+      // Optional: reload or redirect to login/home
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
 
   return (
     <AuthContext.Provider

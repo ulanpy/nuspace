@@ -35,7 +35,7 @@ async def add_new_product_to_db(
     result = await session.execute(query)
     new_product = result.scalars().first()
 
-    await add_meilisearch_data(storage_name='products', json_values={'id': new_product.id, 'name': new_product.name})
+    await add_meilisearch_data(request = request, storage_name='products', json_values={'id': new_product.id, 'name': new_product.name})
     return await build_product_response(new_product, session, request, media_section)
 
 
@@ -49,7 +49,7 @@ async def get_products_of_user_from_db(
         select(Product)
         .options(selectinload(Product.user))
         .filter_by(user_sub=user_sub)
-        .order_by(Product.updated_at.desc())
+        .order_by(Product.created_at.desc())
     )
     result = await session.execute(query)
     products = result.scalars().all()
@@ -87,7 +87,7 @@ async def show_products_from_db(
         .where(*sql_conditions)
         .offset(offset)
         .limit(size)
-        .order_by(Product.updated_at.desc())
+        .order_by(Product.created_at.desc())
     )
     result = await session.execute(query)
     products = result.scalars().all()
@@ -115,23 +115,6 @@ async def get_product_from_db(
         raise HTTPException(status_code=404, detail="Product not found")
     return await build_product_response(product, session, request, media_section)
 
-
-async def update_product_from_database(
-    product_id: int,
-    product_schema: ProductRequestSchema,
-    session: AsyncSession
-):
-    result = await session.execute(select(Product).filter_by(id=product_id))
-    product = result.scalars().first()
-    if not product:
-        return False
-    for key, value in product_schema.model_dump().items():
-        setattr(product, key, value)
-    await session.commit()
-    await session.refresh(product)
-    return product
-
-
 async def remove_product_from_db(
     request: Request,
     user_sub: str,
@@ -147,12 +130,13 @@ async def remove_product_from_db(
             select(Media).filter(Media.entity_id == product.id, Media.section == MediaSection.kp)
         )
         media_objects = media_result.scalars().all()
-        for media in media_objects:
-            await delete_bucket_object(request, media.name)
-            await session.delete(media)
-        await session.delete(product)
-        await session.commit()
-        await remove_meilisearch_data(storage_name='products', object_id=str(product_id))
+        if media_objects:
+            for media in media_objects:
+                await delete_bucket_object(request, media.name)
+                await session.delete(media)
+            await session.delete(product)
+            await session.commit()
+            await remove_meilisearch_data(request = request, storage_name='products', object_id=str(product_id))
 
 
 async def update_product_in_db(
@@ -171,7 +155,7 @@ async def update_product_in_db(
 
     if product_update.name is not None:
         product.name = product_update.name
-        await update_meilisearch_data(storage_name="products",
+        await update_meilisearch_data(request = Request, storage_name="products",
                                       json_values={"id": product_update.product_id, "name": product.name})
     if product_update.description is not None:
         product.description = product_update.description
@@ -245,13 +229,11 @@ async def add_product_report(report_data: ProductReportSchema, user_sub: str, se
 async def show_products_for_search(
     session: AsyncSession,
     size: int,
-    page: int,
     num_of_products: int,
-    product_ids:list[int],
+    product_ids: list[int],
     request: Request,
     media_section: MediaSection = MediaSection.kp
 ) -> ListResponseSchema:
-    offset = size * (page - 1)
 
     # Подсчет общего числа продуктов
     num_of_pages = max(1, (num_of_products + size - 1) // size)
@@ -260,9 +242,7 @@ async def show_products_for_search(
         select(Product)
         .options(selectinload(Product.user))
         .where(Product.id.in_(product_ids))
-        .offset(offset)
-        .limit(size)
-        .order_by(Product.updated_at.desc())
+        .order_by(Product.created_at.desc())
     )
     result = await session.execute(query)
     products = result.scalars().all()
@@ -271,3 +251,4 @@ async def show_products_for_search(
     products_response = await asyncio.gather(*(build_product_response(product, session, request, media_section)
                                                 for product in products))
     return ListResponseSchema(products=products_response, num_of_pages=num_of_pages)
+
