@@ -13,8 +13,6 @@ from backend.routes.auth.auth import KeyCloakManager
 from backend.core.database.models import Product
 from backend.common.utils import import_data_from_db
 from backend.common.dependencies import get_db_session
-from backend.routes.google_bucket.utils import update_bucket_push_endpoint
-import httpx
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,8 +24,6 @@ async def lifespan(app: FastAPI):
         app.state.db_manager = AsyncDatabaseManager()
         app.state.db_manager_sync = SyncDatabaseManager()
         app.state.kc_manager = KeyCloakManager()
-        app.state.meilisearch_client  = httpx.AsyncClient(base_url = config.meilisearch_url, headers = {"Authorization": f"Bearer {config.meilisearch_master_key}"})
-
 
         redis_pool = ConnectionPool.from_url(
             config.REDIS_URL,
@@ -51,8 +47,9 @@ async def lifespan(app: FastAPI):
         yield
 
     finally:
-        await app.state.bot.session.close()
-        await app.state.bot.delete_webhook(drop_pending_updates=True)
+        if config.IS_BOT_DEV:
+            await app.state.bot.session.close()
+            await app.state.bot.delete_webhook(drop_pending_updates=True)
 
         await app.state.redis.aclose()
         await app.state.db_manager.async_engine.dispose()
