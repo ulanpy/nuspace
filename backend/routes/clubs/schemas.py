@@ -83,6 +83,12 @@ class ListEventSchema(BaseModel):
     num_of_pages: int
 
 
+class ListClubSchema(BaseModel):
+    events: List[ClubResponseSchema]
+    num_of_pages: int
+
+
+
 # class ClubAnnouncement(BaseModel):
 #     id: int
 #     club_id: int

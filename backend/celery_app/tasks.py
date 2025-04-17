@@ -17,7 +17,7 @@ def schedule_kick(chat_id: int, user_id: int, message_id: int):
 
         await bot.session.close()
     try:
-        result = loop.run_until_complete(kick_async(chat_id, user_id))
+        result = loop.run_until_complete(kick_async(chat_id, user_id, message_id))
         return result
     finally:
         loop.close()

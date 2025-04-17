@@ -45,10 +45,11 @@ class Club(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    managers = relationship("ClubManager", back_populates="club")
-    events = relationship('ClubEvent', back_populates='club')
-    announcements = relationship('ClubAnnouncement', back_populates='club')
-    president_user = relationship("User", back_populates="clubs_led")
+    managers = relationship("ClubManager", back_populates="club", cascade="all, delete-orphan")
+    events = relationship('ClubEvent', back_populates='club', cascade="all, delete-orphan")
+    announcements = relationship('ClubAnnouncement', back_populates='club', cascade="all, delete-orphan")
+    president_user = relationship("User", back_populates="clubs_led", cascade="all, delete-orphan")
+
 
 class ClubManager(Base):
     __tablename__ = 'club_managers'

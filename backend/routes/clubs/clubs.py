@@ -3,10 +3,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import get_db_session, check_token
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 
-from .cruds import add_new_club, add_new_event, get_club_events, get_event_db
-from .schemas import ClubRequestSchema, ClubResponseSchema, ClubEventRequestSchema, ClubEventResponseSchema, ListEventSchema
+from .cruds import add_new_club, add_new_event, get_club_events, get_event_db, get_all_events, get_all_clubs
+from .enums import OrderEvents
+from .schemas import ClubRequestSchema, ClubResponseSchema, ClubEventRequestSchema, ClubEventResponseSchema, \
+    ListEventSchema, ListClubSchema
+from ...core.database.models.club import ClubType, EventPolicy
 
 router = APIRouter(tags=['Club Routes'])
 
@@ -70,3 +73,47 @@ async def get_event(
         return event
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                         detail="such event does not exist")
+
+
+@router.post("/events/list", response_model=ListEventSchema)
+async def get_events(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session),
+    size: int = 20,
+    page: int = 1,
+    club_type: Optional[ClubType] = None,
+    event_policy: Optional[EventPolicy] = None,
+    order: Optional[OrderEvents] = None
+) -> ListEventSchema:
+
+    return await get_all_events(
+        request=request,
+        session=db_session,
+        size=size,
+        page=page,
+        club_type=club_type,
+        event_policy=event_policy,
+        order=order
+    )
+
+
+@router.post("/clubs/list", response_model=ListClubSchema)
+async def get_events(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session),
+    size: int = 20,
+    page: int = 1,
+    club_type: Optional[ClubType] = None
+) -> ListClubSchema:
+    return await get_all_clubs(
+        request=request,
+        session=db_session,
+        size=size,
+        page=page,
+        club_type=club_type
+    )
+
+
+
