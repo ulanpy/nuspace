@@ -5,6 +5,16 @@ description = ""
 authors = ["Ulan <ulan.sharipov@nu.edu.kz>"]
 readme = "README.md"
 
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+select = ["E", "F", "I"]  # E: pycodestyle, F: pyflakes, I: isort
+ignore = ["D", "ANN101", "ANN102"]  # <-- можешь включить при желании
+
 [tool.poetry.dependencies]
 python = "^3.12"
 sqlalchemy = "^2.0.37"
@@ -33,8 +43,14 @@ celery = "^5.4.0"
 polib = "^1.2.0"
 pytz = "^2025.2"
 google-cloud-pubsub = "^2.29.0"
+pre-commit = "^4.2.0"
 
 
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11.5"
+black = "^25.1.0"
+pre-commit = "^4.2.0"
 
 [build-system]
 requires = ["poetry-core"]

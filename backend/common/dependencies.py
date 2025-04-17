@@ -1,13 +1,13 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import AsyncGenerator
-from fastapi import Request, HTTPException, status, Cookie, Depends, Response
-from typing import Annotated
+from typing import Annotated, AsyncGenerator
+
+from fastapi import Cookie, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.database.manager import AsyncDatabaseManager
+from backend.core.database.models import User
 from backend.routes.auth.keycloak_manager import KeyCloakManager
 from backend.routes.auth.utils import validate_access_token
-from backend.core.database.models import User
 
 
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
@@ -21,33 +21,31 @@ async def check_token(
     request: Request,
     response: Response,
     access_token: Annotated[str | None, Cookie(alias="access_token")] = None,
-    refresh_token: Annotated[str | None, Cookie(alias="refresh_token")] = None
+    refresh_token: Annotated[str | None, Cookie(alias="refresh_token")] = None,
 ) -> dict:
     """Dependency to validate Keycloak token from HTTP-only Secure cookie."""
     if not access_token or not refresh_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing access and/or refresh token cookie"
+            detail="Missing access and/or refresh token cookie",
         )
 
     kc: KeyCloakManager = request.app.state.kc_manager
-    return await validate_access_token(response, access_token, refresh_token, kc)  # Your existing validation
-
+    return await validate_access_token(
+        response, access_token, refresh_token, kc
+    )  # Your existing validation
 
 
 async def check_tg(
     user: Annotated[dict, Depends(check_token)],
-    db_session: AsyncSession = Depends(get_db_session)
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> bool:
     sub = user.get("sub")
-    result = await db_session.execute(
-        select(User.telegram_id).filter_by(sub=sub)
-    )
+    result = await db_session.execute(select(User.telegram_id).filter_by(sub=sub))
     tg_id = result.scalars().first()
 
     if not tg_id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Telegram not linked"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Telegram not linked"
         )
     return True
