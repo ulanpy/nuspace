@@ -134,9 +134,9 @@ async def remove_product_from_db(
             for media in media_objects:
                 await delete_bucket_object(request, media.name)
                 await session.delete(media)
-            await session.delete(product)
-            await session.commit()
-            await remove_meilisearch_data(request = request, storage_name='products', object_id=str(product_id))
+        await session.delete(product)
+        await session.commit()
+        await remove_meilisearch_data(request = request, storage_name='products', object_id=str(product_id))
 
 
 async def update_product_in_db(
