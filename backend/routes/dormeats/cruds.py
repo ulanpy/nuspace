@@ -1,19 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
 from fastapi import HTTPException, Request
-from backend.core.database.models.product import Product, ProductCategory
-from backend.core.database.models.media import Media
-from backend.core.database.models.product import ProductCondition, ProductCategory
-from backend.routes.kupiprodai.schemas import ProductResponseSchema, ProductUpdateSchema, ProductRequestSchema, ListResponseSchema
-from backend.common.utils import add_meilisearch_data,remove_meilisearch_data
-from typing import Literal, List
-from backend.core.database.models.product import ProductStatus
-from backend.common.utils import update_meilisearch_data
-from backend.routes.google_bucket.utils import generate_download_url, delete_bucket_object
-from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
-from sqlalchemy.orm import selectinload
-import asyncio
-from backend.core.database.models.dormeats import *
+from backend.routes.google_bucket.schemas import  MediaSection
+from backend.core.database.models.dormeats import CanteenProductCategory, CanteenProduct
+from .schemas import CanteenProductRequestSchema, CanteenProductResponseSchema
 
 
 # create read update delete
@@ -24,7 +13,6 @@ async def add_new_canteenproduct_to_db(
         product_data: CanteenProductRequestSchema,
         media_section: MediaSection = MediaSection.de
 ) -> CanteenProductResponseSchema: 
-    from .schemas import CanteenProductResponseSchema
     from .utils import build_canteen_product_response
     new_canteenproduct = CanteenProduct(**product_data.dict())
     session.add(new_canteenproduct)

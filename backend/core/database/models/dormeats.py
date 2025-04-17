@@ -57,9 +57,9 @@ class Meal(Base): #create, read, update, delete
     ingredient = relationship("Ingredient", back_populates="meals")
 
 class CanteenProductCategory(Enum):
-    veggies = "Овощи"
-    fruits = "Фрукты"
-    cerial = "Крупы"
+    veggies = "veggies"
+    fruits = "fruits"
+    cerial = "cerial"
 
 class CanteenProduct(Base):
     __tablename__= 'canteenproducts'
