@@ -18,7 +18,7 @@ class ClubResponseSchema(BaseModel):
     instagram_url: str = None
     created_at: datetime
     updated_at: datetime
-    media: MediaResponse | None = None
+    media: MediaResponse | List = []
 
     @field_validator('telegram_url', 'instagram_url')
     def validate_url(cls, value):

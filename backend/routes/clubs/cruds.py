@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import List
+
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Request
@@ -78,7 +81,7 @@ async def get_event_db(
     session: AsyncSession,
     media_section: MediaSection = MediaSection.ev,
     media_purpose: MediaPurpose = MediaPurpose.vertical_image
-) -> ClubEventResponseSchema | None:
+) -> ClubEventResponseSchema | List:
     query = (
         select(ClubEvent)
         .filter_by(id=event_id)
@@ -87,7 +90,7 @@ async def get_event_db(
     event: ClubEvent = result.scalars().first()
     if event:
         return await build_event_response(event, session, request, media_section, media_purpose)
-    return None
+    return []
 
 
 async def get_all_events(
@@ -108,13 +111,14 @@ async def get_all_events(
     num_of_pages = max(1, (total_count + size - 1) // size)
 
     sql_conditions = []
-    column = ClubEvent.created_at
+    column = ClubEvent.created_at.desc()
     if club_type:
         sql_conditions.append(Club.type == club_type)
     if event_policy:
         sql_conditions.append(ClubEvent.policy == event_policy)
-    if order:
-        column = getattr(ClubEvent, order.value)
+    if order == order.event_datetime:
+        column = getattr(ClubEvent, order.value).asc()
+    sql_conditions.append(ClubEvent.event_datetime >= datetime.utcnow())
 
     query = (
         select(ClubEvent)
@@ -122,7 +126,7 @@ async def get_all_events(
         .where(*sql_conditions)
         .offset(offset)
         .limit(size)
-        .order_by(column.desc())
+        .order_by(column)
     )
     result = await session.execute(query)
     events = result.scalars().all()

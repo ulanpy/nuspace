@@ -36,7 +36,7 @@ async def get_media_response(
     club_id: int,
     media_section: MediaSection,
     media_purpose: MediaPurpose
-) -> MediaResponse | None:
+) -> MediaResponse | List:
     """
     Возвращает MediaResponse для заданного клуба.
     """
@@ -50,7 +50,7 @@ async def get_media_response(
     media_object = media_result.scalars().first()
     if media_object:
         return await build_media_response(request, media_object)
-    return None
+    return []
 
 
 async def build_club_response(
