@@ -5,18 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from backend.common.dependencies import check_tg, check_token, get_db_session
 from backend.common.utils import search_for_meilisearch_data
 
-from .__init__ import (
+from .cruds import (
     AsyncSession,
-    ListProductFeedbackResponseSchema,
-    ListResponseSchema,
     ProductCategory,
     ProductCondition,
-    ProductFeedbackSchema,
-    ProductReportSchema,
-    ProductRequestSchema,
-    ProductResponseSchema,
-    ProductUpdateSchema,
     add_new_product_feedback_to_db,
+    add_new_product_to_db,
     add_product_report,
     get_product_feedbacks_from_db,
     get_product_from_db,
@@ -24,9 +18,18 @@ from .__init__ import (
     remove_product_feedback_from_db,
     remove_product_from_db,
     show_products_for_search,
+    show_products_from_db,
     update_product_in_db,
 )
-from .cruds import add_new_product_to_db, show_products_from_db
+from .schemas import (
+    ListProductFeedbackResponseSchema,
+    ListResponseSchema,
+    ProductFeedbackSchema,
+    ProductReportSchema,
+    ProductRequestSchema,
+    ProductResponseSchema,
+    ProductUpdateSchema,
+)
 
 router = APIRouter(prefix="/products", tags=["Kupi-Prodai Routes"])
 
