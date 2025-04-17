@@ -25,8 +25,8 @@ function App() {
                   path="kupi-prodai/product/:id"
                   element={<ProductDetailPage />}
                 />
-                <Route path="nu-events" element={<NUEventsPage />} />
-                <Route path="dorm-eats" element={<DormEatsPage />} />
+                {/* <Route path="nu-events" element={<NUEventsPage />} />
+                <Route path="dorm-eats" element={<DormEatsPage />} /> */}
               </Route>
             </Routes>
             <Toasts />

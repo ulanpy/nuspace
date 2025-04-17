@@ -1,9 +1,10 @@
-from aiogram import Router, F
+from aiogram import F, Router
 
 from .language import router as command_language
 from .start import router as start
 from .start_deeplink import router as start_deeplink
 from .student_validator import router as student_validator
+
 
 def setup_private_message_router() -> Router:
     # ORDER MATTERS

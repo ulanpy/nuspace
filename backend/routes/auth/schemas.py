@@ -1,12 +1,9 @@
-from datetime import datetime
-from typing import Optional, List
-from pydantic import BaseModel
-import uuid
-from typing import Any
+from typing import Any, Dict
+
+from pydantic import BaseModel, EmailStr
+
 from backend.core.database.models.user import UserRole, UserScope
 
-from pydantic import BaseModel, HttpUrl, EmailStr
-from typing import Dict
 
 class UserSchema(BaseModel):
     email: EmailStr
@@ -17,8 +14,10 @@ class UserSchema(BaseModel):
     picture: str
     sub: str
 
+
 class Sub(BaseModel):
     sub: str
+
 
 class CurrentUserResponse(BaseModel):
     user: Dict[str, Any]  # This will store user token data
