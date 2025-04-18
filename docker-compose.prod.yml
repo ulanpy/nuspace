@@ -53,11 +53,11 @@ services:
       - frontend-builder
     command: >
       /bin/sh -c "
-        apt update && apt install -y inotify-tools && 
-        (while inotifywait -e modify /etc/nginx/nginx.conf; do 
-          echo 'nginx config changed, copying and reloading Nginx...' && 
-          nginx -t && nginx -s reload; 
-        done) & 
+        apt update && apt install -y inotify-tools &&
+        (while inotifywait -e modify /etc/nginx/nginx.conf; do
+          echo 'nginx config changed, copying and reloading Nginx...' &&
+          nginx -t && nginx -s reload;
+        done) &
         nginx -g 'daemon off;'"
 
   redis:
@@ -77,7 +77,7 @@ services:
       - nuros
     container_name: meilisearch
     ports:
-      - 7700:7700
+      - 7701:7700
 
 
 
@@ -127,7 +127,7 @@ services:
     networks:
       - nuros
     volumes:
-      - ./frontend/dist:/app/dist  
+      - ./frontend/dist:/app/dist
     command: sh -c "npm run build"  # Run build command on container start
     restart: "no"
 
