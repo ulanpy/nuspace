@@ -1,12 +1,12 @@
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import check_tg, check_token, get_db_session
 from backend.common.utils import search_for_meilisearch_data
 
 from .cruds import (
-    AsyncSession,
     ProductCategory,
     ProductCondition,
     add_new_product_feedback_to_db,
