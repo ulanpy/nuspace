@@ -1,7 +1,7 @@
+from typing import Any, Awaitable, Callable
+
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
-from typing import Callable, Awaitable, Any
-
 from redis.asyncio import Redis
 
 
@@ -13,6 +13,7 @@ class RedisMiddleware(BaseMiddleware):
         self,
         handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
         event: TelegramObject,
-        data: dict[str, Any]) -> Any:
-            data['redis'] = self.redis
-            return await handler(event, data)
+        data: dict[str, Any],
+    ) -> Any:
+        data["redis"] = self.redis
+        return await handler(event, data)

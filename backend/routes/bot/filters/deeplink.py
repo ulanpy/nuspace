@@ -1,7 +1,8 @@
+from typing import Optional
+
 from aiogram.filters import BaseFilter, CommandObject
 from aiogram.types import Message
 from aiogram.utils.payload import decode_payload
-from typing import Optional
 
 
 class EncodedDeepLinkFilter(BaseFilter):
@@ -20,4 +21,3 @@ class EncodedDeepLinkFilter(BaseFilter):
                 return True
             return False
         return False
-

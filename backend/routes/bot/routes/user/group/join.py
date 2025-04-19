@@ -1,23 +1,18 @@
-from aiogram import Router, F
+from aiogram import F, Router
 from aiogram.types import ChatMemberUpdated
-from sqlalchemy.ext.asyncio import AsyncSession
 from redis.asyncio import Redis
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .common import handle_new_member
-
 
 router = Router()
 
 
 @router.chat_member(
-    (F.old_chat_member.is_member == False) &
-    (F.new_chat_member.is_member == True)
+    (F.old_chat_member.is_member == False) & (F.new_chat_member.is_member == True)
 )
 async def on_user_joined(
-    event: ChatMemberUpdated,
-    db_session: AsyncSession,
-    redis: Redis,
-    public_url: str
+    event: ChatMemberUpdated, db_session: AsyncSession, redis: Redis, public_url: str
 ) -> None:
     if event.new_chat_member.user.is_bot:
         return
@@ -28,5 +23,5 @@ async def on_user_joined(
         bot=event.bot,
         db_session=db_session,
         redis=redis,
-        public_url=public_url
+        public_url=public_url,
     )

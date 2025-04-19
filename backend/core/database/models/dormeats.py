@@ -1,8 +1,8 @@
 from .base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import List
-from sqlalchemy import String, Integer, ForeignKey, BigInteger, DateTime, Column, Boolean
-from sqlalchemy import Integer, CheckConstraint, Enum as SQLEnum
+from sqlalchemy import String, Integer, ForeignKey, BigInteger, DateTime, Column, Boolean, Boolean
+from sqlalchemy import Integer, CheckConstraint, CheckConstraint, Enum as SQLEnum
 from sqlalchemy.ext.hybrid import hybrid_property
 from statistics import mean
 
@@ -14,8 +14,18 @@ class Canteen(Base): #create, read, update, delete
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     description: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    description: Mapped[str] = mapped_column(String, nullable=False)
 
     meals = relationship("Meal", back_populates="canteen")
+    available_meals = relationship("AvailableMeals", back_populates="canteen")
+    canteen_feedbacks = relationship("CanteenFeedback", back_populates="canteen")
+    canteen_reports = relationship("CanteenReport", back_populates="canteen")
+
+    @hybrid_property
+    def average_rating(self):
+        ratings = [feedback.rating for feedback in self.canteen_feedback]
+        return round(mean(ratings), 1) if ratings else None
     available_meals = relationship("AvailableMeals", back_populates="canteen")
     canteen_feedbacks = relationship("CanteenFeedback", back_populates="canteen")
     canteen_reports = relationship("CanteenReport", back_populates="canteen")
@@ -47,9 +57,9 @@ class Meal(Base): #create, read, update, delete
     ingredient = relationship("Ingredient", back_populates="meals")
 
 class CanteenProductCategory(Enum):
-    veggies = "Овощи"
-    fruits = "Фрукты"
-    cerial = "Крупы"
+    veggies = "veggies"
+    fruits = "fruits"
+    cerial = "cerial"
 
 class CanteenProduct(Base):
     __tablename__= 'canteenproducts'
@@ -65,7 +75,7 @@ class Ingredient(Base): #create, read, update, delete
     __tablename__= 'ingredient'
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     meal_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('meals.id'), nullable=False)
-    product_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('products.id'), nullable=False)
+    product_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('canteenproducts.id'), nullable=False)
 
     canteenproducts = relationship("CanteenProduct", back_populates="ingredient")
     meals = relationship("Meal", back_populates="ingredient")
@@ -90,7 +100,7 @@ class CanteenFeedback(Base): #create, read, update, delete
     feedback: Mapped[str] = mapped_column(String, nullable=False)
     rating: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    canteen = relationship("Canteen", back_populates="canteen_feedback")
+    canteen = relationship("Canteen", back_populates="canteen_feedbacks")
 
 class CanteenReport(Base): #create, read, update, delete
     __tablename__ = "canteen_report"
@@ -98,4 +108,4 @@ class CanteenReport(Base): #create, read, update, delete
     canteen_id: Mapped[int] = mapped_column(Integer, ForeignKey('canteen.id'), nullable=False)
     report: Mapped[str] = mapped_column(String, nullable=False)
 
-    canteen = relationship("Canteen", back_populates="canteen_report")
+    canteen = relationship("Canteen", back_populates="canteen_reports")
