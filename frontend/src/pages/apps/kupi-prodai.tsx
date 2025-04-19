@@ -602,14 +602,6 @@ export default function KupiProdaiPage() {
                             size="sm"
                             className="flex gap-1 text-muted-foreground hover:text-primary"
                           >
-                            <Heart className="h-4 w-4" />
-                            <span>Like</span>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="flex gap-1 text-muted-foreground hover:text-primary"
-                          >
                             <MessageSquare className="h-4 w-4" />
                             <span>Message</span>
                           </Button>
@@ -1368,43 +1360,8 @@ export default function KupiProdaiPage() {
                                   }
                                 }}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4 text-foreground" />
                               </Button>
-
-                              {/* Reordering buttons */}
-                              {previewImages.length > 1 && (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-full bg-background/80"
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      moveImageUp(currentMediaIndex);
-                                    }}
-                                    disabled={currentMediaIndex === 0}
-                                  >
-                                    <ChevronUp className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-full bg-background/80"
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      moveImageDown(currentMediaIndex);
-                                    }}
-                                    disabled={
-                                      currentMediaIndex ===
-                                      previewImages.length - 1
-                                    }
-                                  >
-                                    <ChevronDown className="h-4 w-4" />
-                                  </Button>
-                                </>
-                              )}
                             </div>
                           </>
                         ) : (
