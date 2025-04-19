@@ -48,6 +48,13 @@ import { useImageContext } from "@/context/image-context";
 import { useMediaContext } from "@/context/media-context";
 import { useSearchProduct } from "@/modules/kupi-prodai/hooks/use-search-product";
 
+import { FaBook, FaLaptop, FaTshirt, FaCouch, FaBlender } from "react-icons/fa";
+import { BiSolidCategory } from "react-icons/bi";
+import { MdSports, MdBrush, MdLocalOffer } from "react-icons/md";
+import { BsPencilFill } from "react-icons/bs";
+import { GiKnifeFork } from "react-icons/gi";
+import { IoTicket, IoCarSport } from "react-icons/io5";
+
 // Define categories and conditions
 const categories = [
   "All Categories",
@@ -66,6 +73,38 @@ const categories = [
   "transport",
   "others",
 ];
+
+const getCategoryIcon = (category: string) => {
+  switch (category) {
+    case "books":
+      return <FaBook />;
+    case "electronics":
+      return <FaLaptop />;
+    case "clothing":
+      return <FaTshirt />;
+    case "furniture":
+      return <FaCouch />;
+    case "appliances":
+      return <FaBlender />;
+    case "sports":
+      return <MdSports />;
+    case "stationery":
+      return <BsPencilFill />;
+    case "art_supplies":
+      return <MdBrush />;
+    case "beauty":
+      return <MdLocalOffer />;
+    case "food":
+      return <GiKnifeFork />;
+    case "tickets":
+      return <IoTicket />;
+    case "transport":
+      return <IoCarSport />;
+    default:
+      return <BiSolidCategory />;
+  }
+};
+
 
 const displayCategories = [
   "All Categories",
@@ -456,10 +495,31 @@ export default function KupiProdaiPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            <div >
+                <h3 className="text-lg font-medium mb-4">Categories</h3>
+                <div className="overflow-x-auto pb-4">
+                  <div className="grid grid-rows-2 grid-flow-col gap-4 min-w-min">
+                    {categories.map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => setSelectedCategory(category)}
+                        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg border transition-all w-20 h-20 ${
+                          selectedCategory === category
+                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                            : "border-gray-200 hover:border-blue-200 hover:bg-blue-50"
+                        }`}
+                      >
+                        <span className="text-2xl">{getCategoryIcon(category)}</span>
+                        <span className="text-sm text-center capitalize">{category.replace(/_/g, " ")}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             <Button
               variant="outline"
               size="sm"
-              className="flex gap-2 sm:size-default"
+              className="flex w-14 sm:size-default"
               onClick={() => setShowFilters(!showFilters)}
             >
               <Filter className="h-4 w-4" />
@@ -467,62 +527,38 @@ export default function KupiProdaiPage() {
             </Button>
           </div>
 
-          {/* Simple Filter UI */}
           {showFilters && (
-            <div className="p-4 border rounded-md bg-background space-y-3">
-              <div className="space-y-1">
-                <label htmlFor="category" className="block text-sm font-medium">
-                  Category
-                </label>
-                <select
-                  id="category"
-                  className="w-full p-2 border rounded-md bg-background text-foreground"
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                >
-                  {categories.map((category, index) => (
-                    <option key={category} value={category}>
-                      {displayCategories[index]}
-                    </option>
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <div>
+                <h3 className="text-lg font-medium mb-4">Condition</h3>
+                <div className="flex flex-wrap gap-4">
+                  {conditions.map((condition) => (
+                    <button
+                      key={condition}
+                      onClick={() => setSelectedCondition(condition)}
+                      className={`px-4 py-2 rounded-lg border transition-all ${
+                        selectedCondition === condition
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "border-gray-200 hover:border-blue-200 hover:bg-blue-50"
+                      }`}
+                    >
+                      <span className="capitalize">{condition.replace(/_/g, " ")}</span>
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <label
-                  htmlFor="condition"
-                  className="block text-sm font-medium"
-                >
-                  Condition
-                </label>
-                <select
-                  id="condition"
-                  className="w-full p-2 border rounded-md bg-background text-foreground"
-                  value={selectedCondition}
-                  onChange={(e) => setSelectedCondition(e.target.value)}
-                >
-                  {conditions.map((condition, index) => (
-                    <option key={condition} value={condition}>
-                      {displayConditions[index]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-between pt-2">
+              <div className="flex justify-between pt-6 mt-6 border-t">
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={() => {
                     setSelectedCategory("All Categories");
                     setSelectedCondition("All Conditions");
                   }}
                 >
-                  Reset
+                  Reset Filters
                 </Button>
-                <Button size="sm" onClick={() => setShowFilters(false)}>
-                  Apply
-                </Button>
+                <Button onClick={() => setShowFilters(false)}>Close Filters</Button>
               </div>
             </div>
           )}
@@ -597,14 +633,6 @@ export default function KupiProdaiPage() {
                           </div>
                         </div>
                         <div className="flex justify-between">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="flex gap-1 text-muted-foreground hover:text-primary"
-                          >
-                            <Heart className="h-4 w-4" />
-                            <span>Like</span>
-                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -1368,43 +1396,8 @@ export default function KupiProdaiPage() {
                                   }
                                 }}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4 text-foreground" />
                               </Button>
-
-                              {/* Reordering buttons */}
-                              {previewImages.length > 1 && (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-full bg-background/80"
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      moveImageUp(currentMediaIndex);
-                                    }}
-                                    disabled={currentMediaIndex === 0}
-                                  >
-                                    <ChevronUp className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-full bg-background/80"
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      moveImageDown(currentMediaIndex);
-                                    }}
-                                    disabled={
-                                      currentMediaIndex ===
-                                      previewImages.length - 1
-                                    }
-                                  >
-                                    <ChevronDown className="h-4 w-4" />
-                                  </Button>
-                                </>
-                              )}
                             </div>
                           </>
                         ) : (
