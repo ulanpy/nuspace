@@ -526,6 +526,7 @@ export default function KupiProdaiPage() {
               <Filter className="h-4 w-4" />
               <span>Filter</span>
             </Button>
+            </div>
           </div>
 
           {showFilters && (
