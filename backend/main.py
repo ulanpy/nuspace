@@ -14,7 +14,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=config.origins,
+    allow_origins=config.ORIGINS,
     allow_credentials=True,
 )
-app.add_middleware(SessionMiddleware, secret_key=config.session_middleware_key)
+app.add_middleware(SessionMiddleware, secret_key=config.SESSION_MIDDLEWARE_KEY)
