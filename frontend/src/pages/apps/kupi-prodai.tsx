@@ -529,7 +529,7 @@ export default function KupiProdaiPage() {
                 <span>Filter</span>
               </Button>
           {showFilters && (
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="bg-card rounded-lg shadow-md p-6 mb-6">
               <div>
                 <h3 className="text-lg font-medium mb-4">Condition</h3>
                 <div className="flex flex-wrap gap-4">
