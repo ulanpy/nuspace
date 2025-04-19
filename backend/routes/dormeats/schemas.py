@@ -9,13 +9,24 @@ from backend.routes.google_bucket.schemas import MediaResponse
 from pydantic import BaseModel, HttpUrl, EmailStr
 from typing import Dict
 
-class MealSchema(BaseModel):
-    id: int
+class MealRequestSchema(BaseModel):
     name: str
     description: str
     price: int
     category: MealCategory
     canteen_id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+class MealResponseSchema(BaseModel):
+    id: int
+    name: str
+    description: str
+    price: int
+    category: MealCategory
+    media: List[MediaResponse] = []
+
+    model_config = ConfigDict(from_attributes=True)
 
 class CanteenProductRequestSchema(BaseModel):
     name: str

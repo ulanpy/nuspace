@@ -1,9 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, Request
 from backend.routes.google_bucket.schemas import  MediaSection
-from backend.core.database.models.dormeats import CanteenProductCategory, CanteenProduct
-from .schemas import CanteenProductRequestSchema, CanteenProductResponseSchema
-
+from backend.core.database.models.dormeats import CanteenProductCategory, CanteenProduct, Meal
+from .schemas import CanteenProductRequestSchema, CanteenProductResponseSchema, MealRequestSchema, MealResponseSchema
+from .utils import build_canteen_product_response, build_meal_response
 
 # create read update delete
 # add get update delete
@@ -13,7 +13,6 @@ async def add_new_canteenproduct_to_db(
         product_data: CanteenProductRequestSchema,
         media_section: MediaSection = MediaSection.de
 ) -> CanteenProductResponseSchema: 
-    from .utils import build_canteen_product_response
     new_canteenproduct = CanteenProduct(**product_data.dict())
     session.add(new_canteenproduct)
     await session.commit()
@@ -31,7 +30,19 @@ async def filter_canteenproducts_from_db(
     pass
 
     
-    
+# ibra: canteenproduct; ingredient; meal
+async def add_new_meal_to_db(
+        session: AsyncSession, 
+        request: Request, 
+        meal_data: MealRequestSchema,
+        media_section: MediaSection = MediaSection.de
+) -> MealResponseSchema:
+    new_meal = Meal(**meal_data.dict())
+    session.add(new_meal)
+    await session.commit()
+    await session.refresh(new_meal)
+
+    return await build_meal_response(meal=new_meal, session=session, request=request, media_section=media_section)
 
 
 
