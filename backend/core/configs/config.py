@@ -10,10 +10,10 @@ from pydantic_settings import BaseSettings
 ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 load_dotenv(os.path.join(ENV_DIR, ".env"))
 
+CREDENTIALS_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "nuspace.json"))
 
 class Config(BaseSettings):
-    GCP_CREDENTIALS_JSON: str
-    session_middleware_key: str = "your_secret_key"
+    SESSION_MIDDLEWARE_KEY: setattr
     DB_NAME: str
     DB_USER: str
     DB_PASSWORD: str
@@ -24,9 +24,9 @@ class Config(BaseSettings):
     BUCKET_NAME: str = "nuspace_bucket"
     IS_BOT_DEV: bool = False
     FRONTEND_HOST: str
-    nginx_port: int = 80
-    meilisearch_url: str
-    meilisearch_master_key: str
+    NGINX_PORT: int = 80
+    MEILISEARCH_MASTER_KEY: str
+    MEILISEARCH_URL: str
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
     IS_DEBUG: bool = True
@@ -36,7 +36,7 @@ class Config(BaseSettings):
     NUSPACE: str
     GCP_PROJECT_ID: str
     GCP_TOPIC_ID: str
-    origins: List[str] = ["*"]
+    ORIGINS: List[str] = ["*"]
 
     @property
     def DATABASE_URL(self) -> str:
@@ -57,8 +57,10 @@ class Config(BaseSettings):
 
     @property
     def BUCKET_CREDENTIALS(self):
+        with open(CREDENTIALS_PATH, 'r') as f:
+            credentials_info = json.load(f)
         return service_account.Credentials.from_service_account_info(
-            json.loads(self.GCP_CREDENTIALS_JSON)
+            credentials_info
         )
 
     @property
