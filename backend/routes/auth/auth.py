@@ -3,15 +3,25 @@ from typing import Annotated
 
 from aiogram import Bot
 from aiogram.utils.deep_linking import create_start_link
-from fastapi import APIRouter, Cookie, Depends, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import check_token, get_db_session
 from backend.core.configs.config import config
 from backend.routes.auth.keycloak_manager import KeyCloakManager
 from backend.routes.auth.schemas import CurrentUserResponse, Sub
 
-from .__init__ import *
+from .cruds import User, upsert_user
+from .schemas import UserSchema
+from .utils import (
+    create_user_schema,
+    exchange_code_for_credentials,
+    set_auth_cookies,
+    unset_auth_cookies,
+    validate_access_token,
+)
 
 router = APIRouter(tags=["Auth Routes"])
 

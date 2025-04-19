@@ -2,17 +2,18 @@ import base64
 import json
 import uuid
 from datetime import datetime, timedelta
+from io import BytesIO
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from google.cloud.exceptions import NotFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import check_token, get_db_session
 from backend.core.database.models.media import MediaPurpose, MediaSection
 
-from .__init__ import SignedUrlResponse, UploadConfirmation
 from .cruds import confirm_uploaded_media_to_db, delete_media, get_filename
+from .schemas import SignedUrlResponse, UploadConfirmation
 
 router = APIRouter(prefix="/bucket", tags=["Google Bucket Routes"])
 
@@ -64,11 +65,6 @@ async def generate_upload_url(
         )
         urls.append({"filename": filename, "upload_url": signed_url})
     return {"signed_urls": urls}
-
-
-from io import BytesIO
-
-from fastapi import File, Form, Request, UploadFile
 
 
 @router.post("/upload-image/")

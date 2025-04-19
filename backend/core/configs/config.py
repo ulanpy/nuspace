@@ -1,5 +1,6 @@
 import json
 import os
+from typing import List
 
 from dotenv import load_dotenv
 from google.oauth2 import service_account
@@ -35,6 +36,7 @@ class Config(BaseSettings):
     NUSPACE: str
     GCP_PROJECT_ID: str
     GCP_TOPIC_ID: str
+    origins: List[str] = ["*"]
 
     @property
     def DATABASE_URL(self) -> str:

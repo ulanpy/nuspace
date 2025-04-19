@@ -1,19 +1,19 @@
 from datetime import datetime
-from enum import Enum
+from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, DateTime, Enum
+from sqlalchemy import BigInteger, Column, DateTime
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
 
-class UserRole(Enum):
+class UserRole(PyEnum):
     default = "default"
     admin = "admin"
 
 
-class UserScope(Enum):
+class UserScope(PyEnum):
     allowed = "allowed"
     banned = "banned"
 

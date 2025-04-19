@@ -6,8 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.database.manager import AsyncDatabaseManager
 from backend.core.database.models import User
-from backend.routes.auth.keycloak_manager import KeyCloakManager
-from backend.routes.auth.utils import validate_access_token
 
 
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
@@ -29,11 +27,11 @@ async def check_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing access and/or refresh token cookie",
         )
+    from backend.routes.auth.keycloak_manager import KeyCloakManager
+    from backend.routes.auth.utils import validate_access_token
 
     kc: KeyCloakManager = request.app.state.kc_manager
-    return await validate_access_token(
-        response, access_token, refresh_token, kc
-    )  # Your existing validation
+    return await validate_access_token(response, access_token, refresh_token, kc)
 
 
 async def check_tg(

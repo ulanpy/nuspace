@@ -1,10 +1,8 @@
 from fastapi import HTTPException, Request
-from markupsafe import Markup
 from sqladmin.models import ModelView
 
 from backend.core.database.manager import SyncDatabaseManager
-from backend.core.database.models import Club
-from backend.routes.auth import UserRole
+from backend.core.database.models import Club, UserRole
 from backend.routes.auth.cruds import get_user_role_sync
 from backend.routes.auth.utils import validate_access_token_sync
 
@@ -15,7 +13,6 @@ class ClubAdmin(ModelView, model=Club):
 
     # 1. Column Configuration
     column_list = [
-        Club.picture,
         Club.name,
         Club.description,
         Club.president_user,
@@ -33,7 +30,6 @@ class ClubAdmin(ModelView, model=Club):
         Club.president_user,  # Use the RELATIONSHIP field for selection
         Club.telegram_url,
         Club.instagram_url,
-        Club.picture,
     ]
     form_ajax_refs = {
         "president_user": {
@@ -43,20 +39,20 @@ class ClubAdmin(ModelView, model=Club):
         }
     }
 
-    @staticmethod
-    def _format_photo_url(obj: Club, context) -> str:
-        if obj.picture:
-            return Markup(
-                f'<img src="{obj.picture}" alt="Club Photo" width="50" height="50">'
-            )
-        return "No Image"
+    # @staticmethod
+    # def _format_photo_url(obj: Club, context) -> str:
+    #     if obj.picture:
+    #         return Markup(
+    #             f'<img src="{obj.picture}" alt="Club Photo" width="50" height="50">'
+    #         )
+    #     return "No Image"
 
-    column_formatters = {
-        "picture": _format_photo_url,
-        "president_user": lambda m, c: (
-            m.president_user.name if m.president_user else "Unknown"
-        ),
-    }
+    # column_formatters = {
+    #     "picture": _format_photo_url,
+    #     "president_user": lambda m, c: (
+    #         m.president_user.name if m.president_user else "Unknown"
+    #     ),
+    # }
 
     def is_accessible(self, request: Request):
         try:

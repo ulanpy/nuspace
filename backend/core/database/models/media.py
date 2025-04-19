@@ -1,20 +1,20 @@
 from datetime import datetime
-from enum import Enum
+from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, DateTime, Enum, Integer
+from sqlalchemy import BigInteger, Column, DateTime, Integer
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
 
-class MediaSection(Enum):
+class MediaSection(PyEnum):
     kp = "kp"
     ev = "ev"
     de = "de"
 
 
-class MediaPurpose(Enum):
+class MediaPurpose(PyEnum):
     banner = "banner"
     vertical_image = "vertical_image"
     large_image = "large_image"
