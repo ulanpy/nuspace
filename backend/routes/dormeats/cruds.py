@@ -3,7 +3,7 @@ from fastapi import HTTPException, Request
 from backend.routes.google_bucket.schemas import  MediaSection
 from backend.core.database.models.dormeats import CanteenProductCategory, CanteenProduct, Meal, CanteenReport
 from .schemas import CanteenProductRequestSchema, CanteenProductResponseSchema, MealRequestSchema, MealResponseSchema, CanteenReportRequestSchema, CanteenReportResponseSchema
-from .utils import build_canteen_product_response, build_meal_response
+from .utils import build_canteen_product_response, build_meal_response, build_canteen_report_response
 
 # create read update delete
 # add get update delete
@@ -56,4 +56,4 @@ async def add_new_canteen_report_to_db(
     await session.commit()
     await session.refresh(new_canteen_report)
 
-    return await build_canteen_product_response(canteen_report=new_canteen_report, session=session, request=request, media_section=media_section)
+    return await build_canteen_report_response(canteen_report=new_canteen_report, session=session, request=request, media_section=media_section)
