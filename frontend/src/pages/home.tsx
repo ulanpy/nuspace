@@ -6,6 +6,10 @@ import { PersonalizedDashboard } from "@/components/personalized-dashboard"
 import { LoginButton } from "../components/login-button"
 import { useAuth } from "../context/auth-context"
 import { GlowCarouselWithImage } from "../components/glow-carousel-with-images"
+import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';  // Import the useNavigate hook
+
+
 
 // Define carousel items with your image for the homepage
 const homeCarouselItems = [
@@ -13,7 +17,8 @@ const homeCarouselItems = [
     id: 1,
     content: (
       <div className="w-full h-full flex items-center justify-center">
-        <img src="/images/nu-space-presentation.jpg" alt="Featured image" className="w-full h-full object-cover rounded-xl" />
+        <img src="/images/nu-space-presentation.jpg" alt="Featured image" className="w-full h-full object-cover rounded-xl"
+        />
       </div>
     ),
     gradient: "radial-gradient(circle, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.06) 50%, rgba(194,65,12,0) 100%)",
@@ -33,6 +38,7 @@ const homeCarouselItems = [
 
 export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth()
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4">
       {/* Header with login button */}
@@ -62,6 +68,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="mt-16 text-center text-sm text-muted-foreground">
         <p>© 2025 NU Space. All rights reserved.</p>
+        <Link to="/apps/about">About Us</Link>
       </footer>
     </div>
   )
