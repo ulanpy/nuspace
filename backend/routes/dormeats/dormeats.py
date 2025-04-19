@@ -16,7 +16,6 @@ async def add_new_product(
         db_session: AsyncSession = Depends(get_db_session)
 ):
     try:
-        new_canteen_product = await add_new_canteenproduct_to_db(session = db_session, product_data = product_data, request=request)
-        return new_canteen_product
+        return await add_new_canteenproduct_to_db(session = db_session, product_data = product_data, request=request)
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

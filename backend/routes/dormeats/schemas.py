@@ -18,7 +18,6 @@ class MealSchema(BaseModel):
     canteen_id: int
 
 class CanteenProductRequestSchema(BaseModel):
-    id: int
     name: str
     category: CanteenProductCategory
 
