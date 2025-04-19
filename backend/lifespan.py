@@ -15,8 +15,8 @@ from backend.routes.auth.keycloak_manager import KeyCloakManager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        app.state.kc_manager = KeyCloakManager()
         app.state.config = Config()
+        app.state.kc_manager = KeyCloakManager()
         app.state.storage_client = storage.Client(credentials=config.BUCKET_CREDENTIALS)
 
         await setup_db(app)
