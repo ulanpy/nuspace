@@ -12,7 +12,7 @@ async def generate_download_url(storage_client: storage.Client, filename: str):
     - GET access only
     - Requires valid JWT
     """
-    blob = storage_client.bucket(config.bucket_name).blob(filename)
+    blob = storage_client.bucket(config.BUCKET_NAME).blob(filename)
 
     signed_url = blob.generate_signed_url(
         version="v4",
