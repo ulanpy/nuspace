@@ -4,6 +4,7 @@ import KupiProdaiPage from "./pages/apps/kupi-prodai";
 import ProductDetailPage from "./pages/apps/kupi-prodai/product/[id]";
 import NUEventsPage from "./pages/apps/nu-events";
 import DormEatsPage from "./pages/apps/dorm-eats";
+import { About } from "./pages/apps/about";
 import AppsLayout from "./layouts/apps-layout";
 import { AuthProvider } from "./context/auth-context";
 import { Toasts } from "./components/ui/toast";
@@ -29,8 +30,9 @@ function App() {
                   path="kupi-prodai/product/:id"
                   element={<ProductDetailPage />}
                 />
-                <Route path="nu-events" element={<NUEventsPage />} />
-                <Route path="dorm-eats" element={<DormEatsPage />} />
+                <Route path="about" element={<About />}/>
+                {/* <Route path="nu-events" element={<NUEventsPage />} />
+                <Route path="dorm-eats" element={<DormEatsPage />} /> */}
               </Route>
             </Routes>
             <Toasts />
@@ -40,6 +42,5 @@ function App() {
     </AuthProvider>
   );
 }
-import { Search } from "lucide-react";
 
 export default App;

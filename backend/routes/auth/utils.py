@@ -6,10 +6,6 @@ from backend.core.configs.config import *
 from backend.routes.auth.keycloak_manager import KeyCloakManager
 from backend.routes.auth.schemas import *
 
-redis_client = redis.Redis(
-    host=config.redis_host, port=config.redis_port, decode_responses=True
-)
-
 
 async def validate_access_token(
     response: Response, access_token: str, refresh_token: str, kc: KeyCloakManager

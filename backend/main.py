@@ -5,11 +5,16 @@ from starlette.middleware.sessions import SessionMiddleware
 from backend.core.configs.config import config
 from backend.lifespan import lifespan
 
-app = FastAPI(debug=True, lifespan=lifespan, root_path="/api", docs_url="/docs")
+app = FastAPI(
+    debug=True,
+    lifespan=lifespan,
+    root_path="/api",
+    docs_url="/docs" if config.IS_DEBUG else None,
+)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=config.origins,
+    allow_origins=config.ORIGINS,
     allow_credentials=True,
 )
-app.add_middleware(SessionMiddleware, secret_key=config.session_middleware_key)
+app.add_middleware(SessionMiddleware, secret_key=config.SESSION_MIDDLEWARE_KEY)

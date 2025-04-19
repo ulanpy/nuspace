@@ -19,6 +19,7 @@ class MediaPurpose(PyEnum):
     vertical_image = "vertical_image"
     large_image = "large_image"
     thumbnail = "thumbnail"
+    profile = "profile"
 
 
 # Mapped[dtype] defaults parameters: nullable=False, unique=True, primary_key=False
@@ -38,9 +39,7 @@ class Media(Base):
     media_purpose: Mapped[MediaPurpose] = mapped_column(
         SQLEnum(MediaPurpose, name="media_purpose"), nullable=False
     )
-    media_order: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0
-    )  # Add order field
+    media_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
