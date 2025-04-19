@@ -22,7 +22,7 @@ export function useCreateProduct() {
         queryClient.invalidateQueries({
           queryKey: [kupiProdaiApi.baseKey],
         });
-      }, 1500);
+      }, 2000);
     },
     onSuccess() {
       setTimeout(() => {
@@ -31,7 +31,7 @@ export function useCreateProduct() {
           description: "Product created successfully",
         });
         setActiveTab("my-listings");
-      }, 1500);
+      }, 2000);
     },
     onError() {
       toast({

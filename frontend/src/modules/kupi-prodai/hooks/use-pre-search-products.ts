@@ -3,12 +3,12 @@ import { useAuth } from "@/context/auth-context";
 import { useListingState } from "@/context/listing-context";
 import { useQuery } from "@tanstack/react-query";
 
-export const useSearchProduct = () => {
+export const usePreSearchProducts = () => {
   const { isAuthenticated } = useAuth();
   const { searchQuery } = useListingState();
-  const { data: searchedProducts } = useQuery({
-    ...kupiProdaiApi.getSearchProductQueryOptions(searchQuery),
-    enabled: isAuthenticated && !!searchQuery.trim(),
+  const { data: preSearchedProducts } = useQuery({
+    ...kupiProdaiApi.getPreSearchedProductsQueryOptions(searchQuery),
+    enabled: isAuthenticated && !!searchQuery,
   });
-  return { searchedProducts };
+  return { preSearchedProducts };
 };

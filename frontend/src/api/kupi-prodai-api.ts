@@ -162,12 +162,24 @@ export const kupiProdaiApi = {
   },
 
   // Search for products
-  getSearchProductQueryOptions: (keyword: string) => {
+  getPreSearchedProductsQueryOptions: (keyword: string) => {
     return queryOptions({
-      queryKey: ["search-products", keyword],
+      queryKey: ["pre-search-products", keyword],
       queryFn: ({ signal }) => {
-        return apiCall<Product[]>(`/products/search/?keyword=${keyword}`, {
+        return apiCall<string[]>(`/products/pre_search/?keyword=${keyword}`, {
           signal,
+        });
+      },
+    });
+  },
+  getSearchedProductsQueryOptions: ({page = defaultPage, size = defaultSize, keyword } : {page: number, size: number, keyword: string}) => {
+    return queryOptions({
+      queryKey: ["search-products", {page, size, keyword}],
+      queryFn: ({queryKey}) => {
+        const [, params] = queryKey as [string, {page: number, size: number, keyword: string}]
+        let endpoint = `/products/post_search/?keyword=${params.keyword}&size=${params.size}&page=${params.page}`
+        return apiCall<Product[]>(endpoint, {
+          method: "POST"
         });
       },
     });

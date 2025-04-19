@@ -46,7 +46,8 @@ import { useToggleProduct } from "@/modules/kupi-prodai/hooks/use-toggle-product
 import { useListingState } from "@/context/listing-context";
 import { useImageContext } from "@/context/image-context";
 import { useMediaContext } from "@/context/media-context";
-import { useSearchProduct } from "@/modules/kupi-prodai/hooks/use-search-product";
+import { usePreSearchProducts } from "@/modules/kupi-prodai/hooks/use-pre-search-products";
+import { useSearchProducts } from "@/modules/kupi-prodai/hooks/use-search-products";
 
 // Define categories and conditions
 const categories = [
@@ -147,10 +148,12 @@ export default function KupiProdaiPage() {
   const { handleToggleProductStatus, getIsPendingToggleMutation } =
     useToggleProduct();
 
-  const { searchedProducts } = useSearchProduct();
+  // Search
+  const { preSearchedProducts } = usePreSearchProducts();
+  const { searchedProducts, handleSearchProducts } = useSearchProducts();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
-
   // Edit listing state [Form Hooks]
   const { handleEditListing, closeEditModal } = useEditModal();
   const {
@@ -454,7 +457,23 @@ export default function KupiProdaiPage() {
                 className="pl-9 text-sm"
                 value={searchQuery.trim()}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchProducts}
               />
+              {preSearchedProducts && preSearchedProducts.length > 0 && (
+                <ul className="absolute top-full left-0 right-0 bg-[#020817]  border border-t-0 border-gray-300 shadow-md z-10 rounded-b-lg">
+                  {preSearchedProducts.map((product, index) => (
+                    <li
+                      key={index}
+                      className="px-4 py-2 hover:bg-gray-900 cursor-pointer"
+                      onClick={() => {
+                        setSearchQuery(product)
+                      }}
+                    >
+                      {product}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <Button
               variant="outline"
@@ -668,19 +687,19 @@ export default function KupiProdaiPage() {
             </Alert>
           ) : !isTelegramLinked ? (
             <Alert
-            variant="warning"
-            className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900"
-          >
-            <AlertTitle className="flex items-center gap-2">
-              Telegram Required
-            </AlertTitle>
-            <AlertDescription className="space-y-2">
-              <p>You need to link your Telegram account before selling items.</p>
-            </AlertDescription>
-          </Alert>
-          )
-
-          : (
+              variant="warning"
+              className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900"
+            >
+              <AlertTitle className="flex items-center gap-2">
+                Telegram Required
+              </AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>
+                  You need to link your Telegram account before selling items.
+                </p>
+              </AlertDescription>
+            </Alert>
+          ) : (
             <form onSubmit={handleCreate} className="space-y-4">
               {/* Name */}
               <div className="space-y-2">
@@ -898,7 +917,9 @@ export default function KupiProdaiPage() {
                       <Card
                         key={product.id}
                         className="overflow-hidden"
-                        onClick={() => navigate(`/apps/kupi-prodai/product/${product.id}`)}
+                        onClick={() =>
+                          navigate(`/apps/kupi-prodai/product/${product.id}`)
+                        }
                       >
                         <div className="aspect-square relative">
                           <img
@@ -918,7 +939,9 @@ export default function KupiProdaiPage() {
                           </Badge>
                         </div>
                         <CardContent className="p-3">
-                          <h3 className="font-medium text-sm line-clamp-1">{product.name}</h3>
+                          <h3 className="font-medium text-sm line-clamp-1">
+                            {product.name}
+                          </h3>
                           <p className="text-sm font-bold">{product.price} ₸</p>
                           <div className="flex justify-between mt-2">
                             <Button
@@ -948,7 +971,10 @@ export default function KupiProdaiPage() {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleToggleProductStatus(product.id, product.status);
+                                handleToggleProductStatus(
+                                  product.id,
+                                  product.status
+                                );
                               }}
                             >
                               Mark as Sold
@@ -956,7 +982,6 @@ export default function KupiProdaiPage() {
                           </div>
                         </CardContent>
                       </Card>
-
                     ))}
                   </div>
                 ) : (

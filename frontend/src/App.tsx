@@ -10,6 +10,7 @@ import { Toasts } from "./components/ui/toast";
 import { ListingProvider } from "./context/listing-context";
 import { ImageProvider } from "./context/image-context";
 import { MediaProvider } from "./context/media-context";
+import SearchPage from "./pages/apps/kupi-prodai/search/page"
 
 function App() {
   return (
@@ -20,13 +21,16 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/apps" element={<AppsLayout />}>
-                <Route path="kupi-prodai" element={<KupiProdaiPage />} />
+                <Route path="kupi-prodai" element={<KupiProdaiPage />} >
+                  <Route path="search" element={<SearchPage/>} />
+                  <Route path="search/:keyword" element={<KupiProdaiPage />} />
+                </Route>
                 <Route
                   path="kupi-prodai/product/:id"
                   element={<ProductDetailPage />}
                 />
-                {/* <Route path="nu-events" element={<NUEventsPage />} />
-                <Route path="dorm-eats" element={<DormEatsPage />} /> */}
+                <Route path="nu-events" element={<NUEventsPage />} />
+                <Route path="dorm-eats" element={<DormEatsPage />} />
               </Route>
             </Routes>
             <Toasts />
@@ -36,5 +40,6 @@ function App() {
     </AuthProvider>
   );
 }
+import { Search } from "lucide-react";
 
 export default App;
