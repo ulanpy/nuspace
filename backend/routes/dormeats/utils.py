@@ -1,9 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import Request
-from backend.core.database.models.dormeats import CanteenProduct, Meal
+from backend.core.database.models.dormeats import CanteenProduct, Meal, CanteenReport
 from backend.core.database.models.media import Media
-from backend.routes.dormeats.schemas import CanteenProductResponseSchema, MealResponseSchema
+from backend.routes.dormeats.schemas import CanteenProductResponseSchema, MealResponseSchema, CanteenReportResponseSchema
 from typing import List
 from backend.routes.google_bucket.utils import generate_download_url
 from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
@@ -37,5 +37,19 @@ async def build_meal_response(
         description = meal.description,
         price = meal.price, 
         category = meal.category,
+        media = media_responses
+    )
+
+async def build_canteen_report_response(
+        canteen_report: CanteenReport,
+        session: AsyncSession,
+        request: Request,
+        media_section: MediaSection
+):
+    media_responses = await get_media_responses(session=session, request=request, entity_id=canteen_report.id, media_section=media_section)
+    return CanteenReportResponseSchema(
+        id = canteen_report.id,
+        canteen_id = canteen_report.canteen_id,
+        report = canteen_report.report,
         media = media_responses
     )

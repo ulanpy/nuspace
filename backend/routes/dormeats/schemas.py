@@ -64,8 +64,18 @@ class CanteenFeedbackSchema(BaseModel):
     feedback: str
     rating: int
 
-class CanteenReportSchema(BaseModel):
-    id: int
+class CanteenReportRequestSchema(BaseModel):
     canteen_id: int
     report: str
     
+    model_config = ConfigDict(from_attributes=True)
+    
+
+class CanteenReportResponseSchema(BaseModel):
+    id: int
+    canteen_id: int
+    report: str
+    media: List[MediaResponse] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
