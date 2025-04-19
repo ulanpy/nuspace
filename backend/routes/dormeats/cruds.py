@@ -45,4 +45,3 @@ async def add_new_meal_to_db(
     return await build_meal_response(meal=new_meal, session=session, request=request, media_section=media_section)
 
 
-

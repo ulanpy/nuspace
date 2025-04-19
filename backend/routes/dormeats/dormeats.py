@@ -7,7 +7,7 @@ from backend.common.dependencies import get_db_session, check_token
 
 router = APIRouter(prefix="/dormeats", tags=['Dorm-Eats Routes'])
 
-@router.post("canteen_product/new", response_model=CanteenProductResponseSchema) #works
+@router.post("/canteen_product/new", response_model=CanteenProductResponseSchema) #works
 async def add_new_product(
         request: Request,
         user: Annotated[dict, Depends(check_token)],
@@ -19,7 +19,7 @@ async def add_new_product(
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.post("meal/new", response_model=MealResponseSchema)
+@router.post("/meal/new", response_model=MealResponseSchema)
 async def add_new_meal(
         request: Request,
         user: Annotated[dict, Depends(check_token)],

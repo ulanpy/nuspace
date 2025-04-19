@@ -35,7 +35,7 @@ async def build_meal_response(
         id = meal.id,
         name = meal.name,
         description = meal.description,
-        priece = meal.price, 
+        price = meal.price, 
         category = meal.category,
         media = media_responses
     )
