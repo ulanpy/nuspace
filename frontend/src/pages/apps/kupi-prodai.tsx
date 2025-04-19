@@ -495,22 +495,7 @@ export default function KupiProdaiPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex gap-2 sm:size-default"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <Filter className="h-4 w-4" />
-              <span>Filter</span>
-            </Button>
-          </div>
-
-          {showFilters && (
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-6">Filters</h2>
-
-              <div className="mb-8">
+            <div >
                 <h3 className="text-lg font-medium mb-4">Categories</h3>
                 <div className="overflow-x-auto pb-4">
                   <div className="grid grid-rows-2 grid-flow-col gap-4 min-w-min">
@@ -531,7 +516,19 @@ export default function KupiProdaiPage() {
                   </div>
                 </div>
               </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex w-14 sm:size-default"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="h-4 w-4" />
+              <span>Filter</span>
+            </Button>
+          </div>
 
+          {showFilters && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
               <div>
                 <h3 className="text-lg font-medium mb-4">Condition</h3>
                 <div className="flex flex-wrap gap-4">
