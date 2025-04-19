@@ -495,6 +495,7 @@ export default function KupiProdaiPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            </div>
 
             {/* Categories section - separate row */}
             <div className="w-full">
@@ -517,18 +518,16 @@ export default function KupiProdaiPage() {
                   ))}
                 </div>
               </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex w-14 sm:size-default"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <Filter className="h-4 w-4" />
-              <span>Filter</span>
-            </Button>
             </div>
-          </div>
-
+            <Button
+                variant="outline"
+                size="sm"
+                className="flex w-14 sm:size-default"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="h-4 w-4" />
+                <span>Filter</span>
+              </Button>
           {showFilters && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
               <div>
