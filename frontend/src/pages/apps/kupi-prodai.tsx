@@ -495,25 +495,26 @@ export default function KupiProdaiPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div >
-                <h3 className="text-lg font-medium mb-4">Categories</h3>
-                <div className="overflow-x-auto pb-4">
-                  <div className="grid grid-rows-2 grid-flow-col gap-4 min-w-min">
-                    {categories.map((category) => (
-                      <button
-                        key={category}
-                        onClick={() => setSelectedCategory(category)}
-                        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg border transition-all w-20 h-20 ${
-                          selectedCategory === category
-                            ? "border-blue-500 bg-blue-50 text-blue-700"
-                            : "border-gray-200 hover:border-blue-200 hover:bg-blue-50"
-                        }`}
-                      >
-                        <span className="text-2xl">{getCategoryIcon(category)}</span>
-                        <span className="text-sm text-center capitalize">{category.replace(/_/g, " ")}</span>
-                      </button>
-                    ))}
-                  </div>
+
+            {/* Categories section - separate row */}
+            <div className="w-full">
+              <h3 className="text-lg font-medium mb-4">Categories</h3>
+              <div className="overflow-x-auto pb-4">
+                <div className="grid grid-rows-2 grid-flow-col gap-4 min-w-min">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-border/40 shadow-lg transition-all w-20 h-20 ${
+                        selectedCategory === category
+                          ? "bg-blue-50 text-black"
+                          : "hover:border-blue-200 hover:bg-blue-50"
+                      }`}
+                    >
+                      <span className="text-2xl">{getCategoryIcon(category)}</span>
+                      <span className="text-sm text-center capitalize">{category.replace(/_/g, " ")}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             <Button
@@ -536,10 +537,10 @@ export default function KupiProdaiPage() {
                     <button
                       key={condition}
                       onClick={() => setSelectedCondition(condition)}
-                      className={`px-4 py-2 rounded-lg border transition-all ${
+                      className={`px-4 py-2 rounded-lg border border-border/40 shadow-lg transition-all ${
                         selectedCondition === condition
-                          ? "border-blue-500 bg-blue-50 text-blue-700"
-                          : "border-gray-200 hover:border-blue-200 hover:bg-blue-50"
+                          ? "bg-blue-50 text-black"
+                          : "hover:border-blue-200 hover:bg-blue-50"
                       }`}
                     >
                       <span className="capitalize">{condition.replace(/_/g, " ")}</span>
