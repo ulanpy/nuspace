@@ -1,25 +1,24 @@
-from backend.core.database.models import Club
-from backend.routes.auth import UserRole
-from fastapi import Request, HTTPException
-from markupsafe import Markup
+from fastapi import HTTPException, Request
 from sqladmin.models import ModelView
 
-from backend.routes.auth.utils import validate_access_token_sync
-from backend.routes.auth.cruds import get_user_role_sync
 from backend.core.database.manager import SyncDatabaseManager
+from backend.core.database.models import Club, UserRole
+from backend.routes.auth.cruds import get_user_role_sync
+from backend.routes.auth.utils import validate_access_token_sync
+
+
 class ClubAdmin(ModelView, model=Club):
     icon = "fa-solid fa-users"
     category = "Clubs"
 
     # 1. Column Configuration
     column_list = [
-        Club.picture,
         Club.name,
         Club.description,
         Club.president_user,
         # Show relationship in list view
         Club.telegram_url,
-        Club.instagram_url
+        Club.instagram_url,
     ]
 
     column_searchable_list = [Club.name, Club.president_user]
@@ -31,28 +30,29 @@ class ClubAdmin(ModelView, model=Club):
         Club.president_user,  # Use the RELATIONSHIP field for selection
         Club.telegram_url,
         Club.instagram_url,
-        Club.picture
     ]
     form_ajax_refs = {
         "president_user": {
             "fields": ("name",),  # Search both name and surname
             "order_by": ("name",),
-            "limit": 10
+            "limit": 10,
         }
     }
 
+    # @staticmethod
+    # def _format_photo_url(obj: Club, context) -> str:
+    #     if obj.picture:
+    #         return Markup(
+    #             f'<img src="{obj.picture}" alt="Club Photo" width="50" height="50">'
+    #         )
+    #     return "No Image"
 
-
-    @staticmethod
-    def _format_photo_url(obj: Club, context) -> str:
-        if obj.picture:
-            return Markup(f'<img src="{obj.picture}" alt="Club Photo" width="50" height="50">')
-        return "No Image"
-
-    column_formatters = {
-        "picture": _format_photo_url,
-        "president_user": lambda m, c: m.president_user.name if m.president_user else "Unknown"
-    }
+    # column_formatters = {
+    #     "picture": _format_photo_url,
+    #     "president_user": lambda m, c: (
+    #         m.president_user.name if m.president_user else "Unknown"
+    #     ),
+    # }
 
     def is_accessible(self, request: Request):
         try:
@@ -60,8 +60,7 @@ class ClubAdmin(ModelView, model=Club):
             kc_manager = request.app.state.kc_manager
 
             sub = validate_access_token_sync(
-                request.cookies.get("access_token"),
-                kc_manager
+                request.cookies.get("access_token"), kc_manager
             )["sub"]
 
             # Use async with instead of async for

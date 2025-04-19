@@ -6,5 +6,6 @@ class ConfirmTelegramUser(CallbackData, prefix="confirm"):
     number: int
     confirmation_number: int
 
+
 class Languages(CallbackData, prefix="language"):
     language: str

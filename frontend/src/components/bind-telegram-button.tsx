@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { ExternalLink, Check } from "lucide-react"
+import { ExternalLink, CheckCheck } from "lucide-react"
 import { Button } from "./ui/button"
 import { Modal } from "./ui/modal"
 import { Badge } from "./ui/badge"
@@ -144,8 +144,8 @@ export function BindTelegramButton() {
     return (
       <div className="flex items-center gap-2">
         <Badge variant="outline" className="flex items-center gap-1 bg-green-50 text-green-700 border-green-200">
-          <Check className="h-3 w-3" />
-          <span>Telegram Linked</span>
+          <CheckCheck className="h-3 w-3" />
+          <span>Tg Connected</span>
         </Badge>
       </div>
     )

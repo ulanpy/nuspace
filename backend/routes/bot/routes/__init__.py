@@ -1,6 +1,6 @@
 from aiogram import Dispatcher
 
-from .user import setup_private_routers, setup_group_routers
+from .user import setup_group_routers, setup_private_routers
 
 
 def include_routers(dp: Dispatcher) -> None:
