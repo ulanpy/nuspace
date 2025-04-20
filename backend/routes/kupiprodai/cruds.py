@@ -232,7 +232,14 @@ async def add_new_product_feedback_to_db(
     session.add(new_feedback)
     await session.commit()
     await session.refresh(new_feedback)
-    return build_product_feedbacks_response(feedback=new_feedback)
+    query = (
+        select(ProductFeedback)
+        .options(selectinload(ProductFeedback.user))
+        .filter_by(product_id=feedback_data.product_id, user_sub=user_sub)
+    )
+    result = await session.execute(query)
+    feedback = result.scalars().first()
+    return await build_product_feedbacks_response(feedback=feedback)
 
 
 async def get_product_feedbacks_from_db(
@@ -271,7 +278,7 @@ async def remove_product_feedback_from_db(
     feedback_id: int, user_sub: str, session: AsyncSession
 ):
     result = await session.execute(
-        select(ProductFeedback).filter_by(product_id=feedback_id, user_sub=user_sub)
+        select(ProductFeedback).filter_by(id=feedback_id, user_sub=user_sub)
     )
     product_feedback = result.scalars().first()
     if product_feedback:
@@ -288,7 +295,7 @@ async def add_product_report(
     session.add(new_report)
     await session.commit()
     await session.refresh(new_report)
-    return build_product_report_response(report=new_report)
+    return await build_product_report_response(report=new_report)
 
 
 async def show_products_for_search(

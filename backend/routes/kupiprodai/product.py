@@ -494,10 +494,9 @@ async def store_new_product_report(
     """
 
     try:
-        new_product_report = await add_product_report(
+        return await add_product_report(
             report_data=report_data, user_sub=user.get("sub"), session=db_session
         )
-        return new_product_report
     except HTTPException as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
