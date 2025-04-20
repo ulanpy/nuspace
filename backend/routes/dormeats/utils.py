@@ -1,55 +1,84 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from fastapi import Request
-from backend.core.database.models.dormeats import CanteenProduct, Meal, CanteenReport
-from backend.core.database.models.media import Media
-from backend.routes.dormeats.schemas import CanteenProductResponseSchema, MealResponseSchema, CanteenReportResponseSchema
-from typing import List
-from backend.routes.google_bucket.utils import generate_download_url
-from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
-import asyncio
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.common.utils import get_media_responses
+from backend.core.database.models.dormeats import (
+    AvailableMeal,
+    CanteenProduct,
+    CanteenReport,
+    Meal,
+)
+from backend.routes.dormeats.schemas import (
+    AvailableMealResponseSchema,
+    CanteenProductResponseSchema,
+    CanteenReportResponseSchema,
+    MealResponseSchema,
+)
+from backend.routes.google_bucket.schemas import MediaSection
+
 
 async def build_canteen_product_response(
-        canteen_product: CanteenProduct,
-        session: AsyncSession,
-        request: Request,
-        media_section: MediaSection
+    canteen_product: CanteenProduct,
+    session: AsyncSession,
+    request: Request,
+    media_section: MediaSection,
 ):
-    media_responses = await get_media_responses(session = session, request = request, entity_id = canteen_product.id, media_section = media_section)
-    return CanteenProductResponseSchema(
-        id = canteen_product.id,
-        name = canteen_product.name,
-        category = canteen_product.category,
-        media = media_responses
+    media_responses = await get_media_responses(
+        session=session,
+        request=request,
+        entity_id=canteen_product.id,
+        media_section=media_section,
     )
+    return CanteenProductResponseSchema(
+        id=canteen_product.id,
+        name=canteen_product.name,
+        category=canteen_product.category,
+        media=media_responses,
+    )
+
 
 async def build_meal_response(
-        meal: Meal,
-        session: AsyncSession,
-        request: Request,
-        media_section: MediaSection
+    meal: Meal, session: AsyncSession, request: Request, media_section: MediaSection
 ):
-    media_responses = await get_media_responses(session=session, request=request, entity_id=meal.id, media_section=media_section)
+    media_responses = await get_media_responses(
+        session=session, request=request, entity_id=meal.id, media_section=media_section
+    )
     return MealResponseSchema(
-        id = meal.id,
-        name = meal.name,
-        description = meal.description,
-        price = meal.price, 
-        category = meal.category,
-        media = media_responses
+        id=meal.id,
+        name=meal.name,
+        description=meal.description,
+        price=meal.price,
+        category=meal.category,
+        media=media_responses,
     )
 
-async def build_canteen_report_response(
-        canteen_report: CanteenReport,
-        session: AsyncSession,
-        request: Request,
-        media_section: MediaSection
+
+async def build_available_meal_response(
+    available_meal: AvailableMeal, session: AsyncSession, request: Request
 ):
-    media_responses = await get_media_responses(session=session, request=request, entity_id=canteen_report.id, media_section=media_section)
+    return AvailableMealResponseSchema(
+        id=available_meal.id,
+        canteen_id=available_meal.canteen_id,
+        meal_id=available_meal.meal_id,
+        status=available_meal.status,
+    )
+
+
+async def build_canteen_report_response(
+    canteen_report: CanteenReport,
+    session: AsyncSession,
+    request: Request,
+    media_section: MediaSection,
+):
+    media_responses = await get_media_responses(
+        session=session,
+        request=request,
+        entity_id=canteen_report.id,
+        media_section=media_section,
+    )
     return CanteenReportResponseSchema(
-        id = canteen_report.id,
-        canteen_id = canteen_report.canteen_id,
-        report = canteen_report.report,
-        media = media_responses
+        id=canteen_report.id,
+        canteen_id=canteen_report.canteen_id,
+        report=canteen_report.report,
+        media=media_responses,
     )
