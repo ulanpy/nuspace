@@ -27,14 +27,20 @@ from backend.routes.google_bucket.utils import (
 from backend.routes.kupiprodai.schemas import (
     ListProductFeedbackResponseSchema,
     ListResponseSchema,
+    ProductFeedbackResponseSchema,
     ProductFeedbackSchema,
+    ProductReportResponseSchema,
     ProductReportSchema,
     ProductRequestSchema,
     ProductResponseSchema,
     ProductUpdateSchema,
 )
 
-from .utils import build_product_feedbacks_response, build_product_response
+from .utils import (
+    build_product_feedbacks_response,
+    build_product_report_response,
+    build_product_response,
+)
 
 
 async def add_new_product_to_db(
@@ -178,6 +184,8 @@ async def remove_product_from_db(
         await remove_meilisearch_data(
             request=request, storage_name="products", object_id=str(product_id)
         )
+    else:
+        raise HTTPException(status_code=404, detail="Product not found")
 
 
 async def update_product_in_db(
@@ -185,7 +193,7 @@ async def update_product_in_db(
     product_update: ProductUpdateSchema,
     user_sub: str,
     session: AsyncSession,
-):
+) -> ProductUpdateSchema:
     query = select(Product).where(
         Product.id == product_update.product_id, Product.user_sub == user_sub
     )
@@ -219,17 +227,17 @@ async def update_product_in_db(
 
 async def add_new_product_feedback_to_db(
     feedback_data: ProductFeedbackSchema, user_sub: str, session: AsyncSession
-) -> ProductFeedback:
+) -> ProductFeedbackResponseSchema:
     new_feedback = ProductFeedback(**feedback_data.dict(), user_sub=user_sub)
     session.add(new_feedback)
     await session.commit()
     await session.refresh(new_feedback)
-    return new_feedback
+    return build_product_feedbacks_response(feedback=new_feedback)
 
 
 async def get_product_feedbacks_from_db(
     product_id: int, session: AsyncSession, size: int = 20, page: int = 1
-):
+) -> ListProductFeedbackResponseSchema:
     offset = size * (page - 1)
     sql_conditions = [ProductFeedback.product_id == product_id]
 
@@ -269,16 +277,18 @@ async def remove_product_feedback_from_db(
     if product_feedback:
         await session.delete(product_feedback)
         await session.commit()
+    else:
+        raise HTTPException(status_code=404, detail="Product not found")
 
 
 async def add_product_report(
     report_data: ProductReportSchema, user_sub: str, session: AsyncSession
-):
+) -> ProductReportResponseSchema:
     new_report = ProductReport(**report_data.dict(), user_sub=user_sub)
     session.add(new_report)
     await session.commit()
     await session.refresh(new_report)
-    return new_report
+    return build_product_report_response(report=new_report)
 
 
 async def show_products_for_search(
