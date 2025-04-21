@@ -53,6 +53,7 @@ class IngredientSchema(BaseModel):
 class CanteenRequestSchema(BaseModel):
     name: str
     description: str
+    
 
 
 # Available Meal
@@ -96,6 +97,3 @@ class CanteenReportResponseSchema(BaseModel):
     media: List[MediaResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
-
-
-    
