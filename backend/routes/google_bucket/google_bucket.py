@@ -43,7 +43,7 @@ async def generate_upload_url(
 
         filename = f"{base_url}/{user.get('sub')}_{timestamp}_{uuid.uuid4().hex}"
         blob = request.app.state.storage_client.bucket(
-            request.app.state.config.bucket_name
+            request.app.state.config.BUCKET_NAME
         ).blob(filename)
 
         # List headers that will be included in the signed URL (values are ignored)
@@ -81,7 +81,7 @@ async def upload_image(
 
     contents = await file.read()
     bucket = request.app.state.storage_client.bucket(
-        request.app.state.config.bucket_name
+        request.app.state.config.BUCKET_NAME
     )
     blob = bucket.blob(filename)
 
@@ -167,7 +167,7 @@ async def delete_bucket_object(
 ):
     filename = await get_filename(db_session, media_id)
     blob = request.app.state.storage_client.bucket(
-        request.app.state.config.bucket_name
+        request.app.state.config.BUCKET_NAME
     ).blob(filename)
     try:
         blob.delete()

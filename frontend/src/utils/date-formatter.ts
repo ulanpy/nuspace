@@ -5,6 +5,9 @@
  */
 export function formatRelativeTime(dateString: string): string {
     const date = new Date(dateString)
+
+    date.setHours(date.getHours() + 5);
+
     const now = new Date()
 
     // Convert to local time
@@ -74,6 +77,8 @@ export function formatRelativeTime(dateString: string): string {
   export function formatDateWithContext(dateString: string): string {
     const date = new Date(dateString)
     const now = new Date()
+
+    date.setHours(date.getHours() + 5);
 
     // Convert to local time
     const localDate = new Date(date.getTime())

@@ -11,8 +11,8 @@ from backend.routes.google_bucket.utils import update_bucket_push_endpoint
 async def setup_meilisearch(app: FastAPI):
     app.state.storage_client = storage.Client(credentials=config.BUCKET_CREDENTIALS)
     app.state.meilisearch_client = httpx.AsyncClient(
-        base_url=config.meilisearch_url,
-        headers={"Authorization": f"Bearer {config.meilisearch_master_key}"},
+        base_url=config.MEILISEARCH_URL,
+        headers={"Authorization": f"Bearer {config.MEILISEARCH_MASTER_KEY}"},
     )
 
     update_bucket_push_endpoint()

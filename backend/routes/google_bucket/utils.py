@@ -15,7 +15,7 @@ async def generate_download_url(
     - Requires valid JWT
     """
     blob = request.app.state.storage_client.bucket(
-        request.app.state.config.bucket_name
+        request.app.state.config.BUCKET_NAME
     ).blob(filename)
     signed_url = blob.generate_signed_url(
         version="v4",
@@ -30,7 +30,7 @@ async def delete_bucket_object(
     filename: str,
 ):
     blob = request.app.state.storage_client.bucket(
-        request.app.state.config.bucket_name
+        request.app.state.config.BUCKET_NAME
     ).blob(filename)
     try:
         blob.delete()

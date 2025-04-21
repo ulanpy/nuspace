@@ -7,6 +7,8 @@
 # Virtual environment
 venv/
 
+**/nuspace.json
+
 # PyCharm IDE files
 .idea/
 

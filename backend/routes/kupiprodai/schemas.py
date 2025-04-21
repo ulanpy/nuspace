@@ -42,8 +42,6 @@ class ProductResponseSchema(BaseModel):
     created_at: datetime
     media: List[MediaResponse] = []
 
-    
-
 
 class ListResponseSchema(BaseModel):
     products: List[ProductResponseSchema]
