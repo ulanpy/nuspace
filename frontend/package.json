@@ -53,9 +53,9 @@
     "lucide-react": "^0.454.0",
     "next-themes": "latest",
     "path": "latest",
-    "react": "^18.2.0",
+    "react": "18.2.0",
     "react-day-picker": "8.10.1",
-    "react-dom": "^18.2.0",
+    "react-dom": "18.2.0",
     "react-hook-form": "^7.54.1",
     "react-resizable-panels": "^2.1.7",
     "react-router-dom": "latest",
@@ -72,12 +72,17 @@
     "tsx": "latest",
     "vaul": "^0.9.6",
     "yaml": "latest",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "react-icons": "5.5.0"
+  },
+  "overrides": {
+  "react": "18.2.0",
+  "react-dom": "18.2.0"
   },
   "devDependencies": {
     "@types/node": "^22",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.3",

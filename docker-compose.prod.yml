@@ -8,6 +8,8 @@ services:
       - nuros
     restart: always
     container_name: postgres
+    ports:
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -21,18 +23,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        IS_DEBUG: ${IS_DEBUG:-true}  # Default to 'true' if not set
     networks:
       - nuros
     restart: always
     env_file:
       - .env
     volumes:
-      - .:/nuros  # Sync local backend folder with container's /app
+      - .:/nuros  # Sync local backend folder with container's /nuros
     depends_on:
       - postgres
     environment:
       - PYTHONUNBUFFERED=1
-      - WORKERS=${GUNICORN_WORKERS} #not set this in prod and let decide on the fly
+      - WORKERS=${GUNICORN_WORKERS:-4}
+
 
   nginx:
     container_name: nginx
