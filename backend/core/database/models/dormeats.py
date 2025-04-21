@@ -72,7 +72,7 @@ class Meal(Base):  # create, read, update, delete
     )
 
     canteen = relationship("Canteen", back_populates="meals")
-    available_meal = relationship("AvailableMeal", back_populates="meals")
+    available_meal = relationship("AvailableMeal", back_populates="meal")
     ingredient = relationship("Ingredient", back_populates="meals")
 
 
