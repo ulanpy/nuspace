@@ -47,10 +47,11 @@ class IngredientSchema(BaseModel):
     meal_id: int
     product_id: int
 
-class CanteenSchema(BaseModel):
+class CanteenRequestSchema(BaseModel):
     id: int
     name: str
     description: str
+    
 
 class AvailableMealsSchema(BaseModel):
     id: int
@@ -63,7 +64,6 @@ class CanteenFeedbackSchema(BaseModel):
     canteen_id: int
     feedback: str
     rating: int
-
 class CanteenReportRequestSchema(BaseModel):
     canteen_id: int
     report: str
@@ -79,3 +79,4 @@ class CanteenReportResponseSchema(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+    
