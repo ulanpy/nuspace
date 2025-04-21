@@ -1,7 +1,7 @@
 from .base import Base
 from .club import Club, ClubAnnouncement, ClubEvent, ClubManager
 from .dormeats import (
-    AvailableMeals,
+    AvailableMeal,
     Canteen,
     CanteenFeedback,
     CanteenProduct,
