@@ -13,7 +13,7 @@ class ClubResponseSchema(BaseModel):
     type: ClubType
     description: str
     president: str
-    telegram_url: str | None = None
+    telegram_url: str = None
     instagram_url: str = None
     created_at: datetime
     updated_at: datetime
