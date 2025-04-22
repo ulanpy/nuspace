@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import { ExternalLink, Check } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { ExternalLink, CheckCheck } from "lucide-react"
 import { Button } from "./ui/button"
 import { Modal } from "./ui/modal"
-import { useAuth } from "../context/auth-context"
 import { Badge } from "./ui/badge"
+import { useToast } from "../hooks/use-toast"
+import { useUser } from "@/hooks/use-user"
 
 // Emoji mapping based on the backend logic
 const numberToEmoji = (num: number): string => {
@@ -15,19 +16,89 @@ const numberToEmoji = (num: number): string => {
 }
 
 export function BindTelegramButton() {
-  const { user, isAuthenticated } = useAuth()
+  const {user, isAuthenticated, refetchUser} = useUser()
   const [isLoading, setIsLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [telegramLink, setTelegramLink] = useState("")
   const [confirmationEmoji, setConfirmationEmoji] = useState("")
   const [error, setError] = useState("")
+  const [isLinked, setIsLinked] = useState(user?.tg_linked || false)
+  const { toast } = useToast()
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Check if user is linked to Telegram directly from the user object
-  const isLinked = user?.tg_linked || false
+  useEffect(() => {
+    setIsLinked(user?.tg_linked || false)
+  }, [user])
 
-  // Update the handleBindTelegram function to use the correct sub field
+  // Clean up polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+      }
+    }
+  }, [])
+
+  // Start polling for Telegram status when modal is shown
+  useEffect(() => {
+    if (showModal && !isLinked) {
+      startPollingTelegramStatus()
+    } else if (!showModal && pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+      pollingIntervalRef.current = null
+    }
+  }, [showModal, isLinked])
+
+  const startPollingTelegramStatus = () => {
+    // Clear any existing interval
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current)
+    }
+
+    // Start polling every 2 seconds
+    pollingIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await fetch("/api/me", {
+          method: "GET",
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const userData = await response.json()
+
+          // If Telegram is now linked, update UI and stop polling
+          if (userData.tg_linked) {
+            setIsLinked(true)
+            setShowModal(false)
+
+            // Refresh the auth context to update the user data
+            await refetchUser()
+
+            toast({
+              title: "Success",
+              description: "Your Telegram account has been linked successfully!",
+              variant: "success",
+            })
+
+            // Stop polling
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current)
+              pollingIntervalRef.current = null
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking Telegram status:", error)
+      }
+    }, 2000)
+  }
+
   const handleBindTelegram = async () => {
-    if (!user?.user?.sub) {
+    // Use the correct user identifier - check both possible locations
+    const userIdentifier = user?.user?.sub
+
+    if (!userIdentifier) {
       setError("User information not available")
       return
     }
@@ -36,14 +107,13 @@ export function BindTelegramButton() {
     setError("")
 
     try {
-      // Use the correct sub field from the user object
-      const response = await fetch("http://localhost/api/bingtg", {
+      const response = await fetch("/api/bingtg", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include", // Important for cookies
-        body: JSON.stringify({ sub: user.user.sub }),
+        body: JSON.stringify({ sub: userIdentifier }),
       })
 
       if (!response.ok) {
@@ -74,8 +144,8 @@ export function BindTelegramButton() {
     return (
       <div className="flex items-center gap-2">
         <Badge variant="outline" className="flex items-center gap-1 bg-green-50 text-green-700 border-green-200">
-          <Check className="h-3 w-3" />
-          <span>Telegram Linked</span>
+          <CheckCheck className="h-3 w-3" />
+          <span>Tg Connected</span>
         </Badge>
       </div>
     )
@@ -111,6 +181,12 @@ export function BindTelegramButton() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline flex items-center gap-1"
+              onClick={(e) => {
+                // Prevent default to handle it manually
+                e.preventDefault()
+                // Open in a new window
+                window.open(telegramLink, "_blank", "width=600,height=600")
+              }}
             >
               <ExternalLink className="h-4 w-4" />
               Open Telegram Bot

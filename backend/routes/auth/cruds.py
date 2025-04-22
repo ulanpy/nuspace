@@ -1,9 +1,10 @@
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, delete, insert, update, text, Interval, cast, or_
 from sqlalchemy.orm import Session
 
 from backend.core.database.models import User
 from backend.routes.auth.schemas import UserSchema
+
 
 async def upsert_user(session: AsyncSession, user_schema: UserSchema):
     # Query if the user already exists using the 'sub' field
@@ -30,12 +31,11 @@ async def upsert_user(session: AsyncSession, user_schema: UserSchema):
 
     return user_db
 
+
 async def get_user_role(session: AsyncSession, sub: str) -> str | None:
     result = await session.execute(select(User.role).filter_by(sub=sub))
     user_role = result.scalars().first()
     return user_role.value if user_role else None  # Convert enum to string
-
-
 
 
 # SYNC VERSION (for SyncDatabaseManager)

@@ -1,7 +1,8 @@
-from aiogram import BaseMiddleware
 import contextlib
+from typing import Any, Awaitable, Callable
+
+from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
-from typing import Callable, Awaitable, Any
 
 from backend.core.database.manager import AsyncDatabaseManager
 
@@ -14,9 +15,11 @@ class DatabaseMiddleware(BaseMiddleware):
         self,
         handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
         event: TelegramObject,
-        data: dict[str, Any]) -> Any:
+        data: dict[str, Any],
+    ) -> Any:
 
-        async with contextlib.asynccontextmanager(self.db_manager.get_async_session)() as session:
-            data['db_session'] = session
+        async with contextlib.asynccontextmanager(
+            self.db_manager.get_async_session
+        )() as session:
+            data["db_session"] = session
             return await handler(event, data)
-

@@ -1,21 +1,46 @@
-from fastapi import APIRouter, Depends, Request, HTTPException, status
-from typing import Literal, Annotated
+from typing import Annotated, List
 
-from .__init__ import *
-from backend.common.utils import *
-from backend.common.dependencies import get_db_session, check_token, check_tg
-from .cruds import show_products_from_db, add_new_product_to_db
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.common.dependencies import check_tg, check_token, get_db_session
+from backend.common.utils import search_for_meilisearch_data
+
+from .cruds import (
+    ProductCategory,
+    ProductCondition,
+    add_new_product_feedback_to_db,
+    add_new_product_to_db,
+    add_product_report,
+    get_product_feedbacks_from_db,
+    get_product_from_db,
+    get_products_of_user_from_db,
+    remove_product_feedback_from_db,
+    remove_product_from_db,
+    show_products_for_search,
+    show_products_from_db,
+    update_product_in_db,
+)
+from .schemas import (
+    ListProductFeedbackResponseSchema,
+    ListResponseSchema,
+    ProductFeedbackSchema,
+    ProductReportSchema,
+    ProductRequestSchema,
+    ProductResponseSchema,
+    ProductUpdateSchema,
+)
+
+router = APIRouter(prefix="/products", tags=["Kupi-Prodai Routes"])
 
 
-router = APIRouter(prefix="/products", tags=['Kupi-Prodai Routes'])
-
-@router.post("/new", response_model=ProductResponseSchema) #works
+@router.post("/new", response_model=ProductResponseSchema)  # works
 async def add_new_product(
-        request: Request,
-        user: Annotated[dict, Depends(check_token)],
-        tg: Annotated[bool, Depends(check_tg)],
-        product_data: ProductRequestSchema,
-        db_session: AsyncSession = Depends(get_db_session)
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    tg: Annotated[bool, Depends(check_tg)],
+    product_data: ProductRequestSchema,
+    db_session: AsyncSession = Depends(get_db_session),
 ):
     """
     Creates a new product under the 'Kupi-Prodai' section.
@@ -26,7 +51,8 @@ async def add_new_product(
     - The user must have a linked Telegram account (checked via dependency).
 
     **Parameters:**
-    - `product_data`: JSON body containing product fields (name, description, price, category, condition, etc.)
+    - `product_data`: JSON body containing product fields
+    (name, description, price, category, condition, etc.)
 
     - Automatically associates the product with the authenticated user.
 
@@ -40,28 +66,36 @@ async def add_new_product(
     """
 
     try:
-        new_product = await add_new_product_to_db(db_session, product_data, user_sub=user["sub"], request=request)
+        new_product = await add_new_product_to_db(
+            db_session, product_data, user_sub=user["sub"], request=request
+        )
         return new_product
     except HTTPException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
-@router.get('/user', response_model=List[ProductResponseSchema]) #works # todo add pagination
+@router.get(
+    "/user", response_model=List[ProductResponseSchema]
+)  # works # todo add pagination
 async def get_products_of_user(
-        request: Request,
-        user: Annotated[dict, Depends(check_token)],
-        db_session: AsyncSession = Depends(get_db_session)
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session),
 ):
     """
     Retrieves a list of all products created by the currently authenticated user,
-    including both active and inactive items. Results are ordered by most recently updated.
+    including both active and inactive items.
+    Results are ordered by most recently updated.
 
     **Parameters:**
 
     - `access_token`: Required authentication token from cookies (via dependency).
 
     **Returns:**
-    - A list of the user's own products, each with full product details and associated media.
+    - A list of the user's own products, each with full
+    product details and associated media.
 
     **Notes:**
     - Pagination is not yet implemented (all products are returned at once).
@@ -70,25 +104,26 @@ async def get_products_of_user(
     """
     user_sub = user.get("sub")
     try:
-        return await get_products_of_user_from_db(request=request, user_sub=user_sub, session=db_session)
+        return await get_products_of_user_from_db(
+            request=request, user_sub=user_sub, session=db_session
+        )
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
 
 
-
-
-@router.get("/list", response_model=ListResponseSchema) #works
+@router.get("/list", response_model=ListResponseSchema)  # works
 async def get_products(
-        request: Request,
-        user: Annotated[dict, Depends(check_token)],
-        db_session: AsyncSession = Depends(get_db_session),
-        size: int = 20,
-        page: int = 1,
-        category: ProductCategory = None,
-        condition: ProductCondition = None
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session),
+    size: int = 20,
+    page: int = 1,
+    category: ProductCategory = None,
+    condition: ProductCondition = None,
 ):
     """
-    Retrieves a paginated list of active products, with optional filtering by category and condition.
+    Retrieves a paginated list of active products, with optional filtering
+    by category and condition.
 
     **Parameters:**
 
@@ -110,19 +145,20 @@ async def get_products(
         size=size,
         page=page,
         category=category,
-        condition=condition
+        condition=condition,
     )
 
 
-@router.get("/{product_id}", response_model=ProductResponseSchema) #works
+@router.get("/{product_id}", response_model=ProductResponseSchema)  # works
 async def get_product(
-        request: Request,
-        user: Annotated[dict, Depends(check_token)],
-        product_id: int,
-        db_session: AsyncSession = Depends(get_db_session)
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    product_id: int,
+    db_session: AsyncSession = Depends(get_db_session),
 ):
     """
-    Retrieves a single active product by its unique ID, including its associated media files.
+    Retrieves a single active product by its unique ID, including
+    its associated media files.
 
     **Parameters:**
 
@@ -131,18 +167,18 @@ async def get_product(
     - `access_token`: Required authentication token from cookies (via dependency).
 
     **Returns:**
-    - A detailed product object if found, including its name, description, price, category, condition, and media URLs.
+    - A detailed product object if found, including its name, description,
+    price, category, condition, and media URLs.
 
     **Errors:**
-    - Returns `404 Not Found` if the product with the specified ID does not exist or is inactive.
+    - Returns `404 Not Found` if the product with the specified ID
+    does not exist or is inactive.
 
     - Returns `401 Unauthorized` if no valid access token is provided.
     """
 
     product = await get_product_from_db(
-        request=request,
-        product_id=product_id,
-        session=db_session
+        request=request, product_id=product_id, session=db_session
     )
 
     if product is None:
@@ -151,12 +187,12 @@ async def get_product(
     return product
 
 
-@router.delete("/{product_id}")  #works
+@router.delete("/{product_id}")  # works
 async def remove_product(
-        request: Request,
-        user: Annotated[dict, Depends(check_token)],
-        product_id: int,
-        db_session: AsyncSession = Depends(get_db_session)
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    product_id: int,
+    db_session: AsyncSession = Depends(get_db_session),
 ):
     """
     Deletes a specific product owned by the authenticated user.
@@ -188,19 +224,22 @@ async def remove_product(
             request=request,
             user_sub=user.get("sub"),
             product_id=product_id,
-            session=db_session
+            session=db_session,
         )
         return status.HTTP_204_NO_CONTENT
 
     except HTTPException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
-@router.patch("/")  #works
+@router.patch("/")  # works
 async def update_product(
+    request: Request,
     user: Annotated[dict, Depends(check_token)],
     product_update: ProductUpdateSchema,
-    db_session: AsyncSession = Depends(get_db_session)
+    db_session: AsyncSession = Depends(get_db_session),
 ):
     """
     Updates fields of an existing product owned by the authenticated user.
@@ -213,7 +252,8 @@ async def update_product(
     **Parameters:**
     - `product_id`: ID of the product to update (included in the request body).
 
-    - `name`, `description`, `price`, `category`, `condition`, `status` — any of these fields can be updated individually or together.
+    - `name`, `description`, `price`, `category`, `condition`, `status` —
+    any of these fields can be updated individually or together.
 
     **Process:**
     - Validates that the product exists and belongs to the user.
@@ -229,74 +269,229 @@ async def update_product(
     """
 
     product_update = await update_product_in_db(
+        request=request,
         product_update=product_update,
         user_sub=user.get("sub"),
-        session=db_session
+        session=db_session,
     )
-    return {"product_id": product_update.product_id, "updated_fields": product_update.dict(exclude_unset=True)}
+    return {
+        "product_id": product_update.product_id,
+        "updated_fields": product_update.dict(exclude_unset=True),
+    }
 
 
+@router.post("/post_search/", response_model=ListResponseSchema)
+async def post_search(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    keyword: str,
+    size: int = 20,
+    page: int = 1,
+    db_session=Depends(get_db_session),
+):
+    """
+    Retrieves product objects from database based on the
+    search result of pre_search router.
+    - The returned products contain details such as id, name,
+    description, price, condition, and category.
 
-@router.get("/search/", response_model=List[ProductResponseSchema]) #works
-async def search(
-        request: Request,
-        user: Annotated[dict, Depends(check_token)],
-        keyword: str,
-        db_session=Depends(get_db_session)
+    **Parameters:**
+    - `keyword`: word for searching products
+    - `size`: Number of products per page (default: 20)
+    - `page`: Page number (default: 1)
+
+    **Returns:**
+    - A list of product objects that match the keyword from the search.
+    - Products will be returned with their full details (from the database).
+    """
+    search_results = await search_for_meilisearch_data(
+        keyword=keyword, request=request, page=page, size=size, storage_name="products"
+    )
+    product_ids = [product["id"] for product in search_results["hits"]]
+    return await show_products_for_search(
+        size=size,
+        request=request,
+        session=db_session,
+        product_ids=product_ids,
+        num_of_products=search_results["estimatedTotalHits"],
+    )
+
+
+@router.get("/pre_search/", response_model=list[str])
+async def pre_search(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    keyword: str,
+    db_session=Depends(get_db_session),
 ):
     """
     Searches for products based on the provided keyword:
     - Uses Meilisearch to find matching products.
     - Will return active products only that match the keyword.
     - The search results are then used to fetch product details from the database.
-    - The returned products contain details such as id, name, description, price, condition, and category.
+    - The returned products contain details such as id, name,
+    description, price, condition, and category.
 
     **Parameters:**
-    - `keyword`: The search term used to find products. It will be used for querying in Meilisearch.
+    - `keyword`: The search term used to find products.
+    It will be used for querying in Meilisearch.
 
     **Returns:**
     - A list of product objects that match the keyword from the search.
-    - Products will be returned with their full details (from the database).
     """
-    result = await search_for_meilisearch_data(storage_name="products", keyword=keyword)
-    products = result['data']['hits']
-    product_objects = []
-    for product in products:
-        product_objects.append(await get_product_from_db(request=request, product_id=product['id'], session=db_session))
-    return product_objects
+    distinct_keywords = []
+    seen = set()
+    page = 1
+    while len(distinct_keywords) < 5:
+        result = await search_for_meilisearch_data(
+            request=request,
+            storage_name="products",
+            keyword=keyword,
+            page=page,
+            size=20,
+        )
+        for object in result["hits"]:
+            if object["name"] not in seen:
+                seen.add(object["name"])
+                distinct_keywords.append(object["name"])
+            if len(distinct_keywords) >= 5:
+                break
+        else:
+            break
+        page += 1
+    return distinct_keywords
 
 
-@router.post("/feedback/{product_id}")
+@router.post("/feedback/{product_id}")  # added description
 async def store_new_product_feedback(
     feedback_data: ProductFeedbackSchema,
     user: Annotated[dict, Depends(check_token)],
     request: Request,
-    db_session = Depends(get_db_session)
+    db_session=Depends(get_db_session),
 ):
-    user_sub = user.get("sub")
-    await add_new_product_feedback_to_db(feedback_data=feedback_data, user_sub=user_sub, session=db_session)
+    """
+    Adds new feedback to the product
 
-@router.get("/feedback/{product_id}")
+    ***Parameters:***
+    - `feedback_data`: json object with values for product_id and text of the feedback.
+
+    ***Returns:***
+    - The newly added product feedback with all of its values;
+
+    ***Errors:***
+    - Returns 500 on internal error.
+    """
+
+    try:
+        new_product_feedback = await add_new_product_feedback_to_db(
+            feedback_data=feedback_data, user_sub=user.get("sub"), session=db_session
+        )
+        return new_product_feedback
+    except HTTPException as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@router.get("/feedback/{product_id}")  # added description
 async def get_product_feedbacks(
     product_id: int,
-    db_session = Depends(get_db_session),
+    user: Annotated[dict, Depends(check_token)],
+    db_session=Depends(get_db_session),
     size: int = 20,
-    page: int = 1
+    page: int = 1,
+    response_model=ListProductFeedbackResponseSchema,
 ):
-    return await get_product_feedbacks_from_db(product_id=product_id, session=db_session, size=size, page=page)
+    """
+    Retrieves a paginated list of feedbacks of the product.
 
-@router.delete("/feedback/{feedback_id}")
-async def remove_product_feedback(feedback_id: int, db_session = Depends(get_db_session)):
-    await remove_product_feedback_from_db(feedback_id=feedback_id, session=db_session)
+    **Parameters:**
+
+    - `size`: Number of products per page (default: 20)
+
+    - `page`: Page number (default: 1)
+
+    - `product_id`: ID of the product
+
+    **Returns:**
+    - A list of feedbacks of the product, sorted by most recently added.
+    """
+    return await get_product_feedbacks_from_db(
+        product_id=product_id, session=db_session, size=size, page=page
+    )
 
 
-@router.post("/{product_id}/report")
+@router.delete("/feedback/{feedback_id}")  # added description
+async def remove_product_feedback(
+    feedback_id: int,
+    user: Annotated[dict, Depends(check_token)],
+    db_session=Depends(get_db_session),
+):
+    """
+    Deletes a specific product feedback added by the authenticated user.
+
+    **Requirements:**
+    - The user must be authenticated (`access_token` cookie required).
+
+    - Only the owner of the product feedback can delete it.
+
+    **Parameters:**
+    - `feedback_id`: The ID of the product feedback to delete.
+
+    **Process:**
+    - Deletes the product feedback from the database.
+
+    **Returns:**
+    - HTTP 204 No Content on successful deletion.
+
+    **Errors:**
+    - Returns 403 if the product does not belong to the user.
+    - Returns 404 if the product is not found.
+    - Returns 500 on internal error.
+    """
+    try:
+        await remove_product_feedback_from_db(
+            feedback_id=feedback_id, user_sub=user.get("sub"), session=db_session
+        )
+        return status.HTTP_204_NO_CONTENT
+    except HTTPException as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@router.post("/{product_id}/report")  # added description
 async def store_new_product_report(
     report_data: ProductReportSchema,
     user: Annotated[dict, Depends(check_token)],
     request: Request,
-    db_session=Depends(get_db_session
-)):
-    user_sub = user.get("sub")
-    await add_product_report(report_data=report_data, user_sub = user_sub, session = db_session)
+    db_session=Depends(get_db_session),
+):
+    """
+    Adds a new product report.
 
+    ***Requirements:***
+    - The user must be authenticated (`access_token` cookie required).
+
+    ***Parameters:***
+    - `report_data`: JSON body containing product fields (product_id, text)
+
+    - Automatically associates the product report with the authenticated user.
+
+    ***Returns:***
+    - The newly created product report with full details including associated
+    media (if any).
+
+    ***Errors:***
+    - Returns 500 on internal error.
+    """
+
+    try:
+        new_product_report = await add_product_report(
+            report_data=report_data, user_sub=user.get("sub"), session=db_session
+        )
+        return new_product_report
+    except HTTPException as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )

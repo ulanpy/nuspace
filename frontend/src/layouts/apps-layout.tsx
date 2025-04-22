@@ -26,6 +26,7 @@ export default function AppsLayout() {
     }
   }, [isAuthenticated, isKupiProdaiPath])
 
+
   // Handle login from the modal
   const handleLogin = () => {
     login()
@@ -71,4 +72,3 @@ export default function AppsLayout() {
     </div>
   )
 }
-

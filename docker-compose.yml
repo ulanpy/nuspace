@@ -20,18 +20,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        IS_DEBUG: ${IS_DEBUG:-true}  # Default to 'true' if not set
     networks:
       - nuros
     restart: always
     env_file:
       - .env
     volumes:
-      - .:/nuros  # Sync local backend folder with container's /app
+      - .:/nuros  # Sync local backend folder with container's /nuros
     depends_on:
       - postgres
     environment:
       - PYTHONUNBUFFERED=1
-      - WORKERS=${GUNICORN_WORKERS} #not set this in prod and let decide on the fly
+      - WORKERS=${GUNICORN_WORKERS:-4}
+
 
   nginx:
     container_name: nginx
@@ -59,7 +62,7 @@ services:
 
   pgadmin:
       image: dpage/pgadmin4
-      container_name: pgadmin
+      container_name: pgadmindev
       environment:
         PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
         PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
@@ -74,23 +77,18 @@ services:
         - ./backend/core/configs/pgadmin_config/pgpass:/pgpass  # Auto-login credentials
 
 
-  ngrok:
-      image: ngrok/ngrok:latest
-      profiles:
-        - ngrok
-      restart: always
-      container_name: ngrok
-      networks:
-        - nuros
-      env_file:
-        - .env
-      environment:
-        - NGROK_CONFIG=/etc/ngrok.yml
-        - NGROK_AUTHTOKEN=${NGROK_AUTH_TOKEN}  # Remove the underscore to match ngrok.yml
-      volumes:
-        - ./backend/core/configs/ngrok.yml:/etc/ngrok.yml
-      depends_on:
-        - fastapi
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    networks:
+      - nuros
+    restart: always
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARED_TOKEN}  # Each developer sets their token
+    command: tunnel run
+    depends_on:
+      - nginx  # Ensure nginx is up before starting tunnel
+
 
   redis:
     image: redis:latest

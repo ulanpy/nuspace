@@ -1,8 +1,9 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncEngine
 from typing import AsyncGenerator
 
-from backend.core.database.models import Base
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from backend.core.configs.config import config
+from backend.core.database.models import Base
 
 
 class AsyncDatabaseManager:
@@ -13,7 +14,7 @@ class AsyncDatabaseManager:
             pool_size=20,
             max_overflow=200,
             future=True,
-            echo=False
+            echo=False,
         )
         self.async_session_maker = async_sessionmaker(
             bind=self.async_engine,
@@ -34,11 +35,9 @@ class AsyncDatabaseManager:
                 await session.close()
 
 
-
-
-
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
+
 
 class SyncDatabaseManager:
     def __init__(self):
@@ -48,7 +47,7 @@ class SyncDatabaseManager:
             max_overflow=10,
             pool_timeout=30,
             future=True,
-            echo=False
+            echo=False,
         )
         self.sync_session_maker = sessionmaker(
             bind=self.sync_engine,

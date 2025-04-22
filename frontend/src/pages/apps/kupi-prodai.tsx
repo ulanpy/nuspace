@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useRef, useEffect } from "react"
-import { motion } from "framer-motion"
+import { useState, useRef } from "react";
+import { motion } from "framer-motion";
 import {
   Search,
   Filter,
@@ -11,54 +11,121 @@ import {
   Heart,
   MessageSquare,
   X,
-  Camera,
   ChevronLeft,
   ChevronRight,
-  User,
-  AlertTriangle,
-} from "lucide-react"
-import { Input } from "../../components/ui/input"
-import { Button } from "../../components/ui/button"
-import { Card, CardContent } from "../../components/ui/card"
-import { Badge } from "../../components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
-import { useNavigate } from "react-router-dom"
-import { useAuth } from "../../context/auth-context"
+  RefreshCw,
+  ImageIcon,
+  ChevronUp,
+  ChevronDown,
+  Trash2,
+  Plus,
+} from "lucide-react";
+import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent } from "../../components/ui/card";
+import { Badge } from "../../components/ui/badge";
 import {
-  kupiProdaiApi,
-  type Product,
-  type NewProductRequest,
-  defaultSize,
-  defaultPage,
-} from "../../api/kupi-prodai-api"
-import { useToast } from "../../hooks/use-toast"
-import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert"
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/auth-context";
+import { useToast } from "../../hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
+import { Progress } from "../../components/ui/progress";
+import { Skeleton } from "../../components/ui/skeleton";
+import { useProducts } from "@/modules/kupi-prodai/hooks/use-products";
+import { useUserProducts } from "@/modules/kupi-prodai/hooks/use-user-products";
+import { useCreateProduct } from "@/modules/kupi-prodai/hooks/use-create-product";
+import { useDeleteProduct } from "@/modules/kupi-prodai/hooks/use-delete-product";
+import { useUpdateProduct } from "@/modules/kupi-prodai/hooks/use-update-product";
+import { useEditModal } from "@/modules/kupi-prodai/form/use-edit-modal";
+import { useToggleProduct } from "@/modules/kupi-prodai/hooks/use-toggle-product";
+import { useListingState } from "@/context/listing-context";
+import { useImageContext } from "@/context/image-context";
+import { useMediaContext } from "@/context/media-context";
+import { useSearchProduct } from "@/modules/kupi-prodai/hooks/use-search-product";
+
+import { FaBook, FaLaptop, FaTshirt, FaCouch, FaBlender } from "react-icons/fa";
+import { BiSolidCategory } from "react-icons/bi";
+import { MdSports, MdBrush, MdLocalOffer } from "react-icons/md";
+import { BsPencilFill } from "react-icons/bs";
+import { GiKnifeFork } from "react-icons/gi";
+import { IoTicket, IoCarSport } from "react-icons/io5";
 
 // Define categories and conditions
-const categories = ["All Categories", "books", "electronics", "clothing", "home", "sports", "other"]
-const displayCategories = ["All Categories", "Books", "Electronics", "Clothing", "Home", "Sports", "Other"]
+const categories = [
+  "All Categories",
+  "books",
+  "electronics",
+  "clothing",
+  "furniture",
+  "appliances",
+  "sports",
+  "stationery",
+  "art_supplies",
+  "beauty",
+  "services",
+  "food",
+  "tickets",
+  "transport",
+  "others",
+];
 
-const conditions = ["All Conditions", "new", "like_new", "used"]
-const displayConditions = ["All Conditions", "New", "Like New", "Used"]
+const getCategoryIcon = (category: string) => {
+  switch (category) {
+    case "books":
+      return <FaBook />;
+    case "electronics":
+      return <FaLaptop />;
+    case "clothing":
+      return <FaTshirt />;
+    case "furniture":
+      return <FaCouch />;
+    case "appliances":
+      return <FaBlender />;
+    case "sports":
+      return <MdSports />;
+    case "stationery":
+      return <BsPencilFill />;
+    case "art_supplies":
+      return <MdBrush />;
+    case "beauty":
+      return <MdLocalOffer />;
+    case "food":
+      return <GiKnifeFork />;
+    case "tickets":
+      return <IoTicket />;
+    case "transport":
+      return <IoCarSport />;
+    default:
+      return <BiSolidCategory />;
+  }
+};
 
-const locations = [
-  "All Locations",
-  "Block 1A",
-  "Block 1B",
-  "Block 1C",
-  "Block 2A",
-  "Block 2B",
-  "Block 2C",
-  "Block 3A",
-  "Block 3B",
-  "Block 3C",
-  "Block 4A",
-  "Block 4B",
-  "Block 4C",
-  "Main Building",
-  "Library",
-  "Sports Center",
-]
+
+const displayCategories = [
+  "All Categories",
+  "Books",
+  "Electronics",
+  "Clothing",
+  "Furniture",
+  "Appliances",
+  "Sports",
+  "Stationery",
+  "Art Supplies",
+  "Beauty",
+  "Services",
+  "Food",
+  "Tickets",
+  "Transport",
+  "Others",
+];
+
+const conditions = ["All Conditions", "new", "like_new", "used"];
+const displayConditions = ["All Conditions", "New", "Like New", "Used"];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -68,7 +135,7 @@ const containerVariants = {
       staggerChildren: 0.1,
     },
   },
-}
+};
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
@@ -81,378 +148,332 @@ const itemVariants = {
       damping: 15,
     },
   },
-}
+};
 
 export default function KupiProdaiPage() {
-  const navigate = useNavigate()
-  const { user, isAuthenticated, login } = useAuth()
-  const { toast } = useToast()
-  const [activeTab, setActiveTab] = useState("buy")
-  const [likedProducts, setLikedProducts] = useState<number[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("All Categories")
-  const [selectedCondition, setSelectedCondition] = useState("All Conditions")
-  const [showFilters, setShowFilters] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate();
+  const { user, isAuthenticated, login } = useAuth();
+  const { toast } = useToast();
+  const [likedProducts, setLikedProducts] = useState<number[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [error] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const isTelegramLinked = user?.tg_linked || false;
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(defaultPage)
-  const [itemsPerPage, setItemsPerPage] = useState(defaultSize)
-  const [totalPages, setTotalPages] = useState(1)
+  const [totalPages] = useState(1);
 
-  // Products state
-  const [products, setProducts] = useState<Product[]>([])
-  const [myProducts, setMyProducts] = useState<Product[]>([])
+  // Products state [CRUD Hooks]
+  const {
+    productItems,
+    isLoading,
+    selectedCategory,
+    selectedCondition,
+    setSelectedCategory,
+    setSelectedCondition,
+  } = useProducts();
+  const { myProducts } = useUserProducts();
+  const { handleCreate } = useCreateProduct();
+  const {
+    isUploading,
+    imageFiles,
+    previewImages,
+    setPreviewImages,
+    setImageFiles,
+  } = useImageContext();
+  const { getIsPendingDeleteMutation, handleDelete } = useDeleteProduct();
+  const { handleUpdateListing } = useUpdateProduct();
+  const { handleToggleProductStatus, getIsPendingToggleMutation } =
+    useToggleProduct();
 
-  // New listing form state
-  const [newListing, setNewListing] = useState<NewProductRequest>({
-    name: "",
-    description: "",
-    price: 0,
-    category: "books",
-    condition: "new",
-    status: "active",
-  })
-  const [previewImages, setPreviewImages] = useState<string[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { searchedProducts } = useSearchProduct();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
-  // Edit listing state
-  const [editingListing, setEditingListing] = useState<Product | null>(null)
-  const [showEditModal, setShowEditModal] = useState(false)
-
-  // Fetch products on component mount
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchProducts()
-      fetchUserProducts()
-    }
-  }, [isAuthenticated])
-
-  // Fetch products when filters change
-  useEffect(() => {
-    if (activeTab === "buy") {
-      if (searchQuery.trim()) {
-        searchProducts(searchQuery)
-      } else {
-        fetchProducts()
-      }
-    }
-  }, [activeTab, selectedCategory, selectedCondition, currentPage, searchQuery])
-
-  // Fetch products from API
-  const fetchProducts = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const category = selectedCategory !== "All Categories" ? selectedCategory.toLowerCase() : undefined
-      const condition = selectedCondition !== "All Conditions" ? selectedCondition.toLowerCase() : undefined
-
-      const data = await kupiProdaiApi.getProducts(currentPage, itemsPerPage, category, condition)
-      setProducts(data.products)
-      setTotalPages(data.num_of_pages)
-    } catch (err) {
-      setError("Failed to fetch products")
-      console.error(err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Fetch user's products
-  const fetchUserProducts = async () => {
-    try {
-      const data = await kupiProdaiApi.getUserProducts()
-      setMyProducts(data)
-    } catch (err) {
-      console.error("Failed to fetch user products:", err)
-    }
-  }
-
-  // Search products
-  const searchProducts = async (keyword: string) => {
-    if (!keyword.trim()) {
-      fetchProducts()
-      return
-    }
-
-    try {
-      setIsLoading(true)
-      const data = await kupiProdaiApi.searchProducts(keyword)
-      setProducts(data)
-      setTotalPages(1) // Search results are not paginated in the API
-    } catch (err) {
-      console.error("Search failed:", err)
-      setError("Search failed")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
+  // Edit listing state [Form Hooks]
+  const { handleEditListing, closeEditModal } = useEditModal();
+  const {
+    originalMedia,
+    mediaToDelete,
+    currentMediaIndex,
+    reorderedMedia,
+    setCurrentMediaIndex,
+    setMediaToDelete,
+    setReorderedMedia,
+  } = useMediaContext();
+  const {
+    uploadProgress,
+    searchQuery,
+    newListing,
+    showEditModal,
+    currentPage,
+    activeTab,
+    setActiveTab,
+    setCurrentPage,
+    setNewListing,
+    setSearchQuery,
+  } = useListingState();
   // Handle image upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
+    const files = e.target.files;
     if (files && files.length > 0) {
-      const newPreviewImages = [...previewImages]
-
-      Array.from(files).forEach((file) => {
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          newPreviewImages.push(reader.result as string)
-          setPreviewImages([...newPreviewImages])
-        }
-        reader.readAsDataURL(file)
-      })
+      processFiles(Array.from(files));
     }
-  }
+  };
+
+  // Process files for upload
+  const processFiles = (files: File[]) => {
+    const newPreviewImages = [...previewImages];
+    const newImageFiles = [...imageFiles];
+
+    files.forEach((file) => {
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          newPreviewImages.push(reader.result as string);
+          newImageFiles.push(file);
+          setPreviewImages([...newPreviewImages]);
+          setImageFiles([...newImageFiles]);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        toast({
+          title: "Invalid file type",
+          description: "Only image files are allowed",
+          variant: "destructive",
+        });
+      }
+    });
+  };
+
+  // Handle drag and drop
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(Array.from(e.dataTransfer.files));
+    }
+  };
 
   const removeImage = (index: number) => {
-    const newPreviewImages = [...previewImages]
-    newPreviewImages.splice(index, 1)
-    setPreviewImages(newPreviewImages)
-  }
+    const newPreviewImages = [...previewImages];
+    const newImageFiles = [...imageFiles];
+    newPreviewImages.splice(index, 1);
+    newImageFiles.splice(index, 1);
+    setPreviewImages(newPreviewImages);
+    setImageFiles(newImageFiles);
+  };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setNewListing((prev) => ({
-      ...prev,
-      [name]: name === "price" ? Number.parseFloat(value) : value,
-    }))
-  }
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+
+    if (name === "price") {
+      // Handle price input specially to avoid leading zeros and negative values
+      const numValue =
+        value === "" ? 0 : Math.max(0, Number.parseInt(value, 10));
+      setNewListing((prev) => ({ ...prev, [name]: numValue }));
+    } else {
+      setNewListing((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handlePriceInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Clear the input when it's focused and the value is 0
+    if (e.target.value === "0") {
+      e.target.value = "";
+    }
+  };
+
+  const handlePriceInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    // If the input is empty when blurred, set it back to 0
+    if (e.target.value === "") {
+      setNewListing((prev) => ({ ...prev, price: 0 }));
+    }
+  };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setNewListing((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setNewListing((prev) => ({ ...prev, [name]: value }));
+  };
 
-  // Check if user has Telegram linked
-  const isTelegramLinked = user?.tg_linked || false
+  // Add this function to handle image deletion in the edit modal
+  const handleDeleteImage = (mediaId: number) => {
+    // Add the media ID to the list of media to delete
+    setMediaToDelete([...mediaToDelete, mediaId]);
 
-  // Create new product
-  const handleSubmitListing = async (e: React.FormEvent) => {
-    e.preventDefault()
+    // Remove the image from the preview images
+    const mediaIndex = originalMedia.findIndex((m) => m.id === mediaId);
+    if (mediaIndex !== -1) {
+      const newPreviewImages = [...previewImages];
+      newPreviewImages.splice(mediaIndex, 1);
+      setPreviewImages(newPreviewImages);
 
-    // Check if Telegram is linked
-    if (!isTelegramLinked) {
-      toast({
-        title: "Telegram Required",
-        description: "You need to link your Telegram account before selling items.",
-        variant: "destructive",
-      })
-      return
-    }
+      // Update reordered media
+      const newReorderedMedia =
+        reorderedMedia.length > 0
+          ? reorderedMedia.filter((m) => m.id !== mediaId)
+          : originalMedia.filter((m) => m.id !== mediaId);
+      setReorderedMedia(newReorderedMedia);
 
-    if (previewImages.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please upload at least one image",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      // In a real app, you would upload the images first and get URLs
-      // Then create the product with those URLs
-      const createdProduct = await kupiProdaiApi.createProduct(newListing)
-
-      // Refresh user products
-      fetchUserProducts()
-
-      // Reset form
-      setNewListing({
-        name: "",
-        description: "",
-        price: 0,
-        category: "books",
-        condition: "new",
-        status: "active",
-      })
-      setPreviewImages([])
-
-      // Navigate to my-listings tab
-      setActiveTab("my-listings")
-
-      toast({
-        title: "Success",
-        description: "Product created successfully",
-      })
-    } catch (err) {
-      console.error("Failed to create product:", err)
-      toast({
-        title: "Error",
-        description: "Failed to create product",
-        variant: "destructive",
-      })
-    }
-  }
-
-  // Update product
-  const handleEditListing = (product: Product) => {
-    setEditingListing(product)
-    setNewListing({
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      category: product.category,
-      condition: product.condition,
-      status: "active",
-    })
-    setPreviewImages(product.media.map((m) => m.url))
-    setShowEditModal(true)
-  }
-
-  const handleUpdateListing = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!editingListing) return
-
-    try {
-      await kupiProdaiApi.updateProduct({
-        product_id: editingListing.id,
-        name: newListing.name,
-        description: newListing.description,
-        price: newListing.price,
-        category: newListing.category,
-        condition: newListing.condition,
-      })
-
-      // Refresh user products
-      fetchUserProducts()
-
-      // Reset form and close modal
-      setEditingListing(null)
-      setNewListing({
-        name: "",
-        description: "",
-        price: 0,
-        category: "books",
-        condition: "new",
-        status: "active",
-      })
-      setPreviewImages([])
-      setShowEditModal(false)
-
-      toast({
-        title: "Success",
-        description: "Product updated successfully",
-      })
-    } catch (err) {
-      console.error("Failed to update product:", err)
-      toast({
-        title: "Error",
-        description: "Failed to update product",
-        variant: "destructive",
-      })
-    }
-  }
-
-  // Delete product
-  const handleDeleteListing = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this listing?")) {
-      try {
-        await kupiProdaiApi.deleteProduct(id)
-
-        // Refresh user products
-        fetchUserProducts()
-
-        toast({
-          title: "Success",
-          description: "Product deleted successfully",
-        })
-      } catch (err) {
-        console.error("Failed to delete product:", err)
-        toast({
-          title: "Error",
-          description: "Failed to delete product",
-          variant: "destructive",
-        })
+      // Adjust current index if needed
+      if (
+        currentMediaIndex >= newPreviewImages.length &&
+        newPreviewImages.length > 0
+      ) {
+        setCurrentMediaIndex(newPreviewImages.length - 1);
       }
     }
-  }
+  };
 
-  // Mark product as sold
-  const handleMarkAsSold = async (id: number) => {
-    try {
-      await kupiProdaiApi.updateProduct({
-        product_id: id,
-        status: "sold",
-      })
+  // Add these functions to handle image reordering
+  const moveImageUp = (index: number) => {
+    if (index <= 0) return;
 
-      // Refresh user products
-      fetchUserProducts()
+    // Initialize reorderedMedia if it's empty
+    const mediaToReorder =
+      reorderedMedia.length > 0
+        ? [...reorderedMedia]
+        : [...originalMedia.filter((m) => !mediaToDelete.includes(m.id))];
 
-      toast({
-        title: "Success",
-        description: "Product marked as sold",
-      })
-    } catch (err) {
-      console.error("Failed to mark product as sold:", err)
-      toast({
-        title: "Error",
-        description: "Failed to mark product as sold",
-        variant: "destructive",
-      })
-    }
-  }
+    // Swap the images
+    const temp = mediaToReorder[index];
+    mediaToReorder[index] = mediaToReorder[index - 1];
+    mediaToReorder[index - 1] = temp;
+
+    // Update the preview images to match
+    const newPreviewImages = mediaToReorder.map((m) => m.url);
+
+    setReorderedMedia(mediaToReorder);
+    setPreviewImages(newPreviewImages);
+    setCurrentMediaIndex(index - 1);
+  };
+
+  const moveImageDown = (index: number) => {
+    // Initialize reorderedMedia if it's empty
+    const mediaToReorder =
+      reorderedMedia.length > 0
+        ? [...reorderedMedia]
+        : [...originalMedia.filter((m) => !mediaToDelete.includes(m.id))];
+
+    if (index >= mediaToReorder.length - 1) return;
+
+    // Swap the images
+    const temp = mediaToReorder[index];
+    mediaToReorder[index] = mediaToReorder[index + 1];
+    mediaToReorder[index + 1] = temp;
+
+    // Update the preview images to match
+    const newPreviewImages = mediaToReorder.map((m) => m.url);
+
+    setReorderedMedia(mediaToReorder);
+    setPreviewImages(newPreviewImages);
+    setCurrentMediaIndex(index + 1);
+  };
+
+  // Update the handleUpdateListingListing function to handle media changes
+
+  // Delete product
+
+  // Mark product as sold/active
 
   const toggleLike = (id: number) => {
     if (likedProducts.includes(id)) {
-      setLikedProducts(likedProducts.filter((productId) => productId !== id))
+      setLikedProducts(likedProducts.filter((productId) => productId !== id));
     } else {
-      setLikedProducts([...likedProducts, id])
+      setLikedProducts([...likedProducts, id]);
     }
-  }
+  };
 
   const getConditionDisplay = (condition: string) => {
     switch (condition) {
       case "new":
-        return "New"
+        return "New";
       case "like_new":
-        return "Like New"
+        return "Like New";
       case "used":
-        return "Used"
+        return "Used";
       default:
-        return condition
+        return condition;
     }
-  }
+  };
 
   const getConditionColor = (condition: string) => {
     switch (condition) {
       case "new":
-        return "bg-green-500"
+        return "bg-green-500";
       case "like_new":
-        return "bg-blue-500"
+        return "bg-blue-500";
       case "used":
-        return "bg-orange-500"
+        return "bg-orange-500";
       default:
-        return "bg-gray-500"
+        return "bg-gray-500";
     }
-  }
+  };
 
   const getCategoryDisplay = (category: string) => {
-    return category.charAt(0).toUpperCase() + category.slice(1)
-  }
+    return (
+      category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, " ")
+    );
+  };
 
   const paginate = (pageNumber: number) => {
     if (pageNumber > 0 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber)
+      setCurrentPage(pageNumber);
     }
-  }
+  };
 
-  // Active and sold listings
-  const activeListings = myProducts.filter((p) => p.status === "active")
-  const soldListings = myProducts.filter((p) => p.status === "sold")
+  // Active and inactive listings
+  const activeListings = myProducts?.filter((p) => p.status === "active");
+  const inactiveListings = myProducts?.filter((p) => p.status === "inactive");
+  const soldListings = myProducts?.filter((p) => p.status === "inactive");
+
+  // Product skeleton for loading state
+  const ProductSkeleton = () => (
+    <Card className="overflow-hidden h-full">
+      <Skeleton className="aspect-square w-full" />
+      <CardContent className="p-3 sm:p-4">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-6 w-1/3" />
+          <div className="flex justify-between items-center pt-2">
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-4 w-1/4" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // Add this function to renew a sold product
 
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col space-y-1 sm:space-y-2">
         <h1 className="text-2xl sm:text-3xl font-bold">Kupi&Prodai</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Buy and sell items within the university community</p>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Buy and sell items within the university community
+        </p>
       </div>
 
-      <Tabs defaultValue="buy" className="w-full" onValueChange={setActiveTab}>
+      <Tabs
+        defaultValue="buy"
+        className="w-full"
+        onValueChange={(value) => setActiveTab(value as Types.ActiveTab)}
+        value={activeTab}
+      >
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="buy">Buy</TabsTrigger>
           <TabsTrigger value="sell">Sell</TabsTrigger>
@@ -460,97 +481,107 @@ export default function KupiProdaiPage() {
         </TabsList>
 
         {/* BUY SECTION */}
-        <TabsContent value="buy" className="space-y-3 sm:space-y-4 pt-3 sm:pt-4">
+        <TabsContent
+          value="buy"
+          className="space-y-3 sm:space-y-4 pt-3 sm:pt-4"
+        >
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search items..."
                 className="pl-9 text-sm"
-                value={searchQuery}
+                value={searchQuery.trim()}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            </div>
+
+            {/* Categories section - separate row */}
+            <div className="w-full">
+              <h3 className="text-lg font-medium mb-4">Categories</h3>
+              <div className="overflow-x-auto pb-4">
+                <div className="grid grid-rows-2 grid-flow-col gap-4 min-w-min">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-border/40 shadow-lg transition-all w-20 h-20 ${
+                        selectedCategory === category
+                          ? "bg-blue-50 text-black"
+                          : "hover:border-blue-200 hover:bg-blue-50"
+                      }`}
+                    >
+                      <span className="text-2xl">{getCategoryIcon(category)}</span>
+                      <span className="text-sm text-center capitalize">{category.replace(/_/g, " ")}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
             <Button
-              variant="outline"
-              size="sm"
-              className="flex gap-2 sm:size-default"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <Filter className="h-4 w-4" />
-              <span>Filter</span>
-            </Button>
-          </div>
-
-          {/* Simple Filter UI */}
+                variant="outline"
+                size="sm"
+                className="flex w-14 sm:size-default"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="h-4 w-4" />
+                <span>Filter</span>
+              </Button>
           {showFilters && (
-            <div className="p-4 border rounded-md bg-background space-y-3">
-              <div className="space-y-1">
-                <label htmlFor="category" className="text-sm font-medium">
-                  Category
-                </label>
-                <select
-                  id="category"
-                  className="w-full p-2 border rounded-md bg-background"
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                >
-                  {categories.map((category, index) => (
-                    <option key={category} value={category}>
-                      {displayCategories[index]}
-                    </option>
+            <div className="bg-card rounded-lg shadow-md p-6 mb-6">
+              <div>
+                <h3 className="text-lg font-medium mb-4">Condition</h3>
+                <div className="flex flex-wrap gap-4">
+                  {conditions.map((condition) => (
+                    <button
+                      key={condition}
+                      onClick={() => setSelectedCondition(condition)}
+                      className={`px-4 py-2 rounded-lg border border-border/40 shadow-lg transition-all ${
+                        selectedCondition === condition
+                          ? "bg-blue-50 text-black"
+                          : "hover:border-blue-200 hover:bg-blue-50"
+                      }`}
+                    >
+                      <span className="capitalize">{condition.replace(/_/g, " ")}</span>
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <label htmlFor="condition" className="text-sm font-medium">
-                  Condition
-                </label>
-                <select
-                  id="condition"
-                  className="w-full p-2 border rounded-md bg-background"
-                  value={selectedCondition}
-                  onChange={(e) => setSelectedCondition(e.target.value)}
-                >
-                  {conditions.map((condition, index) => (
-                    <option key={condition} value={condition}>
-                      {displayConditions[index]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-between pt-2">
+              <div className="flex justify-between pt-6 mt-6 border-t">
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={() => {
-                    setSelectedCategory("All Categories")
-                    setSelectedCondition("All Conditions")
+                    setSelectedCategory("All Categories");
+                    setSelectedCondition("All Conditions");
                   }}
                 >
-                  Reset
+                  Reset Filters
                 </Button>
-                <Button size="sm" onClick={() => setShowFilters(false)}>
-                  Apply
-                </Button>
+                <Button onClick={() => setShowFilters(false)}>Close Filters</Button>
               </div>
             </div>
           )}
 
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <ProductSkeleton key={index} />
+              ))}
             </div>
           ) : error ? (
             <div className="text-center py-12 text-destructive">
               <p>{error}</p>
-              <Button variant="outline" className="mt-4" onClick={fetchProducts}>
+              <Button
+                variant="outline"
+                className="mt-4"
+                // onClick={fetchProducts}
+              >
                 Try Again
               </Button>
             </div>
-          ) : products.length > 0 ? (
+          ) : (productItems?.products?.length ?? 0) > 0 ? (
             <>
               <motion.div
                 className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3"
@@ -558,20 +589,27 @@ export default function KupiProdaiPage() {
                 initial="hidden"
                 animate="visible"
               >
-                {products.map((product) => (
+                {productItems?.products.map((product) => (
                   <motion.div key={product.id} variants={itemVariants}>
                     <Card
                       className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => navigate(`/apps/kupi-prodai/product/${product.id}`)}
+                      onClick={() =>
+                        navigate(`/apps/kupi-prodai/product/${product.id}`)
+                      }
                     >
                       <div className="aspect-square relative">
                         <img
-                          src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
+                          src={
+                            product.media[0]?.url ||
+                            "https://placehold.co/200x200?text=No+Image"
+                          }
                           alt={product.name}
                           className="object-cover w-full h-full"
                         />
                         <Badge
-                          className={`absolute top-2 right-2 ${getConditionColor(product.condition)} text-white text-xs`}
+                          className={`absolute top-2 right-2 ${getConditionColor(
+                            product.condition
+                          )} text-white text-xs`}
                         >
                           {getConditionDisplay(product.condition)}
                         </Badge>
@@ -579,41 +617,30 @@ export default function KupiProdaiPage() {
                       <CardContent className="p-2 sm:p-3">
                         <div className="flex justify-between items-start mb-1">
                           <div>
-                            <h3 className="font-medium text-xs sm:text-sm line-clamp-1">{product.name}</h3>
-                            <p className="text-sm sm:text-base font-bold">{product.price} ₸</p>
+                            <h3 className="font-medium text-xs sm:text-sm line-clamp-1">
+                              {product.name}
+                            </h3>
+                            <p className="text-sm sm:text-base font-bold">
+                              {product.price} ₸
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center text-[10px] sm:text-xs text-muted-foreground mb-1">
                           <div className="flex items-center">
-                            <span>{product.category && getCategoryDisplay(product.category)}</span>
+                            <span>
+                              {product.category &&
+                                getCategoryDisplay(product.category)}
+                            </span>
                           </div>
                         </div>
                         <div className="flex justify-between">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="flex gap-1 text-muted-foreground hover:text-foreground h-6 px-1.5"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleLike(product.id)
-                            }}
+                            className="flex gap-1 text-muted-foreground hover:text-primary"
                           >
-                            <Heart
-                              className={`h-3 w-3 ${likedProducts.includes(product.id) ? "fill-red-500 text-red-500" : ""}`}
-                            />
-                            <span className="text-[10px]">{likedProducts.includes(product.id) ? "Liked" : "Like"}</span>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="flex gap-1 text-muted-foreground hover:text-foreground h-6 px-1.5"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              navigate(`/apps/kupi-prodai/product/${product.id}`)
-                            }}
-                          >
-                            <MessageSquare className="h-3 w-3" />
-                            <span className="text-[10px]">Details</span>
+                            <MessageSquare className="h-4 w-4" />
+                            <span>Message</span>
                           </Button>
                         </div>
                       </CardContent>
@@ -624,447 +651,160 @@ export default function KupiProdaiPage() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex justify-center items-center mt-4 gap-1">
+                <div className="flex justify-center mt-4">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => paginate(currentPage - 1)}
                     disabled={currentPage === 1}
+                    onClick={() => paginate(currentPage - 1)}
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-4 w-4 mr-2" />
+                    Previous
                   </Button>
-
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <Button
-                      key={i + 1}
-                      variant={currentPage === i + 1 ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => paginate(i + 1)}
-                      className="w-8 h-8 p-0"
-                    >
-                      {i + 1}
-                    </Button>
-                  ))}
-
+                  <span className="mx-2 text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => paginate(currentPage + 1)}
                     disabled={currentPage === totalPages}
+                    onClick={() => paginate(currentPage + 1)}
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
               )}
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No items found</h3>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Try adjusting your search or filters to find what you're looking for.
-              </p>
+            <div className="text-center py-12">
+              <p>No products found.</p>
             </div>
           )}
         </TabsContent>
 
         {/* SELL SECTION */}
-        <TabsContent value="sell" className="pt-3 sm:pt-4">
-          <Card>
-            <CardContent className="p-4 sm:p-6">
-              {isAuthenticated ? (
-                <>
-                  {!isTelegramLinked && (
-                    <Alert variant="destructive" className="mb-4">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertTitle>Telegram Required</AlertTitle>
-                      <AlertDescription>
-                        You need to link your Telegram account before you can sell items. Please go to your profile and
-                        bind your Telegram account.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  <h2 className="text-xl font-bold mb-4">Create a New Listing</h2>
-                  <form onSubmit={handleSubmitListing} className="space-y-4">
-                    <div className="space-y-2">
-                      <label htmlFor="name" className="text-sm font-medium">
-                        Title
-                      </label>
-                      <Input
-                        id="name"
-                        name="name"
-                        placeholder="What are you selling?"
-                        value={newListing.name}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label htmlFor="price" className="text-sm font-medium">
-                          Price (₸)
-                        </label>
-                        <Input
-                          id="price"
-                          name="price"
-                          type="number"
-                          placeholder="0"
-                          value={newListing.price}
-                          onChange={handleInputChange}
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label htmlFor="category" className="text-sm font-medium">
-                          Category
-                        </label>
-                        <select
-                          id="category"
-                          name="category"
-                          className="w-full p-2 border rounded-md bg-background"
-                          value={newListing.category}
-                          onChange={handleSelectChange}
-                          required
-                        >
-                          <option value="" disabled>
-                            Select category
-                          </option>
-                          {categories.slice(1).map((category, index) => (
-                            <option key={category} value={category}>
-                              {displayCategories[index + 1]}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label htmlFor="condition" className="text-sm font-medium">
-                        Condition
-                      </label>
-                      <select
-                        id="condition"
-                        name="condition"
-                        className="w-full p-2 border rounded-md bg-background"
-                        value={newListing.condition}
-                        onChange={handleSelectChange}
-                        required
-                      >
-                        <option value="" disabled>
-                          Select condition
-                        </option>
-                        {conditions.slice(1).map((condition, index) => (
-                          <option key={condition} value={condition}>
-                            {displayConditions[index + 1]}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label htmlFor="description" className="text-sm font-medium">
-                        Description
-                      </label>
-                      <textarea
-                        id="description"
-                        name="description"
-                        placeholder="Describe your item in detail"
-                        className="w-full min-h-[100px] p-2 border rounded-md bg-background"
-                        value={newListing.description}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Upload Images</label>
-                      <div className="border-2 border-dashed border-input rounded-md p-4">
-                        <div className="grid grid-cols-3 gap-2 mb-3">
-                          {previewImages.map((image, index) => (
-                            <div key={index} className="relative">
-                              <img
-                                src={image || "/placeholder.svg"}
-                                alt={`Preview ${index + 1}`}
-                                className="w-full h-24 object-cover rounded-md"
-                              />
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                size="icon"
-                                className="absolute top-1 right-1 h-5 w-5"
-                                onClick={() => removeImage(index)}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-
-                        {previewImages.length < 5 && (
-                          <div
-                            className="flex flex-col items-center justify-center py-4 cursor-pointer border border-dashed border-input rounded-md"
-                            onClick={() => fileInputRef.current?.click()}
-                          >
-                            <Camera className="h-8 w-8 text-muted-foreground mb-2" />
-                            <p className="text-sm font-medium mb-1">Upload images</p>
-                            <p className="text-xs text-muted-foreground">Click to browse or drag and drop</p>
-                            <input
-                              type="file"
-                              ref={fileInputRef}
-                              className="hidden"
-                              accept="image/*"
-                              multiple
-                              onChange={handleImageUpload}
-                            />
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">You can upload up to 5 images</p>
-                    </div>
-
-                    <Button type="submit" className="w-full" disabled={!isTelegramLinked}>
-                      {isTelegramLinked ? "Create Listing" : "Telegram Binding Required"}
-                    </Button>
-                  </form>
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 sm:py-12 text-center">
-                  <ShoppingBag className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
-                  <h3 className="text-lg sm:text-xl font-medium mb-1 sm:mb-2">Login to Sell Items</h3>
-                  <p className="text-sm text-muted-foreground mb-4 sm:mb-6 max-w-md">
-                    You need to login before you can sell items on the marketplace
-                  </p>
-                  <Button size="sm" onClick={login} className="flex gap-2">
-                    <User className="h-4 w-4" />
-                    <span>Login</span>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* MY LISTINGS SECTION */}
-        <TabsContent value="my-listings" className="pt-3 sm:pt-4">
-          <Tabs defaultValue="active">
-            <TabsList className="w-full">
-              <TabsTrigger value="active" className="flex-1">
-                Active Listings ({activeListings.length})
-              </TabsTrigger>
-              <TabsTrigger value="sold" className="flex-1">
-                Sold Items ({soldListings.length})
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="active" className="pt-4">
-              {isLoading ? (
-                <div className="flex justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-                </div>
-              ) : activeListings.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  {activeListings.map((product) => (
-                    <Card key={product.id} className="overflow-hidden h-full">
-                      <div className="aspect-square relative">
-                        <img
-                          src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
-                          alt={product.name}
-                          className="object-cover w-full h-full"
-                        />
-                        <Badge
-                          className={`absolute top-2 right-2 ${getConditionColor(product.condition)} text-white text-xs`}
-                        >
-                          {getConditionDisplay(product.condition)}
-                        </Badge>
-                      </div>
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="flex justify-between items-start mb-1 sm:mb-2">
-                          <div>
-                            <h3 className="font-medium text-sm sm:text-base">{product.name}</h3>
-                            <p className="text-base sm:text-lg font-bold">{product.price} ₸</p>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {getCategoryDisplay(product.category)}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center text-xs sm:text-sm text-muted-foreground mb-3">
-                          <p className="line-clamp-2">{product.description}</p>
-                        </div>
-                        <div className="flex justify-end">
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditListing(product)}>
-                              Edit
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive"
-                              onClick={() => handleDeleteListing(product.id)}
-                            >
-                              Delete
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleMarkAsSold(product.id)}>
-                              Mark as Sold
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No active listings</h3>
-                  <p className="text-sm text-muted-foreground max-w-md mb-6">
-                    You don't have any active listings. Create a new listing to start selling.
-                  </p>
-                  <Button onClick={() => setActiveTab("sell")}>Create Listing</Button>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="sold" className="pt-4">
-              {isLoading ? (
-                <div className="flex justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-                </div>
-              ) : soldListings.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  {soldListings.map((product) => (
-                    <Card key={product.id} className="overflow-hidden h-full opacity-75">
-                      <div className="aspect-square relative">
-                        <img
-                          src={product.media[0]?.url || "/placeholder.svg?height=200&width=200"}
-                          alt={product.name}
-                          className="object-cover w-full h-full"
-                        />
-                        <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
-                          <Badge className="bg-green-500 text-white text-sm px-3 py-1">SOLD</Badge>
-                        </div>
-                      </div>
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="flex justify-between items-start mb-1 sm:mb-2">
-                          <div>
-                            <h3 className="font-medium text-sm sm:text-base">{product.name}</h3>
-                            <p className="text-base sm:text-lg font-bold">{product.price} ₸</p>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {getCategoryDisplay(product.category)}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center text-xs sm:text-sm text-muted-foreground mb-3">
-                          <p className="line-clamp-2">{product.description}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No sold items</h3>
-                  <p className="text-sm text-muted-foreground max-w-md">Items you've sold will appear here.</p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-      </Tabs>
-
-      {/* Edit Listing Modal */}
-      {showEditModal && editingListing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-background rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-auto">
-            <div className="p-4 sm:p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Edit Listing</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowEditModal(false)
-                    setEditingListing(null)
-                    setPreviewImages([])
-                  }}
-                >
-                  <X className="h-5 w-5" />
+        <TabsContent value="sell" className="space-y-4 pt-4">
+          {!isAuthenticated ? (
+            <Alert variant="destructive">
+              <AlertTitle>Authentication Required</AlertTitle>
+              <AlertDescription>
+                You must be logged in to create a listing.
+                <Button variant="link" onClick={() => login()}>
+                  Login
                 </Button>
+              </AlertDescription>
+            </Alert>
+          ) : !isTelegramLinked ? (
+            <Alert
+            variant="warning"
+            className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900"
+          >
+            <AlertTitle className="flex items-center gap-2">
+              Telegram Required
+            </AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p>You need to link your Telegram account before selling items.</p>
+            </AlertDescription>
+          </Alert>
+          )
+
+          : (
+            <form onSubmit={handleCreate} className="space-y-4">
+              {/* Name */}
+              <div className="space-y-2">
+                <label htmlFor="name" className="block text-sm font-medium">
+                  Name
+                </label>
+                <Input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={newListing.name}
+                  onChange={handleInputChange}
+                  required
+                  className="bg-background text-foreground"
+                  placeholder="What are you selling?"
+                />
               </div>
 
-              <form onSubmit={handleUpdateListing} className="space-y-4">
+              {/* Description */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium"
+                >
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={newListing.description}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full p-2 border rounded-md bg-background text-foreground"
+                  placeholder="Describe your item..."
+                />
+              </div>
+
+              {/* Price, Category, and Condition */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="edit-name" className="text-sm font-medium">
-                    Title
+                  <label htmlFor="price" className="block text-sm font-medium">
+                    Price (₸)
                   </label>
                   <Input
-                    id="edit-name"
-                    name="name"
-                    placeholder="What are you selling?"
-                    value={newListing.name}
+                    type="number"
+                    id="price"
+                    name="price"
+                    value={newListing.price === 0 ? "" : newListing.price}
                     onChange={handleInputChange}
+                    onFocus={handlePriceInputFocus}
+                    onBlur={handlePriceInputBlur}
+                    min="0"
+                    step="1"
                     required
+                    className="bg-background text-foreground"
+                    placeholder="0"
                   />
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor="edit-price" className="text-sm font-medium">
-                      Price (₸)
-                    </label>
-                    <Input
-                      id="edit-price"
-                      name="price"
-                      type="number"
-                      placeholder="0"
-                      value={newListing.price}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="edit-category" className="text-sm font-medium">
-                      Category
-                    </label>
-                    <select
-                      id="edit-category"
-                      name="category"
-                      className="w-full p-2 border rounded-md bg-background"
-                      value={newListing.category}
-                      onChange={handleSelectChange}
-                      required
-                    >
-                      <option value="" disabled>
-                        Select category
-                      </option>
-                      {categories.slice(1).map((category, index) => (
-                        <option key={category} value={category}>
-                          {displayCategories[index + 1]}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
                 <div className="space-y-2">
-                  <label htmlFor="edit-condition" className="text-sm font-medium">
+                  <label
+                    htmlFor="category"
+                    className="block text-sm font-medium"
+                  >
+                    Category
+                  </label>
+                  <select
+                    id="category"
+                    name="category"
+                    value={newListing.category}
+                    onChange={handleSelectChange}
+                    className="w-full p-2 border rounded-md bg-background text-foreground"
+                    required
+                  >
+                    {categories.slice(1).map((category, index) => (
+                      <option key={category} value={category}>
+                        {displayCategories[index + 1]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="condition"
+                    className="block text-sm font-medium"
+                  >
                     Condition
                   </label>
                   <select
-                    id="edit-condition"
+                    id="condition"
                     name="condition"
-                    className="w-full p-2 border rounded-md bg-background"
                     value={newListing.condition}
                     onChange={handleSelectChange}
+                    className="w-full p-2 border rounded-md bg-background text-foreground"
                     required
                   >
-                    <option value="" disabled>
-                      Select condition
-                    </option>
                     {conditions.slice(1).map((condition, index) => (
                       <option key={condition} value={condition}>
                         {displayConditions[index + 1]}
@@ -1072,87 +812,696 @@ export default function KupiProdaiPage() {
                     ))}
                   </select>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="edit-description" className="text-sm font-medium">
-                    Description
-                  </label>
-                  <textarea
-                    id="edit-description"
-                    name="description"
-                    placeholder="Describe your item in detail"
-                    className="w-full min-h-[100px] p-2 border rounded-md bg-background"
-                    value={newListing.description}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Images</label>
-                  <div className="border-2 border-dashed border-input rounded-md p-4">
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      {previewImages.map((image, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={image || "/placeholder.svg"}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-md"
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-1 right-1 h-5 w-5"
-                            onClick={() => removeImage(index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-
-                    {previewImages.length < 5 && (
-                      <div
-                        className="flex flex-col items-center justify-center py-4 cursor-pointer border border-dashed border-input rounded-md"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        <Camera className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-sm font-medium mb-1">Upload images</p>
-                        <p className="text-xs text-muted-foreground">Click to browse or drag and drop</p>
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          className="hidden"
-                          accept="image/*"
-                          multiple
-                          onChange={handleImageUpload}
-                        />
-                      </div>
-                    )}
+              {/* Image Upload with Drag and Drop */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">Images</label>
+                <div
+                  ref={dropZoneRef}
+                  className={`border-2 ${
+                    isDragging ? "border-primary" : "border-dashed"
+                  } rounded-md p-6 transition-colors duration-200 ease-in-out`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-sm font-medium mb-1">
+                      Upload a file or drag and drop
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      PNG, JPG, GIF up to 10MB
+                    </p>
+                    <input
+                      type="file"
+                      name="images"
+                      ref={fileInputRef}
+                      className="hidden"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                    />
+                    <Button type="button" variant="outline" size="sm">
+                      Upload a file
+                    </Button>
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2">
+                {/* Image Preview */}
+                {previewImages.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-4">
+                    {previewImages.map((src, index) => (
+                      <div
+                        key={index}
+                        className="relative aspect-square rounded-md overflow-hidden"
+                      >
+                        <img
+                          src={src || "/placeholder.svg"}
+                          alt={`Preview ${index + 1}`}
+                          className="object-cover w-full h-full"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-1 right-1 h-6 w-6"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeImage(index);
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                disabled={isUploading || !isTelegramLinked}
+                className="w-full"
+              >
+                {isUploading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <RefreshCw className="animate-spin h-4 w-4" />
+                    <span>Uploading... {uploadProgress}%</span>
+                  </div>
+                ) : (
+                  "Create Listing"
+                )}
+              </Button>
+
+              {isUploading && (
+                <Progress value={uploadProgress} className="mt-2" />
+              )}
+            </form>
+          )}
+        </TabsContent>
+
+        {/* MY LISTINGS SECTION */}
+        <TabsContent value="my-listings" className="space-y-4 pt-4">
+          {!isAuthenticated ? (
+            <Alert variant="destructive">
+              <AlertTitle>Authentication Required</AlertTitle>
+              <AlertDescription>
+                You must be logged in to view your listings.
+                <Button variant="link" onClick={() => login()}>
+                  Login
+                </Button>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              {/* Active Listings */}
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold">Active Listings</h2>
+                {(activeListings?.length ?? 0) > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {activeListings?.map((product) => (
+                      <Card
+                        key={product.id}
+                        className="overflow-hidden"
+                        onClick={() => navigate(`/apps/kupi-prodai/product/${product.id}`)}
+                      >
+                        <div className="aspect-square relative">
+                          <img
+                            src={
+                              product.media[0]?.url ||
+                              "https://placehold.co/200x200?text=No+Image"
+                            }
+                            alt={product.name}
+                            className="object-cover w-full h-full"
+                          />
+                          <Badge
+                            className={`absolute top-2 right-2 ${getConditionColor(
+                              product.condition
+                            )} text-white text-xs`}
+                          >
+                            {getConditionDisplay(product.condition)}
+                          </Badge>
+                        </div>
+                        <CardContent className="p-3">
+                          <h3 className="font-medium text-sm line-clamp-1">{product.name}</h3>
+                          <p className="text-sm font-bold">{product.price} ₸</p>
+                          <div className="flex justify-between mt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditListing(product);
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              disabled={getIsPendingDeleteMutation(product.id)}
+                              variant="destructive"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(product.id);
+                              }}
+                            >
+                              Delete
+                            </Button>
+                            <Button
+                              disabled={getIsPendingToggleMutation(product.id)}
+                              variant="secondary"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleProductStatus(product.id, product.status);
+                              }}
+                            >
+                              Mark as Sold
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                    ))}
+                  </div>
+                ) : (
+                  <p>No active listings found.</p>
+                )}
+              </div>
+
+              {/* Inactive Listings */}
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold">Inactive Listings</h2>
+                {(inactiveListings?.length ?? 0) > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {inactiveListings?.map((product) => (
+                      <Card key={product.id} className="overflow-hidden">
+                        <div className="aspect-square relative">
+                          <img
+                            src={
+                              product.media[0]?.url ||
+                              "https://placehold.co/200x200?text=No+Image"
+                            }
+                            alt={product.name}
+                            className="object-cover w-full h-full"
+                          />
+                          <Badge
+                            className={`absolute top-2 right-2 ${getConditionColor(
+                              product.condition
+                            )} text-white text-xs`}
+                          >
+                            {getConditionDisplay(product.condition)}
+                          </Badge>
+                        </div>
+                        <CardContent className="p-3">
+                          <h3 className="font-medium text-sm line-clamp-1">
+                            {product.name}
+                          </h3>
+                          <p className="text-sm font-bold">{product.price} ₸</p>
+                          <div className="flex justify-between mt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditListing(product)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              disabled={getIsPendingDeleteMutation(product.id)}
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(product.id)}
+                            >
+                              Delete
+                            </Button>
+                            <Button
+                              disabled={getIsPendingToggleMutation(product.id)}
+                              variant="secondary"
+                              size="sm"
+                              onClick={() =>
+                                handleToggleProductStatus(
+                                  product.id,
+                                  product.status
+                                )
+                              }
+                            >
+                              Mark as Active
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <p>No inactive listings found.</p>
+                )}
+              </div>
+            </>
+          )}
+        </TabsContent>
+
+        {/* Update the sold items section */}
+        <TabsContent value="sold" className="pt-4">
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : (soldListings?.length ?? 0) > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {soldListings?.map((product) => (
+                <Card
+                  key={product.id}
+                  className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() =>
+                    navigate(`/apps/kupi-prodai/product/${product.id}`)
+                  }
+                >
+                  <div className="aspect-square relative">
+                    <img
+                      src={
+                        product.media[0]?.url ||
+                        "https://placehold.co/200x200?text=No+Image"
+                      }
+                      alt={product.name}
+                      className="object-cover w-full h-full"
+                    />
+                    <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+                      <Badge className="bg-green-500 text-white text-sm px-3 py-1">
+                        SOLD
+                      </Badge>
+                    </div>
+                  </div>
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex justify-between items-start mb-1 sm:mb-2">
+                      <div>
+                        <h3 className="font-medium text-sm sm:text-base">
+                          {product.name}
+                        </h3>
+                        <p className="text-base sm:text-lg font-bold">
+                          {product.price} ₸
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {getCategoryDisplay(product.category)}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center text-xs sm:text-sm text-muted-foreground mb-3">
+                      <p className="line-clamp-2">{product.description}</p>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          handleToggleProductStatus(product.id, "active");
+                        }}
+                        className="text-green-600 border-green-200 hover:bg-green-50"
+                      >
+                        Renew Listing
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">No sold items</h3>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Items you've sold will appear here.
+              </p>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Replace the Edit Listing Modal with this enhanced version */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 py-6 text-center">
+            <div
+              className="fixed inset-0 transition-opacity"
+              aria-hidden="true"
+            >
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+
+            <div
+              className="inline-block w-full max-w-4xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-background rounded-lg shadow-xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="modal-headline"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold" id="modal-headline">
+                  Edit Listing
+                </h2>
+                <Button variant="ghost" size="sm" onClick={closeEditModal}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+
+              <form onSubmit={handleUpdateListing} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left column: Product details */}
+                  <div className="space-y-4">
+                    {/* Name */}
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="edit-name"
+                        className="block text-sm font-medium"
+                      >
+                        Name
+                      </label>
+                      <Input
+                        type="text"
+                        id="edit-name"
+                        name="name"
+                        value={newListing.name}
+                        onChange={handleInputChange}
+                        required
+                        className="bg-background text-foreground"
+                      />
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="edit-description"
+                        className="block text-sm font-medium"
+                      >
+                        Description
+                      </label>
+                      <textarea
+                        id="edit-description"
+                        name="description"
+                        value={newListing.description}
+                        onChange={handleInputChange}
+                        rows={4}
+                        className="w-full p-2 border rounded-md bg-background text-foreground"
+                      />
+                    </div>
+
+                    {/* Price, Category, and Condition */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <label
+                          htmlFor="edit-price"
+                          className="block text-sm font-medium"
+                        >
+                          Price (₸)
+                        </label>
+                        <Input
+                          type="number"
+                          id="edit-price"
+                          name="price"
+                          value={newListing.price === 0 ? "" : newListing.price}
+                          onChange={handleInputChange}
+                          onFocus={handlePriceInputFocus}
+                          onBlur={handlePriceInputBlur}
+                          min="0"
+                          step="1"
+                          required
+                          className="bg-background text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label
+                          htmlFor="edit-category"
+                          className="block text-sm font-medium"
+                        >
+                          Category
+                        </label>
+                        <select
+                          id="edit-category"
+                          name="category"
+                          value={newListing.category}
+                          onChange={handleSelectChange}
+                          className="w-full p-2 border rounded-md bg-background text-foreground"
+                        >
+                          {categories.slice(1).map((category, index) => (
+                            <option key={category} value={category}>
+                              {displayCategories[index + 1]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label
+                          htmlFor="edit-condition"
+                          className="block text-sm font-medium"
+                        >
+                          Condition
+                        </label>
+                        <select
+                          id="edit-condition"
+                          name="condition"
+                          value={newListing.condition}
+                          onChange={handleSelectChange}
+                          className="w-full p-2 border rounded-md bg-background text-foreground"
+                        >
+                          {conditions.slice(1).map((condition, index) => (
+                            <option key={condition} value={condition}>
+                              {displayConditions[index + 1]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right column: Image carousel and controls */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium">
+                        Images
+                      </label>
+
+                      {/* Image carousel */}
+                      <div className="relative aspect-square rounded-md overflow-hidden border border-border">
+                        {previewImages.length > 0 ? (
+                          <>
+                            <img
+                              src={
+                                previewImages[currentMediaIndex] ||
+                                "/placeholder.svg"
+                              }
+                              alt={`Product image ${currentMediaIndex + 1}`}
+                              className="object-contain w-full h-full"
+                            />
+
+                            {/* Image navigation */}
+                            {previewImages.length > 1 && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-background/80"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setCurrentMediaIndex((prev) =>
+                                      prev === 0
+                                        ? previewImages.length - 1
+                                        : prev - 1
+                                    );
+                                  }}
+                                  type="button"
+                                >
+                                  <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-background/80"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setCurrentMediaIndex((prev) =>
+                                      prev === previewImages.length - 1
+                                        ? 0
+                                        : prev + 1
+                                    );
+                                  }}
+                                  type="button"
+                                >
+                                  <ChevronRight className="h-4 w-4" />
+                                </Button>
+
+                                {/* Image indicators */}
+                                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                                  {previewImages.map((_, index) => (
+                                    <Button
+                                      key={index}
+                                      type="button"
+                                      className={`w-2 h-2 rounded-full ${
+                                        index === currentMediaIndex
+                                          ? "bg-primary"
+                                          : "bg-background/80"
+                                      }`}
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setCurrentMediaIndex(index);
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              </>
+                            )}
+
+                            {/* Image actions */}
+                            <div className="absolute top-2 right-2 flex gap-1">
+                              {/* Always show delete button */}
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                className="h-8 w-8 rounded-full bg-background/80"
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const mediaToRemove = originalMedia.find(
+                                    (m) =>
+                                      m.url === previewImages[currentMediaIndex]
+                                  );
+                                  if (mediaToRemove) {
+                                    handleDeleteImage(mediaToRemove.id);
+                                  } else {
+                                    // This is a newly added image
+                                    const newImageFiles = [...imageFiles];
+                                    const newPreviewImages = [...previewImages];
+                                    newImageFiles.splice(
+                                      currentMediaIndex - originalMedia.length,
+                                      1
+                                    );
+                                    newPreviewImages.splice(
+                                      currentMediaIndex,
+                                      1
+                                    );
+                                    setImageFiles(newImageFiles);
+                                    setPreviewImages(newPreviewImages);
+                                    if (
+                                      currentMediaIndex >=
+                                        newPreviewImages.length &&
+                                      newPreviewImages.length > 0
+                                    ) {
+                                      setCurrentMediaIndex(
+                                        newPreviewImages.length - 1
+                                      );
+                                    }
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-foreground" />
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                            <ImageIcon className="h-12 w-12 mb-2" />
+                            <p>No images</p>
+                            <p className="text-xs mt-2">
+                              Upload images to showcase your product
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Image thumbnails */}
+                      {previewImages.length > 0 && (
+                        <div className="flex overflow-x-auto gap-2 py-2">
+                          {previewImages.map((src, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              className={`relative w-16 h-16 rounded-md overflow-hidden border-2 ${
+                                index === currentMediaIndex
+                                  ? "border-primary"
+                                  : "border-transparent"
+                              }`}
+                              onClick={() => setCurrentMediaIndex(index)}
+                            >
+                              <img
+                                src={src || "/placeholder.svg"}
+                                alt={`Thumbnail ${index + 1}`}
+                                className="object-cover w-full h-full"
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add new images */}
+                      <div
+                        ref={dropZoneRef}
+                        className={`border-2 ${
+                          isDragging ? "border-primary" : "border-dashed"
+                        } rounded-md p-4 transition-colors duration-200 ease-in-out`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <Plus className="h-8 w-8 text-muted-foreground mb-2" />
+                          <p className="text-sm font-medium mb-1">
+                            Add more images
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Click or drag and drop
+                          </p>
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            multiple
+                            onChange={handleImageUpload}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit buttons */}
+                <div className="flex justify-end gap-2 pt-4 border-t">
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => {
-                      setShowEditModal(false)
-                      setEditingListing(null)
-                      setPreviewImages([])
-                    }}
+                    onClick={closeEditModal}
                   >
                     Cancel
                   </Button>
-                  <Button type="submit">Update Listing</Button>
+                  <Button
+                    type="submit"
+                    disabled={isUploading}
+                    className="min-w-[120px]"
+                  >
+                    {isUploading ? (
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        <span>{uploadProgress}%</span>
+                      </div>
+                    ) : (
+                      "Update Listing"
+                    )}
+                  </Button>
                 </div>
+
+                {isUploading && (
+                  <Progress value={uploadProgress} className="mt-2" />
+                )}
               </form>
             </div>
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }
-
