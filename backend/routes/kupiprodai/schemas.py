@@ -87,6 +87,14 @@ class ProductReportSchema(BaseModel):
     text: str
 
 
+class ProductReportResponseSchema(BaseModel):
+    id: int
+    user_sub: str
+    product_id: int
+    text: str
+    created_at: datetime
+
+
 class SearchResponseSchema(BaseModel):
     id: int
     name: str
@@ -94,3 +102,8 @@ class SearchResponseSchema(BaseModel):
 
 class ListSearchResponseSchema(BaseModel):
     search_result: List[SearchResponseSchema]
+
+
+class ProductUpdateResponseSchema(BaseModel):
+    product_id: int
+    updated_fields: dict
