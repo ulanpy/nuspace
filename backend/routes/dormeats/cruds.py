@@ -1,10 +1,10 @@
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.core.database.models.dormeats import (
     AvailableMeal,
     CanteenProduct,
     CanteenProductCategory,
+    CanteenFeedback,
     CanteenReport,
     Meal,
 )
@@ -18,6 +18,8 @@ from .schemas import (
     AvailableMealResponseSchema,
     CanteenProductRequestSchema,
     CanteenProductResponseSchema,
+    CanteenFeedbackRequestSchema,
+    CanteenFeedbackResponseSchema,
     CanteenReportRequestSchema,
     CanteenReportResponseSchema,
     MealRequestSchema,
@@ -26,6 +28,7 @@ from .schemas import (
 from .utils import (
     build_available_meal_response,
     build_canteen_product_response,
+    build_canteen_feedback_response,
     build_canteen_report_response,
     build_meal_response,
 )
@@ -88,6 +91,21 @@ async def add_new_available_meal_to_db(
 
     return await build_available_meal_response(
         available_meal=new_available_meal, session=session, request=request
+    )
+
+
+async def add_new_canteen_feedback_to_db(
+    session: AsyncSession,
+    request: Request,
+    canteen_feedback_data: CanteenFeedbackRequestSchema,
+) -> CanteenFeedbackResponseSchema:
+    new_canteen_feedback = CanteenFeedback(**canteen_feedback_data.dict())
+    session.add(new_canteen_feedback)
+    await session.commit()
+    await session.refresh(new_canteen_feedback)
+
+    return await build_canteen_feedback_response(
+        canteen_feedback=new_canteen_feedback, session=session, request=request
     )
 
 

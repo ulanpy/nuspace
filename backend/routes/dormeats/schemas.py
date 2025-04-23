@@ -76,11 +76,21 @@ class AvailableMealResponseSchema(BaseModel):
 
 
 # Canteen Feedback
-class CanteenFeedbackSchema(BaseModel):
+class CanteenFeedbackRequestSchema(BaseModel):
+    canteen_id: int
+    feedback: str
+    rating: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CanteenFeedbackResponseSchema(BaseModel):
     id: int
     canteen_id: int
     feedback: str
     rating: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Canteen Report

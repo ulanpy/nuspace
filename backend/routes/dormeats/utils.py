@@ -1,16 +1,17 @@
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.common.utils import get_media_responses
 from backend.core.database.models.dormeats import (
     AvailableMeal,
     CanteenProduct,
+    CanteenFeedback,
     CanteenReport,
     Meal,
 )
 from backend.routes.dormeats.schemas import (
     AvailableMealResponseSchema,
     CanteenProductResponseSchema,
+    CanteenFeedbackResponseSchema,
     CanteenReportResponseSchema,
     MealResponseSchema,
 )
@@ -61,6 +62,19 @@ async def build_available_meal_response(
         canteen_id=available_meal.canteen_id,
         meal_id=available_meal.meal_id,
         status=available_meal.status,
+    )
+
+
+async def build_canteen_feedback_response(
+    canteen_feedback: CanteenFeedback,
+    session: AsyncSession,
+    request: Request,
+):
+    return CanteenFeedbackResponseSchema(
+        id=canteen_feedback.id,
+        canteen_id=canteen_feedback.canteen_id,
+        feedback=canteen_feedback.feedback,
+        rating=canteen_feedback.rating,
     )
 
 
