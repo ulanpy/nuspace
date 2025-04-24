@@ -48,7 +48,7 @@ export function useCreateProduct() {
       name: String(formData.get("name")),
       description: String(formData.get("description")),
       price: Number(formData.get("price")),
-      category: String(formData.get("category")) as Types.ProductCategory,
+      category: String(formData.get("category")).toLowerCase() as Types.ProductCategory,
       condition: String(formData.get("condition")) as Types.ProductCondition,
       status: "active",
     };
@@ -65,14 +65,14 @@ export function useCreateProduct() {
 
     setIsUploading(true);
     setUploadProgress(10);
+    createProductMutation.mutate(
+      newProduct
+    );
     return newProduct;
   };
 
-  const uploadImage = async (newProduct: NewProductRequest) => {
+  const uploadImage = async () => {
     try {
-      const createdProduct = await createProductMutation.mutateAsync(
-        newProduct
-      );
       setUploadProgress(30);
       if (imageFiles.length > 0) {
         // Get signed URLs for image uploads
@@ -81,17 +81,23 @@ export function useCreateProduct() {
         );
         setUploadProgress(50);
 
-        // Upload each image
-        const uploadPromises = imageFiles.map((file, index) => {
-          const signedUrl = signedUrlsResponse.signed_urls[index];
-          return kupiProdaiApi.uploadImage(
-            file,
-            signedUrl.filename,
-            createdProduct.id,
-            index + 1 // Media order starts from 1
-          );
-        });
-        await Promise.all(uploadPromises);
+        for (let i = 0; i < imageFiles.length; i++) {
+          const file = imageFiles[i];
+          const { upload_url } = signedUrlsResponse.signed_urls[i];
+
+          // Optional: Set custom metadata headers
+          const headers = {
+            'Content-Type': file.type,
+            'x-goog-meta-filename': file.name,
+            // Add other custom metadata headers as needed
+          };
+
+          await fetch(upload_url, {
+            method: "POST",
+            headers: headers,
+            body: file,
+          });
+        }
         setUploadProgress(90);
       }
 
@@ -108,11 +114,9 @@ export function useCreateProduct() {
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const newProduct = createProduct(e);
+    createProduct(e);
 
-    if (!newProduct) return;
-
-    await uploadImage(newProduct);
+    await uploadImage();
 
     resetEditListing();
   };

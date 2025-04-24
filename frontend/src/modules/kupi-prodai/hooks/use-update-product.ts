@@ -78,7 +78,7 @@ export const useUpdateProduct = () => {
         name: newListing.name,
         description: newListing.description,
         price: newListing.price,
-        category: newListing.category as Types.ProductCategory,
+        category: newListing.category.toLowerCase() as Types.ProductCategory,
         condition: newListing.condition as Types.ProductCondition,
         status: newListing.status as Types.Status,
       });

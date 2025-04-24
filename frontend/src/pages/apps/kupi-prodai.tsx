@@ -30,6 +30,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "../../components/ui/tabs";
+import { SliderGroup } from "@/components/slider-group";
+import { ConditionGroup } from "@/components/condition-group";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/auth-context";
 import { useToast } from "../../hooks/use-toast";
@@ -55,75 +57,69 @@ import { MdSports, MdBrush, MdLocalOffer } from "react-icons/md";
 import { BsPencilFill } from "react-icons/bs";
 import { GiKnifeFork } from "react-icons/gi";
 import { IoTicket, IoCarSport } from "react-icons/io5";
+import { title } from "process";
 
 // Define categories and conditions
 const categories = [
-  "All Categories",
-  "books",
-  "electronics",
-  "clothing",
-  "furniture",
-  "appliances",
-  "sports",
-  "stationery",
-  "art_supplies",
-  "beauty",
-  "services",
-  "food",
-  "tickets",
-  "transport",
-  "others",
-];
+  {
+    title: "All Categories",
+    icon: <BiSolidCategory />,
+  },
+  {
+    title: "Books",
+    icon: <FaBook />,
+  },
+  {
+    title: "Electronics",
+    icon: <FaLaptop />,
+  },
+  {
+    title: "Clothing",
+    icon: <FaTshirt />,
+  },
+  {
+    title: "Furniture",
+    icon: <FaCouch />,
+  },
+  {
+    title: "Appliances",
+    icon: <FaBlender />,
+  },
+  {
+    title: "Sports",
+    icon: <MdSports />,
+  },
+  {
+    title: "Stationery",
+    icon: <BsPencilFill />,
+  },
+  {
+    title: "Art Supplies",
+    icon: <MdBrush />,
+  },
+  {
+    title: "Beauty",
+    icon: <MdLocalOffer />,
+  },
+  {
+    title: "Food",
+    icon: <GiKnifeFork />,
+  },
+  {
+    title: "Tickets",
+    icon: <IoTicket />,
+  },
+  {
+    title: "Transport",
+    icon: <IoCarSport />,
+  },
+  {
+    title: "Others",
+    icon: <BiSolidCategory />,
 
-const getCategoryIcon = (category: string) => {
-  switch (category) {
-    case "books":
-      return <FaBook />;
-    case "electronics":
-      return <FaLaptop />;
-    case "clothing":
-      return <FaTshirt />;
-    case "furniture":
-      return <FaCouch />;
-    case "appliances":
-      return <FaBlender />;
-    case "sports":
-      return <MdSports />;
-    case "stationery":
-      return <BsPencilFill />;
-    case "art_supplies":
-      return <MdBrush />;
-    case "beauty":
-      return <MdLocalOffer />;
-    case "food":
-      return <GiKnifeFork />;
-    case "tickets":
-      return <IoTicket />;
-    case "transport":
-      return <IoCarSport />;
-    default:
-      return <BiSolidCategory />;
   }
-};
-
-
-const displayCategories = [
-  "All Categories",
-  "Books",
-  "Electronics",
-  "Clothing",
-  "Furniture",
-  "Appliances",
-  "Sports",
-  "Stationery",
-  "Art Supplies",
-  "Beauty",
-  "Services",
-  "Food",
-  "Tickets",
-  "Transport",
-  "Others",
 ];
+
 
 const conditions = ["All Conditions", "new", "like_new", "used"];
 const displayConditions = ["All Conditions", "New", "Like New", "Used"];
@@ -486,7 +482,7 @@ export default function KupiProdaiPage() {
         {/* BUY SECTION */}
         <TabsContent
           value="buy"
-          className="space-y-3 sm:space-y-4 pt-3 sm:pt-4"
+          className="space-y-3 sm:space-y-4 pt-3 sm:pt-4 flex flex-col gap-4"
         >
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <div className="relative flex-1">
@@ -505,7 +501,7 @@ export default function KupiProdaiPage() {
                       key={index}
                       className="px-4 py-2 hover:bg-gray-900 cursor-pointer"
                       onClick={() => {
-                        setSearchQuery(product)
+                        setSearchQuery(product);
                       }}
                     >
                       {product}
@@ -514,74 +510,16 @@ export default function KupiProdaiPage() {
                 </ul>
               )}
             </div>
-            </div>
+          </div>
 
-            {/* Categories section - separate row */}
-            <div className="w-full">
-              <h3 className="text-lg font-medium mb-4">Categories</h3>
-              <div className="overflow-x-auto pb-4">
-                <div className="grid grid-rows-2 grid-flow-col gap-4 min-w-min">
-                  {categories.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-border/40 shadow-lg transition-all w-20 h-20 ${
-                        selectedCategory === category
-                          ? "bg-blue-50 text-black"
-                          : "hover:border-blue-200 hover:bg-blue-50"
-                      }`}
-                    >
-                      <span className="text-2xl">{getCategoryIcon(category)}</span>
-                      <span className="text-sm text-center capitalize">{category.replace(/_/g, " ")}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <Button
-                variant="outline"
-                size="sm"
-                className="flex w-14 sm:size-default"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-4 w-4" />
-                <span>Filter</span>
-              </Button>
-          {showFilters && (
-            <div className="bg-card rounded-lg shadow-md p-6 mb-6">
-              <div>
-                <h3 className="text-lg font-medium mb-4">Condition</h3>
-                <div className="flex flex-wrap gap-4">
-                  {conditions.map((condition) => (
-                    <button
-                      key={condition}
-                      onClick={() => setSelectedCondition(condition)}
-                      className={`px-4 py-2 rounded-lg border border-border/40 shadow-lg transition-all ${
-                        selectedCondition === condition
-                          ? "bg-blue-50 text-black"
-                          : "hover:border-blue-200 hover:bg-blue-50"
-                      }`}
-                    >
-                      <span className="capitalize">{condition.replace(/_/g, " ")}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+          {/* Categories section - separate row */}
+          <div className="flex flex-col gap-4">
+          <ConditionGroup conditions={conditions} selectedCondition={selectedCondition} setSelectedCondition={setSelectedCondition}/>
+          <SliderGroup categories={categories} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}/>
 
-              <div className="flex justify-between pt-6 mt-6 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedCategory("All Categories");
-                    setSelectedCondition("All Conditions");
-                  }}
-                >
-                  Reset Filters
-                </Button>
-                <Button onClick={() => setShowFilters(false)}>Close Filters</Button>
-              </div>
-            </div>
-          )}
+          </div>
+
+
 
           {isLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
@@ -716,7 +654,7 @@ export default function KupiProdaiPage() {
             </Alert>
           ) : !isTelegramLinked ? (
             <Alert
-              variant="warning"
+              variant="default"
               className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900"
             >
               <AlertTitle className="flex items-center gap-2">
@@ -803,8 +741,8 @@ export default function KupiProdaiPage() {
                     required
                   >
                     {categories.slice(1).map((category, index) => (
-                      <option key={category} value={category}>
-                        {displayCategories[index + 1]}
+                      <option key={category.title} value={category.title}>
+                        {categories[index + 1].title}
                       </option>
                     ))}
                   </select>
@@ -1270,8 +1208,8 @@ export default function KupiProdaiPage() {
                           className="w-full p-2 border rounded-md bg-background text-foreground"
                         >
                           {categories.slice(1).map((category, index) => (
-                            <option key={category} value={category}>
-                              {displayCategories[index + 1]}
+                            <option key={category.title} value={category.title}>
+                              {categories[index + 1].title}
                             </option>
                           ))}
                         </select>
