@@ -1,8 +1,7 @@
-from aiogram import Router, F
+from aiogram import F, Router
 from aiogram.types import ChatMemberUpdated
-
-from redis.asyncio import Redis
 from celery.result import AsyncResult
+from redis.asyncio import Redis
 
 from backend.celery_app.celery_config import celery_app
 
@@ -10,11 +9,9 @@ router = Router()
 
 
 @router.chat_member(
-    (F.old_chat_member.is_member == True) &
-    (F.new_chat_member.is_member == False)
+    (F.old_chat_member.is_member == True) & (F.new_chat_member.is_member == False)
 )
-async def on_user_left(event: ChatMemberUpdated,
-                       redis: Redis) -> None:
+async def on_user_left(event: ChatMemberUpdated, redis: Redis) -> None:
     user_id = event.old_chat_member.user.id
     chat_id = event.chat.id
     keys = [key async for key in redis.scan_iter(f"celery:kick:{user_id}:{chat_id}:*")]

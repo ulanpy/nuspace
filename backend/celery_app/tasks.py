@@ -1,7 +1,10 @@
-from .celery_config import celery_app
-from backend.core.configs.config import config
-from aiogram import Bot
 import asyncio
+
+from aiogram import Bot
+
+from backend.core.configs.config import config
+
+from .celery_config import celery_app
 
 
 @celery_app.task
@@ -16,11 +19,9 @@ def schedule_kick(chat_id: int, user_id: int, message_id: int):
         await bot.delete_message(chat_id=chat_id, message_id=message_id)
 
         await bot.session.close()
+
     try:
-        result = loop.run_until_complete(kick_async(chat_id, user_id))
+        result = loop.run_until_complete(kick_async(chat_id, user_id, message_id))
         return result
     finally:
         loop.close()
-
-
-

@@ -1,15 +1,18 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import select, func
-from fastapi import HTTPException
-from backend.core.database.models.media import Media, MediaSection, MediaPurpose
-from .schemas import UploadConfirmation
 from typing import List
+
+from fastapi import HTTPException
+from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.core.database.models.media import Media, MediaPurpose, MediaSection
+
+from .schemas import UploadConfirmation
+
 
 # idenpotence + upsert
 async def confirm_uploaded_media_to_db(
-    confirmation: UploadConfirmation,
-    session: AsyncSession
+    confirmation: UploadConfirmation, session: AsyncSession
 ) -> List[Media]:
     try:
         section = MediaSection(confirmation.section)
@@ -51,7 +54,10 @@ async def confirm_uploaded_media_to_db(
 
     except SQLAlchemyError as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"Database error while confirming uploads: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Database error while confirming uploads: {str(e)}"
+        )
+
 
 async def delete_media(session: AsyncSession, media_id: int):
     result = await session.execute(select(Media).filter_by(id=int(media_id)))
@@ -62,6 +68,7 @@ async def delete_media(session: AsyncSession, media_id: int):
         return True
     else:
         return False
+
 
 async def get_filename(session: AsyncSession, media_id: int):
     result = await session.execute(select(Media.name).filter_by(id=int(media_id)))

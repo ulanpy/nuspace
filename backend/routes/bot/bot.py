@@ -1,25 +1,20 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Request, Depends,  Response, status
 from aiogram.types import Update
 from aiogram.utils.deep_linking import create_start_link
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.routes.bot.cruds import get_telegram_id
+from backend.common.dependencies import check_token, get_db_session
 from backend.core.configs.config import config
-from backend.common.dependencies import get_db_session, check_token
+from backend.core.database.models import Product
+from backend.routes.bot.cruds import find_product
 
-web_router = APIRouter(tags=['Bot Routes'])
+web_router = APIRouter(tags=["Bot Routes"])
 
 
 @web_router.post("/webhook")
-async def webhook(request:  Request) -> Response:
-    """
-        Handles incoming webhook requests from Telegram.
-        Extracts the bot and dispatcher (dp) from the app state.
-        Attaches the database and scheduler session to the dispatcher for use in handlers.
-        Validates the incoming update from Telegram and processes it using the dispatcher.
-    """
+async def webhook(request: Request) -> Response:
     received_token = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
     if received_token != config.SECRET_TOKEN:
         return Response(status_code=status.HTTP_403_FORBIDDEN)
@@ -35,7 +30,13 @@ async def webhook(request:  Request) -> Response:
 async def contact(
     request: Request,
     product_id: int,
-    user: Annotated[dict, Depends(check_token)]
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> str:
-    link: str = await create_start_link(request.app.state.bot, f"contact&{product_id}", encode=True)
-    return link
+    product: Product | None = await find_product(db_session, int(product_id))
+    if product:
+        link: str = await create_start_link(
+            request.app.state.bot, f"contact&{product_id}", encode=True
+        )
+        return link
+    raise HTTPException(status_code=404, detail="Does not exist!")

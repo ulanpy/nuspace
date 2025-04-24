@@ -1,4 +1,4 @@
-from aiogram import Router, F
+from aiogram import F, Router
 from aiogram.enums.chat_type import ChatType
 
 from .join import router as join
