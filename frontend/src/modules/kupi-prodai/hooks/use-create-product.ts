@@ -42,7 +42,7 @@ export function useCreateProduct() {
     },
   });
 
-  const createProduct = (e: React.FormEvent<HTMLFormElement>) => {
+  const createProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     const formData = new FormData(e.currentTarget);
     const newProduct: NewProductRequest = {
       name: String(formData.get("name")),
@@ -65,13 +65,20 @@ export function useCreateProduct() {
 
     setIsUploading(true);
     setUploadProgress(10);
-    createProductMutation.mutate(
+    const res = await createProductMutation.mutateAsync(
       newProduct
     );
-    return newProduct;
+    console.log("res id", res.id);
+    return res;
   };
 
-  const uploadImage = async () => {
+  const uploadImage = async (meta: {
+    section: string;
+    entityId: number;
+    mediaPurpose: string;
+    mediaOrder: number;
+    mimeType: string;
+  }) => {
     try {
       setUploadProgress(30);
       if (imageFiles.length > 0) {
@@ -83,17 +90,20 @@ export function useCreateProduct() {
 
         for (let i = 0; i < imageFiles.length; i++) {
           const file = imageFiles[i];
-          const { upload_url } = signedUrlsResponse.signed_urls[i];
+          const { upload_url, filename } = signedUrlsResponse.signed_urls[i];
 
-          // Optional: Set custom metadata headers
-          const headers = {
-            'Content-Type': file.type,
-            'x-goog-meta-filename': file.name,
-            // Add other custom metadata headers as needed
+          const headers: Record<string, string> = {
+            "Content-Type": file.type,
+            "x-goog-meta-filename": filename, // ✅ decoded
+            "x-goog-meta-section": "kp", // ✅ no encodeURIComponent
+            "x-goog-meta-entity-id": meta.entityId.toString(),
+            "x-goog-meta-media-purpose": meta.mediaPurpose, // ✅ no encodeURIComponent
+            "x-goog-meta-media-order": i.toString(),
+            "x-goog-meta-mime-type": meta.mimeType, // ✅ must be like "image/jpeg"
           };
 
           await fetch(upload_url, {
-            method: "POST",
+            method: "PUT",
             headers: headers,
             body: file,
           });
@@ -114,9 +124,19 @@ export function useCreateProduct() {
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    createProduct(e);
-
-    await uploadImage();
+    const newProduct = await createProduct(e);
+    console.log("new", newProduct);
+    if (!newProduct) return;
+    const meta = {
+      section: "kp",
+      entityId: newProduct.id,
+      mediaPurpose: "banner",
+      mediaOrder: 0,
+      mimeType: "image/jpeg",
+    };
+    console.log("3 step:", meta);
+    await uploadImage(meta);
+    console.log("4 step:");
 
     resetEditListing();
   };
