@@ -60,7 +60,7 @@ async def generate_upload_url(
         signed_url = blob.generate_signed_url(
             version="v4",
             expiration=timedelta(minutes=15),
-            method="PUT",
+            method="POST",
             headers=required_headers,  # <- Headers are signed, but values are dynamic
         )
         urls.append({"filename": filename, "upload_url": signed_url})
