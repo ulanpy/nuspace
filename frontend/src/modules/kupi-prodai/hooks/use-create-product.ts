@@ -93,7 +93,7 @@ export function useCreateProduct() {
           };
 
           await fetch(upload_url, {
-            method: "POST",
+            method: "PUT",
             headers: headers,
             body: file,
           });
