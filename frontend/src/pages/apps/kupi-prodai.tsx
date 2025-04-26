@@ -52,7 +52,6 @@ import { MdSports, MdBrush, MdLocalOffer } from "react-icons/md";
 import { BsPencilFill } from "react-icons/bs";
 import { GiKnifeFork } from "react-icons/gi";
 import { IoTicket, IoCarSport } from "react-icons/io5";
-import { title } from "process";
 import { SearchInput } from "@/components/search-input";
 import { getSearchTextFromURL } from "@/lib/utils";
 
@@ -148,7 +147,6 @@ export default function KupiProdaiPage() {
   const { user, isAuthenticated, login } = useAuth();
   const { toast } = useToast();
   const [likedProducts, setLikedProducts] = useState<number[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
   const [error] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const isTelegramLinked = user?.tg_linked || false;
@@ -193,7 +191,6 @@ export default function KupiProdaiPage() {
   } = useMediaContext();
   const {
     uploadProgress,
-    searchQuery,
     newListing,
     showEditModal,
     currentPage,
@@ -328,64 +325,6 @@ export default function KupiProdaiPage() {
     }
   };
 
-  // Add these functions to handle image reordering
-  const moveImageUp = (index: number) => {
-    if (index <= 0) return;
-
-    // Initialize reorderedMedia if it's empty
-    const mediaToReorder =
-      reorderedMedia.length > 0
-        ? [...reorderedMedia]
-        : [...originalMedia.filter((m) => !mediaToDelete.includes(m.id))];
-
-    // Swap the images
-    const temp = mediaToReorder[index];
-    mediaToReorder[index] = mediaToReorder[index - 1];
-    mediaToReorder[index - 1] = temp;
-
-    // Update the preview images to match
-    const newPreviewImages = mediaToReorder.map((m) => m.url);
-
-    setReorderedMedia(mediaToReorder);
-    setPreviewImages(newPreviewImages);
-    setCurrentMediaIndex(index - 1);
-  };
-
-  const moveImageDown = (index: number) => {
-    // Initialize reorderedMedia if it's empty
-    const mediaToReorder =
-      reorderedMedia.length > 0
-        ? [...reorderedMedia]
-        : [...originalMedia.filter((m) => !mediaToDelete.includes(m.id))];
-
-    if (index >= mediaToReorder.length - 1) return;
-
-    // Swap the images
-    const temp = mediaToReorder[index];
-    mediaToReorder[index] = mediaToReorder[index + 1];
-    mediaToReorder[index + 1] = temp;
-
-    // Update the preview images to match
-    const newPreviewImages = mediaToReorder.map((m) => m.url);
-
-    setReorderedMedia(mediaToReorder);
-    setPreviewImages(newPreviewImages);
-    setCurrentMediaIndex(index + 1);
-  };
-
-  // Update the handleUpdateListingListing function to handle media changes
-
-  // Delete product
-
-  // Mark product as sold/active
-
-  const toggleLike = (id: number) => {
-    if (likedProducts.includes(id)) {
-      setLikedProducts(likedProducts.filter((productId) => productId !== id));
-    } else {
-      setLikedProducts([...likedProducts, id]);
-    }
-  };
 
   const getConditionDisplay = (condition: string) => {
     switch (condition) {
