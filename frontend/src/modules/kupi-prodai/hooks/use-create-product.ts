@@ -74,17 +74,16 @@ export function useCreateProduct() {
 
   const uploadImage = async (meta: {
     section: string;
-    entityId: number;
-    mediaPurpose: string;
+    entity_id: number;
+    media_purpose: string;
     mediaOrder: number;
-    mimeType: string;
+    mime_type: string;
   }) => {
     try {
       setUploadProgress(30);
       if (imageFiles.length > 0) {
-        // Get signed URLs for image uploads
         const signedUrlsResponse = await kupiProdaiApi.getSignedUrls(
-          imageFiles.length
+          meta
         );
         setUploadProgress(50);
 
@@ -94,24 +93,23 @@ export function useCreateProduct() {
 
           const headers: Record<string, string> = {
             "Content-Type": file.type,
-            "x-goog-meta-filename": filename, // ✅ decoded
-            "x-goog-meta-section": "kp", // ✅ no encodeURIComponent
-            "x-goog-meta-entity-id": meta.entityId.toString(),
-            "x-goog-meta-media-purpose": meta.mediaPurpose, // ✅ no encodeURIComponent
+            "x-goog-meta-filename": filename,
+            "x-goog-meta-section": "kp",
+            "x-goog-meta-entity-id": meta.entity_id.toString(),
+            "x-goog-meta-media-purpose": meta.media_purpose,
             "x-goog-meta-media-order": i.toString(),
-            "x-goog-meta-mime-type": meta.mimeType, // ✅ must be like "image/jpeg"
+            "x-goog-meta-mime-type": meta.mime_type,
           };
 
           await fetch(upload_url, {
             method: "PUT",
             headers: headers,
-            body: file,
+            body: signedUrlsResponse,
           });
         }
         setUploadProgress(90);
       }
 
-      // Step 3: Refresh user products to show the updated product with images
       setUploadProgress(100);
       setImageFiles([]);
     } catch (err) {
@@ -129,14 +127,14 @@ export function useCreateProduct() {
     if (!newProduct) return;
     const meta = {
       section: "kp",
-      entityId: newProduct.id,
-      mediaPurpose: "banner",
-      mediaOrder: 0,
-      mimeType: "image/jpeg",
+      entity_id: newProduct.id,
+      media_purpose: "banner",
+      media_order: 0,
+      mime_type: "image/jpeg",
     };
     console.log("3 step:", meta);
     await uploadImage(meta);
-    console.log("4 step:");
+
 
     resetEditListing();
   };
