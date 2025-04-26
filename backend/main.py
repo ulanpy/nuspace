@@ -6,11 +6,14 @@ from backend.core.configs.config import config
 from backend.lifespan import lifespan
 
 app = FastAPI(
-    debug=True,
+    debug=config.IS_DEBUG,
     lifespan=lifespan,
     root_path="/api",
     docs_url="/docs" if config.IS_DEBUG else None,
+    redoc_url="/redoc" if config.IS_DEBUG else None,
+    openapi_url="/openapi.json" if config.IS_DEBUG else None,
 )
+
 
 app.add_middleware(
     CORSMiddleware,

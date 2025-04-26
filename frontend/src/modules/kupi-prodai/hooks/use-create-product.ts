@@ -1,4 +1,4 @@
-import { kupiProdaiApi, NewProductRequest } from "@/api/kupi-prodai-api";
+import { kupiProdaiApi, NewProductRequest, SignedUrlRequest } from "@/api/kupi-prodai-api";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -74,70 +74,87 @@ export function useCreateProduct() {
 
   const uploadImage = async (meta: {
     section: string;
-    entity_id: number;
-    media_purpose: string;
+    entityId: number;
+    mediaPurpose: string;
     mediaOrder: number;
-    mime_type: string;
+    mimeType: string;
   }) => {
-    try {
-      setUploadProgress(30);
-      if (imageFiles.length > 0) {
-        const signedUrlsResponse = await kupiProdaiApi.getSignedUrls(
-          meta
-        );
-        setUploadProgress(50);
+    if (!imageFiles.length) return;
+  
+    // 1) prepare one SignedUrlRequest per file
+    const requests: SignedUrlRequest[] = imageFiles.map((file: File, idx: number) => ({
+      section: meta.section,
+      entity_id: meta.entityId,
+      media_purpose: meta.mediaPurpose,
+      media_order: idx,
+      mime_type: file.type,
+      content_type: file.type,
+    }));
 
-        for (let i = 0; i < imageFiles.length; i++) {
-          const file = imageFiles[i];
-          const { upload_url, filename } = signedUrlsResponse.signed_urls[i];
+    setIsUploading(true);
+    setUploadProgress(30);
 
-          const headers: Record<string, string> = {
-            "Content-Type": file.type,
-            "x-goog-meta-filename": filename,
-            "x-goog-meta-section": "kp",
-            "x-goog-meta-entity-id": meta.entity_id.toString(),
-            "x-goog-meta-media-purpose": meta.media_purpose,
-            "x-goog-meta-media-order": i.toString(),
-            "x-goog-meta-mime-type": meta.mime_type,
-          };
+    // 2) POST to get the signed URLs
+    const signedUrls = await kupiProdaiApi.getSignedUrls(requests);
 
-          await fetch(upload_url, {
-            method: "PUT",
-            headers: headers,
-            body: signedUrlsResponse,
-          });
-        }
-        setUploadProgress(90);
-      }
+    setUploadProgress(50);
 
-      setUploadProgress(100);
-      setImageFiles([]);
-    } catch (err) {
-      console.error("Failed to create product or upload images:", err);
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
-    }
+    await Promise.all(
+      imageFiles.map((file: File, i: number) => {
+        const {
+          upload_url,
+          filename,
+          content_type,
+          section,
+          entity_id,
+          media_purpose,
+          media_order,
+          mime_type
+        } = signedUrls[i];
+
+        const headers: Record<string, string> = {
+          "Content-Type": content_type,
+          "x-goog-meta-filename": filename,
+          "x-goog-meta-section": section,
+          "x-goog-meta-entity-id": entity_id.toString(),
+          "x-goog-meta-media-purpose": media_purpose,
+          "x-goog-meta-media-order": media_order.toString(),
+          "x-goog-meta-mime-type": mime_type,
+        };
+
+        return fetch(upload_url, {
+          method: "PUT",
+          headers,
+          body: file,
+        });
+      })
+    );
+
+    setUploadProgress(90);
+
+    // 4) Done
+    setUploadProgress(100);
+    setImageFiles([]);
+    setIsUploading(false);
+    setUploadProgress(0);
   };
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     const newProduct = await createProduct(e);
-    console.log("new", newProduct);
     if (!newProduct) return;
-    const meta = {
-      section: "kp",
-      entity_id: newProduct.id,
-      media_purpose: "banner",
-      media_order: 0,
-      mime_type: "image/jpeg",
-    };
-    console.log("3 step:", meta);
-    await uploadImage(meta);
 
+    await uploadImage({
+      section: "kp",
+      entityId: newProduct.id,
+      mediaPurpose: "banner",
+    });
 
     resetEditListing();
   };
+
+
   return {
     setUploadProgress,
     handleCreate,

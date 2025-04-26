@@ -75,13 +75,24 @@ export interface UpdateProductRequest {
   status?: "inactive" | "active";
 }
 
-export interface SignedUrl {
-  filename: string;
-  upload_url: string;
+export interface SignedUrlRequest {
+  section: string;
+  entity_id: number;
+  media_purpose: string;
+  media_order: number;
+  mime_type: string;
+  content_type: string;
 }
 
 export interface SignedUrlResponse {
-  signed_urls: SignedUrl[];
+  filename: string;
+  upload_url: string;
+  section: string;
+  entity_id: number;
+  media_purpose: string;
+  media_order: number;
+  mime_type: string;
+  content_type: string;
 }
 
 // API base URL
@@ -203,6 +214,7 @@ export const kupiProdaiApi = {
       }
     );
   },
+
 
   // Upload an image to the bucket
   uploadImage: async (

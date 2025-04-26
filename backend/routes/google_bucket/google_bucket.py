@@ -48,9 +48,9 @@ async def generate_upload_url(
 
         required_headers = {
             "x-goog-meta-filename": str(filename),
-            "x-goog-meta-section": str(item.section),
+            "x-goog-meta-section": item.section.value,
             "x-goog-meta-entity-id": str(item.entity_id),
-            "x-goog-meta-media-purpose": str(item.media_purpose),
+            "x-goog-meta-media-purpose": item.media_purpose.value,
             "x-goog-meta-media-order": str(item.media_order),
             "x-goog-meta-mime-type": item.mime_type,
             "Content-Type": item.content_type,
@@ -66,9 +66,9 @@ async def generate_upload_url(
             {
                 "filename": filename,
                 "upload_url": signed_url,
-                "section": item.section,
+                "section": item.section.value,
                 "entity_id": item.entity_id,
-                "media_purpose": item.media_purpose,
+                "media_purpose": item.media_purpose.value,
                 "media_order": item.media_order,
                 "mime_type": item.mime_type,
                 "content_type": item.content_type,
@@ -118,8 +118,8 @@ async def gcs_webhook(request: Request, db_session: AsyncSession = Depends(get_d
         await confirm_uploaded_media_to_db(confirmation, db_session)
         return {"status": "ok"}
 
-    except (ValueError, json.JSONDecodeError) as e:
-        raise HTTPException(status_code=400, detail=f"Invalid data or metadata: {str(e)}")
+    except (ValueError, json.JSONDecodeError):
+        return {"status": "ok"}
 
 
 @router.delete("/{filename}")
