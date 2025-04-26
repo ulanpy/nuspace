@@ -62,7 +62,7 @@ import { title } from "process";
 // Define categories and conditions
 const categories = [
   {
-    title: "All Categories",
+    title: "All",
     icon: <BiSolidCategory />,
   },
   {
@@ -121,7 +121,7 @@ const categories = [
 ];
 
 
-const conditions = ["All Conditions", "new", "like_new", "used"];
+const conditions = ["All Conditions", "new", "like new", "used"];
 const displayConditions = ["All Conditions", "New", "Like New", "Used"];
 
 const containerVariants = {
