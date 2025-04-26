@@ -2,21 +2,16 @@
 
 import type React from "react";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  Search,
-  Filter,
   ShoppingBag,
-  Heart,
   MessageSquare,
   X,
   ChevronLeft,
   ChevronRight,
   RefreshCw,
   ImageIcon,
-  ChevronUp,
-  ChevronDown,
   Trash2,
   Plus,
 } from "lucide-react";
@@ -32,7 +27,7 @@ import {
 } from "../../components/ui/tabs";
 import { SliderGroup } from "@/components/slider-group";
 import { ConditionGroup } from "@/components/condition-group";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/auth-context";
 import { useToast } from "../../hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
@@ -58,6 +53,8 @@ import { BsPencilFill } from "react-icons/bs";
 import { GiKnifeFork } from "react-icons/gi";
 import { IoTicket, IoCarSport } from "react-icons/io5";
 import { title } from "process";
+import { SearchInput } from "@/components/search-input";
+import { getSearchTextFromURL } from "@/lib/utils";
 
 // Define categories and conditions
 const categories = [
@@ -116,10 +113,8 @@ const categories = [
   {
     title: "Others",
     icon: <BiSolidCategory />,
-
-  }
+  },
 ];
-
 
 const conditions = ["All Conditions", "new", "like new", "used"];
 const displayConditions = ["All Conditions", "New", "Like New", "Used"];
@@ -149,6 +144,7 @@ const itemVariants = {
 
 export default function KupiProdaiPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, login } = useAuth();
   const { toast } = useToast();
   const [likedProducts, setLikedProducts] = useState<number[]>([]);
@@ -182,11 +178,6 @@ export default function KupiProdaiPage() {
   const { handleUpdateListing } = useUpdateProduct();
   const { handleToggleProductStatus, getIsPendingToggleMutation } =
     useToggleProduct();
-
-  // Search
-  const { preSearchedProducts } = usePreSearchProducts();
-  const { searchedProducts, handleSearchProducts } = useSearchProducts();
-
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   // Edit listing state [Form Hooks]
@@ -456,7 +447,28 @@ export default function KupiProdaiPage() {
     </Card>
   );
 
-  // Add this function to renew a sold product
+  // search section
+  const [inputValue, setInputValue] = useState(
+    getSearchTextFromURL(location.search)
+  );
+  const { preSearchedProducts } = usePreSearchProducts(inputValue);
+  const { searchedProducts } = useSearchProducts();
+  const products = searchedProducts ? searchedProducts.products : (productItems?.products ?? []);
+  console.log(products)
+  useEffect(() => {
+    const textFromURL = getSearchTextFromURL(location.search);
+    setSearchQuery(textFromURL);
+  }, [location.search]);
+
+  const handleSearch = (inputValue: string) => {
+    if(!!inputValue.trim()) {
+      setSearchQuery(inputValue);
+      navigate(`/apps/kupi-prodai?text=${inputValue}`);
+    } if(inputValue.trim() === "") {
+      navigate("/apps/kupi-prodai");
+    }
+  };
+
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -486,40 +498,28 @@ export default function KupiProdaiPage() {
         >
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search items..."
-                className="pl-9 text-sm"
-                value={searchQuery.trim()}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleSearchProducts}
+              <SearchInput
+                inputValue={inputValue}
+                setInputValue={setInputValue}
+                preSearchedProducts={preSearchedProducts}
+                handleSearch={handleSearch}
               />
-              {preSearchedProducts && preSearchedProducts.length > 0 && (
-                <ul className="absolute top-full left-0 right-0 bg-[#020817]  border border-t-0 border-gray-300 shadow-md z-10 rounded-b-lg">
-                  {preSearchedProducts.map((product, index) => (
-                    <li
-                      key={index}
-                      className="px-4 py-2 hover:bg-gray-900 cursor-pointer"
-                      onClick={() => {
-                        setSearchQuery(product);
-                      }}
-                    >
-                      {product}
-                    </li>
-                  ))}
-                </ul>
-              )}
             </div>
           </div>
 
           {/* Categories section - separate row */}
           <div className="flex flex-col gap-4">
-          <ConditionGroup conditions={conditions} selectedCondition={selectedCondition} setSelectedCondition={setSelectedCondition}/>
-          <SliderGroup categories={categories} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}/>
-
+            <ConditionGroup
+              conditions={conditions}
+              selectedCondition={selectedCondition}
+              setSelectedCondition={setSelectedCondition}
+            />
+            <SliderGroup
+              categories={categories}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+            />
           </div>
-
-
 
           {isLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
@@ -538,7 +538,7 @@ export default function KupiProdaiPage() {
                 Try Again
               </Button>
             </div>
-          ) : (productItems?.products?.length ?? 0) > 0 ? (
+          ) : (products.length ?? 0) > 0 ? (
             <>
               <motion.div
                 className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3"
@@ -546,7 +546,7 @@ export default function KupiProdaiPage() {
                 initial="hidden"
                 animate="visible"
               >
-                {productItems?.products.map((product) => (
+                {products.map((product) => (
                   <motion.div key={product.id} variants={itemVariants}>
                     <Card
                       className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"

@@ -23,8 +23,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/apps" element={<AppsLayout />}>
                 <Route path="kupi-prodai" element={<KupiProdaiPage />} >
-                  <Route path="search" element={<SearchPage/>} />
-                  <Route path="search/:keyword" element={<KupiProdaiPage />} />
+                  <Route path="search" element={<KupiProdaiPage/>} />
                 </Route>
                 <Route
                   path="kupi-prodai/product/:id"
