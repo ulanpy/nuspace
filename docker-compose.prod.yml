@@ -82,7 +82,7 @@ services:
       - nuros
     container_name: meilisearch
     ports:
-      - 7701:7700
+      - 7700:7700
 
 
 
