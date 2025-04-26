@@ -30,6 +30,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "../../components/ui/tabs";
+import { SliderGroup } from "@/components/slider-group";
+import { ConditionGroup } from "@/components/condition-group";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/auth-context";
 import { useToast } from "../../hooks/use-toast";
@@ -46,7 +48,8 @@ import { useToggleProduct } from "@/modules/kupi-prodai/hooks/use-toggle-product
 import { useListingState } from "@/context/listing-context";
 import { useImageContext } from "@/context/image-context";
 import { useMediaContext } from "@/context/media-context";
-import { useSearchProduct } from "@/modules/kupi-prodai/hooks/use-search-product";
+import { usePreSearchProducts } from "@/modules/kupi-prodai/hooks/use-pre-search-products";
+import { useSearchProducts } from "@/modules/kupi-prodai/hooks/use-search-products";
 
 import { FaBook, FaLaptop, FaTshirt, FaCouch, FaBlender } from "react-icons/fa";
 import { BiSolidCategory } from "react-icons/bi";
@@ -54,77 +57,71 @@ import { MdSports, MdBrush, MdLocalOffer } from "react-icons/md";
 import { BsPencilFill } from "react-icons/bs";
 import { GiKnifeFork } from "react-icons/gi";
 import { IoTicket, IoCarSport } from "react-icons/io5";
+import { title } from "process";
 
 // Define categories and conditions
 const categories = [
-  "All Categories",
-  "books",
-  "electronics",
-  "clothing",
-  "furniture",
-  "appliances",
-  "sports",
-  "stationery",
-  "art_supplies",
-  "beauty",
-  "services",
-  "food",
-  "tickets",
-  "transport",
-  "others",
-];
+  {
+    title: "All",
+    icon: <BiSolidCategory />,
+  },
+  {
+    title: "Books",
+    icon: <FaBook />,
+  },
+  {
+    title: "Electronics",
+    icon: <FaLaptop />,
+  },
+  {
+    title: "Clothing",
+    icon: <FaTshirt />,
+  },
+  {
+    title: "Furniture",
+    icon: <FaCouch />,
+  },
+  {
+    title: "Appliances",
+    icon: <FaBlender />,
+  },
+  {
+    title: "Sports",
+    icon: <MdSports />,
+  },
+  {
+    title: "Stationery",
+    icon: <BsPencilFill />,
+  },
+  {
+    title: "Art Supplies",
+    icon: <MdBrush />,
+  },
+  {
+    title: "Beauty",
+    icon: <MdLocalOffer />,
+  },
+  {
+    title: "Food",
+    icon: <GiKnifeFork />,
+  },
+  {
+    title: "Tickets",
+    icon: <IoTicket />,
+  },
+  {
+    title: "Transport",
+    icon: <IoCarSport />,
+  },
+  {
+    title: "Others",
+    icon: <BiSolidCategory />,
 
-const getCategoryIcon = (category: string) => {
-  switch (category) {
-    case "books":
-      return <FaBook />;
-    case "electronics":
-      return <FaLaptop />;
-    case "clothing":
-      return <FaTshirt />;
-    case "furniture":
-      return <FaCouch />;
-    case "appliances":
-      return <FaBlender />;
-    case "sports":
-      return <MdSports />;
-    case "stationery":
-      return <BsPencilFill />;
-    case "art_supplies":
-      return <MdBrush />;
-    case "beauty":
-      return <MdLocalOffer />;
-    case "food":
-      return <GiKnifeFork />;
-    case "tickets":
-      return <IoTicket />;
-    case "transport":
-      return <IoCarSport />;
-    default:
-      return <BiSolidCategory />;
   }
-};
-
-
-const displayCategories = [
-  "All Categories",
-  "Books",
-  "Electronics",
-  "Clothing",
-  "Furniture",
-  "Appliances",
-  "Sports",
-  "Stationery",
-  "Art Supplies",
-  "Beauty",
-  "Services",
-  "Food",
-  "Tickets",
-  "Transport",
-  "Others",
 ];
 
-const conditions = ["All Conditions", "new", "like_new", "used"];
+
+const conditions = ["All Conditions", "new", "like new", "used"];
 const displayConditions = ["All Conditions", "New", "Like New", "Used"];
 
 const containerVariants = {
@@ -186,10 +183,12 @@ export default function KupiProdaiPage() {
   const { handleToggleProductStatus, getIsPendingToggleMutation } =
     useToggleProduct();
 
-  const { searchedProducts } = useSearchProduct();
+  // Search
+  const { preSearchedProducts } = usePreSearchProducts();
+  const { searchedProducts, handleSearchProducts } = useSearchProducts();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
-
   // Edit listing state [Form Hooks]
   const { handleEditListing, closeEditModal } = useEditModal();
   const {
@@ -483,7 +482,7 @@ export default function KupiProdaiPage() {
         {/* BUY SECTION */}
         <TabsContent
           value="buy"
-          className="space-y-3 sm:space-y-4 pt-3 sm:pt-4"
+          className="space-y-3 sm:space-y-4 pt-3 sm:pt-4 flex flex-col gap-4"
         >
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <div className="relative flex-1">
@@ -493,76 +492,34 @@ export default function KupiProdaiPage() {
                 className="pl-9 text-sm"
                 value={searchQuery.trim()}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchProducts}
               />
-            </div>
-            </div>
-
-            {/* Categories section - separate row */}
-            <div className="w-full">
-              <h3 className="text-lg font-medium mb-4">Categories</h3>
-              <div className="overflow-x-auto pb-4">
-                <div className="grid grid-rows-2 grid-flow-col gap-4 min-w-min">
-                  {categories.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-border/40 shadow-lg transition-all w-20 h-20 ${
-                        selectedCategory === category
-                          ? "bg-blue-50 text-black"
-                          : "hover:border-blue-200 hover:bg-blue-50"
-                      }`}
+              {preSearchedProducts && preSearchedProducts.length > 0 && (
+                <ul className="absolute top-full left-0 right-0 bg-[#020817]  border border-t-0 border-gray-300 shadow-md z-10 rounded-b-lg">
+                  {preSearchedProducts.map((product, index) => (
+                    <li
+                      key={index}
+                      className="px-4 py-2 hover:bg-gray-900 cursor-pointer"
+                      onClick={() => {
+                        setSearchQuery(product);
+                      }}
                     >
-                      <span className="text-2xl">{getCategoryIcon(category)}</span>
-                      <span className="text-sm text-center capitalize">{category.replace(/_/g, " ")}</span>
-                    </button>
+                      {product}
+                    </li>
                   ))}
-                </div>
-              </div>
+                </ul>
+              )}
             </div>
-            <Button
-                variant="outline"
-                size="sm"
-                className="flex w-14 sm:size-default"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-4 w-4" />
-                <span>Filter</span>
-              </Button>
-          {showFilters && (
-            <div className="bg-card rounded-lg shadow-md p-6 mb-6">
-              <div>
-                <h3 className="text-lg font-medium mb-4">Condition</h3>
-                <div className="flex flex-wrap gap-4">
-                  {conditions.map((condition) => (
-                    <button
-                      key={condition}
-                      onClick={() => setSelectedCondition(condition)}
-                      className={`px-4 py-2 rounded-lg border border-border/40 shadow-lg transition-all ${
-                        selectedCondition === condition
-                          ? "bg-blue-50 text-black"
-                          : "hover:border-blue-200 hover:bg-blue-50"
-                      }`}
-                    >
-                      <span className="capitalize">{condition.replace(/_/g, " ")}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+          </div>
 
-              <div className="flex justify-between pt-6 mt-6 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedCategory("All Categories");
-                    setSelectedCondition("All Conditions");
-                  }}
-                >
-                  Reset Filters
-                </Button>
-                <Button onClick={() => setShowFilters(false)}>Close Filters</Button>
-              </div>
-            </div>
-          )}
+          {/* Categories section - separate row */}
+          <div className="flex flex-col gap-4">
+          <ConditionGroup conditions={conditions} selectedCondition={selectedCondition} setSelectedCondition={setSelectedCondition}/>
+          <SliderGroup categories={categories} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}/>
+
+          </div>
+
+
 
           {isLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
@@ -697,19 +654,19 @@ export default function KupiProdaiPage() {
             </Alert>
           ) : !isTelegramLinked ? (
             <Alert
-            variant="warning"
-            className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900"
-          >
-            <AlertTitle className="flex items-center gap-2">
-              Telegram Required
-            </AlertTitle>
-            <AlertDescription className="space-y-2">
-              <p>You need to link your Telegram account before selling items.</p>
-            </AlertDescription>
-          </Alert>
-          )
-
-          : (
+              variant="default"
+              className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900"
+            >
+              <AlertTitle className="flex items-center gap-2">
+                Telegram Required
+              </AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>
+                  You need to link your Telegram account before selling items.
+                </p>
+              </AlertDescription>
+            </Alert>
+          ) : (
             <form onSubmit={handleCreate} className="space-y-4">
               {/* Name */}
               <div className="space-y-2">
@@ -784,8 +741,8 @@ export default function KupiProdaiPage() {
                     required
                   >
                     {categories.slice(1).map((category, index) => (
-                      <option key={category} value={category}>
-                        {displayCategories[index + 1]}
+                      <option key={category.title} value={category.title}>
+                        {categories[index + 1].title}
                       </option>
                     ))}
                   </select>
@@ -927,7 +884,9 @@ export default function KupiProdaiPage() {
                       <Card
                         key={product.id}
                         className="overflow-hidden"
-                        onClick={() => navigate(`/apps/kupi-prodai/product/${product.id}`)}
+                        onClick={() =>
+                          navigate(`/apps/kupi-prodai/product/${product.id}`)
+                        }
                       >
                         <div className="aspect-square relative">
                           <img
@@ -947,7 +906,9 @@ export default function KupiProdaiPage() {
                           </Badge>
                         </div>
                         <CardContent className="p-3">
-                          <h3 className="font-medium text-sm line-clamp-1">{product.name}</h3>
+                          <h3 className="font-medium text-sm line-clamp-1">
+                            {product.name}
+                          </h3>
                           <p className="text-sm font-bold">{product.price} ₸</p>
                           <div className="flex justify-between mt-2">
                             <Button
@@ -977,7 +938,10 @@ export default function KupiProdaiPage() {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleToggleProductStatus(product.id, product.status);
+                                handleToggleProductStatus(
+                                  product.id,
+                                  product.status
+                                );
                               }}
                             >
                               Mark as Sold
@@ -985,7 +949,6 @@ export default function KupiProdaiPage() {
                           </div>
                         </CardContent>
                       </Card>
-
                     ))}
                   </div>
                 ) : (
@@ -1245,8 +1208,8 @@ export default function KupiProdaiPage() {
                           className="w-full p-2 border rounded-md bg-background text-foreground"
                         >
                           {categories.slice(1).map((category, index) => (
-                            <option key={category} value={category}>
-                              {displayCategories[index + 1]}
+                            <option key={category.title} value={category.title}>
+                              {categories[index + 1].title}
                             </option>
                           ))}
                         </select>
