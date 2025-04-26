@@ -68,13 +68,24 @@ export interface UpdateProductRequest {
   status?: "inactive" | "active";
 }
 
-export interface SignedUrl {
-  filename: string;
-  upload_url: string;
+export interface SignedUrlRequest {
+  section: string;
+  entity_id: number;
+  media_purpose: string;
+  media_order: number;
+  mime_type: string;
+  content_type: string;
 }
 
 export interface SignedUrlResponse {
-  signed_urls: SignedUrl[];
+  filename: string;
+  upload_url: string;
+  section: string;
+  entity_id: number;
+  media_purpose: string;
+  media_order: number;
+  mime_type: string;
+  content_type: string;
 }
 
 // API base URL
@@ -186,11 +197,19 @@ export const kupiProdaiApi = {
   },
 
   // Get signed URLs for uploading images
-  getSignedUrls: async (fileCount: number): Promise<SignedUrlResponse> => {
-    return apiCall<SignedUrlResponse>(
-      `/bucket/upload-url?file_count=${fileCount}`
+  // AFTER (correct)
+getSignedUrls: async (
+    requests: SignedUrlRequest[]
+  ): Promise<SignedUrlResponse[]> => {
+    return apiCall<SignedUrlResponse[]>(
+      `/bucket/upload-url`,
+      {
+        method: "POST",
+        json: requests, 
+      }
     );
   },
+
 
   // Upload an image to the bucket
   uploadImage: async (

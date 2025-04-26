@@ -1,4 +1,4 @@
-import { kupiProdaiApi, NewProductRequest } from "@/api/kupi-prodai-api";
+import { kupiProdaiApi, NewProductRequest, SignedUrlRequest } from "@/api/kupi-prodai-api";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -76,70 +76,83 @@ export function useCreateProduct() {
     section: string;
     entityId: number;
     mediaPurpose: string;
-    mediaOrder: number;
-    mimeType: string;
   }) => {
-    try {
-      setUploadProgress(30);
-      if (imageFiles.length > 0) {
-        // Get signed URLs for image uploads
-        const signedUrlsResponse = await kupiProdaiApi.getSignedUrls(
-          imageFiles.length
-        );
-        setUploadProgress(50);
-
-        for (let i = 0; i < imageFiles.length; i++) {
-          const file = imageFiles[i];
-          const { upload_url, filename } = signedUrlsResponse.signed_urls[i];
-
-          const headers: Record<string, string> = {
-            "Content-Type": file.type,
-            "x-goog-meta-filename": filename, // ✅ decoded
-            "x-goog-meta-section": "kp", // ✅ no encodeURIComponent
-            "x-goog-meta-entity-id": meta.entityId.toString(),
-            "x-goog-meta-media-purpose": meta.mediaPurpose, // ✅ no encodeURIComponent
-            "x-goog-meta-media-order": i.toString(),
-            "x-goog-meta-mime-type": meta.mimeType, // ✅ must be like "image/jpeg"
-          };
-
-          await fetch(upload_url, {
-            method: "PUT",
-            headers: headers,
-            body: file,
-          });
-        }
-        setUploadProgress(90);
-      }
-
-      // Step 3: Refresh user products to show the updated product with images
-      setUploadProgress(100);
-      setImageFiles([]);
-    } catch (err) {
-      console.error("Failed to create product or upload images:", err);
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
-    }
+    if (!imageFiles.length) return;
+  
+    // 1) prepare one SignedUrlRequest per file
+    const requests: SignedUrlRequest[] = imageFiles.map((file: File, idx: number) => ({
+      section: meta.section,
+      entity_id: meta.entityId,
+      media_purpose: meta.mediaPurpose,
+      media_order: idx,
+      mime_type: file.type,
+      content_type: file.type,
+    }));
+    
+    setIsUploading(true);
+    setUploadProgress(30);
+  
+    // 2) POST to get the signed URLs
+    const signedUrls = await kupiProdaiApi.getSignedUrls(requests);
+  
+    setUploadProgress(50);
+  
+    await Promise.all(
+      imageFiles.map((file: File, i: number) => {
+        const {
+          upload_url,
+          filename,
+          content_type,
+          section,
+          entity_id,
+          media_purpose,
+          media_order,
+          mime_type
+        } = signedUrls[i];
+    
+        const headers: Record<string, string> = {
+          "Content-Type": content_type,
+          "x-goog-meta-filename": filename,
+          "x-goog-meta-section": section,
+          "x-goog-meta-entity-id": entity_id.toString(),
+          "x-goog-meta-media-purpose": media_purpose,
+          "x-goog-meta-media-order": media_order.toString(),
+          "x-goog-meta-mime-type": mime_type,
+        };
+    
+        return fetch(upload_url, {
+          method: "PUT",
+          headers,
+          body: file,
+        });
+      })
+    );
+    
+    setUploadProgress(90);
+  
+    // 4) Done
+    setUploadProgress(100);
+    setImageFiles([]);
+    setIsUploading(false);
+    setUploadProgress(0);
   };
+  
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     const newProduct = await createProduct(e);
-    console.log("new", newProduct);
     if (!newProduct) return;
-    const meta = {
+  
+    await uploadImage({
       section: "kp",
       entityId: newProduct.id,
       mediaPurpose: "banner",
-      mediaOrder: 0,
-      mimeType: "image/jpeg",
-    };
-    console.log("3 step:", meta);
-    await uploadImage(meta);
-    console.log("4 step:");
-
+    });
+  
     resetEditListing();
   };
+
+  
   return {
     setUploadProgress,
     handleCreate,
