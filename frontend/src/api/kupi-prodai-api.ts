@@ -9,14 +9,7 @@ export interface ProductMedia {
   id: number;
   url: string;
 }
-export interface MetaData {
-  section: string;
-  entity_id: number;
-  media_purpose: string;
-  media_order: number;
-  mime_type: string;
-  content_type: string;
-}
+
 export interface PaginatedResponse<T> {
   products: T[];
   num_of_pages: number;
@@ -203,14 +196,16 @@ export const kupiProdaiApi = {
     });
   },
 
-
   // Get signed URLs for uploading images
-  getSignedUrls: async (meta: MetaData[]): Promise<SignedUrlResponse> => {
-    return apiCall<SignedUrlResponse>(
-      `/bucket/upload-url`,{
+  // AFTER (correct)
+getSignedUrls: async (
+    requests: SignedUrlRequest[]
+  ): Promise<SignedUrlResponse[]> => {
+    return apiCall<SignedUrlResponse[]>(
+      `/bucket/upload-url`,
+      {
         method: "POST",
-        credentials: "include",
-        body: meta
+        json: requests, 
       }
     );
   },
