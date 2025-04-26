@@ -2,6 +2,7 @@
 
 import { Search } from "lucide-react";
 import { Input } from "./ui/input";
+import { useListingState } from "@/context/listing-context";
 type SearchInputProps = {
   inputValue: string;
   setInputValue: (value: string) => void;
@@ -14,7 +15,7 @@ export function SearchInput({
   preSearchedProducts,
   handleSearch,
 }: SearchInputProps) {
-
+  const { setSearchQuery } = useListingState();
   const handleSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleSearch(inputValue);
@@ -30,7 +31,7 @@ export function SearchInput({
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={(e) => handleSubmit(e)}
       />
-      {preSearchedProducts && preSearchedProducts.length > 0 && (
+      {preSearchedProducts && preSearchedProducts.length > 1 && (
         <ul className="absolute top-full left-0 right-0 bg-[#020817]  border border-t-0 border-gray-300 shadow-md z-10 rounded-b-lg">
           {preSearchedProducts.map((product, index) => (
             <li
@@ -38,6 +39,7 @@ export function SearchInput({
               className="px-4 py-2 hover:bg-gray-900 cursor-pointer"
               onClick={() => {
                 setInputValue(product);
+                setSearchQuery(product);
               }}
             >
               {product}
