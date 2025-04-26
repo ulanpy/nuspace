@@ -67,7 +67,7 @@ export const useUpdateProduct = () => {
         queryClient.invalidateQueries({ queryKey: [kupiProdaiApi.baseKey] });
       }, 1500),
   });
-
+  
   const calculateMediaOrder = () => {
     const remainingMedia = originalMedia.filter(
       (media) => !mediaToDelete.includes(media.id)

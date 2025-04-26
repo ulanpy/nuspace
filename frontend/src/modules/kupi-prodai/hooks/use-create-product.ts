@@ -80,8 +80,6 @@ export function useCreateProduct() {
     section: string;
     entityId: number;
     mediaPurpose: string;
-    mediaOrder: number;
-    mimeType: string;
   }) => {
     if (!imageFiles.length) return;
 
@@ -145,7 +143,7 @@ export function useCreateProduct() {
     setUploadProgress(0);
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const newProduct = await createProduct(e);
     if (!newProduct) return;
