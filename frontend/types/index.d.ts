@@ -81,5 +81,25 @@ declare global {
       }
       tg_linked: boolean
     }
+
+    // SearchInput
+    export type SearchInputProps = {
+      inputValue: string;
+      setInputValue: (value: string) => void;
+      preSearchedProducts: string[] | null;
+      handleSearch: (inputValue: string) => void;
+    };
+    export type KeyActions = Record<string, () => void>;
+    export type InputHandlers = {
+      change: (e: React.ChangeEvent<HTMLInputElement>) => void;
+      keyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+      focus: () => void;
+      blur: () => void;
+    };
+    export type SearchHandlers = {
+      selectItem: (item: string) => void;
+      keyActions: KeyActions;
+      input: InputHandlers;
+    };
   }
 }
