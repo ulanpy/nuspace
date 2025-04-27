@@ -1,4 +1,4 @@
-import { kupiProdaiApi } from "@/api/kupi-prodai-api";
+import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useAuth } from "@/context/auth-context";
 import { useQuery } from "@tanstack/react-query";
 
