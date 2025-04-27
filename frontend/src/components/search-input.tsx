@@ -106,7 +106,7 @@ export function SearchInput({
         <button
           type="button"
           onClick={handlers.clear}
-          className="absolute right-14 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-600"
+          className="absolute right-14 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 hover:text-slate-600"
         >
           <X className="h-5 w-5" />
         </button>
