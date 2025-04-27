@@ -1,15 +1,9 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Input } from "./ui/input";
 import { useListingState } from "@/context/listing-context";
-import {
-  useState,
-  useEffect,
-  useRef,
-  KeyboardEvent,
-  ChangeEvent,
-} from "react";
+import { useState, useEffect, useRef, KeyboardEvent, ChangeEvent } from "react";
 
 export function SearchInput({
   inputValue,
@@ -38,6 +32,15 @@ export function SearchInput({
   }, [preSearchedProducts, hasSuggestions]);
 
   const handlers = {
+    clear: () => {
+      setInputValue("");
+      setIsDropdownOpen(false);
+      inputRef.current?.focus();
+    },
+    search: () => {
+      handleSearch(inputValue);
+      setIsDropdownOpen(false);
+    },
     selectItem: (item: string) => {
       setInputValue(item);
       setSearchQuery(item);
@@ -46,7 +49,7 @@ export function SearchInput({
       setSelectedIndex(-1);
     },
 
-    keyActions:  {
+    keyActions: {
       ArrowDown: () =>
         hasSuggestions &&
         (setIsDropdownOpen(true),
@@ -89,18 +92,34 @@ export function SearchInput({
 
   return (
     <>
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
         ref={inputRef}
         placeholder="Search items..."
-        className="pl-9 text-sm"
+        className="text-sm"
         value={inputValue.trim()}
         onChange={handlers.input.change}
         onKeyDown={handlers.input.keyDown}
         onFocus={handlers.input.focus}
         onBlur={handlers.input.blur}
       />
-
+      {!!inputValue.trim() && (
+        <button
+          type="button"
+          onClick={handlers.clear}
+          className="absolute right-14 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 hover:text-slate-600"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      )}
+      <div
+        onClick={handlers.search}
+        className="absolute right-4 top-1/2 -translate-y-1/2 rounded-lg bg-slate-600 hover:bg-slate-700 p-1"
+      >
+        <Search
+          className="h-4 w-4 text-muted-foreground cursor-pointer"
+          color="#020817"
+        />
+      </div>
       {isDropdownOpen && hasSuggestions && (
         <ul
           className="absolute top-full left-0 right-0 bg-[#020817] border border-t-0 border-gray-300 shadow-md z-10 rounded-b-lg"
