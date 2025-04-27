@@ -52,54 +52,55 @@ declare global {
 
     interface User {
       user: {
-        sub: string
-        exp?: number
-        iat?: number
-        auth_time?: number
-        jti?: string
-        iss?: string
-        aud?: string
-        typ?: string
-        azp?: string
-        sid?: string
-        acr?: string
-        name: string
-        given_name: string
-        family_name: string
-        email: string
-        preferred_username: string
-        email_verified?: boolean
-        scope?: string
+        sub: string;
+        exp?: number;
+        iat?: number;
+        auth_time?: number;
+        jti?: string;
+        iss?: string;
+        aud?: string;
+        typ?: string;
+        azp?: string;
+        sid?: string;
+        acr?: string;
+        name: string;
+        given_name: string;
+        family_name: string;
+        email: string;
+        preferred_username: string;
+        email_verified?: boolean;
+        scope?: string;
         realm_access?: {
-          roles: string[]
-        }
+          roles: string[];
+        };
         resource_access?: {
           account: {
-            roles: string[]
-          }
-        }
-      }
-      tg_linked: boolean
+            roles: string[];
+          };
+        };
+      };
+      tg_linked: boolean;
     }
 
     // SearchInput
-    export type SearchInputProps = {
+    type SearchInputProps = {
       inputValue: string;
       setInputValue: (value: string) => void;
       preSearchedProducts: string[] | null;
       handleSearch: (inputValue: string) => void;
     };
-    export type KeyActions = Record<string, () => void>;
-    export type InputHandlers = {
+    type KeyActions = Record<string, () => void>;
+    type InputHandlers = {
       change: (e: React.ChangeEvent<HTMLInputElement>) => void;
       keyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
       focus: () => void;
       blur: () => void;
     };
-    export type SearchHandlers = {
+    type SearchHandlers = {
       selectItem: (item: string) => void;
       keyActions: KeyActions;
       input: InputHandlers;
     };
+    type SupportedKey = 'ArrowDown' | 'ArrowUp' | 'Enter' | 'Escape'
   }
 }

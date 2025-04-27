@@ -1,10 +1,15 @@
-// components/input-search.tsx
 "use client";
 
 import { Search } from "lucide-react";
 import { Input } from "./ui/input";
 import { useListingState } from "@/context/listing-context";
-import { useState, useEffect, useRef, KeyboardEvent, ChangeEvent } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  KeyboardEvent,
+  ChangeEvent,
+} from "react";
 
 export function SearchInput({
   inputValue,
@@ -13,12 +18,12 @@ export function SearchInput({
   handleSearch,
 }: Types.SearchInputProps) {
   const { setSearchQuery } = useListingState();
-  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
-  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const suggestions = preSearchedProducts || [];
-  const hasSuggestions = !!suggestions.length && !!inputValue.trim();
+  const hasSuggestions = Boolean(suggestions.length && inputValue.trim());
 
   useEffect(() => {
     setIsDropdownOpen(false);
@@ -27,9 +32,12 @@ export function SearchInput({
 
   useEffect(() => {
     setSelectedIndex(-1);
-  }, [preSearchedProducts, inputValue]);
 
-  const handlers: Types.SearchHandlers = {
+    const isInputFocused = document.activeElement === inputRef.current;
+    isInputFocused && hasSuggestions && setIsDropdownOpen(true);
+  }, [preSearchedProducts, hasSuggestions]);
+
+  const handlers = {
     selectItem: (item: string) => {
       setInputValue(item);
       setSearchQuery(item);
@@ -38,19 +46,19 @@ export function SearchInput({
       setSelectedIndex(-1);
     },
 
-    keyActions: {
-      ArrowDown: () => {
-        if (hasSuggestions) {
-          setIsDropdownOpen(true);
-          setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : 0));
-        }
-      },
-      ArrowUp: () => {
-        if (hasSuggestions) {
-          setIsDropdownOpen(true);
-          setSelectedIndex(prev => (prev > 0 ? prev - 1 : suggestions.length - 1));
-        }
-      },
+    keyActions:  {
+      ArrowDown: () =>
+        hasSuggestions &&
+        (setIsDropdownOpen(true),
+        setSelectedIndex((prev) =>
+          prev < suggestions.length - 1 ? prev + 1 : 0
+        )),
+      ArrowUp: () =>
+        hasSuggestions &&
+        (setIsDropdownOpen(true),
+        setSelectedIndex((prev) =>
+          prev > 0 ? prev - 1 : suggestions.length - 1
+        )),
       Enter: () => {
         if (selectedIndex >= 0 && suggestions[selectedIndex]) {
           handlers.selectItem(suggestions[selectedIndex]);
@@ -63,25 +71,20 @@ export function SearchInput({
         setIsDropdownOpen(false);
         setSelectedIndex(-1);
         inputRef.current?.blur();
-      }
-    },
+      },
+    } as Record<Types.SupportedKey, () => void>,
 
     input: {
-      change: (e: ChangeEvent<HTMLInputElement>) => {
-        const newValue = e.target.value;
-        setInputValue(newValue);
-        setIsDropdownOpen(!!newValue.trim() && !!suggestions.length);
-      },
+      change: (e: ChangeEvent<HTMLInputElement>) =>
+        setInputValue(e.target.value),
       keyDown: (e: KeyboardEvent<HTMLInputElement>) => {
-        const handler = handlers.keyActions[e.key];
-        if (handler) {
-          e.preventDefault();
-          handler();
-        }
+        const key = e.key as Types.SupportedKey;
+        const handler = handlers.keyActions[key];
+        handler && (e.preventDefault(), handler());
       },
       focus: () => hasSuggestions && setIsDropdownOpen(true),
-      blur: () => setTimeout(() => setIsDropdownOpen(false), 200)
-    }
+      blur: () => setTimeout(() => setIsDropdownOpen(false), 200),
+    },
   };
 
   return (
@@ -107,7 +110,9 @@ export function SearchInput({
             <li
               key={index}
               className={`px-4 py-2 cursor-pointer ${
-                index === selectedIndex ? "bg-gray-900 text-white" : "hover:bg-gray-900"
+                index === selectedIndex
+                  ? "bg-gray-900 text-white"
+                  : "hover:bg-gray-900"
               }`}
               onClick={() => handlers.selectItem(product)}
               onMouseEnter={() => setSelectedIndex(index)}

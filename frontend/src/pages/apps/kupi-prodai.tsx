@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   ShoppingBag,
@@ -27,7 +27,7 @@ import {
 } from "../../components/ui/tabs";
 import { SliderGroup } from "@/components/slider-group";
 import { ConditionGroup } from "@/components/condition-group";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/auth-context";
 import { useToast } from "../../hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
@@ -43,9 +43,6 @@ import { useToggleProduct } from "@/modules/kupi-prodai/hooks/use-toggle-product
 import { useListingState } from "@/context/listing-context";
 import { useImageContext } from "@/context/image-context";
 import { useMediaContext } from "@/context/media-context";
-import { usePreSearchProducts } from "@/modules/kupi-prodai/hooks/use-pre-search-products";
-import { useSearchProducts } from "@/modules/kupi-prodai/hooks/use-search-products";
-
 import { FaBook, FaLaptop, FaTshirt, FaCouch, FaBlender } from "react-icons/fa";
 import { BiSolidCategory } from "react-icons/bi";
 import { MdSports, MdBrush, MdLocalOffer } from "react-icons/md";
@@ -53,7 +50,7 @@ import { BsPencilFill } from "react-icons/bs";
 import { GiKnifeFork } from "react-icons/gi";
 import { IoTicket, IoCarSport } from "react-icons/io5";
 import { SearchInput } from "@/components/search-input";
-import { getSearchTextFromURL } from "@/lib/utils";
+import { useSearchLogic } from "@/hooks/useSearchLogic";
 
 // Define categories and conditions
 const categories = [
@@ -143,7 +140,6 @@ const itemVariants = {
 
 export default function KupiProdaiPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, isAuthenticated, login } = useAuth();
   const { toast } = useToast();
   const [likedProducts, setLikedProducts] = useState<number[]>([]);
@@ -198,7 +194,6 @@ export default function KupiProdaiPage() {
     setActiveTab,
     setCurrentPage,
     setNewListing,
-    setSearchQuery,
   } = useListingState();
   // Handle image upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -387,27 +382,12 @@ export default function KupiProdaiPage() {
   );
 
   // search section
-  const [inputValue, setInputValue] = useState(
-    getSearchTextFromURL(location.search)
-  );
-  const { preSearchedProducts } = usePreSearchProducts(inputValue);
-  const { searchedProducts } = useSearchProducts();
+  const { inputValue, setInputValue, handleSearch, searchedProducts, preSearchedProducts } =
+    useSearchLogic({
+      baseRoute: "/apps/kupi-prodai",
+      searchParam: "text",
+    });
   const products = searchedProducts ? searchedProducts.products : (productItems?.products ?? []);
-  console.log(products)
-  useEffect(() => {
-    const textFromURL = getSearchTextFromURL(location.search);
-    setSearchQuery(textFromURL);
-  }, [location.search]);
-
-  const handleSearch = (inputValue: string) => {
-    if(!!inputValue.trim()) {
-      setSearchQuery(inputValue);
-      navigate(`/apps/kupi-prodai?text=${inputValue}`);
-    } if(inputValue.trim() === "") {
-      navigate("/apps/kupi-prodai");
-    }
-  };
-
 
   return (
     <div className="space-y-4 sm:space-y-6">
