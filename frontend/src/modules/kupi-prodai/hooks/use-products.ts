@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { kupiProdaiApi } from "@/api/kupi-prodai-api";
+import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useListingState } from "@/context/listing-context";

@@ -1,52 +1,49 @@
-"use client"
+"use client";
 
-import { kupiProdaiApi } from "@/api/kupi-prodai-api"
-import { queryClient } from "@/api/query-client"
-import { useUser } from "@/hooks/use-user"
-import { createContext, useContext, useEffect, type ReactNode } from "react"
+import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
+import { queryClient } from "@/api/query-client";
+import { useUser } from "@/hooks/use-user";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
 
 // Update the User interface to match the new API structure
 
 interface AuthContextType {
-  user: Types.User | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  login: () => void
-  logout: () => void
+  user: Types.User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: () => void;
+  logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Add this to the AuthContext to expose the refreshUserData function
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const {user, isAuthenticated, isLoading} = useUser()
-
+  const { user, isAuthenticated, isLoading } = useUser();
 
   const refreshToken = async () => {
     try {
       await fetch("/api/refresh-token", {
         method: "POST",
         credentials: "include", // Important for cookies
-      })
+      });
     } catch (error) {
-      console.error("Error refreshing token:", error)
+      console.error("Error refreshing token:", error);
     }
-  }
+  };
 
   useEffect(() => {
-
-
     // Set up token refresh interval
-    const refreshInterval = setInterval(refreshToken, 240*1000) // 5 seconds
+    const refreshInterval = setInterval(refreshToken, 240 * 1000); // 5 seconds
 
     return () => {
-      clearInterval(refreshInterval)
-    }
-  }, [])
+      clearInterval(refreshInterval);
+    };
+  }, []);
 
   const login = () => {
-    window.location.href = "/api/login"
-  }
+    window.location.href = "/api/login";
+  };
 
   const logout = async () => {
     try {
@@ -74,7 +71,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-
   return (
     <AuthContext.Provider
       value={{
@@ -87,13 +83,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }

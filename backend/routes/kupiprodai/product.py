@@ -24,10 +24,13 @@ from .cruds import (
 from .schemas import (
     ListProductFeedbackResponseSchema,
     ListResponseSchema,
+    ProductFeedbackResponseSchema,
     ProductFeedbackSchema,
+    ProductReportResponseSchema,
     ProductReportSchema,
     ProductRequestSchema,
     ProductResponseSchema,
+    ProductUpdateResponseSchema,
     ProductUpdateSchema,
 )
 
@@ -234,7 +237,7 @@ async def remove_product(
         )
 
 
-@router.patch("/")  # works
+@router.patch("/", response_model=ProductUpdateResponseSchema)  # works
 async def update_product(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
@@ -280,7 +283,7 @@ async def update_product(
     }
 
 
-@router.post("/post_search/", response_model=ListResponseSchema)
+@router.get("/search/", response_model=ListResponseSchema)
 async def post_search(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
@@ -362,7 +365,9 @@ async def pre_search(
     return distinct_keywords
 
 
-@router.post("/feedback/{product_id}")  # added description
+@router.post(
+    "/feedback/{product_id}", response_model=ProductFeedbackResponseSchema
+)  # added description
 async def store_new_product_feedback(
     feedback_data: ProductFeedbackSchema,
     user: Annotated[dict, Depends(check_token)],
@@ -383,24 +388,24 @@ async def store_new_product_feedback(
     """
 
     try:
-        new_product_feedback = await add_new_product_feedback_to_db(
+        return await add_new_product_feedback_to_db(
             feedback_data=feedback_data, user_sub=user.get("sub"), session=db_session
         )
-        return new_product_feedback
     except HTTPException as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
 
 
-@router.get("/feedback/{product_id}")  # added description
+@router.get(
+    "/feedback/{product_id}", response_model=ListProductFeedbackResponseSchema
+)  # added description
 async def get_product_feedbacks(
     product_id: int,
     user: Annotated[dict, Depends(check_token)],
     db_session=Depends(get_db_session),
     size: int = 20,
     page: int = 1,
-    response_model=ListProductFeedbackResponseSchema,
 ):
     """
     Retrieves a paginated list of feedbacks of the product.
@@ -460,7 +465,9 @@ async def remove_product_feedback(
         )
 
 
-@router.post("/{product_id}/report")  # added description
+@router.post(
+    "/{product_id}/report", response_model=ProductReportResponseSchema
+)  # added description
 async def store_new_product_report(
     report_data: ProductReportSchema,
     user: Annotated[dict, Depends(check_token)],
@@ -487,10 +494,9 @@ async def store_new_product_report(
     """
 
     try:
-        new_product_report = await add_product_report(
+        return await add_product_report(
             report_data=report_data, user_sub=user.get("sub"), session=db_session
         )
-        return new_product_report
     except HTTPException as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)

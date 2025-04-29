@@ -1,4 +1,4 @@
-import { kupiProdaiApi } from "@/api/kupi-prodai-api";
+import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -54,7 +54,10 @@ export const useToggleProduct = () => {
     },
   });
 
-  const handleToggleProductStatus = (id: number, currentStatus: Types.Status) => {
+  const handleToggleProductStatus = (
+    id: number,
+    currentStatus: Types.Status
+  ) => {
     const newStatus = currentStatus === "active" ? "inactive" : "active";
 
     toggleProductMutation.mutate({

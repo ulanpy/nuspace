@@ -1,4 +1,4 @@
-import { kupiProdaiApi } from "@/api/kupi-prodai-api";
+import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useQuery } from "@tanstack/react-query";
 
 export const useUser = () => {

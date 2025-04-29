@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 interface ProductMedia {
   id: number;
   url: string;
+  order: string;
   // Қажет болса, басқа да өрістерді қосыңыз
 }
 

@@ -58,8 +58,7 @@ async def auth_callback(
     await upsert_user(db_session, user_schema)
     # return creds
 
-    frontend_url = f"{config.FRONTEND_HOST}"
-    response = RedirectResponse(url=frontend_url, status_code=303)
+    response = RedirectResponse(url=config.FRONTEND_HOST, status_code=303)
     set_auth_cookies(response, creds)
     return response
 
@@ -87,9 +86,7 @@ async def refresh_token(
         raise HTTPException(status_code=402, detail="No  refresh token provided")
 
     creds = await kc.refresh_access_token(refresh_token)
-    await validate_access_token(
-        response, creds.get("access_token"), creds.get("refresh_token"), kc
-    )
+    await validate_access_token(response, creds.get("access_token"), creds.get("refresh_token"), kc)
     set_auth_cookies(response, creds)
 
     return creds

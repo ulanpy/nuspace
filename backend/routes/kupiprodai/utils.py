@@ -6,10 +6,15 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.database.models.media import Media
-from backend.core.database.models.product import Product, ProductFeedback
+from backend.core.database.models.product import Product, ProductFeedback, ProductReport
 from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
 from backend.routes.google_bucket.utils import generate_download_url
-from backend.routes.kupiprodai.schemas import *
+from backend.routes.kupiprodai.schemas import (
+    ProductFeedbackResponseSchema,
+    ProductReportResponseSchema,
+    ProductResponseSchema,
+    SearchResponseSchema,
+)
 
 
 async def get_media_responses(
@@ -28,7 +33,8 @@ async def get_media_responses(
     )
     media_objects = media_result.scalars().all()
 
-    # Если есть необходимость параллельной генерации URL, можно использовать asyncio.gather:
+    # Если есть необходимость параллельной генерации URL,
+    # можно использовать asyncio.gather:
     async def build_media_response(media: Media) -> MediaResponse:
         url_data = await generate_download_url(request, media.name)
         return MediaResponse(
@@ -54,8 +60,9 @@ async def build_product_response(
     media_section: MediaSection,
 ) -> ProductResponseSchema:
     """
-    Собирает ProductResponseSchema из объекта Product с учетом eagerly loaded user и media.
-    """
+    Собирает ProductResponseSchema из объекта Product
+    с учетом eagerly loaded user и media.
+    """  # noqa: E501
     media_responses = await get_media_responses(
         session, request, product.id, media_section
     )
@@ -94,3 +101,15 @@ async def build_search_response(
     search_result: SearchResponseSchema,
 ) -> SearchResponseSchema:
     return SearchResponseSchema(id=search_result["id"], name=search_result["name"])
+
+
+async def build_product_report_response(
+    report: ProductReport,
+) -> ProductReportResponseSchema:
+    return ProductReportResponseSchema(
+        id=report.id,
+        user_sub=report.user_sub,
+        product_id=report.product_id,
+        text=report.text,
+        created_at=report.created_at,
+    )

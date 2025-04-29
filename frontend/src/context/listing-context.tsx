@@ -1,6 +1,9 @@
 // src/contexts/ListingContext.tsx
 
-import { defaultPage, defaultSize } from "@/api/kupi-prodai-api";
+import {
+  defaultPage,
+  defaultSize,
+} from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import React, { createContext, useContext, useState } from "react";
 
 type NewProductRequest = {
@@ -18,21 +21,25 @@ type ListingContextType = {
   uploadProgress: number;
   setUploadProgress: React.Dispatch<React.SetStateAction<number>>;
   editingListing: Types.Product | null;
-  setEditingListing: React.Dispatch<React.SetStateAction<Types.Product | null>>
+  setEditingListing: React.Dispatch<React.SetStateAction<Types.Product | null>>;
   showEditModal: boolean;
-  setShowEditModal: React.Dispatch<React.SetStateAction<boolean>>
+  setShowEditModal: React.Dispatch<React.SetStateAction<boolean>>;
   searchQuery: string;
-  setSearchQuery: React.Dispatch<React.SetStateAction<string>>
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
   currentPage: number;
   setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
   itemsPerPage: number;
   activeTab: Types.ActiveTab;
-  setActiveTab: React.Dispatch<React.SetStateAction<Types.ActiveTab>>
+  setActiveTab: React.Dispatch<React.SetStateAction<Types.ActiveTab>>;
 };
 
 const ListingContext = createContext<ListingContextType | undefined>(undefined);
 
-export const ListingProvider = ({ children }: { children: React.ReactNode }) => {
+export const ListingProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const [newListing, setNewListing] = useState<NewProductRequest>({
     name: "",
     description: "",
@@ -41,7 +48,9 @@ export const ListingProvider = ({ children }: { children: React.ReactNode }) => 
     condition: "new",
     status: "active",
   });
-  const [editingListing, setEditingListing] = useState<Types.Product | null>(null);
+  const [editingListing, setEditingListing] = useState<Types.Product | null>(
+    null
+  );
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,7 +74,7 @@ export const ListingProvider = ({ children }: { children: React.ReactNode }) => 
         setCurrentPage,
         itemsPerPage,
         activeTab,
-        setActiveTab
+        setActiveTab,
       }}
     >
       {children}
