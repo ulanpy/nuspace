@@ -1,10 +1,11 @@
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.core.database.models.dormeats import (
     AvailableMeal,
+    CanteenFeedback,
     CanteenProduct,
     CanteenProductCategory,
-    CanteenFeedback,
     CanteenReport,
     Meal,
 )
@@ -16,10 +17,10 @@ from backend.routes.google_bucket.schemas import MediaSection
 from .schemas import (
     AvailableMealRequestSchema,
     AvailableMealResponseSchema,
-    CanteenProductRequestSchema,
-    CanteenProductResponseSchema,
     CanteenFeedbackRequestSchema,
     CanteenFeedbackResponseSchema,
+    CanteenProductRequestSchema,
+    CanteenProductResponseSchema,
     CanteenReportRequestSchema,
     CanteenReportResponseSchema,
     MealRequestSchema,
@@ -27,8 +28,8 @@ from .schemas import (
 )
 from .utils import (
     build_available_meal_response,
-    build_canteen_product_response,
     build_canteen_feedback_response,
+    build_canteen_product_response,
     build_canteen_report_response,
     build_meal_response,
 )

@@ -13,6 +13,7 @@ class MealRequestSchema(BaseModel):
     price: int
     category: MealCategory
     canteen_id: int
+    status: bool
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -23,6 +24,8 @@ class MealResponseSchema(BaseModel):
     description: str
     price: int
     category: MealCategory
+    # Shouldn't there be canteen_id?????
+    status: bool
     media: List[MediaResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
@@ -57,22 +60,22 @@ class CanteenSchema(BaseModel):
     description: str
 
 
-# Available Meal
-class AvailableMealRequestSchema(BaseModel):
-    canteen_id: int
-    meal_id: int
-    status: bool
+# # Available Meal
+# class AvailableMealRequestSchema(BaseModel):
+#     canteen_id: int
+#     meal_id: int
+#     status: bool
 
-    model_config = ConfigDict(from_attributes=True)
+#     model_config = ConfigDict(from_attributes=True)
 
 
-class AvailableMealResponseSchema(BaseModel):
-    id: int
-    canteen_id: int
-    meal_id: int
-    status: bool
+# class AvailableMealResponseSchema(BaseModel):
+#     id: int
+#     canteen_id: int
+#     meal_id: int
+#     status: bool
 
-    model_config = ConfigDict(from_attributes=True)
+#     model_config = ConfigDict(from_attributes=True)
 
 
 # Canteen Feedback
