@@ -3,12 +3,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.utils import get_media_responses
 from backend.core.database.models.dormeats import (
+    CanteenFeedback,
     CanteenProduct,
     CanteenReport,
     Meal,
 )
 from backend.routes.dormeats.schemas import (
-    AvailableMealResponseSchema,
+    CanteenFeedbackResponseSchema,
     CanteenProductResponseSchema,
     CanteenReportResponseSchema,
     MealResponseSchema,
@@ -48,18 +49,32 @@ async def build_meal_response(
         description=meal.description,
         price=meal.price,
         category=meal.category,
+        status=meal.status,
         media=media_responses,
     )
 
 
-async def build_available_meal_response(
-    available_meal: AvailableMeal, session: AsyncSession, request: Request
+# async def build_available_meal_response(
+#     available_meal: AvailableMeal, session: AsyncSession, request: Request
+# ):
+#     return AvailableMealResponseSchema(
+#         id=available_meal.id,
+#         canteen_id=available_meal.canteen_id,
+#         meal_id=available_meal.meal_id,
+#         status=available_meal.status,
+#     )
+
+
+async def build_canteen_feedback_response(
+    canteen_feedback: CanteenFeedback,
+    session: AsyncSession,
+    request: Request,
 ):
-    return AvailableMealResponseSchema(
-        id=available_meal.id,
-        canteen_id=available_meal.canteen_id,
-        meal_id=available_meal.meal_id,
-        status=available_meal.status,
+    return CanteenFeedbackResponseSchema(
+        id=canteen_feedback.id,
+        canteen_id=canteen_feedback.canteen_id,
+        feedback=canteen_feedback.feedback,
+        rating=canteen_feedback.rating,
     )
 
 

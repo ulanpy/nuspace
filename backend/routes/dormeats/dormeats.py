@@ -62,6 +62,25 @@ async def add_new_available_meal(
         )
 
 
+@router.post("/canteen_feedback/new", response_model=CanteenFeedbackResponseSchema)
+async def add_new_canteen_feedback(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    canteen_feedback_data: CanteenFeedbackRequestSchema,
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    try:
+        return await add_new_canteen_feedback_to_db(
+            session=db_session,
+            canteen_feedback_data=canteen_feedback_data,
+            request=request,
+        )
+    except HTTPException as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
 @router.post("/canteen_report/new", response_model=CanteenReportResponseSchema)
 async def add_new_canteen_report(
     request: Request,

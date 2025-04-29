@@ -71,9 +71,9 @@ class Meal(Base):  # create, read, update, delete
     canteen_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("canteen.id"), nullable=False
     )
+    status: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
     canteen = relationship("Canteen", back_populates="meals")
-    available_meal = relationship("AvailableMeal", back_populates="meal")
     ingredient = relationship("Ingredient", back_populates="meals")
 
 
@@ -112,6 +112,21 @@ class Ingredient(Base):  # create, read, update, delete
 
     canteenproducts = relationship("CanteenProduct", back_populates="ingredient")
     meals = relationship("Meal", back_populates="ingredient")
+
+
+# class AvailableMeal(Base):
+#     __tablename__ = "available_meal"
+#     id: Mapped[int] = mapped_column(
+#         BigInteger, primary_key=True, nullable=False, index=True
+#     )
+#     canteen_id: Mapped[int] = mapped_column(
+#         Integer, ForeignKey("canteen.id"), nullable=False
+#     )
+#     meal_id: Mapped[int] = mapped_column(Integer, ForeignKey("meals.id"))
+#     status: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+#     canteen = relationship("Canteen", back_populates="available_meal")
+#     meal = relationship("Meal", back_populates="available_meal")
 
 
 class CanteenFeedback(Base):  # create, read, update, delete
