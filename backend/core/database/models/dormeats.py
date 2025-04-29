@@ -113,6 +113,7 @@ class Ingredient(Base):  # create, read, update, delete
     canteenproducts = relationship("CanteenProduct", back_populates="ingredient")
     meals = relationship("Meal", back_populates="ingredient")
 
+
 class CanteenFeedback(Base):  # create, read, update, delete
     __tablename__ = "canteen_feedback"
     __table_args__ = (

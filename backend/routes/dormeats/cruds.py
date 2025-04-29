@@ -1,7 +1,8 @@
-from fastapi import Request
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import func, select
 import asyncio
+
+from fastapi import Request
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.database.models.dormeats import (
     AvailableMeal,
@@ -111,18 +112,21 @@ async def add_new_canteen_report_to_db(
         media_section=media_section,
     )
 
+
 async def get_canteen_products_from_db(
-        category: CanteenProductCategory,
-        request: Request,
-        session: AsyncSession,
-        media_section: MediaSection = MediaSection.de
-    ) -> list[CanteenProductResponseSchema]:
-    result = await session.execute(select(CanteenProduct).filter(CanteenProduct.category == category))
+    category: CanteenProductCategory,
+    request: Request,
+    session: AsyncSession,
+    media_section: MediaSection = MediaSection.de,
+) -> list[CanteenProductResponseSchema]:
+    result = await session.execute(
+        select(CanteenProduct).filter(CanteenProduct.category == category)
+    )
     canteen_products = result.scalars().all()
 
     products_response = await asyncio.gather(
         *(
-            build_canteen_product_response(product, session, request, media_section) 
+            build_canteen_product_response(product, session, request, media_section)
             for product in canteen_products
         )
     )

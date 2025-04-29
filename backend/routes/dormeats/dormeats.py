@@ -79,17 +79,15 @@ async def add_new_canteen_report(
         )
 
 
-@router.get(
-    '/canteen_products',
-    response_model = List[CanteenProductResponseSchema])
+@router.get("/canteen_products", response_model=List[CanteenProductResponseSchema])
 async def get_canteen_products(
     request: Request,
     category: CanteenProductCategory,
-    db_session: AsyncSession = Depends(get_db_session)
+    db_session: AsyncSession = Depends(get_db_session),
 ):
     try:
         return await get_canteen_products_from_db(
-            request = request, category=category, session = db_session
+            request=request, category=category, session=db_session
         )
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
