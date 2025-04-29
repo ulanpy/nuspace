@@ -27,7 +27,6 @@ class Canteen(Base):  # create, read, update, delete
     description: Mapped[str] = mapped_column(String, nullable=False)
 
     meals = relationship("Meal", back_populates="canteen")
-    available_meal = relationship("AvailableMeal", back_populates="canteen")
     canteen_feedbacks = relationship("CanteenFeedback", back_populates="canteen")
     canteen_reports = relationship("CanteenReport", back_populates="canteen")
 

@@ -54,16 +54,6 @@ async def build_meal_response(
     )
 
 
-# async def build_available_meal_response(
-#     available_meal: AvailableMeal, session: AsyncSession, request: Request
-# ):
-#     return AvailableMealResponseSchema(
-#         id=available_meal.id,
-#         canteen_id=available_meal.canteen_id,
-#         meal_id=available_meal.meal_id,
-#         status=available_meal.status,
-#     )
-
 
 async def build_canteen_feedback_response(
     canteen_feedback: CanteenFeedback,

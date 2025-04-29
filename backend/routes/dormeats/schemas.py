@@ -60,24 +60,6 @@ class CanteenSchema(BaseModel):
     description: str
 
 
-# # Available Meal
-# class AvailableMealRequestSchema(BaseModel):
-#     canteen_id: int
-#     meal_id: int
-#     status: bool
-
-#     model_config = ConfigDict(from_attributes=True)
-
-
-# class AvailableMealResponseSchema(BaseModel):
-#     id: int
-#     canteen_id: int
-#     meal_id: int
-#     status: bool
-
-#     model_config = ConfigDict(from_attributes=True)
-
-
 # Canteen Feedback
 class CanteenFeedbackRequestSchema(BaseModel):
     canteen_id: int

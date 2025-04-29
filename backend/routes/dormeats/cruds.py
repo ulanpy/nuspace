@@ -5,7 +5,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.database.models.dormeats import (
-    AvailableMeal,
     CanteenFeedback,
     CanteenProduct,
     CanteenProductCategory,
@@ -18,8 +17,6 @@ from backend.routes.google_bucket.schemas import MediaSection
 # Requests
 # Responses
 from .schemas import (
-    AvailableMealRequestSchema,
-    AvailableMealResponseSchema,
     CanteenFeedbackRequestSchema,
     CanteenFeedbackResponseSchema,
     CanteenProductRequestSchema,
@@ -30,7 +27,6 @@ from .schemas import (
     MealResponseSchema,
 )
 from .utils import (
-    build_available_meal_response,
     build_canteen_feedback_response,
     build_canteen_product_response,
     build_canteen_report_response,
@@ -82,20 +78,6 @@ async def add_new_meal_to_db(
         meal=new_meal, session=session, request=request, media_section=media_section
     )
 
-
-async def add_new_available_meal_to_db(
-    session: AsyncSession,
-    request: Request,
-    avaiable_meal_data: AvailableMealRequestSchema,
-) -> AvailableMealResponseSchema:
-    new_available_meal = AvailableMeal(**avaiable_meal_data.dict())
-    session.add(new_available_meal)
-    await session.commit()
-    await session.refresh(new_available_meal)
-
-    return await build_available_meal_response(
-        available_meal=new_available_meal, session=session, request=request
-    )
 
 
 async def add_new_canteen_feedback_to_db(
