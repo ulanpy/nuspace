@@ -3,7 +3,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.utils import get_media_responses
 from backend.core.database.models.dormeats import (
-    AvailableMeal,
     CanteenProduct,
     CanteenReport,
     Meal,
@@ -33,7 +32,7 @@ async def build_canteen_product_response(
         id=canteen_product.id,
         name=canteen_product.name,
         category=canteen_product.category,
-        media=media_responses,
+        media=media_responses
     )
 
 

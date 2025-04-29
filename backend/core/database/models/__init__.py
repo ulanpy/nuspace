@@ -1,7 +1,6 @@
 from .base import Base
 from .club import Club, ClubAnnouncement, ClubEvent, ClubManager
 from .dormeats import (
-    AvailableMeal,
     Canteen,
     CanteenFeedback,
     CanteenProduct,
@@ -13,4 +12,4 @@ from .dormeats import (
 )
 from .media import Media
 from .product import Product, ProductFeedback, ProductReport
-from .user import User, UserRole, UserScope
+from .user import User, UserScope
