@@ -1,4 +1,8 @@
-import { kupiProdaiApi, NewProductRequest, SignedUrlRequest } from "@/api/kupi-prodai-api";
+import {
+  kupiProdaiApi,
+  NewProductRequest,
+  SignedUrlRequest,
+} from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -48,7 +52,9 @@ export function useCreateProduct() {
       name: String(formData.get("name")),
       description: String(formData.get("description")),
       price: Number(formData.get("price")),
-      category: String(formData.get("category")).toLowerCase() as Types.ProductCategory,
+      category: String(
+        formData.get("category")
+      ).toLowerCase() as Types.ProductCategory,
       condition: String(formData.get("condition")) as Types.ProductCondition,
       status: "active",
     };
@@ -65,9 +71,7 @@ export function useCreateProduct() {
 
     setIsUploading(true);
     setUploadProgress(10);
-    const res = await createProductMutation.mutateAsync(
-      newProduct
-    );
+    const res = await createProductMutation.mutateAsync(newProduct);
     console.log("res id", res.id);
     return res;
   };
@@ -78,25 +82,27 @@ export function useCreateProduct() {
     mediaPurpose: string;
   }) => {
     if (!imageFiles.length) return;
-  
+
     // 1) prepare one SignedUrlRequest per file
-    const requests: SignedUrlRequest[] = imageFiles.map((file: File, idx: number) => ({
-      section: meta.section,
-      entity_id: meta.entityId,
-      media_purpose: meta.mediaPurpose,
-      media_order: idx,
-      mime_type: file.type,
-      content_type: file.type,
-    }));
-    
+    const requests: SignedUrlRequest[] = imageFiles.map(
+      (file: File, idx: number) => ({
+        section: meta.section,
+        entity_id: meta.entityId,
+        media_purpose: meta.mediaPurpose,
+        media_order: idx,
+        mime_type: file.type,
+        content_type: file.type,
+      })
+    );
+
     setIsUploading(true);
     setUploadProgress(30);
-  
+
     // 2) POST to get the signed URLs
     const signedUrls = await kupiProdaiApi.getSignedUrls(requests);
-  
+
     setUploadProgress(50);
-  
+
     await Promise.all(
       imageFiles.map((file: File, i: number) => {
         const {
@@ -107,9 +113,9 @@ export function useCreateProduct() {
           entity_id,
           media_purpose,
           media_order,
-          mime_type
+          mime_type,
         } = signedUrls[i];
-    
+
         const headers: Record<string, string> = {
           "Content-Type": content_type,
           "x-goog-meta-filename": filename,
@@ -119,7 +125,7 @@ export function useCreateProduct() {
           "x-goog-meta-media-order": media_order.toString(),
           "x-goog-meta-mime-type": mime_type,
         };
-    
+
         return fetch(upload_url, {
           method: "PUT",
           headers,
@@ -127,32 +133,30 @@ export function useCreateProduct() {
         });
       })
     );
-    
+
     setUploadProgress(90);
-  
+
     // 4) Done
     setUploadProgress(100);
     setImageFiles([]);
     setIsUploading(false);
     setUploadProgress(0);
   };
-  
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const newProduct = await createProduct(e);
     if (!newProduct) return;
-  
+
     await uploadImage({
       section: "kp",
       entityId: newProduct.id,
       mediaPurpose: "banner",
     });
-  
+
     resetEditListing();
   };
 
-  
   return {
     setUploadProgress,
     handleCreate,

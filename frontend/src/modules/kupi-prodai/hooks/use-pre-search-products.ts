@@ -1,14 +1,12 @@
-import { kupiProdaiApi } from "@/api/kupi-prodai-api";
+import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useAuth } from "@/context/auth-context";
-import { useListingState } from "@/context/listing-context";
 import { useQuery } from "@tanstack/react-query";
 
-export const usePreSearchProducts = () => {
+export const usePreSearchProducts = (inputValue: string) => {
   const { isAuthenticated } = useAuth();
-  const { searchQuery } = useListingState();
   const { data: preSearchedProducts } = useQuery({
-    ...kupiProdaiApi.getPreSearchedProductsQueryOptions(searchQuery),
-    enabled: isAuthenticated && !!searchQuery,
+    ...kupiProdaiApi.getPreSearchedProductsQueryOptions(inputValue),
+    enabled: isAuthenticated && !!inputValue,
   });
-  return { preSearchedProducts };
+  return { preSearchedProducts: preSearchedProducts || null };
 };
