@@ -54,7 +54,6 @@ async def build_meal_response(
     )
 
 
-
 async def build_canteen_feedback_response(
     canteen_feedback: CanteenFeedback,
     session: AsyncSession,

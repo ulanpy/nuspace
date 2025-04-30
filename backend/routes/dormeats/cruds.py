@@ -79,7 +79,6 @@ async def add_new_meal_to_db(
     )
 
 
-
 async def add_new_canteen_feedback_to_db(
     session: AsyncSession,
     request: Request,
@@ -132,3 +131,21 @@ async def get_canteen_products_from_db(
         )
     )
     return products_response
+
+async def get_meals_from_db(
+        meal_id: int,
+        request: Request,
+        session: AsyncSession,
+        media_section: MediaSection = MediaSection.de,
+) -> list[MealResponseSchema]:
+    result = await session.execute(
+        select(Meal).filter(Meal.id == meal_id)
+    )
+    meals = result.scalars().all()
+
+    meals_response = await asyncio.gather(
+        *(
+            build_meal_response(meal, session, request, media_section)
+            for meal in meals
+        )
+    )
