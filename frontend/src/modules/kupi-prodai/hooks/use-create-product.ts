@@ -1,3 +1,5 @@
+import imageCompression from "browser-image-compression";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   kupiProdaiApi,
   NewProductRequest,
@@ -5,7 +7,6 @@ import {
 } from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useListingState } from "@/context/listing-context";
 import { useImageContext } from "@/context/image-context";
 import { useEditModal } from "../form/use-edit-modal";
@@ -100,11 +101,22 @@ export function useCreateProduct() {
 
     // 2) POST to get the signed URLs
     const signedUrls = await kupiProdaiApi.getSignedUrls(requests);
-
+    const options = {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+    };
+    const compressedImages = await Promise.all(
+      imageFiles.map(async (imageFile) => {
+        console.log('originalFile instanceof Blob', imageFile instanceof Blob); // true
+        console.log(`originalFile size ${imageFile.size / 1024 / 1024} MB`);
+        return await imageCompression(imageFile, options);
+      })
+    );
     setUploadProgress(50);
 
     await Promise.all(
-      imageFiles.map((file: File, i: number) => {
+      compressedImages.map((file: File, i: number) => {
         const {
           upload_url,
           filename,
