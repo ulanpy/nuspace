@@ -78,6 +78,24 @@ async def add_new_ingredient(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
 
+@router.post("/canteen/new", response_model = CanteenResponseSchema)
+async def add_new_canteen(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    canteen_data: CanteenRequestSchema,
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    try: 
+        return await add_new_canteen_to_db(
+            session=db_session, canteen_data=canteen_data, request=request
+        )
+    except HTTPException as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+
 @router.post("/canteen_report/new", response_model=CanteenReportResponseSchema)
 async def add_new_canteen_report(
     request: Request,

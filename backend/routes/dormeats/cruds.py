@@ -11,6 +11,7 @@ from backend.core.database.models.dormeats import (
     CanteenReport,
     Meal,
     Ingredient,
+    Canteen,
 )
 from backend.routes.google_bucket.schemas import MediaSection
 
@@ -28,6 +29,8 @@ from .schemas import (
     MealResponseSchema,
     IngredientRequestSchema,
     IngredientResponseSchema,
+    CanteenRequestSchema,
+    CanteenResponseSchema,
 )
 from .utils import (
     build_canteen_feedback_response,
@@ -35,6 +38,7 @@ from .utils import (
     build_canteen_report_response,
     build_meal_response,
     build_ingredient_response,
+    build_canteen_response,
 )
 
 
@@ -109,6 +113,22 @@ async def add_new_ingredient_to_db(
 
     return await build_ingredient_response(
         ingredient=new_ingredient, session=session, request=request
+    )
+
+async def add_new_canteen_to_db(
+        session: AsyncSession,
+        request: Request,
+        canteen_data: CanteenRequestSchema,
+) -> CanteenResponseSchema:
+    new_canteen = Canteen(**canteen_data.dict())
+    session.add(new_canteen)
+    await session.commit()
+    await session.refresh(new_canteen)
+
+    return await build_canteen_response(
+        canteen=new_canteen,
+        session=session,
+        request=request,
     )
 
 async def add_new_canteen_report_to_db(

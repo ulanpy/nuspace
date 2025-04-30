@@ -65,6 +65,10 @@ class CanteenRequestSchema(BaseModel):
     name: str
     description: str
     
+class CanteenResponseSchema(BaseModel):
+    id: int
+    name: str
+    description: str
 
 
 # Canteen Feedback
