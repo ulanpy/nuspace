@@ -60,7 +60,21 @@ async def add_new_available_meal(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
-
+@router.post("/ingredient/new", response_model = IngredientResponseSchema)
+async def add_new_ingredient(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    ingredient_data: IngredientRequestSchema,
+    db_session: AsyncSession = Depends(get_db_session), 
+): 
+    try: 
+        return await add_new_ingredient_to_db(
+            session=db_session, ingredient_data=ingredient_data, request=request
+        )
+    except HTTPException as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 @router.post("/canteen_report/new", response_model=CanteenReportResponseSchema)
 async def add_new_canteen_report(

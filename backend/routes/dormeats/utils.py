@@ -7,12 +7,14 @@ from backend.core.database.models.dormeats import (
     CanteenProduct,
     CanteenReport,
     Meal,
+    Ingredient,
 )
 from backend.routes.dormeats.schemas import (
     AvailableMealResponseSchema,
     CanteenProductResponseSchema,
     CanteenReportResponseSchema,
     MealResponseSchema,
+    IngredientResponseSchema
 )
 from backend.routes.google_bucket.schemas import MediaSection
 
@@ -61,6 +63,16 @@ async def build_available_meal_response(
         canteen_id=available_meal.canteen_id,
         meal_id=available_meal.meal_id,
         status=available_meal.status,
+    )
+
+async def build_ingredient_response(
+        ingredient: Ingredient, session: AsyncSession, request: Request
+):
+    return IngredientResponseSchema(
+        id = ingredient.id,
+        meal_id = ingredient.meal_id,
+        product_id = ingredient.product_id,
+
     )
 
 
