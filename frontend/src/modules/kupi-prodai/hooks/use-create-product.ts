@@ -5,14 +5,14 @@ import {
   NewProductRequest,
   SignedUrlRequest,
 } from "@/modules/kupi-prodai/api/kupi-prodai-api";
-import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { useListingState } from "@/context/listing-context";
 import { useImageContext } from "@/context/image-context";
 import { useEditModal } from "../form/use-edit-modal";
+import { useUser } from "@/hooks/use-user";
 
 export function useCreateProduct() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { toast } = useToast();
   const { imageFiles, setIsUploading, setImageFiles } = useImageContext();
   const { setActiveTab, setUploadProgress } = useListingState();

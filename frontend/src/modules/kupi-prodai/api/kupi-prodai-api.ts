@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { apiCall } from "../../../api/api";
 
 // Types for the API
-export const defaultSize = 15;
+export const defaultSize = 5;
 export const defaultPage = 1;
 
 export interface ProductMedia {
