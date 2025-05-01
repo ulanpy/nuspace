@@ -10,6 +10,8 @@ from backend.core.database.models.dormeats import (
     CanteenProductCategory,
     CanteenReport,
     Meal,
+    Ingredient,
+    Canteen,
 )
 from backend.routes.google_bucket.schemas import MediaSection
 
@@ -25,12 +27,18 @@ from .schemas import (
     CanteenReportResponseSchema,
     MealRequestSchema,
     MealResponseSchema,
+    IngredientRequestSchema,
+    IngredientResponseSchema,
+    CanteenRequestSchema,
+    CanteenResponseSchema,
 )
 from .utils import (
     build_canteen_feedback_response,
     build_canteen_product_response,
     build_canteen_report_response,
     build_meal_response,
+    build_ingredient_response,
+    build_canteen_response,
 )
 
 
@@ -79,7 +87,6 @@ async def add_new_meal_to_db(
     )
 
 
-
 async def add_new_canteen_feedback_to_db(
     session: AsyncSession,
     request: Request,
@@ -94,6 +101,35 @@ async def add_new_canteen_feedback_to_db(
         canteen_feedback=new_canteen_feedback, session=session, request=request
     )
 
+async def add_new_ingredient_to_db(
+        session: AsyncSession,
+        request: Request,
+        ingredient_data: IngredientRequestSchema,
+) -> IngredientResponseSchema:
+    new_ingredient = Ingredient(**ingredient_data.dict())
+    session.add(new_ingredient)
+    await session.commit()
+    await session.refresh(new_ingredient)
+
+    return await build_ingredient_response(
+        ingredient=new_ingredient, session=session, request=request
+    )
+
+async def add_new_canteen_to_db(
+        session: AsyncSession,
+        request: Request,
+        canteen_data: CanteenRequestSchema,
+) -> CanteenResponseSchema:
+    new_canteen = Canteen(**canteen_data.dict())
+    session.add(new_canteen)
+    await session.commit()
+    await session.refresh(new_canteen)
+
+    return await build_canteen_response(
+        canteen=new_canteen,
+        session=session,
+        request=request,
+    )
 
 async def add_new_canteen_report_to_db(
     session: AsyncSession,
@@ -132,3 +168,21 @@ async def get_canteen_products_from_db(
         )
     )
     return products_response
+
+async def get_meals_from_db(
+        meal_id: int,
+        request: Request,
+        session: AsyncSession,
+        media_section: MediaSection = MediaSection.de,
+) -> list[MealResponseSchema]:
+    result = await session.execute(
+        select(Meal).filter(Meal.id == meal_id)
+    )
+    meals = result.scalars().all()
+
+    meals_response = await asyncio.gather(
+        *(
+            build_meal_response(meal, session, request, media_section)
+            for meal in meals
+        )
+    )

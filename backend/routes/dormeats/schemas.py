@@ -48,13 +48,24 @@ class CanteenProductResponseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class IngredientSchema(BaseModel):
+class IngredientRequestSchema(BaseModel):
+    meal_id: int
+    product_id: int
+
+    model_config = ConfigDict(from_attribute=True)
+
+class IngredientResponseSchema(BaseModel):
     id: int
     meal_id: int
     product_id: int
 
+    model_config = ConfigDict(from_attribute=True)
 
-class CanteenSchema(BaseModel):
+class CanteenRequestSchema(BaseModel):
+    name: str
+    description: str
+    
+class CanteenResponseSchema(BaseModel):
     id: int
     name: str
     description: str

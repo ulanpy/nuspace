@@ -62,6 +62,38 @@ async def add_new_canteen_feedback(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
+@router.post("/ingredient/new", response_model = IngredientResponseSchema)
+async def add_new_ingredient(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    ingredient_data: IngredientRequestSchema,
+    db_session: AsyncSession = Depends(get_db_session), 
+): 
+    try: 
+        return await add_new_ingredient_to_db(
+            session=db_session, ingredient_data=ingredient_data, request=request
+        )
+    except HTTPException as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+@router.post("/canteen/new", response_model = CanteenResponseSchema)
+async def add_new_canteen(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    canteen_data: CanteenRequestSchema,
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    try: 
+        return await add_new_canteen_to_db(
+            session=db_session, canteen_data=canteen_data, request=request
+        )
+    except HTTPException as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
 
 
 @router.post("/canteen_report/new", response_model=CanteenReportResponseSchema)
@@ -93,3 +125,16 @@ async def get_canteen_products(
         )
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
+
+@router.get('/meals', response_model=List[MealResponseSchema])
+async def get_meals(
+    request: Request,
+    db_session: AsyncSession = Depends(get_db_session)
+):
+    try:
+        return await get_meals_from_db(
+            request=request, session=db_session
+        )
+    except HTTPException as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
+    
