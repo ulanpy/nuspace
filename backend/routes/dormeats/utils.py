@@ -81,12 +81,20 @@ async def build_ingredient_response(
     )
 
 async def build_canteen_response(
-        canteen: Canteen, session: AsyncSession, request: Request
+        canteen: Canteen, session: AsyncSession, request: Request, media_section: MediaSection,
 ):
+    media_responses = await get_media_responses(
+    session=session,
+    request=request,
+    entity_id=canteen.id,
+    media_section=media_section,
+    )
     return CanteenResponseSchema(
         id = canteen.id,
         name = canteen.name, 
         description = canteen.description,
+        meida = media_responses
+
     )
 
 

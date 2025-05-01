@@ -119,6 +119,7 @@ async def add_new_canteen_to_db(
         session: AsyncSession,
         request: Request,
         canteen_data: CanteenRequestSchema,
+        media_section: MediaSection = MediaSection.de,
 ) -> CanteenResponseSchema:
     new_canteen = Canteen(**canteen_data.dict())
     session.add(new_canteen)
@@ -129,6 +130,7 @@ async def add_new_canteen_to_db(
         canteen=new_canteen,
         session=session,
         request=request,
+        media_section=media_section
     )
 
 async def add_new_canteen_report_to_db(
