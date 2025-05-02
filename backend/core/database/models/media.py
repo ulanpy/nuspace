@@ -12,6 +12,8 @@ class MediaSection(PyEnum):
     kp = "kp"
     ev = "ev"
     de = "de"
+    meals = "meals"
+    canteen_product = "canteen_product"
 
 
 class MediaPurpose(PyEnum):
