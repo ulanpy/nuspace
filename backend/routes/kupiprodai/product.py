@@ -284,10 +284,11 @@ async def update_product(
 
 
 @router.get("/search/", response_model=ListResponseSchema)
-async def post_search(
+async def search(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     keyword: str,
+    condition: ProductCondition,
     size: int = 20,
     page: int = 1,
     db_session=Depends(get_db_session),
@@ -308,7 +309,12 @@ async def post_search(
     - Products will be returned with their full details (from the database).
     """
     search_results = await search_for_meilisearch_data(
-        keyword=keyword, request=request, page=page, size=size, storage_name="products"
+        keyword=keyword,
+        request=request,
+        page=page,
+        size=size,
+        filters=[f"condition = {condition.value}"],
+        storage_name="products",
     )
     product_ids = [product["id"] for product in search_results["hits"]]
     return await show_products_for_search(

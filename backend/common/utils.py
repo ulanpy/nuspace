@@ -27,11 +27,21 @@ async def add_meilisearch_data(request: Request, storage_name: str, json_values:
 
 
 async def search_for_meilisearch_data(
-    request: Request, storage_name: str, keyword: str, page: int = 0, size: int = 20
+    request: Request,
+    storage_name: str,
+    keyword: str,
+    filters: dict,
+    page: int = 0,
+    size: int = 20,
 ):
     response = await request.app.state.meilisearch_client.post(
         f"/indexes/{storage_name}/search",
-        json={"q": keyword, "limit": size, "offset": (page - 1) * size},
+        json={
+            "q": keyword,
+            "limit": size,
+            "offset": (page - 1) * size,
+            "filter": filters,
+        },
     )
     return response.json()
 
