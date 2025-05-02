@@ -48,7 +48,7 @@ async def add_new_canteenproduct_to_db(
     session: AsyncSession,
     request: Request,
     product_data: CanteenProductRequestSchema,
-    media_section: MediaSection = MediaSection.de,
+    media_section: MediaSection = MediaSection.canteen_product,
 ) -> CanteenProductResponseSchema:
     new_canteenproduct = CanteenProduct(**product_data.dict())
     session.add(new_canteenproduct)
@@ -75,7 +75,7 @@ async def add_new_meal_to_db(
     session: AsyncSession,
     request: Request,
     meal_data: MealRequestSchema,
-    media_section: MediaSection = MediaSection.de,
+    media_section: MediaSection = MediaSection.meal,
 ) -> MealResponseSchema:
     new_meal = Meal(**meal_data.dict())
     session.add(new_meal)
@@ -135,7 +135,7 @@ async def add_new_canteen_report_to_db(
     session: AsyncSession,
     request: Request,
     canteen_report_data: CanteenReportRequestSchema,
-    media_section: MediaSection = MediaSection.de,
+    media_section: MediaSection = MediaSection.canteen_report,
 ) -> CanteenReportResponseSchema:
     new_canteen_report = CanteenReport(**canteen_report_data.dict())
     session.add(new_canteen_report)
@@ -154,7 +154,7 @@ async def get_canteen_products_from_db(
     category: CanteenProductCategory,
     request: Request,
     session: AsyncSession,
-    media_section: MediaSection = MediaSection.de,
+    media_section: MediaSection = MediaSection.canteen_product,
 ) -> list[CanteenProductResponseSchema]:
     result = await session.execute(
         select(CanteenProduct).filter(CanteenProduct.category == category)
@@ -170,13 +170,12 @@ async def get_canteen_products_from_db(
     return products_response
 
 async def get_meals_from_db(
-        meal_id: int,
         request: Request,
         session: AsyncSession,
-        media_section: MediaSection = MediaSection.de,
+        media_section: MediaSection = MediaSection.meal,
 ) -> list[MealResponseSchema]:
     result = await session.execute(
-        select(Meal).filter(Meal.id == meal_id)
+        select(Meal)
     )
     meals = result.scalars().all()
 
@@ -186,3 +185,4 @@ async def get_meals_from_db(
             for meal in meals
         )
     )
+    return meals_response

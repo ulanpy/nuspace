@@ -42,10 +42,16 @@ async def build_canteen_product_response(
 
 
 async def build_meal_response(
-    meal: Meal, session: AsyncSession, request: Request, media_section: MediaSection
-):
+    meal: Meal, 
+    session: AsyncSession, 
+    request: Request, 
+    media_section: MediaSection
+) -> MealResponseSchema:
     media_responses = await get_media_responses(
-        session=session, request=request, entity_id=meal.id, media_section=media_section
+        session=session, 
+        request=request, 
+        entity_id=meal.id, 
+        media_section=media_section
     )
     return MealResponseSchema(
         id=meal.id,
@@ -54,7 +60,7 @@ async def build_meal_response(
         price=meal.price,
         category=meal.category,
         status=meal.status,
-        media=media_responses,
+        media=media_responses
     )
 
 

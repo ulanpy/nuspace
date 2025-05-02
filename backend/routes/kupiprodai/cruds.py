@@ -235,7 +235,7 @@ async def add_new_product_feedback_to_db(
     query = (
         select(ProductFeedback)
         .options(selectinload(ProductFeedback.user))
-        .filter_by(product_id=feedback_data.product_id, user_sub=user_sub)
+        .filter_by(id=new_feedback.id, user_sub=user_sub)
     )
     result = await session.execute(query)
     feedback = result.scalars().first()
