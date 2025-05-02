@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/context/auth-context";
 import {
   kupiProdaiApi,
   type Product,
@@ -25,13 +24,14 @@ import {
   formatDateWithContext,
   formatRelativeTime,
 } from "@/utils/date-formatter";
+import { useUser } from "@/hooks/use-user";
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user_name } = useParams<{ user_name: string }>();
   const { user_surname } = useParams<{ user_surname: string }>();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useUser();
   const [product, setProduct] = useState<Product | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -351,7 +351,7 @@ export default function ProductDetailPage() {
               </div>
               <div>
                 <div className="flex items-center">
-                  <p className="font-medium">{`${product.user_name} ${product.user_surname[0]}.`}</p>
+                  <p className="font-medium">{`${product.user_name} ${product.user_surname?.[0] ?? ''}.`}</p>
                 </div>
               </div>
             </div>
@@ -416,7 +416,7 @@ export default function ProductDetailPage() {
         productId={product.id}
         sellerName={product.user_name}
         currentUser={user}
-        isAuthenticated={isAuthenticated}
+        isAuthenticated={!!user}
       />
 
       {/* Report Modal */}
