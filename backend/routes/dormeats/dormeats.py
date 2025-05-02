@@ -128,8 +128,19 @@ async def get_canteen_products(
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
 
+@router.get("/canteens", response_model=List[CanteenResponseSchema])
+async def get_canteens(
+    request: Request,
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    try: 
+        return await get_canteens_from_db(
+            request=request, session=db_session
+        )
+    except HTTPException as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)    
 
-@router.get("/meals", response_model=List[MealResponseSchema])
+@router.get('/meals', response_model=List[MealResponseSchema])
 async def get_meals(
     request: Request,
     canteen_id: int,
