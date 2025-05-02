@@ -171,6 +171,22 @@ async def get_canteen_products_from_db(
     )
     return products_response
 
+async def get_canteens_from_db(
+        request: Request,
+        session: AsyncSession,
+        media_section: MediaSection = MediaSection.de,
+) -> list[CanteenResponseSchema]:
+    result = await session.execute(
+        select(Canteen).filter(Canteen.category == category)
+    )
+    canteens = result.scalars().all()
+    canteens_response = await asyncio.gather(
+        *(
+            build_canteen_response(session, request, media_section)
+            for canteen in canteens
+        )
+    )
+    return canteens_response
 async def get_meals_from_db(
         meal_id: int,
         request: Request,
