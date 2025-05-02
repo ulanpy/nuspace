@@ -283,7 +283,7 @@ async def search(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     keyword: str,
-    condition: ProductCondition,
+    condition: ProductCondition = None,
     size: int = 20,
     page: int = 1,
     db_session=Depends(get_db_session),
@@ -303,12 +303,16 @@ async def search(
     - A list of product objects that match the keyword from the search.
     - Products will be returned with their full details (from the database).
     """
+    if condition:
+        filters=[f"condition = {condition.value}"]
+    else:
+        filters = None
     search_results = await search_for_meilisearch_data(
         keyword=keyword,
         request=request,
         page=page,
         size=size,
-        filters=[f"condition = {condition.value}"],
+        filters=filters,
         storage_name="products",
     )
     product_ids = [product["id"] for product in search_results["hits"]]
