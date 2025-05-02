@@ -2,7 +2,7 @@ import json
 
 from aio_pika.abc import AbstractIncomingMessage
 from aiogram import Bot
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramForbiddenError
 
 from backend.core.configs.config import config
 from backend.rbq.schemas import Notification
@@ -19,7 +19,7 @@ async def task(message: AbstractIncomingMessage):
             reply_markup=kb_url(notification.url),
         )
         await message.ack()
-    except TelegramBadRequest:
+    except TelegramForbiddenError:
         await message.nack(requeue=False)
     finally:
         await bot.session.close()
