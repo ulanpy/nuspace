@@ -30,16 +30,19 @@ async def search_for_meilisearch_data(
     request: Request,
     storage_name: str,
     keyword: str,
-    filters: dict,
+    filters: list = None,
     page: int = 0,
     size: int = 20,
 ):
+    payload = {
+        "q": keyword,
+        "limit": size,
+        "offset": (page - 1) * size
+    }
     response = await request.app.state.meilisearch_client.post(
         f"/indexes/{storage_name}/search",
         json={
-            "q": keyword,
-            "limit": size,
-            "offset": (page - 1) * size,
+            
             "filter": filters,
         },
     )
