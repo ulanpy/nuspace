@@ -39,12 +39,12 @@ async def search_for_meilisearch_data(
         "limit": size,
         "offset": (page - 1) * size
     }
+    if filters:
+        payload['filter'] = filters
+        
     response = await request.app.state.meilisearch_client.post(
         f"/indexes/{storage_name}/search",
-        json={
-            
-            "filter": filters,
-        },
+        json=payload
     )
     return response.json()
 
