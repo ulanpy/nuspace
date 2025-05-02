@@ -2,21 +2,16 @@
 
 import type React from "react";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  Search,
-  Filter,
   ShoppingBag,
-  Heart,
   MessageSquare,
   X,
   ChevronLeft,
   ChevronRight,
   RefreshCw,
   ImageIcon,
-  ChevronUp,
-  ChevronDown,
   Trash2,
   Plus,
 } from "lucide-react";
@@ -30,8 +25,9 @@ import {
   TabsList,
   TabsTrigger,
 } from "../../components/ui/tabs";
+import { SliderGroup } from "@/components/slider-group";
+import { ConditionGroup } from "@/components/condition-group";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/auth-context";
 import { useToast } from "../../hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
 import { Progress } from "../../components/ui/progress";
@@ -46,86 +42,79 @@ import { useToggleProduct } from "@/modules/kupi-prodai/hooks/use-toggle-product
 import { useListingState } from "@/context/listing-context";
 import { useImageContext } from "@/context/image-context";
 import { useMediaContext } from "@/context/media-context";
-import { useSearchProduct } from "@/modules/kupi-prodai/hooks/use-search-product";
-
 import { FaBook, FaLaptop, FaTshirt, FaCouch, FaBlender } from "react-icons/fa";
 import { BiSolidCategory } from "react-icons/bi";
 import { MdSports, MdBrush, MdLocalOffer } from "react-icons/md";
 import { BsPencilFill } from "react-icons/bs";
 import { GiKnifeFork } from "react-icons/gi";
 import { IoTicket, IoCarSport } from "react-icons/io5";
+import { SearchInput } from "@/components/search-input";
+import { useSearchLogic } from "@/hooks/useSearchLogic";
+import { Pagination } from "@/components/pagination";
+import { useUser } from "@/hooks/use-user";
 
 // Define categories and conditions
 const categories = [
-  "All Categories",
-  "books",
-  "electronics",
-  "clothing",
-  "furniture",
-  "appliances",
-  "sports",
-  "stationery",
-  "art_supplies",
-  "beauty",
-  "services",
-  "food",
-  "tickets",
-  "transport",
-  "others",
+  {
+    title: "All",
+    icon: <BiSolidCategory />,
+  },
+  {
+    title: "Books",
+    icon: <FaBook />,
+  },
+  {
+    title: "Electronics",
+    icon: <FaLaptop />,
+  },
+  {
+    title: "Clothing",
+    icon: <FaTshirt />,
+  },
+  {
+    title: "Furniture",
+    icon: <FaCouch />,
+  },
+  {
+    title: "Appliances",
+    icon: <FaBlender />,
+  },
+  {
+    title: "Sports",
+    icon: <MdSports />,
+  },
+  {
+    title: "Stationery",
+    icon: <BsPencilFill />,
+  },
+  {
+    title: "Art Supplies",
+    icon: <MdBrush />,
+  },
+  {
+    title: "Beauty",
+    icon: <MdLocalOffer />,
+  },
+  {
+    title: "Food",
+    icon: <GiKnifeFork />,
+  },
+  {
+    title: "Tickets",
+    icon: <IoTicket />,
+  },
+  {
+    title: "Transport",
+    icon: <IoCarSport />,
+  },
+  {
+    title: "Others",
+    icon: <BiSolidCategory />,
+  },
 ];
 
-const getCategoryIcon = (category: string) => {
-  switch (category) {
-    case "books":
-      return <FaBook />;
-    case "electronics":
-      return <FaLaptop />;
-    case "clothing":
-      return <FaTshirt />;
-    case "furniture":
-      return <FaCouch />;
-    case "appliances":
-      return <FaBlender />;
-    case "sports":
-      return <MdSports />;
-    case "stationery":
-      return <BsPencilFill />;
-    case "art_supplies":
-      return <MdBrush />;
-    case "beauty":
-      return <MdLocalOffer />;
-    case "food":
-      return <GiKnifeFork />;
-    case "tickets":
-      return <IoTicket />;
-    case "transport":
-      return <IoCarSport />;
-    default:
-      return <BiSolidCategory />;
-  }
-};
-
-
-const displayCategories = [
-  "All Categories",
-  "Books",
-  "Electronics",
-  "Clothing",
-  "Furniture",
-  "Appliances",
-  "Sports",
-  "Stationery",
-  "Art Supplies",
-  "Beauty",
-  "Services",
-  "Food",
-  "Tickets",
-  "Transport",
-  "Others",
-];
-
-const conditions = ["All Conditions", "new", "like_new", "used"];
-const displayConditions = ["All Conditions", "New", "Like New", "Used"];
+const conditions = ["All Conditions", "new", "used"];
+const displayConditions = ["All Conditions", "New","Used"];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -152,16 +141,15 @@ const itemVariants = {
 
 export default function KupiProdaiPage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, login } = useAuth();
+
+  // useUser
+  const { user, login } = useUser();
+
   const { toast } = useToast();
   const [likedProducts, setLikedProducts] = useState<number[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
   const [error] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const isTelegramLinked = user?.tg_linked || false;
-
-  // Pagination state
-  const [totalPages] = useState(1);
 
   // Products state [CRUD Hooks]
   const {
@@ -185,11 +173,8 @@ export default function KupiProdaiPage() {
   const { handleUpdateListing } = useUpdateProduct();
   const { handleToggleProductStatus, getIsPendingToggleMutation } =
     useToggleProduct();
-
-  const { searchedProducts } = useSearchProduct();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
-
   // Edit listing state [Form Hooks]
   const { handleEditListing, closeEditModal } = useEditModal();
   const {
@@ -203,7 +188,6 @@ export default function KupiProdaiPage() {
   } = useMediaContext();
   const {
     uploadProgress,
-    searchQuery,
     newListing,
     showEditModal,
     currentPage,
@@ -211,7 +195,6 @@ export default function KupiProdaiPage() {
     setActiveTab,
     setCurrentPage,
     setNewListing,
-    setSearchQuery,
   } = useListingState();
   // Handle image upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -338,65 +321,6 @@ export default function KupiProdaiPage() {
     }
   };
 
-  // Add these functions to handle image reordering
-  const moveImageUp = (index: number) => {
-    if (index <= 0) return;
-
-    // Initialize reorderedMedia if it's empty
-    const mediaToReorder =
-      reorderedMedia.length > 0
-        ? [...reorderedMedia]
-        : [...originalMedia.filter((m) => !mediaToDelete.includes(m.id))];
-
-    // Swap the images
-    const temp = mediaToReorder[index];
-    mediaToReorder[index] = mediaToReorder[index - 1];
-    mediaToReorder[index - 1] = temp;
-
-    // Update the preview images to match
-    const newPreviewImages = mediaToReorder.map((m) => m.url);
-
-    setReorderedMedia(mediaToReorder);
-    setPreviewImages(newPreviewImages);
-    setCurrentMediaIndex(index - 1);
-  };
-
-  const moveImageDown = (index: number) => {
-    // Initialize reorderedMedia if it's empty
-    const mediaToReorder =
-      reorderedMedia.length > 0
-        ? [...reorderedMedia]
-        : [...originalMedia.filter((m) => !mediaToDelete.includes(m.id))];
-
-    if (index >= mediaToReorder.length - 1) return;
-
-    // Swap the images
-    const temp = mediaToReorder[index];
-    mediaToReorder[index] = mediaToReorder[index + 1];
-    mediaToReorder[index + 1] = temp;
-
-    // Update the preview images to match
-    const newPreviewImages = mediaToReorder.map((m) => m.url);
-
-    setReorderedMedia(mediaToReorder);
-    setPreviewImages(newPreviewImages);
-    setCurrentMediaIndex(index + 1);
-  };
-
-  // Update the handleUpdateListingListing function to handle media changes
-
-  // Delete product
-
-  // Mark product as sold/active
-
-  const toggleLike = (id: number) => {
-    if (likedProducts.includes(id)) {
-      setLikedProducts(likedProducts.filter((productId) => productId !== id));
-    } else {
-      setLikedProducts([...likedProducts, id]);
-    }
-  };
-
   const getConditionDisplay = (condition: string) => {
     switch (condition) {
       case "new":
@@ -429,12 +353,6 @@ export default function KupiProdaiPage() {
     );
   };
 
-  const paginate = (pageNumber: number) => {
-    if (pageNumber > 0 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-    }
-  };
-
   // Active and inactive listings
   const activeListings = myProducts?.filter((p) => p.status === "active");
   const inactiveListings = myProducts?.filter((p) => p.status === "inactive");
@@ -457,7 +375,29 @@ export default function KupiProdaiPage() {
     </Card>
   );
 
-  // Add this function to renew a sold product
+  // search section
+  const {
+    inputValue,
+    setInputValue,
+    handleSearch,
+    searchedProducts,
+    preSearchedProducts,
+  } = useSearchLogic({
+    setSelectedCategory,
+    baseRoute: "/apps/kupi-prodai",
+    searchParam: "text",
+  });
+  const [products, setProducts] = useState<Types.PaginatedResponse<Types.Product> | null>(null)
+
+  useEffect(() => {
+    if(searchedProducts){
+      setProducts(searchedProducts)
+    }
+  }, [searchedProducts])
+
+  useEffect(() => {
+    setProducts(productItems)
+  }, [productItems])
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -483,86 +423,35 @@ export default function KupiProdaiPage() {
         {/* BUY SECTION */}
         <TabsContent
           value="buy"
-          className="space-y-3 sm:space-y-4 pt-3 sm:pt-4"
+          className="space-y-3 sm:space-y-4 pt-3 sm:pt-4 flex flex-col gap-4"
         >
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search items..."
-                className="pl-9 text-sm"
-                value={searchQuery.trim()}
-                onChange={(e) => setSearchQuery(e.target.value)}
+              <SearchInput
+                inputValue={inputValue}
+                setInputValue={setInputValue}
+                preSearchedProducts={preSearchedProducts}
+                handleSearch={handleSearch}
+                setSelectedCondition={setSelectedCondition}
               />
             </div>
-            </div>
+          </div>
 
-            {/* Categories section - separate row */}
-            <div className="w-full">
-              <h3 className="text-lg font-medium mb-4">Categories</h3>
-              <div className="overflow-x-auto pb-4">
-                <div className="grid grid-rows-2 grid-flow-col gap-4 min-w-min">
-                  {categories.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-border/40 shadow-lg transition-all w-20 h-20 ${
-                        selectedCategory === category
-                          ? "bg-blue-50 text-black"
-                          : "hover:border-blue-200 hover:bg-blue-50"
-                      }`}
-                    >
-                      <span className="text-2xl">{getCategoryIcon(category)}</span>
-                      <span className="text-sm text-center capitalize">{category.replace(/_/g, " ")}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <Button
-                variant="outline"
-                size="sm"
-                className="flex w-14 sm:size-default"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-4 w-4" />
-                <span>Filter</span>
-              </Button>
-          {showFilters && (
-            <div className="bg-card rounded-lg shadow-md p-6 mb-6">
-              <div>
-                <h3 className="text-lg font-medium mb-4">Condition</h3>
-                <div className="flex flex-wrap gap-4">
-                  {conditions.map((condition) => (
-                    <button
-                      key={condition}
-                      onClick={() => setSelectedCondition(condition)}
-                      className={`px-4 py-2 rounded-lg border border-border/40 shadow-lg transition-all ${
-                        selectedCondition === condition
-                          ? "bg-blue-50 text-black"
-                          : "hover:border-blue-200 hover:bg-blue-50"
-                      }`}
-                    >
-                      <span className="capitalize">{condition.replace(/_/g, " ")}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-between pt-6 mt-6 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedCategory("All Categories");
-                    setSelectedCondition("All Conditions");
-                  }}
-                >
-                  Reset Filters
-                </Button>
-                <Button onClick={() => setShowFilters(false)}>Close Filters</Button>
-              </div>
-            </div>
-          )}
+          {/* Categories section - separate row */}
+          <div className="flex flex-col gap-4">
+            <ConditionGroup
+              conditions={conditions}
+              selectedCondition={selectedCondition}
+              setSelectedCondition={setSelectedCondition}
+            />
+            <SliderGroup
+              categories={categories}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              setInputValue={setInputValue}
+              setSelectedCondition={setSelectedCondition}
+            />
+          </div>
 
           {isLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
@@ -581,7 +470,7 @@ export default function KupiProdaiPage() {
                 Try Again
               </Button>
             </div>
-          ) : (productItems?.products?.length ?? 0) > 0 ? (
+          ) : (products?.products.length ?? 0) > 0 ? (
             <>
               <motion.div
                 className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3"
@@ -589,7 +478,7 @@ export default function KupiProdaiPage() {
                 initial="hidden"
                 animate="visible"
               >
-                {productItems?.products.map((product) => (
+                {products?.products.map((product) => (
                   <motion.div key={product.id} variants={itemVariants}>
                     <Card
                       className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"
@@ -648,33 +537,11 @@ export default function KupiProdaiPage() {
                   </motion.div>
                 ))}
               </motion.div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === 1}
-                    onClick={() => paginate(currentPage - 1)}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-2" />
-                    Previous
-                  </Button>
-                  <span className="mx-2 text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === totalPages}
-                    onClick={() => paginate(currentPage + 1)}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </div>
-              )}
+              <Pagination
+                length={products?.num_of_pages ?? 0}
+                currentPage={currentPage}
+                onChange={(page) => setCurrentPage(page)}
+              />
             </>
           ) : (
             <div className="text-center py-12">
@@ -685,7 +552,7 @@ export default function KupiProdaiPage() {
 
         {/* SELL SECTION */}
         <TabsContent value="sell" className="space-y-4 pt-4">
-          {!isAuthenticated ? (
+          {!user ? (
             <Alert variant="destructive">
               <AlertTitle>Authentication Required</AlertTitle>
               <AlertDescription>
@@ -697,19 +564,19 @@ export default function KupiProdaiPage() {
             </Alert>
           ) : !isTelegramLinked ? (
             <Alert
-            variant="warning"
-            className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900"
-          >
-            <AlertTitle className="flex items-center gap-2">
-              Telegram Required
-            </AlertTitle>
-            <AlertDescription className="space-y-2">
-              <p>You need to link your Telegram account before selling items.</p>
-            </AlertDescription>
-          </Alert>
-          )
-
-          : (
+              variant="default"
+              className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900"
+            >
+              <AlertTitle className="flex items-center gap-2">
+                Telegram Required
+              </AlertTitle>
+              <AlertDescription className="space-y-2">
+                <p>
+                  You need to link your Telegram account before selling items.
+                </p>
+              </AlertDescription>
+            </Alert>
+          ) : (
             <form onSubmit={handleCreate} className="space-y-4">
               {/* Name */}
               <div className="space-y-2">
@@ -784,8 +651,8 @@ export default function KupiProdaiPage() {
                     required
                   >
                     {categories.slice(1).map((category, index) => (
-                      <option key={category} value={category}>
-                        {displayCategories[index + 1]}
+                      <option key={category.title} value={category.title}>
+                        {categories[index + 1].title}
                       </option>
                     ))}
                   </select>
@@ -906,7 +773,7 @@ export default function KupiProdaiPage() {
 
         {/* MY LISTINGS SECTION */}
         <TabsContent value="my-listings" className="space-y-4 pt-4">
-          {!isAuthenticated ? (
+          {!user ? (
             <Alert variant="destructive">
               <AlertTitle>Authentication Required</AlertTitle>
               <AlertDescription>
@@ -927,7 +794,9 @@ export default function KupiProdaiPage() {
                       <Card
                         key={product.id}
                         className="overflow-hidden"
-                        onClick={() => navigate(`/apps/kupi-prodai/product/${product.id}`)}
+                        onClick={() =>
+                          navigate(`/apps/kupi-prodai/product/${product.id}`)
+                        }
                       >
                         <div className="aspect-square relative">
                           <img
@@ -947,7 +816,9 @@ export default function KupiProdaiPage() {
                           </Badge>
                         </div>
                         <CardContent className="p-3">
-                          <h3 className="font-medium text-sm line-clamp-1">{product.name}</h3>
+                          <h3 className="font-medium text-sm line-clamp-1">
+                            {product.name}
+                          </h3>
                           <p className="text-sm font-bold">{product.price} ₸</p>
                           <div className="flex justify-between mt-2">
                             <Button
@@ -977,7 +848,10 @@ export default function KupiProdaiPage() {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleToggleProductStatus(product.id, product.status);
+                                handleToggleProductStatus(
+                                  product.id,
+                                  product.status
+                                );
                               }}
                             >
                               Mark as Sold
@@ -985,7 +859,6 @@ export default function KupiProdaiPage() {
                           </div>
                         </CardContent>
                       </Card>
-
                     ))}
                   </div>
                 ) : (
@@ -1245,8 +1118,8 @@ export default function KupiProdaiPage() {
                           className="w-full p-2 border rounded-md bg-background text-foreground"
                         >
                           {categories.slice(1).map((category, index) => (
-                            <option key={category} value={category}>
-                              {displayCategories[index + 1]}
+                            <option key={category.title} value={category.title}>
+                              {categories[index + 1].title}
                             </option>
                           ))}
                         </select>

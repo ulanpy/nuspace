@@ -1,15 +1,12 @@
-"use client"
+"use client";
 
-import { ThemeToggle } from "../components/theme-toggle"
-import { AppGrid } from "../components/app-grid"
-import { PersonalizedDashboard } from "@/components/personalized-dashboard"
-import { LoginButton } from "../components/login-button"
-import { useAuth } from "../context/auth-context"
-import { GlowCarouselWithImage } from "../components/glow-carousel-with-images"
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';  // Import the useNavigate hook
-
-
+import { ThemeToggle } from "../components/theme-toggle";
+import { AppGrid } from "../components/app-grid";
+import { PersonalizedDashboard } from "@/components/personalized-dashboard";
+import { LoginButton } from "../components/login-button";
+import { GlowCarouselWithImage } from "../components/glow-carousel-with-images";
+import { Link } from "react-router-dom";
+import { useUser } from "@/hooks/use-user";
 
 // Define carousel items with your image for the homepage
 const homeCarouselItems = [
@@ -17,28 +14,36 @@ const homeCarouselItems = [
     id: 1,
     content: (
       <div className="w-full h-full flex items-center justify-center">
-        <img src="/images/nu-space-presentation.jpg" alt="Featured image" className="w-full h-full object-cover rounded-xl"
+        <img
+          src="/images/nu-space-presentation.jpg"
+          alt="Featured image"
+          className="w-full h-full object-cover rounded-xl"
         />
       </div>
     ),
-    gradient: "radial-gradient(circle, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.06) 50%, rgba(194,65,12,0) 100%)",
+    gradient:
+      "radial-gradient(circle, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.06) 50%, rgba(194,65,12,0) 100%)",
     accentColor: "rgb(249 115 22)",
   },
   {
     id: 2,
     content: (
       <div className="w-full h-full flex items-center justify-center">
-        <img src="/images/welcome-nu-space.jpg" alt="Featured image" className="w-full h-full object-cover rounded-xl" />
+        <img
+          src="/images/welcome-nu-space.jpg"
+          alt="Featured image"
+          className="w-full h-full object-cover rounded-xl"
+        />
       </div>
     ),
-    gradient: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(37,99,235,0.06) 50%, rgba(29,78,216,0) 100%)",
+    gradient:
+      "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(37,99,235,0.06) 50%, rgba(29,78,216,0) 100%)",
     accentColor: "rgb(59 130 246)",
   },
-]
+];
 
 export default function HomePage() {
-  const { user, isAuthenticated, isLoading } = useAuth()
-  const navigate = useNavigate();
+  const { user, isLoading, isSuccess } = useUser();
   return (
     <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4">
       {/* Header with login button */}
@@ -51,7 +56,13 @@ export default function HomePage() {
         {/* Greeting */}
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-          {isAuthenticated && user?.user.given_name ? `Welcome back, ${user.user.given_name}!` : "Welcome to NU Space"}
+          {isLoading ? (
+    <span>Loading...</span>
+  ) : isSuccess && user?.user.given_name ? (
+    <span>Welcome back, {user.user.given_name}!</span>
+  ) : (
+    <span>Welcome to NU Space</span>
+  )}
           </h1>
         </div>
 
@@ -71,6 +82,5 @@ export default function HomePage() {
         <Link to="/apps/about">About Us</Link>
       </footer>
     </div>
-  )
+  );
 }
-

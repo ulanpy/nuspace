@@ -2,7 +2,7 @@
 
 import { User, X } from "lucide-react"
 import { Button } from "./ui/button"
-import { useAuth } from "../context/auth-context"
+import { useUser } from "@/hooks/use-user"
 
 interface LoginRequirementModalProps {
   title?: string
@@ -17,7 +17,7 @@ export function LoginRequirementModal({
   onLogin,
   onDismiss,
 }: LoginRequirementModalProps) {
-  const { login } = useAuth()
+  const { login } = useUser()
 
   const handleLogin = () => {
     if (onLogin) {

@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
-import { apiCall } from "./api";
+import { apiCall } from "../../../api/api";
 
 // Types for the API
-export const defaultSize = 15;
+export const defaultSize = 5;
 export const defaultPage = 1;
 
 export interface ProductMedia {
@@ -68,13 +68,24 @@ export interface UpdateProductRequest {
   status?: "inactive" | "active";
 }
 
-export interface SignedUrl {
-  filename: string;
-  upload_url: string;
+export interface SignedUrlRequest {
+  section: string;
+  entity_id: number;
+  media_purpose: string;
+  media_order: number;
+  mime_type: string;
+  content_type: string;
 }
 
 export interface SignedUrlResponse {
-  signed_urls: SignedUrl[];
+  filename: string;
+  upload_url: string;
+  section: string;
+  entity_id: number;
+  media_purpose: string;
+  media_order: number;
+  mime_type: string;
+  content_type: string;
 }
 
 // API base URL
@@ -162,23 +173,41 @@ export const kupiProdaiApi = {
   },
 
   // Search for products
-  getSearchProductQueryOptions: (keyword: string) => {
+  getPreSearchedProductsQueryOptions: (keyword: string) => {
     return queryOptions({
-      queryKey: ["search-products", keyword],
+      queryKey: ["pre-search-products", keyword],
       queryFn: ({ signal }) => {
-        return apiCall<Product[]>(`/products/search/?keyword=${keyword}`, {
+        return apiCall<string[]>(`/products/pre_search/?keyword=${keyword}`, {
           signal,
         });
       },
     });
   },
+  getSearchedProductsQueryOptions: ({page = defaultPage, size = defaultSize, keyword } : {page: number, size: number, keyword: string}) => {
+    return queryOptions({
+      queryKey: ["search-products", {page, size, keyword}],
+      queryFn: ({queryKey}) => {
+        const [, params] = queryKey as [string, {page: number, size: number, keyword: string}]
+        let endpoint = `/products/search/?keyword=${params.keyword}&size=${params.size}&page=${params.page}`
+        return apiCall<PaginatedResponse<Product>>(endpoint);
+      },
+    });
+  },
 
   // Get signed URLs for uploading images
-  getSignedUrls: async (fileCount: number): Promise<SignedUrlResponse> => {
-    return apiCall<SignedUrlResponse>(
-      `/bucket/upload-url?file_count=${fileCount}`
+  // AFTER (correct)
+getSignedUrls: async (
+    requests: SignedUrlRequest[]
+  ): Promise<SignedUrlResponse[]> => {
+    return apiCall<SignedUrlResponse[]>(
+      `/bucket/upload-url`,
+      {
+        method: "POST",
+        json: requests,
+      }
     );
   },
+
 
   // Upload an image to the bucket
   uploadImage: async (

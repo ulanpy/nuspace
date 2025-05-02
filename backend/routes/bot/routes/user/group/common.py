@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.celery_app.tasks import schedule_kick
 from backend.routes.bot.cruds import check_user_by_telegram_id
-from backend.routes.bot.keyboards.kb import kb_register_groups
+from backend.routes.bot.keyboards.kb import kb_url
 from backend.routes.bot.utils import no_permissions
 
 
@@ -28,13 +28,12 @@ async def handle_new_member(
     if not await check_user_by_telegram_id(session=db_session, user_id=user_id):
         sent_m = await bot.send_message(
             chat_id=chat_id,
-            text="Зарегайся в NUspace, иначе в течений 15 минут будешь исключен",
-            reply_markup=kb_register_groups(url=public_url),
+            text="Пожалуйста, пройдите регистрацию в NUspace в течение ближайших 15 минут. "
+            "В противном случае, к сожалению, вы будете исключены из чата",
+            reply_markup=kb_url(url=public_url),
             reply_to_message_id=message.message_id if message else None,
         )
-        await bot.restrict_chat_member(
-            chat_id=chat_id, user_id=user_id, permissions=no_permissions
-        )
+        await bot.restrict_chat_member(chat_id=chat_id, user_id=user_id, permissions=no_permissions)
         task_id = f"celery:kick:{user_id}:{chat_id}:{sent_m.message_id}"
         await redis.set(task_id, "pending", ex=15 * 60 + 1)
         schedule_kick.apply_async(

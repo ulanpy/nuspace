@@ -6,11 +6,11 @@ authors = ["Ulan <ulan.sharipov@nu.edu.kz>"]
 readme = "README.md"
 
 [tool.black]
-line-length = 88
+line-length = 100
 target-version = ['py311']
 
 [tool.ruff]
-line-length = 88
+line-length = 100
 target-version = "py311"
 
 [tool.ruff.lint]
@@ -46,6 +46,7 @@ polib = "^1.2.0"
 pytz = "^2025.2"
 google-cloud-pubsub = "^2.29.0"
 pre-commit = "^4.2.0"
+aio-pika = "^9.5.5"
 
 
 

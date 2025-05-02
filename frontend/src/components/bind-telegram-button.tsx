@@ -16,7 +16,7 @@ const numberToEmoji = (num: number): string => {
 }
 
 export function BindTelegramButton() {
-  const {user, isAuthenticated, refetchUser} = useUser()
+  const {user, refetchUser} = useUser()
   const [isLoading, setIsLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [telegramLink, setTelegramLink] = useState("")
@@ -136,7 +136,7 @@ export function BindTelegramButton() {
     }
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return null
   }
 

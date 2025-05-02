@@ -44,3 +44,21 @@ msgstr "Select a user"
 
 msgid "Профиль пользователя"
 msgstr "User Profile"
+
+msgid "✅Включить уведомления"
+msgstr "✅Enable notifications"
+
+msgid "⛔️Выключить уведомления"
+msgstr "⛔️Disable notifications"
+
+msgid "⛔️Уведомления отключены"
+msgstr "⛔️Notifications are off"
+
+msgid "✅Уведомления включены"
+msgstr "✅Notifications are on"
+
+msgid "🔔Уведомления"
+msgstr "🔔Notifications"
+
+msgid "⛔️Нет доступа"
+msgstr "⛔️No access"
