@@ -14,7 +14,7 @@ router = Router()
 async def student_validator(m: Message, db_session: AsyncSession, _: Callable[[str], str]):
     user_protect: bool = await check_user_by_telegram_id(session=db_session, user_id=m.from_user.id)
     if not user_protect:
-        return await m.answer("No access")
+        return await m.answer(_("⛔️Нет доступа"))
 
     user = m.forward_from
     user_exist: bool = await check_user_by_telegram_id(session=db_session, user_id=user.id)
@@ -26,7 +26,7 @@ async def student_validator(m: Message, db_session: AsyncSession, _: Callable[[s
 async def handle_hidden_forward(m: Message, db_session: AsyncSession, _: Callable[[str], str]):
     user_protect: bool = await check_user_by_telegram_id(session=db_session, user_id=m.from_user.id)
     if not user_protect:
-        return await m.answer("No access")
+        return await m.answer(_("⛔️Нет доступа"))
 
     await m.answer(
         _(
@@ -41,7 +41,7 @@ async def handle_hidden_forward(m: Message, db_session: AsyncSession, _: Callabl
 async def handle_user_shared(m: Message, db_session: AsyncSession, _: Callable[[str], str]):
     user_protect: bool = await check_user_by_telegram_id(session=db_session, user_id=m.from_user.id)
     if not user_protect:
-        return await m.answer("No access")
+        return await m.answer(_("⛔️Нет доступа"))
 
     user_shared = m.user_shared
     selected_user = user_shared.user_id
