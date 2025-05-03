@@ -25,7 +25,7 @@ async def build_canteen_product_response(
     canteen_product: CanteenProduct,
     session: AsyncSession,
     request: Request,
-    media_section: MediaSection,
+    media_section: MediaSection = MediaSection.canteen_product,
 ):
     media_responses = await get_media_responses(
         session=session,
@@ -85,7 +85,7 @@ async def build_canteen_response(
     canteen: Canteen,
     session: AsyncSession,
     request: Request,
-    media_section: MediaSection,
+    media_section: MediaSection = MediaSection.canteen,
 ):
     media_responses = await get_media_responses(
         session=session,
