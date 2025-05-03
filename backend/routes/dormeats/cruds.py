@@ -210,12 +210,14 @@ async def get_ingredients_from_db(
     session: AsyncSession,
     media_section: MediaSection = MediaSection.canteen_product,
 ) -> list[CanteenProductResponseSchema]:
-    result = await session.execute(select(Ingredient).options(selectinload(Ingredient.canteenproducts)).filter(Ingredient.meal_id == meal_id))
+    result = await session.execute(
+        select(Ingredient).options(selectinload(Ingredient.canteen_product)).filter(Ingredient.meal_id == meal_id)
+    )
     ingredients = result.scalars().all()
 
     ingredients_response = await asyncio.gather(
         *(
-            build_canteen_product_response(ingredient.canteenproducts, session, request, media_section)
+            build_canteen_product_response(ingredient.canteen_product, session, request, media_section)
             for ingredient in ingredients
         )
     )

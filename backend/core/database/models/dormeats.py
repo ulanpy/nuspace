@@ -92,7 +92,7 @@ class CanteenProduct(Base):
         SQLEnum(CanteenProductCategory, name="canteenproduct_category"), nullable=False
     )
 
-    ingredient = relationship("Ingredient", back_populates="canteenproducts")
+    ingredient = relationship("Ingredient", back_populates="canteen_product")
 
 
 # Ingredient and Product classes aren't the same? Both are about ingredients (onion, carrot, etc...)
@@ -109,7 +109,7 @@ class Ingredient(Base):  # create, read, update, delete
         BigInteger, ForeignKey("canteenproducts.id"), nullable=False
     )
 
-    canteenproducts = relationship("CanteenProduct", back_populates="ingredient")
+    canteen_product = relationship("CanteenProduct", back_populates="ingredient")
     meals = relationship("Meal", back_populates="ingredient")
 
 
