@@ -6,6 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.common.dependencies import check_tg, check_token, get_db_session
 from backend.common.utils import search_for_meilisearch_data
 
+from ...core.configs.config import config
+from ...rbq.producer import send_notification
+from ...rbq.schemas import Notification
 from .cruds import (
     ProductCategory,
     ProductCondition,
@@ -74,14 +77,10 @@ async def add_new_product(
         )
         return new_product
     except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.get(
-    "/user", response_model=List[ProductResponseSchema]
-)  # works # todo add pagination
+@router.get("/user", response_model=List[ProductResponseSchema])  # works # todo add pagination
 async def get_products_of_user(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
@@ -180,9 +179,7 @@ async def get_product(
     - Returns `401 Unauthorized` if no valid access token is provided.
     """
 
-    product = await get_product_from_db(
-        request=request, product_id=product_id, session=db_session
-    )
+    product = await get_product_from_db(request=request, product_id=product_id, session=db_session)
 
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -232,9 +229,7 @@ async def remove_product(
         return status.HTTP_204_NO_CONTENT
 
     except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 @router.patch("/", response_model=ProductUpdateResponseSchema)  # works
@@ -388,13 +383,26 @@ async def store_new_product_feedback(
     """
 
     try:
+        product = await get_product_from_db(
+            request=request, product_id=feedback_data.product_id, session=db_session
+        )
+        key_exist: bool = await request.app.state.redis.exists(
+            f"notification:{product.user_telegram_id}"
+        )
+        if not key_exist:
+            await send_notification(
+                channel=request.app.state.rbq_channel,
+                notification=Notification(
+                    user_id=product.user_telegram_id,
+                    text=feedback_data.text,
+                    url=f"https://{config.ROUTING_PREFIX}/apps/kupi-prodai/product/{feedback_data.product_id}",
+                ),
+            )
         return await add_new_product_feedback_to_db(
             feedback_data=feedback_data, user_sub=user.get("sub"), session=db_session
         )
     except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 @router.get(
@@ -460,9 +468,7 @@ async def remove_product_feedback(
         )
         return status.HTTP_204_NO_CONTENT
     except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 @router.post(
@@ -498,6 +504,4 @@ async def store_new_product_report(
             report_data=report_data, user_sub=user.get("sub"), session=db_session
         )
     except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

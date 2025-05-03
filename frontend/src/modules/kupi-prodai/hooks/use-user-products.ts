@@ -1,16 +1,16 @@
+import { useUser } from "@/hooks/use-user";
 import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
-import { useAuth } from "@/context/auth-context";
 import { useQuery } from "@tanstack/react-query";
 
 export function useUserProducts() {
-  const { isAuthenticated } = useAuth();
+  const { user } = useUser();
   const {
     data: myProducts,
     isError,
     isLoading,
   } = useQuery({
     ...kupiProdaiApi.getUserProductsQueryOptions(),
-    enabled: isAuthenticated,
+    enabled: !!user,
     staleTime: Infinity,
     gcTime: 1000 * 60 * 60 * 24,
   });

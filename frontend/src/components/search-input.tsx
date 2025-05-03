@@ -4,13 +4,17 @@ import { Search, X } from "lucide-react";
 import { Input } from "./ui/input";
 import { useListingState } from "@/context/listing-context";
 import { useState, useEffect, useRef, KeyboardEvent, ChangeEvent } from "react";
+import { useTheme } from "./theme-provider";
 
 export function SearchInput({
   inputValue,
   setInputValue,
   preSearchedProducts,
   handleSearch,
+  setSelectedCondition
 }: Types.SearchInputProps) {
+  const { theme } = useTheme();
+  const isDarkTheme = theme === "dark";
   const { setSearchQuery } = useListingState();
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -39,12 +43,14 @@ export function SearchInput({
     },
     search: () => {
       handleSearch(inputValue);
+      setSelectedCondition?.("All Conditions");
       setIsDropdownOpen(false);
     },
     selectItem: (item: string) => {
       setInputValue(item);
       setSearchQuery(item);
       handleSearch(item);
+      setSelectedCondition?.("All Conditions");
       setIsDropdownOpen(false);
       setSelectedIndex(-1);
     },
@@ -67,6 +73,7 @@ export function SearchInput({
           handlers.selectItem(suggestions[selectedIndex]);
         } else {
           handleSearch(inputValue);
+          setSelectedCondition?.("All Conditions");
           setIsDropdownOpen(false);
         }
       },
@@ -122,7 +129,11 @@ export function SearchInput({
       </div>
       {isDropdownOpen && hasSuggestions && (
         <ul
-          className="absolute top-full left-0 right-0 bg-[#020817] border border-t-0 border-gray-300 shadow-md z-10 rounded-b-lg"
+          className={`absolute top-full left-0 right-0  border border-t-0  shadow-md z-10 rounded-b-lg ${
+            isDarkTheme
+              ? "bg-[#020817] border-gray-300"
+              : "bg-slate-100  border-slate-200"
+          }`}
           onMouseLeave={() => setSelectedIndex(-1)}
         >
           {suggestions.map((product, index) => (
@@ -130,8 +141,12 @@ export function SearchInput({
               key={index}
               className={`px-4 py-2 cursor-pointer ${
                 index === selectedIndex
-                  ? "bg-gray-900 text-white"
-                  : "hover:bg-gray-900"
+                  ? isDarkTheme
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-200 text-black"
+                  : isDarkTheme
+                  ? "text-gray-400 hover:bg-gray-700"
+                  : "text-slate-500 hover:bg-slate-300"
               }`}
               onClick={() => handlers.selectItem(product)}
               onMouseEnter={() => setSelectedIndex(index)}
