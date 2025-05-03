@@ -64,13 +64,15 @@ class IngredientResponseSchema(BaseModel):
 class CanteenRequestSchema(BaseModel):
     name: str
     description: str
+
+    model_config = ConfigDict(from_attribute=True)
     
 class CanteenResponseSchema(BaseModel):
     id: int
     name: str
     description: str
 
-
+    model_config = ConfigDict(from_attribute=True)
 # Canteen Feedback
 class CanteenFeedbackRequestSchema(BaseModel):
     canteen_id: int
