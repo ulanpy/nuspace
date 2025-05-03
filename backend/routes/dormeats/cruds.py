@@ -3,6 +3,7 @@ import asyncio
 from fastapi import Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from backend.core.database.models.dormeats import (
     Canteen,
@@ -211,13 +212,13 @@ async def get_ingredients_from_db(
     media_section: MediaSection = MediaSection.canteen_product,
 ) -> list[CanteenProductResponseSchema]:
     result = await session.execute(
-        select(Ingredient).filter(Ingredient.meal_id == meal_id)
+        select(Ingredient).options(selectinload(Ingredient.canteen_product)).filter(Ingredient.meal_id == meal_id)
     )
     ingredients = result.scalars().all()
 
     ingredients_response = await asyncio.gather(
         *(
-            build_canteen_product_response(meal_id, session, request, media_section)
+            build_canteen_product_response(ingredient.canteen_product, session, request, media_section)
             for ingredient in ingredients
         )
     )

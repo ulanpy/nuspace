@@ -154,7 +154,7 @@ async def get_meals(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
 
 
-@router.get("/ingredients", response_model=List[IngredientResponseSchema])
+@router.get("/ingredients", response_model=List[CanteenProductResponseSchema])
 async def get_ingredients(
     request: Request, meal_id: int, db_session: AsyncSession = Depends(get_db_session)
 ):
