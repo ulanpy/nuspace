@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
-import { apiCall } from "./api";
+import { apiCall } from "../../../api/api";
 
 // Types for the API
-export const defaultSize = 15;
+export const defaultSize = 5;
 export const defaultPage = 1;
 
 export interface ProductMedia {
@@ -188,10 +188,8 @@ export const kupiProdaiApi = {
       queryKey: ["search-products", {page, size, keyword}],
       queryFn: ({queryKey}) => {
         const [, params] = queryKey as [string, {page: number, size: number, keyword: string}]
-        let endpoint = `/products/post_search/?keyword=${params.keyword}&size=${params.size}&page=${params.page}`
-        return apiCall<Product[]>(endpoint, {
-          method: "POST"
-        });
+        let endpoint = `/products/search/?keyword=${params.keyword}&size=${params.size}&page=${params.page}`
+        return apiCall<PaginatedResponse<Product>>(endpoint);
       },
     });
   },
@@ -205,7 +203,7 @@ getSignedUrls: async (
       `/bucket/upload-url`,
       {
         method: "POST",
-        json: requests, 
+        json: requests,
       }
     );
   },

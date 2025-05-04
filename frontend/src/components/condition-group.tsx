@@ -1,3 +1,4 @@
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "./theme-provider";
 
 export function ConditionGroup({
@@ -9,14 +10,24 @@ export function ConditionGroup({
   selectedCondition: string;
   setSelectedCondition: (condition: string) => void;
 }) {
+  const navigate = useNavigate()
+  const location = useLocation()
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
+
+  const handleClick = (item: string) => {
+    const params = new URLSearchParams(location.search)
+    params.delete('page')
+    params.set('condition', item)
+    setSelectedCondition(item)
+    navigate(`${location.pathname}?${params.toString()}`)
+  }
   return (
     <div className="flex space-x-3 overflow-x-auto no-scrollbar">
       {conditions.map((item) => (
         <button
           key={item}
-          onClick={() => setSelectedCondition(item)}
+          onClick={() => handleClick(item)}
           className={`
             px-4 py-2 rounded-full
             text-xs font-medium transition

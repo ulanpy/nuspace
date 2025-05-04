@@ -1,16 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
-import { kupiProdaiApi } from "@/api/kupi-prodai-api";
+import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useState } from "react";
-import { useAuth } from "@/context/auth-context";
 import { useListingState } from "@/context/listing-context";
+import { useUser } from "@/hooks/use-user";
+import { getSearchCategoryFromURL, getSearchConditionFromURL } from "@/utils/search-params";
+import { useLocation } from "react-router-dom";
 
 export function useProducts() {
-  const { isAuthenticated } = useAuth();
-  const { currentPage, itemsPerPage } = useListingState();
-  const [selectedCategory, setSelectedCategory] = useState("All Categories");
-  const [selectedCondition, setSelectedCondition] = useState("All Conditions");
+  const location = useLocation();
+  const { user } = useUser();
+  const { currentPage, itemsPerPage, searchQuery } = useListingState();
+  const [selectedCategory, setSelectedCategory] = useState(getSearchCategoryFromURL(location.search));
+  const [selectedCondition, setSelectedCondition] = useState(getSearchConditionFromURL(location.search));
   const category =
-    selectedCategory !== "All Categories"
+    selectedCategory !== "All"
       ? selectedCategory.toLowerCase()
       : undefined;
   const condition =
@@ -29,12 +32,12 @@ export function useProducts() {
       category,
       condition,
     }),
-    enabled: isAuthenticated,
+    enabled: !!user && !searchQuery,
     staleTime: Infinity,
     gcTime: 1000 * 60 * 60 * 24,
   });
   return {
-    productItems,
+    productItems: productItems ?? null,
     isError,
     isLoading,
     selectedCondition,

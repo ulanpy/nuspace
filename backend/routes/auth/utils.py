@@ -78,6 +78,7 @@ def set_auth_cookies(response: Response, creds: dict):
         httponly=True,
         secure=not config.IS_DEBUG,  # False if config.IS_DEBUG is True AND reverse in otherwise
         samesite="Lax",  # Mitigate CSRF attacks
+        max_age=3600,  # 1 hour
     )
     response.set_cookie(
         key="refresh_token",
@@ -85,20 +86,11 @@ def set_auth_cookies(response: Response, creds: dict):
         httponly=True,
         secure=not config.IS_DEBUG,
         samesite="Lax",
+        max_age=30 * 24 * 60 * 60,  # 30 days
     )
 
 
 def unset_auth_cookies(response: Response):
-    response.delete_cookie(
-        key="access_token",
-        httponly=True,
-        secure=not config.IS_DEBUG,
-        samesite="Lax",
-    )
+    response.delete_cookie(key="access_token")
 
-    response.delete_cookie(
-        key="refresh_token",
-        httponly=True,
-        secure=not config.IS_DEBUG,
-        samesite="Lax",
-    )
+    response.delete_cookie(key="refresh_token")

@@ -1,4 +1,7 @@
-import { kupiProdaiApi, SignedUrlRequest } from "@/api/kupi-prodai-api";
+import {
+  kupiProdaiApi,
+  SignedUrlRequest,
+} from "@/modules/kupi-prodai/api/kupi-prodai-api";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -64,20 +67,18 @@ export const useUpdateProduct = () => {
         queryClient.invalidateQueries({ queryKey: [kupiProdaiApi.baseKey] });
       }, 1500),
   });
-
+  
   const calculateMediaOrder = () => {
     const remainingMedia = originalMedia.filter(
       (media) => !mediaToDelete.includes(media.id)
     );
-    
+
     // Safely convert all orders to numbers
     const validOrders = remainingMedia
-      .map(media => Number(media.order))
-      .filter(order => !isNaN(order));
-  
-    return validOrders.length > 0 
-      ? Math.max(...validOrders) + 1 
-      : 0;
+      .map((media) => Number(media.order))
+      .filter((order) => !isNaN(order));
+
+    return validOrders.length > 0 ? Math.max(...validOrders) + 1 : 0;
   };
 
   const handleUpdateListing = async (e: React.FormEvent) => {
@@ -104,13 +105,10 @@ export const useUpdateProduct = () => {
       // Step 2: Delete images that were removed
       if (mediaToDelete.length > 0) {
         const deletePromises = mediaToDelete.map((mediaId) => {
-          return fetch(
-            `/api/bucket/delete?media_id=${mediaId}`,
-            {
-              method: "DELETE",
-              credentials: "include",
-            }
-          );
+          return fetch(`/api/bucket/delete?media_id=${mediaId}`, {
+            method: "DELETE",
+            credentials: "include",
+          });
         });
 
         await Promise.all(deletePromises);
