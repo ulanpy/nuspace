@@ -223,3 +223,32 @@ async def get_ingredients_from_db(
         )
     )
     return ingredients_response
+
+
+async def get_reports_(
+        session: AsyncSession,
+        size: int, 
+        page: int, 
+        request: Request,
+        media_section: MediaSection = MediaSection.de
+) -> CanteenReportResponseSchema:
+    offset = size * (page - 1)
+    total_query = select(func.count()).select_from(CanteenReport) #CanteenReport
+    total_result = await session.execute(total_query)
+    total_count = total_result.scalar()
+    num_of_pages = max(1, (total_count + size - 1) // size)
+    query = (
+        select(CanteenReport)
+        .offset(offset)
+        .limit(size)
+    )
+    result = await session.execute(query)
+    products = result.scalars().all()
+    reports_response = await asyncio.gather(
+        *(
+        build_canteen_report_response(product, session, request, media_section)
+            for product in products
+        )
+    )
+    #add object list and num_of_pages to the schema and return it
+    return CanteenReportResponseSchema(reports=reports_response, num_of_pages=num_of_pages)
