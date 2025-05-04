@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useTheme } from "./theme-provider";
+import { useTheme } from "../theme-provider";
 
 export function ConditionGroup({
   conditions,
@@ -10,18 +10,18 @@ export function ConditionGroup({
   selectedCondition: string;
   setSelectedCondition: (condition: string) => void;
 }) {
-  const navigate = useNavigate()
-  const location = useLocation()
+  const navigate = useNavigate();
+  const location = useLocation();
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
 
   const handleClick = (item: string) => {
-    const params = new URLSearchParams(location.search)
-    params.delete('page')
-    params.set('condition', item)
-    setSelectedCondition(item)
-    navigate(`${location.pathname}?${params.toString()}`)
-  }
+    const params = new URLSearchParams(location.search);
+    params.delete("page");
+    params.set("condition", item);
+    setSelectedCondition(item);
+    navigate(`${location.pathname}?${params.toString()}`);
+  };
   return (
     <div className="flex space-x-3 overflow-x-auto no-scrollbar">
       {conditions.map((item) => (
@@ -44,7 +44,6 @@ export function ConditionGroup({
                 : "text-slate-500 hover:bg-slate-200/70 hover:text-slate-800"
             }
           `}
-
         >
           {item}
         </button>

@@ -25,8 +25,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "../../components/ui/tabs";
-import { SliderGroup } from "@/components/slider-group";
-import { ConditionGroup } from "@/components/condition-group";
+import { SliderGroup } from "@/components/organisms/slider-group";
+import { ConditionGroup } from "@/components/molecules/condition-group";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../../hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
@@ -48,9 +48,9 @@ import { MdSports, MdBrush, MdLocalOffer } from "react-icons/md";
 import { BsPencilFill } from "react-icons/bs";
 import { GiKnifeFork } from "react-icons/gi";
 import { IoTicket, IoCarSport } from "react-icons/io5";
-import { SearchInput } from "@/components/search-input";
+import { SearchInput } from "@/components/molecules/search-input";
 import { useSearchLogic } from "@/hooks/useSearchLogic";
-import { Pagination } from "@/components/pagination";
+import { Pagination } from "@/components/molecules/pagination";
 import { useUser } from "@/hooks/use-user";
 
 // Define categories and conditions
@@ -114,7 +114,7 @@ const categories = [
 ];
 
 const conditions = ["All Conditions", "new", "used"];
-const displayConditions = ["All Conditions", "New","Used"];
+const displayConditions = ["All Conditions", "New", "Used"];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -387,17 +387,18 @@ export default function KupiProdaiPage() {
     baseRoute: "/apps/kupi-prodai",
     searchParam: "text",
   });
-  const [products, setProducts] = useState<Types.PaginatedResponse<Types.Product> | null>(null)
+  const [products, setProducts] =
+    useState<Types.PaginatedResponse<Types.Product> | null>(null);
 
   useEffect(() => {
-    if(searchedProducts){
-      setProducts(searchedProducts)
+    if (searchedProducts) {
+      setProducts(searchedProducts);
     }
-  }, [searchedProducts])
+  }, [searchedProducts]);
 
   useEffect(() => {
-    setProducts(productItems)
-  }, [productItems])
+    setProducts(productItems);
+  }, [productItems]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
