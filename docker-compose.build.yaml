@@ -14,10 +14,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile_celery
-    networks:
-      - nuros
-    env_file:
-      - .env
     command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
     environment:
       - CELERY_WORKER_CONCURRENCY=4
