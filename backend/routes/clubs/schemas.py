@@ -87,17 +87,3 @@ class ListClubSchema(BaseModel):
     num_of_pages: int
 
 
-# class ClubAnnouncement(BaseModel):
-#     id: int
-#     club_id: int
-#     banner: List[MediaResponse]
-#     description: str
-#     created_at: datetime
-#     updated_at: datetime
-#
-#
-# class ClubManagers(BaseModel):
-#     id: int
-#     club_id: int
-#     sub: str
-#     updated_at: datetime

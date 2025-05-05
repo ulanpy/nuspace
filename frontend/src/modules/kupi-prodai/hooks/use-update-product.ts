@@ -119,9 +119,9 @@ export const useUpdateProduct = () => {
       if (imageFiles.length > 0) {
         const startOrder = calculateMediaOrder();
         const requests: SignedUrlRequest[] = imageFiles.map((file, index) => ({
-          section: "kp",
+          media_table: "products",
           entity_id: Number(editingListing.id), // Ensure this is a number
-          media_purpose: "banner",
+          media_format: "carousel",
           media_order: startOrder + index, // This should already be a number
           mime_type: file.type,
           content_type: file.type,
@@ -130,7 +130,6 @@ export const useUpdateProduct = () => {
         // Get signed URLs
         const signedUrls = await kupiProdaiApi.getSignedUrls(requests);
         setUploadProgress(60);
-
         // Upload images using signed URLs
         await Promise.all(
           imageFiles.map((file: File, i: number) => {
@@ -140,9 +139,9 @@ export const useUpdateProduct = () => {
               headers: {
                 "Content-Type": file.type,
                 "x-goog-meta-filename": meta.filename,
-                "x-goog-meta-section": meta.section,
+                "x-goog-meta-media-table": meta.media_table,
                 "x-goog-meta-entity-id": meta.entity_id.toString(),
-                "x-goog-meta-media-purpose": meta.media_purpose,
+                "x-goog-meta-media-format": meta.media_format,
                 "x-goog-meta-media-order": meta.media_order.toString(),
                 "x-goog-meta-mime-type": meta.mime_type,
               },

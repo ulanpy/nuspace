@@ -2,35 +2,32 @@
 
 from pydantic import BaseModel, HttpUrl
 
-from backend.core.database.models.media import MediaPurpose, MediaSection
+from backend.core.database.models.media import MediaFormat, MediaTable
 
 
 class SignedUrlRequest(BaseModel):
-    section: MediaSection
+    media_table: MediaTable
     entity_id: int
-    media_purpose: MediaPurpose
+    media_format: MediaFormat
     media_order: int
     mime_type: str
-    content_type: str
 
 
 class SignedUrlResponse(BaseModel):
     filename: str
     upload_url: HttpUrl
-    section: MediaSection
+    media_table: MediaTable
     entity_id: int
-    media_purpose: MediaPurpose
+    media_format: MediaFormat
     media_order: int
     mime_type: str
-    content_type: str
-
 
 class UploadConfirmation(BaseModel):
     filename: str
     mime_type: str
-    section: MediaSection
+    media_table: MediaTable
     entity_id: int
-    media_purpose: MediaPurpose
+    media_format: MediaFormat
     media_order: int
 
 
@@ -43,7 +40,7 @@ class MediaResponse(BaseModel):
     id: int
     url: str
     mime_type: str
-    section: MediaSection
+    media_table: MediaTable
     entity_id: int
-    media_purpose: MediaPurpose
+    media_format: MediaFormat
     media_order: int

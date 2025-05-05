@@ -69,9 +69,9 @@ export interface UpdateProductRequest {
 }
 
 export interface SignedUrlRequest {
-  section: string;
+  media_table: string;
   entity_id: number;
-  media_purpose: string;
+  media_format: string;
   media_order: number;
   mime_type: string;
   content_type: string;
@@ -80,12 +80,11 @@ export interface SignedUrlRequest {
 export interface SignedUrlResponse {
   filename: string;
   upload_url: string;
-  section: string;
+  media_table: string;
   entity_id: number;
-  media_purpose: string;
+  media_format: string;
   media_order: number;
   mime_type: string;
-  content_type: string;
 }
 
 // API base URL
@@ -220,9 +219,9 @@ getSignedUrls: async (
     formData.append("file", file);
     formData.append("filename", filename);
     formData.append("mime_type", file.type);
-    formData.append("section", "kp"); // kp for Kupi&Prodai
+    formData.append("media_table", "products"); // products for Kupi&Prodai
     formData.append("entity_id", entityId.toString());
-    formData.append("media_purpose", "banner");
+    formData.append("media_format", "carousel");
     formData.append("media_order", mediaOrder.toString());
 
     const response = await apiCall(`/bucket/upload-image/`, {
