@@ -1,4 +1,4 @@
-<h1>Nuspace</h1>
+<h1>nuspace</h1>
 
 <img align="right" width="150" src="./backend/core/configs/coverpage.jpg">
 
