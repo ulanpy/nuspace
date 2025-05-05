@@ -1,16 +1,19 @@
-# Nuspace
+<h1>Nuspace</h1>
 
-Nuspace.kz is a secure platform for Nazarbayev University students, accessible via @nu.edu.kz email verification. It restricts access to verified users, reducing fraud risk, and offers a set of services that streamline and centralize student communication—replacing unstructured Telegram chats with a more reliable and organized solution.
+<img align="right" width="150" src="./backend/core/configs/coverpage.jpg">
+
+**Nuspace.kz** is a secure platform for Nazarbayev University students, accessible via `@nu.edu.kz` email verification. It restricts access to verified users, reducing fraud risk, and offers a set of services that streamline and centralize student communication—replacing unstructured Telegram chats with a more reliable and organized solution.
 
 ## Features
 - Private and secure access for Nazarbayev University students.
 - Centralized services to replace unstructured Telegram chats.
 - Reliable and efficient communication platform.
 
+
 ## Prerequisites
 To set up the project, ensure you have the following installed:
 - [Docker](https://www.docker.com/)
-- [Pre-commit](https://pre-commit.com/)
+- Pre-commit
 - Google Cloud credentials (bucket name, project ID, topic, and `nuspace.json` file for bucket access).
 - Keycloak credentials for Google Identity Provider (IDP).
 
