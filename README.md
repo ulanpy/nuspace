@@ -1,6 +1,6 @@
 <h1>Nuspace</h1>
 
-<img align="right" width="250" src="./backend/core/configs/coverpage.jpg">
+<img align="right" width="150" src="./backend/core/configs/coverpage.jpg">
 
 **Nuspace.kz** is a secure platform for Nazarbayev University students, accessible via `@nu.edu.kz` email verification. It restricts access to verified users, reducing fraud risk, and offers a set of services that streamline and centralize student communication—replacing unstructured Telegram chats with a more reliable and organized solution.
 
