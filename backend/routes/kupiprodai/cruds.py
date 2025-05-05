@@ -67,7 +67,11 @@ async def add_new_product_to_db(
     await add_meilisearch_data(
         request=request,
         storage_name="products",
-        json_values={"id": new_product.id, "name": new_product.name},
+        json_values={
+            "id": new_product.id,
+            "name": new_product.name,
+            "condition": new_product.condition.value,
+        },
     )
     return await build_product_response(new_product, session, request, media_section)
 
@@ -204,21 +208,46 @@ async def update_product_in_db(
 
     if product_update.name is not None:
         product.name = product_update.name
-        await update_meilisearch_data(
-            request=request,
-            storage_name="products",
-            json_values={"id": product_update.product_id, "name": product.name},
-        )
     if product_update.description is not None:
         product.description = product_update.description
     if product_update.price is not None:
         product.price = product_update.price
     if product_update.status is not None:
         product.status = product_update.status
+        if product_update.status.value == "active":
+            result = await session.execute(
+                select(Product).filter(Product.id == product_update.product_id)
+            )
+            product = result.scalars().first()
+            await add_meilisearch_data(
+                request=request,
+                storage_name="products",
+                json_values={
+                    "id": product.id,
+                    "name": product.name,
+                    "condition": product.condition.value,
+                },
+            )
+        else:
+            await remove_meilisearch_data(
+                request=request,
+                storage_name="products",
+                object_id=product_update.product_id,
+            )
     if product_update.condition is not None:
         product.condition = product_update.condition
     if product_update.category is not None:
         product.category = product_update.category
+    if product_update.condition or product_update.name:
+        await update_meilisearch_data(
+            request=request,
+            storage_name="products",
+            json_values={
+                "id": product_update.product_id,
+                "name": product_update.name,
+                "condition": product_update.condition.value,
+            },
+        )
 
     await session.commit()
     await session.refresh(product)
@@ -235,7 +264,7 @@ async def add_new_product_feedback_to_db(
     query = (
         select(ProductFeedback)
         .options(selectinload(ProductFeedback.user))
-        .filter_by(product_id=feedback_data.product_id, user_sub=user_sub)
+        .filter_by(id=new_feedback.id, user_sub=user_sub)
     )
     result = await session.execute(query)
     feedback = result.scalars().first()
