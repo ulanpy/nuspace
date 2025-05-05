@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.database.models import Club, ClubEvent
-from backend.core.database.models.media import Media, MediaPurpose, MediaSection
+from backend.core.database.models.media import Media, MediaFormat, MediaTable
 from backend.routes.google_bucket.schemas import MediaResponse
 from backend.routes.google_bucket.utils import generate_download_url
 
@@ -23,9 +23,9 @@ async def build_media_response(request: Request, media: Media) -> MediaResponse:
         id=media.id,
         url=url_data["signed_url"],
         mime_type=media.mime_type,
-        section=media.section,
+        media_table=media.media_table,
         entity_id=media.entity_id,
-        media_purpose=media.media_purpose,
+        media_format=media.media_format,
         media_order=media.media_order,
     )
 
@@ -34,8 +34,8 @@ async def get_media_response(
     session: AsyncSession,
     request: Request,
     club_id: int,
-    media_section: MediaSection,
-    media_purpose: MediaPurpose,
+    media_table: MediaTable,
+    media_format: MediaFormat,
 ) -> MediaResponse | List:
     """
     Возвращает MediaResponse для заданного клуба.
@@ -43,8 +43,8 @@ async def get_media_response(
     media_result = await session.execute(
         select(Media).filter(
             Media.entity_id == club_id,
-            Media.section == media_section,
-            Media.media_purpose == media_purpose,
+            Media.media_table == media_table,
+            Media.media_format == media_format,
         )
     )
     media_object = media_result.scalars().first()
@@ -57,11 +57,11 @@ async def build_club_response(
     club: Club,
     session: AsyncSession,
     request: Request,
-    media_section: MediaSection,
-    media_purpose: MediaPurpose,
+    media_table: MediaTable,
+    media_format: MediaFormat,
 ) -> ClubResponseSchema:
     media_response = await get_media_response(
-        session, request, club.id, media_section, media_purpose
+        session, request, club.id, media_table, media_format
     )
     return ClubResponseSchema(
         id=club.id,
@@ -81,8 +81,8 @@ async def get_media_responses(
     session: AsyncSession,
     request: Request,
     event_id: int,
-    media_section: MediaSection,
-    media_purpose: MediaPurpose,
+    media_table: MediaTable,
+    media_format: MediaFormat,
 ) -> List[MediaResponse] | None:
     """
     Возвращает MediaResponse для заданного клуба.
@@ -90,8 +90,8 @@ async def get_media_responses(
     media_result = await session.execute(
         select(Media).filter(
             Media.entity_id == event_id,
-            Media.section == media_section,
-            Media.media_purpose == media_purpose,
+            Media.media_table == media_table,
+            Media.media_format == media_format,
         )
     )
     media_objects = media_result.scalars().all()
@@ -108,11 +108,11 @@ async def build_event_response(
     event: ClubEvent,
     session: AsyncSession,
     request: Request,
-    media_section: MediaSection,
-    media_purpose: MediaPurpose,
+    media_table: MediaTable,
+    media_format: MediaFormat,
 ) -> ClubEventResponseSchema:
     media_responses = await get_media_responses(
-        session, request, event.id, media_section, media_purpose
+        session, request, event.id, media_table, media_format
     )
     return ClubEventResponseSchema(
         id=event.id,
@@ -135,8 +135,8 @@ async def show_events_for_search(
     size: int,
     num_of_products: int,
     event_ids: list[int],
-    media_section: MediaSection = MediaSection.ev,
-    media_purpose: MediaPurpose = MediaPurpose.vertical_image,
+    media_table: MediaTable = MediaTable.club_events,
+    media_format: MediaFormat = MediaFormat.carousel,
 ) -> ListEventSchema:
 
     # Подсчет общего числа продуктов
@@ -152,7 +152,7 @@ async def show_events_for_search(
     # Собираем ответы для всех продуктов
     events_response = await asyncio.gather(
         *(
-            build_event_response(event, session, request, media_section, media_purpose)
+            build_event_response(event, session, request, media_table, media_format)
             for event in events
         )
     )

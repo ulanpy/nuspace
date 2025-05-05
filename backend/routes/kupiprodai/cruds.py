@@ -20,7 +20,7 @@ from backend.core.database.models.product import (
     ProductReport,
     ProductStatus,
 )
-from backend.routes.google_bucket.schemas import MediaSection
+from backend.routes.google_bucket.schemas import MediaTable
 from backend.routes.google_bucket.utils import (
     delete_bucket_object,
 )
@@ -48,7 +48,7 @@ async def add_new_product_to_db(
     product_data: ProductRequestSchema,
     user_sub: str,
     request: Request,
-    media_section: MediaSection = MediaSection.kp,
+    media_table: MediaTable = MediaTable.products,
 ) -> ProductResponseSchema:
     new_product = Product(**product_data.dict(), user_sub=user_sub)
     session.add(new_product)
@@ -73,14 +73,14 @@ async def add_new_product_to_db(
             "condition": new_product.condition.value,
         },
     )
-    return await build_product_response(new_product, session, request, media_section)
+    return await build_product_response(new_product, session, request, media_table)
 
 
 async def get_products_of_user_from_db(
     user_sub: str,
     session: AsyncSession,
     request: Request,
-    media_section: MediaSection = MediaSection.kp,
+    media_table: MediaTable = MediaTable.products,
 ) -> List[ProductResponseSchema]:
     query = (
         select(Product)
@@ -95,7 +95,7 @@ async def get_products_of_user_from_db(
     return list(
         await asyncio.gather(
             *(
-                build_product_response(product, session, request, media_section)
+                build_product_response(product, session, request, media_table)
                 for product in products
             )
         )
@@ -109,7 +109,7 @@ async def show_products_from_db(
     request: Request,
     category: ProductCategory | None = None,
     condition: ProductCondition | None = None,
-    media_section: MediaSection = MediaSection.kp,
+    media_table: MediaTable = MediaTable.products,
 ) -> ListResponseSchema:
     offset = size * (page - 1)
     sql_conditions = [Product.status == ProductStatus.active]
@@ -138,7 +138,7 @@ async def show_products_from_db(
     # Собираем ответы для всех продуктов
     products_response = await asyncio.gather(
         *(
-            build_product_response(product, session, request, media_section)
+            build_product_response(product, session, request, media_table)
             for product in products
         )
     )
@@ -149,7 +149,7 @@ async def get_product_from_db(
     request: Request,
     product_id: int,
     session: AsyncSession,
-    media_section: MediaSection = MediaSection.kp,
+    media_table: MediaTable = MediaTable.products,
 ) -> ProductResponseSchema:
     query = (
         select(Product)
@@ -160,7 +160,7 @@ async def get_product_from_db(
     product = result.scalars().first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    return await build_product_response(product, session, request, media_section)
+    return await build_product_response(product, session, request, media_table)
 
 
 async def remove_product_from_db(
@@ -175,7 +175,7 @@ async def remove_product_from_db(
         # Удаляем связанные media
         media_result = await session.execute(
             select(Media).filter(
-                Media.entity_id == product.id, Media.section == MediaSection.kp
+                Media.entity_id == product.id, Media.media_table == MediaTable.products
             )
         )
         media_objects = media_result.scalars().all()
@@ -333,7 +333,7 @@ async def show_products_for_search(
     num_of_products: int,
     product_ids: list[int],
     request: Request,
-    media_section: MediaSection = MediaSection.kp,
+    media_table: MediaTable = MediaTable.products,
 ) -> ListResponseSchema:
 
     # Подсчет общего числа продуктов
@@ -351,7 +351,7 @@ async def show_products_for_search(
     # Собираем ответы для всех продуктов
     products_response = await asyncio.gather(
         *(
-            build_product_response(product, session, request, media_section)
+            build_product_response(product, session, request, media_table)
             for product in products
         )
     )

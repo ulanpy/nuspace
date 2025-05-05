@@ -78,18 +78,18 @@ export function useCreateProduct() {
   };
 
   const uploadImage = async (meta: {
-    section: string;
+    media_table: string;
     entityId: number;
-    mediaPurpose: string;
+    mediaFormat: string;
   }) => {
     if (!imageFiles.length) return;
 
     // 1) prepare one SignedUrlRequest per file
     const requests: SignedUrlRequest[] = imageFiles.map(
       (file: File, idx: number) => ({
-        section: meta.section,
+        media_table: meta.media_table,
         entity_id: meta.entityId,
-        media_purpose: meta.mediaPurpose,
+        media_format: meta.mediaFormat,
         media_order: idx,
         mime_type: file.type,
         content_type: file.type,
@@ -102,7 +102,7 @@ export function useCreateProduct() {
     // 2) POST to get the signed URLs
     const signedUrls = await kupiProdaiApi.getSignedUrls(requests);
     const options = {
-      maxSizeMB: 1,
+      maxSizeMB: 0.5,
       maxWidthOrHeight: 1920,
       useWebWorker: true,
     };
@@ -120,22 +120,21 @@ export function useCreateProduct() {
         const {
           upload_url,
           filename,
-          content_type,
-          section,
+          media_table,
           entity_id,
-          media_purpose,
+          media_format,
           media_order,
           mime_type,
         } = signedUrls[i];
 
         const headers: Record<string, string> = {
-          "Content-Type": content_type,
           "x-goog-meta-filename": filename,
-          "x-goog-meta-section": section,
+          "x-goog-meta-media-table": media_table,
           "x-goog-meta-entity-id": entity_id.toString(),
-          "x-goog-meta-media-purpose": media_purpose,
+          "x-goog-meta-media-format": media_format,
           "x-goog-meta-media-order": media_order.toString(),
           "x-goog-meta-mime-type": mime_type,
+          "Content-Type": mime_type,
         };
 
         return fetch(upload_url, {
@@ -161,9 +160,9 @@ export function useCreateProduct() {
     if (!newProduct) return;
 
     await uploadImage({
-      section: "kp",
+      media_table: "products",
       entityId: newProduct.id,
-      mediaPurpose: "banner",
+      mediaFormat: "carousel",
     });
 
     resetEditListing();
