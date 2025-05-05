@@ -9,8 +9,8 @@ services:
         IS_DEBUG: ${IS_DEBUG:-true}  # Default to 'true' if not set
 
 
-  celery-worker:
-    image: celery-worker:latest
+  celeryworker:
+    image: celeryworker:latest
     build:
       context: .
       dockerfile: Dockerfile_celery

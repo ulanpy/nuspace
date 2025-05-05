@@ -103,7 +103,7 @@ services:
 
   celery-worker:
     container_name: celery-worker
-    image: kamikadze24/celery-worker:latest
+    image: kamikadze24/celeryworker:latest
     networks:
       - nuros
     restart: always

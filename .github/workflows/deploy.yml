@@ -29,12 +29,9 @@ jobs:
 
       - name: Build and Push Docker Images
         run: |
-          services=$(docker-compose -f docker-compose.build.yaml config --services)
-          for service in $services; do
-            docker-compose -f docker-compose.build.yaml build $service
-            docker tag $service docker.io/${{ secrets.DOCKER_USERNAME }}/${service}:latest
-            docker push docker.io/${{ secrets.DOCKER_USERNAME }}/${service}:latest
-          done
+          set -e
+          docker-compose -f docker-compose.build.yaml build
+          docker-compose -f docker-compose.build.yaml push
 
       - name: Set up Python
         uses: actions/setup-python@v2
