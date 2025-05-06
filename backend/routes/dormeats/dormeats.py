@@ -164,3 +164,18 @@ async def get_ingredients(
         )
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
+
+@router.get("/list", response_model=CanteenReportResponseSchema)  
+async def get_reports_router(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session),
+    size: int = 20,
+    page: int = 1
+):
+    return await get_reports_(
+        request=request,
+        session=db_session,
+        size=size,
+        page=page
+    )
