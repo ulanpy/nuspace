@@ -15,7 +15,7 @@ export function AboutTemplate() {
         isDarkTheme ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-800"
       }`}
     >
-      <div className="max-w-4xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
         <Header />
         <MessionSection />
         <FeatureSection />
