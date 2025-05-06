@@ -1,5 +1,5 @@
 - name: Deploy Docker Containers
-  hosts: server
+  hosts: webservers
   become: true
   tasks:
     - name: Ensure Docker is installed
