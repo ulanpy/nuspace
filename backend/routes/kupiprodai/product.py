@@ -6,6 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.common.dependencies import check_tg, check_token, get_db_session
 from backend.common.utils import search_for_meilisearch_data
 
+from ...core.configs.config import config
+from ...rbq.producer import send_notification
+from ...rbq.schemas import Notification
 from .cruds import (
     ProductCategory,
     ProductCondition,
@@ -24,10 +27,13 @@ from .cruds import (
 from .schemas import (
     ListProductFeedbackResponseSchema,
     ListResponseSchema,
+    ProductFeedbackResponseSchema,
     ProductFeedbackSchema,
+    ProductReportResponseSchema,
     ProductReportSchema,
     ProductRequestSchema,
     ProductResponseSchema,
+    ProductUpdateResponseSchema,
     ProductUpdateSchema,
 )
 
@@ -71,14 +77,10 @@ async def add_new_product(
         )
         return new_product
     except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.get(
-    "/user", response_model=List[ProductResponseSchema]
-)  # works # todo add pagination
+@router.get("/user", response_model=List[ProductResponseSchema])  # works # todo add pagination
 async def get_products_of_user(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
@@ -177,9 +179,7 @@ async def get_product(
     - Returns `401 Unauthorized` if no valid access token is provided.
     """
 
-    product = await get_product_from_db(
-        request=request, product_id=product_id, session=db_session
-    )
+    product = await get_product_from_db(request=request, product_id=product_id, session=db_session)
 
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -229,12 +229,10 @@ async def remove_product(
         return status.HTTP_204_NO_CONTENT
 
     except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.patch("/")  # works
+@router.patch("/", response_model=ProductUpdateResponseSchema)  # works
 async def update_product(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
@@ -280,11 +278,12 @@ async def update_product(
     }
 
 
-@router.post("/post_search/", response_model=ListResponseSchema)
-async def post_search(
+@router.get("/search/", response_model=ListResponseSchema)
+async def search(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     keyword: str,
+    condition: ProductCondition = None,
     size: int = 20,
     page: int = 1,
     db_session=Depends(get_db_session),
@@ -304,8 +303,17 @@ async def post_search(
     - A list of product objects that match the keyword from the search.
     - Products will be returned with their full details (from the database).
     """
+    if condition:
+        filters=[f"condition = {condition.value}"]
+    else:
+        filters = None
     search_results = await search_for_meilisearch_data(
-        keyword=keyword, request=request, page=page, size=size, storage_name="products"
+        keyword=keyword,
+        request=request,
+        page=page,
+        size=size,
+        filters=filters,
+        storage_name="products",
     )
     product_ids = [product["id"] for product in search_results["hits"]]
     return await show_products_for_search(
@@ -362,7 +370,9 @@ async def pre_search(
     return distinct_keywords
 
 
-@router.post("/feedback/{product_id}")  # added description
+@router.post(
+    "/feedback/{product_id}", response_model=ProductFeedbackResponseSchema
+)  # added description
 async def store_new_product_feedback(
     feedback_data: ProductFeedbackSchema,
     user: Annotated[dict, Depends(check_token)],
@@ -383,24 +393,37 @@ async def store_new_product_feedback(
     """
 
     try:
-        new_product_feedback = await add_new_product_feedback_to_db(
+        product = await get_product_from_db(
+            request=request, product_id=feedback_data.product_id, session=db_session
+        )
+        key_exist: bool = await request.app.state.redis.exists(
+            f"notification:{product.user_telegram_id}"
+        )
+        if not key_exist:
+            await send_notification(
+                channel=request.app.state.rbq_channel,
+                notification=Notification(
+                    user_id=product.user_telegram_id,
+                    text=feedback_data.text,
+                    url=f"https://{config.ROUTING_PREFIX}/apps/kupi-prodai/product/{feedback_data.product_id}",
+                ),
+            )
+        return await add_new_product_feedback_to_db(
             feedback_data=feedback_data, user_sub=user.get("sub"), session=db_session
         )
-        return new_product_feedback
     except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.get("/feedback/{product_id}")  # added description
+@router.get(
+    "/feedback/{product_id}", response_model=ListProductFeedbackResponseSchema
+)  # added description
 async def get_product_feedbacks(
     product_id: int,
     user: Annotated[dict, Depends(check_token)],
     db_session=Depends(get_db_session),
     size: int = 20,
     page: int = 1,
-    response_model=ListProductFeedbackResponseSchema,
 ):
     """
     Retrieves a paginated list of feedbacks of the product.
@@ -455,12 +478,12 @@ async def remove_product_feedback(
         )
         return status.HTTP_204_NO_CONTENT
     except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.post("/{product_id}/report")  # added description
+@router.post(
+    "/{product_id}/report", response_model=ProductReportResponseSchema
+)  # added description
 async def store_new_product_report(
     report_data: ProductReportSchema,
     user: Annotated[dict, Depends(check_token)],
@@ -487,11 +510,8 @@ async def store_new_product_report(
     """
 
     try:
-        new_product_report = await add_product_report(
+        return await add_product_report(
             report_data=report_data, user_sub=user.get("sub"), session=db_session
         )
-        return new_product_report
     except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

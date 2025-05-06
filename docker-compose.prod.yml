@@ -8,6 +8,8 @@ services:
       - nuros
     restart: always
     container_name: postgres
+    ports:
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -17,22 +19,21 @@ services:
 
 
   fastapi:
-    container_name: fastapi
-    build:
-      context: .
-      dockerfile: Dockerfile
+    container_name: kamikadze24/fastapi:latest
+    image: fastapi:latest
     networks:
       - nuros
     restart: always
     env_file:
       - .env
     volumes:
-      - .:/nuros  # Sync local backend folder with container's /app
+      - .:/nuros  # Sync local backend folder with container's /nuros
     depends_on:
       - postgres
     environment:
       - PYTHONUNBUFFERED=1
-      - WORKERS=${GUNICORN_WORKERS} #not set this in prod and let decide on the fly
+      - WORKERS=${GUNICORN_WORKERS:-4}
+
 
   nginx:
     container_name: nginx
@@ -53,11 +54,11 @@ services:
       - frontend-builder
     command: >
       /bin/sh -c "
-        apt update && apt install -y inotify-tools && 
-        (while inotifywait -e modify /etc/nginx/nginx.conf; do 
-          echo 'nginx config changed, copying and reloading Nginx...' && 
-          nginx -t && nginx -s reload; 
-        done) & 
+        apt update && apt install -y inotify-tools &&
+        (while inotifywait -e modify /etc/nginx/nginx.conf; do
+          echo 'nginx config changed, copying and reloading Nginx...' &&
+          nginx -t && nginx -s reload;
+        done) &
         nginx -g 'daemon off;'"
 
   redis:
@@ -101,11 +102,11 @@ services:
 
 
   celery-worker:
-    build:
-      context: .
-      dockerfile: Dockerfile_celery
+    container_name: celery-worker
+    image: kamikadze24/celeryworker:latest
     networks:
       - nuros
+    restart: always
     env_file:
       - .env
     depends_on:
@@ -114,10 +115,12 @@ services:
       - fastapi
     command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
     environment:
-      - CELERY_WORKER_CONCURRENCY=4  # Adjust based on your needs
+      - CELERY_WORKER_CONCURRENCY=4
       - CELERY_WORKER_PREFETCH_MULTIPLIER=1
     deploy:
-      replicas: 2  # For scalability
+      replicas: 2 
+
+
 
   frontend-builder:
     container_name: frontend-builder
@@ -127,7 +130,7 @@ services:
     networks:
       - nuros
     volumes:
-      - ./frontend/dist:/app/dist  
+      - ./frontend/dist:/app/dist
     command: sh -c "npm run build"  # Run build command on container start
     restart: "no"
 

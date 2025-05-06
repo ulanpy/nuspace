@@ -1,14 +1,9 @@
-import redis
 from fastapi import HTTPException, Request, Response, status
 from jose import JWTError, jwt
 
-from backend.core.configs.config import *
+from backend.core.configs.config import config
 from backend.routes.auth.keycloak_manager import KeyCloakManager
-from backend.routes.auth.schemas import *
-
-redis_client = redis.Redis(
-    host=config.redis_host, port=config.redis_port, decode_responses=True
-)
+from backend.routes.auth.schemas import UserRole, UserSchema, UserScope
 
 
 async def validate_access_token(
@@ -20,7 +15,7 @@ async def validate_access_token(
             access_token,
             signing_key,
             algorithms=["RS256"],
-            audience="account",  # Verify this matches your Keycloak client
+            audience="account",  # Verify this
             issuer=f"{kc.KEYCLOAK_URL}/realms/{kc.REALM}",
         )
         return decoded_access_token
@@ -33,15 +28,13 @@ async def validate_access_token(
             creds["access_token"],
             signing_key,
             algorithms=["RS256"],
-            audience="account",  # Verify this matches your Keycloak client
+            audience="account",  # Verify this
             issuer=f"{kc.KEYCLOAK_URL}/realms/{kc.REALM}",
         )
         return decoded_access_token
 
 
-def validate_access_token_sync(
-    access_token: str, kc: KeyCloakManager
-) -> dict | HTTPException:
+def validate_access_token_sync(access_token: str, kc: KeyCloakManager) -> dict | HTTPException:
     try:
         signing_key = kc.get_pub_key_sync(access_token)
 
@@ -49,7 +42,7 @@ def validate_access_token_sync(
             access_token,
             signing_key,
             algorithms=["RS256"],
-            audience="account",  # Verify this matches your Keycloak client
+            audience="account",  # Verify this
             issuer=f"{kc.KEYCLOAK_URL}/realms/{kc.REALM}",
         )
         return decoded_access_token
@@ -60,9 +53,7 @@ def validate_access_token_sync(
 
 async def exchange_code_for_credentials(request: Request):
     kc: KeyCloakManager = request.app.state.kc_manager
-    token = await getattr(
-        kc.oauth, kc.__class__.__name__.lower()
-    ).authorize_access_token(request)
+    token = await getattr(kc.oauth, kc.__class__.__name__.lower()).authorize_access_token(request)
     return token
 
 
@@ -75,7 +66,7 @@ async def create_user_schema(creds: dict) -> UserSchema:
         scope=UserScope.allowed,
         name=userinfo["given_name"],
         surname=userinfo["family_name"],
-        picture="asd",  # userinfo["picture"],
+        picture="asd",  # бля ахаххахаха
         sub=userinfo["sub"],
     )
 
@@ -84,30 +75,22 @@ def set_auth_cookies(response: Response, creds: dict):
     response.set_cookie(
         key="access_token",
         value=creds["access_token"],
-        httponly=True,  # Prevent JavaScript access
-        secure=False,  # Send only over HTTPS
+        httponly=True,
+        secure=not config.IS_DEBUG,  # False if config.IS_DEBUG is True AND reverse in otherwise
         samesite="Lax",  # Mitigate CSRF attacks
+        max_age=3600,  # 1 hour
     )
     response.set_cookie(
         key="refresh_token",
         value=creds["refresh_token"],
-        httponly=True,  # Prevent JavaScript access
-        secure=False,  # Send only over HTTPS
-        samesite="Lax",  # Mitigate CSRF attacks
+        httponly=True,
+        secure=not config.IS_DEBUG,
+        samesite="Lax",
+        max_age=30 * 24 * 60 * 60,  # 30 days
     )
 
 
 def unset_auth_cookies(response: Response):
-    response.delete_cookie(
-        key="access_token",  # The name of the cookie to be deleted
-        httponly=True,  # Ensures the cookie is not accessible via JavaScript
-        secure=False,  # Set this to True in production with HTTPS
-        samesite="Lax",  # Mitigate CSRF attacks
-    )
+    response.delete_cookie(key="access_token")
 
-    response.delete_cookie(
-        key="refresh_token",  # The name of the cookie to be deleted
-        httponly=True,  # Ensures the cookie is not accessible via JavaScript
-        secure=False,  # Set this to True in production with HTTPS
-        samesite="Lax",  # Mitigate CSRF attacks
-    )
+    response.delete_cookie(key="refresh_token")

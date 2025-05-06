@@ -20,18 +20,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        IS_DEBUG: ${IS_DEBUG:-true}  # Default to 'true' if not set
     networks:
       - nuros
     restart: always
     env_file:
       - .env
     volumes:
-      - .:/nuros  # Sync local backend folder with container's /app
+      - .:/nuros  # Sync local backend folder with container's /nuros
     depends_on:
       - postgres
     environment:
       - PYTHONUNBUFFERED=1
-      - WORKERS=${GUNICORN_WORKERS} #not set this in prod and let decide on the fly
+      - WORKERS=${GUNICORN_WORKERS:-4}
+
 
   nginx:
     container_name: nginx
@@ -48,18 +51,18 @@ services:
       - fastapi
       - pgadmin
     command: [ "/bin/sh", "-c", "
-      apt update && apt install -y inotify-tools && 
-      (while inotifywait -e modify /etc/nginx/nginx.conf; do 
-        echo 'nginx config changed, copying and reloading Nginx...' && 
-        nginx -t && nginx -s reload; 
-      done) & 
+      apt update && apt install -y inotify-tools &&
+      (while inotifywait -e modify /etc/nginx/nginx.conf; do
+        echo 'nginx config changed, copying and reloading Nginx...' &&
+        nginx -t && nginx -s reload;
+      done) &
       nginx -g 'daemon off;'
       " ]
 
 
   pgadmin:
       image: dpage/pgadmin4
-      container_name: pgadmin
+      container_name: pgadmindev
       environment:
         PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
         PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
@@ -105,8 +108,8 @@ services:
     container_name: meilisearch
     ports:
       - 7700:7700
-    
-    
+
+
 
 
   rabbitmq:

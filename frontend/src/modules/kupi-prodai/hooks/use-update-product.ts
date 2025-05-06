@@ -1,4 +1,8 @@
-import { kupiProdaiApi } from "@/api/kupi-prodai-api";
+import {
+  kupiProdaiApi,
+  SignedUrlRequest,
+} from "@/modules/kupi-prodai/api/kupi-prodai-api";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useListingState } from "@/context/listing-context";
@@ -63,6 +67,19 @@ export const useUpdateProduct = () => {
         queryClient.invalidateQueries({ queryKey: [kupiProdaiApi.baseKey] });
       }, 1500),
   });
+  
+  const calculateMediaOrder = () => {
+    const remainingMedia = originalMedia.filter(
+      (media) => !mediaToDelete.includes(media.id)
+    );
+
+    // Safely convert all orders to numbers
+    const validOrders = remainingMedia
+      .map((media) => Number(media.order))
+      .filter((order) => !isNaN(order));
+
+    return validOrders.length > 0 ? Math.max(...validOrders) + 1 : 0;
+  };
 
   const handleUpdateListing = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +95,7 @@ export const useUpdateProduct = () => {
         name: newListing.name,
         description: newListing.description,
         price: newListing.price,
-        category: newListing.category as Types.ProductCategory,
+        category: newListing.category.toLowerCase() as Types.ProductCategory,
         condition: newListing.condition as Types.ProductCondition,
         status: newListing.status as Types.Status,
       });
@@ -88,13 +105,10 @@ export const useUpdateProduct = () => {
       // Step 2: Delete images that were removed
       if (mediaToDelete.length > 0) {
         const deletePromises = mediaToDelete.map((mediaId) => {
-          return fetch(
-            `/api/bucket/delete?media_id=${mediaId}`,
-            {
-              method: "DELETE",
-              credentials: "include",
-            }
-          );
+          return fetch(`/api/bucket/delete?media_id=${mediaId}`, {
+            method: "DELETE",
+            credentials: "include",
+          });
         });
 
         await Promise.all(deletePromises);
@@ -103,30 +117,43 @@ export const useUpdateProduct = () => {
 
       // Step 3: Upload new images if there are any
       if (imageFiles.length > 0) {
-        // Get signed URLs for image uploads
-        const signedUrlsResponse = await kupiProdaiApi.getSignedUrls(
-          imageFiles.length
-        );
-        console.log("signedUrlsResponse", signedUrlsResponse);
-        setUploadProgress(60);
+        const startOrder = calculateMediaOrder();
+        const requests: SignedUrlRequest[] = imageFiles.map((file, index) => ({
+          media_table: "products",
+          entity_id: Number(editingListing.id), // Ensure this is a number
+          media_format: "carousel",
+          media_order: startOrder + index, // This should already be a number
+          mime_type: file.type,
+          content_type: file.type,
+        }));
 
-        // Upload each image
-        const uploadPromises = imageFiles.map((file, index) => {
-          const signedUrl = signedUrlsResponse.signed_urls[index];
-          return kupiProdaiApi.uploadImage(
-            file,
-            signedUrl.filename,
-            editingListing.id,
-            // Use the next available order number
-            originalMedia.length + index + 1
-          );
-        });
-        console.log("uploadPromises", uploadPromises);
-        await Promise.all(uploadPromises);
+        // Get signed URLs
+        const signedUrls = await kupiProdaiApi.getSignedUrls(requests);
+        setUploadProgress(60);
+        // Upload images using signed URLs
+        await Promise.all(
+          imageFiles.map((file: File, i: number) => {
+            const { upload_url, ...meta } = signedUrls[i];
+            return fetch(upload_url, {
+              method: "PUT",
+              headers: {
+                "Content-Type": file.type,
+                "x-goog-meta-filename": meta.filename,
+                "x-goog-meta-media-table": meta.media_table,
+                "x-goog-meta-entity-id": meta.entity_id.toString(),
+                "x-goog-meta-media-format": meta.media_format,
+                "x-goog-meta-media-order": meta.media_order.toString(),
+                "x-goog-meta-mime-type": meta.mime_type,
+              },
+              body: file,
+            });
+          })
+        );
         setUploadProgress(80);
       }
+
+      // Final cleanup
       setUploadProgress(100);
-      // Reset form and close modal
       setEditingListing(null);
       setNewListing({
         name: "",
@@ -144,6 +171,11 @@ export const useUpdateProduct = () => {
       setShowEditModal(false);
     } catch (err) {
       console.error("Failed to update product:", err);
+      toast({
+        title: "Error",
+        description: "Failed to update product",
+        variant: "destructive",
+      });
     } finally {
       setIsUploading(false);
       setUploadProgress(0);

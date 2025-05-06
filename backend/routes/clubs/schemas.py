@@ -13,7 +13,7 @@ class ClubResponseSchema(BaseModel):
     type: ClubType
     description: str
     president: str
-    telegram_url: str = None
+    telegram_url: str | None = None
     instagram_url: str = None
     created_at: datetime
     updated_at: datetime
@@ -85,19 +85,3 @@ class ListEventSchema(BaseModel):
 class ListClubSchema(BaseModel):
     events: List[ClubResponseSchema]
     num_of_pages: int
-
-
-# class ClubAnnouncement(BaseModel):
-#     id: int
-#     club_id: int
-#     banner: List[MediaResponse]
-#     description: str
-#     created_at: datetime
-#     updated_at: datetime
-#
-#
-# class ClubManagers(BaseModel):
-#     id: int
-#     club_id: int
-#     sub: str
-#     updated_at: datetime

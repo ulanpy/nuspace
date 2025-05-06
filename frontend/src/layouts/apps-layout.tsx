@@ -5,11 +5,11 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
 import { ThemeToggle } from "../components/theme-toggle"
 import { LoginButton } from "../components/login-button"
-import { useAuth } from "../context/auth-context"
 import { LoginRequirementModal } from "../components/login-requirement-modal"
+import { useUser } from "@/hooks/use-user"
 
 export default function AppsLayout() {
-  const { isAuthenticated, login } = useAuth()
+  const { user, login } = useUser()
   const location = useLocation()
   const navigate = useNavigate()
   const [showLoginModal, setShowLoginModal] = useState(false)
@@ -19,12 +19,12 @@ export default function AppsLayout() {
 
   // Show login modal for unauthenticated users trying to access Kupi&Prodai
   useEffect(() => {
-    if (!isAuthenticated && isKupiProdaiPath) {
+    if (!user && isKupiProdaiPath) {
       setShowLoginModal(true)
     } else {
       setShowLoginModal(false)
     }
-  }, [isAuthenticated, isKupiProdaiPath])
+  }, [user, isKupiProdaiPath])
 
 
   // Handle login from the modal

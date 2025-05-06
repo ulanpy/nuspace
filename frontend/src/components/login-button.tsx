@@ -1,16 +1,16 @@
 "use client"
 
-import { useAuth } from "@/context/auth-context"
 import { Button } from "./ui/button"
 import { User, LogOut } from "lucide-react"
 import { BindTelegramButton } from "./bind-telegram-button"
+import { useUser } from "@/hooks/use-user"
 
 export function LoginButton() {
-  const { user, isAuthenticated, login, logout } = useAuth()
+  const { user, login, logout } = useUser()
 
   return (
     <div className="flex items-center gap-2">
-      {isAuthenticated ? (
+      {user ? (
         <div className="flex items-center gap-2">
           <span className="text-sm hidden sm:inline-block">{user?.user.given_name}</span>
           <BindTelegramButton />

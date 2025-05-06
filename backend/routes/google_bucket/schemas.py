@@ -1,29 +1,33 @@
 # schemas.py
-from typing import List
 
 from pydantic import BaseModel, HttpUrl
 
-from backend.core.database.models.media import MediaPurpose, MediaSection
-
-# Keep original if you adapt /upload-url to handle lists of mime_types
+from backend.core.database.models.media import MediaFormat, MediaTable
 
 
-# New response for single URL generation
-class SingleSignedUrlResponse(BaseModel):
-    filename: str
-    upload_url: HttpUrl
+class SignedUrlRequest(BaseModel):
+    media_table: MediaTable
+    entity_id: int
+    media_format: MediaFormat
+    media_order: int
+    mime_type: str
 
 
 class SignedUrlResponse(BaseModel):
-    signed_urls: List[SingleSignedUrlResponse]
-
+    filename: str
+    upload_url: HttpUrl
+    media_table: MediaTable
+    entity_id: int
+    media_format: MediaFormat
+    media_order: int
+    mime_type: str
 
 class UploadConfirmation(BaseModel):
     filename: str
     mime_type: str
-    section: MediaSection
+    media_table: MediaTable
     entity_id: int
-    media_purpose: MediaPurpose
+    media_format: MediaFormat
     media_order: int
 
 
@@ -36,7 +40,7 @@ class MediaResponse(BaseModel):
     id: int
     url: str
     mime_type: str
-    section: MediaSection
+    media_table: MediaTable
     entity_id: int
-    media_purpose: MediaPurpose
+    media_format: MediaFormat
     media_order: int

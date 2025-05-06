@@ -6,38 +6,44 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.database.models.media import Media
-from backend.core.database.models.product import Product, ProductFeedback
-from backend.routes.google_bucket.schemas import MediaResponse, MediaSection
+from backend.core.database.models.product import Product, ProductFeedback, ProductReport
+from backend.routes.google_bucket.schemas import MediaResponse, MediaTable
 from backend.routes.google_bucket.utils import generate_download_url
-from backend.routes.kupiprodai.schemas import *
+from backend.routes.kupiprodai.schemas import (
+    ProductFeedbackResponseSchema,
+    ProductReportResponseSchema,
+    ProductResponseSchema,
+    SearchResponseSchema,
+)
 
 
 async def get_media_responses(
     session: AsyncSession,
     request: Request,
     product_id: int,
-    media_section: MediaSection,
+    media_table: MediaTable,
 ) -> List[MediaResponse]:
     """
     Возвращает список MediaResponse для заданного продукта.
     """
     media_result = await session.execute(
         select(Media).filter(
-            Media.entity_id == product_id, Media.section == media_section
+            Media.entity_id == product_id, Media.media_table == media_table
         )
     )
     media_objects = media_result.scalars().all()
 
-    # Если есть необходимость параллельной генерации URL, можно использовать asyncio.gather:
+    # Если есть необходимость параллельной генерации URL,
+    # можно использовать asyncio.gather:
     async def build_media_response(media: Media) -> MediaResponse:
         url_data = await generate_download_url(request, media.name)
         return MediaResponse(
             id=media.id,
             url=url_data["signed_url"],
             mime_type=media.mime_type,
-            section=media.section,
+            media_table=media.media_table,
             entity_id=media.entity_id,
-            media_purpose=media.media_purpose,
+            media_format=media.media_format,
             media_order=media.media_order,
         )
 
@@ -51,13 +57,14 @@ async def build_product_response(
     product: Product,
     session: AsyncSession,
     request: Request,
-    media_section: MediaSection,
+    media_table: MediaTable,
 ) -> ProductResponseSchema:
     """
-    Собирает ProductResponseSchema из объекта Product с учетом eagerly loaded user и media.
-    """
+    Собирает ProductResponseSchema из объекта Product
+    с учетом eagerly loaded user и media.
+    """  # noqa: E501
     media_responses = await get_media_responses(
-        session, request, product.id, media_section
+        session, request, product.id, media_table
     )
     return ProductResponseSchema(
         id=product.id,
@@ -94,3 +101,15 @@ async def build_search_response(
     search_result: SearchResponseSchema,
 ) -> SearchResponseSchema:
     return SearchResponseSchema(id=search_result["id"], name=search_result["name"])
+
+
+async def build_product_report_response(
+    report: ProductReport,
+) -> ProductReportResponseSchema:
+    return ProductReportResponseSchema(
+        id=report.id,
+        user_sub=report.user_sub,
+        product_id=report.product_id,
+        text=report.text,
+        created_at=report.created_at,
+    )

@@ -98,7 +98,6 @@ class ClubAnnouncement(Base):
     club_id: Mapped[str] = mapped_column(
         ForeignKey("clubs.id"), nullable=False, unique=False
     )
-    banner: Mapped[str] = mapped_column(nullable=False, unique=True)
     description: Mapped[str] = mapped_column(nullable=False, unique=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(

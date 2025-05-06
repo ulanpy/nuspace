@@ -20,21 +20,27 @@ from backend.core.database.models.product import (
     ProductReport,
     ProductStatus,
 )
-from backend.routes.google_bucket.schemas import MediaSection
+from backend.routes.google_bucket.schemas import MediaTable
 from backend.routes.google_bucket.utils import (
     delete_bucket_object,
 )
 from backend.routes.kupiprodai.schemas import (
     ListProductFeedbackResponseSchema,
     ListResponseSchema,
+    ProductFeedbackResponseSchema,
     ProductFeedbackSchema,
+    ProductReportResponseSchema,
     ProductReportSchema,
     ProductRequestSchema,
     ProductResponseSchema,
     ProductUpdateSchema,
 )
 
-from .utils import build_product_feedbacks_response, build_product_response
+from .utils import (
+    build_product_feedbacks_response,
+    build_product_report_response,
+    build_product_response,
+)
 
 
 async def add_new_product_to_db(
@@ -42,7 +48,7 @@ async def add_new_product_to_db(
     product_data: ProductRequestSchema,
     user_sub: str,
     request: Request,
-    media_section: MediaSection = MediaSection.kp,
+    media_table: MediaTable = MediaTable.products,
 ) -> ProductResponseSchema:
     new_product = Product(**product_data.dict(), user_sub=user_sub)
     session.add(new_product)
@@ -61,16 +67,20 @@ async def add_new_product_to_db(
     await add_meilisearch_data(
         request=request,
         storage_name="products",
-        json_values={"id": new_product.id, "name": new_product.name},
+        json_values={
+            "id": new_product.id,
+            "name": new_product.name,
+            "condition": new_product.condition.value,
+        },
     )
-    return await build_product_response(new_product, session, request, media_section)
+    return await build_product_response(new_product, session, request, media_table)
 
 
 async def get_products_of_user_from_db(
     user_sub: str,
     session: AsyncSession,
     request: Request,
-    media_section: MediaSection = MediaSection.kp,
+    media_table: MediaTable = MediaTable.products,
 ) -> List[ProductResponseSchema]:
     query = (
         select(Product)
@@ -85,7 +95,7 @@ async def get_products_of_user_from_db(
     return list(
         await asyncio.gather(
             *(
-                build_product_response(product, session, request, media_section)
+                build_product_response(product, session, request, media_table)
                 for product in products
             )
         )
@@ -99,7 +109,7 @@ async def show_products_from_db(
     request: Request,
     category: ProductCategory | None = None,
     condition: ProductCondition | None = None,
-    media_section: MediaSection = MediaSection.kp,
+    media_table: MediaTable = MediaTable.products,
 ) -> ListResponseSchema:
     offset = size * (page - 1)
     sql_conditions = [Product.status == ProductStatus.active]
@@ -128,7 +138,7 @@ async def show_products_from_db(
     # Собираем ответы для всех продуктов
     products_response = await asyncio.gather(
         *(
-            build_product_response(product, session, request, media_section)
+            build_product_response(product, session, request, media_table)
             for product in products
         )
     )
@@ -139,7 +149,7 @@ async def get_product_from_db(
     request: Request,
     product_id: int,
     session: AsyncSession,
-    media_section: MediaSection = MediaSection.kp,
+    media_table: MediaTable = MediaTable.products,
 ) -> ProductResponseSchema:
     query = (
         select(Product)
@@ -150,7 +160,7 @@ async def get_product_from_db(
     product = result.scalars().first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    return await build_product_response(product, session, request, media_section)
+    return await build_product_response(product, session, request, media_table)
 
 
 async def remove_product_from_db(
@@ -165,7 +175,7 @@ async def remove_product_from_db(
         # Удаляем связанные media
         media_result = await session.execute(
             select(Media).filter(
-                Media.entity_id == product.id, Media.section == MediaSection.kp
+                Media.entity_id == product.id, Media.media_table == MediaTable.products
             )
         )
         media_objects = media_result.scalars().all()
@@ -178,6 +188,8 @@ async def remove_product_from_db(
         await remove_meilisearch_data(
             request=request, storage_name="products", object_id=str(product_id)
         )
+    else:
+        raise HTTPException(status_code=404, detail="Product not found")
 
 
 async def update_product_in_db(
@@ -185,7 +197,7 @@ async def update_product_in_db(
     product_update: ProductUpdateSchema,
     user_sub: str,
     session: AsyncSession,
-):
+) -> ProductUpdateSchema:
     query = select(Product).where(
         Product.id == product_update.product_id, Product.user_sub == user_sub
     )
@@ -196,21 +208,46 @@ async def update_product_in_db(
 
     if product_update.name is not None:
         product.name = product_update.name
-        await update_meilisearch_data(
-            request=request,
-            storage_name="products",
-            json_values={"id": product_update.product_id, "name": product.name},
-        )
     if product_update.description is not None:
         product.description = product_update.description
     if product_update.price is not None:
         product.price = product_update.price
     if product_update.status is not None:
         product.status = product_update.status
+        if product_update.status.value == "active":
+            result = await session.execute(
+                select(Product).filter(Product.id == product_update.product_id)
+            )
+            product = result.scalars().first()
+            await add_meilisearch_data(
+                request=request,
+                storage_name="products",
+                json_values={
+                    "id": product.id,
+                    "name": product.name,
+                    "condition": product.condition.value,
+                },
+            )
+        else:
+            await remove_meilisearch_data(
+                request=request,
+                storage_name="products",
+                object_id=product_update.product_id,
+            )
     if product_update.condition is not None:
         product.condition = product_update.condition
     if product_update.category is not None:
         product.category = product_update.category
+    if product_update.condition or product_update.name:
+        await update_meilisearch_data(
+            request=request,
+            storage_name="products",
+            json_values={
+                "id": product_update.product_id,
+                "name": product_update.name,
+                "condition": product_update.condition.value,
+            },
+        )
 
     await session.commit()
     await session.refresh(product)
@@ -219,17 +256,24 @@ async def update_product_in_db(
 
 async def add_new_product_feedback_to_db(
     feedback_data: ProductFeedbackSchema, user_sub: str, session: AsyncSession
-) -> ProductFeedback:
+) -> ProductFeedbackResponseSchema:
     new_feedback = ProductFeedback(**feedback_data.dict(), user_sub=user_sub)
     session.add(new_feedback)
     await session.commit()
     await session.refresh(new_feedback)
-    return new_feedback
+    query = (
+        select(ProductFeedback)
+        .options(selectinload(ProductFeedback.user))
+        .filter_by(id=new_feedback.id, user_sub=user_sub)
+    )
+    result = await session.execute(query)
+    feedback = result.scalars().first()
+    return await build_product_feedbacks_response(feedback=feedback)
 
 
 async def get_product_feedbacks_from_db(
     product_id: int, session: AsyncSession, size: int = 20, page: int = 1
-):
+) -> ListProductFeedbackResponseSchema:
     offset = size * (page - 1)
     sql_conditions = [ProductFeedback.product_id == product_id]
 
@@ -263,22 +307,24 @@ async def remove_product_feedback_from_db(
     feedback_id: int, user_sub: str, session: AsyncSession
 ):
     result = await session.execute(
-        select(ProductFeedback).filter_by(product_id=feedback_id, user_sub=user_sub)
+        select(ProductFeedback).filter_by(id=feedback_id, user_sub=user_sub)
     )
     product_feedback = result.scalars().first()
     if product_feedback:
         await session.delete(product_feedback)
         await session.commit()
+    else:
+        raise HTTPException(status_code=404, detail="Product not found")
 
 
 async def add_product_report(
     report_data: ProductReportSchema, user_sub: str, session: AsyncSession
-):
+) -> ProductReportResponseSchema:
     new_report = ProductReport(**report_data.dict(), user_sub=user_sub)
     session.add(new_report)
     await session.commit()
     await session.refresh(new_report)
-    return new_report
+    return await build_product_report_response(report=new_report)
 
 
 async def show_products_for_search(
@@ -287,7 +333,7 @@ async def show_products_for_search(
     num_of_products: int,
     product_ids: list[int],
     request: Request,
-    media_section: MediaSection = MediaSection.kp,
+    media_table: MediaTable = MediaTable.products,
 ) -> ListResponseSchema:
 
     # Подсчет общего числа продуктов
@@ -305,7 +351,7 @@ async def show_products_for_search(
     # Собираем ответы для всех продуктов
     products_response = await asyncio.gather(
         *(
-            build_product_response(product, session, request, media_section)
+            build_product_response(product, session, request, media_table)
             for product in products
         )
     )

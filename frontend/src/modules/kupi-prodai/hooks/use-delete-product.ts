@@ -1,32 +1,39 @@
-import { kupiProdaiApi } from "@/api/kupi-prodai-api";
+import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-export function useDeleteProduct(){
+export function useDeleteProduct() {
   const { toast } = useToast();
 
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   const deleteProductMutation = useMutation({
     mutationFn: kupiProdaiApi.deleteProduct,
     async onSettled() {
-      queryClient.invalidateQueries({queryKey: [kupiProdaiApi.baseKey]})
+      queryClient.invalidateQueries({ queryKey: [kupiProdaiApi.baseKey] });
     },
     async onSuccess(_, deletedId) {
-      queryClient.setQueryData(kupiProdaiApi.getUserProductsQueryOptions().queryKey, (data) => data?.filter(product => product.id !== deletedId))
+      queryClient.setQueryData(
+        kupiProdaiApi.getUserProductsQueryOptions().queryKey,
+        (data) => data?.filter((product) => product.id !== deletedId)
+      );
 
       toast({
         title: "Success",
         description: "Product deleted successfully",
-      })
+      });
     },
     async onError() {
       toast({
         title: "Error",
         description: "Failed to delete product",
         variant: "destructive",
-      })
-    }
-  })
+      });
+    },
+  });
 
-  return {handleDelete: deleteProductMutation.mutate, getIsPendingDeleteMutation: (id: number) => deleteProductMutation.isPending && deleteProductMutation.variables === id}
+  return {
+    handleDelete: deleteProductMutation.mutate,
+    getIsPendingDeleteMutation: (id: number) =>
+      deleteProductMutation.isPending && deleteProductMutation.variables === id,
+  };
 }

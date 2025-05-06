@@ -11,7 +11,7 @@ from backend.routes.clubs.enums import OrderEvents
 
 from ...core.database.models import Club, ClubEvent
 from ...core.database.models.club import ClubType, EventPolicy
-from ...core.database.models.media import MediaPurpose, MediaSection
+from ...core.database.models.media import MediaFormat, MediaTable
 from .schemas import (
     ClubEventRequestSchema,
     ClubEventResponseSchema,
@@ -27,30 +27,26 @@ async def add_new_club(
     request: Request,
     club: ClubRequestSchema,
     session: AsyncSession,
-    media_section: MediaSection = MediaSection.ev,
-    media_purpose: MediaPurpose = MediaPurpose.profile,
+    media_table: MediaTable = MediaTable.clubs,
+    media_format: MediaFormat = MediaFormat.profile,
 ) -> ClubResponseSchema:
     new_club = Club(**club.dict())
     session.add(new_club)
     await session.commit()
-    return await build_club_response(
-        new_club, session, request, media_section, media_purpose
-    )
+    return await build_club_response(new_club, session, request, media_table, media_format)
 
 
 async def add_new_event(
     request: Request,
     event: ClubEventRequestSchema,
     session: AsyncSession,
-    media_section: MediaSection = MediaSection.ev,
-    media_purpose: MediaPurpose = MediaPurpose.vertical_image,
+    media_table: MediaTable = MediaTable.club_events,
+    media_format: MediaFormat = MediaFormat.carousel,
 ) -> ClubEventResponseSchema:
     new_event = ClubEvent(**event.dict())
     session.add(new_event)
     await session.commit()
-    return await build_event_response(
-        new_event, session, request, media_section, media_purpose
-    )
+    return await build_event_response(new_event, session, request, media_table, media_format)
 
 
 async def get_club_events(
@@ -59,8 +55,8 @@ async def get_club_events(
     session: AsyncSession,
     size: int,
     page: int,
-    media_section: MediaSection = MediaSection.ev,
-    media_purpose: MediaPurpose = MediaPurpose.vertical_image,
+    media_table: MediaTable = MediaTable.club_events,
+    media_format: MediaFormat = MediaFormat.carousel,
 ) -> ListEventSchema:
     offset = size * (page - 1)
     total_query = select(func.count(ClubEvent.id)).filter_by(club_id=club_id)
@@ -80,9 +76,7 @@ async def get_club_events(
     events_response = list(
         await asyncio.gather(
             *(
-                build_event_response(
-                    event, session, request, media_section, media_purpose
-                )
+                build_event_response(event, session, request, media_table, media_format)
                 for event in events
             )
         )
@@ -95,16 +89,14 @@ async def get_event_db(
     event_id: int,
     request: Request,
     session: AsyncSession,
-    media_section: MediaSection = MediaSection.ev,
-    media_purpose: MediaPurpose = MediaPurpose.vertical_image,
+    media_table: MediaTable = MediaTable.club_events,
+    media_format: MediaFormat = MediaFormat.carousel,
 ) -> ClubEventResponseSchema | List:
     query = select(ClubEvent).filter_by(id=event_id)
     result = await session.execute(query)
     event: ClubEvent = result.scalars().first()
     if event:
-        return await build_event_response(
-            event, session, request, media_section, media_purpose
-        )
+        return await build_event_response(event, session, request, media_table, media_format)
     return []
 
 
@@ -116,8 +108,8 @@ async def get_all_events(
     club_type: ClubType,
     event_policy: EventPolicy,
     order: OrderEvents,
-    media_section: MediaSection = MediaSection.ev,
-    media_purpose: MediaPurpose = MediaPurpose.vertical_image,
+    media_table: MediaTable = MediaTable.club_events,
+    media_format: MediaFormat = MediaFormat.carousel,
 ) -> ListEventSchema:
     offset = size * (page - 1)
     total_query = select(func.count(ClubEvent.id))
@@ -148,9 +140,7 @@ async def get_all_events(
     events_response = list(
         await asyncio.gather(
             *(
-                build_event_response(
-                    event, session, request, media_section, media_purpose
-                )
+                build_event_response(event, session, request, media_table, media_format)
                 for event in events
             )
         )
@@ -165,8 +155,8 @@ async def get_all_clubs(
     size: int,
     page: int,
     club_type: ClubType,
-    media_section: MediaSection = MediaSection.ev,
-    media_purpose: MediaPurpose = MediaPurpose.profile,
+    media_table: MediaTable = MediaTable.clubs,
+    media_format: MediaFormat = MediaFormat.profile,
 ) -> ListClubSchema:
     offset = size * (page - 1)
     total_query = select(func.count(Club.id))
@@ -190,9 +180,7 @@ async def get_all_clubs(
     clubs_response = list(
         await asyncio.gather(
             *(
-                build_club_response(
-                    club, session, request, media_section, media_purpose
-                )
+                build_club_response(club, session, request, media_table, media_format)
                 for club in clubs
             )
         )
