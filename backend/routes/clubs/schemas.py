@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, field_validator
 
@@ -7,17 +7,13 @@ from backend.core.database.models.club import ClubType, EventPolicy
 from backend.routes.google_bucket.schemas import MediaResponse
 
 
-class ClubResponseSchema(BaseModel):
-    id: int
+class ClubRequestSchema(BaseModel):
     name: str
     type: ClubType
     description: str
     president: str
-    telegram_url: str | None = None
-    instagram_url: str = None
-    created_at: datetime
-    updated_at: datetime
-    media: MediaResponse | List = []
+    telegram_url: str
+    instagram_url: str
 
     @field_validator("telegram_url", "instagram_url")
     def validate_url(cls, value):
@@ -26,18 +22,35 @@ class ClubResponseSchema(BaseModel):
         return value
 
 
-class ClubRequestSchema(BaseModel):
+class ClubResponseSchema(BaseModel):
+    id: int
     name: str
     type: ClubType
     description: str
     president: str
-    telegram_url: str | None = None
-    instagram_url: str | None = None
+    telegram_url: str
+    instagram_url: str
+    created_at: datetime
+    updated_at: datetime
+    media: List[MediaResponse] = []
 
     @field_validator("telegram_url", "instagram_url")
     def validate_url(cls, value):
         if not value.startswith(("http://", "https://")):
             raise ValueError("Invalid URL format")
+        return value
+
+
+class ClubUpdateSchema(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    telegram_url: Optional[str] = None
+    instagram_url: Optional[str] = None
+
+    @field_validator("name", "description", "telegram_url", "instagram_url")
+    def validate_url(cls, value):
+        if not value or value.strip() == "":
+            raise ValueError("Invalid format")
         return value
 
 

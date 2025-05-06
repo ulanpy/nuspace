@@ -1,19 +1,15 @@
-import asyncio
 from typing import List
 
 from fastapi import Request
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.database.models import Club, ClubEvent
-from backend.core.database.models.media import Media, MediaFormat, MediaTable
+from backend.core.database.models.media import Media
 from backend.routes.google_bucket.schemas import MediaResponse
 from backend.routes.google_bucket.utils import generate_download_url
 
 from .schemas import (
     ClubEventResponseSchema,
     ClubResponseSchema,
-    ListEventSchema,
 )
 
 
@@ -30,37 +26,9 @@ async def build_media_response(request: Request, media: Media) -> MediaResponse:
     )
 
 
-async def get_media_response(
-    session: AsyncSession,
-    request: Request,
-    club_id: int,
-    media_table: MediaTable,
-    media_format: MediaFormat,
-) -> MediaResponse | List:
-    """
-    Возвращает MediaResponse для заданного клуба.
-    """
-    media_result = await session.execute(
-        select(Media).filter(
-            Media.entity_id == club_id,
-            Media.media_table == media_table,
-            Media.media_format == media_format,
-        )
-    )
-    media_object = media_result.scalars().first()
-    if media_object:
-        return await build_media_response(request, media_object)
-    return []
-
-
 async def build_club_response(
-    club: Club,
-    session: AsyncSession,
-    request: Request,
-    media_table: MediaTable,
-    media_format: MediaFormat,
+    club: Club, media_responses: List[MediaResponse]
 ) -> ClubResponseSchema:
-    media_response = await get_media_response(session, request, club.id, media_table, media_format)
     return ClubResponseSchema(
         id=club.id,
         name=club.name,
@@ -71,44 +39,13 @@ async def build_club_response(
         instagram_url=club.instagram_url,
         created_at=club.created_at,
         updated_at=club.updated_at,
-        media=media_response,
+        media=media_responses,
     )
-
-
-async def get_media_responses(
-    session: AsyncSession,
-    request: Request,
-    event_id: int,
-    media_table: MediaTable,
-    media_format: MediaFormat,
-) -> List[MediaResponse] | None:
-    """
-    Возвращает MediaResponse для заданного клуба.
-    """
-    media_result = await session.execute(
-        select(Media).filter(
-            Media.entity_id == event_id,
-            Media.media_table == media_table,
-            Media.media_format == media_format,
-        )
-    )
-    media_objects = media_result.scalars().all()
-
-    if media_objects:
-        return [await build_media_response(request, media_object) for media_object in media_objects]
-    return []
 
 
 async def build_event_response(
-    event: ClubEvent,
-    session: AsyncSession,
-    request: Request,
-    media_table: MediaTable,
-    media_format: MediaFormat,
+    event: ClubEvent, media_responses: List[MediaResponse]
 ) -> ClubEventResponseSchema:
-    media_responses = await get_media_responses(
-        session, request, event.id, media_table, media_format
-    )
     return ClubEventResponseSchema(
         id=event.id,
         club_id=event.club_id,
@@ -122,33 +59,3 @@ async def build_event_response(
         updated_at=event.updated_at,
         media=media_responses,
     )
-
-
-async def show_events_for_search(
-    request: Request,
-    session: AsyncSession,
-    size: int,
-    num_of_products: int,
-    event_ids: list[int],
-    media_table: MediaTable = MediaTable.club_events,
-    media_format: MediaFormat = MediaFormat.carousel,
-) -> ListEventSchema:
-
-    # Подсчет общего числа продуктов
-    num_of_pages = max(1, (num_of_products + size - 1) // size)
-
-    query = (
-        select(ClubEvent)
-        .where(ClubEvent.id.in_(event_ids))
-        .order_by(ClubEvent.event_datetime.asc())
-    )
-    result = await session.execute(query)
-    events = result.scalars().all()
-    # Собираем ответы для всех продуктов
-    events_response = await asyncio.gather(
-        *(
-            build_event_response(event, session, request, media_table, media_format)
-            for event in events
-        )
-    )
-    return ListEventSchema(events=events_response, num_of_pages=num_of_pages)
