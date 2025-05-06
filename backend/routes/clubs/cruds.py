@@ -16,6 +16,7 @@ from ..google_bucket.schemas import MediaResponse
 from .schemas import (
     ClubEventRequestSchema,
     ClubEventResponseSchema,
+    ClubEventUpdateSchema,
     ClubRequestSchema,
     ClubResponseSchema,
     ClubUpdateSchema,
@@ -58,7 +59,7 @@ async def update_club(
     return await build_club_response(club, media_responses)
 
 
-async def delete_club(request: Request, session: AsyncSession, club: Club):
+async def delete_club(session: AsyncSession, club: Club):
     await session.delete(club)
     await session.commit()
 
@@ -79,8 +80,43 @@ async def add_new_event(
     return await build_event_response(new_event, media_responses)
 
 
+async def update_event(
+    request: Request, session: AsyncSession, new_data: ClubEventUpdateSchema, event: ClubEvent
+) -> ClubEventResponseSchema:
+    if new_data.name is not None:
+        event.name = new_data.name
+    if new_data.place is not None:
+        event.place = new_data.place
+    if new_data.description is not None:
+        event.description = new_data.description
+    if new_data.duration is not None:
+        event.duration = new_data.duration
+    if new_data.event_datetime is not None:
+        event.event_datetime = new_data.event_datetime
+    if new_data.policy is not None:
+        event.policy = new_data.policy
+
+    await session.commit()
+    await session.refresh(event)
+
+    media_responses = await get_media_responses(
+        session, request, event.id, MediaTable.clubs, MediaFormat.profile
+    )
+    return await build_event_response(event, media_responses)
+
+
+async def delete_event(session: AsyncSession, event: ClubEvent):
+    await session.delete(event)
+    await session.commit()
+
+
 async def get_club_by_id(session: AsyncSession, club_id: int) -> Optional[Club]:
     result = await session.execute(select(Club).where(Club.id == club_id))
+    return result.scalar_one_or_none()
+
+
+async def get_event_by_id(session: AsyncSession, event_id: int) -> Optional[ClubEvent]:
+    result = await session.execute(select(ClubEvent).where(ClubEvent.id == event_id))
     return result.scalar_one_or_none()
 
 

@@ -34,12 +34,6 @@ class ClubResponseSchema(BaseModel):
     updated_at: datetime
     media: List[MediaResponse] = []
 
-    @field_validator("telegram_url", "instagram_url")
-    def validate_url(cls, value):
-        if not value.startswith(("http://", "https://")):
-            raise ValueError("Invalid URL format")
-        return value
-
 
 class ClubUpdateSchema(BaseModel):
     name: Optional[str] = None
@@ -48,9 +42,9 @@ class ClubUpdateSchema(BaseModel):
     instagram_url: Optional[str] = None
 
     @field_validator("name", "description", "telegram_url", "instagram_url")
-    def validate_url(cls, value):
+    def validate_emptiness(cls, value):
         if not value or value.strip() == "":
-            raise ValueError("Invalid format")
+            return None
         return value
 
 
@@ -64,7 +58,7 @@ class ClubEventRequestSchema(BaseModel):
     duration: int
 
     @field_validator("duration")
-    def validate_url(cls, value):
+    def validate_duration(cls, value):
         if value <= 0:
             raise ValueError("Duration should be positive")
         return value
@@ -91,19 +85,37 @@ class ClubEventResponseSchema(BaseModel):
 
 
 class ClubEventUpdateSchema(BaseModel):
-    name: Optional[str]
-    place: Optional[str]
-    description: Optional[str]
-    duration: Optional[int]
-    event_datetime: Optional[datetime]
-    policy: Optional[EventPolicy]
+    name: Optional[str] = None
+    place: Optional[str] = None
+    description: Optional[str] = None
+    duration: Optional[int] = None
+    event_datetime: Optional[datetime] = None
+    policy: Optional[EventPolicy] = None
+
+    @field_validator("name", "place", "description")
+    def validate_emptiness(cls, value):
+        if not value or value.strip() == "":
+            return None
+        return value
 
 
 class ListEventSchema(BaseModel):
     events: List[ClubEventResponseSchema]
     num_of_pages: int
 
+    @field_validator("num_of_pages")
+    def validate_pages(cls, value):
+        if value <= 0:
+            raise ValueError("Number of pages should be positive")
+        return value
+
 
 class ListClubSchema(BaseModel):
     events: List[ClubResponseSchema]
     num_of_pages: int
+
+    @field_validator("num_of_pages")
+    def validate_pages(cls, value):
+        if value <= 0:
+            raise ValueError("Number of pages should be positive")
+        return value

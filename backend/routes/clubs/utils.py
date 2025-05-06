@@ -7,6 +7,7 @@ from backend.core.database.models.media import Media
 from backend.routes.google_bucket.schemas import MediaResponse
 from backend.routes.google_bucket.utils import generate_download_url
 
+from ...common.utils import search_for_meilisearch_data
 from .schemas import (
     ClubEventResponseSchema,
     ClubResponseSchema,
@@ -59,3 +60,32 @@ async def build_event_response(
         updated_at=event.updated_at,
         media=media_responses,
     )
+
+
+async def pre_search(request: Request, keyword: str, storage_name: str = "events") -> List[str]:
+    seen = set()
+    distinct_keywords = []
+    page = 1
+
+    while len(distinct_keywords) < 5:
+        result = await search_for_meilisearch_data(
+            request=request,
+            storage_name=storage_name,
+            keyword=keyword,
+            page=page,
+            size=20,
+        )
+        hits = result.get("hits", [])
+        if not hits:
+            break
+
+        for obj in hits:
+            name = obj.get("name")
+            if name and name not in seen:
+                seen.add(name)
+                distinct_keywords.append(name)
+                if len(distinct_keywords) >= 5:
+                    break
+
+        page += 1
+    return distinct_keywords
