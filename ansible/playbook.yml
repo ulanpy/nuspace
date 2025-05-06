@@ -1,0 +1,39 @@
+- name: Deploy Docker Containers
+  hosts: my_server
+  become: true
+
+  tasks:
+    - name: Ensure Docker Python SDK is present
+      pip:
+        name: docker
+
+    - name: Ensure community.docker collection is installed locally
+      ansible.builtin.command:
+        cmd: ansible-galaxy collection install community.docker
+      delegate_to: localhost
+
+    - name: Ensure Docker is installed
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Pull Docker images
+      community.docker.docker_compose:
+        project_src: /opt/nuspace
+        pull: yes
+        files:
+          - docker-compose.prod.yml
+      register: pull_result
+
+    - name: Start Docker containers
+      community.docker.docker_compose:
+        project_src: /opt/nuspace
+        files:
+          - docker-compose.prod.yml
+        state: present
+
+    - name: Prune unused images (if updates occurred)
+      ansible.builtin.command:
+        cmd: docker system prune -f
+      when: pull_result.changed
