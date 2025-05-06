@@ -26,8 +26,6 @@ services:
     restart: always
     env_file:
       - .env
-    volumes:
-      - .:/nuros  # Sync local backend folder with container's /nuros
     depends_on:
       - postgres
     environment:
@@ -78,7 +76,7 @@ services:
       - nuros
     container_name: meilisearch
     ports:
-      - 7700:7700
+      - "127.0.0.1:7700:7700"
 
 
 
@@ -91,7 +89,7 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     ports:
-      - "15672:15672"  # Management UI
+      - "127.0.0.1:15672:15672"  # Management UI
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
