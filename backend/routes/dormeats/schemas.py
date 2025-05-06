@@ -87,6 +87,8 @@ class CanteenFeedbackResponseSchema(BaseModel):
     canteen_id: int
     feedback: str
     rating: int
+    media: List[MediaResponse] = []
+
 
     model_config = ConfigDict(from_attributes=True)
 
