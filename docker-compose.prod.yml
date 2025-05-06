@@ -19,8 +19,8 @@ services:
 
 
   fastapi:
-    container_name: kamikadze24/fastapi:latest
-    image: fastapi:latest
+    container_name: fastapi
+    image: kamikadze24/fastapi:latest
     networks:
       - nuros
     restart: always
