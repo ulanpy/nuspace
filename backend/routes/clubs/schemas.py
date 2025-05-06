@@ -54,20 +54,6 @@ class ClubUpdateSchema(BaseModel):
         return value
 
 
-class ClubEventResponseSchema(BaseModel):
-    id: int
-    club_id: int
-    name: str
-    place: str
-    description: str
-    duration: int
-    event_datetime: datetime
-    policy: EventPolicy
-    created_at: datetime
-    updated_at: datetime
-    media: List[MediaResponse] = []
-
-
 class ClubEventRequestSchema(BaseModel):
     club_id: int
     policy: EventPolicy
@@ -88,6 +74,29 @@ class ClubEventRequestSchema(BaseModel):
         if value <= datetime.now():
             raise ValueError("Event datetime must be in the future")
         return value
+
+
+class ClubEventResponseSchema(BaseModel):
+    id: int
+    club_id: int
+    name: str
+    place: str
+    description: str
+    duration: int
+    event_datetime: datetime
+    policy: EventPolicy
+    created_at: datetime
+    updated_at: datetime
+    media: List[MediaResponse] = []
+
+
+class ClubEventUpdateSchema(BaseModel):
+    name: Optional[str]
+    place: Optional[str]
+    description: Optional[str]
+    duration: Optional[int]
+    event_datetime: Optional[datetime]
+    policy: Optional[EventPolicy]
 
 
 class ListEventSchema(BaseModel):

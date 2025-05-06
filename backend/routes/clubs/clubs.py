@@ -83,7 +83,30 @@ async def delete_club(
     await cruds.delete_club(request=request, session=db_session, club=club)
 
 
-@router.post("/events/add", response_model=ClubEventResponseSchema)
+@router.get("/events", response_model=ListEventSchema)
+async def get_events(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session),
+    size: int = 20,
+    page: int = 1,
+    club_type: Optional[ClubType] = None,
+    event_policy: Optional[EventPolicy] = None,
+    order: Optional[OrderEvents] = OrderEvents.event_datetime,
+) -> ListEventSchema:
+
+    return await cruds.get_all_events(
+        request=request,
+        session=db_session,
+        size=size,
+        page=page,
+        club_type=club_type,
+        event_policy=event_policy,
+        order=order,
+    )
+
+
+@router.post("/events", response_model=ClubEventResponseSchema)
 async def add_event(
     request: Request,
     event: ClubEventRequestSchema,
@@ -109,27 +132,22 @@ async def add_event(
         )
 
 
-@router.get("/events/list", response_model=ListEventSchema)
-async def get_events(
+@router.patch("/events", response_model=ListEventSchema)
+async def update_event(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     db_session: AsyncSession = Depends(get_db_session),
-    size: int = 20,
-    page: int = 1,
-    club_type: Optional[ClubType] = None,
-    event_policy: Optional[EventPolicy] = None,
-    order: Optional[OrderEvents] = OrderEvents.event_datetime,
 ) -> ListEventSchema:
+    pass
 
-    return await cruds.get_all_events(
-        request=request,
-        session=db_session,
-        size=size,
-        page=page,
-        club_type=club_type,
-        event_policy=event_policy,
-        order=order,
-    )
+
+@router.delete("/events", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_event(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session),
+) -> ListEventSchema:
+    pass
 
 
 @router.get("/events/search/", response_model=ListEventSchema)
