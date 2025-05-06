@@ -1,6 +1,5 @@
 import { ReportButton } from "@/components/molecules/report-button";
 import { useTheme } from "@/context/theme-provider";
-import { FaTelegram } from "react-icons/fa";
 export const ContactSection = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
@@ -15,12 +14,13 @@ export const ContactSection = () => {
         Found a bug or having issues? We're here to help. Reach out directly for
         quick assistance.
       </p>
-      <ReportButton text="Contact via Telegram" className="inline-flex items-center px-6 py-3 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700
-                  transition duration-300 ease-in-out transform"/>
+      <ReportButton
+        text="Contact via Telegram"
+        className="inline-flex items-center px-6 py-3 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700
+                  transition duration-300 ease-in-out transform"
+      />
       <p
-        className={`mt-4 text-sm ${
-          isDark ? "text-gray-400" : "text-gray-500"
-        }`}
+        className={`mt-4 text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}
       >
         We appreciate your feedback and work quickly to resolve any issues.
       </p>
