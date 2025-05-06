@@ -7,50 +7,6 @@
     docker_password: "{{ lookup('env', 'DOCKER_PASSWORD') }}"
 
   tasks:
-    - name: Update apt package index
-      apt:
-        update_cache: yes
-        cache_valid_time: 3600
-
-    - name: Install prerequisites (Debian/Ubuntu)
-      apt:
-        name:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - gnupg
-          - software-properties-common  # Ubuntu only (skipped on Debian)
-        state: present
-      when: ansible_os_family == 'Debian'
-
-    - name: Add Docker GPG key (Debian/Ubuntu)
-      ansible.builtin.get_url:
-        url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
-        dest: /usr/share/keyrings/docker-archive-keyring.gpg
-        mode: '0644'
-
-    - name: Add Docker repository (Debian/Ubuntu)
-      ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
-        state: present
-        update_cache: yes
-      when: ansible_os_family == 'Debian'
-
-    - name: Install Docker Engine (Debian/Ubuntu)
-      apt:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-compose-plugin
-        state: present
-
-    - name: Ensure Docker service is running
-      service:
-        name: docker
-        state: started
-        enabled: yes
-
     - name: Log in to Docker Hub
       community.docker.docker_login:
         username: "{{ docker_username }}"
