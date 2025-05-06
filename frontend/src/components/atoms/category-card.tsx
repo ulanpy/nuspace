@@ -1,4 +1,4 @@
-import { useTheme } from "../theme-provider";
+import { useTheme } from "../../context/theme-provider";
 
 interface CategoryCardProps {
   title: string;
@@ -7,7 +7,12 @@ interface CategoryCardProps {
   onClick: () => void;
 }
 
-export const CategoryCard = ({ title, icon, isSelected, onClick }: CategoryCardProps) => {
+export const CategoryCard = ({
+  title,
+  icon,
+  isSelected,
+  onClick,
+}: CategoryCardProps) => {
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
 

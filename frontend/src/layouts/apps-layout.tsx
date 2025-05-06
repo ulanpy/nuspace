@@ -1,43 +1,43 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
-import { ArrowLeft } from "lucide-react"
-import { ThemeToggle } from "../components/theme-toggle"
-import { LoginButton } from "../components/login-button"
-import { LoginRequirementModal } from "../components/login-requirement-modal"
-import { useUser } from "@/hooks/use-user"
+import { useState, useEffect } from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { ThemeToggle } from "../components/molecules/theme-toggle";
+import { LoginButton } from "../components/molecules/login-button";
+import { LoginRequirementModal } from "../components/molecules/login-requirement-modal";
+import { useUser } from "@/hooks/use-user";
+
 
 export default function AppsLayout() {
-  const { user, login } = useUser()
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [showLoginModal, setShowLoginModal] = useState(false)
+  const { user, login } = useUser();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Check if the current path is for Kupi&Prodai
-  const isKupiProdaiPath = location.pathname.includes("/apps/kupi-prodai")
+  const isKupiProdaiPath = location.pathname.includes("/apps/kupi-prodai");
 
   // Show login modal for unauthenticated users trying to access Kupi&Prodai
   useEffect(() => {
     if (!user && isKupiProdaiPath) {
-      setShowLoginModal(true)
+      setShowLoginModal(true);
     } else {
-      setShowLoginModal(false)
+      setShowLoginModal(false);
     }
-  }, [user, isKupiProdaiPath])
-
+  }, [user, isKupiProdaiPath]);
 
   // Handle login from the modal
   const handleLogin = () => {
-    login()
-    setShowLoginModal(false)
-  }
+    login();
+    setShowLoginModal(false);
+  };
 
   // Handle modal dismissal
   const handleDismiss = () => {
-    setShowLoginModal(false)
-    navigate("/")
-  }
+    setShowLoginModal(false);
+    navigate("/");
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -70,5 +70,5 @@ export default function AppsLayout() {
         )}
       </main>
     </div>
-  )
+  );
 }

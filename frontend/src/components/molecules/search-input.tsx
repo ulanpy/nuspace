@@ -1,10 +1,10 @@
 "use client";
 
 import { Search, X } from "lucide-react";
-import { Input } from "../ui/input";
+import { Input } from "../atoms/input";
 import { useListingState } from "@/context/listing-context";
 import { useState, useEffect, useRef, KeyboardEvent, ChangeEvent } from "react";
-import { useTheme } from "../theme-provider";
+import { useTheme } from "../../context/theme-provider";
 
 export function SearchInput({
   inputValue,

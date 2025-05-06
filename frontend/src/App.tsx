@@ -6,10 +6,10 @@ import NUEventsPage from "./pages/apps/nu-events";
 import DormEatsPage from "./pages/apps/dorm-eats";
 import { About } from "./pages/apps/about";
 import AppsLayout from "./layouts/apps-layout";
-import { Toasts } from "./components/ui/toast";
+import { Toasts } from "./components/atoms/toast";
 import { ListingProvider } from "./context/listing-context";
 import { ImageProvider } from "./context/image-context";
-import { MediaProvider } from "./context/media-context";;
+import { MediaProvider } from "./context/media-context";
 
 function App() {
   return (

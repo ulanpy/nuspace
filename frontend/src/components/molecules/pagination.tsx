@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useTheme } from "../theme-provider";
+import { useTheme } from "../../context/theme-provider";
 
 export interface PaginationProps {
   length: number;
