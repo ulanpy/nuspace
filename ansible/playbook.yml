@@ -25,6 +25,7 @@
         project_src: /opt/nuspace
         files:
           - docker-compose.prod.yml
+        recreate: true
         state: present
 
     - name: Prune unused images
