@@ -38,12 +38,20 @@ jobs:
           sudo apt update
           sudo apt install -y ansible
 
+      - name: Write SSH private key to file
+        run: |
+          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ansible_key.pem
+          chmod 600 ansible_key.pem
+
+      - name: Create dynamic Ansible inventory
+        run: |
+          mkdir -p ansible
+          echo "[server]" > ansible/inventory.ini
+          echo "my_server ansible_host=${{ secrets.ANSIBLE_HOST }} ansible_user=${{ secrets.ANSIBLE_USER }} ansible_ssh_private_key_file=ansible_key.pem" >> ansible/inventory.ini
+
       - name: Run Ansible Playbook
+        run: |
+          ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          ANSIBLE_HOST: ${{ secrets.ANSIBLE_HOST }}
-          ANSIBLE_USER: ${{ secrets.ANSIBLE_USER }}
-          ANSIBLE_SSH_KEY: ${{ secrets.ANSIBLE_SSH_KEY }}
-        run: |
-          ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
