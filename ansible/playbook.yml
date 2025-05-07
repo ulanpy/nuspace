@@ -34,3 +34,4 @@
     - name: Prune all unused Docker images
       community.docker.docker_prune:
         images: true
+        all: true
