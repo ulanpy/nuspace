@@ -1,0 +1,34 @@
+---
+- name: Deploy Docker Containers
+  hosts: webservers
+  become: true
+  vars:
+    docker_username: "{{ lookup('env', 'DOCKER_USERNAME') }}"
+    docker_password: "{{ lookup('env', 'DOCKER_PASSWORD') }}"
+    docker_image_tag: "{{ lookup('env', 'DOCKER_IMAGE_TAG') }}"
+  tasks:
+    - name: Log in to Docker Hub
+      community.docker.docker_login:
+        username: "{{ docker_username }}"
+        password: "{{ docker_password }}"
+
+    - name: Pull Docker images
+      community.docker.docker_compose_v2:
+        project_src: /opt/nuspace
+        files:
+          - docker-compose.prod.yml
+        pull: always
+        recreate: always
+        state: present
+
+    - name: Start Docker containers
+      community.docker.docker_compose_v2:
+        project_src: /opt/nuspace
+        files:
+          - docker-compose.prod.yml
+        recreate: always
+        state: present
+
+    - name: Prune unused images
+      command: docker system prune -f
+      when: pull_result.changed

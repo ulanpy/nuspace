@@ -20,18 +20,12 @@ services:
 
   fastapi:
     container_name: fastapi
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        IS_DEBUG: ${IS_DEBUG:-true}  # Default to 'true' if not set
+    image: kamikadze24/fastapi:{{ docker_image_tag }}
     networks:
       - nuros
     restart: always
     env_file:
       - .env
-    volumes:
-      - .:/nuros  # Sync local backend folder with container's /nuros
     depends_on:
       - postgres
     environment:
@@ -82,7 +76,7 @@ services:
       - nuros
     container_name: meilisearch
     ports:
-      - 7700:7700
+      - "127.0.0.1:7700:7700"
 
 
 
@@ -95,7 +89,7 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     ports:
-      - "15672:15672"  # Management UI
+      - "127.0.0.1:15672:15672"  # Management UI
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
@@ -106,11 +100,11 @@ services:
 
 
   celery-worker:
-    build:
-      context: .
-      dockerfile: Dockerfile_celery
+    container_name: celery-worker
+    image: kamikadze24/celeryworker:{{ docker_image_tag }}
     networks:
       - nuros
+    restart: always
     env_file:
       - .env
     depends_on:
@@ -119,10 +113,12 @@ services:
       - fastapi
     command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
     environment:
-      - CELERY_WORKER_CONCURRENCY=4  # Adjust based on your needs
+      - CELERY_WORKER_CONCURRENCY=4
       - CELERY_WORKER_PREFETCH_MULTIPLIER=1
     deploy:
-      replicas: 2  # For scalability
+      replicas: 2 
+
+
 
   frontend-builder:
     container_name: frontend-builder
