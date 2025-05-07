@@ -12,7 +12,7 @@
     - name: Pull latest changes from origin/main
       become: true  # This ensures the task runs with sudo
       git:
-        repo: 'https://github.com/your-repository/nuspace.git'
+        repo: 'https://github.com/ulanpy/nuspace.git'
         dest: /opt/nuspace
         version: main
         force: yes  # This will ensure the latest changes are pulled
