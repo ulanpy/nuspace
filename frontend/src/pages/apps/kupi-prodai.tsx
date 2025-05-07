@@ -15,23 +15,27 @@ import {
   Trash2,
   Plus,
 } from "lucide-react";
-import { Input } from "../../components/ui/input";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
+import { Input } from "../../components/atoms/input";
+import { Button } from "../../components/atoms/button";
+import { Card, CardContent } from "../../components/atoms/card";
+import { Badge } from "../../components/atoms/badge";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "../../components/ui/tabs";
-import { SliderGroup } from "@/components/slider-group";
-import { ConditionGroup } from "@/components/condition-group";
+} from "../../components/atoms/tabs";
+import { SliderContainer } from "@/components/molecules/slider-container";
+import { ConditionGroup } from "@/components/molecules/condition-group";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../../hooks/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
-import { Progress } from "../../components/ui/progress";
-import { Skeleton } from "../../components/ui/skeleton";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "../../components/atoms/alert";
+import { Progress } from "../../components/atoms/progress";
+import { Skeleton } from "../../components/atoms/skeleton";
 import { useProducts } from "@/modules/kupi-prodai/hooks/use-products";
 import { useUserProducts } from "@/modules/kupi-prodai/hooks/use-user-products";
 import { useCreateProduct } from "@/modules/kupi-prodai/hooks/use-create-product";
@@ -48,10 +52,12 @@ import { MdSports, MdBrush, MdLocalOffer } from "react-icons/md";
 import { BsPencilFill } from "react-icons/bs";
 import { GiKnifeFork } from "react-icons/gi";
 import { IoTicket, IoCarSport } from "react-icons/io5";
-import { SearchInput } from "@/components/search-input";
+import { SearchInput } from "@/components/molecules/search-input";
 import { useSearchLogic } from "@/hooks/useSearchLogic";
-import { Pagination } from "@/components/pagination";
+import { Pagination } from "@/components/molecules/pagination";
 import { useUser } from "@/hooks/use-user";
+import { CategoryCard } from "@/components/atoms/category-card";
+import { CategorySlider } from "@/components/organisms/category-slider";
 
 // Define categories and conditions
 const categories = [
@@ -114,7 +120,7 @@ const categories = [
 ];
 
 const conditions = ["All Conditions", "new", "used"];
-const displayConditions = ["All Conditions", "New","Used"];
+const displayConditions = ["All Conditions", "New", "Used"];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -379,25 +385,26 @@ export default function KupiProdaiPage() {
   const {
     inputValue,
     setInputValue,
+    preSearchedProducts,
     handleSearch,
     searchedProducts,
-    preSearchedProducts,
   } = useSearchLogic({
     setSelectedCategory,
     baseRoute: "/apps/kupi-prodai",
     searchParam: "text",
   });
-  const [products, setProducts] = useState<Types.PaginatedResponse<Types.Product> | null>(null)
+  const [products, setProducts] =
+    useState<Types.PaginatedResponse<Types.Product> | null>(null);
 
   useEffect(() => {
-    if(searchedProducts){
-      setProducts(searchedProducts)
+    if (searchedProducts) {
+      setProducts(searchedProducts);
     }
-  }, [searchedProducts])
+  }, [searchedProducts]);
 
   useEffect(() => {
-    setProducts(productItems)
-  }, [productItems])
+    setProducts(productItems);
+  }, [productItems]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -444,7 +451,7 @@ export default function KupiProdaiPage() {
               selectedCondition={selectedCondition}
               setSelectedCondition={setSelectedCondition}
             />
-            <SliderGroup
+            <CategorySlider
               categories={categories}
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
