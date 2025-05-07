@@ -20,6 +20,8 @@
         pull: always
         recreate: always
         state: present
+      environment:
+        DOCKER_IMAGE_TAG: "{{ docker_image_tag }}"
       register: pull_result
 
     - name: Start Docker containers
@@ -29,7 +31,5 @@
           - docker-compose.prod.yml
         recreate: always
         state: present
-
-    - name: Prune unused images
-      command: docker system prune -f
-      when: pull_result.changed
+      environment:
+        DOCKER_IMAGE_TAG: "{{ docker_image_tag }}"
