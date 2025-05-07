@@ -22,9 +22,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      - name: Extract Git SHA
+        run: echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
       - name: Build and Push Docker Images
         run: |
           set -e
+          export TAG=$GIT_SHA
           docker compose -f docker-compose.build.yaml build
           docker compose -f docker-compose.build.yaml push
 
@@ -62,3 +66,4 @@ jobs:
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_IMAGE_TAG: ${{ env.GIT_SHA }}

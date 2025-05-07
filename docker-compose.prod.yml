@@ -20,7 +20,7 @@ services:
 
   fastapi:
     container_name: fastapi
-    image: kamikadze24/fastapi:latest
+    image: kamikadze24/fastapi:{{ docker_image_tag }}
     networks:
       - nuros
     restart: always
@@ -101,7 +101,7 @@ services:
 
   celery-worker:
     container_name: celery-worker
-    image: kamikadze24/celeryworker:latest
+    image: kamikadze24/celeryworker:{{ docker_image_tag }}
     networks:
       - nuros
     restart: always
