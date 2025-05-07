@@ -26,82 +26,58 @@ class ClubType(PyEnum):
 
 class Club(Base):
     __tablename__ = "clubs"
-    id: Mapped[int] = mapped_column(
-        BigInteger, primary_key=True, nullable=False, index=True
-    )
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(nullable=False, unique=True)
-    type: Mapped[ClubType] = mapped_column(
-        SQLEnum(ClubType, name="club_type"), nullable=False
-    )
+    type: Mapped[ClubType] = mapped_column(SQLEnum(ClubType, name="club_type"), nullable=False)
     description: Mapped[str] = mapped_column(nullable=False)
     president: Mapped[str] = mapped_column(ForeignKey("users.sub"), nullable=False)
     telegram_url: Mapped[str] = mapped_column(nullable=True, unique=False)
     instagram_url: Mapped[str] = mapped_column(nullable=True, unique=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    managers = relationship("ClubManager", back_populates="club")
-    events = relationship("ClubEvent", back_populates="club")
-    announcements = relationship("ClubAnnouncement", back_populates="club")
+    managers = relationship("ClubManager", back_populates="club", cascade="all, delete-orphan")
+    events = relationship("ClubEvent", back_populates="club", cascade="all, delete-orphan")
+    announcements = relationship(
+        "ClubAnnouncement", back_populates="club", cascade="all, delete-orphan"
+    )
     president_user = relationship("User", back_populates="clubs_led")
 
 
 class ClubManager(Base):
     __tablename__ = "club_managers"
-    id: Mapped[int] = mapped_column(
-        BigInteger, primary_key=True, nullable=False, index=True
-    )
-    club_id: Mapped[str] = mapped_column(
-        ForeignKey("clubs.id"), nullable=False, unique=False
-    )
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+    club_id: Mapped[str] = mapped_column(ForeignKey("clubs.id"), nullable=False, unique=False)
     sub: Mapped[str] = mapped_column(ForeignKey("users.sub"), nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     club = relationship("Club", back_populates="managers")
 
 
 class ClubEvent(Base):
     __tablename__ = "club_events"
-    id: Mapped[int] = mapped_column(
-        BigInteger, primary_key=True, nullable=False, index=True
-    )
-    club_id: Mapped[str] = mapped_column(
-        ForeignKey("clubs.id"), nullable=False, unique=False
-    )
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+    club_id: Mapped[str] = mapped_column(ForeignKey("clubs.id"), nullable=False, unique=False)
     policy: Mapped[EventPolicy] = mapped_column(
         SQLEnum(EventPolicy, name="event_policy"), nullable=False
     )
     name: Mapped[str] = mapped_column(nullable=False, unique=False)
     place: Mapped[str] = mapped_column(nullable=False, unique=False)
-    event_datetime: Mapped[DateTime] = mapped_column(
-        DateTime, nullable=False
-    )  # DateTime column
+    event_datetime: Mapped[DateTime] = mapped_column(DateTime, nullable=False)  # DateTime column
     description: Mapped[str] = mapped_column(nullable=False, unique=False)
     duration: Mapped[int] = mapped_column(nullable=True, unique=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     club = relationship("Club", back_populates="events")
 
 
 class ClubAnnouncement(Base):
     __tablename__ = "club_announcements"
-    id: Mapped[BigInteger] = mapped_column(
-        BigInteger, primary_key=True, nullable=False, index=True
-    )
-    club_id: Mapped[str] = mapped_column(
-        ForeignKey("clubs.id"), nullable=False, unique=False
-    )
+    id: Mapped[BigInteger] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+    club_id: Mapped[str] = mapped_column(ForeignKey("clubs.id"), nullable=False, unique=False)
     description: Mapped[str] = mapped_column(nullable=False, unique=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     club = relationship("Club", back_populates="announcements")
