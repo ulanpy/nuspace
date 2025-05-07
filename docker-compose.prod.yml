@@ -100,7 +100,6 @@ services:
 
 
   celery-worker:
-    container_name: celery-worker
     image: kamikadze24/celeryworker:${DOCKER_IMAGE_TAG}
     networks:
       - nuros
