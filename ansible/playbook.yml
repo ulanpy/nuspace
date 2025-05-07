@@ -32,6 +32,4 @@
         DOCKER_IMAGE_TAG: "{{ docker_image_tag }}"
 
     - name: Prune all unused Docker images
-      community.docker.docker_prune:
-        images: true
-        all: true
+      command: docker system prune -a -f
