@@ -6,7 +6,17 @@
     docker_username: "{{ lookup('env', 'DOCKER_USERNAME') }}"
     docker_password: "{{ lookup('env', 'DOCKER_PASSWORD') }}"
     docker_image_tag: "{{ lookup('env', 'DOCKER_IMAGE_TAG') }}"
+
   tasks:
+  
+    - name: Pull latest changes from origin/main
+      become: true  # This ensures the task runs with sudo
+      git:
+        repo: 'https://github.com/your-repository/nuspace.git'
+        dest: /opt/nuspace
+        version: main
+        force: yes  # This will ensure the latest changes are pulled
+
     - name: Log in to Docker Hub
       community.docker.docker_login:
         username: "{{ docker_username }}"
