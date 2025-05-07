@@ -1,25 +1,38 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { Search, Users, BookOpen, Building, Star, Clock, MapPin } from "lucide-react"
-import { Input } from "../../components/ui/input"
-import { Button } from "../../components/ui/button"
-import { Card, CardContent } from "../../components/ui/card"
-import { Badge } from "../../components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
-import { format } from "date-fns"
+import { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Search,
+  Users,
+  BookOpen,
+  Building,
+  Star,
+  Clock,
+  MapPin,
+} from "lucide-react";
+import { Input } from "../../components/atoms/input";
+import { Button } from "../../components/atoms/button";
+import { Card, CardContent } from "../../components/atoms/card";
+import { Badge } from "../../components/atoms/badge";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/atoms/tabs";
+import { format } from "date-fns";
 
 interface Event {
-  id: number
-  title: string
-  date: Date
-  location: string
-  organizer: string
-  organizerType: "club" | "admin" | "other"
-  category: string
-  image: string
-  isFeatured: boolean
+  id: number;
+  title: string;
+  date: Date;
+  location: string;
+  organizer: string;
+  organizerType: "club" | "admin" | "other";
+  category: string;
+  image: string;
+  isFeatured: boolean;
 }
 
 const events: Event[] = [
@@ -89,7 +102,7 @@ const events: Event[] = [
     image: "https://placehold.co/350x200",
     isFeatured: false,
   },
-]
+];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -99,7 +112,7 @@ const containerVariants = {
       staggerChildren: 0.1,
     },
   },
-}
+};
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
@@ -112,41 +125,47 @@ const itemVariants = {
       damping: 15,
     },
   },
-}
+};
 
 export default function NUEventsPage() {
-  const [activeTab, setActiveTab] = useState("all")
-  const [savedEvents, setSavedEvents] = useState<number[]>([])
+  const [activeTab, setActiveTab] = useState("all");
+  const [savedEvents, setSavedEvents] = useState<number[]>([]);
 
   const toggleSave = (id: number) => {
     if (savedEvents.includes(id)) {
-      setSavedEvents(savedEvents.filter((eventId) => eventId !== id))
+      setSavedEvents(savedEvents.filter((eventId) => eventId !== id));
     } else {
-      setSavedEvents([...savedEvents, id])
+      setSavedEvents([...savedEvents, id]);
     }
-  }
+  };
 
   const getOrganizerIcon = (type: Event["organizerType"]) => {
     switch (type) {
       case "club":
-        return <Users className="h-4 w-4" />
+        return <Users className="h-4 w-4" />;
       case "admin":
-        return <Building className="h-4 w-4" />
+        return <Building className="h-4 w-4" />;
       case "other":
-        return <BookOpen className="h-4 w-4" />
+        return <BookOpen className="h-4 w-4" />;
     }
-  }
+  };
 
   const filteredEvents =
     activeTab === "all"
       ? events
-      : events.filter((event) => (activeTab === "featured" ? event.isFeatured : event.organizerType === activeTab))
+      : events.filter((event) =>
+          activeTab === "featured"
+            ? event.isFeatured
+            : event.organizerType === activeTab
+        );
 
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col space-y-1 sm:space-y-2">
         <h1 className="text-2xl sm:text-3xl font-bold">NU Events</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Discover events happening at Nazarbayev University</p>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Discover events happening at Nazarbayev University
+        </p>
       </div>
 
       <div className="relative">
@@ -179,12 +198,16 @@ export default function NUEventsPage() {
                       className="object-cover w-full h-36 sm:h-48"
                     />
                     {event.isFeatured && (
-                      <Badge className="absolute top-2 right-2 bg-yellow-500 text-white text-xs">Featured</Badge>
+                      <Badge className="absolute top-2 right-2 bg-yellow-500 text-white text-xs">
+                        Featured
+                      </Badge>
                     )}
                   </div>
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex justify-between items-start mb-1 sm:mb-2">
-                      <h3 className="font-medium text-base sm:text-lg">{event.title}</h3>
+                      <h3 className="font-medium text-base sm:text-lg">
+                        {event.title}
+                      </h3>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -192,7 +215,11 @@ export default function NUEventsPage() {
                         onClick={() => toggleSave(event.id)}
                       >
                         <Star
-                          className={`h-4 w-4 sm:h-5 sm:w-5 ${savedEvents.includes(event.id) ? "fill-yellow-500 text-yellow-500" : "text-muted-foreground"}`}
+                          className={`h-4 w-4 sm:h-5 sm:w-5 ${
+                            savedEvents.includes(event.id)
+                              ? "fill-yellow-500 text-yellow-500"
+                              : "text-muted-foreground"
+                          }`}
                         />
                       </Button>
                     </div>
@@ -202,7 +229,9 @@ export default function NUEventsPage() {
                     <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
                       <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground">
                         <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>{format(event.date, "EEEE, MMMM d, yyyy • h:mm a")}</span>
+                        <span>
+                          {format(event.date, "EEEE, MMMM d, yyyy • h:mm a")}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground">
                         <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -221,6 +250,5 @@ export default function NUEventsPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
-
