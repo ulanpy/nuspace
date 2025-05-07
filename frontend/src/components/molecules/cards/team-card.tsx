@@ -1,56 +1,63 @@
-import { useTheme } from "@/context/theme-provider";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/atoms/card";
+import { FaUsers } from "react-icons/fa";
 
-export function TeamCard({ team }: Types.TeamCardProps) {
+import { teamMembers } from "@/data/team-members";
+import { TeamMemberCard } from "@/components/molecules/cards/team-member-card";
+import { Modal } from "@/components/atoms/modal";
+import { useTheme } from "@/context/theme-provider";
+
+export function TeamCard() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const { name, role, contacts, imgLink } = team;
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const cardWidth = () => {
-    const charWidth = 4;
-    const baseWidth = 160;
-    const calculatedWidth = baseWidth + name.length * charWidth;
-    return Math.max(baseWidth, calculatedWidth);
-  };
   return (
-    <Card
-      className={`text-center h-64 ${
-        isDark ? "bg-gray-800 border-gray-700" : "bg-white"
-      }`}
-      style={{ width: cardWidth() }}
-    >
-      <CardContent className="pt-6 pb-6 flex flex-col justify-between items-center h-full">
-        <div className="w-full">
-          <div className="inline-flex rounded-full overflow-hidden h-20 w-20 mb-4">
-            <img src={imgLink} loading="lazy" className="object-cover"></img>
+    <>
+      <Card
+        className={`text-center cursor-pointer transform transition-transform  ${
+          isDark
+            ? "bg-gray-800 border-gray-700 hover:bg-slate-800"
+            : "bg-white hover:bg-gray-50"
+        }`}
+        onClick={() => setIsModalOpen(true)}
+      >
+        <CardContent className="py-8 px-6 flex flex-col items-center">
+          <div className="flex items-center justify-center rounded-full overflow-hidden h-24 w-24 mb-5 bg-indigo-600/20">
+            <FaUsers className="text-indigo-500" size={42} />
           </div>
 
-          <h3 className="text-lg font-semibold">{name}</h3>
+          <h3 className="text-xl font-semibold mb-2">All Developers</h3>
           <p
-            className={`text-sm mb-3 ${
+            className={`text-sm mb-4 ${
               isDark ? "text-gray-400" : "text-gray-500"
             }`}
           >
-            {role}
+            Meet our talented development team
           </p>
-        </div>
-        <div className="flex justify-center space-x-3">
-          {contacts.map((contact, index) => (
-            <a
-              href={contact.link}
-              target="_blank"
-              rel="noopener noreferrer"
+
+          <button className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
+            View Team
+          </button>
+        </CardContent>
+      </Card>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Our Development Team"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4 max-h-[70vh] overflow-y-auto">
+          {teamMembers.map((member, index) => (
+            <TeamMemberCard
               key={index}
-              className={`hover:text-indigo-500 transition-colors ${
-                isDark ? "text-gray-400" : "text-gray-600"
-              }`}
-              aria-label={`${name}'s GitHub profile`}
-            >
-              {contact.icon}
-            </a>
+              name={member.name}
+              role={member.role}
+              imgLink={member.imgLink}
+              contacts={member.contacts}
+            />
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </Modal>
+    </>
   );
 }

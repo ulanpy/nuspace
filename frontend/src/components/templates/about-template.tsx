@@ -2,8 +2,7 @@ import { useTheme } from "@/context/theme-provider";
 import { Header } from "@/components/organisms/about/header";
 import { MessionSection } from "@/components/organisms/about/mession-section";
 import { FeatureSection } from "@/components/organisms/about/feature-section";
-import { TeamSection } from "@/components/organisms/about/team-section";
-import { ContactSection } from "@/components/organisms/about/contact-section";
+import { AboutUsSection } from "../organisms/about/about-us-section";
 
 export function AboutTemplate() {
   const { theme } = useTheme();
@@ -19,8 +18,7 @@ export function AboutTemplate() {
         <Header />
         <MessionSection />
         <FeatureSection />
-        <TeamSection />
-        <ContactSection />
+        <AboutUsSection />
       </div>
     </div>
   );

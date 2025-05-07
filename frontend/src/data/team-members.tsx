@@ -134,6 +134,42 @@ export const teamMembers: Types.Team[] = [
       },
     ],
   },
-
+  {
+    name: "Ulan",
+    imgLink: "/images/teams/ulan.jpg",
+    role: "Backend Developer",
+    contacts: [
+      {
+        icon: <FaGithub size={20} />,
+        link: "https://github.com/ulanpy/",
+      },
+      {
+        icon: <FaLinkedin size={20} />,
+        link: "",
+      },
+      {
+        icon: <FaTelegram size={20} />,
+        link: "https://t.me/kamikadze24",
+      },
+    ],
+  },
+  {
+    name: "Adil",
+    imgLink: "/images/teams/adil.jpg",
+    role: "Backend Developer",
+    contacts: [
+      {
+        icon: <FaGithub size={20} />,
+        link: "https://github.com/weeebdev",
+      },
+      {
+        icon: <FaLinkedin size={20} />,
+        link: "https://www.linkedin.com/in/adildev/",
+      },
+      {
+        icon: <FaTelegram size={20} />,
+        link: "https://t.me/weeebdev",
+      },
+    ],
+  },
 ];
-

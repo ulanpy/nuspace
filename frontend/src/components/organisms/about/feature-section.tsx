@@ -8,7 +8,7 @@ export const FeatureSection = () => {
       description:
         "Here students have the opportunity to sell, buy or exchange their belongings.",
       icon: MdSell,
-      link: "/apps/kupi-prodai",
+      link: "https://nuspace.kz/apps/kupi-prodai",
     },
     {
       title: "NU Events",
