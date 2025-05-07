@@ -1,7 +1,8 @@
 services:
 
   fastapi:
-    image: kamikadze24/fastapi:latest
+    image: kamikadze24/fastapi:${TAG}
+
     build:
       context: .
       dockerfile: Dockerfile 
@@ -10,7 +11,7 @@ services:
 
 
   celeryworker:
-    image: kamikadze24/celeryworker:latest
+    image: kamikadze24/celeryworker:${TAG}
     build:
       context: .
       dockerfile: Dockerfile_celery

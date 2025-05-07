@@ -5,7 +5,7 @@
   vars:
     docker_username: "{{ lookup('env', 'DOCKER_USERNAME') }}"
     docker_password: "{{ lookup('env', 'DOCKER_PASSWORD') }}"
-
+    docker_image_tag: "{{ lookup('env', 'DOCKER_IMAGE_TAG') }}"
   tasks:
     - name: Log in to Docker Hub
       community.docker.docker_login:
@@ -18,7 +18,8 @@
         files:
           - docker-compose.prod.yml
         pull: always
-      register: pull_result
+        recreate: always
+        state: present
 
     - name: Start Docker containers
       community.docker.docker_compose_v2:
