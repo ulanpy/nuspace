@@ -20,6 +20,7 @@
         pull: always
         recreate: always
         state: present
+      register: pull_result
 
     - name: Start Docker containers
       community.docker.docker_compose_v2:
