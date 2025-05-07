@@ -19,3 +19,11 @@ services:
     environment:
       - CELERY_WORKER_CONCURRENCY=4
       - CELERY_WORKER_PREFETCH_MULTIPLIER=1
+
+  frontend-builder:
+    image: kamikadze24/frontendbuilder:${TAG}
+    build:
+      context: .
+      dockerfile: Dockerfile_static_builder
+    command: sh -c "npm run build"  # Run build command on container start
+    restart: "no"
