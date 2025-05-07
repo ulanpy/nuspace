@@ -1,7 +1,7 @@
 import asyncio
 
 from fastapi import Request
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -173,14 +173,13 @@ async def get_canteen_products_from_db(
     )
     return products_response
 
+
 async def get_canteens_from_db(
-        request: Request,
-        session: AsyncSession,
-        media_section: MediaSection = MediaSection.de,
+    request: Request,
+    session: AsyncSession,
+    media_section: MediaSection = MediaSection.de,
 ) -> list[CanteenResponseSchema]:
-    result = await session.execute(
-        select(Canteen).filter(Canteen.category == category)
-    )
+    result = await session.execute(select(Canteen).filter(Canteen.category == category))
     canteens = result.scalars().all()
     canteens_response = await asyncio.gather(
         *(
@@ -189,6 +188,7 @@ async def get_canteens_from_db(
         )
     )
     return canteens_response
+
 
 async def get_meals_from_db(
     canteen_id: int,
@@ -212,43 +212,72 @@ async def get_ingredients_from_db(
     media_section: MediaSection = MediaSection.canteen_product,
 ) -> list[CanteenProductResponseSchema]:
     result = await session.execute(
-        select(Ingredient).options(selectinload(Ingredient.canteen_product)).filter(Ingredient.meal_id == meal_id)
+        select(Ingredient)
+        .options(selectinload(Ingredient.canteen_product))
+        .filter(Ingredient.meal_id == meal_id)
     )
     ingredients = result.scalars().all()
 
     ingredients_response = await asyncio.gather(
         *(
-            build_canteen_product_response(ingredient.canteen_product, session, request, media_section)
+            build_canteen_product_response(
+                ingredient.canteen_product, session, request, media_section
+            )
             for ingredient in ingredients
         )
     )
     return ingredients_response
 
 
-async def get_reports_(
-        session: AsyncSession,
-        size: int, 
-        page: int, 
-        request: Request,
-        media_section: MediaSection = MediaSection.de
-) -> CanteenReportResponseSchema:
+async def show_canteen_feedbacks_from_db(
+    session: AsyncSession,
+    size: int,
+    page: int,
+    request: Request,
+    media_section: MediaSection = MediaSection.de,
+) -> CanteenFeedbackResponseSchema:
     offset = size * (page - 1)
-    total_query = select(func.count()).select_from(CanteenReport) #CanteenReport
+    total_query = select(func.count()).select_from(CanteenFeedback)
     total_result = await session.execute(total_query)
     total_count = total_result.scalar()
     num_of_pages = max(1, (total_count + size - 1) // size)
-    query = (
-        select(CanteenReport)
-        .offset(offset)
-        .limit(size)
+
+    query = select(CanteenFeedback).offset(offset).limit(size)
+    result = await session.execute(query)
+    feedbacks = result.scalars().all()
+    feedbacks_response = await asyncio.gather(
+        *(
+            build_canteen_feedback_response(feedback, session, request, media_section)
+            for feedback in feedbacks
+        )
     )
+    return CanteenFeedbackResponseSchema(
+        feedback=feedbacks_response, num_of_pages=num_of_pages
+    )
+
+
+async def get_reports_(
+    session: AsyncSession,
+    size: int,
+    page: int,
+    request: Request,
+    media_section: MediaSection = MediaSection.de,
+) -> CanteenReportResponseSchema:
+    offset = size * (page - 1)
+    total_query = select(func.count()).select_from(CanteenReport)  # CanteenReport
+    total_result = await session.execute(total_query)
+    total_count = total_result.scalar()
+    num_of_pages = max(1, (total_count + size - 1) // size)
+    query = select(CanteenReport).offset(offset).limit(size)
     result = await session.execute(query)
     products = result.scalars().all()
     reports_response = await asyncio.gather(
         *(
-        build_canteen_report_response(product, session, request, media_section)
+            build_canteen_report_response(product, session, request, media_section)
             for product in products
         )
     )
-    #add object list and num_of_pages to the schema and return it
-    return CanteenReportResponseSchema(reports=reports_response, num_of_pages=num_of_pages)
+    # add object list and num_of_pages to the schema and return it
+    return CanteenReportResponseSchema(
+        reports=reports_response, num_of_pages=num_of_pages
+    )
