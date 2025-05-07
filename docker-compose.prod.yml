@@ -31,8 +31,9 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - WORKERS=${GUNICORN_WORKERS:-4}
-
-
+    volumes:
+      - ./backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
+      - .env:/nuros/.env:ro
   nginx:
     container_name: nginx
     image: nginx:latest
