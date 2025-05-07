@@ -106,5 +106,22 @@ declare global {
       input: InputHandlers;
     };
     type SupportedKey = 'ArrowDown' | 'ArrowUp' | 'Enter' | 'Escape'
+    type SelectedCondition = "All Conditions" | "new" | "used";
+
+    interface TeamContact {
+      icon: JSX.Element;
+      link: string;
+    }
+
+    interface Team {
+      name: string;
+      imgLink?: string;
+      role: string;
+      contacts: TeamContact[];
+    }
+
+    interface TeamCardProps {
+      team: Team;
+    }T
   }
 }
