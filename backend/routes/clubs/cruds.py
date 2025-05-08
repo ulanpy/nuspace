@@ -18,11 +18,31 @@ from backend.routes.clubs.schemas import (
 
 
 async def get_club(session: AsyncSession, club_id: int) -> Optional[Club]:
+    """
+    Fetch a club by its ID.
+
+    Parameters:
+    - `session` (AsyncSession): Database session.
+    - `club_id` (int): Club ID.
+
+    Returns:
+    - `Club | None`: Club object or `None` if not found.
+    """
     result = await session.execute(select(Club).where(Club.id == club_id))
     return result.scalar_one_or_none()
 
 
 async def add_club(club_data: ClubRequestSchema, session: AsyncSession) -> Club:
+    """
+    Insert a new club into the database.
+
+    Parameters:
+    - `club_data` (ClubRequestSchema): Club data.
+    - `session` (AsyncSession): Database session.
+
+    Returns:
+    - `Club`: The created club.
+    """
     club: Club = Club(**club_data.dict())
     session.add(club)
     await session.commit()
@@ -30,6 +50,16 @@ async def add_club(club_data: ClubRequestSchema, session: AsyncSession) -> Club:
 
 
 async def update_club(session: AsyncSession, new_data: ClubUpdateSchema, club: Club) -> Club:
+    """
+    Insert a new club into the database.
+
+    Parameters:
+    - `club_data` (ClubRequestSchema): Club data.
+    - `session` (AsyncSession): Database session.
+
+    Returns:
+    - `Club`: The created club.
+    """
     if new_data.name is not None:
         club.name = new_data.name
     if new_data.description is not None:
@@ -46,16 +76,43 @@ async def update_club(session: AsyncSession, new_data: ClubUpdateSchema, club: C
 
 
 async def delete_club(session: AsyncSession, club: Club) -> None:
+    """
+    Delete a club from the database.
+
+    Parameters:
+    - `session` (AsyncSession): Database session.
+    - `club` (Club): Club to delete.
+    """
     await session.delete(club)
     await session.commit()
 
 
 async def get_event(session: AsyncSession, event_id: int) -> Optional[ClubEvent]:
+    """
+    Fetch an event by its ID.
+
+    Parameters:
+    - `session` (AsyncSession): Database session.
+    - `event_id` (int): Event ID.
+
+    Returns:
+    - `ClubEvent | None`: Event object or None if not found.
+    """
     result = await session.execute(select(ClubEvent).where(ClubEvent.id == event_id))
     return result.scalar_one_or_none()
 
 
 async def add_event(event_data: ClubEventRequestSchema, session: AsyncSession) -> ClubEvent:
+    """
+    Insert a new event into the database.
+
+    Parameters:
+    - `event_data` (ClubEventRequestSchema): Event data.
+    - `session` (AsyncSession): Database session.
+
+    Returns:
+    - `ClubEvent`: The created event.
+    """
     new_event = ClubEvent(**event_data.dict())
     session.add(new_event)
     await session.commit()
@@ -67,6 +124,17 @@ async def update_event(
     new_data: ClubEventUpdateSchema,
     event: ClubEvent,
 ) -> ClubEvent:
+    """
+    Update an existing event.
+
+    Parameters:
+    - `session` (AsyncSession): Database session.
+    - `new_data` (ClubEventUpdateSchema): Updated event data.
+    - `event` (ClubEvent): Existing event object.
+
+    Returns:
+    - `ClubEvent`: The updated event.
+    """
     if new_data.name is not None:
         event.name = new_data.name
     if new_data.place is not None:
@@ -87,6 +155,13 @@ async def update_event(
 
 
 async def delete_event(session: AsyncSession, event: ClubEvent) -> None:
+    """
+    Delete an event from the database.
+
+    Parameters:
+    - `session` (AsyncSession): Database session.
+    - `event` (ClubEvent): Event to delete.
+    """
     await session.delete(event)
     await session.commit()
 
@@ -97,6 +172,18 @@ async def get_club_events(
     size: int,
     page: int,
 ) -> List[ClubEvent]:
+    """
+    Fetch events for a specific club with pagination.
+
+    Parameters:
+    - `club_id` (int): Club ID.
+    - `session` (AsyncSession): Database session.
+    - `size` (int): Items per page.
+    - `page` (int): Page number.
+
+    Returns:
+    - `List[ClubEvent]`: List of events.
+    """
     offset = size * (page - 1)
 
     query = (
@@ -120,6 +207,20 @@ async def get_events(
     event_policy: EventPolicy,
     order: OrderEvents,
 ) -> List[ClubEvent]:
+    """
+    Fetch events with filtering and sorting options.
+
+    Parameters:
+    - `session` (AsyncSession): Database session.
+    - `size` (int): Items per page.
+    - `page` (int): Page number.
+    - `club_type` (ClubType): Filter by club type.
+    - `event_policy` (EventPolicy): Filter by event policy.
+    - `order` (OrderEvents): Sort order.
+
+    Returns:
+    - `List[ClubEvent]`: List of filtered/sorted events.
+    """
     offset = size * (page - 1)
 
     sql_conditions = []
@@ -146,6 +247,18 @@ async def get_events(
 
 
 async def get_clubs(session: AsyncSession, size: int, page: int, club_type: ClubType) -> List[Club]:
+    """
+    Fetch clubs with optional type filtering.
+
+    Parameters:
+    - `session` (AsyncSession): Database session.
+    - `size` (int): Items per page.
+    - `page` (int): Page number.
+    - `club_type` (ClubType): Filter by club type.
+
+    Returns:
+    - `List[Club]`: List of clubs.
+    """
     offset = size * (page - 1)
 
     sql_conditions = []
@@ -168,6 +281,16 @@ async def get_certain_events(
     session: AsyncSession,
     event_ids: List[int],
 ) -> List[ClubEvent]:
+    """
+    Fetch specific events by their IDs.
+
+    Parameters:
+    - `session` (AsyncSession): Database session.
+    - `event_ids` (List[int]): List of event IDs.
+
+    Returns:
+    - `List[ClubEvent]`: List of events in ascending order by datetime.
+    """
     query = (
         select(ClubEvent)
         .where(ClubEvent.id.in_(event_ids))
@@ -184,6 +307,18 @@ async def get_media_responses(
     media_table: MediaTable,
     media_format: MediaFormat,
 ) -> List[Media]:
+    """
+    Fetch media associated with an entity.
+
+    Parameters:
+    - `session` (AsyncSession): Database session.
+    - `entity_id` (int): ID of the entity (club/event).
+    - `media_table` (MediaTable): Table name (clubs/club_events).
+    - `media_format` (MediaFormat): Media format (profile/carousel).
+
+    Returns:
+    - `List[Media]`: List of media objects.
+    """
     media_result = await session.execute(
         select(Media).filter(
             Media.entity_id == entity_id,
@@ -196,6 +331,16 @@ async def get_media_responses(
 
 
 async def get_count(model: Type[Base], session: AsyncSession) -> int:
+    """
+    Count records of a given model.
+
+    Parameters:
+    - `model` (Type[Base]): SQLAlchemy model class.
+    - `session` (AsyncSession): Database session.
+
+    Returns:
+    - `int`: Total count of records.
+    """
     total_query = select(func.count(model.id))
     total_result = await session.execute(total_query)
     total_count: Optional[int] = total_result.scalar()
