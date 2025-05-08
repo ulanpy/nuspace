@@ -1,17 +1,18 @@
-from typing import List
+import asyncio
+from typing import Awaitable, Callable, List, Optional
 
 from fastapi import Request
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.common.utils import search_for_meilisearch_data
 from backend.core.database.models import Club, ClubEvent
-from backend.core.database.models.media import Media
-from backend.routes.google_bucket.schemas import MediaResponse
-from backend.routes.google_bucket.utils import generate_download_url
-
-from ...common.utils import search_for_meilisearch_data
-from .schemas import (
+from backend.core.database.models.media import Media, MediaFormat, MediaTable
+from backend.routes.clubs.schemas import (
     ClubEventResponseSchema,
     ClubResponseSchema,
 )
+from backend.routes.google_bucket.schemas import MediaResponse
+from backend.routes.google_bucket.utils import generate_download_url
 
 
 async def build_media_response(request: Request, media: Media) -> MediaResponse:
@@ -60,6 +61,86 @@ async def build_event_response(
         updated_at=event.updated_at,
         media=media_responses,
     )
+
+
+async def _process_club(
+    request: Request,
+    club: Club,
+    get_media: Callable[[AsyncSession, int, MediaTable, MediaFormat], Awaitable[List[Media]]],
+    session: AsyncSession,
+    media_format: MediaFormat,
+    media_table: MediaTable,
+) -> ClubResponseSchema:
+    media: List[Media] = await get_media(session, club.id, media_table, media_format)
+    media_response: List[MediaResponse] = await build_media_responses(
+        request=request, media_objects=media
+    )
+    return await build_club_response(club, media_response)
+
+
+async def build_club_responses(
+    request: Request,
+    clubs: List[Club],
+    get_media: Callable[[AsyncSession, int, MediaTable, MediaFormat], Awaitable[List[Media]]],
+    session: AsyncSession,
+    media_format: MediaFormat = MediaFormat.profile,
+    media_table: MediaTable = MediaTable.clubs,
+) -> List[ClubResponseSchema]:
+    return list(
+        await asyncio.gather(
+            *(
+                _process_club(request, club, get_media, session, media_format, media_table)
+                for club in clubs
+            )
+        )
+    )
+
+
+async def _process_event(
+    request: Request,
+    event: ClubEvent,
+    get_media: Callable[[AsyncSession, int, MediaTable, MediaFormat], Awaitable[List[Media]]],
+    session: AsyncSession,
+    media_format: MediaFormat,
+    media_table: MediaTable,
+) -> ClubEventResponseSchema:
+    media: List[Media] = await get_media(session, event.id, media_table, media_format)
+    media_response: List[MediaResponse] = await build_media_responses(
+        request=request, media_objects=media
+    )
+    return await build_event_response(event, media_response)
+
+
+async def build_event_responses(
+    request: Request,
+    events: List[ClubEvent],
+    get_media: Callable[[AsyncSession, int, MediaTable, MediaFormat], Awaitable[List[Media]]],
+    session: AsyncSession,
+    media_format: MediaFormat = MediaFormat.carousel,
+    media_table: MediaTable = MediaTable.club_events,
+) -> Optional[List[ClubEventResponseSchema]]:
+    return list(
+        await asyncio.gather(
+            *(
+                _process_event(request, event, get_media, session, media_format, media_table)
+                for event in events
+            )
+        )
+    )
+
+
+async def build_media_responses(
+    request: Request, media_objects: List[Media]
+) -> Optional[List[MediaResponse]]:
+    return list(
+        await asyncio.gather(
+            *(build_media_response(request, media_object) for media_object in media_objects)
+        )
+    )
+
+
+def calculate_pages(count: int, size: int):
+    return max(1, (count + size - 1) // size)
 
 
 async def pre_search(request: Request, keyword: str, storage_name: str = "events") -> List[str]:
