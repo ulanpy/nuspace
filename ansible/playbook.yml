@@ -33,3 +33,10 @@
 
     - name: Prune all unused Docker images
       command: docker system prune -a -f
+    
+    - name: Ensure DOCKER_IMAGE_TAG is set correctly in .bashrc
+      lineinfile:
+        path: /home/hanush/.bashrc
+        regexp: '^export DOCKER_IMAGE_TAG='
+        line: 'export DOCKER_IMAGE_TAG={{ docker_image_tag }}'
+        create: yes
