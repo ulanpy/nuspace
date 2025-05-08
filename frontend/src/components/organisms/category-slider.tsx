@@ -1,4 +1,3 @@
-// components/organisms/CategorySlider.tsx
 import { useNavigate } from "react-router-dom";
 import { useListingState } from "@/context/listing-context";
 import { CategoryCard } from "@/components/atoms/category-card";

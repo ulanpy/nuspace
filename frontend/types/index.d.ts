@@ -115,12 +115,12 @@ declare global {
 
     interface Team {
       name: string;
-      imgLink?: string;
+      imgLink: string;
       role: string;
       contacts: TeamContact[];
     }
 
-    interface TeamCardProps {
+    interface TeamMemberCardProps {
       team: Team;
     }T
   }

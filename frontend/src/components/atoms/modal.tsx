@@ -1,71 +1,95 @@
-"use client";
-
-import * as React from "react";
-import { X } from "lucide-react";
-import { Button } from "./button";
-import { cn } from "../../utils/utils";
+import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { IoMdClose } from "react-icons/io";
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
-  description?: string;
-  children?: React.ReactNode;
-  className?: string;
+  children: React.ReactNode;
 }
 
-export function Modal({
-  isOpen,
-  onClose,
-  title,
-  description,
-  children,
-  className,
-}: ModalProps) {
-  // Close on escape key press
-  React.useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
     };
 
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+  useEffect(() => {
+    if (!isOpen) return;
+
+    previousFocus.current = document.activeElement as HTMLElement;
+
+    if (modalRef.current) {
+      modalRef.current.focus();
+    }
+    return () => {
+      if (previousFocus.current) {
+        previousFocus.current.focus();
+      }
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
     if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
-      // Prevent scrolling when modal is open
       document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
     }
 
     return () => {
-      document.removeEventListener("keydown", handleEscape);
-      // Restore scrolling when modal is closed
       document.body.style.overflow = "";
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
+
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (overlayRef.current === e.target) {
+      onClose();
+    }
+  };
 
   if (!isOpen) return null;
 
-  // Use portal to render modal at the document root level
   return createPortal(
-    <div className="fixed inset-0 z-[100] grid place-items-center p-4 bg-black/50 backdrop-blur-sm">
+    <div
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      onClick={handleOverlayClick}
+    >
       <div
-        className={cn(
-          "bg-background rounded-lg shadow-lg w-full max-w-md overflow-hidden",
-          className
-        )}
+        ref={modalRef}
+        className="bg-gray-900 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-xl"
         onClick={(e) => e.stopPropagation()}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
       >
-        <div className="flex justify-between items-center p-4 border-b">
-          <div>
-            {title && <h2 className="text-lg font-semibold">{title}</h2>}
-            {description && (
-              <p className="text-sm text-muted-foreground">{description}</p>
-            )}
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+          <h2 id="modal-title" className="text-xl font-semibold text-white">
+            {title || "Dialog"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white rounded-full p-1 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            aria-label="Close"
+          >
+            <IoMdClose size={24} />
+          </button>
         </div>
-        <div className="p-4">{children}</div>
+
+        <div className="overflow-y-auto">{children}</div>
       </div>
     </div>,
     document.body
