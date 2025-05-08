@@ -65,9 +65,9 @@ async def get_clubs(
         items=clubs,
         get_media=cruds.get_media_responses,
         session=db_session,
-        response_builder=build_club_response,
         media_format=MediaFormat.profile,
         media_table=MediaTable.clubs,
+        response_builder=build_club_response,
     )
 
     count: int = await cruds.get_count(model=Club, session=db_session)
@@ -216,9 +216,9 @@ async def get_events(
         items=events,
         get_media=cruds.get_media_responses,
         session=db_session,
-        response_builder=build_event_response,
         media_format=MediaFormat.carousel,
         media_table=MediaTable.club_events,
+        response_builder=build_event_response,
     )
 
     count: int = await cruds.get_count(model=ClubEvent, session=db_session)
@@ -383,9 +383,9 @@ async def post_search(
         items=events,
         get_media=cruds.get_media_responses,
         session=db_session,
-        response_builder=build_event_response,
         media_format=MediaFormat.carousel,
         media_table=MediaTable.club_events,
+        response_builder=build_event_response,
     )
 
     count: int = search_results["estimatedTotalHits"]
@@ -445,9 +445,9 @@ async def get_club_events(
         items=events,
         get_media=cruds.get_media_responses,
         session=db_session,
-        response_builder=build_event_response,
         media_format=MediaFormat.carousel,
         media_table=MediaTable.club_events,
+        response_builder=build_event_response,
     )
 
     count: int = await cruds.get_count(model=ClubEvent, session=db_session)

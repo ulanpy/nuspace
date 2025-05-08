@@ -131,9 +131,9 @@ async def build_responses(
     items: List[T],
     get_media: Callable[[AsyncSession, int, MediaTable, MediaFormat], Awaitable[List[Media]]],
     session: AsyncSession,
-    response_builder: Callable[[T, List[MediaResponse]], Awaitable[S]],
     media_format: MediaFormat,
     media_table: MediaTable,
+    response_builder: Callable[[T, List[MediaResponse]], Awaitable[S]],
 ) -> List[S]:
     """
     Build API responses for entities (clubs/events) with associated media.
