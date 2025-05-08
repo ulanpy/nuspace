@@ -1,5 +1,5 @@
 import asyncio
-from typing import Awaitable, Callable, List, Optional, TypeVar
+from typing import Awaitable, Callable, List, Optional
 
 from fastapi import Request
 from pydantic import BaseModel
@@ -14,9 +14,6 @@ from backend.routes.clubs.schemas import (
 )
 from backend.routes.google_bucket.schemas import MediaResponse
 from backend.routes.google_bucket.utils import generate_download_url
-
-T = TypeVar("T", bound=Base)
-S = TypeVar("S", bound=BaseModel)
 
 
 async def build_media_response(request: Request, media: Media) -> MediaResponse:
@@ -97,7 +94,9 @@ async def build_event_response(
     )
 
 
-async def _process_item(
+async def _process_item[
+    T: Base, S: BaseModel
+](
     request: Request,
     item: T,
     get_media: Callable[[AsyncSession, int, MediaTable, MediaFormat], Awaitable[List[Media]]],
@@ -126,7 +125,9 @@ async def _process_item(
     return await response_builder(item, media_response)
 
 
-async def build_responses(
+async def build_responses[
+    T: Base, S: BaseModel
+](
     request: Request,
     items: List[T],
     get_media: Callable[[AsyncSession, int, MediaTable, MediaFormat], Awaitable[List[Media]]],
