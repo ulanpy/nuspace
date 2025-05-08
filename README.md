@@ -28,7 +28,7 @@ cd nuspace
 ### 2. Configure Environment Variables
 Create a `.env` file in the root directory and specify the required environment variables. Use the `.env.example` file as a reference:
 ```bash
-cp .env.example .env
+cp .env .env
 ```
 Update the `.env` file with:
 - Google Cloud bucket name, project ID, topic.

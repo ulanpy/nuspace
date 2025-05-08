@@ -50,3 +50,4 @@ class User(Base):
     products = relationship("Product", back_populates="user")
     product_feedbacks = relationship("ProductFeedback", back_populates="user")
     product_reports = relationship("ProductReport", back_populates="user")
+    chat = relationship("Chat", back_populates="user")
