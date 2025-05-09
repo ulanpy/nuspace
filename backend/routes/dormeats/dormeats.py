@@ -1,11 +1,26 @@
-from typing import Annotated
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import check_token, get_db_session
 
-from .__init__ import *
 from ..dormeats import cruds
+from .schemas import (
+    CanteenFeedbackRequestSchema,
+    CanteenFeedbackResponseSchema,
+    CanteenProductCategory,
+    CanteenProductRequestSchema,
+    CanteenProductResponseSchema,
+    CanteenReportRequestSchema,
+    CanteenReportResponseSchema,
+    CanteenRequestSchema,
+    CanteenResponseSchema,
+    IngredientRequestSchema,
+    IngredientResponseSchema,
+    MealRequestSchema,
+    MealResponseSchema,
+)
 
 router = APIRouter(prefix="/dormeats", tags=["Dorm-Eats Routes"])
 
