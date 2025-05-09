@@ -100,7 +100,7 @@ class ClubEventUpdateSchema(BaseModel):
 
 
 class ListEventSchema(BaseModel):
-    events: List[ClubEventResponseSchema]
+    events: List[ClubEventResponseSchema] = []
     num_of_pages: int
 
     @field_validator("num_of_pages")
@@ -111,7 +111,7 @@ class ListEventSchema(BaseModel):
 
 
 class ListClubSchema(BaseModel):
-    events: List[ClubResponseSchema]
+    clubs: List[ClubResponseSchema] = []
     num_of_pages: int
 
     @field_validator("num_of_pages")
