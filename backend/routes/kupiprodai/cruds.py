@@ -133,10 +133,7 @@ async def show_products_from_db(
 
     # Собираем ответы для всех продуктов
     products_response = await asyncio.gather(
-        *(
-            build_product_response(product, session, request, media_table)
-            for product in products
-        )
+        *(build_product_response(product, session, request, media_table) for product in products)
     )
     return ListResponseSchema(products=products_response, num_of_pages=num_of_pages)
 
@@ -197,8 +194,6 @@ async def update_product_in_db(
     )
     result = await session.execute(query)
     product = result.scalars().first()
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
 
     if product_update.name is not None:
         product.name = product_update.name
@@ -339,9 +334,6 @@ async def show_products_for_search(
 
     # Собираем ответы для всех продуктов
     products_response = await asyncio.gather(
-        *(
-            build_product_response(product, session, request, media_table)
-            for product in products
-        )
+        *(build_product_response(product, session, request, media_table) for product in products)
     )
     return ListResponseSchema(products=products_response, num_of_pages=num_of_pages)

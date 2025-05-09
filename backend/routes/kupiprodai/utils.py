@@ -2,9 +2,9 @@ import asyncio
 from typing import List
 
 from fastapi import Request
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.common.cruds import get_media_objects
 from backend.core.database.models.media import Media
 from backend.core.database.models.product import Product, ProductFeedback, ProductReport
 from backend.routes.google_bucket.schemas import MediaResponse, MediaTable
@@ -26,12 +26,9 @@ async def get_media_responses(
     """
     Возвращает список MediaResponse для заданного продукта.
     """
-    media_result = await session.execute(
-        select(Media).filter(
-            Media.entity_id == product_id, Media.media_table == media_table
-        )
+    media_objects = await get_media_objects(
+        object_id=product_id, media_table=media_table, session=session
     )
-    media_objects = media_result.scalars().all()
 
     # Если есть необходимость параллельной генерации URL,
     # можно использовать asyncio.gather:
@@ -48,9 +45,7 @@ async def get_media_responses(
         )
 
     # Параллельное выполнение (опционально)
-    return list(
-        await asyncio.gather(*(build_media_response(media) for media in media_objects))
-    )
+    return list(await asyncio.gather(*(build_media_response(media) for media in media_objects)))
 
 
 async def build_product_response(
@@ -63,9 +58,7 @@ async def build_product_response(
     Собирает ProductResponseSchema из объекта Product
     с учетом eagerly loaded user и media.
     """  # noqa: E501
-    media_responses = await get_media_responses(
-        session, request, product.id, media_table
-    )
+    media_responses = await get_media_responses(session, request, product.id, media_table)
     return ProductResponseSchema(
         id=product.id,
         name=product.name,
