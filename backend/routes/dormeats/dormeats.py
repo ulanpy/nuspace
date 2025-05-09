@@ -35,7 +35,7 @@ async def add_product(
     db_session: AsyncSession = Depends(get_db_session),
 ) -> CanteenResponseSchema:
     try:
-        return await cruds.add_new_canteenproduct_to_db(
+        return await cruds.add_canteenproduct(
             session=db_session, product_data=product_data, request=request
         )
     except HTTPException as e:
@@ -52,7 +52,7 @@ async def add_meal(
     db_session: AsyncSession = Depends(get_db_session),
 ) -> MealResponseSchema:
     try:
-        return await cruds.add_new_meal_to_db(
+        return await cruds.add_meal(
             session=db_session, meal_data=meal_data, request=request
         )
     except HTTPException as e:
@@ -69,7 +69,7 @@ async def add_canteen_feedback(
     db_session: AsyncSession = Depends(get_db_session),
 ) -> CanteenFeedbackResponseSchema:
     try:
-        return await cruds.add_new_canteen_feedback_to_db(
+        return await cruds.add_canteen_feedback(
             session=db_session,
             canteen_feedback_data=canteen_feedback_data,
             request=request,
@@ -88,7 +88,7 @@ async def add_ingredient(
     db_session: AsyncSession = Depends(get_db_session),
 ) -> IngredientResponseSchema:
     try:
-        return await cruds.add_new_ingredient_to_db(
+        return await cruds.add_ingredient(
             session=db_session, ingredient_data=ingredient_data, request=request
         )
     except HTTPException as e:
@@ -105,7 +105,7 @@ async def add_canteen(
     db_session: AsyncSession = Depends(get_db_session),
 ) -> CanteenResponseSchema:
     try:
-        return await cruds.add_new_canteen_to_db(
+        return await cruds.add_canteen(
             session=db_session, canteen_data=canteen_data, request=request
         )
     except HTTPException as e:
@@ -122,7 +122,7 @@ async def add_canteen_report(
     db_session: AsyncSession = Depends(get_db_session),
 ) -> CanteenReportResponseSchema:
     try:
-        return await cruds.add_new_canteen_report_to_db(
+        return await cruds.add_canteen_report(
             session=db_session, canteen_report_data=canteen_report_data, request=request
         )
     except HTTPException as e:
@@ -138,7 +138,7 @@ async def get_canteen_products(
     db_session: AsyncSession = Depends(get_db_session),
 ) -> List[CanteenProductResponseSchema]:
     try:
-        return await cruds.get_canteen_products_from_db(
+        return await cruds.get_canteen_products(
             request=request, category=category, session=db_session
         )
     except HTTPException as e:
@@ -151,7 +151,7 @@ async def get_canteens(
     db_session: AsyncSession = Depends(get_db_session),
 ) -> List[CanteenResponseSchema]:
     try:
-        return await cruds.get_canteens_from_db(request=request, session=db_session)
+        return await cruds.get_canteens(request=request, session=db_session)
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
 
@@ -163,7 +163,7 @@ async def get_meals(
     db_session: AsyncSession = Depends(get_db_session),
 ) -> List[MealResponseSchema]:
     try:
-        return await cruds.get_meals_from_db(
+        return await cruds.get_meals(
             request=request, canteen_id=canteen_id, session=db_session
         )
     except HTTPException as e:
@@ -175,7 +175,7 @@ async def get_ingredients(
     request: Request, meal_id: int, db_session: AsyncSession = Depends(get_db_session)
 ) -> List[CanteenProductResponseSchema]:
     try:
-        return await cruds.get_ingredients_from_db(
+        return await cruds.get_ingredients(
             request=request, meal_id=meal_id, session=db_session
         )
     except HTTPException as e:
@@ -190,7 +190,7 @@ async def get_canteen_feedbacks_router(
     size: int = 20,
     page: int = 1,
 ) -> CanteenFeedbackResponseSchema:
-    return await cruds.show_canteen_feedbacks_from_db(
+    return await cruds.show_canteen_feedbacks(
         request=request, session=db_session, size=size, page=page
     )
 

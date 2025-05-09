@@ -43,7 +43,7 @@ from .utils import (
 
 # create read update delete
 # add get update delete
-async def add_new_canteenproduct_to_db(
+async def add_canteenproduct(
     session: AsyncSession,
     request: Request,
     product_data: CanteenProductRequestSchema,
@@ -70,7 +70,7 @@ async def filter_canteenproducts_from_db(
 
 
 # ibra: canteenproduct; ingredient; meal
-async def add_new_meal_to_db(
+async def add_meal(
     session: AsyncSession,
     request: Request,
     meal_data: MealRequestSchema,
@@ -86,7 +86,7 @@ async def add_new_meal_to_db(
     )
 
 
-async def add_new_canteen_feedback_to_db(
+async def add_canteen_feedback(
     session: AsyncSession,
     request: Request,
     canteen_feedback_data: CanteenFeedbackRequestSchema,
@@ -101,7 +101,7 @@ async def add_new_canteen_feedback_to_db(
     )
 
 
-async def add_new_ingredient_to_db(
+async def add_ingredient(
     session: AsyncSession,
     request: Request,
     ingredient_data: IngredientRequestSchema,
@@ -116,7 +116,7 @@ async def add_new_ingredient_to_db(
     )
 
 
-async def add_new_canteen_to_db(
+async def add_canteen(
     session: AsyncSession,
     request: Request,
     canteen_data: CanteenRequestSchema,
@@ -135,7 +135,7 @@ async def add_new_canteen_to_db(
     )
 
 
-async def add_new_canteen_report_to_db(
+async def add_canteen_report(
     session: AsyncSession,
     request: Request,
     canteen_report_data: CanteenReportRequestSchema,
@@ -154,7 +154,7 @@ async def add_new_canteen_report_to_db(
     )
 
 
-async def get_canteen_products_from_db(
+async def get_canteen_products(
     category: CanteenProductCategory,
     request: Request,
     session: AsyncSession,
@@ -174,10 +174,11 @@ async def get_canteen_products_from_db(
     return products_response
 
 
-async def get_canteens_from_db(
+async def get_canteens(
     request: Request,
     session: AsyncSession,
     media_section: MediaSection = MediaSection.de,
+    category: None = None
 ) -> list[CanteenResponseSchema]:
     result = await session.execute(select(Canteen).filter(Canteen.category == category))
     canteens = result.scalars().all()
@@ -190,7 +191,7 @@ async def get_canteens_from_db(
     return canteens_response
 
 
-async def get_meals_from_db(
+async def get_meals(
     canteen_id: int,
     request: Request,
     session: AsyncSession,
@@ -205,7 +206,7 @@ async def get_meals_from_db(
     return meals_response
 
 
-async def get_ingredients_from_db(
+async def get_ingredients(
     meal_id: int,
     request: Request,
     session: AsyncSession,
@@ -229,7 +230,7 @@ async def get_ingredients_from_db(
     return ingredients_response
 
 
-async def show_canteen_feedbacks_from_db(
+async def show_canteen_feedbacks(
     session: AsyncSession,
     size: int,
     page: int,
