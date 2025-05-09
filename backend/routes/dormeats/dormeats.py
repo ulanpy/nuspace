@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from backend.common.dependencies import check_token, get_db_session
 
 from .__init__ import *
+from ..dormeats import cruds
 
 router = APIRouter(prefix="/dormeats", tags=["Dorm-Eats Routes"])
 
@@ -19,7 +20,7 @@ async def add_new_product(
     db_session: AsyncSession = Depends(get_db_session),
 ):
     try:
-        return await add_new_canteenproduct_to_db(
+        return await cruds.add_new_canteenproduct_to_db(
             session=db_session, product_data=product_data, request=request
         )
     except HTTPException as e:
@@ -36,7 +37,7 @@ async def add_new_meal(
     db_session: AsyncSession = Depends(get_db_session),
 ):
     try:
-        return await add_new_meal_to_db(
+        return await cruds.add_new_meal_to_db(
             session=db_session, meal_data=meal_data, request=request
         )
     except HTTPException as e:
@@ -53,7 +54,7 @@ async def add_new_canteen_feedback(
     db_session: AsyncSession = Depends(get_db_session),
 ):
     try:
-        return await add_new_canteen_feedback_to_db(
+        return await cruds.add_new_canteen_feedback_to_db(
             session=db_session,
             canteen_feedback_data=canteen_feedback_data,
             request=request,
@@ -72,7 +73,7 @@ async def add_new_ingredient(
     db_session: AsyncSession = Depends(get_db_session),
 ):
     try:
-        return await add_new_ingredient_to_db(
+        return await cruds.add_new_ingredient_to_db(
             session=db_session, ingredient_data=ingredient_data, request=request
         )
     except HTTPException as e:
@@ -89,7 +90,7 @@ async def add_new_canteen(
     db_session: AsyncSession = Depends(get_db_session),
 ):
     try:
-        return await add_new_canteen_to_db(
+        return await cruds.add_new_canteen_to_db(
             session=db_session, canteen_data=canteen_data, request=request
         )
     except HTTPException as e:
@@ -106,7 +107,7 @@ async def add_new_canteen_report(
     db_session: AsyncSession = Depends(get_db_session),
 ):
     try:
-        return await add_new_canteen_report_to_db(
+        return await cruds.add_new_canteen_report_to_db(
             session=db_session, canteen_report_data=canteen_report_data, request=request
         )
     except HTTPException as e:
@@ -122,7 +123,7 @@ async def get_canteen_products(
     db_session: AsyncSession = Depends(get_db_session),
 ):
     try:
-        return await get_canteen_products_from_db(
+        return await cruds.get_canteen_products_from_db(
             request=request, category=category, session=db_session
         )
     except HTTPException as e:
@@ -135,7 +136,7 @@ async def get_canteens(
     db_session: AsyncSession = Depends(get_db_session),
 ):
     try:
-        return await get_canteens_from_db(request=request, session=db_session)
+        return await cruds.get_canteens_from_db(request=request, session=db_session)
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
 
@@ -147,7 +148,7 @@ async def get_meals(
     db_session: AsyncSession = Depends(get_db_session),
 ):
     try:
-        return await get_meals_from_db(
+        return await cruds.get_meals_from_db(
             request=request, canteen_id=canteen_id, session=db_session
         )
     except HTTPException as e:
@@ -159,7 +160,7 @@ async def get_ingredients(
     request: Request, meal_id: int, db_session: AsyncSession = Depends(get_db_session)
 ):
     try:
-        return await get_ingredients_from_db(
+        return await cruds.get_ingredients_from_db(
             request=request, meal_id=meal_id, session=db_session
         )
     except HTTPException as e:
@@ -174,7 +175,7 @@ async def get_canteen_feedbacks_router(
     size: int = 20,
     page: int = 1,
 ):
-    return await show_canteen_feedbacks_from_db(
+    return await cruds.show_canteen_feedbacks_from_db(
         request=request, session=db_session, size=size, page=page
     )
 
@@ -187,4 +188,4 @@ async def get_reports_router(
     size: int = 20,
     page: int = 1,
 ):
-    return await get_reports_(request=request, session=db_session, size=size, page=page)
+    return await cruds.get_reports_(request=request, session=db_session, size=size, page=page)
