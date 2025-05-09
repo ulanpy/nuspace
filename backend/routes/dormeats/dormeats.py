@@ -28,7 +28,7 @@ router = APIRouter(prefix="/dormeats", tags=["Dorm-Eats Routes"])
 @router.post(
     "/canteen_product/new", response_model=CanteenProductResponseSchema
 )  # works
-async def add_new_product(
+async def add_product(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     product_data: CanteenProductRequestSchema,
@@ -45,7 +45,7 @@ async def add_new_product(
 
 
 @router.post("/meal/new", response_model=MealResponseSchema)
-async def add_new_meal(
+async def add_meal(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     meal_data: MealRequestSchema,
@@ -62,7 +62,7 @@ async def add_new_meal(
 
 
 @router.post("/canteen_feedback/new", response_model=CanteenFeedbackResponseSchema)
-async def add_new_canteen_feedback(
+async def add_canteen_feedback(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     canteen_feedback_data: CanteenFeedbackRequestSchema,
@@ -81,7 +81,7 @@ async def add_new_canteen_feedback(
 
 
 @router.post("/ingredient/new", response_model=IngredientResponseSchema)
-async def add_new_ingredient(
+async def add_ingredient(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     ingredient_data: IngredientRequestSchema,
@@ -98,7 +98,7 @@ async def add_new_ingredient(
 
 
 @router.post("/canteen/new", response_model=CanteenResponseSchema)
-async def add_new_canteen(
+async def add_canteen(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     canteen_data: CanteenRequestSchema,
@@ -115,7 +115,7 @@ async def add_new_canteen(
 
 
 @router.post("/canteen_report/new", response_model=CanteenReportResponseSchema)
-async def add_new_canteen_report(
+async def add_canteen_report(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     canteen_report_data: CanteenReportRequestSchema,
