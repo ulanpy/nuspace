@@ -7,23 +7,10 @@ from backend.common.dependencies import check_tg, check_token, get_db_session
 from backend.common.utils import search_for_meilisearch_data
 
 from ...core.configs.config import config
+from ...core.database.models.product import ProductCategory, ProductCondition
 from ...rbq.producer import send_notification
 from ...rbq.schemas import Notification
-from .cruds import (
-    ProductCategory,
-    ProductCondition,
-    add_new_product_feedback_to_db,
-    add_new_product_to_db,
-    add_product_report,
-    get_product_feedbacks_from_db,
-    get_product_from_db,
-    get_products_of_user_from_db,
-    remove_product_feedback_from_db,
-    remove_product_from_db,
-    show_products_for_search,
-    show_products_from_db,
-    update_product_in_db,
-)
+from ..kupiprodai import cruds
 from .schemas import (
     ListProductFeedbackResponseSchema,
     ListResponseSchema,
@@ -40,14 +27,14 @@ from .schemas import (
 router = APIRouter(prefix="/products", tags=["Kupi-Prodai Routes"])
 
 
-@router.post("/new", response_model=ProductResponseSchema)  # works
+@router.post("/new", response_model=ProductResponseSchema)   # works
 async def add_new_product(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     tg: Annotated[bool, Depends(check_tg)],
     product_data: ProductRequestSchema,
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> ProductResponseSchema:
     """
     Creates a new product under the 'Kupi-Prodai' section.
 
@@ -72,7 +59,7 @@ async def add_new_product(
     """
 
     try:
-        new_product = await add_new_product_to_db(
+        new_product = await cruds.add_new_product_to_db(
             db_session, product_data, user_sub=user["sub"], request=request
         )
         return new_product
@@ -85,7 +72,7 @@ async def get_products_of_user(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> List[ProductResponseSchema]:
     """
     Retrieves a list of all products created by the currently authenticated user,
     including both active and inactive items.
@@ -106,7 +93,7 @@ async def get_products_of_user(
     """
     user_sub = user.get("sub")
     try:
-        return await get_products_of_user_from_db(
+        return await cruds.get_products_of_user_from_db(
             request=request, user_sub=user_sub, session=db_session
         )
     except HTTPException as e:
@@ -122,7 +109,7 @@ async def get_products(
     page: int = 1,
     category: ProductCategory = None,
     condition: ProductCondition = None,
-):
+) -> ListResponseSchema:
     """
     Retrieves a paginated list of active products, with optional filtering
     by category and condition.
@@ -141,7 +128,7 @@ async def get_products(
     - A list of active products, sorted by most recently updated.
     """
 
-    return await show_products_from_db(
+    return await cruds.show_products_from_db(
         request=request,
         session=db_session,
         size=size,
@@ -157,7 +144,7 @@ async def get_product(
     user: Annotated[dict, Depends(check_token)],
     product_id: int,
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> ProductResponseSchema:
     """
     Retrieves a single active product by its unique ID, including
     its associated media files.
@@ -179,7 +166,7 @@ async def get_product(
     - Returns `401 Unauthorized` if no valid access token is provided.
     """
 
-    product = await get_product_from_db(request=request, product_id=product_id, session=db_session)
+    product = await cruds.get_product_from_db(request=request, product_id=product_id, session=db_session)
 
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -220,7 +207,7 @@ async def remove_product(
     """
 
     try:
-        await remove_product_from_db(
+        await cruds.remove_product_from_db(
             request=request,
             user_sub=user.get("sub"),
             product_id=product_id,
@@ -238,7 +225,7 @@ async def update_product(
     user: Annotated[dict, Depends(check_token)],
     product_update: ProductUpdateSchema,
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> ProductUpdateResponseSchema:
     """
     Updates fields of an existing product owned by the authenticated user.
 
@@ -266,7 +253,7 @@ async def update_product(
     - Returns 500 on internal error.
     """
 
-    product_update = await update_product_in_db(
+    product_update = await cruds.update_product_in_db(
         request=request,
         product_update=product_update,
         user_sub=user.get("sub"),
@@ -287,7 +274,7 @@ async def search(
     size: int = 20,
     page: int = 1,
     db_session=Depends(get_db_session),
-):
+) -> ListResponseSchema:
     """
     Retrieves product objects from database based on the
     search result of pre_search router.
@@ -316,7 +303,7 @@ async def search(
         storage_name="products",
     )
     product_ids = [product["id"] for product in search_results["hits"]]
-    return await show_products_for_search(
+    return await cruds.show_products_for_search(
         size=size,
         request=request,
         session=db_session,
@@ -331,7 +318,7 @@ async def pre_search(
     user: Annotated[dict, Depends(check_token)],
     keyword: str,
     db_session=Depends(get_db_session),
-):
+) -> list[str]:
     """
     Searches for products based on the provided keyword:
     - Uses Meilisearch to find matching products.
@@ -378,7 +365,7 @@ async def store_new_product_feedback(
     user: Annotated[dict, Depends(check_token)],
     request: Request,
     db_session=Depends(get_db_session),
-):
+) -> ProductFeedbackResponseSchema:
     """
     Adds new feedback to the product
 
@@ -393,7 +380,7 @@ async def store_new_product_feedback(
     """
 
     try:
-        product = await get_product_from_db(
+        product = await cruds.get_product_from_db(
             request=request, product_id=feedback_data.product_id, session=db_session
         )
         key_exist: bool = await request.app.state.redis.exists(
@@ -408,7 +395,7 @@ async def store_new_product_feedback(
                     url=f"https://{config.ROUTING_PREFIX}/apps/kupi-prodai/product/{feedback_data.product_id}",
                 ),
             )
-        return await add_new_product_feedback_to_db(
+        return await cruds.add_new_product_feedback_to_db(
             feedback_data=feedback_data, user_sub=user.get("sub"), session=db_session
         )
     except HTTPException as e:
@@ -424,7 +411,7 @@ async def get_product_feedbacks(
     db_session=Depends(get_db_session),
     size: int = 20,
     page: int = 1,
-):
+) -> ListProductFeedbackResponseSchema:
     """
     Retrieves a paginated list of feedbacks of the product.
 
@@ -439,7 +426,7 @@ async def get_product_feedbacks(
     **Returns:**
     - A list of feedbacks of the product, sorted by most recently added.
     """
-    return await get_product_feedbacks_from_db(
+    return await cruds.get_product_feedbacks_from_db(
         product_id=product_id, session=db_session, size=size, page=page
     )
 
@@ -473,7 +460,7 @@ async def remove_product_feedback(
     - Returns 500 on internal error.
     """
     try:
-        await remove_product_feedback_from_db(
+        await cruds.remove_product_feedback_from_db(
             feedback_id=feedback_id, user_sub=user.get("sub"), session=db_session
         )
         return status.HTTP_204_NO_CONTENT
@@ -489,7 +476,7 @@ async def store_new_product_report(
     user: Annotated[dict, Depends(check_token)],
     request: Request,
     db_session=Depends(get_db_session),
-):
+) -> ProductReportResponseSchema:
     """
     Adds a new product report.
 
@@ -510,7 +497,7 @@ async def store_new_product_report(
     """
 
     try:
-        return await add_product_report(
+        return await cruds.add_product_report(
             report_data=report_data, user_sub=user.get("sub"), session=db_session
         )
     except HTTPException as e:
