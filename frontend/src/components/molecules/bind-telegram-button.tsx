@@ -7,7 +7,7 @@ import { Modal } from "../atoms/modal";
 import { Badge } from "../atoms/badge";
 import { useToast } from "../../hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
-
+import { PrivacyModal } from "../atoms/PrivacyModal";
 // Emoji mapping based on the backend logic
 const numberToEmoji = (num: number): string => {
   const emojis = ["🐬", "🦄", "🐖", "🐉", "🐁", "🐈", "🦍", "🐝", "🐺", "🐥"];
@@ -25,7 +25,7 @@ export function BindTelegramButton() {
   const [isLinked, setIsLinked] = useState(user?.tg_linked || false);
   const { toast } = useToast();
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
+  const [showPrivacy, setShowPrivacy] = useState(false);
   // Check if user is linked to Telegram directly from the user object
   useEffect(() => {
     setIsLinked(user?.tg_linked || false);
@@ -171,47 +171,56 @@ export function BindTelegramButton() {
       </Button>
 
       <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title="Bind Your Telegram Account"
-        description="Click the link below to open Telegram and confirm your account."
+  isOpen={showModal}
+  onClose={() => setShowModal(false)}
+  title="Bind Your Telegram Account"
+  description="Click the link below to open Telegram and confirm your account."
+>
+  <div className="space-y-4 py-2">
+    <div className="flex flex-col items-center gap-2 text-center">
+      <p className="text-sm text-muted-foreground">
+        Tap the link below to open Telegram and connect your account
+      </p>
+
+      <a
+        href={telegramLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary hover:underline flex items-center gap-1"
+        onClick={(e) => {
+          e.preventDefault();
+          window.open(telegramLink, "_blank", "width=600,height=600");
+        }}
       >
-        <div className="space-y-4 py-2">
-          <div className="flex flex-col items-center gap-2 text-center">
-            <p className="text-sm text-muted-foreground">
-              Tap the link below to open Telegram and connect your account
-            </p>
+        <ExternalLink className="h-4 w-4" />
+        Open Telegram Bot
+      </a>
 
-            <a
-              href={telegramLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline flex items-center gap-1"
-              onClick={(e) => {
-                // Prevent default to handle it manually
-                e.preventDefault();
-                // Open in a new window
-                window.open(telegramLink, "_blank", "width=600,height=600");
-              }}
-            >
-              <ExternalLink className="h-4 w-4" />
-              Open Telegram Bot
-            </a>
+      <div className="mt-4 p-4 border rounded-md bg-muted/50">
+        <p className="text-sm font-medium mb-2">Confirmation Instructions:</p>
+        <p className="text-sm text-muted-foreground mb-4">
+          When the bot asks for confirmation, tap this emoji:
+        </p>
+        <div className="text-4xl">{confirmationEmoji}</div>
+      </div>
+    </div>
+  </div>
 
-            <div className="mt-4 p-4 border rounded-md bg-muted/50">
-              <p className="text-sm font-medium mb-2">
-                Confirmation Instructions:
-              </p>
-              <p className="text-sm text-muted-foreground mb-4">
-                When the bot asks for confirmation, tap this emoji:
-              </p>
-              <div className="text-4xl">{confirmationEmoji}</div>
-            </div>
-          </div>
-        </div>
+  {error && <div className="text-sm text-destructive mt-2">{error}</div>}
 
-        {error && <div className="text-sm text-destructive mt-2">{error}</div>}
-      </Modal>
+  <div className="mt-4 text-center text-xs text-muted-foreground">
+    By continuing the registration process, you agree to our{" "}
+    <button
+      className="underline text-blue-600 hover:text-blue-800"
+      onClick={() => setShowPrivacy(true)}
+    >
+      Privacy Policy
+    </button>.
+  </div>
+</Modal>
+
+<PrivacyModal isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} />
+
     </>
   );
 }

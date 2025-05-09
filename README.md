@@ -53,6 +53,12 @@ docker-compose up --build
 ### 5. Verify Setup
 Ensure the application is running by accessing the appropriate URL (e.g., [localhost](http://localhost)).
 
+### 6. Telegram Bot Localization binary compilation
+```bash 
+msgfmt backend/routes/bot/locales/ru/LC_MESSAGES/messages.po -o backend/routes/bot/locales/ru/LC_MESSAGES/messages.mo
+msgfmt backend/routes/bot/locales/en/LC_MESSAGES/messages.po -o backend/routes/bot/locales/en/LC_MESSAGES/messages.mo
+msgfmt backend/routes/bot/locales/kz/LC_MESSAGES/messages.po -o backend/routes/bot/locales/kz/LC_MESSAGES/messages.mo
+```
 ## Development Guidelines
 - Always use `pre-commit` to ensure code quality.
 - Follow the contribution guidelines for submitting pull requests.
