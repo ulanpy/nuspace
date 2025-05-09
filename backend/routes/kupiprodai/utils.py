@@ -16,6 +16,8 @@ from backend.routes.kupiprodai.schemas import (
     SearchResponseSchema,
 )
 
+from ..kupiprodai import cruds
+
 
 async def get_media_responses(
     session: AsyncSession,
@@ -26,11 +28,8 @@ async def get_media_responses(
     """
     Возвращает список MediaResponse для заданного продукта.
     """
-    media_result = await session.execute(
-        select(Media).filter(
-            Media.entity_id == product_id, Media.media_table == media_table
-        )
-    )
+    media_result = await cruds.get_media_result(session, product_id, media_table)
+    
     media_objects = media_result.scalars().all()
 
     # Если есть необходимость параллельной генерации URL,

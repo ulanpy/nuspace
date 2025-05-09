@@ -43,6 +43,7 @@ from .utils import (
 )
 
 
+
 async def add_product_to_db(
     session: AsyncSession,
     product_data: ProductRequestSchema,
@@ -356,3 +357,16 @@ async def show_products_for_search(
         )
     )
     return ListResponseSchema(products=products_response, num_of_pages=num_of_pages)
+
+# media results for the utils
+async def get_media_result(
+    session: AsyncSession,
+    product_id: int,
+    media_table: MediaTable,
+):
+    media_result = await session.execute(
+        select(Media).filter(
+            Media.entity_id == product_id, Media.media_table == media_table
+        )
+    )
+    return media_result
