@@ -1,13 +1,12 @@
 "use client";
 
-import { ThemeToggle } from "../components/theme-toggle";
-import { AppGrid } from "../components/app-grid";
-import { PersonalizedDashboard } from "@/components/personalized-dashboard";
-import { LoginButton } from "../components/login-button";
-import { GlowCarouselWithImage } from "../components/glow-carousel-with-images";
+import { ThemeToggle } from "../components/molecules/theme-toggle";
+import { AppGrid } from "../components/organisms/app-grid";
+import { LoginButton } from "../components/molecules/login-button";
+import { GlowCarouselWithImage } from "../components/organisms/glow-carousel-with-images";
 import { Link } from "react-router-dom";
 import { useUser } from "@/hooks/use-user";
-
+import { ReportButton } from "@/components/molecules/report-button";
 // Define carousel items with your image for the homepage
 const homeCarouselItems = [
   {
@@ -48,7 +47,10 @@ export default function HomePage() {
     <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4">
       {/* Header with login button */}
       <header className="w-full flex justify-between items-center mb-8">
-        <ThemeToggle />
+        <div className="flex items-center gap-6">
+          <ThemeToggle />
+          <ReportButton/>
+        </div>
         <LoginButton />
       </header>
 
@@ -56,13 +58,13 @@ export default function HomePage() {
         {/* Greeting */}
         <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-          {isLoading ? (
-    <span>Loading...</span>
-  ) : isSuccess && user?.user.given_name ? (
-    <span>Welcome back, {user.user.given_name}!</span>
-  ) : (
-    <span>Welcome to NU Space</span>
-  )}
+            {isLoading ? (
+              <span>Loading...</span>
+            ) : isSuccess && user?.user.given_name ? (
+              <span>Welcome back, {user.user.given_name}!</span>
+            ) : (
+              <span>Welcome to NU Space</span>
+            )}
           </h1>
         </div>
 

@@ -1,23 +1,32 @@
 import asyncio
-from typing import List
+from typing import Awaitable, Callable, List, Optional
 
 from fastapi import Request
-from sqlalchemy import select
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database.models import Club, ClubEvent
+from backend.common.utils import search_for_meilisearch_data
+from backend.core.database.models import Base, Club, ClubEvent
 from backend.core.database.models.media import Media, MediaFormat, MediaTable
+from backend.routes.clubs.schemas import (
+    ClubEventResponseSchema,
+    ClubResponseSchema,
+)
 from backend.routes.google_bucket.schemas import MediaResponse
 from backend.routes.google_bucket.utils import generate_download_url
 
-from .schemas import (
-    ClubEventResponseSchema,
-    ClubResponseSchema,
-    ListEventSchema,
-)
-
 
 async def build_media_response(request: Request, media: Media) -> MediaResponse:
+    """
+    Generate a signed URL for a media file.
+
+    Parameters:
+    - `request` (Request): FastAPI request object.
+    - `media` (Media): Media database object.
+
+    Returns:
+    - `MediaResponse`: Signed URL and metadata.
+    """
     url_data = await generate_download_url(request, media.name)
     return MediaResponse(
         id=media.id,
@@ -30,39 +39,19 @@ async def build_media_response(request: Request, media: Media) -> MediaResponse:
     )
 
 
-async def get_media_response(
-    session: AsyncSession,
-    request: Request,
-    club_id: int,
-    media_table: MediaTable,
-    media_format: MediaFormat,
-) -> MediaResponse | List:
-    """
-    Возвращает MediaResponse для заданного клуба.
-    """
-    media_result = await session.execute(
-        select(Media).filter(
-            Media.entity_id == club_id,
-            Media.media_table == media_table,
-            Media.media_format == media_format,
-        )
-    )
-    media_object = media_result.scalars().first()
-    if media_object:
-        return await build_media_response(request, media_object)
-    return []
-
-
 async def build_club_response(
-    club: Club,
-    session: AsyncSession,
-    request: Request,
-    media_table: MediaTable,
-    media_format: MediaFormat,
+    club: Club, media_responses: List[MediaResponse]
 ) -> ClubResponseSchema:
-    media_response = await get_media_response(
-        session, request, club.id, media_table, media_format
-    )
+    """
+    Construct a club response with associated media.
+
+    Parameters:
+    - `club` (Club): Club object.
+    - `media_responses` (List[MediaResponse]): Club's media.
+
+    Returns:
+    - `ClubResponseSchema`: Formatted club response.
+    """
     return ClubResponseSchema(
         id=club.id,
         name=club.name,
@@ -73,47 +62,23 @@ async def build_club_response(
         instagram_url=club.instagram_url,
         created_at=club.created_at,
         updated_at=club.updated_at,
-        media=media_response,
+        media=media_responses,
     )
-
-
-async def get_media_responses(
-    session: AsyncSession,
-    request: Request,
-    event_id: int,
-    media_table: MediaTable,
-    media_format: MediaFormat,
-) -> List[MediaResponse] | None:
-    """
-    Возвращает MediaResponse для заданного клуба.
-    """
-    media_result = await session.execute(
-        select(Media).filter(
-            Media.entity_id == event_id,
-            Media.media_table == media_table,
-            Media.media_format == media_format,
-        )
-    )
-    media_objects = media_result.scalars().all()
-
-    if media_objects:
-        return [
-            await build_media_response(request, media_object)
-            for media_object in media_objects
-        ]
-    return []
 
 
 async def build_event_response(
-    event: ClubEvent,
-    session: AsyncSession,
-    request: Request,
-    media_table: MediaTable,
-    media_format: MediaFormat,
+    event: ClubEvent, media_responses: List[MediaResponse]
 ) -> ClubEventResponseSchema:
-    media_responses = await get_media_responses(
-        session, request, event.id, media_table, media_format
-    )
+    """
+    Construct an event response with associated media.
+
+    Parameters:
+    - `event` (ClubEvent): Event object.
+    - `media_responses` (List[MediaResponse]): Event's media.
+
+    Returns:
+    - `ClubEventResponseSchema`: Formatted event response.
+    """
     return ClubEventResponseSchema(
         id=event.id,
         club_id=event.club_id,
@@ -129,31 +94,141 @@ async def build_event_response(
     )
 
 
-async def show_events_for_search(
+async def _process_item[
+    T: Base, S: BaseModel
+](
     request: Request,
+    item: T,
+    get_media: Callable[[AsyncSession, int, MediaTable, MediaFormat], Awaitable[List[Media]]],
     session: AsyncSession,
-    size: int,
-    num_of_products: int,
-    event_ids: list[int],
-    media_table: MediaTable = MediaTable.club_events,
-    media_format: MediaFormat = MediaFormat.carousel,
-) -> ListEventSchema:
+    media_format: MediaFormat,
+    media_table: MediaTable,
+    response_builder: Callable[[T, List[MediaResponse]], Awaitable[S]],
+) -> S:
+    """
+    Internal helper to process a single entity (club/event) and its media.
 
-    # Подсчет общего числа продуктов
-    num_of_pages = max(1, (num_of_products + size - 1) // size)
+    Parameters:
+    - `item` (T): Club or Event object.
+    - `get_media` (Callable): Media-fetching function.
+    - `media_format` (MediaFormat): Media format.
+    - `media_table` (MediaTable): Media table.
+    - `response_builder` (Callable): Schema builder function.
 
-    query = (
-        select(ClubEvent)
-        .where(ClubEvent.id.in_(event_ids))
-        .order_by(ClubEvent.event_datetime.asc())
+    Returns:
+    - `S`: Built response schema (ClubResponseSchema/ClubEventResponseSchema).
+    """
+    media: List[Media] = await get_media(session, item.id, media_table, media_format)
+    media_response: List[MediaResponse] = await build_media_responses(
+        request=request, media_objects=media
     )
-    result = await session.execute(query)
-    events = result.scalars().all()
-    # Собираем ответы для всех продуктов
-    events_response = await asyncio.gather(
-        *(
-            build_event_response(event, session, request, media_table, media_format)
-            for event in events
+    return await response_builder(item, media_response)
+
+
+async def build_responses[
+    T: Base, S: BaseModel
+](
+    request: Request,
+    items: List[T],
+    get_media: Callable[[AsyncSession, int, MediaTable, MediaFormat], Awaitable[List[Media]]],
+    session: AsyncSession,
+    media_format: MediaFormat,
+    media_table: MediaTable,
+    response_builder: Callable[[T, List[MediaResponse]], Awaitable[S]],
+) -> List[S]:
+    """
+    Build API responses for entities (clubs/events) with associated media.
+
+    Parameters:
+    - `items` (List[T]): List of entities (Club/ClubEvent).
+    - `response_builder` (Callable): Function to create the response schema.
+    - `media_format` (MediaFormat): Media format (e.g., profile, carousel).
+    - `media_table` (MediaTable): Media table (e.g., clubs, club_events).
+
+    Returns:
+    - `List[S]`: List of response schemas with media.
+    """
+    return list(
+        await asyncio.gather(
+            *(
+                _process_item(
+                    request, item, get_media, session, media_format, media_table, response_builder
+                )
+                for item in items
+            )
         )
     )
-    return ListEventSchema(events=events_response, num_of_pages=num_of_pages)
+
+
+async def build_media_responses(
+    request: Request, media_objects: List[Media]
+) -> Optional[List[MediaResponse]]:
+    """
+    Generate media responses for a list of media objects.
+
+    Parameters:
+    - `request` (Request): FastAPI request object.
+    - `media_objects` (List[Media]): Media objects.
+
+    Returns:
+    - `List[MediaResponse] | None`: List of media responses.
+    """
+    return list(
+        await asyncio.gather(
+            *(build_media_response(request, media_object) for media_object in media_objects)
+        )
+    )
+
+
+def calculate_pages(count: int, size: int):
+    """
+    Calculate total pages for pagination.
+
+    Parameters:
+    - `count` (int): Total items.
+    - `size` (int): Items per page.
+
+    Returns:
+    - `int`: Total pages (minimum 1).
+    """
+    return max(1, (count + size - 1) // size)
+
+
+async def pre_search(request: Request, keyword: str, storage_name: str = "events") -> List[str]:
+    """
+    Fetch search suggestions from Meilisearch.
+
+    Parameters:
+    - `request` (Request): FastAPI request object.
+    - `keyword` (str): Search term.
+    - `storage_name` (str): Index name (default: "events").
+
+    Returns:
+    - `List[str]`: Distinct search suggestions (max 5).
+    """
+    seen = set()
+    distinct_keywords = []
+    page = 1
+
+    while len(distinct_keywords) < 5:
+        result = await search_for_meilisearch_data(
+            request=request,
+            storage_name=storage_name,
+            keyword=keyword,
+            page=page,
+            size=20,
+        )
+        hits = result.get("hits", [])
+        if not hits:
+            break
+
+        for obj in hits:
+            name = obj.get("name")
+            if name and name not in seen:
+                seen.add(name)
+                distinct_keywords.append(name)
+                if len(distinct_keywords) >= 5:
+                    break
+
+        page += 1
+    return distinct_keywords

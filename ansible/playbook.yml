@@ -6,13 +6,21 @@
     docker_username: "{{ lookup('env', 'DOCKER_USERNAME') }}"
     docker_password: "{{ lookup('env', 'DOCKER_PASSWORD') }}"
     docker_image_tag: "{{ lookup('env', 'DOCKER_IMAGE_TAG') }}"
+
   tasks:
+    - name: Pull latest changes from origin/main
+      git:
+        repo: 'https://github.com/ulanpy/nuspace.git'
+        dest: /opt/nuspace
+        version: main
+        force: yes
+
     - name: Log in to Docker Hub
       community.docker.docker_login:
         username: "{{ docker_username }}"
         password: "{{ docker_password }}"
 
-    - name: Pull Docker images
+    - name: Pull new images & recreate services
       community.docker.docker_compose_v2:
         project_src: /opt/nuspace
         files:
@@ -20,15 +28,15 @@
         pull: always
         recreate: always
         state: present
+      environment:
+        DOCKER_IMAGE_TAG: "{{ docker_image_tag }}"
 
-    - name: Start Docker containers
-      community.docker.docker_compose_v2:
-        project_src: /opt/nuspace
-        files:
-          - docker-compose.prod.yml
-        recreate: always
-        state: present
-
-    - name: Prune unused images
-      command: docker system prune -f
-      when: pull_result.changed
+    - name: Prune all unused Docker images
+      command: docker system prune -a -f
+    
+    - name: Ensure DOCKER_IMAGE_TAG is set correctly in .bashrc
+      lineinfile:
+        path: /home/hanush/.bashrc
+        regexp: '^export DOCKER_IMAGE_TAG='
+        line: 'export DOCKER_IMAGE_TAG={{ docker_image_tag }}'
+        create: yes

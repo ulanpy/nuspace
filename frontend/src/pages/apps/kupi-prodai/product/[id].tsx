@@ -11,14 +11,14 @@ import {
   User,
   Clock,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/atoms/button";
+import { Badge } from "@/components/atoms/badge";
 import {
   kupiProdaiApi,
   type Product,
 } from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useToast } from "@/hooks/use-toast";
-import { Modal } from "@/components/ui/modal";
+import { Modal } from "@/components/atoms/modal";
 import CommentsSection from "../comment-section";
 import {
   formatDateWithContext,
@@ -351,7 +351,9 @@ export default function ProductDetailPage() {
               </div>
               <div>
                 <div className="flex items-center">
-                  <p className="font-medium">{`${product.user_name} ${product.user_surname?.[0] ?? ''}.`}</p>
+                  <p className="font-medium">{`${product.user_name} ${
+                    product.user_surname?.[0] ?? ""
+                  }.`}</p>
                 </div>
               </div>
             </div>

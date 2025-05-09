@@ -1,36 +1,46 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { Coffee, Clock, DollarSign, Star, MapPin, Search } from "lucide-react"
-import { Input } from "../../components/ui/input"
-import { Card, CardContent } from "../../components/ui/card"
-import { Badge } from "../../components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../components/ui/accordion"
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Coffee, Clock, DollarSign, Star, MapPin, Search } from "lucide-react";
+import { Input } from "../../components/atoms/input";
+import { Card, CardContent } from "../../components/atoms/card";
+import { Badge } from "../../components/atoms/badge";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/atoms/tabs";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../../components/atoms/accordion";
 
 interface Cafeteria {
-  id: string
-  name: string
-  location: string
-  hours: string
-  priceRange: 1 | 2 | 3
-  rating: number
-  image: string
+  id: string;
+  name: string;
+  location: string;
+  hours: string;
+  priceRange: 1 | 2 | 3;
+  rating: number;
+  image: string;
 }
 
 interface MenuItem {
-  id: number
-  name: string
-  price: number
-  category: string
-  description: string
-  isAvailable: boolean
+  id: number;
+  name: string;
+  price: number;
+  category: string;
+  description: string;
+  isAvailable: boolean;
 }
 
 interface MenuCategory {
-  name: string
-  items: MenuItem[]
+  name: string;
+  items: MenuItem[];
 }
 
 const cafeterias: Cafeteria[] = [
@@ -70,7 +80,7 @@ const cafeterias: Cafeteria[] = [
     rating: 4.0,
     image: "https://placehold.co/350x200",
   },
-]
+];
 
 const menus: Record<string, MenuCategory[]> = {
   corner: [
@@ -155,7 +165,8 @@ const menus: Record<string, MenuCategory[]> = {
           name: "Chicken Caesar Salad",
           price: 1600,
           category: "Salads",
-          description: "Romaine lettuce with grilled chicken and Caesar dressing",
+          description:
+            "Romaine lettuce with grilled chicken and Caesar dressing",
           isAvailable: true,
         },
       ],
@@ -333,7 +344,7 @@ const menus: Record<string, MenuCategory[]> = {
       ],
     },
   ],
-}
+};
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -343,7 +354,7 @@ const containerVariants = {
       staggerChildren: 0.1,
     },
   },
-}
+};
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
@@ -356,11 +367,11 @@ const itemVariants = {
       damping: 15,
     },
   },
-}
+};
 
 export default function DormEatsPage() {
-  const [activeCafeteria, setActiveCafeteria] = useState("corner")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [activeCafeteria, setActiveCafeteria] = useState("corner");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const renderPriceRange = (range: number) => {
     return Array(3)
@@ -368,10 +379,12 @@ export default function DormEatsPage() {
       .map((_, i) => (
         <DollarSign
           key={i}
-          className={`h-3 w-3 sm:h-4 sm:w-4 ${i < range ? "text-foreground" : "text-muted-foreground opacity-40"}`}
+          className={`h-3 w-3 sm:h-4 sm:w-4 ${
+            i < range ? "text-foreground" : "text-muted-foreground opacity-40"
+          }`}
         />
-      ))
-  }
+      ));
+  };
 
   const filteredMenu = menus[activeCafeteria]
     .map((category) => ({
@@ -379,19 +392,25 @@ export default function DormEatsPage() {
       items: category.items.filter(
         (item) =>
           item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.description.toLowerCase().includes(searchQuery.toLowerCase()),
+          item.description.toLowerCase().includes(searchQuery.toLowerCase())
       ),
     }))
-    .filter((category) => category.items.length > 0)
+    .filter((category) => category.items.length > 0);
 
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col space-y-1 sm:space-y-2">
         <h1 className="text-2xl sm:text-3xl font-bold">Dorm Eats</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">Explore cafeteria menus at Nazarbayev University</p>
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Explore cafeteria menus at Nazarbayev University
+        </p>
       </div>
 
-      <Tabs defaultValue="corner" className="w-full" onValueChange={setActiveCafeteria}>
+      <Tabs
+        defaultValue="corner"
+        className="w-full"
+        onValueChange={setActiveCafeteria}
+      >
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 text-xs sm:text-sm">
           {cafeterias.map((cafeteria) => (
             <TabsTrigger key={cafeteria.id} value={cafeteria.id}>
@@ -401,8 +420,17 @@ export default function DormEatsPage() {
         </TabsList>
 
         {cafeterias.map((cafeteria) => (
-          <TabsContent key={cafeteria.id} value={cafeteria.id} className="pt-3 sm:pt-4">
-            <motion.div variants={containerVariants} initial="hidden" animate="visible" key={cafeteria.id}>
+          <TabsContent
+            key={cafeteria.id}
+            value={cafeteria.id}
+            className="pt-3 sm:pt-4"
+          >
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              key={cafeteria.id}
+            >
               <motion.div variants={itemVariants}>
                 <Card className="mb-4 sm:mb-6">
                   <div className="relative">
@@ -414,7 +442,9 @@ export default function DormEatsPage() {
                   </div>
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex justify-between items-start mb-1 sm:mb-2">
-                      <h3 className="font-medium text-base sm:text-lg">{cafeteria.name}</h3>
+                      <h3 className="font-medium text-base sm:text-lg">
+                        {cafeteria.name}
+                      </h3>
                       <div className="flex items-center gap-1">
                         <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-500 text-yellow-500" />
                         <span className="text-sm">{cafeteria.rating}</span>
@@ -430,7 +460,9 @@ export default function DormEatsPage() {
                         <span>{cafeteria.hours}</span>
                       </div>
                       <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground">
-                        <div className="flex">{renderPriceRange(cafeteria.priceRange)}</div>
+                        <div className="flex">
+                          {renderPriceRange(cafeteria.priceRange)}
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -463,13 +495,17 @@ export default function DormEatsPage() {
                               <div
                                 key={item.id}
                                 className={`p-2 sm:p-3 rounded-lg border ${
-                                  item.isAvailable ? "border-border/40" : "border-border/20 bg-muted/50 opacity-60"
+                                  item.isAvailable
+                                    ? "border-border/40"
+                                    : "border-border/20 bg-muted/50 opacity-60"
                                 }`}
                               >
                                 <div className="flex justify-between items-start">
                                   <div>
                                     <div className="flex items-center gap-1 sm:gap-2">
-                                      <h4 className="font-medium text-xs sm:text-sm">{item.name}</h4>
+                                      <h4 className="font-medium text-xs sm:text-sm">
+                                        {item.name}
+                                      </h4>
                                       {!item.isAvailable && (
                                         <Badge
                                           variant="outline"
@@ -483,7 +519,9 @@ export default function DormEatsPage() {
                                       {item.description}
                                     </p>
                                   </div>
-                                  <span className="font-bold text-xs sm:text-sm">{item.price} ₸</span>
+                                  <span className="font-bold text-xs sm:text-sm">
+                                    {item.price} ₸
+                                  </span>
                                 </div>
                               </div>
                             ))}
@@ -496,7 +534,9 @@ export default function DormEatsPage() {
               ) : (
                 <div className="text-center py-8 sm:py-12">
                   <Coffee className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-3 sm:mb-4" />
-                  <h3 className="text-base sm:text-lg font-medium mb-1 sm:mb-2">No menu items found</h3>
+                  <h3 className="text-base sm:text-lg font-medium mb-1 sm:mb-2">
+                    No menu items found
+                  </h3>
                   <p className="text-xs sm:text-sm text-muted-foreground">
                     Try adjusting your search or check back later
                   </p>
@@ -507,6 +547,5 @@ export default function DormEatsPage() {
         ))}
       </Tabs>
     </div>
-  )
+  );
 }
-

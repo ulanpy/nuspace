@@ -20,7 +20,7 @@ services:
 
   fastapi:
     container_name: fastapi
-    image: kamikadze24/fastapi:{{ docker_image_tag }}
+    image: kamikadze24/fastapi:${DOCKER_IMAGE_TAG}
     networks:
       - nuros
     restart: always
@@ -31,8 +31,9 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - WORKERS=${GUNICORN_WORKERS:-4}
-
-
+    volumes:
+      - ./backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
+      - .env:/nuros/.env:ro
   nginx:
     container_name: nginx
     image: nginx:latest
@@ -100,8 +101,7 @@ services:
 
 
   celery-worker:
-    container_name: celery-worker
-    image: kamikadze24/celeryworker:{{ docker_image_tag }}
+    image: kamikadze24/celeryworker:${DOCKER_IMAGE_TAG}
     networks:
       - nuros
     restart: always
@@ -122,6 +122,7 @@ services:
 
   frontend-builder:
     container_name: frontend-builder
+    image: kamikadze24/frontendbuilder:${DOCKER_IMAGE_TAG}
     build:
       context: .
       dockerfile: Dockerfile_static_builder

@@ -7,18 +7,17 @@ import { getSearchTextFromURL } from "@/utils/search-params";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-type SearchLogic = {
-  baseRoute: string
+type SearchLogicProps = {
+  baseRoute: string;
   searchParam: string;
   setSelectedCategory?: (category: string) => void;
 };
 
-
 export const useSearchLogic = ({
   baseRoute,
   searchParam = "text",
-  setSelectedCategory
-}: SearchLogic) => {
+  setSelectedCategory,
+}: SearchLogicProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [inputValue, setInputValue] = useState(
@@ -35,13 +34,11 @@ export const useSearchLogic = ({
   const handleSearch = (inputValue: string) => {
     if (!!inputValue.trim()) {
       setSearchQuery(inputValue);
-      setCurrentPage(1)
-      if(setSelectedCategory) {
-        setSelectedCategory("");
-      }
+      setCurrentPage(1);
+      setSelectedCategory?.("");
       navigate(`${baseRoute}?${searchParam}=${encodeURIComponent(inputValue)}`);
     }
-    if (inputValue.trim() === "") {
+    if (!inputValue.trim()) {
       navigate(baseRoute);
     }
   };
