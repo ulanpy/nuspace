@@ -49,7 +49,7 @@ export default function HomePage() {
       <header className="w-full flex justify-between items-center mb-8">
         <div className="flex items-center gap-6">
           <ThemeToggle />
-          <ReportButton/>
+          <ReportButton />
         </div>
         <LoginButton />
       </header>

@@ -1,6 +1,6 @@
 import { useTheme } from "@/context/theme-provider";
 
-export const Header = () => {
+export const AboutHeader = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   return (
