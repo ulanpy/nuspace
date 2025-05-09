@@ -33,7 +33,7 @@ async def add_product(
     user: Annotated[dict, Depends(check_token)],
     product_data: CanteenProductRequestSchema,
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> CanteenResponseSchema:
     try:
         return await cruds.add_new_canteenproduct_to_db(
             session=db_session, product_data=product_data, request=request
@@ -50,7 +50,7 @@ async def add_meal(
     user: Annotated[dict, Depends(check_token)],
     meal_data: MealRequestSchema,
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> MealResponseSchema:
     try:
         return await cruds.add_new_meal_to_db(
             session=db_session, meal_data=meal_data, request=request
@@ -67,7 +67,7 @@ async def add_canteen_feedback(
     user: Annotated[dict, Depends(check_token)],
     canteen_feedback_data: CanteenFeedbackRequestSchema,
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> CanteenFeedbackResponseSchema:
     try:
         return await cruds.add_new_canteen_feedback_to_db(
             session=db_session,
@@ -86,7 +86,7 @@ async def add_ingredient(
     user: Annotated[dict, Depends(check_token)],
     ingredient_data: IngredientRequestSchema,
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> IngredientResponseSchema:
     try:
         return await cruds.add_new_ingredient_to_db(
             session=db_session, ingredient_data=ingredient_data, request=request
@@ -103,7 +103,7 @@ async def add_canteen(
     user: Annotated[dict, Depends(check_token)],
     canteen_data: CanteenRequestSchema,
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> CanteenResponseSchema:
     try:
         return await cruds.add_new_canteen_to_db(
             session=db_session, canteen_data=canteen_data, request=request
@@ -120,7 +120,7 @@ async def add_canteen_report(
     user: Annotated[dict, Depends(check_token)],
     canteen_report_data: CanteenReportRequestSchema,
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> CanteenReportResponseSchema:
     try:
         return await cruds.add_new_canteen_report_to_db(
             session=db_session, canteen_report_data=canteen_report_data, request=request
@@ -136,7 +136,7 @@ async def get_canteen_products(
     request: Request,
     category: CanteenProductCategory,
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> List[CanteenProductResponseSchema]:
     try:
         return await cruds.get_canteen_products_from_db(
             request=request, category=category, session=db_session
@@ -149,7 +149,7 @@ async def get_canteen_products(
 async def get_canteens(
     request: Request,
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> List[CanteenResponseSchema]:
     try:
         return await cruds.get_canteens_from_db(request=request, session=db_session)
     except HTTPException as e:
@@ -161,7 +161,7 @@ async def get_meals(
     request: Request,
     canteen_id: int,
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> List[MealResponseSchema]:
     try:
         return await cruds.get_meals_from_db(
             request=request, canteen_id=canteen_id, session=db_session
@@ -173,7 +173,7 @@ async def get_meals(
 @router.get("/ingredients", response_model=List[CanteenProductResponseSchema])
 async def get_ingredients(
     request: Request, meal_id: int, db_session: AsyncSession = Depends(get_db_session)
-):
+) -> List[CanteenProductResponseSchema]:
     try:
         return await cruds.get_ingredients_from_db(
             request=request, meal_id=meal_id, session=db_session
@@ -189,7 +189,7 @@ async def get_canteen_feedbacks_router(
     db_session: AsyncSession = Depends(get_db_session),
     size: int = 20,
     page: int = 1,
-):
+) -> CanteenFeedbackResponseSchema:
     return await cruds.show_canteen_feedbacks_from_db(
         request=request, session=db_session, size=size, page=page
     )
@@ -202,5 +202,5 @@ async def get_reports_router(
     db_session: AsyncSession = Depends(get_db_session),
     size: int = 20,
     page: int = 1,
-):
+) -> CanteenReportResponseSchema:
     return await cruds.get_reports_(request=request, session=db_session, size=size, page=page)
