@@ -43,7 +43,7 @@ from .utils import (
 )
 
 
-async def add_new_product_to_db(
+async def add_product_to_db(
     session: AsyncSession,
     product_data: ProductRequestSchema,
     user_sub: str,
@@ -254,7 +254,7 @@ async def update_product_in_db(
     return product_update
 
 
-async def add_new_product_feedback_to_db(
+async def add_product_feedback_to_db(
     feedback_data: ProductFeedbackSchema, user_sub: str, session: AsyncSession
 ) -> ProductFeedbackResponseSchema:
     new_feedback = ProductFeedback(**feedback_data.dict(), user_sub=user_sub)

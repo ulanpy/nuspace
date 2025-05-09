@@ -28,11 +28,11 @@ router = APIRouter(prefix="/products", tags=["Kupi-Prodai Routes"])
 
 
 @router.post("/new", response_model=ProductResponseSchema)   # works
-async def add_new_product(
+async def add_product(
     request: Request,
+    product_data: ProductRequestSchema,
     user: Annotated[dict, Depends(check_token)],
     tg: Annotated[bool, Depends(check_tg)],
-    product_data: ProductRequestSchema,
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ProductResponseSchema:
     """
@@ -59,7 +59,7 @@ async def add_new_product(
     """
 
     try:
-        new_product = await cruds.add_new_product_to_db(
+        new_product = await cruds.add_product_to_db(
             db_session, product_data, user_sub=user["sub"], request=request
         )
         return new_product
@@ -104,11 +104,11 @@ async def get_products_of_user(
 async def get_products(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
-    db_session: AsyncSession = Depends(get_db_session),
     size: int = 20,
     page: int = 1,
     category: ProductCategory = None,
     condition: ProductCondition = None,
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> ListResponseSchema:
     """
     Retrieves a paginated list of active products, with optional filtering
@@ -270,9 +270,9 @@ async def search(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     keyword: str,
-    condition: ProductCondition = None,
     size: int = 20,
     page: int = 1,
+    condition: ProductCondition = None,
     db_session=Depends(get_db_session),
 ) -> ListResponseSchema:
     """
@@ -317,7 +317,6 @@ async def pre_search(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     keyword: str,
-    db_session=Depends(get_db_session),
 ) -> list[str]:
     """
     Searches for products based on the provided keyword:
@@ -360,10 +359,10 @@ async def pre_search(
 @router.post(
     "/feedback/{product_id}", response_model=ProductFeedbackResponseSchema
 )  # added description
-async def store_new_product_feedback(
-    feedback_data: ProductFeedbackSchema,
-    user: Annotated[dict, Depends(check_token)],
+async def store_product_feedback(
     request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    feedback_data: ProductFeedbackSchema,
     db_session=Depends(get_db_session),
 ) -> ProductFeedbackResponseSchema:
     """
@@ -395,7 +394,7 @@ async def store_new_product_feedback(
                     url=f"https://{config.ROUTING_PREFIX}/apps/kupi-prodai/product/{feedback_data.product_id}",
                 ),
             )
-        return await cruds.add_new_product_feedback_to_db(
+        return await cruds.add_product_feedback_to_db(
             feedback_data=feedback_data, user_sub=user.get("sub"), session=db_session
         )
     except HTTPException as e:
@@ -406,11 +405,11 @@ async def store_new_product_feedback(
     "/feedback/{product_id}", response_model=ListProductFeedbackResponseSchema
 )  # added description
 async def get_product_feedbacks(
-    product_id: int,
     user: Annotated[dict, Depends(check_token)],
-    db_session=Depends(get_db_session),
+    product_id: int,
     size: int = 20,
     page: int = 1,
+    db_session=Depends(get_db_session),
 ) -> ListProductFeedbackResponseSchema:
     """
     Retrieves a paginated list of feedbacks of the product.
@@ -433,8 +432,8 @@ async def get_product_feedbacks(
 
 @router.delete("/feedback/{feedback_id}")  # added description
 async def remove_product_feedback(
-    feedback_id: int,
     user: Annotated[dict, Depends(check_token)],
+    feedback_id: int,
     db_session=Depends(get_db_session),
 ):
     """
@@ -472,9 +471,8 @@ async def remove_product_feedback(
     "/{product_id}/report", response_model=ProductReportResponseSchema
 )  # added description
 async def store_new_product_report(
-    report_data: ProductReportSchema,
     user: Annotated[dict, Depends(check_token)],
-    request: Request,
+    report_data: ProductReportSchema,
     db_session=Depends(get_db_session),
 ) -> ProductReportResponseSchema:
     """
