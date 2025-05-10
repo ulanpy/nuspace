@@ -14,7 +14,7 @@ from backend.core.database.models.dormeats import (
     Ingredient,
     Meal,
 )
-from backend.routes.google_bucket.schemas import MediaSection
+from backend.routes.google_bucket.schemas import MediaTable
 
 # Requests + Responses
 from .schemas import (
@@ -47,7 +47,7 @@ async def add_new_canteenproduct_to_db(
     session: AsyncSession,
     request: Request,
     product_data: CanteenProductRequestSchema,
-    media_section: MediaSection = MediaSection.canteen_product,
+    media_table: MediaTable = MediaTable.canteen_product,
 ) -> CanteenProductResponseSchema:
     new_canteenproduct = CanteenProduct(**product_data.dict())
     session.add(new_canteenproduct)
@@ -58,7 +58,7 @@ async def add_new_canteenproduct_to_db(
         canteen_product=new_canteenproduct,
         session=session,
         request=request,
-        media_section=media_section,
+        media_table=media_table,
     )
 
 
@@ -72,7 +72,7 @@ async def add_new_meal_to_db(
     session: AsyncSession,
     request: Request,
     meal_data: MealRequestSchema,
-    media_section: MediaSection = MediaSection.meal,
+    media_table: MediaTable = MediaTable.meal,
 ) -> MealResponseSchema:
     new_meal = Meal(**meal_data.dict())
     session.add(new_meal)
@@ -80,7 +80,7 @@ async def add_new_meal_to_db(
     await session.refresh(new_meal)
 
     return await build_meal_response(
-        meal=new_meal, session=session, request=request, media_section=media_section
+        meal=new_meal, session=session, request=request, media_table=media_table
     )
 
 
@@ -118,7 +118,7 @@ async def add_new_canteen_to_db(
     session: AsyncSession,
     request: Request,
     canteen_data: CanteenRequestSchema,
-    media_section: MediaSection = MediaSection.canteen,
+    media_table: MediaTable = MediaTable.canteen,
 ) -> CanteenResponseSchema:
     new_canteen = Canteen(**canteen_data.dict())
     session.add(new_canteen)
@@ -129,7 +129,7 @@ async def add_new_canteen_to_db(
         canteen=new_canteen,
         session=session,
         request=request,
-        media_section=media_section,
+        media_table=media_table,
     )
 
 
@@ -137,7 +137,7 @@ async def add_new_canteen_report_to_db(
     session: AsyncSession,
     request: Request,
     canteen_report_data: CanteenReportRequestSchema,
-    media_section: MediaSection = MediaSection.canteen_report,
+    media_table: MediaTable = MediaTable.canteen_report,
 ) -> CanteenReportResponseSchema:
     new_canteen_report = CanteenReport(**canteen_report_data.dict())
     session.add(new_canteen_report)
@@ -148,7 +148,7 @@ async def add_new_canteen_report_to_db(
         canteen_report=new_canteen_report,
         session=session,
         request=request,
-        media_section=media_section,
+        media_table=media_table,
     )
 
 
@@ -156,7 +156,7 @@ async def get_canteen_products_from_db(
     category: CanteenProductCategory,
     request: Request,
     session: AsyncSession,
-    media_section: MediaSection = MediaSection.canteen_product,
+    media_table: MediaTable = MediaTable.canteen_product,
 ) -> list[CanteenProductResponseSchema]:
     result = await session.execute(
         select(CanteenProduct).filter(CanteenProduct.category == category)
@@ -165,27 +165,29 @@ async def get_canteen_products_from_db(
 
     products_response = await asyncio.gather(
         *(
-            build_canteen_product_response(product, session, request, media_section)
+            build_canteen_product_response(product, session, request, media_table)
             for product in canteen_products
         )
     )
     return products_response
 
 
-
 async def get_canteens_from_db(
     request: Request,
     session: AsyncSession,
-    media_section: MediaSection = MediaSection.canteen,
+    media_table: MediaTable = MediaTable.canteen,
 ) -> list[CanteenResponseSchema]:
-    result = await session.execute(select(Canteen)) # no need to add category parameter
+    result = await session.execute(select(Canteen))  # no need to add category parameter
     canteens = result.scalars().all()
     canteens_response = await asyncio.gather(
-        *(build_canteen_response(
-            canteen = canteen, #we need to pass canteen object to canteen parameter
-            session = session, 
-            request = request) 
-        for canteen in canteens) 
+        *(
+            build_canteen_response(
+                canteen=canteen,  # we need to pass canteen object to canteen parameter
+                session=session,
+                request=request,
+            )
+            for canteen in canteens
+        )
     )
     return canteens_response
 
@@ -194,13 +196,13 @@ async def get_meals_from_db(
     canteen_id: int,
     request: Request,
     session: AsyncSession,
-    media_section: MediaSection = MediaSection.meal,
+    media_table: MediaTable = MediaTable.meal,
 ) -> list[MealResponseSchema]:
     result = await session.execute(select(Meal).filter(Meal.canteen_id == canteen_id))
     meals = result.scalars().all()
 
     meals_response = await asyncio.gather(
-        *(build_meal_response(meal, session, request, media_section) for meal in meals)
+        *(build_meal_response(meal, session, request, media_table) for meal in meals)
     )
     return meals_response
 
@@ -209,7 +211,7 @@ async def get_ingredients_from_db(
     meal_id: int,
     request: Request,
     session: AsyncSession,
-    media_section: MediaSection = MediaSection.canteen_product,
+    media_table: MediaTable = MediaTable.canteen_product,
 ) -> list[CanteenProductResponseSchema]:
     result = await session.execute(
         select(Ingredient)
@@ -221,7 +223,7 @@ async def get_ingredients_from_db(
     ingredients_response = await asyncio.gather(
         *(
             build_canteen_product_response(
-                ingredient.canteen_product, session, request, media_section
+                ingredient.canteen_product, session, request, media_table
             )
             for ingredient in ingredients
         )
@@ -234,7 +236,7 @@ async def show_canteen_feedbacks_from_db(
     size: int,
     page: int,
     request: Request,
-    media_section: MediaSection = MediaSection.de,
+    media_table: MediaTable = MediaTable.canteen_feedback,
 ) -> CanteenFeedbackResponseSchema:
     offset = size * (page - 1)
     total_query = select(func.count()).select_from(CanteenFeedback)
@@ -247,13 +249,11 @@ async def show_canteen_feedbacks_from_db(
     feedbacks = result.scalars().all()
     feedbacks_response = await asyncio.gather(
         *(
-            build_canteen_feedback_response(feedback, session, request, media_section)
+            build_canteen_feedback_response(feedback, session, request, media_table)
             for feedback in feedbacks
         )
     )
-    return CanteenFeedbackResponseSchema(
-        feedback=feedbacks_response, num_of_pages=num_of_pages
-    )
+    return CanteenFeedbackResponseSchema(feedback=feedbacks_response, num_of_pages=num_of_pages)
 
 
 async def get_reports_(
@@ -261,7 +261,7 @@ async def get_reports_(
     size: int,
     page: int,
     request: Request,
-    media_section: MediaSection = MediaSection.de,
+    media_table: MediaTable = MediaTable.canteen_feedback,
 ) -> CanteenReportResponseSchema:
     offset = size * (page - 1)
     total_query = select(func.count()).select_from(CanteenReport)  # CanteenReport
@@ -273,11 +273,9 @@ async def get_reports_(
     products = result.scalars().all()
     reports_response = await asyncio.gather(
         *(
-            build_canteen_report_response(product, session, request, media_section)
+            build_canteen_report_response(product, session, request, media_table)
             for product in products
         )
     )
     # add object list and num_of_pages to the schema and return it
-    return CanteenReportResponseSchema(
-        reports=reports_response, num_of_pages=num_of_pages
-    )
+    return CanteenReportResponseSchema(reports=reports_response, num_of_pages=num_of_pages)

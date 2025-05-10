@@ -18,20 +18,20 @@ from backend.routes.dormeats.schemas import (
     IngredientResponseSchema,
     MealResponseSchema,
 )
-from backend.routes.google_bucket.schemas import MediaSection
+from backend.routes.google_bucket.schemas import MediaTable
 
 
 async def build_canteen_product_response(
     canteen_product: CanteenProduct,
     session: AsyncSession,
     request: Request,
-    media_section: MediaSection = MediaSection.canteen_product,
+    media_table: MediaTable = MediaTable.canteen_product,
 ):
     media_responses = await get_media_responses(
         session=session,
         request=request,
         entity_id=canteen_product.id,
-        media_section=media_section,
+        media_table=media_table,
     )
     return CanteenProductResponseSchema(
         id=canteen_product.id,
@@ -42,10 +42,10 @@ async def build_canteen_product_response(
 
 
 async def build_meal_response(
-    meal: Meal, session: AsyncSession, request: Request, media_section: MediaSection
+    meal: Meal, session: AsyncSession, request: Request, media_table: MediaTable
 ) -> MealResponseSchema:
     media_responses = await get_media_responses(
-        session=session, request=request, entity_id=meal.id, media_section=media_section
+        session=session, request=request, entity_id=meal.id, media_table=media_table
     )
     return MealResponseSchema(
         id=meal.id,
@@ -85,13 +85,13 @@ async def build_canteen_response(
     canteen: Canteen,
     session: AsyncSession,
     request: Request,
-    media_section: MediaSection = MediaSection.canteen,
+    media_table: MediaTable = MediaTable.canteen,
 ):
     media_responses = await get_media_responses(
         session=session,
         request=request,
         entity_id=canteen.id,
-        media_section=media_section,
+        media_table=media_table,
     )
     return CanteenResponseSchema(
         id=canteen.id, name=canteen.name, description=canteen.description, meida=media_responses
@@ -102,13 +102,13 @@ async def build_canteen_report_response(
     canteen_report: CanteenReport,
     session: AsyncSession,
     request: Request,
-    media_section: MediaSection,
+    media_table: MediaTable,
 ):
     media_responses = await get_media_responses(
         session=session,
         request=request,
         entity_id=canteen_report.id,
-        media_section=media_section,
+        media_table=media_table,
     )
     return CanteenReportResponseSchema(
         id=canteen_report.id,

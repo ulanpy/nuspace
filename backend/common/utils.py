@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
 from backend.core.database.manager import AsyncDatabaseManager
-from backend.core.database.models.media import Media, MediaFormat
+from backend.core.database.models.media import Media, MediaTable
 from backend.routes.google_bucket.schemas import MediaResponse
 from backend.routes.google_bucket.utils import generate_download_url
 
@@ -80,13 +80,13 @@ async def import_data_from_db(
 
 
 async def get_media_responses(
-    session: AsyncSession, request: Request, entity_id: int, media_format: MediaFormat
+    session: AsyncSession, request: Request, entity_id: int, media_table: MediaTable
 ) -> List[MediaResponse]:
     """
     Возвращает список MediaResponse для заданного продукта.
     """
     media_result = await session.execute(
-        select(Media).filter(Media.entity_id == entity_id, Media.section == media_section)
+        select(Media).filter(Media.entity_id == entity_id, Media.media_table == media_table)
     )
     media_objects = media_result.scalars().all()
 
@@ -97,9 +97,9 @@ async def get_media_responses(
             id=media.id,
             url=url_data["signed_url"],
             mime_type=media.mime_type,
-            section=media.section,
+            media_table=media.media_table,
             entity_id=media.entity_id,
-            media_purpose=media.media_purpose,
+            media_format=media.media_format,
             media_order=media.media_order,
         )
 
