@@ -265,13 +265,16 @@ async def update_product(
     - Returns 404 if the product does not exist or doesn't belong to the user.
     - Returns 500 on internal error.
     """
+    try:
+        product_update = await update_product_in_db(
+            request=request,
+            product_update=product_update,
+            user_sub=user.get("sub"),
+            session=db_session,
+        )
+    except HTTPException as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-    product_update = await update_product_in_db(
-        request=request,
-        product_update=product_update,
-        user_sub=user.get("sub"),
-        session=db_session,
-    )
     return {
         "product_id": product_update.product_id,
         "updated_fields": product_update.dict(exclude_unset=True),
@@ -304,7 +307,7 @@ async def search(
     - Products will be returned with their full details (from the database).
     """
     if condition:
-        filters=[f"condition = {condition.value}"]
+        filters = [f"condition = {condition.value}"]
     else:
         filters = None
     search_results = await search_for_meilisearch_data(
