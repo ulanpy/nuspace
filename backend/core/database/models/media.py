@@ -10,7 +10,7 @@ from .base import Base
 
 class MediaTable(PyEnum):
     products = "products"
-    club_events= "club_events"
+    club_events = "club_events"
     clubs = "clubs"
     club_announcements = "club_announcements"
     canteen = "canteen"
@@ -35,14 +35,10 @@ class Media(Base):
     media_table: Mapped[MediaTable] = mapped_column(
         SQLEnum(MediaTable, name="media_table"), nullable=False
     )
-    entity_id: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, index=True, unique=False
-    )
+    entity_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True, unique=False)
     media_format: Mapped[MediaFormat] = mapped_column(
         SQLEnum(MediaFormat, name="media_format"), nullable=False
     )
     media_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

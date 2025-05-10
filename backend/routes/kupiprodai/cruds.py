@@ -108,7 +108,7 @@ async def show_products_from_db(
     media_table: MediaTable = MediaTable.products,
 ) -> ListResponseSchema:
     offset = size * (page - 1)
-    
+
     sql_conditions = [Product.status == ProductStatus.active]
     if category:
         sql_conditions.append(Product.category == category)
