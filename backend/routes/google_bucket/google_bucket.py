@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import check_token, get_db_session
 from backend.core.configs.config import Config
-from backend.core.database.models.media import MediaPurpose, MediaSection
+from backend.core.database.models.media import MediaFormat, MediaTable
 
 from .cruds import confirm_uploaded_media_to_db, delete_media, get_filename
 from .schemas import SignedUrlRequest, SignedUrlResponse, UploadConfirmation
@@ -48,12 +48,12 @@ async def generate_upload_url(
 
         required_headers = {
             "x-goog-meta-filename": str(filename),
-            "x-goog-meta-section": item.section.value,
+            "x-goog-meta-media-table": item.media_table.value,
             "x-goog-meta-entity-id": str(item.entity_id),
-            "x-goog-meta-media-purpose": item.media_purpose.value,
+            "x-goog-meta-media-format": item.media_format.value,
             "x-goog-meta-media-order": str(item.media_order),
             "x-goog-meta-mime-type": item.mime_type,
-            "Content-Type": item.content_type,
+            "Content-Type": item.mime_type,
         }
 
         signed_url = blob.generate_signed_url(
@@ -66,12 +66,11 @@ async def generate_upload_url(
             {
                 "filename": filename,
                 "upload_url": signed_url,
-                "section": item.section.value,
+                "media_table": item.media_table.value,
                 "entity_id": item.entity_id,
-                "media_purpose": item.media_purpose.value,
+                "media_format": item.media_format.value,
                 "media_order": item.media_order,
                 "mime_type": item.mime_type,
-                "content_type": item.content_type,
             }
         )
 
@@ -106,13 +105,12 @@ async def gcs_webhook(request: Request, db_session: AsyncSession = Depends(get_d
 
         if blob is None:
             raise HTTPException(status_code=404, detail="Blob not found in GCS.")
-
         confirmation = UploadConfirmation(
             filename=blob.metadata.get("filename"),
             mime_type=blob.metadata.get("mime-type"),
-            section=MediaSection(blob.metadata.get("section")),
+            media_table=MediaTable(blob.metadata.get("media-table")),
             entity_id=int(blob.metadata["entity-id"]),
-            media_purpose=MediaPurpose(blob.metadata["media-purpose"]),
+            media_format=MediaFormat(blob.metadata["media-format"]),
             media_order=int(blob.metadata.get("media-order")),
         )
         await confirm_uploaded_media_to_db(confirmation, db_session)

@@ -7,7 +7,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.celery_app.celery_config import celery_app
-from backend.routes.bot.cruds import get_telegram_id, set_telegram_id
+from backend.routes.bot.cruds import set_telegram_id
 from backend.routes.bot.keyboards.callback_factory import ConfirmTelegramUser
 from backend.routes.bot.utils import all_permissions
 
@@ -23,10 +23,7 @@ async def confirmation_buttons(
     _: Callable[[str], str],
 ) -> None:
 
-    if await get_telegram_id(session=db_session, sub=callback_data.sub) is not None:
-        await c.message.answer(_("Уже авторизирован!"))
-
-    elif callback_data.number == callback_data.confirmation_number:
+    if callback_data.number == callback_data.confirmation_number:
         user_id = await set_telegram_id(
             session=db_session, sub=callback_data.sub, user_id=c.from_user.id
         )

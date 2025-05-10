@@ -4,7 +4,9 @@ import {
   defaultPage,
   defaultSize,
 } from "@/modules/kupi-prodai/api/kupi-prodai-api";
+import { getSeachPageFromURL } from "@/utils/search-params";
 import React, { createContext, useContext, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 type NewProductRequest = {
   name: string;
@@ -51,10 +53,13 @@ export const ListingProvider = ({
   const [editingListing, setEditingListing] = useState<Types.Product | null>(
     null
   );
+
+
+  const location = useLocation()
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(defaultPage);
+  const [currentPage, setCurrentPage] = useState(getSeachPageFromURL(location.search));
   const [itemsPerPage] = useState(defaultSize);
   const [activeTab, setActiveTab] = useState<Types.ActiveTab>("buy");
   return (

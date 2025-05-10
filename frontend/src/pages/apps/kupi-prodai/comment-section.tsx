@@ -1,79 +1,96 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { MessageSquare, Send, X, ChevronLeft, ChevronRight, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
-import { formatRelativeTime } from "@/utils/date-formatter"
+import type React from "react";
+import { useState, useEffect } from "react";
+import {
+  MessageSquare,
+  Send,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  User,
+} from "lucide-react";
+import { Button } from "@/components/atoms/button";
+import { Badge } from "@/components/atoms/badge";
+import { Card, CardContent } from "@/components/atoms/card";
+import { useToast } from "@/hooks/use-toast";
+import { formatRelativeTime } from "@/utils/date-formatter";
 
 interface Comment {
-  id: number
-  user_id: number
-  user_name: string
-  user_surname: string
-  product_id: number
-  text: string
-  created_at: string
+  id: number;
+  user_id: number;
+  user_name: string;
+  user_surname: string;
+  product_id: number;
+  text: string;
+  created_at: string;
 }
 
 interface CommentsSectionProps {
-  productId: number
-  sellerName?: string
-  currentUser: any
-  isAuthenticated: boolean
+  productId: number;
+  sellerName?: string;
+  currentUser: any;
+  isAuthenticated: boolean;
 }
 
-const CommentsSection: React.FC<CommentsSectionProps> = ({ productId, sellerName, currentUser, isAuthenticated }) => {
-  const [message, setMessage] = useState("")
-  const [comments, setComments] = useState<Comment[]>([])
-  const [totalComments, setTotalComments] = useState(0)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
-  const commentsPerPage = 5
+const CommentsSection: React.FC<CommentsSectionProps> = ({
+  productId,
+  sellerName,
+  currentUser,
+  isAuthenticated,
+}) => {
+  const [message, setMessage] = useState("");
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [totalComments, setTotalComments] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const commentsPerPage = 5;
 
-  const { toast } = useToast()
+  const { toast } = useToast();
 
   // Fetch comments on component mount and when page changes
   useEffect(() => {
-    fetchComments(currentPage)
-  }, [productId, currentPage])
+    fetchComments(currentPage);
+  }, [productId, currentPage]);
 
   const fetchComments = async (page: number) => {
-    if (!productId) return
+    if (!productId) return;
 
     try {
-      setIsLoading(true)
-      const response = await fetch(`/api/products/feedback/${productId}?size=${commentsPerPage}&page=${page}`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
+      setIsLoading(true);
+      const response = await fetch(
+        `/api/products/feedback/${productId}?size=${commentsPerPage}&page=${page}`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch comments")
+        throw new Error("Failed to fetch comments");
       }
 
-      const data = await response.json()
-      setComments(data.product_feedbacks || [])
-      setTotalPages(data.num_of_pages || 1)
-      setTotalComments((data.product_feedbacks || []).length * (data.num_of_pages || 1))
+      const data = await response.json();
+      setComments(data.product_feedbacks || []);
+      setTotalPages(data.num_of_pages || 1);
+      setTotalComments(
+        (data.product_feedbacks || []).length * (data.num_of_pages || 1)
+      );
     } catch (error) {
-      console.error("Error fetching comments:", error)
+      console.error("Error fetching comments:", error);
       toast({
         title: "Error",
         description: "Failed to load comments. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleSendMessage = async () => {
     if (!message.trim()) {
@@ -81,8 +98,8 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ productId, sellerName
         title: "Error",
         description: "Please enter a message",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     if (!isAuthenticated) {
@@ -90,8 +107,8 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ productId, sellerName
         title: "Authentication Required",
         description: "You must be logged in to comment",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     try {
@@ -105,81 +122,87 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ productId, sellerName
           product_id: productId,
           text: message,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to send message")
+        throw new Error("Failed to send message");
       }
 
       // Reset message
-      setMessage("")
+      setMessage("");
 
       // Refresh comments (go to first page after adding a new comment)
-      setCurrentPage(1)
-      fetchComments(1)
+      setCurrentPage(1);
+      fetchComments(1);
 
       toast({
         title: "Success",
         description: "Comment added successfully",
-      })
+      });
     } catch (error) {
-      console.error("Error sending message:", error)
+      console.error("Error sending message:", error);
       toast({
         title: "Error",
         description: "Failed to send comment. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const handleDeleteComment = async (commentId: number) => {
     try {
       const response = await fetch(`/api/products/feedback/${commentId}`, {
         method: "DELETE",
         credentials: "include",
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to delete comment")
+        throw new Error("Failed to delete comment");
       }
 
       // Refresh comments on current page
       // If this was the last comment on the page, we might need to go back a page
-      fetchComments(comments.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage)
+      fetchComments(
+        comments.length === 1 && currentPage > 1 ? currentPage - 1 : currentPage
+      );
 
       toast({
         title: "Success",
         description: "Comment deleted successfully",
-      })
+      });
     } catch (error) {
-      console.error("Error deleting comment:", error)
+      console.error("Error deleting comment:", error);
       toast({
         title: "Error",
         description: "Failed to delete comment. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-  }
+    setCurrentPage(page);
+  };
 
   // Helper function to check if the current user is the comment owner
   const isCommentOwner = (comment: Comment) => {
-    if (!currentUser) return false
+    if (!currentUser) return false;
 
     // Check different possible structures of the user object
     if (currentUser.sub && currentUser.sub === String(comment.user_id)) {
-      return true
+      return true;
     }
 
-    if (currentUser.user && currentUser.user.sub && currentUser.user.sub === String(comment.user_id)) {
-      return true
+    if (
+      currentUser.user &&
+      currentUser.user.sub &&
+      currentUser.user.sub === String(comment.user_id)
+    ) {
+      return true;
     }
 
-    return false
-  }
+    return false;
+  };
 
   return (
     <div className="mt-8">
@@ -207,7 +230,9 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ productId, sellerName
               <span>Send Comment</span>
             </Button>
             {!isAuthenticated && (
-              <p className="text-xs text-muted-foreground text-center mt-2">You need to be logged in to comment</p>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                You need to be logged in to comment
+              </p>
             )}
           </div>
         </CardContent>
@@ -220,7 +245,14 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ productId, sellerName
       ) : comments.length > 0 ? (
         <div className="space-y-4">
           {comments.map((comment) => (
-            <Card key={comment.id} className={comment.user_name === sellerName ? "border-primary/30 bg-primary/5" : ""}>
+            <Card
+              key={comment.id}
+              className={
+                comment.user_name === sellerName
+                  ? "border-primary/30 bg-primary/5"
+                  : ""
+              }
+            >
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
@@ -231,13 +263,18 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ productId, sellerName
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{`${comment.user_name} ${comment.user_surname[0]}.`}</span>
                         {comment.user_name === sellerName && (
-                          <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-primary/10 text-primary border-primary/30"
+                          >
                             Seller
                           </Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">{formatRelativeTime(comment.created_at)}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatRelativeTime(comment.created_at)}
+                        </span>
                         {/* Show delete button only for the comment owner */}
                         {isCommentOwner(comment) && (
                           <Button
@@ -273,17 +310,19 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ productId, sellerName
               </Button>
 
               <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "outline"}
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => handlePageChange(page)}
-                  >
-                    {page}
-                  </Button>
-                ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </Button>
+                  )
+                )}
               </div>
 
               <Button
@@ -302,11 +341,13 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({ productId, sellerName
         <div className="text-center py-8 border rounded-md bg-muted/20">
           <MessageSquare className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
           <h3 className="text-lg font-medium mb-1">No comments yet</h3>
-          <p className="text-sm text-muted-foreground">Be the first to ask about this item</p>
+          <p className="text-sm text-muted-foreground">
+            Be the first to ask about this item
+          </p>
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default CommentsSection
+export default CommentsSection;

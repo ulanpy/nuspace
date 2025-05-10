@@ -81,13 +81,17 @@ declare global {
       };
       tg_linked: boolean;
     }
-
+    interface PaginatedResponse<T> {
+      products: T[];
+      num_of_pages: number;
+    }
     // SearchInput
     type SearchInputProps = {
       inputValue: string;
       setInputValue: (value: string) => void;
       preSearchedProducts: string[] | null;
       handleSearch: (inputValue: string) => void;
+      setSelectedCondition?: (condition: string) => void;
     };
     type KeyActions = Record<string, () => void>;
     type InputHandlers = {
@@ -102,5 +106,22 @@ declare global {
       input: InputHandlers;
     };
     type SupportedKey = 'ArrowDown' | 'ArrowUp' | 'Enter' | 'Escape'
+    type SelectedCondition = "All Conditions" | "new" | "used";
+
+    interface TeamContact {
+      icon: JSX.Element;
+      link: string;
+    }
+
+    interface Team {
+      name: string;
+      imgLink: string;
+      role: string;
+      contacts: TeamContact[];
+    }
+
+    interface TeamMemberCardProps {
+      team: Team;
+    }T
   }
 }

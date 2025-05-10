@@ -1,10 +1,13 @@
 import httpx
 from fastapi import FastAPI
 from google.cloud import storage
+from sqlalchemy import select
 
-from backend.common.utils import import_data_from_db
 from backend.core.configs.config import config
-from backend.core.database.models import Product
+from backend.core.database.models.product import (
+    Product,
+    ProductStatus,
+)
 from backend.routes.google_bucket.utils import update_bucket_push_endpoint
 
 
@@ -16,13 +19,29 @@ async def setup_meilisearch(app: FastAPI):
     )
 
     update_bucket_push_endpoint()
-    await import_data_from_db(
-        meilisearch_client=app.state.meilisearch_client,
-        storage_name="products",
-        db_manager=app.state.db_manager,
-        model=Product,
-        columns_for_searching=["id", "name"],
-    )
+    async for session in app.state.db_manager.get_async_session():
+        products = await session.execute(
+            select(Product).filter(Product.status == ProductStatus.active.value)
+        )
+        data = []
+        for product in products.scalars().all():
+            data.append(
+                {
+                    "id": product.id,
+                    "name": product.name,
+                    "condition": product.condition.value,
+                }
+            )
+        await app.state.meilisearch_client.delete("/indexes/products")
+        await app.state.meilisearch_client.post(
+            "/indexes/products/documents", json=data
+        )
+        response = await app.state.meilisearch_client.patch(
+            "/indexes/products/settings",
+            json={"filterableAttributes": ["condition", "status"]},
+        )
+    response.raise_for_status()
+    print(response.json())
 
 
 async def cleanup_meilisearch(app: FastAPI):

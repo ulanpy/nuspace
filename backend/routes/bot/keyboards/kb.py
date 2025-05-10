@@ -10,18 +10,31 @@ from aiogram.types import (
     ReplyKeyboardMarkup,
 )
 
-from backend.routes.bot.keyboards.callback_factory import ConfirmTelegramUser, Languages
+from backend.routes.bot.keyboards.callback_factory import (
+    ConfirmTelegramUser,
+    Languages,
+    NotificationAction,
+)
+from backend.routes.bot.utils.enums import NotificationEnum
 
 
-def kb_webapp(url: str) -> InlineKeyboardMarkup:
+def notifications_keyboard(
+    action: NotificationEnum, _: Callable[[str], str]
+) -> InlineKeyboardMarkup:
+    text = (
+        _("✅Включить уведомления")
+        if action == NotificationEnum.ENABLE
+        else _("⛔️Выключить уведомления")
+    )
+    button = InlineKeyboardButton(text=text, callback_data=NotificationAction(action=action).pack())
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button]])
+    return keyboard
+
+
+def kb_url(url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         row_width=1, inline_keyboard=[[InlineKeyboardButton(text="NUspace", url=url)]]
-    )
-
-
-def kb_register_groups(url: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="NUspace", url=url)]]
     )
 
 
@@ -43,14 +56,12 @@ def kb_confirmation(sub: str, confirmation_number: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
-def kb_languages():
+def kb_languages() -> InlineKeyboardMarkup:
     emojis = ["🇰🇿", "🇷🇺", "🇺🇸"]
     callback_data = ["kz", "ru", "en"]
     buttons = [
         [
-            InlineKeyboardButton(
-                text=emoji, callback_data=Languages(language=cb_data).pack()
-            )
+            InlineKeyboardButton(text=emoji, callback_data=Languages(language=cb_data).pack())
             for emoji, cb_data in zip(emojis, callback_data)
         ]
     ]
@@ -75,14 +86,10 @@ def get_user_selector_kb(_: Callable[[str], str]) -> ReplyKeyboardMarkup:
     )
 
 
-def user_profile_button(user_id: int, _: Callable[[str], str]):
+def user_profile_button(user_id: int, _: Callable[[str], str]) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text=_("Профиль пользователя"), url=f"tg://user?id={user_id}"
-                )
-            ]
+            [InlineKeyboardButton(text=_("Профиль пользователя"), url=f"tg://user?id={user_id}")]
         ]
     )
     return keyboard

@@ -22,19 +22,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Install Docker Compose
-        run: |
-          sudo curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .tag_name)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
+      - name: Extract Git SHA
+        run: echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Build and Push Docker Images
         run: |
-          services=$(docker-compose -f docker-compose.build.yaml config --services)
-          for service in $services; do
-            docker-compose -f docker-compose.build.yaml build $service
-            docker tag $service docker.io/${{ secrets.DOCKER_USERNAME }}/${service}:latest
-            docker push docker.io/${{ secrets.DOCKER_USERNAME }}/${service}:latest
-          done
+          set -e
+          export TAG=$GIT_SHA
+          docker compose -f docker-compose.build.yaml build
+          docker compose -f docker-compose.build.yaml push
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -46,9 +42,28 @@ jobs:
           sudo apt update
           sudo apt install -y ansible
 
+      - name: Write SSH private key to file
+        run: |
+          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ansible_key.pem
+          chmod 600 ansible_key.pem
+
+      - name: Create dynamic Ansible inventory
+        run: |
+          mkdir -p ansible
+          echo "[webservers]" > ansible/inventory.ini
+          echo "server ansible_host=${{ secrets.ANSIBLE_HOST }} ansible_user=${{ secrets.ANSIBLE_USER }} ansible_ssh_private_key_file=ansible_key.pem" >> ansible/inventory.ini
+
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan ${{ secrets.ANSIBLE_HOST }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
       - name: Run Ansible Playbook
+        run: |
+          ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: |
-          ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
+          DOCKER_IMAGE_TAG: ${{ env.GIT_SHA }}

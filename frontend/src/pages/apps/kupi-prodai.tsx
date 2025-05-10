@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ShoppingBag,
@@ -15,24 +15,27 @@ import {
   Trash2,
   Plus,
 } from "lucide-react";
-import { Input } from "../../components/ui/input";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
+import { Input } from "../../components/atoms/input";
+import { Button } from "../../components/atoms/button";
+import { Card, CardContent } from "../../components/atoms/card";
+import { Badge } from "../../components/atoms/badge";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "../../components/ui/tabs";
-import { SliderGroup } from "@/components/slider-group";
-import { ConditionGroup } from "@/components/condition-group";
+} from "../../components/atoms/tabs";
+import { SliderContainer } from "@/components/molecules/slider-container";
+import { ConditionGroup } from "@/components/molecules/condition-group";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/auth-context";
 import { useToast } from "../../hooks/use-toast";
-import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
-import { Progress } from "../../components/ui/progress";
-import { Skeleton } from "../../components/ui/skeleton";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "../../components/atoms/alert";
+import { Progress } from "../../components/atoms/progress";
+import { Skeleton } from "../../components/atoms/skeleton";
 import { useProducts } from "@/modules/kupi-prodai/hooks/use-products";
 import { useUserProducts } from "@/modules/kupi-prodai/hooks/use-user-products";
 import { useCreateProduct } from "@/modules/kupi-prodai/hooks/use-create-product";
@@ -49,8 +52,12 @@ import { MdSports, MdBrush, MdLocalOffer } from "react-icons/md";
 import { BsPencilFill } from "react-icons/bs";
 import { GiKnifeFork } from "react-icons/gi";
 import { IoTicket, IoCarSport } from "react-icons/io5";
-import { SearchInput } from "@/components/search-input";
+import { SearchInput } from "@/components/molecules/search-input";
 import { useSearchLogic } from "@/hooks/useSearchLogic";
+import { Pagination } from "@/components/molecules/pagination";
+import { useUser } from "@/hooks/use-user";
+import { CategoryCard } from "@/components/atoms/category-card";
+import { CategorySlider } from "@/components/organisms/category-slider";
 
 // Define categories and conditions
 const categories = [
@@ -112,8 +119,8 @@ const categories = [
   },
 ];
 
-const conditions = ["All Conditions", "new", "like new", "used"];
-const displayConditions = ["All Conditions", "New", "Like New", "Used"];
+const conditions = ["All Conditions", "new", "used"];
+const displayConditions = ["All Conditions", "New", "Used"];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -140,15 +147,15 @@ const itemVariants = {
 
 export default function KupiProdaiPage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, login } = useAuth();
+
+  // useUser
+  const { user, login } = useUser();
+
   const { toast } = useToast();
   const [likedProducts, setLikedProducts] = useState<number[]>([]);
   const [error] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const isTelegramLinked = user?.tg_linked || false;
-
-  // Pagination state
-  const [totalPages] = useState(1);
 
   // Products state [CRUD Hooks]
   const {
@@ -320,7 +327,6 @@ export default function KupiProdaiPage() {
     }
   };
 
-
   const getConditionDisplay = (condition: string) => {
     switch (condition) {
       case "new":
@@ -353,12 +359,6 @@ export default function KupiProdaiPage() {
     );
   };
 
-  const paginate = (pageNumber: number) => {
-    if (pageNumber > 0 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-    }
-  };
-
   // Active and inactive listings
   const activeListings = myProducts?.filter((p) => p.status === "active");
   const inactiveListings = myProducts?.filter((p) => p.status === "inactive");
@@ -382,12 +382,29 @@ export default function KupiProdaiPage() {
   );
 
   // search section
-  const { inputValue, setInputValue, handleSearch, searchedProducts, preSearchedProducts } =
-    useSearchLogic({
-      baseRoute: "/apps/kupi-prodai",
-      searchParam: "text",
-    });
-  const products = searchedProducts ? searchedProducts.products : (productItems?.products ?? []);
+  const {
+    inputValue,
+    setInputValue,
+    preSearchedProducts,
+    handleSearch,
+    searchedProducts,
+  } = useSearchLogic({
+    setSelectedCategory,
+    baseRoute: "/apps/kupi-prodai",
+    searchParam: "text",
+  });
+  const [products, setProducts] =
+    useState<Types.PaginatedResponse<Types.Product> | null>(null);
+
+  useEffect(() => {
+    if (searchedProducts) {
+      setProducts(searchedProducts);
+    }
+  }, [searchedProducts]);
+
+  useEffect(() => {
+    setProducts(productItems);
+  }, [productItems]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -422,6 +439,7 @@ export default function KupiProdaiPage() {
                 setInputValue={setInputValue}
                 preSearchedProducts={preSearchedProducts}
                 handleSearch={handleSearch}
+                setSelectedCondition={setSelectedCondition}
               />
             </div>
           </div>
@@ -433,10 +451,12 @@ export default function KupiProdaiPage() {
               selectedCondition={selectedCondition}
               setSelectedCondition={setSelectedCondition}
             />
-            <SliderGroup
+            <CategorySlider
               categories={categories}
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
+              setInputValue={setInputValue}
+              setSelectedCondition={setSelectedCondition}
             />
           </div>
 
@@ -457,7 +477,7 @@ export default function KupiProdaiPage() {
                 Try Again
               </Button>
             </div>
-          ) : (products.length ?? 0) > 0 ? (
+          ) : (products?.products.length ?? 0) > 0 ? (
             <>
               <motion.div
                 className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3"
@@ -465,7 +485,7 @@ export default function KupiProdaiPage() {
                 initial="hidden"
                 animate="visible"
               >
-                {products.map((product) => (
+                {products?.products.map((product) => (
                   <motion.div key={product.id} variants={itemVariants}>
                     <Card
                       className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"
@@ -524,33 +544,11 @@ export default function KupiProdaiPage() {
                   </motion.div>
                 ))}
               </motion.div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center mt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === 1}
-                    onClick={() => paginate(currentPage - 1)}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-2" />
-                    Previous
-                  </Button>
-                  <span className="mx-2 text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === totalPages}
-                    onClick={() => paginate(currentPage + 1)}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </div>
-              )}
+              <Pagination
+                length={products?.num_of_pages ?? 0}
+                currentPage={currentPage}
+                onChange={(page) => setCurrentPage(page)}
+              />
             </>
           ) : (
             <div className="text-center py-12">
@@ -561,7 +559,7 @@ export default function KupiProdaiPage() {
 
         {/* SELL SECTION */}
         <TabsContent value="sell" className="space-y-4 pt-4">
-          {!isAuthenticated ? (
+          {!user ? (
             <Alert variant="destructive">
               <AlertTitle>Authentication Required</AlertTitle>
               <AlertDescription>
@@ -782,7 +780,7 @@ export default function KupiProdaiPage() {
 
         {/* MY LISTINGS SECTION */}
         <TabsContent value="my-listings" className="space-y-4 pt-4">
-          {!isAuthenticated ? (
+          {!user ? (
             <Alert variant="destructive">
               <AlertTitle>Authentication Required</AlertTitle>
               <AlertDescription>

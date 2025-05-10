@@ -4,7 +4,7 @@ msgstr ""
 "Language: en\n"
 
 msgid "Отлично, теперь выбери верный смайлик!"
-msgstr "Great, now choose the correct emoji!"
+msgstr "Great, now choose the correct emoji indicated on the site!"
 
 msgid "Ваш телеграм аккаунт уже привязан!"
 msgstr "Your Telegram account is already linked!"
@@ -31,10 +31,10 @@ msgid "Язык успешно изменен!"
 msgstr "Language successfully changed!"
 
 msgid "✅Есть в базе NUspace"
-msgstr "✅Exists in the NUspace database"
+msgstr "✅User with verified NU-mail"
 
 msgid "⛔️Нету в базе NUspace"
-msgstr "⛔️Not in the NUspace database"
+msgstr "⛔️This Telegram user is not registered with Nuspace. Ask them to register."
 
 msgid "⛔️К сожалению из-за настроек конфиденциальности пользователя это недоступно, но есть другой вариант!"
 msgstr "⛔️Unfortunately, due to the user's privacy settings, this is unavailable, but there is another option!"
@@ -44,3 +44,21 @@ msgstr "Select a user"
 
 msgid "Профиль пользователя"
 msgstr "User Profile"
+
+msgid "✅Включить уведомления"
+msgstr "✅Enable notifications"
+
+msgid "⛔️Выключить уведомления"
+msgstr "⛔️Disable notifications"
+
+msgid "⛔️Уведомления отключены"
+msgstr "⛔️Notifications are off"
+
+msgid "✅Уведомления включены"
+msgstr "✅Notifications are on"
+
+msgid "🔔Уведомления"
+msgstr "🔔Notifications"
+
+msgid "⛔️Нет доступа"
+msgstr "⛔️To proceed, first register on the Nuspace website and link your Telegram. This is to confirm that you are a verified NU user."

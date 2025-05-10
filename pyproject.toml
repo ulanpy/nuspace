@@ -46,6 +46,7 @@ polib = "^1.2.0"
 pytz = "^2025.2"
 google-cloud-pubsub = "^2.29.0"
 pre-commit = "^4.2.0"
+aio-pika = "^9.5.5"
 
 
 

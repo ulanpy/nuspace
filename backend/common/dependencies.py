@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.database.manager import AsyncDatabaseManager
-from backend.core.database.models import User
+from backend.core.database.models import User, UserRole
 
 
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
@@ -43,7 +43,18 @@ async def check_tg(
     tg_id = result.scalars().first()
 
     if not tg_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Telegram not linked"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Telegram not linked")
+    return True
+
+
+async def check_admin(
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session),
+) -> bool:
+    sub = user.get("sub")
+    result = await db_session.execute(select(User.role).filter_by(sub=sub))
+    role = result.scalars().first()
+
+    if role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
     return True
