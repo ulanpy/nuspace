@@ -12,4 +12,4 @@ from .dormeats import (
 )
 from .media import Media
 from .product import Product, ProductFeedback, ProductReport
-from .user import User, UserScope
+from .user import User, UserRole, UserScope
