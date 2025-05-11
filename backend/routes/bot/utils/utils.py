@@ -1,5 +1,7 @@
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.redis import RedisStorage
+from aiogram.types.bot_command import BotCommand
+from aiogram.types.bot_command_scope_all_private_chats import BotCommandScopeAllPrivateChats
 from fastapi import FastAPI
 
 from backend.core.configs.config import config
@@ -33,4 +35,10 @@ async def initialize_bot(
         drop_pending_updates=True,
         allowed_updates=app.state.dp.resolve_used_update_types(),
         secret_token=config.SECRET_TOKEN,
+    )
+
+    start = BotCommand(command="start", description="start")
+    language = BotCommand(command="language", description="language")
+    await app.state.bot.set_my_commands(
+        commands=[start, language], scope=BotCommandScopeAllPrivateChats()
     )
