@@ -2,11 +2,9 @@
 
 import type React from "react";
 
-import { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef, useEffect, Suspense } from "react";
 import {
   ShoppingBag,
-  MessageSquare,
   X,
   ChevronLeft,
   ChevronRight,
@@ -25,7 +23,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "../../components/atoms/tabs";
-import { SliderContainer } from "@/components/molecules/slider-container";
 import { ConditionGroup } from "@/components/molecules/condition-group";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../../hooks/use-toast";
@@ -35,7 +32,6 @@ import {
   AlertTitle,
 } from "../../components/atoms/alert";
 import { Progress } from "../../components/atoms/progress";
-import { Skeleton } from "../../components/atoms/skeleton";
 import { useProducts } from "@/modules/kupi-prodai/hooks/use-products";
 import { useUserProducts } from "@/modules/kupi-prodai/hooks/use-user-products";
 import { useCreateProduct } from "@/modules/kupi-prodai/hooks/use-create-product";
@@ -54,13 +50,24 @@ import { GiKnifeFork } from "react-icons/gi";
 import { IoTicket, IoCarSport } from "react-icons/io5";
 import { SearchInput } from "@/components/molecules/search-input";
 import { useSearchLogic } from "@/hooks/useSearchLogic";
-import { Pagination } from "@/components/molecules/pagination";
-import { useUser } from "@/hooks/use-user";
-import { CategoryCard } from "@/components/atoms/category-card";
 import { CategorySlider } from "@/components/organisms/category-slider";
 
+import {
+  AuthRequiredAlert,
+  TelegramRequiredAlert,
+} from "@/components/molecules/auth-required-alert";
+import { ProductLoadingState } from "@/components/molecules/state/product-loading-state";
+import { ProductErrorState } from "@/components/molecules/state/product-error-state";
+import { ProductEmptyState } from "@/components/molecules/state/product-empy-state";
+import { ProductGrid } from "@/components/organisms/kp/product-grid";
+import { ProductInfo } from "@/components/molecules/form/product-info";
+import { ImageUploader } from "@/components/molecules/form/image-uploader";
+import { useUser } from "@/hooks/use-user";
+import { ImageGalery } from "@/components/molecules/form/image-galery";
+import { SubmitButton } from "@/components/molecules/buttons/submit-button";
+
 // Define categories and conditions
-const categories = [
+const categories: Types.DisplayCategory[] = [
   {
     title: "All",
     icon: <BiSolidCategory />,
@@ -122,29 +129,6 @@ const categories = [
 const conditions = ["All Conditions", "new", "used"];
 const displayConditions = ["All Conditions", "New", "Used"];
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      type: "spring",
-      stiffness: 100,
-      damping: 15,
-    },
-  },
-};
-
 export default function KupiProdaiPage() {
   const navigate = useNavigate();
 
@@ -174,6 +158,7 @@ export default function KupiProdaiPage() {
     previewImages,
     setPreviewImages,
     setImageFiles,
+    removeImage,
   } = useImageContext();
   const { getIsPendingDeleteMutation, handleDelete } = useDeleteProduct();
   const { handleUpdateListing } = useUpdateProduct();
@@ -253,15 +238,6 @@ export default function KupiProdaiPage() {
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       processFiles(Array.from(e.dataTransfer.files));
     }
-  };
-
-  const removeImage = (index: number) => {
-    const newPreviewImages = [...previewImages];
-    const newImageFiles = [...imageFiles];
-    newPreviewImages.splice(index, 1);
-    newImageFiles.splice(index, 1);
-    setPreviewImages(newPreviewImages);
-    setImageFiles(newImageFiles);
   };
 
   const handleInputChange = (
@@ -365,21 +341,6 @@ export default function KupiProdaiPage() {
   const soldListings = myProducts?.filter((p) => p.status === "inactive");
 
   // Product skeleton for loading state
-  const ProductSkeleton = () => (
-    <Card className="overflow-hidden h-full">
-      <Skeleton className="aspect-square w-full" />
-      <CardContent className="p-3 sm:p-4">
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-6 w-1/3" />
-          <div className="flex justify-between items-center pt-2">
-            <Skeleton className="h-4 w-1/4" />
-            <Skeleton className="h-4 w-1/4" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   // search section
   const {
@@ -417,7 +378,7 @@ export default function KupiProdaiPage() {
 
       <Tabs
         defaultValue="buy"
-        className="w-full"
+        className="w-full flex flex-col gap-4"
         onValueChange={(value) => setActiveTab(value as Types.ActiveTab)}
         value={activeTab}
       >
@@ -430,22 +391,21 @@ export default function KupiProdaiPage() {
         {/* BUY SECTION */}
         <TabsContent
           value="buy"
-          className="space-y-3 sm:space-y-4 pt-3 sm:pt-4 flex flex-col gap-4"
+          className="space-y-3 sm:space-y-4 flex flex-col gap-3"
         >
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-            <div className="relative flex-1">
-              <SearchInput
-                inputValue={inputValue}
-                setInputValue={setInputValue}
-                preSearchedProducts={preSearchedProducts}
-                handleSearch={handleSearch}
-                setSelectedCondition={setSelectedCondition}
-              />
-            </div>
-          </div>
-
           {/* Categories section - separate row */}
           <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+              <div className="relative flex-1">
+                <SearchInput
+                  inputValue={inputValue}
+                  setInputValue={setInputValue}
+                  preSearchedProducts={preSearchedProducts}
+                  handleSearch={handleSearch}
+                  setSelectedCondition={setSelectedCondition}
+                />
+              </div>
+            </div>
             <ConditionGroup
               conditions={conditions}
               selectedCondition={selectedCondition}
@@ -460,317 +420,67 @@ export default function KupiProdaiPage() {
             />
           </div>
 
-          {isLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
-              {Array.from({ length: 8 }).map((_, index) => (
-                <ProductSkeleton key={index} />
-              ))}
-            </div>
-          ) : error ? (
-            <div className="text-center py-12 text-destructive">
-              <p>{error}</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                // onClick={fetchProducts}
-              >
-                Try Again
-              </Button>
-            </div>
-          ) : (products?.products.length ?? 0) > 0 ? (
-            <>
-              <motion.div
+          <Suspense fallback={<ProductLoadingState count={8} />}>
+            {isLoading ? (
+              <ProductLoadingState />
+            ) : error ? (
+              <ProductErrorState error={error} />
+            ) : (products?.products.length ?? 0) > 0 ? (
+              <ProductGrid
+                products={products}
                 className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {products?.products.map((product) => (
-                  <motion.div key={product.id} variants={itemVariants}>
-                    <Card
-                      className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() =>
-                        navigate(`/apps/kupi-prodai/product/${product.id}`)
-                      }
-                    >
-                      <div className="aspect-square relative">
-                        <img
-                          src={
-                            product.media[0]?.url ||
-                            "https://placehold.co/200x200?text=No+Image"
-                          }
-                          alt={product.name}
-                          className="object-cover w-full h-full"
-                        />
-                        <Badge
-                          className={`absolute top-2 right-2 ${getConditionColor(
-                            product.condition
-                          )} text-white text-xs`}
-                        >
-                          {getConditionDisplay(product.condition)}
-                        </Badge>
-                      </div>
-                      <CardContent className="p-2 sm:p-3">
-                        <div className="flex justify-between items-start mb-1">
-                          <div>
-                            <h3 className="font-medium text-xs sm:text-sm line-clamp-1">
-                              {product.name}
-                            </h3>
-                            <p className="text-sm sm:text-base font-bold">
-                              {product.price} ₸
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center text-[10px] sm:text-xs text-muted-foreground mb-1">
-                          <div className="flex items-center">
-                            <span>
-                              {product.category &&
-                                getCategoryDisplay(product.category)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex justify-between">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="flex gap-1 text-muted-foreground hover:text-primary"
-                          >
-                            <MessageSquare className="h-4 w-4" />
-                            <span>Message</span>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </motion.div>
-              <Pagination
-                length={products?.num_of_pages ?? 0}
-                currentPage={currentPage}
-                onChange={(page) => setCurrentPage(page)}
               />
-            </>
-          ) : (
-            <div className="text-center py-12">
-              <p>No products found.</p>
-            </div>
-          )}
+            ) : (
+              <ProductEmptyState />
+            )}
+          </Suspense>
         </TabsContent>
 
         {/* SELL SECTION */}
         <TabsContent value="sell" className="space-y-4 pt-4">
           {!user ? (
-            <Alert variant="destructive">
-              <AlertTitle>Authentication Required</AlertTitle>
-              <AlertDescription>
-                You must be logged in to create a listing.
-                <Button variant="link" onClick={() => login()}>
-                  Login
-                </Button>
-              </AlertDescription>
-            </Alert>
+            <AuthRequiredAlert onClick={() => login()} />
           ) : !isTelegramLinked ? (
-            <Alert
-              variant="default"
-              className="bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900"
-            >
-              <AlertTitle className="flex items-center gap-2">
-                Telegram Required
-              </AlertTitle>
-              <AlertDescription className="space-y-2">
-                <p>
-                  You need to link your Telegram account before selling items.
-                </p>
-              </AlertDescription>
-            </Alert>
+            <TelegramRequiredAlert />
           ) : (
             <form onSubmit={handleCreate} className="space-y-4">
               {/* Name */}
-              <div className="space-y-2">
-                <label htmlFor="name" className="block text-sm font-medium">
-                  Name
-                </label>
-                <Input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={newListing.name}
-                  onChange={handleInputChange}
-                  required
-                  className="bg-background text-foreground"
-                  placeholder="What are you selling?"
-                />
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium"
-                >
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={newListing.description}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full p-2 border rounded-md bg-background text-foreground"
-                  placeholder="Describe your item..."
-                />
-              </div>
-
-              {/* Price, Category, and Condition */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="price" className="block text-sm font-medium">
-                    Price (₸)
-                  </label>
-                  <Input
-                    type="number"
-                    id="price"
-                    name="price"
-                    value={newListing.price === 0 ? "" : newListing.price}
-                    onChange={handleInputChange}
-                    onFocus={handlePriceInputFocus}
-                    onBlur={handlePriceInputBlur}
-                    min="0"
-                    step="1"
-                    required
-                    className="bg-background text-foreground"
-                    placeholder="0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label
-                    htmlFor="category"
-                    className="block text-sm font-medium"
-                  >
-                    Category
-                  </label>
-                  <select
-                    id="category"
-                    name="category"
-                    value={newListing.category}
-                    onChange={handleSelectChange}
-                    className="w-full p-2 border rounded-md bg-background text-foreground"
-                    required
-                  >
-                    {categories.slice(1).map((category, index) => (
-                      <option key={category.title} value={category.title}>
-                        {categories[index + 1].title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label
-                    htmlFor="condition"
-                    className="block text-sm font-medium"
-                  >
-                    Condition
-                  </label>
-                  <select
-                    id="condition"
-                    name="condition"
-                    value={newListing.condition}
-                    onChange={handleSelectChange}
-                    className="w-full p-2 border rounded-md bg-background text-foreground"
-                    required
-                  >
-                    {conditions.slice(1).map((condition, index) => (
-                      <option key={condition} value={condition}>
-                        {displayConditions[index + 1]}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Image Upload with Drag and Drop */}
+              <ProductInfo
+                newListing={newListing}
+                categories={categories}
+                conditions={conditions}
+                handleInputChange={(e) => handleInputChange(e)}
+                handlePriceInputBlur={handlePriceInputBlur}
+                handlePriceInputFocus={handlePriceInputFocus}
+                handleSelectChange={handleSelectChange}
+              />
               <div className="space-y-2">
                 <label className="block text-sm font-medium">Images</label>
-                <div
-                  ref={dropZoneRef}
-                  className={`border-2 ${
-                    isDragging ? "border-primary" : "border-dashed"
-                  } rounded-md p-6 transition-colors duration-200 ease-in-out`}
+                <ImageUploader
+                  dropZoneRef={dropZoneRef}
+                  fileInputRef={fileInputRef}
+                  isDragging={isDragging}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <div className="flex flex-col items-center justify-center text-center">
-                    <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-sm font-medium mb-1">
-                      Upload a file or drag and drop
-                    </p>
-                    <p className="text-xs text-muted-foreground mb-4">
-                      PNG, JPG, GIF up to 10MB
-                    </p>
-                    <input
-                      type="file"
-                      name="images"
-                      ref={fileInputRef}
-                      className="hidden"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageUpload}
-                    />
-                    <Button type="button" variant="outline" size="sm">
-                      Upload a file
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Image Preview */}
+                  onFileChange={handleImageUpload}
+                />
                 {previewImages.length > 0 && (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-4">
-                    {previewImages.map((src, index) => (
-                      <div
-                        key={index}
-                        className="relative aspect-square rounded-md overflow-hidden"
-                      >
-                        <img
-                          src={src || "/placeholder.svg"}
-                          alt={`Preview ${index + 1}`}
-                          className="object-cover w-full h-full"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-1 right-1 h-6 w-6"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeImage(index);
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                  <ImageGalery
+                    previewImages={previewImages}
+                    removeImage={removeImage}
+                  />
                 )}
               </div>
-
+              
               {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={isUploading || !isTelegramLinked}
-                className="w-full"
-              >
-                {isUploading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <RefreshCw className="animate-spin h-4 w-4" />
-                    <span>Uploading... {uploadProgress}%</span>
-                  </div>
-                ) : (
-                  "Create Listing"
-                )}
-              </Button>
+              <SubmitButton
+                isUploading={isUploading}
+                isTelegramLinked={isTelegramLinked}
+                uploadProgress={uploadProgress}
+              />
 
+              {/* Media Reorder */}
               {isUploading && (
                 <Progress value={uploadProgress} className="mt-2" />
               )}

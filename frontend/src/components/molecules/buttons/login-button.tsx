@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "../atoms/button";
+import { Button } from "../../atoms/button";
 import { User, LogOut } from "lucide-react";
 import { BindTelegramButton } from "./bind-telegram-button";
 import { useUser } from "@/hooks/use-user";
@@ -12,7 +12,6 @@ export function LoginButton() {
     <div className="flex items-center gap-2">
       {user ? (
         <div className="flex items-center gap-2">
-
           <BindTelegramButton />
           <Button
             variant="ghost"

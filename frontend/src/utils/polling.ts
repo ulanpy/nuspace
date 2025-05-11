@@ -1,5 +1,3 @@
-// src/utils/polling.ts
-
 import { QueryClient } from '@tanstack/react-query';
 
 interface PollOptions<T> {

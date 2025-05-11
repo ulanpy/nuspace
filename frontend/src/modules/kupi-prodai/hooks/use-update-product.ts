@@ -1,4 +1,3 @@
-// hooks/use-update-product.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useToast } from "@/hooks/use-toast";
@@ -26,7 +25,8 @@ export function useUpdateProduct() {
     setOriginalMedia,
     setReorderedMedia,
   } = useMediaContext();
-  const { handleImageUpload, deleteMedia, resetImageState } = useProductImages();
+  const { handleImageUpload, deleteMedia, resetImageState } =
+    useProductImages();
 
   const queryClient = useQueryClient();
 
@@ -46,7 +46,6 @@ export function useUpdateProduct() {
       });
     },
     onError: (_, __, context) => {
-
       if (context) {
         queryClient.setQueryData(
           kupiProdaiApi.getUserProductsQueryOptions().queryKey,
@@ -97,7 +96,6 @@ export function useUpdateProduct() {
     try {
       setIsUploading(true);
       setUploadProgress(10);
-
 
       await updateProductMutation.mutateAsync({
         product_id: editingListing.id,

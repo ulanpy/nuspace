@@ -45,6 +45,7 @@ export function TeamCard() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Our Development Team"
+        className="max-w-4xl"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4 max-h-[70vh] overflow-y-auto">
           {teamMembers.map((member, index) => (

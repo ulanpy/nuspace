@@ -1,6 +1,8 @@
-// hooks/use-product-images.ts
 import imageCompression from "browser-image-compression";
-import { kupiProdaiApi, SignedUrlRequest } from "@/modules/kupi-prodai/api/kupi-prodai-api";
+import {
+  kupiProdaiApi,
+  SignedUrlRequest,
+} from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useImageContext } from "@/context/image-context";
 import { useListingState } from "@/context/listing-context";
 
@@ -12,12 +14,8 @@ interface UploadImageOptions {
 }
 
 export function useProductImages() {
-  const {
-    imageFiles,
-    setImageFiles,
-    setPreviewImages,
-    setIsUploading
-  } = useImageContext();
+  const { imageFiles, setImageFiles, setPreviewImages, setIsUploading } =
+    useImageContext();
   const { setUploadProgress } = useListingState();
 
   // Сурет сығымдау функциясы
@@ -38,7 +36,7 @@ export function useProductImages() {
   const getSignedUrls = async (
     entityId: number,
     files: File[],
-    options: Omit<UploadImageOptions, 'entityId'>
+    options: Omit<UploadImageOptions, "entityId">
   ) => {
     const requests: SignedUrlRequest[] = files.map((file, idx) => ({
       media_table: options.media_table,
@@ -92,15 +90,11 @@ export function useProductImages() {
       setUploadProgress(30);
 
       // 1. Signed URLs алу
-      const signedUrls = await getSignedUrls(
-        options.entityId,
-        imageFiles,
-        {
-          media_table: options.media_table,
-          mediaFormat: options.mediaFormat,
-          startOrder: options.startOrder
-        }
-      );
+      const signedUrls = await getSignedUrls(options.entityId, imageFiles, {
+        media_table: options.media_table,
+        mediaFormat: options.mediaFormat,
+        startOrder: options.startOrder,
+      });
 
       const compressedImages = await compressImages(imageFiles);
       setUploadProgress(50);

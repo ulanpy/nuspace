@@ -34,13 +34,13 @@ declare global {
       updated_at?: string;
     }
 
-    interface NewProductRequest {
+    type NewProductRequest = {
       name: string;
       description: string;
       price: number;
       category: ProductCategory;
       condition: ProductCondition;
-      status: "active";
+      status: string;
     }
 
     interface ProductMedia {
@@ -105,7 +105,7 @@ declare global {
       keyActions: KeyActions;
       input: InputHandlers;
     };
-    type SupportedKey = 'ArrowDown' | 'ArrowUp' | 'Enter' | 'Escape'
+    type SupportedKey = "ArrowDown" | "ArrowUp" | "Enter" | "Escape";
     type SelectedCondition = "All Conditions" | "new" | "used";
 
     interface TeamContact {
@@ -122,6 +122,11 @@ declare global {
 
     interface TeamMemberCardProps {
       team: Team;
-    }T
+    }
+
+    interface DisplayCategory {
+      title: string;
+      icon: JSX.Element;
+    }
   }
 }
