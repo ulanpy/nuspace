@@ -4,12 +4,10 @@ from typing import Annotated
 from aiogram import Bot
 from aiogram.utils.deep_linking import create_start_link
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
-from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import check_token, get_db_session
-from backend.core.configs.config import config
 from backend.routes.auth.keycloak_manager import KeyCloakManager
 from backend.routes.auth.schemas import CurrentUserResponse, Sub
 
@@ -56,11 +54,11 @@ async def auth_callback(
     )
     user_schema: UserSchema = await create_user_schema(creds)
     await upsert_user(db_session, user_schema)
-    # return creds
+    return creds
 
-    response = RedirectResponse(url=config.FRONTEND_HOST, status_code=303)
-    set_auth_cookies(response, creds)
-    return response
+    # response = RedirectResponse(url=config.FRONTEND_HOST, status_code=303)
+    # set_auth_cookies(response, creds)
+    # return response
 
 
 @router.post("/bingtg")
