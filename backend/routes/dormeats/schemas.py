@@ -108,3 +108,11 @@ class CanteenReportResponseSchema(BaseModel):
     media: List[MediaResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+class ListCanteenReportsSchema(BaseModel):
+    id: int
+    canteen_id: int
+    reports: list[CanteenReportResponseSchema]
+    media: List[MediaResponse] = []
+
+    model_config = ConfigDict(from_attributes=True)

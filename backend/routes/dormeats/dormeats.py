@@ -128,19 +128,19 @@ async def get_canteen_products(
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
 
-
 @router.get("/canteens", response_model=List[CanteenResponseSchema])
 async def get_canteens(
     request: Request,
     db_session: AsyncSession = Depends(get_db_session),
 ):
-    try:
-        return await get_canteens_from_db(request=request, session=db_session)
+    try: 
+        return await get_canteens_from_db(
+            request=request, session=db_session
+        )
     except HTTPException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)    
 
-
-@router.get("/meals", response_model=List[MealResponseSchema])
+@router.get('/meals', response_model=List[MealResponseSchema])
 async def get_meals(
     request: Request,
     canteen_id: int,
@@ -165,26 +165,19 @@ async def get_ingredients(
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
 
-
-@router.get("/list", response_model=CanteenFeedbackResponseSchema)
-async def get_canteen_feedbacks_router(
-    request: Request,
-    user: Annotated[dict, Depends(check_token)],
-    db_session: AsyncSession = Depends(get_db_session),
-    size: int = 20,
-    page: int = 1,
-):
-    return await show_canteen_feedbacks_from_db(
-        request=request, session=db_session, size=size, page=page
-    )
-
-
-@router.get("/list", response_model=CanteenReportResponseSchema)
+@router.get("/reports", response_model=ListCanteenReportsSchema)  
 async def get_reports_router(
+    canteen_id: int,
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     db_session: AsyncSession = Depends(get_db_session),
     size: int = 20,
-    page: int = 1,
+    page: int = 1
 ):
-    return await get_reports_(request=request, session=db_session, size=size, page=page)
+    return await show_canteen_reports_from_db(
+        canteen_id = canteen_id,
+        request=request,
+        session=db_session,
+        size=size,
+        page=page
+    )
