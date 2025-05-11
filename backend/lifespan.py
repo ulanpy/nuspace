@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from google.cloud import storage
+from openai import AsyncOpenAI
 
 from backend.app_state.bot import cleanup_bot, setup_bot
 from backend.app_state.db import cleanup_db, setup_db
@@ -19,6 +20,7 @@ async def lifespan(app: FastAPI):
         app.state.kc_manager = KeyCloakManager()
         app.state.config = Config()
         app.state.storage_client = storage.Client(credentials=config.BUCKET_CREDENTIALS)
+        app.state.AI_client = AsyncOpenAI(api_key=config.OPEN_AI_KEY)
 
         await setup_rbq(app)
         await setup_db(app)

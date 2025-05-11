@@ -34,6 +34,8 @@ class Config(BaseSettings):
     NUSPACE: str
     GCP_PROJECT_ID: str
     GCP_TOPIC_ID: str
+    OPEN_AI_KEY: str
+
     ORIGINS: List[str] = ["*"]
 
     class Config:

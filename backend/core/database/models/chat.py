@@ -1,52 +1,59 @@
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey,CheckConstraint
+from sqlalchemy import BigInteger, CheckConstraint, Column, DateTime, ForeignKey, Integer
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
-class MessageSenderType(PyEnum):
+
+class SenderType(PyEnum):
     assistant = "assistant"
     user = "user"
+    system = "system"
 
 
-class Chat(Base):
-    __tablename__ = "chats"
-    id: Mapped[int] = mapped_column(
-        BigInteger, primary_key=True, nullable=False, index=True
-    )
+class ModelType(PyEnum):
+    GPT_4 = "gpt-4"
+    GPT_3_5 = "gpt-3.5-turbo"
+    GPT_4_TURBO = "gpt-4-turbo"
 
-    sub: Mapped[str] = mapped_column(ForeignKey("users.sub"), nullable=False)
 
-    title: Mapped[str] = mapped_column(nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
-    user = relationship("User", back_populates="chats")
-    messages: Mapped[list["Message"]] = relationship("Message", back_populates="chat", cascade="all, delete")
+class RentalStatus(PyEnum):
+    active = "active"
+    expired = "expired"
 
 
 class Message(Base):
     __tablename__ = "messages"
-    id: Mapped[int] = mapped_column(
-        BigInteger, primary_key=True, nullable=False, index=True
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+    chat_id: Mapped[str] = mapped_column(nullable=False, index=True)
+    sub: Mapped[str] = mapped_column(ForeignKey("users.sub"), nullable=False)
+    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    message: Mapped[str] = mapped_column(nullable=False)
+    message_order: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    sender_type: Mapped[SenderType] = mapped_column(
+        SQLEnum(SenderType, name="sender_type"), nullable=False
+    )
+    model_type: Mapped[ModelType] = mapped_column(
+        SQLEnum(ModelType, name="model_type"), nullable=False
     )
 
-    chat_id: Mapped[str] = mapped_column(
-        ForeignKey("chat.id"), nullable=False, unique=False
+    user = relationship("User", back_populates="messages")
+
+
+class Rental(Base):
+    __tablename__ = "rentals"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+    sub: Mapped[str] = mapped_column(ForeignKey("users.sub"), nullable=False)
+    start_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, nullable=False)
+    end_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, nullable=False)
+    status: Mapped[RentalStatus] = mapped_column(
+        SQLEnum(RentalStatus), default=RentalStatus.active, nullable=False
     )
 
-    sender_type: Mapped[MessageSenderType] = mapped_column(
-        SQLEnum(MessageSenderType, name="type"), nullable=False
-    )
+    user = relationship("User", back_populates="rentals")
 
-    content: Mapped[str] = mapped_column(nullable=False, unique=False)
-
-    chat: Mapped[Chat] = relationship("Chat", back_populates="messages")
-
-    __table_args__ = (
-        CheckConstraint("role IN ('user', 'assistant')", name="check_role"),
-    )
+    __table_args__ = (CheckConstraint("end_at > start_at", name="check_end_after_start"),)

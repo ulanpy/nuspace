@@ -15,27 +15,6 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
-  fastapi:
-    container_name: fastapi
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        IS_DEBUG: ${IS_DEBUG:-true}  # Default to 'true' if not set
-    networks:
-      - nuros
-    restart: always
-    env_file:
-      - .env
-    volumes:
-      - .:/nuros  # Sync local backend folder with container's /nuros
-    depends_on:
-      - postgres
-    environment:
-      - PYTHONUNBUFFERED=1
-      - WORKERS=${GUNICORN_WORKERS:-4}
-
-
   nginx:
     container_name: nginx
     image: nginx:latest
@@ -164,6 +143,26 @@ services:
     networks:
       - nuros
 
+  fastapi:
+    container_name: fastapi
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        IS_DEBUG: ${IS_DEBUG:-true}  # Default to 'true' if not set
+    networks:
+      - nuros
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - .:/nuros  # Sync local backend folder with container's /nuros
+    depends_on:
+      - postgres
+    environment:
+      - PYTHONUNBUFFERED=1
+      - WORKERS=${GUNICORN_WORKERS:-4}
+
 networks:
   nuros:
     name: nuspace_nuros
@@ -175,3 +174,4 @@ volumes:
     driver: local
   pgadmin-data:
   rabbitmq-data:  # Add this
+

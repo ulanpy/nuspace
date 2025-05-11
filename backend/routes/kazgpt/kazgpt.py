@@ -1,88 +1,55 @@
+from typing import Annotated, List
 
-from typing import Annotated, Optional
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy.exc import IntegrityError
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import check_token, get_db_session
-from .schemas import ChatResponseSchema
-
-from ...common.utils import add_meilisearch_data, search_for_meilisearch_data
-from ...core.database.models.club import ClubType, EventPolicy
+from backend.core.database.models.chat import Message, SenderType
+from backend.routes.kazgpt import api, cruds
+from backend.routes.kazgpt.dependencies import check_permissions
+from backend.routes.kazgpt.schemas import MessageRequest, MessageResponse
+from backend.routes.kazgpt.utils import format_history
 
 router = APIRouter(tags=["KazGPT"])
 
 
-# @router.post("/chat/new", response_model=ChatResponseSchema)
-# async def add_chat(
-#     request: Request,
-#     club: ClubRequestSchema,
-#     user: Annotated[dict, Depends(check_token)],
-#     db_session: AsyncSession = Depends(get_db_session),
-# ) -> ClubResponseSchema:
-#     try:
-#         return await add_new_club(request, club, db_session)
-#     except IntegrityError:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="db rejected the request: probably there are duplication issues",
-#         )
-# @router.post("/chat/send", response_model=ClubResponseSchema)
-# async def send(
-#     request: Request,
-#     club: ClubRequestSchema,
-#     user: Annotated[dict, Depends(check_token)],
-#     db_session: AsyncSession = Depends(get_db_session),
-# ) -> ClubResponseSchema:
-#     try:
-#         return await add_new_club(request, club, db_session)
-#     except IntegrityError:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="db rejected the request: probably there are duplication issues",
-#         )
-#
-# @router.get("/chat/history/{user_id}", response_model=ClubResponseSchema)
-# async def get_user_history(
-#     request: Request,
-#     club: ClubRequestSchema,
-#     user: Annotated[dict, Depends(check_token)],
-#     db_session: AsyncSession = Depends(get_db_session),
-# ) -> ClubResponseSchema:
-#     try:
-#         return await add_new_club(request, club, db_session)
-#     except IntegrityError:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="db rejected the request: probably there are duplication issues",
-#         )
-#
-# @router.get("/chat/{chat_id}", response_model=ClubResponseSchema)
-# async def get_chat(
-#     request: Request,
-#     club: ClubRequestSchema,
-#     user: Annotated[dict, Depends(check_token)],
-#     db_session: AsyncSession = Depends(get_db_session),
-# ) -> ClubResponseSchema:
-#     try:
-#         return await add_new_club(request, club, db_session)
-#     except IntegrityError:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="db rejected the request: probably there are duplication issues",
-#         )
-#
-# @router.delete("/chat/{chat_id}", response_model=ClubResponseSchema)
-# async def delete_chat(
-#     request: Request,
-#     club: ClubRequestSchema,
-#     user: Annotated[dict, Depends(check_token)],
-#     db_session: AsyncSession = Depends(get_db_session),
-# ) -> ClubResponseSchema:
-#     try:
-#         return await add_new_club(request, club, db_session)
-#     except IntegrityError:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="db rejected the request: probably there are duplication issues",
-#         )
+@router.get("/chat/{chat_id}")
+async def get_chat(
+    request: Request,
+    chat_id: str,
+    user: Annotated[dict, Depends(check_token)],
+    permissions: Annotated[bool, Depends(check_permissions)],
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    history: List[Message] = await cruds.get_history(
+        session=db_session, chat_id=chat_id, limit=False
+    )
+    return [MessageResponse.from_orm(message) for message in history]
+
+
+@router.post("/chat")
+async def send_message(
+    request: Request,
+    message_data: MessageRequest,
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    await cruds.add_message(session=db_session, message_data=message_data)
+    history: List[Message] = await cruds.get_history(
+        session=db_session, chat_id=message_data.chat_id
+    )
+    formatted_history = format_history(history)
+    gpt_answer = await api.ask_gpt(
+        client=request.app.state.AI_client, model=message_data.model_type, history=formatted_history
+    )
+    await cruds.add_message(
+        session=db_session,
+        message_data=MessageRequest(
+            chat_id=message_data.chat_id,
+            sub=message_data.sub,
+            message=gpt_answer,
+            sender_type=SenderType.assistant,
+            model_type=message_data.model_type,
+        ),
+    )
+    return gpt_answer
