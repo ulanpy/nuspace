@@ -10,9 +10,14 @@ from .base import Base
 
 class MediaTable(PyEnum):
     products = "products"
-    club_events= "club_events"
+    club_events = "club_events"
     clubs = "clubs"
     club_announcements = "club_announcements"
+    canteen = "canteen"
+    meal = "meal"
+    canteen_product = "canteen_product"
+    canteen_feedback = "canteen_feedback"
+    canteen_report = "canteen_report"
 
 
 class MediaFormat(PyEnum):
@@ -24,22 +29,16 @@ class MediaFormat(PyEnum):
 # Mapped[dtype] defaults parameters: nullable=False, unique=True, primary_key=False
 class Media(Base):
     __tablename__ = "media"
-    id: Mapped[int] = mapped_column(
-        BigInteger, primary_key=True, autoincrement=True, index=True
-    )
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True, index=True)
     name: Mapped[str] = mapped_column(nullable=False, index=True, unique=True)
     mime_type: Mapped[str] = mapped_column(nullable=False, unique=False)
     media_table: Mapped[MediaTable] = mapped_column(
         SQLEnum(MediaTable, name="media_table"), nullable=False
     )
-    entity_id: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, index=True, unique=False
-    )
+    entity_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True, unique=False)
     media_format: Mapped[MediaFormat] = mapped_column(
         SQLEnum(MediaFormat, name="media_format"), nullable=False
     )
     media_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
