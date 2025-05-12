@@ -9,9 +9,25 @@ from .__init__ import *
 router = APIRouter(prefix="/dormeats", tags=["Dorm-Eats Routes"])
 
 
-@router.post(
-    "/canteen_product/new", response_model=CanteenProductResponseSchema
-)  # works
+@router.post("/canteen/new", response_model=CanteenResponseSchema)
+async def add_new_canteen(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    canteen_data: CanteenRequestSchema,
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    try:
+        return await add_new_canteen_to_db(
+            session=db_session, canteen_data=canteen_data, request=request
+        )
+    except HTTPException as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+
+@router.post("/canteen_product/new", response_model=CanteenProductResponseSchema)  # works
 async def add_new_product(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
@@ -21,23 +37,6 @@ async def add_new_product(
     try:
         return await add_new_canteenproduct_to_db(
             session=db_session, product_data=product_data, request=request
-        )
-    except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
-
-
-@router.post("/meal/new", response_model=MealResponseSchema)
-async def add_new_meal(
-    request: Request,
-    user: Annotated[dict, Depends(check_token)],
-    meal_data: MealRequestSchema,
-    db_session: AsyncSession = Depends(get_db_session),
-):
-    try:
-        return await add_new_meal_to_db(
-            session=db_session, meal_data=meal_data, request=request
         )
     except HTTPException as e:
         raise HTTPException(
@@ -64,6 +63,27 @@ async def add_new_canteen_feedback(
         )
 
 
+
+
+@router.post("/meal/new", response_model=MealResponseSchema)
+async def add_new_meal(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    meal_data: MealRequestSchema,
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    try:
+        return await add_new_meal_to_db(
+            session=db_session, meal_data=meal_data, request=request
+        )
+    except HTTPException as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+
+
 @router.post("/ingredient/new", response_model=IngredientResponseSchema)
 async def add_new_ingredient(
     request: Request,
@@ -81,21 +101,6 @@ async def add_new_ingredient(
         )
 
 
-@router.post("/canteen/new", response_model=CanteenResponseSchema)
-async def add_new_canteen(
-    request: Request,
-    user: Annotated[dict, Depends(check_token)],
-    canteen_data: CanteenRequestSchema,
-    db_session: AsyncSession = Depends(get_db_session),
-):
-    try:
-        return await add_new_canteen_to_db(
-            session=db_session, canteen_data=canteen_data, request=request
-        )
-    except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
 
 
 @router.post("/canteen_report/new", response_model=CanteenReportResponseSchema)
@@ -156,7 +161,9 @@ async def get_meals(
 
 @router.get("/ingredients", response_model=List[CanteenProductResponseSchema])
 async def get_ingredients(
-    request: Request, meal_id: int, db_session: AsyncSession = Depends(get_db_session)
+    request: Request,
+    meal_id: int,
+    db_session: AsyncSession = Depends(get_db_session)
 ):
     try:
         return await get_ingredients_from_db(
@@ -164,6 +171,23 @@ async def get_ingredients(
         )
     except HTTPException as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
+
+
+@router.get("/feedbacks", response_model=ListCanteenFeedbackResponseSchema)  
+async def get_feedbacks(
+    canteen_id: int,
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session),
+    size: int = 20,
+    page: int = 1
+):
+    return await show_canteen_feedbacks_from_db(
+        request=request,
+        session=db_session,
+        size=size,
+        page=page
+    )
 
 @router.get("/reports", response_model=ListCanteenReportsSchema)  
 async def get_reports_router(

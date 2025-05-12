@@ -62,6 +62,7 @@ async def build_canteen_feedback_response(
     canteen_feedback: CanteenFeedback,
     session: AsyncSession,
     request: Request,
+    media_table: MediaTable,
 ):
     return CanteenFeedbackResponseSchema(
         id=canteen_feedback.id,
@@ -72,7 +73,9 @@ async def build_canteen_feedback_response(
 
 
 async def build_ingredient_response(
-    ingredient: Ingredient, session: AsyncSession, request: Request
+    ingredient: Ingredient,
+    session: AsyncSession,
+    request: Request
 ):
     return IngredientResponseSchema(
         id=ingredient.id,
@@ -94,7 +97,10 @@ async def build_canteen_response(
         media_table=media_table,
     )
     return CanteenResponseSchema(
-        id=canteen.id, name=canteen.name, description=canteen.description, meida=media_responses
+        id=canteen.id,
+        name=canteen.name,
+        description=canteen.description,
+        meida=media_responses
     )
 
 

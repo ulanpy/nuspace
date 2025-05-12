@@ -6,6 +6,55 @@ from backend.core.database.models.dormeats import CanteenProductCategory, MealCa
 from backend.routes.google_bucket.schemas import MediaResponse
 
 
+# Canteen
+class CanteenRequestSchema(BaseModel):
+    name: str
+    description: str
+
+    model_config = ConfigDict(from_attribute=True)
+    
+class CanteenResponseSchema(BaseModel):
+    id: int
+    name: str
+    description: str
+
+    model_config = ConfigDict(from_attribute=True)
+
+
+# Canteen Product
+class CanteenProductRequestSchema(BaseModel):
+    name: str
+    category: CanteenProductCategory
+
+    model_config = ConfigDict(from_attributes=True)
+
+class CanteenProductResponseSchema(BaseModel):
+    id: int
+    name: str
+    category: CanteenProductCategory
+    media: List[MediaResponse] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+
+# Canteen Feedback
+class CanteenFeedbackRequestSchema(BaseModel):
+    canteen_id: int
+    feedback: str
+    rating: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+class CanteenFeedbackResponseSchema(BaseModel):
+    id: int
+    canteen_id: int
+    feedback: str
+    rating: int
+    media: List[MediaResponse] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
 # Meal
 class MealRequestSchema(BaseModel):
     name: str
@@ -31,21 +80,6 @@ class MealResponseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# Canteen Product
-class CanteenProductRequestSchema(BaseModel):
-    name: str
-    category: CanteenProductCategory
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class CanteenProductResponseSchema(BaseModel):
-    id: int
-    name: str
-    category: CanteenProductCategory
-    media: List[MediaResponse] = []
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class IngredientRequestSchema(BaseModel):
@@ -61,36 +95,11 @@ class IngredientResponseSchema(BaseModel):
 
     model_config = ConfigDict(from_attribute=True)
 
-class CanteenRequestSchema(BaseModel):
-    name: str
-    description: str
-
-    model_config = ConfigDict(from_attribute=True)
-    
-class CanteenResponseSchema(BaseModel):
-    id: int
-    name: str
-    description: str
-
-    model_config = ConfigDict(from_attribute=True)
-# Canteen Feedback
-class CanteenFeedbackRequestSchema(BaseModel):
-    canteen_id: int
-    feedback: str
-    rating: int
-
-    model_config = ConfigDict(from_attributes=True)
 
 
-class CanteenFeedbackResponseSchema(BaseModel):
-    id: int
-    canteen_id: int
-    feedback: str
-    rating: int
-    media: List[MediaResponse] = []
-
-
-    model_config = ConfigDict(from_attributes=True)
+class ListCanteenFeedbackResponseSchema(BaseModel):
+    canteen_feedbacks: List[CanteenFeedbackResponseSchema]
+    num_of_pages: int
 
 
 # Canteen Report
