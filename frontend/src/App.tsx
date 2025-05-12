@@ -27,8 +27,8 @@ function App() {
                 element={<ProductDetailPage />}
               />
               <Route path="about" element={<About />} />
-              {/* <Route path="nu-events" element={<NUEventsPage />} />
-                <Route path="dorm-eats" element={<DormEatsPage />} /> */}
+              <Route path="nu-events" element={<NUEventsPage />} />
+                <Route path="dorm-eats" element={<DormEatsPage />} />
             </Route>
           </Routes>
           <Toasts />

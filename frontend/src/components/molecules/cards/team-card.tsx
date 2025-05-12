@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/atoms/card";
 import { FaUsers } from "react-icons/fa";
 
 import { teamMembers } from "@/data/team-members";
-import { TeamMemberCard } from "@/components/molecules/cards/team-member-card";
+import { TeamMemberCard } from "@/components/molecules/cards";
 import { Modal } from "@/components/atoms/modal";
 import { useTheme } from "@/context/theme-provider";
 
@@ -45,6 +45,7 @@ export function TeamCard() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Our Development Team"
+        className="max-w-4xl"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4 max-h-[70vh] overflow-y-auto">
           {teamMembers.map((member, index) => (

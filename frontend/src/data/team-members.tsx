@@ -156,7 +156,7 @@ export const teamMembers: Types.Team[] = [
   {
     name: "Adil",
     imgLink: "/images/teams/adil.jpg",
-    role: "Backend Developer",
+    role: "Supervisor",
     contacts: [
       {
         icon: <FaGithub size={20} />,

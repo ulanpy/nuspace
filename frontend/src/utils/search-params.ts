@@ -6,15 +6,15 @@ export const getSearchTextFromURL = (query: string) => {
 };
 
 export const getSeachPageFromURL = (query: string) => {
-  const params = new URLSearchParams(query)
-  return Number(params.get('page')) || defaultPage
-}
+  const params = new URLSearchParams(query);
+  return Number(params.get("page")) || defaultPage;
+};
 
 export const getSearchCategoryFromURL = (query: string) => {
-  const params = new URLSearchParams(query)
-  return params.get('category') || "All"
-}
+  const params = new URLSearchParams(query);
+  return params.get("category") || "All";
+};
 export const getSearchConditionFromURL = (query: string) => {
-  const params = new URLSearchParams(query)
-  return params.get('condition') || "All Conditions"
-}
+  const params = new URLSearchParams(query);
+  return params.get("condition") || "All Conditions";
+};

@@ -27,19 +27,17 @@ export const useUser = () => {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      const res = await fetch("/api/logout", {
+        method: "GET",
+        credentials: "include",
+      });
 
-        const res = await fetch("/api/logout", {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (!res.ok) {
-          console.error("Logout failed")
-        }
-        return res.json();
+      if (!res.ok) {
+        console.error("Logout failed");
+      }
+      return res.json();
     },
     onSuccess: () => {
-
       queryClient.removeQueries({
         queryKey: kupiProdaiApi.getUserQueryOptions().queryKey,
       });
@@ -47,7 +45,7 @@ export const useUser = () => {
         queryKey: kupiProdaiApi.getUserProductsQueryOptions().queryKey,
       });
       window.location.href = "/";
-    }
+    },
   });
 
   const refreshToken = async () => {
@@ -70,10 +68,10 @@ export const useUser = () => {
 
   const login = () => {
     loginMutation.mutate();
-  }
+  };
   const logout = () => {
     logoutMutation.mutate();
-  }
+  };
   return {
     user: user ?? null,
     isLoading,

@@ -120,7 +120,7 @@ export function SearchInput({
       )}
       <div
         onClick={handlers.search}
-        className="absolute right-4 top-1/2 -translate-y-1/2 rounded-lg bg-slate-600 hover:bg-slate-700 p-1"
+        className={(`absolute right-4 top-1/2 -translate-y-1/2 rounded-lg p-1 ${isDarkTheme ? 'bg-slate-600 hover:bg-slate-700' : 'bg-slate-200 hover:bg-slate-300'}`)}
       >
         <Search
           className="h-4 w-4 text-muted-foreground cursor-pointer"

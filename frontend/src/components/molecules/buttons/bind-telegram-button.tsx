@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { ExternalLink, CheckCheck } from "lucide-react";
-import { Button } from "../atoms/button";
-import { Modal } from "../atoms/modal";
-import { Badge } from "../atoms/badge";
-import { useToast } from "../../hooks/use-toast";
+import { Button } from "../../atoms/button";
+import { Modal } from "../../atoms/modal";
+import { Badge } from "../../atoms/badge";
+import { useToast } from "../../../hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
 import { PrivacyModal } from "../atoms/PrivacyModal";
 // Emoji mapping based on the backend logic
