@@ -70,7 +70,7 @@ export const ListingProvider = ({
         setSearchQuery,
         currentPage,
         setCurrentPage,
-        itemsPerPage,
+        itemsPerPage, 
         activeTab,
         setActiveTab,
       }}

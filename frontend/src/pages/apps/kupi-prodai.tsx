@@ -131,10 +131,9 @@ const displayConditions = ["All Conditions", "New", "Used"];
 
 export default function KupiProdaiPage() {
   const navigate = useNavigate();
-
   // useUser
-  const { user, login } = useUser();
 
+  const { user, login } = useUser();
   const { toast } = useToast();
   const [likedProducts, setLikedProducts] = useState<number[]>([]);
   const [error] = useState<string | null>(null);
@@ -181,10 +180,8 @@ export default function KupiProdaiPage() {
     uploadProgress,
     newListing,
     showEditModal,
-    currentPage,
     activeTab,
     setActiveTab,
-    setCurrentPage,
     setNewListing,
   } = useListingState();
   // Handle image upload
@@ -472,7 +469,7 @@ export default function KupiProdaiPage() {
                   />
                 )}
               </div>
-              
+
               {/* Submit Button */}
               <SubmitButton
                 isUploading={isUploading}

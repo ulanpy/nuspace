@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { useUser } from "@/hooks/use-user";
 import { ReportButton } from "@/components/molecules/buttons/report-button";
 // Define carousel items with your image for the homepage
+
 const homeCarouselItems = [
   {
     id: 1,
