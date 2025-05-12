@@ -59,7 +59,7 @@ export const teamMembers: Types.Team[] = [
     ],
   },
   {
-    name: "Someone",
+    name: "Ibrahim",
     imgLink: "/images/teams/someone.jpg",
     role: "Backend Developer",
     contacts: [
