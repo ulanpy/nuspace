@@ -62,7 +62,12 @@ export default function HomePage() {
             {isLoading ? (
               <span>Loading...</span>
             ) : isSuccess && user?.user.given_name ? (
-              <span>Welcome back, {user.user.given_name}!</span>
+              <div className="flex items-center gap-2">
+                <img src={user.user.picture} alt="" className="rounded-full size-10"/>
+                <span>Welcome back, {user.user.given_name}!</span>
+                {user.tg_linked && <img src="/svg/telegram-connected.svg" className="rounded-full size-10" alt="" />}
+
+              </div>
             ) : (
               <span>Welcome to NU Space</span>
             )}

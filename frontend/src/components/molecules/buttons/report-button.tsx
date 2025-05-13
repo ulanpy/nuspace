@@ -12,10 +12,10 @@ export function ReportButton({
       target="_blank"
       rel="noopener noreferrer"
       className={
-        className ? className : `flex items-center hover:text-slate-300`
+        className ? className : `flex items-center rounded-full hover:text-slate-300 px-2 bg-slate-700`
       }
     >
-      <FaTelegram size={20} className="mr-2" />
+
       {text}
     </a>
   );
