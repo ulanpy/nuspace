@@ -101,7 +101,7 @@ export function SearchInput({
     <>
       <Input
         ref={inputRef}
-        placeholder="Search items..."
+        placeholder="Search"
         className="text-sm"
         value={inputValue.trim()}
         onChange={handlers.input.change}

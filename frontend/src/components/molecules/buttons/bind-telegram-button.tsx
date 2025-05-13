@@ -158,7 +158,7 @@ export function BindTelegramButton() {
         disabled={isLoading}
       >
         <ExternalLink className="h-4 w-4" />
-        <span>{isLoading ? "Processing..." : "Bind to Telegram"}</span>
+        <span>{isLoading ? "Processing..." : "Connect Telegram"}</span>
       </Button>
 
       <Modal

@@ -69,7 +69,7 @@ export default function HomePage() {
 
               </div>
             ) : (
-              <span>Welcome to NU Space</span>
+              <span>Welcome to Nuspace</span>
             )}
           </h1>
         </div>
@@ -86,7 +86,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="mt-16 text-center text-sm text-muted-foreground">
-        <p>© 2025 NU Space. All rights reserved.</p>
+        <p>© 2025 Nuspace. All rights reserved.</p>
         <Link to="/apps/about">About Us</Link>
       </footer>
     </div>
