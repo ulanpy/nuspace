@@ -65,6 +65,7 @@ import { ImageUploader } from "@/components/molecules/form/image-uploader";
 import { useUser } from "@/hooks/use-user";
 import { ImageGalery } from "@/components/molecules/form/image-galery";
 import { SubmitButton } from "@/components/molecules/buttons/submit-button";
+import { ProductListingSection } from "@/components/organisms/kp/product-listing-section";
 
 // Define categories and conditions
 const categories: Types.DisplayCategory[] = [
@@ -300,32 +301,6 @@ export default function KupiProdaiPage() {
     }
   };
 
-  const getConditionDisplay = (condition: string) => {
-    switch (condition) {
-      case "new":
-        return "New";
-      case "like_new":
-        return "Like New";
-      case "used":
-        return "Used";
-      default:
-        return condition;
-    }
-  };
-
-  const getConditionColor = (condition: string) => {
-    switch (condition) {
-      case "new":
-        return "bg-green-500";
-      case "like_new":
-        return "bg-blue-500";
-      case "used":
-        return "bg-orange-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
   const getCategoryDisplay = (category: string) => {
     return (
       category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, " ")
@@ -488,165 +463,41 @@ export default function KupiProdaiPage() {
         {/* MY LISTINGS SECTION */}
         <TabsContent value="my-listings" className="space-y-4 pt-4">
           {!user ? (
-            <Alert variant="destructive">
-              <AlertTitle>Authentication Required</AlertTitle>
-              <AlertDescription>
-                You must be logged in to view your listings.
-                <Button variant="link" onClick={() => login()}>
-                  Login
-                </Button>
-              </AlertDescription>
-            </Alert>
+            <AuthRequiredAlert
+              description="view your listings."
+              onClick={() => login()}
+            />
           ) : (
             <>
               {/* Active Listings */}
-              <div className="space-y-2">
-                <h2 className="text-lg font-semibold">Active Listings</h2>
-                {(activeListings?.length ?? 0) > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {activeListings?.map((product) => (
-                      <Card
-                        key={product.id}
-                        className="overflow-hidden"
-                        onClick={() =>
-                          navigate(`/apps/kupi-prodai/product/${product.id}`)
-                        }
-                      >
-                        <div className="aspect-square relative">
-                          <img
-                            src={
-                              product.media[0]?.url ||
-                              "https://placehold.co/200x200?text=No+Image"
-                            }
-                            alt={product.name}
-                            className="object-cover w-full h-full"
-                          />
-                          <Badge
-                            className={`absolute top-2 right-2 ${getConditionColor(
-                              product.condition
-                            )} text-white text-xs`}
-                          >
-                            {getConditionDisplay(product.condition)}
-                          </Badge>
-                        </div>
-                        <CardContent className="p-3">
-                          <h3 className="font-medium text-sm line-clamp-1">
-                            {product.name}
-                          </h3>
-                          <p className="text-sm font-bold">{product.price} ₸</p>
-                          <div className="flex justify-between mt-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditListing(product);
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              disabled={getIsPendingDeleteMutation(product.id)}
-                              variant="destructive"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(product.id);
-                              }}
-                            >
-                              Delete
-                            </Button>
-                            <Button
-                              disabled={getIsPendingToggleMutation(product.id)}
-                              variant="secondary"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleProductStatus(
-                                  product.id,
-                                  product.status
-                                );
-                              }}
-                            >
-                              Mark as Sold
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <p>No active listings found.</p>
-                )}
-              </div>
+              <ProductListingSection
+                title="Active Listings"
+                products={activeListings || []}
+                emptyMessage="No active listings found."
+                onProductClick={(productId) =>
+                  navigate(`/apps/kupi-prodai/product/${productId}`)
+                }
+                onEditListing={handleEditListing}
+                onDeleteListing={handleDelete}
+                onToggleListingStatus={handleToggleProductStatus}
+                getIsPendingToggleMutation={getIsPendingToggleMutation}
+                getIsPendingDeleteMutation={getIsPendingDeleteMutation}
+              />
 
               {/* Inactive Listings */}
-              <div className="space-y-2">
-                <h2 className="text-lg font-semibold">Inactive Listings</h2>
-                {(inactiveListings?.length ?? 0) > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {inactiveListings?.map((product) => (
-                      <Card key={product.id} className="overflow-hidden">
-                        <div className="aspect-square relative">
-                          <img
-                            src={
-                              product.media[0]?.url ||
-                              "https://placehold.co/200x200?text=No+Image"
-                            }
-                            alt={product.name}
-                            className="object-cover w-full h-full"
-                          />
-                          <Badge
-                            className={`absolute top-2 right-2 ${getConditionColor(
-                              product.condition
-                            )} text-white text-xs`}
-                          >
-                            {getConditionDisplay(product.condition)}
-                          </Badge>
-                        </div>
-                        <CardContent className="p-3">
-                          <h3 className="font-medium text-sm line-clamp-1">
-                            {product.name}
-                          </h3>
-                          <p className="text-sm font-bold">{product.price} ₸</p>
-                          <div className="flex justify-between mt-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditListing(product)}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              disabled={getIsPendingDeleteMutation(product.id)}
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDelete(product.id)}
-                            >
-                              Delete
-                            </Button>
-                            <Button
-                              disabled={getIsPendingToggleMutation(product.id)}
-                              variant="secondary"
-                              size="sm"
-                              onClick={() =>
-                                handleToggleProductStatus(
-                                  product.id,
-                                  product.status
-                                )
-                              }
-                            >
-                              Mark as Active
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <p>No inactive listings found.</p>
-                )}
-              </div>
+              <ProductListingSection
+                title="Inactive Listings"
+                products={inactiveListings || []}
+                emptyMessage="No inactive listings found."
+                onProductClick={(productId) =>
+                  navigate(`/apps/kupi-prodai/product/${productId}`)
+                }
+                onEditListing={handleEditListing}
+                onDeleteListing={handleDelete}
+                onToggleListingStatus={handleToggleProductStatus}
+                getIsPendingToggleMutation={getIsPendingToggleMutation}
+                getIsPendingDeleteMutation={getIsPendingDeleteMutation}
+              />
             </>
           )}
         </TabsContent>
