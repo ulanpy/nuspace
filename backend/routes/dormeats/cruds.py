@@ -250,23 +250,24 @@ async def show_canteen_feedbacks_from_db(
     return ListCanteenFeedbackResponseSchema(canteen_feedbacks=feedbacks_response, num_of_pages=num_of_pages)
 
 async def show_canteen_reports_from_db(
+    canteen_id : int,
     session: AsyncSession,
     size: int,
     page: int,
     request: Request,
-    media_table: MediaTable = MediaTable.canteen_feedback,
+    media_table: MediaTable = MediaTable.canteen_report,
 ) -> ListCanteenReportsSchema:
     offset = size * (page - 1)
-    total_query = select(func.count()).select_from(CanteenReportResponseSchema)  # CanteenReport
+    total_query = select(func.count()).select_from(CanteenReport).filter(CanteenReport.canteen_id == canteen_id) # CanteenReport
     total_result = await session.execute(total_query)
     total_count = total_result.scalar()
     num_of_pages = max(1, (total_count + size - 1) // size)
-    query = select(CanteenReport).offset(offset).limit(size)
+    query = select(CanteenReport).filter(CanteenReport.canteen_id == canteen_id).offset(offset).limit(size)
     result = await session.execute(query)
     reports = result.scalars().all()
     reports_response = await asyncio.gather(
         *(
-            build_canteen_report_response(reports, session, request, media_table)
+            build_canteen_report_response(report, session, request, media_table)
             for report in reports
         )
     )

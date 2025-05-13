@@ -119,9 +119,6 @@ class CanteenReportResponseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class ListCanteenReportsSchema(BaseModel):
-    id: int
-    canteen_id: int
     reports: list[CanteenReportResponseSchema]
-    media: List[MediaResponse] = []
-
+    num_of_pages: int
     model_config = ConfigDict(from_attributes=True)
