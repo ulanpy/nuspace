@@ -6,24 +6,30 @@ from pydantic import BaseModel, ConfigDict
 from backend.core.database.models.chat import ModelType, SenderType
 
 
-class MessageRequest(BaseModel):
-    chat_id: str = str(uuid.uuid4())
-    sub: str
-    message: str
-    sender_type: SenderType = SenderType.user
+class ChatRequest(BaseModel):
     model_type: ModelType
+    model_config = ConfigDict(from_attributes=True)
 
+
+
+
+
+class MessageRequest(BaseModel):
+    chat_id: int
+    sender_type: SenderType = SenderType.user
+    content: str
     model_config = ConfigDict(from_attributes=True)
 
 
 class MessageResponse(BaseModel):
     id: int
-    chat_id: str
-    sub: str
-    message: str
-    message_order: int
+    chat_id: int
+    content: str
     sender_type: SenderType
-    model_type: ModelType
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ChatResponse(BaseModel):
+    pass

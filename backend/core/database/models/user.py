@@ -40,5 +40,5 @@ class User(Base):
     products = relationship("Product", back_populates="user")
     product_feedbacks = relationship("ProductFeedback", back_populates="user")
     product_reports = relationship("ProductReport", back_populates="user")
-    messages = relationship("Message", back_populates="user")
     rentals = relationship("Rental", back_populates="user")
+    chats = relationship("Chat", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)
