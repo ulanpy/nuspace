@@ -33,7 +33,7 @@ export function ConditionGroup({
             text-xs font-medium transition
             bg-gradient-to-b from-background/80 to-background/40
             border border-border/40
-            backdrop-blur-lg mb-2
+            backdrop-blur-lg
             ${
               selectedCondition === item
                 ? isDarkTheme
