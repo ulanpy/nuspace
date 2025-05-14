@@ -67,6 +67,7 @@ import { ImageUploader } from "@/components/molecules/form/image-uploader";
 import { useUser } from "@/hooks/use-user";
 import { ImageGalery } from "@/components/molecules/form/image-galery";
 import { SubmitButton } from "@/components/molecules/buttons/submit-button";
+import { ProductListingSection } from "@/components/organisms/kp/product-listing-section";
 
 // Define categories and conditions
 const categories: Types.DisplayCategory[] = [
@@ -302,32 +303,6 @@ export default function KupiProdaiPage() {
     }
   };
 
-  const getConditionDisplay = (condition: string) => {
-    switch (condition) {
-      case "new":
-        return "New";
-      case "like_new":
-        return "Like New";
-      case "used":
-        return "Used";
-      default:
-        return condition;
-    }
-  };
-
-  const getConditionColor = (condition: string) => {
-    switch (condition) {
-      case "new":
-        return "bg-green-500";
-      case "like_new":
-        return "bg-blue-500";
-      case "used":
-        return "bg-orange-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
   const getCategoryDisplay = (category: string) => {
     return (
       category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, " ")
@@ -490,15 +465,10 @@ export default function KupiProdaiPage() {
         {/* MY LISTINGS SECTION */}
         <TabsContent value="my-listings" className="space-y-6 pt-4">
           {!user ? (
-            <Alert variant="destructive">
-              <AlertTitle>Authentication Required</AlertTitle>
-              <AlertDescription>
-                You must be logged in to view your listings.
-                <Button variant="link" onClick={() => login()}>
-                  Login
-                </Button>
-              </AlertDescription>
-            </Alert>
+            <AuthRequiredAlert
+              description="view your listings."
+              onClick={() => login()}
+            />
           ) : (
             <>
               {/* Active Listings */}
