@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.common.cruds import get_media_objects
 from backend.core.database.models.media import Media
 from backend.core.database.models.product import Product, ProductFeedback, ProductReport
-from backend.routes.google_bucket.schemas import MediaResponse, MediaTable
+from backend.routes.google_bucket.schemas import EntityType, MediaResponse
 from backend.routes.google_bucket.utils import generate_download_url
 from backend.routes.kupiprodai.schemas import (
     ProductFeedbackResponseSchema,
@@ -21,13 +21,13 @@ async def get_media_responses(
     session: AsyncSession,
     request: Request,
     product_id: int,
-    media_table: MediaTable,
+    entity_type: EntityType,
 ) -> List[MediaResponse]:
     """
     Возвращает список MediaResponse для заданного продукта.
     """
     media_objects = await get_media_objects(
-        object_id=product_id, media_table=media_table, session=session
+        object_id=product_id, entity_type=entity_type, session=session
     )
 
     # Если есть необходимость параллельной генерации URL,
@@ -38,7 +38,7 @@ async def get_media_responses(
             id=media.id,
             url=url_data["signed_url"],
             mime_type=media.mime_type,
-            media_table=media.media_table,
+            entity_type=media.entity_type,
             entity_id=media.entity_id,
             media_format=media.media_format,
             media_order=media.media_order,
@@ -52,13 +52,13 @@ async def build_product_response(
     product: Product,
     session: AsyncSession,
     request: Request,
-    media_table: MediaTable,
+    entity_type: EntityType,
 ) -> ProductResponseSchema:
     """
     Собирает ProductResponseSchema из объекта Product
     с учетом eagerly loaded user и media.
     """  # noqa: E501
-    media_responses = await get_media_responses(session, request, product.id, media_table)
+    media_responses = await get_media_responses(session, request, product.id, entity_type)
     return ProductResponseSchema(
         id=product.id,
         name=product.name,

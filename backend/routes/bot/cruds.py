@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.core.database.models import Media, User
-from backend.core.database.models.media import MediaTable
+from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.product import Product, ProductStatus
 
 
@@ -37,12 +37,12 @@ async def find_media(
     session: AsyncSession,
     product_id: int,
     media_order: int = 0,
-    media_table: MediaTable = MediaTable.products,
+    entity_type: EntityType = EntityType.products,
 ) -> Media | None:
     query = select(Media).filter(
         Media.entity_id == product_id,
         Media.media_order == media_order,
-        Media.media_table == media_table,
+        Media.entity_type == entity_type,
     )
     result = await session.execute(query)
     media = result.scalars().first()

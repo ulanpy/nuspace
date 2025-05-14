@@ -69,7 +69,7 @@ export interface UpdateProductRequest {
 }
 
 export interface SignedUrlRequest {
-  media_table: string;
+  entity_type: string;
   entity_id: number;
   media_format: string;
   media_order: number;
@@ -80,7 +80,7 @@ export interface SignedUrlRequest {
 export interface SignedUrlResponse {
   filename: string;
   upload_url: string;
-  media_table: string;
+  entity_type: string;
   entity_id: number;
   media_format: string;
   media_order: number;
@@ -219,7 +219,7 @@ getSignedUrls: async (
     formData.append("file", file);
     formData.append("filename", filename);
     formData.append("mime_type", file.type);
-    formData.append("media_table", "products"); // products for Kupi&Prodai
+    formData.append("entity_type", "products"); // products for Kupi&Prodai
     formData.append("entity_id", entityId.toString());
     formData.append("media_format", "carousel");
     formData.append("media_order", mediaOrder.toString());

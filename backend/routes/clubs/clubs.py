@@ -11,7 +11,8 @@ from backend.common.utils import (
     update_meilisearch_data,
 )
 from backend.core.database.models.club import Club, ClubEvent, ClubType, EventPolicy
-from backend.core.database.models.media import Media, MediaFormat, MediaTable
+from backend.core.database.models.common_enums import EntityType
+from backend.core.database.models.media import Media, MediaFormat
 from backend.routes.clubs import cruds, utils
 from backend.routes.clubs.enums import OrderEvents
 from backend.routes.clubs.schemas import (
@@ -66,7 +67,7 @@ async def get_clubs(
         get_media=cruds.get_media_responses,
         session=db_session,
         media_format=MediaFormat.profile,
-        media_table=MediaTable.clubs,
+        entity_type=EntityType.clubs,
         response_builder=build_club_response,
     )
 
@@ -108,7 +109,7 @@ async def add_club(
         session=db_session,
         entity_id=club.id,
         media_format=MediaFormat.carousel,
-        media_table=MediaTable.clubs,
+        entity_type=EntityType.clubs,
     )
     media_responses: List[MediaResponse] = await build_media_responses(
         request=request, media_objects=media_objects
@@ -147,7 +148,7 @@ async def update_club(
         session=db_session,
         entity_id=club_id,
         media_format=MediaFormat.profile,
-        media_table=MediaTable.clubs,
+        entity_type=EntityType.clubs,
     )
     media_responses: List[MediaResponse] = await build_media_responses(
         request=request, media_objects=media_objects
@@ -217,7 +218,7 @@ async def get_events(
         get_media=cruds.get_media_responses,
         session=db_session,
         media_format=MediaFormat.carousel,
-        media_table=MediaTable.club_events,
+        entity_type=EntityType.club_events,
         response_builder=build_event_response,
     )
 
@@ -267,7 +268,7 @@ async def add_event(
         session=db_session,
         entity_id=new_event.id,
         media_format=MediaFormat.carousel,
-        media_table=MediaTable.club_events,
+        entity_type=EntityType.club_events,
     )
     media_responses: List[MediaResponse] = await build_media_responses(
         request=request, media_objects=media_objects
@@ -318,7 +319,7 @@ async def update_event(
         session=db_session,
         entity_id=event_id,
         media_format=MediaFormat.carousel,
-        media_table=MediaTable.club_events,
+        entity_type=EntityType.club_events,
     )
     media_responses: List[MediaResponse] = await build_media_responses(
         request=request, media_objects=media_objects
@@ -384,7 +385,7 @@ async def post_search(
         get_media=cruds.get_media_responses,
         session=db_session,
         media_format=MediaFormat.carousel,
-        media_table=MediaTable.club_events,
+        entity_type=EntityType.club_events,
         response_builder=build_event_response,
     )
 
@@ -446,7 +447,7 @@ async def get_club_events(
         get_media=cruds.get_media_responses,
         session=db_session,
         media_format=MediaFormat.carousel,
-        media_table=MediaTable.club_events,
+        entity_type=EntityType.club_events,
         response_builder=build_event_response,
     )
 
@@ -484,7 +485,7 @@ async def get_event(
         session=db_session,
         entity_id=event_id,
         media_format=MediaFormat.carousel,
-        media_table=MediaTable.club_events,
+        entity_type=EntityType.club_events,
     )
     media_responses: List[MediaResponse] = await build_media_responses(
         request=request, media_objects=media_objects

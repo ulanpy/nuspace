@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from backend.core.database.models import Base, Club, ClubEvent
 from backend.core.database.models.club import ClubType, EventPolicy
-from backend.core.database.models.media import Media, MediaFormat, MediaTable
+from backend.core.database.models.media import EntityType, Media, MediaFormat
 from backend.routes.clubs.enums import OrderEvents
 from backend.routes.clubs.schemas import (
     ClubEventRequestSchema,
@@ -304,7 +304,7 @@ async def get_certain_events(
 async def get_media_responses(
     session: AsyncSession,
     entity_id: int,
-    media_table: MediaTable,
+    entity_type: EntityType,
     media_format: MediaFormat,
 ) -> List[Media]:
     """
@@ -313,7 +313,7 @@ async def get_media_responses(
     Parameters:
     - `session` (AsyncSession): Database session.
     - `entity_id` (int): ID of the entity (club/event).
-    - `media_table` (MediaTable): Table name (clubs/club_events).
+    - `entity_type` (EntityType): Table name (clubs/club_events).
     - `media_format` (MediaFormat): Media format (profile/carousel).
 
     Returns:
@@ -322,7 +322,7 @@ async def get_media_responses(
     media_result = await session.execute(
         select(Media).filter(
             Media.entity_id == entity_id,
-            Media.media_table == media_table,
+            Media.entity_type == entity_type,
             Media.media_format == media_format,
         )
     )

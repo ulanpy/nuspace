@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.utils import search_for_meilisearch_data
 from backend.core.database.models import Base, Club, ClubEvent
-from backend.core.database.models.media import Media, MediaFormat, MediaTable
+from backend.core.database.models.common_enums import EntityType
+from backend.core.database.models.media import Media, MediaFormat
 from backend.routes.clubs.schemas import (
     ClubEventResponseSchema,
     ClubResponseSchema,
@@ -32,7 +33,7 @@ async def build_media_response(request: Request, media: Media) -> MediaResponse:
         id=media.id,
         url=url_data["signed_url"],
         mime_type=media.mime_type,
-        media_table=media.media_table,
+        entity_type=media.entity_type,
         entity_id=media.entity_id,
         media_format=media.media_format,
         media_order=media.media_order,
@@ -99,10 +100,10 @@ async def _process_item[
 ](
     request: Request,
     item: T,
-    get_media: Callable[[AsyncSession, int, MediaTable, MediaFormat], Awaitable[List[Media]]],
+    get_media: Callable[[AsyncSession, int, EntityType, MediaFormat], Awaitable[List[Media]]],
     session: AsyncSession,
     media_format: MediaFormat,
-    media_table: MediaTable,
+    entity_type: EntityType,
     response_builder: Callable[[T, List[MediaResponse]], Awaitable[S]],
 ) -> S:
     """
@@ -112,13 +113,13 @@ async def _process_item[
     - `item` (T): Club or Event object.
     - `get_media` (Callable): Media-fetching function.
     - `media_format` (MediaFormat): Media format.
-    - `media_table` (MediaTable): Media table.
+    - `entity_type` (EntityType): Entity type.
     - `response_builder` (Callable): Schema builder function.
 
     Returns:
     - `S`: Built response schema (ClubResponseSchema/ClubEventResponseSchema).
     """
-    media: List[Media] = await get_media(session, item.id, media_table, media_format)
+    media: List[Media] = await get_media(session, item.id, entity_type, media_format)
     media_response: List[MediaResponse] = await build_media_responses(
         request=request, media_objects=media
     )
@@ -130,10 +131,10 @@ async def build_responses[
 ](
     request: Request,
     items: List[T],
-    get_media: Callable[[AsyncSession, int, MediaTable, MediaFormat], Awaitable[List[Media]]],
+    get_media: Callable[[AsyncSession, int, EntityType, MediaFormat], Awaitable[List[Media]]],
     session: AsyncSession,
     media_format: MediaFormat,
-    media_table: MediaTable,
+    entity_type: EntityType,
     response_builder: Callable[[T, List[MediaResponse]], Awaitable[S]],
 ) -> List[S]:
     """
@@ -143,7 +144,7 @@ async def build_responses[
     - `items` (List[T]): List of entities (Club/ClubEvent).
     - `response_builder` (Callable): Function to create the response schema.
     - `media_format` (MediaFormat): Media format (e.g., profile, carousel).
-    - `media_table` (MediaTable): Media table (e.g., clubs, club_events).
+    - `entity_type` (EntityType): Entity type (e.g., clubs, club_events).
 
     Returns:
     - `List[S]`: List of response schemas with media.
@@ -152,7 +153,7 @@ async def build_responses[
         await asyncio.gather(
             *(
                 _process_item(
-                    request, item, get_media, session, media_format, media_table, response_builder
+                    request, item, get_media, session, media_format, entity_type, response_builder
                 )
                 for item in items
             )

@@ -116,7 +116,7 @@ export function useUpdateProduct() {
 
       const startOrder = calculateMediaOrder();
       await handleImageUpload({
-        media_table: "products",
+        entity_type: "products",
         entityId: Number(editingListing.id),
         mediaFormat: "carousel",
         startOrder,

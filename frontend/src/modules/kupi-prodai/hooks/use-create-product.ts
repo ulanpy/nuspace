@@ -78,7 +78,7 @@ export function useCreateProduct() {
       const newProduct = await createProductMutation.mutateAsync(productData);
 
       await handleImageUpload({
-        media_table: "products",
+        entity_type: "products",
         entityId: newProduct.id,
         mediaFormat: "carousel",
       });

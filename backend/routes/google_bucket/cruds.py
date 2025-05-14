@@ -5,7 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database.models.media import Media, MediaFormat, MediaTable
+from backend.core.database.models.common_enums import EntityType
+from backend.core.database.models.media import Media, MediaFormat
 
 from .schemas import UploadConfirmation
 
@@ -15,13 +16,13 @@ async def confirm_uploaded_media_to_db(
     confirmation: UploadConfirmation, session: AsyncSession
 ) -> List[Media]:
     try:
-        media_table = MediaTable(confirmation.media_table)
+        entity_type = EntityType(confirmation.entity_type)
         media_format = MediaFormat(confirmation.media_format)
 
         # Check if it already exists (based on unique constraints)
         stmt = select(Media).where(
             Media.name == confirmation.filename,
-            Media.media_table == media_table,
+            Media.entity_type == entity_type,
             Media.entity_id == confirmation.entity_id,
             Media.media_format == media_format,
         )
@@ -33,7 +34,7 @@ async def confirm_uploaded_media_to_db(
             media_record.name = confirmation.filename
             media_record.mime_type = confirmation.mime_type
             media_record.media_order = confirmation.media_order
-            media_record.media_table = confirmation.media_table
+            media_record.entity_type = confirmation.entity_type
             media_record.entity_id = confirmation.entity_id
             media_record.media_format = confirmation.media_format
             media_record.media_order = confirmation.media_order
@@ -42,7 +43,7 @@ async def confirm_uploaded_media_to_db(
             media_record = Media(
                 name=confirmation.filename,
                 mime_type=confirmation.mime_type,
-                media_table=media_table,
+                entity_type=entity_type,
                 entity_id=confirmation.entity_id,
                 media_format=media_format,
                 media_order=confirmation.media_order,

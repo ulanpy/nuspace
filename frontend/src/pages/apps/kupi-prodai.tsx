@@ -12,6 +12,8 @@ import {
   ImageIcon,
   Trash2,
   Plus,
+  Package,
+  Archive,
 } from "lucide-react";
 import { Input } from "../../components/atoms/input";
 import { Button } from "../../components/atoms/button";
@@ -486,7 +488,7 @@ export default function KupiProdaiPage() {
         </TabsContent>
 
         {/* MY LISTINGS SECTION */}
-        <TabsContent value="my-listings" className="space-y-4 pt-4">
+        <TabsContent value="my-listings" className="space-y-6 pt-4">
           {!user ? (
             <Alert variant="destructive">
               <AlertTitle>Authentication Required</AlertTitle>
@@ -500,8 +502,22 @@ export default function KupiProdaiPage() {
           ) : (
             <>
               {/* Active Listings */}
-              <div className="space-y-2">
-                <h2 className="text-lg font-semibold">Active Listings</h2>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-semibold flex items-center gap-2">
+                    <Package className="h-5 w-5 text-primary" />
+                    Active Listings
+                  </h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1"
+                    onClick={() => setActiveTab("sell")}
+                  >
+                    <Plus className="h-4 w-4" />
+                    New Listing
+                  </Button>
+                </div>
                 {(activeListings?.length ?? 0) > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {activeListings?.map((product) => (
@@ -576,13 +592,31 @@ export default function KupiProdaiPage() {
                     ))}
                   </div>
                 ) : (
-                  <p>No active listings found.</p>
+                  <div className="flex flex-col items-center justify-center py-8 px-4 border border-dashed rounded-lg bg-muted/30">
+                    <Package className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No active listings</h3>
+                    <p className="text-sm text-muted-foreground text-center max-w-sm mb-4">
+                      Start selling by creating your first listing. It's easy and takes just a few minutes!
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1"
+                      onClick={() => setActiveTab("sell")}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Create Your First Listing
+                    </Button>
+                  </div>
                 )}
               </div>
 
               {/* Inactive Listings */}
-              <div className="space-y-2">
-                <h2 className="text-lg font-semibold">Inactive Listings</h2>
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <Archive className="h-5 w-5 text-primary" />
+                  Inactive Listings
+                </h2>
                 {(inactiveListings?.length ?? 0) > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {inactiveListings?.map((product) => (
@@ -644,7 +678,13 @@ export default function KupiProdaiPage() {
                     ))}
                   </div>
                 ) : (
-                  <p>No inactive listings found.</p>
+                  <div className="flex flex-col items-center justify-center py-8 px-4 border border-dashed rounded-lg bg-muted/30">
+                    <Archive className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No inactive listings</h3>
+                    <p className="text-sm text-muted-foreground text-center max-w-sm">
+                      Items you mark as inactive or sold will appear here. You can reactivate them anytime.
+                    </p>
+                  </div>
                 )}
               </div>
             </>

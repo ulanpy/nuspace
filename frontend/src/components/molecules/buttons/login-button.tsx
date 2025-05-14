@@ -2,7 +2,6 @@
 
 import { Button } from "../../atoms/button";
 import { User, LogOut } from "lucide-react";
-import { BindTelegramButton } from "./bind-telegram-button";
 import { useUser } from "@/hooks/use-user";
 
 export function LoginButton() {
@@ -11,18 +10,15 @@ export function LoginButton() {
   return (
     <div className="flex items-center gap-2">
       {user ? (
-        <div className="flex items-center gap-2">
-          <BindTelegramButton />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={logout}
-            className="flex items-center gap-1"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline-block">Logout</span>
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={logout}
+          className="flex items-center gap-1"
+        >
+          <LogOut className="h-4 w-4" />
+          <span className="hidden sm:inline-block">Logout</span>
+        </Button>
       ) : (
         <Button
           variant="outline"

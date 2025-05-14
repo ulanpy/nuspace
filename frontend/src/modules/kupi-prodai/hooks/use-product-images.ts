@@ -7,7 +7,7 @@ import { useImageContext } from "@/context/image-context";
 import { useListingState } from "@/context/listing-context";
 
 interface UploadImageOptions {
-  media_table: string;
+  entity_type: string;
   entityId: number;
   mediaFormat: string;
   startOrder?: number;
@@ -39,7 +39,7 @@ export function useProductImages() {
     options: Omit<UploadImageOptions, "entityId">
   ) => {
     const requests: SignedUrlRequest[] = files.map((file, idx) => ({
-      media_table: options.media_table,
+      entity_type: options.entity_type,
       entity_id: entityId,
       media_format: options.mediaFormat,
       media_order: (options.startOrder || 0) + idx,
@@ -56,7 +56,7 @@ export function useProductImages() {
         const {
           upload_url,
           filename,
-          media_table,
+          entity_type,
           entity_id,
           media_format,
           media_order,
@@ -65,7 +65,7 @@ export function useProductImages() {
 
         const headers: Record<string, string> = {
           "x-goog-meta-filename": filename,
-          "x-goog-meta-media-table": media_table,
+          "x-goog-meta-media-table": entity_type,
           "x-goog-meta-entity-id": entity_id.toString(),
           "x-goog-meta-media-format": media_format,
           "x-goog-meta-media-order": media_order.toString(),
@@ -91,7 +91,7 @@ export function useProductImages() {
 
       // 1. Signed URLs алу
       const signedUrls = await getSignedUrls(options.entityId, imageFiles, {
-        media_table: options.media_table,
+        entity_type: options.entity_type,
         mediaFormat: options.mediaFormat,
         startOrder: options.startOrder,
       });
