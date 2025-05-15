@@ -1,5 +1,4 @@
 import { withSuspense } from "@/components/molecules/hoc/with-suspense";
-import { Component } from "lucide-react";
 import { lazy } from "react";
 
 const APPS = "apps";
@@ -38,7 +37,7 @@ export const SUBROUTES = {
     NU_EVENTS,
     DORM_EATS,
     ABOUT,
-    KP_PRODUCT_ID: `${KP}/product/:id`,
+    KP_PRODUCT_ID: `${KP}/${PRODUCT}/:id`,
   },
   ADMIN: {
     BASEURL: ADMIN,
@@ -63,15 +62,39 @@ export const LazyRoutes = {
     },
     {
       path: SUBROUTES.APPS.ABOUT,
-      Component: withSuspense(lazy(() => import('@/pages/apps/about')))
+      Component: withSuspense(lazy(() => import("@/pages/apps/about"))),
     },
     {
       path: SUBROUTES.APPS.NU_EVENTS,
-      Component: withSuspense(lazy(() => import('@/pages/apps/nu-events')))
+      Component: withSuspense(lazy(() => import("@/pages/apps/nu-events"))),
     },
     {
       path: SUBROUTES.APPS.DORM_EATS,
-      Component: withSuspense(lazy(() => import('@/pages/apps/dorm-eats')))
+      Component: withSuspense(lazy(() => import("@/pages/apps/dorm-eats"))),
+    },
+  ],
+  ADMINS: [
+    {
+      path: SUBROUTES.ADMIN.PRODUCT_ID,
+      Component: withSuspense(
+        lazy(() => import("@/pages/admin/product-detail-page"))
+      ),
+    },
+    {
+      path: SUBROUTES.ADMIN.PRODUCTS,
+      Component: withSuspense(
+        lazy(() => import("@/pages/admin/products-page"))
+      ),
+    },
+    {
+      path: SUBROUTES.ADMIN.USERS,
+      Component: withSuspense(lazy(() => import("@/pages/admin/users-page"))),
+    },
+    {
+      path: SUBROUTES.ADMIN.USER_ID,
+      Component: withSuspense(
+        lazy(() => import("@/pages/admin/user-page"))
+      ),
     },
   ],
 };

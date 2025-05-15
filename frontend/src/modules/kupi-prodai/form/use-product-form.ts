@@ -1,46 +1,107 @@
-import { useListingState } from "@/context/listing-context";
-
+import { mockProductData } from "@/data/temporary";
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "@/components/atoms/sonner";
 export const useProductForm = () => {
-  const { setNewListing } = useListingState();
-  
+const navigate = useNavigate();
+  const { id } = useParams();
+  const isNewProduct = id === "new";
+  const [product, setProduct] = useState(
+    isNewProduct
+      ? {
+          name: "",
+          description: "",
+          price: 0,
+          category: "",
+          seller: "",
+          status: "Active",
+          quantity: 0,
+          images: [],
+        }
+      : mockProductData
+  );
+
+  const [isUploading, setIsUploading] = useState(false);
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-
-    if (name === "price") {
-      // Handle price input specially to avoid leading zeros and negative values
-      const numValue =
-        value === "" ? 0 : Math.max(0, Number.parseInt(value, 10));
-      setNewListing((prev) => ({ ...prev, [name]: numValue }));
-    } else {
-      setNewListing((prev) => ({ ...prev, [name]: value }));
-    }
+    setProduct({
+      ...product,
+      [name]: value,
+    });
   };
 
-  const handlePriceInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    // If the input is empty when blurred, set it back to 0
-    if (e.target.value === "") {
-      setNewListing((prev) => ({ ...prev, price: 0 }));
-    }
+  const handleSelectChange = (name: string, value: string) => {
+    setProduct({
+      ...product,
+      [name]: value,
+    });
   };
 
-  const handlePriceInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    // Clear the input when it's focused and the value is 0
-    if (e.target.value === "0") {
-      e.target.value = "";
-    }
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    // In a real app, you would save the product here
+    toast.success(
+      isNewProduct
+        ? "Product created successfully"
+        : "Product updated successfully"
+    );
+    navigate("/admin/products");
   };
 
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setNewListing((prev) => ({ ...prev, [name]: value }));
+  const handleDelete = () => {
+    // In a real app, you would delete the product here
+    toast.success("Product deleted successfully");
+    navigate("/admin/products");
+  };
+
+  const handleImageUpload = () => {
+    setIsUploading(true);
+    setTimeout(() => {
+      setIsUploading(false);
+      const newImage = {
+        id: Math.random(),
+        url: "https://via.placeholder.com/300",
+        main: product.images.length === 0,
+      };
+      setProduct({
+        ...product,
+        images: [...product.images, newImage],
+      });
+      toast.success("Image uploaded successfully");
+    }, 1500);
+  };
+
+  const setMainImage = (imageId: number) => {
+    setProduct({
+      ...product,
+      images: product.images.map((img) => ({
+        ...img,
+        main: img.id === imageId,
+      })),
+    });
+  };
+
+  const removeImage = (imageId: number) => {
+    setProduct({
+      ...product,
+      images: product.images.filter((img) => img.id !== imageId),
+    });
   };
 
   return {
     handleInputChange,
-    handlePriceInputBlur,
-    handlePriceInputFocus,
     handleSelectChange,
+    handleSave,
+    handleDelete,
+    handleImageUpload,
+    setMainImage,
+    removeImage,
+    isUploading,
+    isNewProduct,
+    product,
+    setProduct,
   };
 };
