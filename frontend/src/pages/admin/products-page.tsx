@@ -1,6 +1,4 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/atoms/button";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -16,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/atoms/select";
-import { Search, } from "lucide-react";
+import { Search } from "lucide-react";
 import { mockProducts } from "@/data/temporary";
 import { ProductsTable } from "@/components/molecules/tables/products-table";
 
@@ -25,7 +23,6 @@ const ProductsPage = () => {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  // Filter products based on search term, status, and category
   const filteredProducts = mockProducts.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -89,7 +86,6 @@ const ProductsPage = () => {
               </SelectContent>
             </Select>
           </div>
-
           <div className="border rounded-md">
             <ProductsTable filteredProducts={filteredProducts} />
           </div>
@@ -98,5 +94,4 @@ const ProductsPage = () => {
     </div>
   );
 };
-
 export default ProductsPage;

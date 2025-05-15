@@ -92,6 +92,9 @@ const navigate = useNavigate();
   };
 
   return {
+    isUploading,
+    isNewProduct,
+    product,
     handleInputChange,
     handleSelectChange,
     handleSave,
@@ -99,9 +102,6 @@ const navigate = useNavigate();
     handleImageUpload,
     setMainImage,
     removeImage,
-    isUploading,
-    isNewProduct,
-    product,
     setProduct,
   };
 };
