@@ -9,7 +9,6 @@ import {
 } from "@/components/atoms/table";
 import { ROUTES } from "@/data/routes";
 import { Edit, Trash2 } from "lucide-react";
-import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 interface filteredProducts {
   id: number;

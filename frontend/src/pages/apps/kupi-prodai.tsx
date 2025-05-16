@@ -1,7 +1,4 @@
 "use client";
-
-import type React from "react";
-
 import { useState, useRef, useEffect, Suspense } from "react";
 import {
   ShoppingBag,
@@ -26,11 +23,6 @@ import {
 import { ConditionGroup } from "@/components/molecules/condition-group";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../../hooks/use-toast";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "../../components/atoms/alert";
 import { Progress } from "../../components/atoms/progress";
 import { useProducts } from "@/modules/kupi-prodai/hooks/use-products";
 import { useUserProducts } from "@/modules/kupi-prodai/hooks/use-user-products";
@@ -49,9 +41,8 @@ import { BsPencilFill } from "react-icons/bs";
 import { GiKnifeFork } from "react-icons/gi";
 import { IoTicket, IoCarSport } from "react-icons/io5";
 import { SearchInput } from "@/components/molecules/search-input";
-import { useSearchLogic } from "@/hooks/useSearchLogic";
+import { useSearchLogic } from "@/hooks/use-search-logic";
 import { CategorySlider } from "@/components/organisms/category-slider";
-
 import {
   AuthRequiredAlert,
   TelegramRequiredAlert,
@@ -60,83 +51,19 @@ import { ProductLoadingState } from "@/components/molecules/state/product-loadin
 import { ProductErrorState } from "@/components/molecules/state/product-error-state";
 import { ProductEmptyState } from "@/components/molecules/state/product-empy-state";
 import { ProductGrid } from "@/components/organisms/kp/product-grid";
-import { ProductInfo } from "@/components/molecules/form/product-info";
-import { ImageUploader } from "@/components/molecules/form/image-uploader";
 import { useUser } from "@/hooks/use-user";
-import { ImageGalery } from "@/components/molecules/form/image-galery";
-import { SubmitButton } from "@/components/molecules/buttons/submit-button";
 import { ProductListingSection } from "@/components/organisms/kp/product-listing-section";
+import { ProductCreateForm } from "@/components/molecules/form/product-create-form";
+import { useImage } from "@/modules/kupi-prodai/form/use-image";
+import { useProduct } from "@/components/molecules/form/use-product";
+import { getCategoryDisplay } from "@/utils/products-utils";
 
-// Define categories and conditions
-const categories: Types.DisplayCategory[] = [
-  {
-    title: "All",
-    icon: <BiSolidCategory />,
-  },
-  {
-    title: "Books",
-    icon: <FaBook />,
-  },
-  {
-    title: "Electronics",
-    icon: <FaLaptop />,
-  },
-  {
-    title: "Clothing",
-    icon: <FaTshirt />,
-  },
-  {
-    title: "Furniture",
-    icon: <FaCouch />,
-  },
-  {
-    title: "Appliances",
-    icon: <FaBlender />,
-  },
-  {
-    title: "Sports",
-    icon: <MdSports />,
-  },
-  {
-    title: "Stationery",
-    icon: <BsPencilFill />,
-  },
-  {
-    title: "Art Supplies",
-    icon: <MdBrush />,
-  },
-  {
-    title: "Beauty",
-    icon: <MdLocalOffer />,
-  },
-  {
-    title: "Food",
-    icon: <GiKnifeFork />,
-  },
-  {
-    title: "Tickets",
-    icon: <IoTicket />,
-  },
-  {
-    title: "Transport",
-    icon: <IoCarSport />,
-  },
-  {
-    title: "Others",
-    icon: <BiSolidCategory />,
-  },
-];
-
-const conditions = ["All Conditions", "new", "used"];
 const displayConditions = ["All Conditions", "New", "Used"];
 
 export default function KupiProdaiPage() {
   const navigate = useNavigate();
   // useUser
-
   const { user, login } = useUser();
-  const { toast } = useToast();
-  const [likedProducts, setLikedProducts] = useState<number[]>([]);
   const [error] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const isTelegramLinked = user?.tg_linked || false;
@@ -158,7 +85,6 @@ export default function KupiProdaiPage() {
     previewImages,
     setPreviewImages,
     setImageFiles,
-    removeImage,
   } = useImageContext();
   const { getIsPendingDeleteMutation, handleDelete } = useDeleteProduct();
   const { handleUpdateListing } = useUpdateProduct();
@@ -168,144 +94,26 @@ export default function KupiProdaiPage() {
   const dropZoneRef = useRef<HTMLDivElement>(null);
   // Edit listing state [Form Hooks]
   const { handleEditListing, closeEditModal } = useEditModal();
-  const {
-    originalMedia,
-    mediaToDelete,
-    currentMediaIndex,
-    reorderedMedia,
-    setCurrentMediaIndex,
-    setMediaToDelete,
-    setReorderedMedia,
-  } = useMediaContext();
-  const {
-    uploadProgress,
-    newListing,
-    showEditModal,
-    activeTab,
-    setActiveTab,
-    setNewListing,
-  } = useListingState();
+  const { originalMedia, currentMediaIndex, setCurrentMediaIndex } =
+    useMediaContext();
+  const { uploadProgress, newListing, showEditModal, activeTab, setActiveTab } =
+    useListingState();
   // Handle image upload
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      processFiles(Array.from(files));
-    }
-  };
-
-  // Process files for upload
-  const processFiles = (files: File[]) => {
-    const newPreviewImages = [...previewImages];
-    const newImageFiles = [...imageFiles];
-
-    files.forEach((file) => {
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          newPreviewImages.push(reader.result as string);
-          newImageFiles.push(file);
-          setPreviewImages([...newPreviewImages]);
-          setImageFiles([...newImageFiles]);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        toast({
-          title: "Invalid file type",
-          description: "Only image files are allowed",
-          variant: "destructive",
-        });
-      }
-    });
-  };
-
-  // Handle drag and drop
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      processFiles(Array.from(e.dataTransfer.files));
-    }
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-
-    if (name === "price") {
-      // Handle price input specially to avoid leading zeros and negative values
-      const numValue =
-        value === "" ? 0 : Math.max(0, Number.parseInt(value, 10));
-      setNewListing((prev) => ({ ...prev, [name]: numValue }));
-    } else {
-      setNewListing((prev) => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handlePriceInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    // Clear the input when it's focused and the value is 0
-    if (e.target.value === "0") {
-      e.target.value = "";
-    }
-  };
-
-  const handlePriceInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    // If the input is empty when blurred, set it back to 0
-    if (e.target.value === "") {
-      setNewListing((prev) => ({ ...prev, price: 0 }));
-    }
-  };
-
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setNewListing((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // Add this function to handle image deletion in the edit modal
-  const handleDeleteImage = (mediaId: number) => {
-    // Add the media ID to the list of media to delete
-    setMediaToDelete([...mediaToDelete, mediaId]);
-
-    // Remove the image from the preview images
-    const mediaIndex = originalMedia.findIndex((m) => m.id === mediaId);
-    if (mediaIndex !== -1) {
-      const newPreviewImages = [...previewImages];
-      newPreviewImages.splice(mediaIndex, 1);
-      setPreviewImages(newPreviewImages);
-
-      // Update reordered media
-      const newReorderedMedia =
-        reorderedMedia.length > 0
-          ? reorderedMedia.filter((m) => m.id !== mediaId)
-          : originalMedia.filter((m) => m.id !== mediaId);
-      setReorderedMedia(newReorderedMedia);
-
-      // Adjust current index if needed
-      if (
-        currentMediaIndex >= newPreviewImages.length &&
-        newPreviewImages.length > 0
-      ) {
-        setCurrentMediaIndex(newPreviewImages.length - 1);
-      }
-    }
-  };
-
-  const getCategoryDisplay = (category: string) => {
-    return (
-      category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, " ")
-    );
-  };
+  const {
+    handleImageUpload,
+    handleDrop,
+    handleDragOver,
+    handleDragLeave,
+    handleDeleteImage,
+  } = useImage();
+  const {
+    conditions,
+    categories,
+    handleInputChange,
+    handlePriceInputBlur,
+    handlePriceInputFocus,
+    handleSelectChange,
+  } = useProduct();
 
   // Active and inactive listings
   const activeListings = myProducts?.filter((p) => p.status === "active");
@@ -415,48 +223,11 @@ export default function KupiProdaiPage() {
           ) : !isTelegramLinked ? (
             <TelegramRequiredAlert />
           ) : (
-            <form onSubmit={handleCreate} className="space-y-4">
-              {/* Name */}
-              <ProductInfo
-                newListing={newListing}
-                categories={categories}
-                conditions={conditions}
-                handleInputChange={(e) => handleInputChange(e)}
-                handlePriceInputBlur={handlePriceInputBlur}
-                handlePriceInputFocus={handlePriceInputFocus}
-                handleSelectChange={handleSelectChange}
-              />
-              <div className="space-y-2">
-                <label className="block text-sm font-medium">Images</label>
-                <ImageUploader
-                  dropZoneRef={dropZoneRef}
-                  fileInputRef={fileInputRef}
-                  isDragging={isDragging}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onFileChange={handleImageUpload}
-                />
-                {previewImages.length > 0 && (
-                  <ImageGalery
-                    previewImages={previewImages}
-                    removeImage={removeImage}
-                  />
-                )}
-              </div>
-
-              {/* Submit Button */}
-              <SubmitButton
-                isUploading={isUploading}
-                isTelegramLinked={isTelegramLinked}
-                uploadProgress={uploadProgress}
-              />
-
-              {/* Media Reorder */}
-              {isUploading && (
-                <Progress value={uploadProgress} className="mt-2" />
-              )}
-            </form>
+            <ProductCreateForm
+              handleCreate={handleCreate}
+              isTelegramLinked={isTelegramLinked}
+              uploadProgress={uploadProgress}
+            />
           )}
         </TabsContent>
 

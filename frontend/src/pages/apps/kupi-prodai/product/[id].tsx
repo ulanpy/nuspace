@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
@@ -27,8 +27,6 @@ import { Spinner } from "@/components/atoms/spinner";
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { user_name } = useParams<{ user_name: string }>();
-  const { user_surname } = useParams<{ user_surname: string }>();
   const navigate = useNavigate();
   const { user } = useUser();
   const { product, isLoading, isError } = useProduct();

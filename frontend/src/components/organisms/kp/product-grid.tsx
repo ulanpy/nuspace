@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import { Pagination } from "../../molecules/pagination";
-import { ProductCard } from "../../molecules/cards";
 import { useNavigate } from "react-router-dom";
 import { useListingState } from "@/context/listing-context";
 import { MessageButton } from "@/components/molecules/buttons/message-button";
+import { ProductCard } from "@/components/molecules/cards/product-card";
 
 const containerVariants = {
   hidden: { opacity: 0 },

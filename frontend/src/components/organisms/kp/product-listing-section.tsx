@@ -1,5 +1,5 @@
 import { ProductCardActions } from "@/components/molecules/actions/product-card-actions";
-import { ProductCard } from "@/components/molecules/cards";
+import { ProductCard } from "@/components/molecules/cards/product-card";
 import { UseMutateFunction } from "@tanstack/react-query";
 
 interface ProductListingSectionProps {

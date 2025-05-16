@@ -149,7 +149,9 @@ export const kupiProdaiApi = {
     });
   },
 
-
+  getProduct: (id: number) => {
+    return apiCall<Product>(`/products/${id}`);
+  },
 
   // Create a new product
   createProduct: async (product: NewProductRequest): Promise<Product> => {
