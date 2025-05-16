@@ -16,7 +16,7 @@ function App() {
         <MediaProvider>
           <Routes>
             <Route path={ROUTES.HOME} element={<HomePage />} />
-            <Route path={ROUTES.ADMIN.BASEURL} element={<AdminLayout />}>
+            <Route path={ROUTES.ADMIN.BASE.path} element={<AdminLayout />}>
               <Route index element={<AdminPage />} />
               {LazyRoutes.ADMINS.map(({ path, Component }) => (
                 <Route key={path} path={path} element={<Component />} />

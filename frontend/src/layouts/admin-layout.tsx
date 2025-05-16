@@ -5,8 +5,6 @@ import {
   LayoutDashboard,
   Package,
   Users,
-  Image,
-  Settings,
   ChevronLeft,
   ChevronRight,
   Search,
@@ -19,7 +17,7 @@ import { ROUTES } from "@/data/routes";
 
 const AdminLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
+  const navItems = ROUTES.ADMIN
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
@@ -36,7 +34,7 @@ const AdminLayout: React.FC = () => {
         {/* Logo area */}
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           {!sidebarCollapsed && (
-            <Link to="/admin" className="font-bold text-lg text-blue-600">
+            <Link to={ROUTES.APPS.KP} className="font-bold text-lg text-blue-600">
               Kupi&Prodai
             </Link>
           )}
@@ -57,24 +55,16 @@ const AdminLayout: React.FC = () => {
         {/* Navigation Links */}
         <nav className="flex-1 py-4">
           <ul className="space-y-1 px-2">
-            <NavItem
-              to={ROUTES.ADMIN.BASEURL}
-              icon={<LayoutDashboard size={20} />}
-              label="Dashboard"
-              collapsed={sidebarCollapsed}
-            />
-            <NavItem
-              to={ROUTES.ADMIN.PRODUCTS}
-              icon={<Package size={20} />}
-              label="Products"
-              collapsed={sidebarCollapsed}
-            />
-            <NavItem
-              to={ROUTES.ADMIN.USERS}
-              icon={<Users size={20} />}
-              label="Users"
-              collapsed={sidebarCollapsed}
-            />
+            {Object.values(navItems).map((item) => (
+              <NavItem
+                key={item.path}
+                to={item.path}
+                icon={item.icon}
+                label={item.label}
+                collapsed={sidebarCollapsed}
+                />
+            ))}
+
 
           </ul>
         </nav>

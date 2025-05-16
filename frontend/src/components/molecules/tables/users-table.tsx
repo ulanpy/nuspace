@@ -62,7 +62,7 @@ export const UsersTable = ({filteredUsers}: UsersTableProps) => {
             </TableCell>
             <TableCell>
               <Button variant="outline" size="sm" asChild>
-                <Link to={`${ROUTES.ADMIN.USER}/${user.id}`}>
+                <Link to={`${ROUTES.ADMIN.USERS.child}/${user.id}`}>
                   View Products
                 </Link>
               </Button>
