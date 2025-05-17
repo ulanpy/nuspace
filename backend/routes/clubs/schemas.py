@@ -47,6 +47,12 @@ class ClubUpdateSchema(BaseModel):
             return None
         return value
 
+    @field_validator("telegram_url", "instagram_url")
+    def validate_url(cls, value):
+        if not value.startswith(("http://", "https://")):
+            raise ValueError("Invalid URL format")
+        return value
+
 
 class ClubEventRequestSchema(BaseModel):
     club_id: int
@@ -96,6 +102,18 @@ class ClubEventUpdateSchema(BaseModel):
     def validate_emptiness(cls, value):
         if not value or value.strip() == "":
             return None
+        return value
+
+    @field_validator("duration")
+    def validate_duration(cls, value):
+        if value <= 0:
+            raise ValueError("Duration should be positive")
+        return value
+
+    @field_validator("event_datetime")
+    def validate_event_datetime(cls, value):
+        if value <= datetime.now():
+            raise ValueError("Event datetime must be in the future")
         return value
 
 
