@@ -7,10 +7,9 @@ import { Button } from "../../atoms/button";
 interface ProductCardProps {
   product: Types.Product;
   onClick: () => void;
-  children?: React.ReactNode;
 }
 
-export function ProductCard({ product, onClick, children }: ProductCardProps) {
+export function ProductCard({ product, onClick }: ProductCardProps) {
   const getConditionColor = (condition: Types.Product["condition"]) => {
     switch (condition) {
       case "new":
@@ -79,7 +78,16 @@ export function ProductCard({ product, onClick, children }: ProductCardProps) {
             </span>
           </div>
         </div>
-        {children}
+        <div className="flex justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex gap-1 text-muted-foreground hover:text-primary"
+          >
+            <MessageSquare className="h-4 w-4" />
+            <span>Message</span>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

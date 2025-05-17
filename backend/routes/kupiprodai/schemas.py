@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.core.database.models.product import (
     ProductCategory,
@@ -20,6 +20,7 @@ class ProductRequestSchema(BaseModel):
         le=10_000_000_000,
         description="Price of the product in whole currency units (1 to 10,000,000)",
     )
+    user_sub: str
     category: ProductCategory
     condition: ProductCondition
     status: ProductStatus = ProductStatus.active
@@ -43,11 +44,6 @@ class ProductResponseSchema(BaseModel):
     media: List[MediaResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class ListResponseSchema(BaseModel):
-    products: List[ProductResponseSchema]
-    num_of_pages: int
 
 
 class ProductUpdateSchema(BaseModel):
@@ -107,3 +103,14 @@ class ListSearchResponseSchema(BaseModel):
 class ProductUpdateResponseSchema(BaseModel):
     product_id: int
     updated_fields: dict
+
+
+class ListProductSchema(BaseModel):
+    products: List[ProductResponseSchema] = []
+    num_of_pages: int
+
+    @field_validator("num_of_pages")
+    def validate_pages(cls, value):
+        if value <= 0:
+            raise ValueError("Number of pages should be positive")
+        return value

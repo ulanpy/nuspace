@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from pydantic import BaseModel, field_validator
@@ -65,9 +65,10 @@ class ClubEventRequestSchema(BaseModel):
 
     @field_validator("event_datetime")
     def validate_event_datetime(cls, value):
-        if value <= datetime.now():
+        if value <= datetime.now(timezone.utc):
             raise ValueError("Event datetime must be in the future")
-        return value
+        # Convert to naive UTC
+        return value.astimezone(timezone.utc).replace(tzinfo=None)
 
 
 class ClubEventResponseSchema(BaseModel):
@@ -97,6 +98,13 @@ class ClubEventUpdateSchema(BaseModel):
         if not value or value.strip() == "":
             return None
         return value
+
+    @field_validator("event_datetime")
+    def validate_event_datetime(cls, value):
+        if value <= datetime.now(timezone.utc):
+            raise ValueError("Event datetime must be in the future")
+        # Convert to naive UTC
+        return value.astimezone(timezone.utc).replace(tzinfo=None)
 
 
 class ListEventSchema(BaseModel):

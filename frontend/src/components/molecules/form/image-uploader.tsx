@@ -18,7 +18,6 @@ export function ImageUploader({
   fileInputRef,
   onFileChange,
 }: ImageUploaderProps) {
-
   return (
     <div
       ref={dropZoneRef}

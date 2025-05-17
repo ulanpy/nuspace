@@ -38,7 +38,6 @@ class User(Base):
     clubs_led = relationship("Club", back_populates="president_user")
 
     products = relationship("Product", back_populates="user")
-    product_feedbacks = relationship("ProductFeedback", back_populates="user")
     product_reports = relationship("ProductReport", back_populates="user")
     reviews = relationship("Reviews", back_populates="user")
     review_responses = relationship("ReviewResponses", back_populates="owner")

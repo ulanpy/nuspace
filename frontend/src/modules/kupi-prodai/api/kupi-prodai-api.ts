@@ -150,7 +150,7 @@ export const kupiProdaiApi = {
 
   // Create a new product
   createProduct: async (product: NewProductRequest): Promise<Product> => {
-    return apiCall<Product>("/products/new", {
+    return apiCall<Product>("/products", {
       method: "POST",
       json: product,
     });

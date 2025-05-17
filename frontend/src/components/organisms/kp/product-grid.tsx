@@ -3,7 +3,6 @@ import { Pagination } from "../../molecules/pagination";
 import { ProductCard } from "../../molecules/cards";
 import { useNavigate } from "react-router-dom";
 import { useListingState } from "@/context/listing-context";
-import { MessageButton } from "@/components/molecules/buttons/message-button";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -51,9 +50,7 @@ export function ProductGrid({
               onClick={() =>
                 navigate(`/apps/kupi-prodai/product/${product.id}`)
               }
-            >
-              <MessageButton />
-            </ProductCard>
+            />
           </motion.div>
         ))}
       </motion.div>

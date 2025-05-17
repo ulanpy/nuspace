@@ -1,7 +1,10 @@
 from datetime import timedelta
 
-from fastapi import Request
+from fastapi import FastAPI, Request
 from google.api_core.exceptions import AlreadyExists
+from google.cloud import pubsub_v1, storage
+
+from backend.core.configs.config import config
 
 
 async def generate_download_url(
@@ -14,9 +17,9 @@ async def generate_download_url(
     - GET access only
     - Requires valid JWT
     """
-    blob = request.app.state.storage_client.bucket(
-        request.app.state.config.BUCKET_NAME
-    ).blob(filename)
+    blob = request.app.state.storage_client.bucket(request.app.state.config.BUCKET_NAME).blob(
+        filename
+    )
     signed_url = blob.generate_signed_url(
         version="v4",
         expiration=timedelta(minutes=15),
@@ -29,21 +32,17 @@ async def delete_bucket_object(
     request: Request,
     filename: str,
 ):
-    blob = request.app.state.storage_client.bucket(
-        request.app.state.config.BUCKET_NAME
-    ).blob(filename)
+    blob = request.app.state.storage_client.bucket(request.app.state.config.BUCKET_NAME).blob(
+        filename
+    )
     try:
         blob.delete()
-    except:
+    except Exception:
         pass
 
 
-from google.cloud import pubsub_v1
-
-from backend.core.configs.config import config
-
-
-def update_bucket_push_endpoint():
+def setup_gcs_pubsub(app: FastAPI):
+    app.state.storage_client = storage.Client(credentials=config.BUCKET_CREDENTIALS)
     client = pubsub_v1.SubscriberClient(credentials=config.BUCKET_CREDENTIALS)
     topic_path = client.topic_path(config.GCP_PROJECT_ID, config.GCP_TOPIC_ID)
     subscription_path = client.subscription_path(
