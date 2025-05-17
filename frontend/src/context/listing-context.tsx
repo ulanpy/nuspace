@@ -8,18 +8,10 @@ import { getSeachPageFromURL } from "@/utils/search-params";
 import React, { createContext, useContext, useState } from "react";
 import { useLocation } from "react-router-dom";
 
-type NewProductRequest = {
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  condition: string;
-  status: string;
-};
 
 type ListingContextType = {
-  newListing: NewProductRequest;
-  setNewListing: React.Dispatch<React.SetStateAction<NewProductRequest>>;
+  newListing: Types.NewProductRequest;
+  setNewListing: React.Dispatch<React.SetStateAction<Types.NewProductRequest>>;
   uploadProgress: number;
   setUploadProgress: React.Dispatch<React.SetStateAction<number>>;
   editingListing: Types.Product | null;
@@ -42,7 +34,7 @@ export const ListingProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [newListing, setNewListing] = useState<NewProductRequest>({
+  const [newListing, setNewListing] = useState<Types.NewProductRequest>({
     name: "",
     description: "",
     price: 0,
@@ -54,12 +46,13 @@ export const ListingProvider = ({
     null
   );
 
-
-  const location = useLocation()
+  const location = useLocation();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(getSeachPageFromURL(location.search));
+  const [currentPage, setCurrentPage] = useState(
+    getSeachPageFromURL(location.search)
+  );
   const [itemsPerPage] = useState(defaultSize);
   const [activeTab, setActiveTab] = useState<Types.ActiveTab>("buy");
   return (
@@ -77,7 +70,7 @@ export const ListingProvider = ({
         setSearchQuery,
         currentPage,
         setCurrentPage,
-        itemsPerPage,
+        itemsPerPage, 
         activeTab,
         setActiveTab,
       }}

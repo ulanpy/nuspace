@@ -2,12 +2,13 @@
 
 import { ThemeToggle } from "../components/molecules/theme-toggle";
 import { AppGrid } from "../components/organisms/app-grid";
-import { LoginButton } from "../components/molecules/login-button";
+import { LoginButton } from "../components/molecules/buttons/login-button";
 import { GlowCarouselWithImage } from "../components/organisms/glow-carousel-with-images";
 import { Link } from "react-router-dom";
 import { useUser } from "@/hooks/use-user";
-import { ReportButton } from "@/components/molecules/report-button";
+import { ReportButton } from "@/components/molecules/buttons/report-button";
 // Define carousel items with your image for the homepage
+
 const homeCarouselItems = [
   {
     id: 1,
@@ -49,19 +50,24 @@ export default function HomePage() {
       <header className="w-full flex justify-between items-center mb-8">
         <div className="flex items-center gap-6">
           <ThemeToggle />
-          <ReportButton/>
+          <ReportButton />
         </div>
         <LoginButton />
       </header>
 
       <div className="flex-1 flex flex-col items-center">
         {/* Greeting */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-[clamp(0px,4vw,32px)]">
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">
             {isLoading ? (
               <span>Loading...</span>
             ) : isSuccess && user?.user.given_name ? (
-              <span>Welcome back, {user.user.given_name}!</span>
+              <div className="flex items-center gap-2">
+                <img src={user.user.picture} alt="" className="rounded-full w-[clamp(24px,5vw,40px)] h-[clamp(24px,5vw,40px)]"/>
+                <span className="text-[clamp(14px,4vw,36px)]">Welcome back, {user.user.given_name}!</span>
+                {user.tg_linked && <img src="/svg/telegram-connected.svg" className="rounded-full w-[clamp(24px,5vw,40px)] h-[clamp(24px,5vw,40px)]" alt="" />}
+
+              </div>
             ) : (
               <span>Welcome to NU Space</span>
             )}

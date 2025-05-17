@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { useTheme } from "../../context/theme-provider";
+import { useTheme } from "../../../context/theme-provider";
 
 interface AppButtonProps {
   icon: React.ReactNode;

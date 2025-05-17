@@ -24,7 +24,7 @@ export const CategoryCard = ({
         w-[clamp(90px,14vw,115px)] py-3
         rounded-xl text-sm cursor-pointer
         border border-border/40
-        transition duration-300 ease-in-out mb-2
+        transition duration-300 ease-in-out
         ${
           isSelected
             ? isDarkTheme

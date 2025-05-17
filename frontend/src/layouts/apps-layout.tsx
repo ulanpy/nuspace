@@ -4,10 +4,9 @@ import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { ThemeToggle } from "../components/molecules/theme-toggle";
-import { LoginButton } from "../components/molecules/login-button";
+import { LoginButton } from "../components/molecules/buttons/login-button";
 import { LoginRequirementModal } from "../components/molecules/login-requirement-modal";
 import { useUser } from "@/hooks/use-user";
-
 
 export default function AppsLayout() {
   const { user, login } = useUser();

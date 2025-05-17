@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- Telegram circle -->
+  <circle cx="32" cy="32" r="30" fill="#229ED9"/>
+  <path fill="#ffffff" d="M26 38.5l-0.9 8.3c1.3 0 1.8-0.6 2.5-1.3l4.7-4.5 9.7 7c1.8 1 3-0.2 3.5-2.2l5.9-27c0.4-1.6-0.6-2.5-2.2-1.9L8.1 30.9c-1.7 0.6-1.7 2 0.3 2.6l10.6 3.2 24.7-15.5c1.2-0.8 2.3-0.3 1.4 0.5L26 38.5z"/>
+
+  <!-- Green circle (status indicator) -->
+  <circle cx="48" cy="48" r="12" fill="#2ecc71"/>
+
+  <!-- Bigger checkmark -->
+  <path d="M43 48l4 4 7-7" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

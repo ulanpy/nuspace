@@ -53,7 +53,7 @@ export function SliderContainer({
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="flex gap-4 overflow-x-auto py-4 no-scrollbar"
+          className="flex gap-4 overflow-x-auto py-1 no-scrollbar"
         >
           {children}
         </div>

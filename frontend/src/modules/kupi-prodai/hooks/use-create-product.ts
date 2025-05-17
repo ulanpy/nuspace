@@ -1,64 +1,56 @@
-import imageCompression from "browser-image-compression";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   kupiProdaiApi,
   NewProductRequest,
-  SignedUrlRequest,
 } from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useToast } from "@/hooks/use-toast";
 import { useListingState } from "@/context/listing-context";
 import { useImageContext } from "@/context/image-context";
 import { useEditModal } from "../form/use-edit-modal";
 import { useUser } from "@/hooks/use-user";
+import { useProductImages } from "./use-product-images";
+import { pollForProductImages } from "@/utils/polling";
 
 export function useCreateProduct() {
   const { user } = useUser();
   const { toast } = useToast();
-  const { imageFiles, setIsUploading, setImageFiles } = useImageContext();
+  const { setIsUploading } = useImageContext();
   const { setActiveTab, setUploadProgress } = useListingState();
   const { resetEditListing } = useEditModal();
+  const { handleImageUpload, resetImageState } = useProductImages();
 
   const queryClient = useQueryClient();
 
   const createProductMutation = useMutation({
     mutationFn: kupiProdaiApi.createProduct,
-    onSettled() {
-      setTimeout(() => {
-        queryClient.invalidateQueries({
-          queryKey: [kupiProdaiApi.baseKey],
-        });
-      }, 2000);
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Product created successfully",
+      });
+      setActiveTab("my-listings");
     },
-    onSuccess() {
-      setTimeout(() => {
-        toast({
-          title: "Success",
-          description: "Product created successfully",
-        });
-        setActiveTab("my-listings");
-      }, 2000);
-    },
-    onError() {
+    onError: () => {
       toast({
         title: "Error",
-        description: "Failed to create product or upload images",
+        description: "Failed to create product",
         variant: "destructive",
       });
     },
   });
 
-  const createProduct = async (e: React.FormEvent<HTMLFormElement>) => {
-    const formData = new FormData(e.currentTarget);
-    const newProduct: NewProductRequest = {
-      name: String(formData.get("name")),
-      description: String(formData.get("description")),
-      price: Number(formData.get("price")),
-      category: String(
-        formData.get("category")
-      ).toLowerCase() as Types.ProductCategory,
-      condition: String(formData.get("condition")) as Types.ProductCondition,
-      status: "active",
-    };
+  const extractProductData = (form: FormData): NewProductRequest => ({
+    name: String(form.get("name")),
+    description: String(form.get("description")),
+    price: Number(form.get("price")),
+    category: String(
+      form.get("category")
+    ).toLowerCase() as Types.ProductCategory,
+    condition: String(form.get("condition")) as Types.ProductCondition,
+    status: "active",
+  });
+
+  const checkTelegramLinked = (): boolean => {
     const isTelegramLinked = user?.tg_linked || false;
     if (!isTelegramLinked) {
       toast({
@@ -67,109 +59,55 @@ export function useCreateProduct() {
           "You need to link your Telegram account before selling items.",
         variant: "destructive",
       });
-      return;
     }
-
-    setIsUploading(true);
-    setUploadProgress(10);
-    const res = await createProductMutation.mutateAsync(newProduct);
-    console.log("res id", res.id);
-    return res;
-  };
-
-  const uploadImage = async (meta: {
-    media_table: string;
-    entityId: number;
-    mediaFormat: string;
-  }) => {
-    if (!imageFiles.length) return;
-
-    // 1) prepare one SignedUrlRequest per file
-    const requests: SignedUrlRequest[] = imageFiles.map(
-      (file: File, idx: number) => ({
-        media_table: meta.media_table,
-        entity_id: meta.entityId,
-        media_format: meta.mediaFormat,
-        media_order: idx,
-        mime_type: file.type,
-        content_type: file.type,
-      })
-    );
-
-    setIsUploading(true);
-    setUploadProgress(30);
-
-    // 2) POST to get the signed URLs
-    const signedUrls = await kupiProdaiApi.getSignedUrls(requests);
-    const options = {
-      maxSizeMB: 0.5,
-      maxWidthOrHeight: 1920,
-      useWebWorker: true,
-    };
-    const compressedImages = await Promise.all(
-      imageFiles.map(async (imageFile) => {
-        console.log('originalFile instanceof Blob', imageFile instanceof Blob); // true
-        console.log(`originalFile size ${imageFile.size / 1024 / 1024} MB`);
-        return await imageCompression(imageFile, options);
-      })
-    );
-    setUploadProgress(50);
-
-    await Promise.all(
-      compressedImages.map((file: File, i: number) => {
-        const {
-          upload_url,
-          filename,
-          media_table,
-          entity_id,
-          media_format,
-          media_order,
-          mime_type,
-        } = signedUrls[i];
-
-        const headers: Record<string, string> = {
-          "x-goog-meta-filename": filename,
-          "x-goog-meta-media-table": media_table,
-          "x-goog-meta-entity-id": entity_id.toString(),
-          "x-goog-meta-media-format": media_format,
-          "x-goog-meta-media-order": media_order.toString(),
-          "x-goog-meta-mime-type": mime_type,
-          "Content-Type": mime_type,
-        };
-
-        return fetch(upload_url, {
-          method: "PUT",
-          headers,
-          body: file,
-        });
-      })
-    );
-
-    setUploadProgress(90);
-
-    // 4) Done
-    setUploadProgress(100);
-    setImageFiles([]);
-    setIsUploading(false);
-    setUploadProgress(0);
+    return isTelegramLinked;
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const newProduct = await createProduct(e);
-    if (!newProduct) return;
 
-    await uploadImage({
-      media_table: "products",
-      entityId: newProduct.id,
-      mediaFormat: "carousel",
-    });
+    if (!checkTelegramLinked()) return;
 
-    resetEditListing();
+    try {
+      setIsUploading(true);
+      setUploadProgress(10);
+
+      const formData = new FormData(e.currentTarget);
+      const productData = extractProductData(formData);
+
+      const newProduct = await createProductMutation.mutateAsync(productData);
+
+      await handleImageUpload({
+        media_table: "products",
+        entityId: newProduct.id,
+        mediaFormat: "carousel",
+      });
+      pollForProductImages(
+        newProduct.id,
+        queryClient,
+        kupiProdaiApi.baseKey,
+        kupiProdaiApi.getProduct
+      );
+
+      resetEditListing();
+      resetImageState();
+
+      return newProduct;
+    } catch (error) {
+      console.error("Product creation failed:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create product or upload images",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
   };
 
   return {
-    setUploadProgress,
     handleCreate,
+    isCreating: createProductMutation.isPending,
   };
 }

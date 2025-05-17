@@ -1,7 +1,7 @@
 "use client";
 
 import { ShoppingBag, Calendar, Coffee } from "lucide-react";
-import { AppButton } from "../molecules/app-button";
+import { AppButton } from "../molecules/buttons/app-button";
 interface AppButtonProps {
   icon: React.ReactNode;
   title: string;

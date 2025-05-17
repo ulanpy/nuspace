@@ -1,18 +1,15 @@
-import {
-  kupiProdaiApi,
-  SignedUrlRequest,
-} from "@/modules/kupi-prodai/api/kupi-prodai-api";
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useToast } from "@/hooks/use-toast";
 import { useListingState } from "@/context/listing-context";
 import { useImageContext } from "@/context/image-context";
 import { useMediaContext } from "@/context/media-context";
+import { useProductImages } from "./use-product-images";
+import { pollForProductImages } from "@/utils/polling";
 
-export const useUpdateProduct = () => {
+export function useUpdateProduct() {
   const { toast } = useToast();
-  const { imageFiles, setImageFiles, setPreviewImages, setIsUploading } =
-    useImageContext();
+  const { setIsUploading } = useImageContext();
   const {
     newListing,
     editingListing,
@@ -28,20 +25,25 @@ export const useUpdateProduct = () => {
     setOriginalMedia,
     setReorderedMedia,
   } = useMediaContext();
+  const { handleImageUpload, deleteMedia, resetImageState } =
+    useProductImages();
 
   const queryClient = useQueryClient();
 
   const updateProductMutation = useMutation({
     mutationFn: kupiProdaiApi.updateProduct,
-
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: [kupiProdaiApi.baseKey] });
-
       const previousTodos = queryClient.getQueryData(
         kupiProdaiApi.getUserProductsQueryOptions().queryKey
       );
-
       return { previousTodos };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Product updated successfully",
+      });
     },
     onError: (_, __, context) => {
       if (context) {
@@ -56,29 +58,35 @@ export const useUpdateProduct = () => {
         variant: "destructive",
       });
     },
-    async onSuccess() {
-      toast({
-        title: "Success",
-        description: "Product updated successfully",
-      });
-    },
-    onSettled: () =>
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: [kupiProdaiApi.baseKey] });
-      }, 1500),
   });
-  
+
   const calculateMediaOrder = () => {
     const remainingMedia = originalMedia.filter(
       (media) => !mediaToDelete.includes(media.id)
     );
 
-    // Safely convert all orders to numbers
     const validOrders = remainingMedia
       .map((media) => Number(media.order))
       .filter((order) => !isNaN(order));
 
     return validOrders.length > 0 ? Math.max(...validOrders) + 1 : 0;
+  };
+
+  const resetState = () => {
+    setEditingListing(null);
+    setNewListing({
+      name: "",
+      description: "",
+      price: 0,
+      category: "books",
+      condition: "new",
+      status: "active",
+    });
+    setOriginalMedia([]);
+    setMediaToDelete([]);
+    setReorderedMedia([]);
+    setShowEditModal(false);
+    resetImageState();
   };
 
   const handleUpdateListing = async (e: React.FormEvent) => {
@@ -89,8 +97,7 @@ export const useUpdateProduct = () => {
       setIsUploading(true);
       setUploadProgress(10);
 
-      // Step 1: Update the product details
-      updateProductMutation.mutateAsync({
+      await updateProductMutation.mutateAsync({
         product_id: editingListing.id,
         name: newListing.name,
         description: newListing.description,
@@ -102,75 +109,27 @@ export const useUpdateProduct = () => {
 
       setUploadProgress(30);
 
-      // Step 2: Delete images that were removed
       if (mediaToDelete.length > 0) {
-        const deletePromises = mediaToDelete.map((mediaId) => {
-          return fetch(`/api/bucket/delete?media_id=${mediaId}`, {
-            method: "DELETE",
-            credentials: "include",
-          });
-        });
-
-        await Promise.all(deletePromises);
+        await deleteMedia(mediaToDelete);
         setUploadProgress(50);
       }
 
-      // Step 3: Upload new images if there are any
-      if (imageFiles.length > 0) {
-        const startOrder = calculateMediaOrder();
-        const requests: SignedUrlRequest[] = imageFiles.map((file, index) => ({
-          media_table: "products",
-          entity_id: Number(editingListing.id), // Ensure this is a number
-          media_format: "carousel",
-          media_order: startOrder + index, // This should already be a number
-          mime_type: file.type,
-          content_type: file.type,
-        }));
-
-        // Get signed URLs
-        const signedUrls = await kupiProdaiApi.getSignedUrls(requests);
-        setUploadProgress(60);
-        // Upload images using signed URLs
-        await Promise.all(
-          imageFiles.map((file: File, i: number) => {
-            const { upload_url, ...meta } = signedUrls[i];
-            return fetch(upload_url, {
-              method: "PUT",
-              headers: {
-                "Content-Type": file.type,
-                "x-goog-meta-filename": meta.filename,
-                "x-goog-meta-media-table": meta.media_table,
-                "x-goog-meta-entity-id": meta.entity_id.toString(),
-                "x-goog-meta-media-format": meta.media_format,
-                "x-goog-meta-media-order": meta.media_order.toString(),
-                "x-goog-meta-mime-type": meta.mime_type,
-              },
-              body: file,
-            });
-          })
-        );
-        setUploadProgress(80);
-      }
-
-      // Final cleanup
-      setUploadProgress(100);
-      setEditingListing(null);
-      setNewListing({
-        name: "",
-        description: "",
-        price: 0,
-        category: "books",
-        condition: "new",
-        status: "active",
+      const startOrder = calculateMediaOrder();
+      await handleImageUpload({
+        media_table: "products",
+        entityId: Number(editingListing.id),
+        mediaFormat: "carousel",
+        startOrder,
       });
-      setPreviewImages([]);
-      setImageFiles([]);
-      setOriginalMedia([]);
-      setMediaToDelete([]);
-      setReorderedMedia([]);
-      setShowEditModal(false);
-    } catch (err) {
-      console.error("Failed to update product:", err);
+      pollForProductImages(
+        editingListing.id,
+        queryClient,
+        kupiProdaiApi.baseKey,
+        kupiProdaiApi.getProduct
+      );
+      resetState();
+    } catch (error) {
+      console.error("Failed to update product:", error);
       toast({
         title: "Error",
         description: "Failed to update product",
@@ -182,5 +141,8 @@ export const useUpdateProduct = () => {
     }
   };
 
-  return { handleUpdateListing };
-};
+  return {
+    handleUpdateListing,
+    isUpdating: updateProductMutation.isPending,
+  };
+}
