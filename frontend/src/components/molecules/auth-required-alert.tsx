@@ -1,11 +1,18 @@
 import { Alert, AlertTitle, AlertDescription } from "../atoms/alert";
 import { Button } from "../atoms/button";
-export function AuthRequiredAlert({ onClick }: { onClick: () => void }) {
+interface AuthRequiredAlertProps {
+  description?: string;
+  onClick: () => void;
+}
+export function AuthRequiredAlert({
+  description = "create a listing.",
+  onClick,
+}: AuthRequiredAlertProps) {
   return (
     <Alert variant="destructive">
       <AlertTitle>Authentication Required</AlertTitle>
       <AlertDescription>
-        You must be logged in to create a listing.
+        You must be logged in to {description}
         <Button variant="link" onClick={onClick}>
           Login
         </Button>
