@@ -60,7 +60,6 @@ async def add_product(
     """
 
     try:
-        # inside also adds to meilisearch db
         product: Product = await common_cruds.add_resource(
             session=db_session,
             model=Product,
@@ -81,6 +80,7 @@ async def add_product(
             "id": product.id,
             "name": product.name,
             "condition": product.condition.value,
+            "status": product.status.value,
         },
     )
 

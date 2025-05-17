@@ -53,7 +53,7 @@ async def get(
     filters: list = None,
     page: int = 0,
     size: int = 20,
-):
+) -> dict:
     payload = {"q": keyword, "limit": size, "offset": (page - 1) * size}
     if filters:
         payload["filter"] = filters

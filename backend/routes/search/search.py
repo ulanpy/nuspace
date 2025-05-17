@@ -1,12 +1,14 @@
-# from typing import Annotated
+from typing import Annotated
 
-# from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from httpx import HTTPError
 
-# from backend.common.dependencies import get_db_session
-# from backend.common.utils import meilisearch
-# from backend.routes.auth.utils import check_token
+from backend.common.dependencies import check_token
+from backend.common.utils import meilisearch
+from backend.core.database.models.common_enums import EntityType
+from backend.core.database.models.product import ProductStatus
 
-# router = APIRouter(prefix="/search", tags=["search"])
+router = APIRouter(tags=["Search Routes"])
 
 
 # @router.get("/products/search/", response_model=ListResponseSchema)
@@ -37,7 +39,7 @@
 
 #     filters = [f"condition = {condition.value}"] if condition else None
 
-#     search_results = await meilisearch.get(
+#     search_results: dict = await meilisearch.get(
 #         keyword=keyword,
 #         request=request,
 #         page=page,
@@ -53,51 +55,6 @@
 #         product_ids=product_ids,
 #         num_of_products=search_results["estimatedTotalHits"],
 #     )
-
-
-# @router.get("/products/pre_search/", response_model=list[str])
-# async def pre_search(
-#     request: Request,
-#     user: Annotated[dict, Depends(check_token)],
-#     keyword: str,
-#     db_session=Depends(get_db_session),
-# ):
-#     """
-#     Searches for products based on the provided keyword:
-#     - Uses Meilisearch to find matching products.
-#     - Will return active products only that match the keyword.
-#     - The search results are then used to fetch product details from the database.
-#     - The returned products contain details such as id, name,
-#     description, price, condition, and category.
-
-#     **Parameters:**
-#     - `keyword`: The search term used to find products.
-#     It will be used for querying in Meilisearch.
-
-#     **Returns:**
-#     - A list of product objects that match the keyword from the search.
-#     """
-#     distinct_keywords = []
-#     seen = set()
-#     page = 1
-#     while len(distinct_keywords) < 5:
-#         result = await meilisearch.get(
-#             request=request,
-#             storage_name="products",
-#             keyword=keyword,
-#             page=page,
-#             size=20,
-#         )
-#         for object in result["hits"]:
-#             if object["name"] not in seen:
-#                 seen.add(object["name"])
-#                 distinct_keywords.append(object["name"])
-#             if len(distinct_keywords) >= 5:
-#                 break
-#         else:
-#             break
-#         page += 1
-#     return distinct_keywords
 
 
 # @router.get("/events/search/", response_model=ListEventSchema)
@@ -144,19 +101,80 @@
 #     return ListEventSchema(events=event_responses, num_of_pages=num_of_pages)
 
 
-# @router.get("/events/pre_search/", response_model=List[str])
-# async def pre_search(
-#     request: Request, keyword: str, user: Annotated[dict, Depends(check_token)]
-# ) -> List[str]:
-#     """
-#     Get search suggestions for events.
+@router.get("/pre_search/", response_model=list[str])
+async def pre_search(
+    request: Request,
+    user: Annotated[dict, Depends(check_token)],
+    keyword: str,
+    storage_name: EntityType,
+):
+    """
+    Searches for entities based on the provided keyword:
+    - Uses Meilisearch to find matching entities.
+    - Will return active entities only that match the keyword.
+    - For products, only returns active products (status = active).
+    - The search results are then used to fetch entity details from the database.
+    - The returned entities contain details such as id, name, description, etc.
+    - Returns an empty list if the index doesn't exist or if there are no matches.
 
-#     Parameters:
-#     - `keyword` (str): Partial search term.
+    **Parameters:**
+    - `keyword`: The search term used to find entities.
+    It will be used for querying in Meilisearch.
+    - `storage_name`: The type of entity to search for (products, clubs, club_events).
+    Must be a valid EntityType.
 
-#     Returns:
-#     - `List[str]`: Top 5 matching event names.
-#     """
-#     return await response_builder.pre_search(
-#         request=request, keyword=keyword, storage_name="events"
-#     )
+    **Returns:**
+    - A list of entity names that match the keyword from the search.
+    - Returns an empty list if the index doesn't exist or no matches found.
+    """
+    distinct_keywords = []
+    seen = set()
+    page = 1
+
+    try:
+        while len(distinct_keywords) < 5:
+            try:
+                # Add filter for active products if storage_name is products
+                filters = (
+                    [f"status = {ProductStatus.active.value}"]
+                    if storage_name == EntityType.products
+                    else None
+                )
+
+                result = await meilisearch.get(
+                    request=request,
+                    storage_name=storage_name.value,
+                    keyword=keyword,
+                    page=page,
+                    size=20,
+                    filters=filters,
+                )
+
+                # If result doesn't contain hits, the index might not exist
+                if "hits" not in result:
+                    return []
+
+                for object in result["hits"]:
+                    if object["name"] not in seen:
+                        seen.add(object["name"])
+                        distinct_keywords.append(object["name"])
+                    if len(distinct_keywords) >= 5:
+                        break
+                else:
+                    break
+                page += 1
+            except HTTPError as e:
+                # Handle HTTP errors from Meilisearch (like index not found)
+                if e.response and e.response.status_code == 404:
+                    return []
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Error searching Meilisearch: {str(e)}",
+                )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error during search: {str(e)}",
+        )
+
+    return distinct_keywords
