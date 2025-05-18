@@ -39,5 +39,5 @@ class User(Base):
 
     products = relationship("Product", back_populates="user")
     product_reports = relationship("ProductReport", back_populates="user")
-    reviews = relationship("Reviews", back_populates="user")
-    review_responses = relationship("ReviewResponses", back_populates="owner")
+    reviews = relationship("Review", back_populates="user")
+    review_responses = relationship("ReviewResponse", back_populates="owner")
