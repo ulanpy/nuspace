@@ -36,6 +36,7 @@ class ClubResponseSchema(BaseModel):
 
 
 class ClubUpdateSchema(BaseModel):
+    club_id: int
     name: Optional[str] = None
     description: Optional[str] = None
     telegram_url: Optional[str] = None
@@ -46,6 +47,9 @@ class ClubUpdateSchema(BaseModel):
         if not value or value.strip() == "":
             return None
         return value
+
+    class Config:
+        from_attributes = True  # Make sure it can be used with SQLAlchemy models
 
 
 class ClubEventRequestSchema(BaseModel):
