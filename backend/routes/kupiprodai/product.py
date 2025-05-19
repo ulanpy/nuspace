@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common import cruds as common_cruds
 from backend.common.dependencies import check_tg, check_token, get_db_session
+from backend.common.schemas import MediaResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
@@ -15,7 +16,6 @@ from backend.core.database.models.product import (
     ProductCondition,
     ProductStatus,
 )
-from backend.routes.google_bucket.schemas import MediaResponse
 from backend.routes.google_bucket.utils import delete_bucket_object
 from backend.routes.kupiprodai import utils
 

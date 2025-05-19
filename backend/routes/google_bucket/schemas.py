@@ -36,13 +36,3 @@ class UploadConfirmation(BaseModel):
 class ConfirmUploadRequest(BaseModel):
     filename: str
     url: HttpUrl
-
-
-class MediaResponse(BaseModel):
-    id: int
-    url: str
-    mime_type: str
-    entity_type: EntityType
-    entity_id: int
-    media_format: MediaFormat
-    media_order: int

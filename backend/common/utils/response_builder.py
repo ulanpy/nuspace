@@ -7,10 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from backend.common import cruds
+from backend.common.schemas import MediaResponse
 from backend.core.database.models import Base
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
-from backend.routes.google_bucket.schemas import MediaResponse
 from backend.routes.google_bucket.utils import generate_download_url
 
 T = TypeVar("T", bound=DeclarativeMeta)
