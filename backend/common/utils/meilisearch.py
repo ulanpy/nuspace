@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Type
 
 import httpx
@@ -54,6 +55,29 @@ async def get(
     page: int = 0,
     size: int = 20,
 ) -> dict:
+    """
+    Search for documents in Meilisearch.
+
+    Args:
+        request: The FastAPI request object containing the Meilisearch client
+        storage_name: The name of the Meilisearch index
+        keyword: The keyword to search for
+        filters: List of filters to apply
+        page: The page number to return
+        size: The number of results per page
+
+    Returns:
+        The Meilisearch response as JSON
+
+    Example:
+        filters = [f"status = {ProductStatus.active.value}"]
+        result = await meilisearch.get(
+            request=request,
+            storage_name=EntityType.products.value,
+            keyword="product name",
+            filters=filters,
+        )
+    """
     payload = {"q": keyword, "limit": size, "offset": (page - 1) * size}
     if filters:
         payload["filter"] = filters
@@ -80,21 +104,30 @@ async def sync_with_db(
     primary_key: str = "id",
 ):
     async for session in db_manager.get_async_session():
-        # Get the primary key column
         pk_column = getattr(model, primary_key)
-
-        # Include primary key in the selection
         columns_to_select = [pk_column] + [getattr(model, col) for col in columns_for_searching]
         result = await session.execute(select(*columns_to_select))
-        data = [dict(row) for row in result.mappings().all()]
+        raw = result.mappings().all()  # list of RowMapping
+
+        # === NEW: convert enums to plain values ===
+        data = []
+        for row in raw:
+            doc = {}
+            for key, val in row.items():
+                if isinstance(val, Enum):
+                    doc[key] = val.value
+                else:
+                    doc[key] = val
+            data.append(doc)
 
         try:
             await meilisearch_client.delete(f"/indexes/{storage_name}")
-            # Create index with explicit primary key
             await meilisearch_client.post(
                 "/indexes", json={"uid": storage_name, "primaryKey": primary_key}
             )
-            # Add documents
-            await meilisearch_client.post(f"/indexes/{storage_name}/documents", json=data)
+            await meilisearch_client.post(
+                f"/indexes/{storage_name}/documents",
+                json=data,
+            )
         except Exception as e:
-            print(f"Meilisearch error: {str(e)}")  # Debug print
+            print(f"Meilisearch error: {e}")  # now you’ll at least see any JSON‐encoding problems

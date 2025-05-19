@@ -9,8 +9,8 @@ from .search import search
 routers = [
     auth.router,
     clubs.router,
-    web_router,
-    google_bucket.router,
     product.router,
     search.router,
+    google_bucket.router,
+    web_router,
 ]
