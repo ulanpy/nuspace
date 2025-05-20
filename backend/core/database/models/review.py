@@ -10,12 +10,12 @@ from .base import Base
 
 class ReviewableType(Enum):
     products = "products"
-    events = "events"
+    club_events = "club_events"
 
 
 class OwnerType(Enum):
-    user = "user"
-    club = "club"
+    users = "users"
+    clubs = "clubs"
 
 
 class Review(Base):
@@ -37,7 +37,9 @@ class Review(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     user = relationship("User", back_populates="reviews")
-    reply = relationship("ReviewReply", back_populates="review", uselist=False)
+    reply = relationship(
+        "ReviewReply", back_populates="review", uselist=False, cascade="all, delete-orphan"
+    )
 
 
 class ReviewReply(Base):

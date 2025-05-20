@@ -16,8 +16,8 @@ class ReviewReplyRequestSchema(BaseModel):
 
     @field_validator("content")
     def validate_content(cls, v):
-        if 40 < len(v) > 200:
-            raise ValueError("Content must be between 40 and 200 characters")
+        if len(v) > 200:
+            raise ValueError("Content must be smaller than 200 characters")
         return v
 
 
@@ -37,7 +37,7 @@ class ReviewRequestSchema(BaseModel):
     entity_id: int
     user_sub: str
     rating: int
-    content: str
+    content: str | None = None
     owner_type: OwnerType
     owner_id: str | int
 
@@ -49,8 +49,8 @@ class ReviewRequestSchema(BaseModel):
 
     @field_validator("content")
     def validate_content(cls, v):
-        if 40 < len(v) > 200:
-            raise ValueError("Content must be between 40 and 200 characters")
+        if len(v) > 200:
+            raise ValueError("Content must be smaller than 200 characters")
         return v
 
     @field_validator("owner_id")
@@ -92,7 +92,7 @@ class ReviewResponseSchema(BaseModel):
     entity_id: int
     user_sub: str
     rating: int
-    content: str
+    content: str | None = None
     owner_type: OwnerType
     owner_id: str
     created_at: datetime

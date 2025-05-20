@@ -70,7 +70,7 @@ class EventReviewOwnershipChecker(ReviewOwnershipChecker):
 
 OWNERSHIP_CHECKERS: dict[ReviewableType, Type[ReviewOwnershipChecker]] = {
     ReviewableType.products: ProductReviewOwnershipChecker,
-    ReviewableType.events: EventReviewOwnershipChecker,
+    ReviewableType.club_events: EventReviewOwnershipChecker,
 }
 
 

@@ -103,7 +103,7 @@ async def add(
     )
 
     review_obj: Review = await common_cruds.add_resource(
-        session=db, model=Review, data=updated_review, preload_relationships=[]
+        session=db, model=Review, data=updated_review, preload_relationships=[Review.reply]
     )
 
     conditions = [
@@ -138,7 +138,7 @@ async def update(
         model=Review,
         resource_id=review_id,
         conditions=review_conditions,
-        preload_relationships=[],
+        preload_relationships=[Review.reply],
     )
 
     if review is None:
