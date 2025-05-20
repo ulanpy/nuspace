@@ -31,7 +31,7 @@ async def get(
     reviewable_type: ReviewableType,
     user: Annotated[dict, Depends(check_token)],
     entity_id: int | None = None,
-    owner_id: str | None = None,
+    owner_id: str | int | None = None,
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     db: AsyncSession = Depends(get_db_session),
