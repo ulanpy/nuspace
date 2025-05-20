@@ -1,19 +1,8 @@
 from typing import List
 
-from backend.core.database.models import Club, ClubEvent, Product, User
-from backend.core.database.models.review import Review, ReviewableType
-from backend.routes.google_bucket.schemas import MediaResponse
+from backend.common.schemas import MediaResponse
+from backend.core.database.models.review import Review
 from backend.routes.review.schemas import ReviewResponseSchema
-
-REVIEWABLE_TYPE_MODEL_MAP = {
-    ReviewableType.products: Product,
-    ReviewableType.events: ClubEvent,
-}
-
-REVIEWABLE_PARENT_MODEL_MAP = {
-    Product: User,
-    ClubEvent: Club,
-}
 
 
 def build_review_response(review: Review, media: List[MediaResponse]) -> ReviewResponseSchema:

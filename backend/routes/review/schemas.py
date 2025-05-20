@@ -1,10 +1,12 @@
 from datetime import datetime
 from typing import List
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from sqlalchemy.orm import DeclarativeBase
 
+from backend.common.schemas import MediaResponse
 from backend.core.database.models.review import OwnerType, ReviewableType
-from backend.routes.google_bucket.schemas import MediaResponse
+from backend.routes.review import service
 
 
 class ReviewRequestSchema(BaseModel):
@@ -34,6 +36,14 @@ class ReviewRequestSchema(BaseModel):
             return int(v)
         except ValueError:
             return v
+
+    @model_validator(mode="after")
+    def validate_owner_type(self):
+        model: DeclarativeBase = service.REVIEWABLE_TYPE_MODEL_MAP.get(self.reviewable_type)
+        parent_model: DeclarativeBase = service.SECOND_REVIEWABLE_TYPE_PARENT_MODEL_MAP.get(model)
+        if parent_model != service.REVIEWABLE_TYPE_PARENT_MODEL_MAP.get(self.owner_type):
+            raise ValueError("Invalid owner type")
+        return self
 
 
 class ReviewUpdateSchema(BaseModel):
@@ -67,3 +77,14 @@ class ReviewResponseSchema(BaseModel):
     media: List[MediaResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ListReviewResponseSchema(BaseModel):
+    reviews: List[ReviewResponseSchema]
+    num_of_pages: int
+
+    @field_validator("num_of_pages")
+    def validate_pages(cls, value):
+        if value <= 0:
+            raise ValueError("Number of pages should be positive")
+        return value

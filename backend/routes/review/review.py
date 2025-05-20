@@ -1,20 +1,22 @@
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import BinaryExpression
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
 from backend.common import cruds as common_cruds
 from backend.common.dependencies import check_token, get_db_session
+from backend.common.schemas import MediaResponse
 from backend.common.utils import response_builder
 from backend.core.database.models import Media, Review
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import MediaFormat
 from backend.core.database.models.review import ReviewableType
-from backend.routes.google_bucket.schemas import MediaResponse
-from backend.routes.review import utils
+from backend.routes.review import service, utils
 from backend.routes.review.schemas import (
+    ListReviewResponseSchema,
     ReviewRequestSchema,
     ReviewResponseSchema,
     ReviewUpdateSchema,
@@ -23,28 +25,49 @@ from backend.routes.review.schemas import (
 router = APIRouter(tags=["review"])
 
 
-@router.get("/reviews", response_model=List[ReviewResponseSchema])
+@router.get("/reviews", response_model=ListReviewResponseSchema)
 async def get(
+    request: Request,
     reviewable_type: ReviewableType,
     user: Annotated[dict, Depends(check_token)],
     entity_id: int | None = None,
     owner_id: str | None = None,
+    size: int = Query(20, ge=1, le=100),
+    page: int = 1,
     db: AsyncSession = Depends(get_db_session),
-) -> List[ReviewResponseSchema]:
+) -> ListReviewResponseSchema:
     if (entity_id is None and owner_id is None) or (entity_id is not None and owner_id is not None):
         raise HTTPException(status_code=400, detail="You must provide either entity_id or owner_id")
 
-    conditions = [Review.reviewable_type == reviewable_type]
+    conditions: List[BinaryExpression] = [Review.reviewable_type == reviewable_type]
     if entity_id is not None:
         conditions.append(Review.entity_id == entity_id)
     else:
         conditions.append(Review.owner_id == owner_id)
 
-    reviews = await common_cruds.get_resources(
-        session=db, model=Review, conditions=conditions, preload_relationships=[]
+    reviews: List[Review] = await common_cruds.get_resources(
+        session=db,
+        model=Review,
+        conditions=conditions,
+        preload_relationships=[],
+        size=size,
+        page=page,
+        order_by=[Review.created_at.desc()],
     )
-    reviews_responses = [ReviewResponseSchema.model_validate(review) for review in reviews]
-    return reviews_responses
+
+    review_responses: List[ReviewResponseSchema] = await response_builder.build_responses(
+        request=request,
+        items=reviews,
+        session=db,
+        media_format=MediaFormat.carousel,
+        entity_type=EntityType.reviews,
+        response_builder=utils.build_review_response,
+    )
+    count: int = await common_cruds.get_resource_count(
+        model=Review, session=db, conditions=conditions
+    )
+    num_of_pages: int = response_builder.calculate_pages(count=count, size=size)
+    return ListReviewResponseSchema(reviews=review_responses, num_of_pages=num_of_pages)
 
 
 @router.post("/reviews", response_model=ReviewResponseSchema)
@@ -54,7 +77,7 @@ async def add(
     user: Annotated[dict, Depends(check_token)],
     db: AsyncSession = Depends(get_db_session),
 ) -> ReviewResponseSchema:
-    model: DeclarativeBase = utils.REVIEWABLE_TYPE_MODEL_MAP.get(review.reviewable_type)
+    model: DeclarativeBase = service.REVIEWABLE_TYPE_MODEL_MAP.get(review.reviewable_type)
 
     obj: DeclarativeBase | None = await common_cruds.get_resource_by_id(
         session=db,
@@ -64,7 +87,7 @@ async def add(
     try:
         obj_parent: DeclarativeBase | None = await common_cruds.get_resource_by_id(
             session=db,
-            model=utils.REVIEWABLE_PARENT_MODEL_MAP.get(model),
+            model=service.REVIEWABLE_TYPE_PARENT_MODEL_MAP.get(review.owner_type),
             resource_id=review.owner_id,
         )
     except ProgrammingError:
@@ -102,6 +125,7 @@ async def add(
 
 @router.patch("/reviews", response_model=ReviewResponseSchema)
 async def update(
+    request: Request,
     review_id: int,
     new_data: ReviewUpdateSchema,
     user: Annotated[dict, Depends(check_token)],
@@ -120,10 +144,25 @@ async def update(
     if review is None:
         raise HTTPException(status_code=404, detail="Review not found or doesn't belong to you")
 
-    updated_review: Review | None = await common_cruds.update_resource(
+    updated_review: Review = await common_cruds.update_resource(
         session=db, resource=review, update_data=new_data
     )
-    return ReviewResponseSchema.model_validate(updated_review)
+
+    conditions = [
+        Media.entity_id == updated_review.id,
+        Media.entity_type == EntityType.reviews,
+        Media.media_format == MediaFormat.carousel,
+    ]
+
+    media_objects: List[Media] = await common_cruds.get_resources(
+        session=db, model=Media, conditions=conditions
+    )
+
+    media_responses: List[MediaResponse] = await response_builder.build_media_responses(
+        request=request, media_objects=media_objects
+    )
+
+    return utils.build_review_response(review=updated_review, media=media_responses)
 
 
 @router.delete("/reviews", status_code=status.HTTP_204_NO_CONTENT)

@@ -48,7 +48,7 @@ async def _process_item[
     session: AsyncSession,
     media_format: MediaFormat,
     entity_type: EntityType,
-    response_builder: Callable[[T, List[MediaResponse]], Awaitable[S]],
+    response_builder: Callable[[T, List[MediaResponse]], S],
 ) -> S:
     """
     Internal helper to process a single entity (club/event) and its media.
@@ -75,7 +75,7 @@ async def _process_item[
     media_response: List[MediaResponse] = await build_media_responses(
         request=request, media_objects=media
     )
-    return await response_builder(item, media_response)
+    return response_builder(item, media_response)
 
 
 async def build_responses[

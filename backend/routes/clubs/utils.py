@@ -6,7 +6,7 @@ from backend.core.database.models.club import ClubEvent
 from backend.routes.clubs.schemas import ClubEventResponseSchema, ClubResponseSchema
 
 
-async def build_club_response(
+def build_club_response(
     club: Club,
     media_responses: List[MediaResponse],
 ) -> ClubResponseSchema:
@@ -34,7 +34,7 @@ async def build_club_response(
     )
 
 
-async def build_event_response(
+def build_event_response(
     event: ClubEvent,
     media_responses: List[MediaResponse],
 ) -> ClubEventResponseSchema:

@@ -7,7 +7,7 @@ from backend.routes.kupiprodai.schemas import (
 )
 
 
-async def build_product_response(
+def build_product_response(
     product: Product,
     media_responses: List[MediaResponse],
 ) -> ProductResponseSchema:
