@@ -74,7 +74,7 @@ OWNERSHIP_CHECKERS: dict[ReviewableType, Type[ReviewOwnershipChecker]] = {
 }
 
 
-async def check_review_reply_owner(
+async def check_resourse_owner(
     review_reply_id: int,
     user: Annotated[dict, Depends(check_token)],
     db: AsyncSession = Depends(get_db_session),
@@ -93,7 +93,7 @@ async def check_review_reply_owner(
     return await checker.check_ownership(review_obj, user, db)
 
 
-async def second_check_review_reply_owner(
+async def check_review_reply_owner(
     review_reply_id: int,
     user: Annotated[dict, Depends(check_token)],
     db: AsyncSession = Depends(get_db_session),

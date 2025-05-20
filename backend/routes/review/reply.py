@@ -8,8 +8,8 @@ from backend.common import cruds as common_cruds
 from backend.common.dependencies import check_token, get_db_session
 from backend.core.database.models.review import ReviewReply
 from backend.routes.review.dependencies import (
+    check_resourse_owner,
     check_review_reply_owner,
-    second_check_review_reply_owner,
 )
 from backend.routes.review.schemas import ReviewReplyRequestSchema, ReviewReplyResponseSchema
 
@@ -20,7 +20,7 @@ router = APIRouter(tags=["review_reply"])
 async def add_review_reply(
     review_reply: ReviewReplyRequestSchema,
     user: Annotated[dict, Depends(check_token)],
-    owner: Annotated[bool, Depends(check_review_reply_owner)],
+    owner: Annotated[bool, Depends(check_resourse_owner)],
     db: AsyncSession = Depends(get_db_session),
 ):
     try:
@@ -39,7 +39,7 @@ async def add_review_reply(
 async def delete_review_reply(
     review_reply_id: int,
     user: Annotated[dict, Depends(check_token)],
-    owner: Annotated[bool, Depends(second_check_review_reply_owner)],
+    owner: Annotated[bool, Depends(check_review_reply_owner)],
     db: AsyncSession = Depends(get_db_session),
 ):
     review_reply: ReviewReply | None = await common_cruds.get_resource_by_id(
