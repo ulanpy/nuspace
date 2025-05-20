@@ -78,14 +78,19 @@ export default function ClubDetailPage() {
         if (!id) return
 
         // Using mock API instead of real API call
-        const clubData = mockApi.getClubById(Number.parseInt(id))
+        const clubData = mockApi.getClub(Number.parseInt(id))
         setClub(clubData)
-        setIsFollowing(clubData.isFollowing)
-        setFollowerCount(clubData.followers)
+
+        if (clubData) {
+            setIsFollowing(clubData.isFollowing)
+            setFollowerCount(clubData.followers)
+        }
 
         // Fetch club events
-        const eventsData = mockApi.getEventsByClubId(Number.parseInt(id))
-        setClubEvents(eventsData)
+        const eventsData = mockApi.getClub(Number.parseInt(id))
+        if (eventsData) {
+            setClubEvents(eventsData)
+        }
       } catch (error) {
         console.error("Error fetching club details:", error)
         toast({

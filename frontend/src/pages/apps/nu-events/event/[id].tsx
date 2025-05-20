@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@/hooks/use-user"
 import { mockApi } from "@/data/mock-events-data"
 import { LoginModal } from "@/components/molecules/login-modal"
+import { Card, CardContent } from "@/components/atoms/card"
 
 interface Club {
   id: number
@@ -303,6 +304,105 @@ export default function EventDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Club link and other events */}
+      {event.club && (
+        <div className="mt-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold">Organized by</h2>
+              <p className="text-muted-foreground mt-1">This event is hosted by {event.club.name}</p>
+            </div>
+            <Button
+              onClick={() => navigate(`/apps/nu-events/club/${event.club?.id}`)}
+              className="flex items-center gap-2"
+            >
+              <Users className="h-4 w-4" />
+              <span>View Club</span>
+            </Button>
+          </div>
+
+          {/* Organizer information */}
+          <div className="rounded-lg border p-4">
+            <h3 className="font-medium mb-3">Event Organizers</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">{event.club.president}</p>
+                  <p className="text-sm text-muted-foreground">Club President</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">Event Coordinator</p>
+                  <p className="text-sm text-muted-foreground">Contact via club's social media</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Other events from this club */}
+          <div>
+            <h2 className="text-xl font-bold mb-4">Other events from this club</h2>
+
+            {(() => {
+              // Get other events from the same club
+              const otherEvents = mockApi
+                .getClubEvents(event.club_id)
+                .events
+
+              return otherEvents.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {otherEvents.map((clubEvent) => (
+                    <Card
+                      key={clubEvent.id}
+                      className="overflow-hidden cursor-pointer"
+                      onClick={() => navigate(`/apps/nu-events/event/${clubEvent.id}`)}
+                    >
+                      <div className="aspect-[1/1.414] relative">
+                        {clubEvent.media && clubEvent.media.length > 0 ? (
+                          <img
+                            src={clubEvent.media[0].url || "/placeholder.svg"}
+                            alt={clubEvent.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center">
+                            <Calendar className="h-8 w-8 text-muted-foreground opacity-50" />
+                          </div>
+                        )}
+                        <div className="absolute top-2 left-2">
+                          <Badge className={`${getPolicyColor(clubEvent.policy)} text-white`}>
+                            {getPolicyDisplay(clubEvent.policy)}
+                          </Badge>
+                        </div>
+                      </div>
+                      <CardContent className="p-4">
+                        <h3 className="font-medium line-clamp-1">{clubEvent.name}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {new Date(clubEvent.event_datetime).toLocaleDateString()}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 border rounded-md bg-muted/20">
+                  <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                  <h3 className="text-lg font-medium mb-1">No other events</h3>
+                  <p className="text-sm text-muted-foreground">This club doesn't have any other scheduled events</p>
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* Login Modal */}
       <LoginModal

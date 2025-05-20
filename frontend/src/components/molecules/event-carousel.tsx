@@ -37,7 +37,7 @@ const getPolicyDisplay = (policy: string) => {
     case "free_ticket":
       return "Free Ticket"
     case "paid_ticket":
-      return "Paid Ticket"
+      return "Free Ticket"
     default:
       return policy
   }
@@ -96,7 +96,7 @@ export const EventCarousel = ({ title, events, viewAllLink }: EventCarouselProps
               className="min-w-[160px] max-w-[160px] sm:min-w-[180px] sm:max-w-[180px] flex-shrink-0 overflow-hidden cursor-pointer snap-start"
               onClick={() => navigate(`/apps/nu-events/event/${event.id}`)}
             >
-              <div className="aspect-[3/2] relative">
+              <div className="aspect-[1/1.414] relative">
                 {event.media && event.media.length > 0 ? (
                   <img
                     src={event.media[0].url || "/placeholder.svg"}

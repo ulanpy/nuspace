@@ -266,7 +266,7 @@ export default function NUEventsPage() {
   // Loading skeleton
   const EventSkeleton = () => (
     <Card className="overflow-hidden h-full">
-      <div className="aspect-[3/2] bg-muted animate-pulse" />
+      <div className="aspect-[1/1.414] bg-muted animate-pulse" />
       <div className="p-2">
         <div className="h-3 bg-muted animate-pulse rounded w-3/4 mb-1" />
         <div className="h-2 bg-muted animate-pulse rounded w-1/2" />
