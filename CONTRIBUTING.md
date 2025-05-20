@@ -31,8 +31,8 @@ There are many ways to contribute to Nuspace.kz, from reporting bugs and suggest
 
 If you encounter a bug, please help us by reporting it!
 
-- **Ensure the bug was not already reported** by searching on GitHub under [Issues](https://github.com/your-username/nuspace/issues).
-- If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/your-username/nuspace/issues/new). Be sure to include:
+- **Ensure the bug was not already reported** by searching on GitHub under [Issues](https://github.com/ulanpy/nuspace/issues).
+- If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/ulanpy/nuspace/issues/new). Be sure to include:
     - A **clear and descriptive title**.
     - **Steps to reproduce** the bug.
     - What you **expected to happen** and what **actually happened**.
@@ -43,8 +43,8 @@ If you encounter a bug, please help us by reporting it!
 
 We welcome suggestions for new features or improvements to existing functionality.
 
-- **Check if the enhancement has already been suggested** by searching on GitHub under [Issues](https://github.com/your-username/nuspace/issues).
-- If it hasn't, [open a new issue](https://github.com/your-username/nuspace/issues/new).
+- **Check if the enhancement has already been suggested** by searching on GitHub under [Issues](https://github.com/ulanpy/nuspace/issues).
+- If it hasn't, [open a new issue](https://github.com/ulanpy/nuspace/issues/new).
     - Provide a **clear and descriptive title**.
     - Explain **why this enhancement would be useful** to Nuspace.kz users.
     - Provide as much detail as possible about the **suggested functionality** and any potential use cases.
@@ -53,17 +53,17 @@ We welcome suggestions for new features or improvements to existing functionalit
 
 Unsure where to begin contributing to Nuspace.kz? You can start by looking through `good first issue` or `help wanted` issues:
 
-- [`Good first issues`](https://github.com/your-username/nuspace/labels/good%20first%20issue) - These are issues that are relatively easy to tackle and are a great way to get familiar with the codebase.
-- [`Help wanted issues`](https://github.com/your-username/nuspace/labels/help%20wanted) - These are issues that the core team would appreciate help with.
+- [`Good first issues`](https://github.com/ulanpy/nuspace/labels/good%20first%20issue) - These are issues that are relatively easy to tackle and are a great way to get familiar with the codebase.
+- [`Help wanted issues`](https://github.com/ulanpy/nuspace/labels/help%20wanted) - These are issues that the core team would appreciate help with.
 
 ### Pull Requests
 
 If you'd like to contribute code, please follow these steps:
 
-1.  **Fork the repository**: Click the "Fork" button on the [Nuspace.kz GitHub page](https://github.com/your-username/nuspace). This creates your own copy of the project.
+1.  **Fork the repository**: Click the "Fork" button on the [Nuspace.kz GitHub page](https://github.com/ulanpy/nuspace). This creates your own copy of the project.
 2.  **Clone your fork**:
     ```bash
-    git clone https://github.com/YOUR_USERNAME/nuspace.git
+    git clone https://github.com/ulanpy/nuspace.git
     cd nuspace
     ```
 3.  **Set up the development environment**: Follow the [Setup Instructions in the README.md](./README.md#setup-instructions) to get your local environment ready.
@@ -123,6 +123,6 @@ feat: Add user profile page
 
 ## Questions?
 
-If you have any questions about contributing, feel free to ask on the [project's Issues page](https://github.com/your-username/nuspace/issues) or contact the maintainers listed in the `README.md`.
+If you have any questions about contributing, feel free to ask on the [project's Issues page](https://github.com/ulanpy/nuspace/issues) or contact the maintainers listed in the `README.md`.
 
 Thank you for contributing to Nuspace.kz! 

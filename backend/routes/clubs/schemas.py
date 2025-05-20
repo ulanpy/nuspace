@@ -12,8 +12,8 @@ class ClubRequestSchema(BaseModel):
     type: ClubType
     description: str
     president: str
-    telegram_url: str
-    instagram_url: str
+    telegram_url: str | None = None
+    instagram_url: str | None = None
 
     @field_validator("telegram_url", "instagram_url")
     def validate_url(cls, value):
@@ -37,10 +37,10 @@ class ClubResponseSchema(BaseModel):
 
 class ClubUpdateSchema(BaseModel):
     club_id: int
-    name: Optional[str] = None
-    description: Optional[str] = None
-    telegram_url: Optional[str] = None
-    instagram_url: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
+    telegram_url: str | None = None
+    instagram_url: str | None = None
 
     @field_validator("name", "description", "telegram_url", "instagram_url")
     def validate_emptiness(cls, value):
