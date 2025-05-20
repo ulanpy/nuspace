@@ -18,4 +18,5 @@ def build_review_response(review: Review, media: List[MediaResponse]) -> ReviewR
         created_at=review.created_at,
         updated_at=review.updated_at,
         media=media,
+        reply=review.reply,
     )

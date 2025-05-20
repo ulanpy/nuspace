@@ -40,4 +40,4 @@ class User(Base):
     products = relationship("Product", back_populates="user")
     product_reports = relationship("ProductReport", back_populates="user")
     reviews = relationship("Review", back_populates="user")
-    review_responses = relationship("ReviewResponse", back_populates="owner")
+    review_responses = relationship("ReviewReply", back_populates="user")

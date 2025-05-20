@@ -49,7 +49,7 @@ async def get(
         session=db,
         model=Review,
         conditions=conditions,
-        preload_relationships=[],
+        preload_relationships=[Review.reply],
         size=size,
         page=page,
         order_by=[Review.created_at.desc()],
@@ -174,11 +174,7 @@ async def delete(
     review_conditions: List = [Review.user_sub == user.get("sub")]
 
     review: Review | None = await common_cruds.get_resource_by_id(
-        session=db,
-        model=Review,
-        resource_id=review_id,
-        conditions=review_conditions,
-        preload_relationships=[],
+        session=db, model=Review, resource_id=review_id, conditions=review_conditions
     )
 
     if review is None:

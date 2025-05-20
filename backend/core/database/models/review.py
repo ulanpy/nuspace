@@ -37,11 +37,11 @@ class Review(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     user = relationship("User", back_populates="reviews")
-    response = relationship("ReviewResponse", back_populates="review", uselist=False)
+    reply = relationship("ReviewReply", back_populates="review", uselist=False)
 
 
-class ReviewResponse(Base):
-    __tablename__ = "review_responses"
+class ReviewReply(Base):
+    __tablename__ = "review_replies"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True, index=True)
     review_id: Mapped[int] = mapped_column(
@@ -52,5 +52,5 @@ class ReviewResponse(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    review = relationship("Review", back_populates="response")
-    owner = relationship("User", back_populates="review_responses")
+    review = relationship("Review", back_populates="reply")
+    user = relationship("User", back_populates="review_responses")
