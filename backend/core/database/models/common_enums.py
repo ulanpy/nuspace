@@ -9,3 +9,4 @@ class EntityType(PyEnum):
     club_events = "club_events"
     clubs = "clubs"
     club_announcements = "club_announcements"
+    reviews = "reviews"
