@@ -4,7 +4,7 @@ from .auth import auth
 from .clubs import clubs
 from .google_bucket import google_bucket
 from .kupiprodai import product
-from .review import review
+from .review import reply, review
 from .search import search
 
 routers = [
@@ -15,4 +15,5 @@ routers = [
     google_bucket.router,
     web_router,
     review.router,
+    reply.router,
 ]

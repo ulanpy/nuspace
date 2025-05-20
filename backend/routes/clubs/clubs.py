@@ -517,7 +517,7 @@ async def add_event(
         request=request, media_objects=media_objects
     )
 
-    return await utils.build_event_response(event=event, media_responses=media_responses)
+    return utils.build_event_response(event=event, media_responses=media_responses)
 
 
 @router.patch("/events", response_model=ClubEventResponseSchema)
@@ -594,9 +594,7 @@ async def update_event(
             request=request, media_objects=media_objects
         )
 
-        return await utils.build_event_response(
-            event=updated_event, media_responses=media_responses
-        )
+        return utils.build_event_response(event=updated_event, media_responses=media_responses)
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
@@ -733,7 +731,7 @@ async def get_event(
             request=request, media_objects=media_objects
         )
 
-        return await utils.build_event_response(event=event, media_responses=media_responses)
+        return utils.build_event_response(event=event, media_responses=media_responses)
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

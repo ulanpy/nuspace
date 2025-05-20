@@ -9,6 +9,29 @@ from backend.core.database.models.review import OwnerType, ReviewableType
 from backend.routes.review import service
 
 
+class ReviewReplyRequestSchema(BaseModel):
+    review_id: int
+    user_sub: str
+    content: str
+
+    @field_validator("content")
+    def validate_content(cls, v):
+        if 40 < len(v) > 200:
+            raise ValueError("Content must be between 40 and 200 characters")
+        return v
+
+
+class ReviewReplyResponseSchema(BaseModel):
+    id: int
+    review_id: int
+    user_sub: str
+    content: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ReviewRequestSchema(BaseModel):
     reviewable_type: ReviewableType
     entity_id: int
@@ -47,8 +70,8 @@ class ReviewRequestSchema(BaseModel):
 
 
 class ReviewUpdateSchema(BaseModel):
-    rating: int
-    content: str
+    rating: int | None = None
+    content: str | None = None
 
     @field_validator("rating")
     def validate_rating(cls, v):
@@ -75,6 +98,7 @@ class ReviewResponseSchema(BaseModel):
     created_at: datetime
     updated_at: datetime
     media: List[MediaResponse] = []
+    reply: ReviewReplyResponseSchema | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -9,7 +9,7 @@ __all__ = [
     "Media",
     "Product",
     "ProductReport",
-    "ReviewResponse",
+    "ReviewReply",
     "Review",
     "User",
     "UserRole",
@@ -19,5 +19,5 @@ from .base import Base
 from .club import Club, ClubAnnouncement, ClubEvent, ClubManager
 from .media import Media
 from .product import Product, ProductReport
-from .review import Review, ReviewResponse
+from .review import Review, ReviewReply
 from .user import User, UserRole, UserScope
