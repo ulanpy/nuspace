@@ -1,10 +1,7 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
-import { Search, Calendar, Filter, Home, Users, CalendarDays } from "lucide-react"
-import { Input } from "../../components/atoms/input"
+import { Calendar, Home, Users, CalendarDays, Filter } from "lucide-react"
 import { Button } from "../../components/atoms/button"
 import { Card } from "../../components/atoms/card"
 import { Badge } from "../../components/atoms/badge"
@@ -23,6 +20,9 @@ import {
 import { EventCarousel } from "../../components/molecules/event-carousel"
 import { LoginModal } from "../../components/molecules/login-modal"
 import { NavTabs } from "../../components/molecules/nav-tabs"
+import { SearchInput } from "../../components/molecules/search-input"
+import { useSearchLogic } from "../../hooks/useSearchLogic"
+import { CategorySlider } from "../../components/organisms/category-slider"
 
 // Types for the API responses
 interface Club {
@@ -62,16 +62,6 @@ interface Media {
   url: string
 }
 
-interface PaginatedEvents {
-  events: Event[]
-  num_of_pages: number
-}
-
-interface PaginatedClubs {
-  clubs: Club[]
-  num_of_pages: number
-}
-
 // Helper function to get club type display text
 const getClubTypeDisplay = (type: string) => {
   return type.charAt(0).toUpperCase() + type.slice(1)
@@ -91,27 +81,47 @@ export default function NUEventsPage() {
   ]
 
   // State
-  const [activeTab, setActiveTab] = useState("featured")
   const [events, setEvents] = useState<Event[]>([])
   const [clubs, setClubs] = useState<Club[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([])
-  const [showSuggestions, setShowSuggestions] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [selectedClubType, setSelectedClubType] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [selectedPolicy, setSelectedPolicy] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null)
 
+  // Search logic using the custom hook
+  const {
+    inputValue,
+    setInputValue,
+    handleSearch,
+    preSearchedProducts
+  } = useSearchLogic({
+    baseRoute: "/apps/nu-events",
+    searchParam: "search",
+    setSelectedCategory
+  })
+
+  // Event categories for the slider
+  const eventCategories = [
+    { title: "All", icon: <Calendar className="h-5 w-5" /> },
+    { title: "Academic", icon: <Calendar className="h-5 w-5" /> },
+    { title: "Professional", icon: <Calendar className="h-5 w-5" /> },
+    { title: "Cultural", icon: <Calendar className="h-5 w-5" /> },
+    { title: "Sports", icon: <Calendar className="h-5 w-5" /> },
+    { title: "Social", icon: <Calendar className="h-5 w-5" /> },
+    { title: "Art", icon: <Calendar className="h-5 w-5" /> },
+    { title: "Technology", icon: <Calendar className="h-5 w-5" /> },
+  ]
+
   // Fetch events
-  const fetchEvents = async (page = 1, clubType = selectedClubType, policy = selectedPolicy) => {
+  const fetchEvents = async (page = 1, category = selectedCategory, policy = selectedPolicy) => {
     setIsLoading(true)
     try {
       // Using mock API instead of real API call
-      const data = mockApi.getEvents(page, 20, clubType, policy)
+      const data = mockApi.getEvents(page, 20, category || null, policy)
       setEvents(data.events)
       setTotalPages(data.num_of_pages)
       setCurrentPage(page)
@@ -138,77 +148,15 @@ export default function NUEventsPage() {
     }
   }
 
-  // Search events
-  const searchEvents = async (query: string) => {
-    if (!query.trim()) {
-      fetchEvents()
-      return
-    }
-
-    setIsLoading(true)
-    try {
-      // Using mock API instead of real API call
-      const data = mockApi.searchEvents(query)
-      setEvents(data.events)
-      setTotalPages(data.num_of_pages)
-    } catch (error) {
-      console.error("Error searching events:", error)
-      toast({
-        title: "Error",
-        description: "Failed to search events. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Get search suggestions
-  const getSearchSuggestions = async (query: string) => {
-    if (!query.trim()) {
-      setSearchSuggestions([])
-      return
-    }
-
-    try {
-      // Using mock API instead of real API call
-      const suggestions = mockApi.getPreSearchSuggestions(query)
-      setSearchSuggestions(suggestions)
-    } catch (error) {
-      console.error("Error fetching search suggestions:", error)
-    }
-  }
-
-  // Handle search input change
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value
-    setSearchQuery(query)
-    getSearchSuggestions(query)
-    setShowSuggestions(!!query.trim())
-  }
-
-  // Handle search submission
-  const handleSearch = () => {
-    searchEvents(searchQuery)
-    setShowSuggestions(false)
-  }
-
-  // Handle suggestion click
-  const handleSuggestionClick = (suggestion: string) => {
-    setSearchQuery(suggestion)
-    searchEvents(suggestion)
-    setShowSuggestions(false)
-  }
-
   // Handle filter changes
   const applyFilters = () => {
-    fetchEvents(1, selectedClubType, selectedPolicy)
+    fetchEvents(1, selectedCategory, selectedPolicy)
     setShowFilters(false)
   }
 
   // Reset filters
   const resetFilters = () => {
-    setSelectedClubType(null)
+    setSelectedCategory("")
     setSelectedPolicy(null)
     fetchEvents(1, null, null)
     setShowFilters(false)
@@ -263,16 +211,14 @@ export default function NUEventsPage() {
     fetchClubs()
   }, [])
 
-  // Loading skeleton
-  const EventSkeleton = () => (
-    <Card className="overflow-hidden h-full">
-      <div className="aspect-[1/1.414] bg-muted animate-pulse" />
-      <div className="p-2">
-        <div className="h-3 bg-muted animate-pulse rounded w-3/4 mb-1" />
-        <div className="h-2 bg-muted animate-pulse rounded w-1/2" />
-      </div>
-    </Card>
-  )
+  // Effect for category or policy changes
+  useEffect(() => {
+    if (currentPage === 1) {
+      fetchEvents(1, selectedCategory, selectedPolicy)
+    } else {
+      setCurrentPage(1)
+    }
+  }, [selectedCategory, selectedPolicy])
 
   return (
     <div className="space-y-4 pb-20">
@@ -287,29 +233,15 @@ export default function NUEventsPage() {
       </div>
 
       {/* Search and filter */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 relative">
         <div className="relative flex-1">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-          <Input
-            placeholder="Search events..."
-            className="pl-7 pr-3 text-xs h-8"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          <SearchInput
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            preSearchedProducts={preSearchedProducts}
+            handleSearch={handleSearch}
+            setSelectedCondition={setSelectedPolicy as (condition: string) => void}
           />
-          {showSuggestions && searchSuggestions.length > 0 && (
-            <div className="absolute z-10 w-full mt-1 bg-background border rounded-md shadow-lg">
-              {searchSuggestions.map((suggestion, index) => (
-                <div
-                  key={index}
-                  className="px-3 py-1.5 cursor-pointer hover:bg-muted text-xs"
-                  onClick={() => handleSuggestionClick(suggestion)}
-                >
-                  {suggestion}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
         <Button
           variant="outline"
@@ -321,28 +253,21 @@ export default function NUEventsPage() {
         </Button>
       </div>
 
+      {/* Category slider */}
+      <div className="mt-4">
+        <CategorySlider
+          categories={eventCategories}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          setInputValue={setInputValue}
+          setSelectedCondition={setSelectedPolicy as (condition: string) => void}
+        />
+      </div>
+
       {/* Filters panel */}
       {showFilters && (
         <Card className="p-3">
           <div className="space-y-3">
-            <div>
-              <h3 className="text-xs font-medium mb-1.5">Club Type</h3>
-              <div className="flex flex-wrap gap-1.5">
-                {["academic", "professional", "recreational", "cultural", "sports", "social", "art", "technology"].map(
-                  (type) => (
-                    <Badge
-                      key={type}
-                      variant={selectedClubType === type ? "default" : "outline"}
-                      className="cursor-pointer text-[10px] px-2 py-0 h-5"
-                      onClick={() => setSelectedClubType(selectedClubType === type ? null : type)}
-                    >
-                      {getClubTypeDisplay(type)}
-                    </Badge>
-                  ),
-                )}
-              </div>
-            </div>
-
             <div>
               <h3 className="text-xs font-medium mb-1.5">Event Policy</h3>
               <div className="flex flex-wrap gap-1.5">
