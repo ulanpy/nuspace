@@ -9,7 +9,7 @@ from sqlalchemy.sql.elements import BinaryExpression
 from backend.core.database.models.base import Base
 
 
-async def get_count(
+async def get_resource_count(
     model: Type[Base], session: AsyncSession, conditions: List[BinaryExpression] | None = None
 ) -> int:
     """

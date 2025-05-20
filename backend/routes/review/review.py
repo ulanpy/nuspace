@@ -1,20 +1,24 @@
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.exc import IntegrityError, ProgrammingError
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
 from backend.common import cruds as common_cruds
 from backend.common.dependencies import check_token, get_db_session
-from backend.core.database.models import Review
+from backend.common.utils import response_builder
+from backend.core.database.models import Media, Review
+from backend.core.database.models.common_enums import EntityType
+from backend.core.database.models.media import MediaFormat
 from backend.core.database.models.review import ReviewableType
+from backend.routes.google_bucket.schemas import MediaResponse
+from backend.routes.review import utils
 from backend.routes.review.schemas import (
     ReviewRequestSchema,
     ReviewResponseSchema,
     ReviewUpdateSchema,
 )
-from backend.routes.review.utils import REVIEWABLE_PARENT_MODEL_MAP, REVIEWABLE_TYPE_MODEL_MAP
 
 router = APIRouter(tags=["review"])
 
@@ -45,11 +49,12 @@ async def get(
 
 @router.post("/reviews", response_model=ReviewResponseSchema)
 async def add(
+    request: Request,
     review: ReviewRequestSchema,
     user: Annotated[dict, Depends(check_token)],
     db: AsyncSession = Depends(get_db_session),
 ) -> ReviewResponseSchema:
-    model: DeclarativeBase = REVIEWABLE_TYPE_MODEL_MAP.get(review.reviewable_type)
+    model: DeclarativeBase = utils.REVIEWABLE_TYPE_MODEL_MAP.get(review.reviewable_type)
 
     obj: DeclarativeBase | None = await common_cruds.get_resource_by_id(
         session=db,
@@ -59,7 +64,7 @@ async def add(
     try:
         obj_parent: DeclarativeBase | None = await common_cruds.get_resource_by_id(
             session=db,
-            model=REVIEWABLE_PARENT_MODEL_MAP.get(model),
+            model=utils.REVIEWABLE_PARENT_MODEL_MAP.get(model),
             resource_id=review.owner_id,
         )
     except ProgrammingError:
@@ -74,14 +79,25 @@ async def add(
         update={"owner_id": str(review.owner_id)}
     )
 
-    try:
-        review_obj: Review = await common_cruds.add_resource(
-            session=db, model=Review, data=updated_review, preload_relationships=[]
-        )
-    except IntegrityError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    review_obj: Review = await common_cruds.add_resource(
+        session=db, model=Review, data=updated_review, preload_relationships=[]
+    )
 
-    return ReviewResponseSchema.model_validate(review_obj)
+    conditions = [
+        Media.entity_id == review_obj.id,
+        Media.entity_type == EntityType.reviews,
+        Media.media_format == MediaFormat.carousel,
+    ]
+
+    media_objects: List[Media] = await common_cruds.get_resources(
+        session=db, model=Media, conditions=conditions
+    )
+
+    media_responses: List[MediaResponse] = await response_builder.build_media_responses(
+        request=request, media_objects=media_objects
+    )
+
+    return utils.build_review_response(review=review_obj, media=media_responses)
 
 
 @router.patch("/reviews", response_model=ReviewResponseSchema)

@@ -1,12 +1,12 @@
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common import cruds as common_cruds
-from backend.common.cruds import get_count
 from backend.common.dependencies import check_tg, check_token, get_db_session
+from backend.common.schemas import MediaResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
@@ -16,7 +16,6 @@ from backend.core.database.models.product import (
     ProductCondition,
     ProductStatus,
 )
-from backend.routes.google_bucket.schemas import MediaResponse
 from backend.routes.google_bucket.utils import delete_bucket_object
 from backend.routes.kupiprodai import utils
 
@@ -58,6 +57,11 @@ async def add_product(
 
     - The product is indexed in Meilisearch after creation.
     """
+    if product_data.user_sub != user.get("sub"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not allowed to create products for other users",
+        )
 
     try:
         product: Product = await common_cruds.add_resource(
@@ -105,11 +109,12 @@ async def add_product(
 async def get_products(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
-    size: int = 20,
+    size: int = Query(20, ge=1, le=100),
     page: int = 1,
     category: ProductCategory | None = None,
     condition: ProductCondition | None = None,
     owner_id: str | None = None,
+    keyword: str | None = None,
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ListProductSchema:
     """
@@ -123,6 +128,7 @@ async def get_products(
     - `owner_id`: Filter by product owner (optional)
         - If set to "me", returns the current user's products
         - If set to a specific user_sub, returns that user's products (if authorized)
+    - `keyword`: Search keyword for product name (optional)
 
     **Returns:**
     - List of products matching the criteria with pagination info
@@ -132,6 +138,7 @@ async def get_products(
     - When owner_id="me", returns all user's products (active and inactive)
     """
     try:
+        conditions = []
         user_sub = None
         include_inactive = False
 
@@ -143,24 +150,53 @@ async def get_products(
                 # Optional: Add authorization check here if needed
                 user_sub = owner_id
 
-        conditions = [Product.status == ProductStatus.active if not include_inactive else True]
+        if keyword:
+            meili_result = await meilisearch.get(
+                request=request,
+                storage_name=EntityType.products.value,
+                keyword=keyword,
+                page=page,
+                size=size,  # limit max returned IDs, adjust as needed
+                filters=(
+                    [f"status = {ProductStatus.active.value}"] if not include_inactive else None
+                ),
+            )
+            product_ids = [item["id"] for item in meili_result["hits"]]
+
+            if not product_ids:
+                return ListProductSchema(products=[], num_of_pages=1)
+
+            count = meili_result.get("estimatedTotalHits", 0)
+
+        else:
+            count = await common_cruds.get_resource_count(
+                model=Product, session=db_session, conditions=conditions
+            )
+
+        # SQLAlchemy conditions
+        if not include_inactive:
+            conditions.append(Product.status == ProductStatus.active)
         if category:
             conditions.append(Product.category == category)
         if condition:
             conditions.append(Product.condition == condition)
         if user_sub:
             conditions.append(Product.user_sub == user_sub)
+        if keyword:
+            conditions.append(Product.id.in_(product_ids))
 
+        # Fetch products from the database with conditions
         products: List[Product | None] = await common_cruds.get_resources(
             session=db_session,
             model=Product,
             conditions=conditions,
-            size=size,
-            page=page,
+            size=size if not keyword else None,  # Disable pagination if keyword is used
+            page=page if not keyword else None,
             order_by=[Product.created_at.desc()],  # Order by newest first
             preload_relationships=[Product.user],  # Preload user relationship for response building
         )
 
+        # Build Pydantic response
         products_responses = await response_builder.build_responses(
             request=request,
             items=products,
@@ -170,20 +206,7 @@ async def get_products(
             response_builder=utils.build_product_response,
         )
 
-        # Build conditions for count query
-        count_conditions = []
-        if user_sub:
-            count_conditions.append(Product.user_sub == user_sub)
-        if not include_inactive:
-            count_conditions.append(Product.status == ProductStatus.active)
-        if category:
-            count_conditions.append(Product.category == category)
-        if condition:
-            count_conditions.append(Product.condition == condition)
-
-        count = await get_count(model=Product, session=db_session, conditions=count_conditions)
-        num_of_pages: int = response_builder.calculate_pages(count=count, size=size)
-
+        num_of_pages = response_builder.calculate_pages(count=count, size=size)
         return ListProductSchema(products=products_responses, num_of_pages=num_of_pages)
 
     except HTTPException as e:

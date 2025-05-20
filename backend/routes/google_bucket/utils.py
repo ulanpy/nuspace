@@ -10,7 +10,7 @@ from backend.core.configs.config import config
 async def generate_download_url(
     request: Request,
     filename: str,
-):
+) -> dict:
     """
     Generates a signed download URL with:
     - 15 minute expiration
@@ -31,7 +31,7 @@ async def generate_download_url(
 async def delete_bucket_object(
     request: Request,
     filename: str,
-):
+) -> None:
     blob = request.app.state.storage_client.bucket(request.app.state.config.BUCKET_NAME).blob(
         filename
     )
@@ -41,7 +41,7 @@ async def delete_bucket_object(
         pass
 
 
-def setup_gcs_pubsub(app: FastAPI):
+def setup_gcs_pubsub(app: FastAPI) -> None:
     app.state.storage_client = storage.Client(credentials=config.BUCKET_CREDENTIALS)
     client = pubsub_v1.SubscriberClient(credentials=config.BUCKET_CREDENTIALS)
     topic_path = client.topic_path(config.GCP_PROJECT_ID, config.GCP_TOPIC_ID)

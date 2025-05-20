@@ -1,7 +1,7 @@
 from typing import List
 
+from backend.common.schemas import MediaResponse
 from backend.core.database.models.product import Product
-from backend.routes.google_bucket.schemas import MediaResponse
 from backend.routes.kupiprodai.schemas import (
     ProductResponseSchema,
 )

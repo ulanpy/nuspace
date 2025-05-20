@@ -3,12 +3,12 @@ from typing import List
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from backend.common.schemas import MediaResponse
 from backend.core.database.models.product import (
     ProductCategory,
     ProductCondition,
     ProductStatus,
 )
-from backend.routes.google_bucket.schemas import MediaResponse
 
 
 class ProductRequestSchema(BaseModel):

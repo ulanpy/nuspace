@@ -8,14 +8,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 
 
-class SenderType(Enum):
-    user = "user"
-    owner = "owner"
-
-
 class ReviewableType(Enum):
     products = "products"
     events = "events"
+
+
+class OwnerType(Enum):
+    user = "user"
+    club = "club"
 
 
 class Review(Base):
@@ -29,6 +29,9 @@ class Review(Base):
     user_sub: Mapped[str] = mapped_column(ForeignKey("users.sub"), nullable=False)
     rating: Mapped[int] = mapped_column(Integer, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=True)
+    owner_type: Mapped[OwnerType] = mapped_column(
+        SQLEnum(OwnerType, name="owner_type"), nullable=False
+    )
     owner_id: Mapped[str] = mapped_column(nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

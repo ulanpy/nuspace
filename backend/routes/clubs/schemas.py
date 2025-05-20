@@ -3,8 +3,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, field_validator
 
+from backend.common.schemas import MediaResponse
 from backend.core.database.models.club import ClubType, EventPolicy
-from backend.routes.google_bucket.schemas import MediaResponse
 
 
 class ClubRequestSchema(BaseModel):
@@ -36,6 +36,7 @@ class ClubResponseSchema(BaseModel):
 
 
 class ClubUpdateSchema(BaseModel):
+    club_id: int
     name: Optional[str] = None
     description: Optional[str] = None
     telegram_url: Optional[str] = None
@@ -46,6 +47,9 @@ class ClubUpdateSchema(BaseModel):
         if not value or value.strip() == "":
             return None
         return value
+
+    class Config:
+        from_attributes = True  # Make sure it can be used with SQLAlchemy models
 
 
 class ClubEventRequestSchema(BaseModel):

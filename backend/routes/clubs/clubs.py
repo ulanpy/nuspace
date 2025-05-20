@@ -1,6 +1,7 @@
+from datetime import date
 from typing import Annotated, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,11 +9,11 @@ from backend.common import cruds as common_cruds
 from backend.common.dependencies import check_admin, check_token, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import meilisearch, response_builder
+from backend.common.utils.enums import DateFilterEnum
 from backend.core.database.models.club import Club, ClubEvent, ClubType, EventPolicy
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
 from backend.routes.clubs import utils
-from backend.routes.clubs.enums import OrderEvents
 from backend.routes.clubs.schemas import (
     ClubEventRequestSchema,
     ClubEventResponseSchema,
@@ -95,7 +96,7 @@ async def add_club(
 async def get_clubs(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
-    size: int = 20,
+    size: int = Query(20, ge=1, le=100),
     page: int = 1,
     club_type: Optional[ClubType] = None,
     db_session: AsyncSession = Depends(get_db_session),
@@ -143,7 +144,7 @@ async def get_clubs(
         )
 
         # Get total count for pagination
-        count: int = await common_cruds.get_count(
+        count: int = await common_cruds.get_resource_count(
             model=Club, session=db_session, conditions=conditions
         )
         num_of_pages: int = response_builder.calculate_pages(count=count, size=size)
@@ -157,7 +158,6 @@ async def get_clubs(
 @router.patch("/clubs", response_model=ClubResponseSchema)
 async def update_club(
     request: Request,
-    club_id: int,
     new_data: ClubUpdateSchema,
     user: Annotated[dict, Depends(check_token)],
     admin: Annotated[bool, Depends(check_admin)],
@@ -171,8 +171,7 @@ async def update_club(
     - The user must have admin privileges (checked via dependency)
 
     **Parameters:**
-    - `club_id`: ID of the club to update
-    - `new_data`: Updated club data including name, description, type, etc.
+    - `new_data`: Updated club data including club_id, name, description, type, etc.
 
     **Returns:**
     - Updated club with all its details and media
@@ -187,7 +186,7 @@ async def update_club(
         club: Club | None = await common_cruds.get_resource_by_id(
             session=db_session,
             model=Club,
-            resource_id=club_id,
+            resource_id=new_data.club_id,
             conditions=conditions,
             preload_relationships=[],
         )
@@ -315,12 +314,25 @@ async def delete_club(
 async def get_events(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
-    size: int = 20,
+    size: int = Query(20, ge=1, le=100),
     page: int = 1,
     club_type: Optional[ClubType] = None,
     event_policy: Optional[EventPolicy] = None,
     club_id: Optional[int] = None,
-    order: Optional[OrderEvents] = OrderEvents.event_datetime,
+    date_filter: Optional[DateFilterEnum] = None,
+    start_date: Optional[date] = Query(
+        None,
+        title="Start date",
+        description="Дата начала диапазона (формат: YYYY-MM-DD)",
+        example="2025-05-19",
+    ),
+    end_date: Optional[date] = Query(
+        None,
+        title="End date",
+        description="Дата конца диапазона (формат: YYYY-MM-DD)",
+        example="2025-05-25",
+    ),
+    keyword: str | None = None,
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ListEventSchema:
     """
@@ -332,7 +344,10 @@ async def get_events(
     - `club_type`: Filter by club type (optional)
     - `event_policy`: Filter by event policy (optional)
     - `club_id`: Filter by specific club (optional)
-    - `order`: Sort order for events (default: by event_datetime)
+    - `date_filter`: Filter by event date (optional)
+    - `start_date`: Start date for filtering events (optional). Used with `date_filter.custom`
+    - `end_date`: End date for filtering events (optional). Used with `date_filter.custom`
+    - `keyword`: Search keyword for event name or description (optional)
 
     **Returns:**
     - List of events matching the criteria with pagination info
@@ -354,31 +369,63 @@ async def get_events(
                 preload_relationships=[],
             )
             if club is None:
-                raise HTTPException(status_code=404, detail="Club not found")
+                raise HTTPException(
+                    status_code=404, detail=f"Event with club_id {club_id} not found"
+                )
 
         # Build conditions list
         conditions = []
+
+        if keyword:
+            meili_result = await meilisearch.get(
+                request=request,
+                storage_name=EntityType.club_events.value,
+                keyword=keyword,
+                page=page,
+                size=size,  # limit max returned IDs, adjust as needed
+                filters=None,
+            )
+            event_ids = [item["id"] for item in meili_result["hits"]]
+
+            if not event_ids:
+                return ListEventSchema(products=[], num_of_pages=1)
+            count = meili_result.get("estimatedTotalHits", 0)
+
+        else:
+            count = await common_cruds.get_resource_count(
+                model=ClubEvent, session=db_session, conditions=conditions
+            )
+
+        # SQLAlchemy conditions
         if club_type:
             conditions.append(Club.type == club_type)
         if event_policy:
             conditions.append(ClubEvent.policy == event_policy)
         if club_id:
             conditions.append(ClubEvent.club_id == club_id)
+        if keyword:
+            conditions.append(ClubEvent.id.in_(event_ids))
 
-        # Set up ordering
-        order_by = [ClubEvent.event_datetime.desc()]
-        if order == OrderEvents.event_datetime:
-            order_by = [ClubEvent.event_datetime.desc()]
-        # Add other order cases if needed
+        if date_filter:
+            try:
+                # Pass the ORM column you want to filter on
+                date_filter.apply(
+                    conditions,
+                    column=ClubEvent.event_datetime,
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=str(e))
 
         # Get events with conditions
         events: List[ClubEvent] = await common_cruds.get_resources(
             session=db_session,
             model=ClubEvent,
             conditions=conditions,
-            size=size,
-            page=page,
-            order_by=order_by,
+            size=size if not keyword else None,
+            page=page if not keyword else None,
+            order_by=[ClubEvent.event_datetime.asc()],  # Order by event datetime
             preload_relationships=[ClubEvent.club],
         )
 
@@ -392,12 +439,7 @@ async def get_events(
             response_builder=utils.build_event_response,
         )
 
-        # Get total count for pagination
-        count: int = await common_cruds.get_count(
-            model=ClubEvent, session=db_session, conditions=conditions
-        )
         num_of_pages: int = response_builder.calculate_pages(count=count, size=size)
-
         return ListEventSchema(events=event_responses, num_of_pages=num_of_pages)
 
     except Exception as e:

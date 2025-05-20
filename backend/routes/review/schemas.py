@@ -1,8 +1,10 @@
 from datetime import datetime
+from typing import List
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from backend.core.database.models.review import ReviewableType
+from backend.core.database.models.review import OwnerType, ReviewableType
+from backend.routes.google_bucket.schemas import MediaResponse
 
 
 class ReviewRequestSchema(BaseModel):
@@ -11,6 +13,7 @@ class ReviewRequestSchema(BaseModel):
     user_sub: str
     rating: int
     content: str
+    owner_type: OwnerType
     owner_id: str | int
 
     @field_validator("rating")
@@ -57,8 +60,10 @@ class ReviewResponseSchema(BaseModel):
     user_sub: str
     rating: int
     content: str
+    owner_type: OwnerType
     owner_id: str
     created_at: datetime
     updated_at: datetime
+    media: List[MediaResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
