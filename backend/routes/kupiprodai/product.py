@@ -5,9 +5,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_tg, check_token, get_db_session
+from backend.common.dependencies import check_role, check_tg, check_token, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import meilisearch, response_builder
+from backend.core.database.models import UserRole
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
 from backend.core.database.models.product import (
@@ -107,6 +108,7 @@ async def add_product(
 async def get_products(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
+    role: Annotated[UserRole, Depends(check_role)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     category: ProductCategory | None = None,
@@ -147,6 +149,8 @@ async def get_products(
             else:
                 # Optional: Add authorization check here if needed
                 user_sub = owner_id
+                if role == UserRole.admin:
+                    include_inactive = True
 
         if keyword:
             meili_result = await meilisearch.get(
@@ -217,6 +221,7 @@ async def update_product(
     request: Request,
     new_data: ProductUpdateSchema,
     user: Annotated[dict, Depends(check_token)],
+    role: Annotated[UserRole, Depends(check_role)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ProductResponseSchema:
     """
@@ -236,7 +241,9 @@ async def update_product(
     **Errors:**
     - Returns 404 if product is not found or doesn't belong to the user
     """
-    conditions = [Product.user_sub == user.get("sub")]
+    conditions = []
+    if role != UserRole.admin:
+        conditions = [Product.user_sub == user.get("sub")]
 
     qb = QueryBuilder(session=db_session, model=Product)
     product: Product | None = (
@@ -286,6 +293,7 @@ async def update_product(
 async def get_product_by_id(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
+    role: Annotated[UserRole, Depends(check_role)],
     product_id: int,
     db_session: AsyncSession = Depends(get_db_session),
 ):
@@ -306,8 +314,11 @@ async def get_product_by_id(
     does not exist or is inactive.
     - Returns `401 Unauthorized` if no valid access token is provided.
     """
+    conditions = []
+    if role != UserRole.admin:
+        conditions = [Product.status == ProductStatus.active]
 
-    conditions = [Product.status == ProductStatus.active, Product.id == product_id]
+    conditions.append(Product.id == product_id)
 
     qb = QueryBuilder(session=db_session, model=Product)
     product: Product | None = await qb.base().filter(*conditions).eager(Product.user).first()
@@ -334,6 +345,7 @@ async def get_product_by_id(
 async def remove_product(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
+    role: Annotated[UserRole, Depends(check_role)],
     product_id: int,
     db_session: AsyncSession = Depends(get_db_session),
 ):
@@ -360,8 +372,10 @@ async def remove_product(
     - Returns 500 on internal error.
     """
     try:
-
-        product_conditions = [Product.id == product_id, Product.user_sub == user.get("sub")]
+        product_conditions = []
+        if role != UserRole.admin:
+            product_conditions = [Product.user_sub == user.get("sub")]
+        product_conditions.append(Product.id == product_id)
 
         qb = QueryBuilder(session=db_session, model=Product)
         product: Product = await qb.base().filter(*product_conditions).eager(Product.user).first()

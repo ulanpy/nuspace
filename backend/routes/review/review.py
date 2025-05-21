@@ -7,13 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_token, get_db_session
+from backend.common.dependencies import check_role, check_token, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import response_builder
 from backend.core.database.models import Media, Review
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import MediaFormat
 from backend.core.database.models.review import ReviewableType
+from backend.core.database.models.user import UserRole
 from backend.routes.google_bucket.utils import delete_bucket_object
 from backend.routes.review import service, utils
 from backend.routes.review.schemas import (
@@ -129,9 +130,13 @@ async def update(
     review_id: int,
     new_data: ReviewUpdateSchema,
     user: Annotated[dict, Depends(check_token)],
+    role: Annotated[UserRole, Depends(check_role)],
     db: AsyncSession = Depends(get_db_session),
 ) -> ReviewResponseSchema:
-    review_conditions: List = [Review.user_sub == user.get("sub")]
+
+    review_conditions = []
+    if role != UserRole.admin:
+        review_conditions.append(Review.user_sub == user.get("sub"))
 
     qb = QueryBuilder(session=db, model=Review)
     review: Review | None = (
@@ -168,9 +173,12 @@ async def delete(
     request: Request,
     review_id: int,
     user: Annotated[dict, Depends(check_token)],
+    role: Annotated[UserRole, Depends(check_role)],
     db: AsyncSession = Depends(get_db_session),
 ):
-    review_conditions: List = [Review.user_sub == user.get("sub")]
+    review_conditions = []
+    if role != UserRole.admin:
+        review_conditions: List = [Review.user_sub == user.get("sub")]
 
     qb = QueryBuilder(session=db, model=Review)
     review: Review | None = (

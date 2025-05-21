@@ -5,12 +5,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_admin, check_token, get_db_session
+from backend.common.dependencies import check_role, check_token, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.club import Club, ClubType
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
+from backend.core.database.models.user import UserRole
 from backend.routes.clubs import utils
 from backend.routes.clubs.schemas import (
     ClubRequestSchema,
@@ -28,7 +29,7 @@ async def add_club(
     request: Request,
     club_data: ClubRequestSchema,
     user: Annotated[dict, Depends(check_token)],
-    admin: Annotated[bool, Depends(check_admin)],
+    role: Annotated[bool, Depends(check_role)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ClubResponseSchema:
     """
@@ -48,6 +49,10 @@ async def add_club(
     - If admin privileges are not present, the request will fail with 403.
     - The club is indexed in Meilisearch after creation.
     """
+
+    if role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
+
     try:
         qb = QueryBuilder(session=db_session, model=Club)
         club: Club = await qb.add(data=club_data)
@@ -147,7 +152,7 @@ async def update_club(
     request: Request,
     new_data: ClubUpdateSchema,
     user: Annotated[dict, Depends(check_token)],
-    admin: Annotated[bool, Depends(check_admin)],
+    role: Annotated[bool, Depends(check_role)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ClubResponseSchema:
     """
@@ -167,6 +172,9 @@ async def update_club(
     - Returns 404 if club is not found
     - Returns 500 on internal error
     """
+    if role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
+
     try:
         # Get club with admin check
         conditions = []  # No additional conditions since admin check is done via dependency
@@ -215,7 +223,7 @@ async def delete_club(
     request: Request,
     club_id: int,
     user: Annotated[dict, Depends(check_token)],
-    admin: Annotated[bool, Depends(check_admin)],
+    role: Annotated[bool, Depends(check_role)],
     db_session: AsyncSession = Depends(get_db_session),
 ):
     """
@@ -240,6 +248,10 @@ async def delete_club(
     - Returns 404 if the club is not found
     - Returns 500 on internal error
     """
+
+    if role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
+
     try:
         # Get club with admin check
         club_conditions = [Club.id == club_id]  # Admin check is done via dependency

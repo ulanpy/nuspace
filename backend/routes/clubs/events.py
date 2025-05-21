@@ -6,13 +6,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_admin, check_token, get_db_session
+from backend.common.dependencies import check_role, check_token, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.common.utils.enums import DateFilterEnum
 from backend.core.database.models.club import Club, ClubEvent, ClubType, EventPolicy
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
+from backend.core.database.models.user import UserRole
 from backend.routes.clubs import utils
 from backend.routes.clubs.schemas import (
     ClubEventRequestSchema,
@@ -167,7 +168,7 @@ async def add_event(
     request: Request,
     event_data: ClubEventRequestSchema,
     user: Annotated[dict, Depends(check_token)],
-    admin: Annotated[bool, Depends(check_admin)],
+    role: Annotated[bool, Depends(check_role)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ClubEventResponseSchema:
     """
@@ -187,6 +188,9 @@ async def add_event(
     - The event is indexed in Meilisearch after creation
     - Associated club must exist, otherwise returns 400
     """
+    if role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
+
     try:
         # Create event using common CRUD
         qb = QueryBuilder(session=db_session, model=ClubEvent)
@@ -237,7 +241,7 @@ async def update_event(
     event_id: int,
     new_data: ClubEventUpdateSchema,
     user: Annotated[dict, Depends(check_token)],
-    admin: Annotated[bool, Depends(check_admin)],
+    role: Annotated[bool, Depends(check_role)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ClubEventResponseSchema:
     """
@@ -258,6 +262,9 @@ async def update_event(
     - Returns 404 if event is not found
     - Returns 500 on internal error
     """
+    if role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
+
     try:
         # Get event with admin check
         conditions = []  # No additional conditions since admin check is done via dependency
@@ -314,7 +321,7 @@ async def delete_event(
     request: Request,
     event_id: int,
     user: Annotated[dict, Depends(check_token)],
-    admin: Annotated[bool, Depends(check_admin)],
+    role: Annotated[bool, Depends(check_role)],
     db_session: AsyncSession = Depends(get_db_session),
 ):
     """
@@ -339,6 +346,9 @@ async def delete_event(
     - Returns 404 if the event is not found
     - Returns 500 on internal error
     """
+    if role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
+
     try:
         # Get event with admin check
         qb = QueryBuilder(session=db_session, model=ClubEvent)

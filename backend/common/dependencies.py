@@ -47,14 +47,13 @@ async def check_tg(
     return True
 
 
-async def check_admin(
+async def check_role(
     user: Annotated[dict, Depends(check_token)],
     db_session: AsyncSession = Depends(get_db_session),
-) -> bool:
+) -> UserRole:
     sub = user.get("sub")
     result = await db_session.execute(select(User.role).filter_by(sub=sub))
     role = result.scalars().first()
-
-    if role != UserRole.admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
-    return True
+    if not role:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not found")
+    return role
