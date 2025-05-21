@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
-from backend.common import cruds
+from backend.common.cruds import QueryBuilder
 from backend.common.schemas import MediaResponse
 from backend.core.database.models import Base
 from backend.core.database.models.common_enums import EntityType
@@ -67,10 +67,8 @@ async def _process_item[
         Media.entity_type == entity_type,
         Media.media_format == media_format,
     ]
-
-    media: List[Media] = await cruds.get_resources(
-        session=session, model=Media, conditions=conditions, preload_relationships=[]
-    )
+    qb = QueryBuilder(session=session, model=Media)
+    media: List[Media] = await qb.base().filter(*conditions).all()
 
     media_response: List[MediaResponse] = await build_media_responses(
         request=request, media_objects=media

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common import cruds as common_cruds
+from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import check_token, get_db_session
 from backend.core.database.models.review import ReviewReply
 from backend.routes.review.dependencies import (
@@ -24,9 +24,9 @@ async def add_review_reply(
     db: AsyncSession = Depends(get_db_session),
 ):
     try:
-        reply: ReviewReply = await common_cruds.add_resource(
-            session=db, model=ReviewReply, data=review_reply, preload_relationships=[]
-        )
+        qb = QueryBuilder(session=db, model=ReviewReply)
+        reply: ReviewReply = await qb.add(data=review_reply)
+
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="You already answered this review"
@@ -42,8 +42,14 @@ async def delete_review_reply(
     owner: Annotated[bool, Depends(check_review_reply_owner)],
     db: AsyncSession = Depends(get_db_session),
 ):
-    review_reply: ReviewReply | None = await common_cruds.get_resource_by_id(
-        session=db, model=ReviewReply, resource_id=review_reply_id
+
+    qb = QueryBuilder(session=db, model=ReviewReply)
+    review_reply: ReviewReply | None = (
+        await qb.base().filter(ReviewReply.id == review_reply_id).first()
     )
 
-    await common_cruds.delete_resource(session=db, resource=review_reply)
+    qb = QueryBuilder(session=db, model=ReviewReply)
+    reply_deleted: bool = await qb.delete(target=review_reply)
+
+    if not reply_deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Review reply not found")

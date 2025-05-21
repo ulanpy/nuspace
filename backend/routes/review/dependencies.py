@@ -3,7 +3,7 @@ from typing import Annotated, List, Protocol, Type
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common import cruds as common_cruds
+from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import check_token, get_db_session
 from backend.core.database.models.club import ClubEvent, ClubManager
 from backend.core.database.models.review import Review, ReviewableType, ReviewReply
@@ -31,18 +31,14 @@ class EventReviewOwnershipChecker(ReviewOwnershipChecker):
     async def check_ownership(
         self, review: Review, user: Annotated[dict, Depends(check_token)], db: AsyncSession
     ) -> bool:
-        club_event: ClubEvent | None = await common_cruds.get_resource_by_id(
-            session=db,
-            model=ClubEvent,
-            resource_id=review.entity_id,
-            preload_relationships=[ClubEvent.club],
+        qb = QueryBuilder(session=db, model=ClubEvent)
+        club_event: ClubEvent | None = (
+            await qb.base().filter(ClubEvent.id == review.entity_id).eager(ClubEvent.club).first()
         )
 
-        managers: List[ClubManager] = await common_cruds.get_resources(
-            session=db,
-            model=ClubManager,
-            conditions=[ClubManager.club_id == club_event.club_id],
-            preload_relationships=[],
+        qb = QueryBuilder(session=db, model=ClubManager)
+        managers: List[ClubManager] = (
+            await qb.base().filter(ClubManager.club_id == club_event.club_id).all()
         )
 
         if not club_event:
@@ -79,11 +75,9 @@ async def check_resourse_owner(
     user: Annotated[dict, Depends(check_token)],
     db: AsyncSession = Depends(get_db_session),
 ) -> bool:
-    review_obj: Review | None = await common_cruds.get_resource_by_id(
-        session=db,
-        model=Review,
-        resource_id=review_reply_id,
-    )
+
+    qb = QueryBuilder(session=db, model=Review)
+    review_obj: ClubEvent | None = await qb.base().filter(Review.id == review_reply_id).first()
 
     if not review_obj:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Review not found")
@@ -98,10 +92,10 @@ async def check_review_reply_owner(
     user: Annotated[dict, Depends(check_token)],
     db: AsyncSession = Depends(get_db_session),
 ) -> bool:
-    review_reply: ReviewReply | None = await common_cruds.get_resource_by_id(
-        session=db,
-        model=ReviewReply,
-        resource_id=review_reply_id,
+
+    qb = QueryBuilder(session=db, model=ReviewReply)
+    review_reply: ReviewReply | None = (
+        await qb.base().filter(ReviewReply.id == review_reply_id).first()
     )
 
     if review_reply.user_sub != user["sub"]:

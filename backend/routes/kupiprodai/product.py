@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common import cruds as common_cruds
+from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import check_tg, check_token, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import meilisearch, response_builder
@@ -64,11 +64,10 @@ async def add_product(
         )
 
     try:
-        product: Product = await common_cruds.add_resource(
-            session=db_session,
-            model=Product,
+        qb = QueryBuilder(session=db_session, model=Product)
+        product: Product = await qb.add(
             data=product_data,
-            preload_relationships=[Product.user],
+            preload=[Product.user],
         )
 
     except IntegrityError as e:
@@ -94,15 +93,14 @@ async def add_product(
         Media.media_format == MediaFormat.carousel,
     ]
 
-    media_objects: List[Media] = await common_cruds.get_resources(
-        session=db_session, model=Media, conditions=conditions
-    )
+    qb = QueryBuilder(session=db_session, model=Media)
+    media_objects: List[Media] = await qb.base().filter(*conditions).all()
 
     media_responses: List[MediaResponse] = await response_builder.build_media_responses(
         request=request, media_objects=media_objects
     )
 
-    return await utils.build_product_response(product=product, media_responses=media_responses)
+    return utils.build_product_response(product=product, media_responses=media_responses)
 
 
 @router.get("/products", response_model=ListProductSchema)  # works
@@ -166,13 +164,6 @@ async def get_products(
             if not product_ids:
                 return ListProductSchema(products=[], num_of_pages=1)
 
-            count = meili_result.get("estimatedTotalHits", 0)
-
-        else:
-            count = await common_cruds.get_resource_count(
-                model=Product, session=db_session, conditions=conditions
-            )
-
         # SQLAlchemy conditions
         if not include_inactive:
             conditions.append(Product.status == ProductStatus.active)
@@ -186,14 +177,17 @@ async def get_products(
             conditions.append(Product.id.in_(product_ids))
 
         # Fetch products from the database with conditions
-        products: List[Product | None] = await common_cruds.get_resources(
-            session=db_session,
-            model=Product,
-            conditions=conditions,
-            size=size if not keyword else None,  # Disable pagination if keyword is used
-            page=page if not keyword else None,
-            order_by=[Product.created_at.desc()],  # Order by newest first
-            preload_relationships=[Product.user],  # Preload user relationship for response building
+        qb = QueryBuilder(session=db_session, model=Product)
+        products: List[Product] = (
+            await qb.base()
+            .filter(*conditions)
+            .eager(Product.user)
+            .paginate(
+                size=size if not keyword else None,
+                page=page if not keyword else None,
+            )
+            .order(Product.created_at.desc())
+            .all()
         )
 
         # Build Pydantic response
@@ -206,6 +200,11 @@ async def get_products(
             response_builder=utils.build_product_response,
         )
 
+        if keyword:
+            count = meili_result.get("estimatedTotalHits", 0)
+        else:
+            qb = QueryBuilder(session=db_session, model=Product)
+            count = await qb.base(count=True).filter(*conditions).count()
         num_of_pages = response_builder.calculate_pages(count=count, size=size)
         return ListProductSchema(products=products_responses, num_of_pages=num_of_pages)
 
@@ -238,21 +237,21 @@ async def update_product(
     - Returns 404 if product is not found or doesn't belong to the user
     """
     conditions = [Product.user_sub == user.get("sub")]
-    product: Product | None = await common_cruds.get_resource_by_id(
-        session=db_session,
-        model=Product,
-        resource_id=new_data.product_id,
-        conditions=conditions,
-        preload_relationships=[Product.user],
+
+    qb = QueryBuilder(session=db_session, model=Product)
+    product: Product | None = (
+        await qb.base()
+        .filter(Product.id == new_data.product_id, *conditions)
+        .eager(Product.user)
+        .first()
     )
 
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found or doesn't belong to you")
 
     # Update product in database first
-    updated_product: Product | None = await common_cruds.update_resource(
-        session=db_session, resource=product, update_data=new_data
-    )
+    qb = QueryBuilder(session=db_session, model=Product)
+    updated_product: Product = await qb.update(instance=product, update_data=new_data)
 
     # Single Meilisearch update with all fields
     await meilisearch.upsert(
@@ -273,17 +272,14 @@ async def update_product(
         Media.media_format == MediaFormat.carousel,
     ]
 
-    media_objects: List[Media] = await common_cruds.get_resources(
-        session=db_session, model=Media, conditions=conditions, preload_relationships=[]
-    )
+    qb = QueryBuilder(session=db_session, model=Media)
+    media_objects: List[Media] = await qb.base().filter(*conditions).all()
 
     media_responses: List[MediaResponse] = await response_builder.build_media_responses(
         request=request, media_objects=media_objects
     )
 
-    return await utils.build_product_response(
-        product=updated_product, media_responses=media_responses
-    )
+    return utils.build_product_response(product=updated_product, media_responses=media_responses)
 
 
 @router.get("/products/{product_id}", response_model=ProductResponseSchema)  # works
@@ -311,15 +307,10 @@ async def get_product_by_id(
     - Returns `401 Unauthorized` if no valid access token is provided.
     """
 
-    conditions = [Product.status == ProductStatus.active]
+    conditions = [Product.status == ProductStatus.active, Product.id == product_id]
 
-    product = await common_cruds.get_resource_by_id(
-        session=db_session,
-        model=Product,
-        resource_id=product_id,
-        conditions=conditions,
-        preload_relationships=[Product.user],
-    )
+    qb = QueryBuilder(session=db_session, model=Product)
+    product: Product | None = await qb.base().filter(*conditions).eager(Product.user).first()
 
     if product is None:
         raise HTTPException(status_code=404, detail="Active product not found")
@@ -330,14 +321,13 @@ async def get_product_by_id(
         Media.media_format == MediaFormat.carousel,
     ]
 
-    media_objects: List[Media] = await common_cruds.get_resources(
-        session=db_session, model=Media, conditions=conditions, preload_relationships=[]
-    )
+    qb = QueryBuilder(session=db_session, model=Media)
+    media_objects: List[Media] = await qb.base().filter(*conditions).all()
 
     media_responses: List[MediaResponse] = await response_builder.build_media_responses(
         request=request, media_objects=media_objects
     )
-    return await utils.build_product_response(product=product, media_responses=media_responses)
+    return utils.build_product_response(product=product, media_responses=media_responses)
 
 
 @router.delete("/products/{product_id}")  # works
@@ -373,13 +363,8 @@ async def remove_product(
 
         product_conditions = [Product.id == product_id, Product.user_sub == user.get("sub")]
 
-        product: Product | None = await common_cruds.get_resource_by_id(
-            session=db_session,
-            model=Product,
-            resource_id=product_id,
-            conditions=product_conditions,
-            preload_relationships=[Product.user],
-        )
+        qb = QueryBuilder(session=db_session, model=Product)
+        product: Product = await qb.base().filter(*product_conditions).eager(Product.user).first()
 
         if product is None:
             raise HTTPException(
@@ -388,19 +373,18 @@ async def remove_product(
 
         media_conditions = [Media.entity_id == product.id, Media.entity_type == EntityType.products]
 
-        media_objects: List[Media] = await common_cruds.get_resources(
-            session=db_session, model=Media, conditions=media_conditions, preload_relationships=[]
-        )
+        qb = QueryBuilder(session=db_session, model=Media)
+        media_objects: List[Media] = await qb.base().filter(*media_conditions).all()
 
         if media_objects:
             for media in media_objects:
                 await delete_bucket_object(request, media.name)
 
-        product_deleted = await common_cruds.delete_resource(session=db_session, resource=product)
+        qb = QueryBuilder(session=db_session, model=Product)
+        product_deleted: bool = await qb.delete(target=product)
 
-        media_deleted = await common_cruds.delete_resource(
-            session=db_session, resource=media_objects
-        )
+        qb = QueryBuilder(session=db_session, model=Media)
+        media_deleted: bool = await qb.delete(target=media_objects)
 
         if not product_deleted or not media_deleted:
             raise HTTPException(
