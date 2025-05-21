@@ -1,9 +1,6 @@
-from typing import Annotated
-
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Query, Request
 from httpx import HTTPError
 
-from backend.common.dependencies import check_token
 from backend.common.utils import meilisearch
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.product import ProductStatus
@@ -16,7 +13,6 @@ async def full_search(
     request: Request,
     keyword: str,
     storage_name: EntityType,
-    user: Annotated[dict, Depends(check_token)],
     page: int = 1,
     size: int = Query(10, ge=1, le=30),
 ):
