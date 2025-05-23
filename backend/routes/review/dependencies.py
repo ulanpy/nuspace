@@ -1,11 +1,11 @@
-from typing import Annotated, List, Protocol, Type
+from typing import Annotated, Protocol, Type
 
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import check_token, get_db_session
-from backend.core.database.models.club import ClubEvent, ClubManager
+from backend.core.database.models.community import CommunityEvent
 from backend.core.database.models.review import Review, ReviewableType, ReviewReply
 
 
@@ -31,14 +31,12 @@ class EventReviewOwnershipChecker(ReviewOwnershipChecker):
     async def check_ownership(
         self, review: Review, user: Annotated[dict, Depends(check_token)], db: AsyncSession
     ) -> bool:
-        qb = QueryBuilder(session=db, model=ClubEvent)
-        club_event: ClubEvent | None = (
-            await qb.base().filter(ClubEvent.id == review.entity_id).eager(ClubEvent.club).first()
-        )
-
-        qb = QueryBuilder(session=db, model=ClubManager)
-        managers: List[ClubManager] = (
-            await qb.base().filter(ClubManager.club_id == club_event.club_id).all()
+        qb = QueryBuilder(session=db, model=CommunityEvent)
+        club_event: CommunityEvent | None = (
+            await qb.base()
+            .filter(CommunityEvent.id == review.entity_id)
+            .eager(CommunityEvent.community)
+            .first()
         )
 
         if not club_event:
@@ -47,19 +45,15 @@ class EventReviewOwnershipChecker(ReviewOwnershipChecker):
                 detail="Associated event not found for review",
             )
 
-        president_sub: str = club_event.club.president
-
-        manager_subs: List[str] = [manager.sub for manager in managers]
+        head_sub: str = club_event.community.head
 
         current_user_sub: str = user["sub"]
-        is_event_authority: bool = (
-            current_user_sub == president_sub or current_user_sub in manager_subs
-        )
+        is_event_authority: bool = current_user_sub == head_sub
 
         if not is_event_authority:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="User is not an authority (president or manager) for this event's club",
+                detail="User is not an authority (head) for this event's community",
             )
         return True
 
@@ -77,7 +71,7 @@ async def check_resourse_owner(
 ) -> bool:
 
     qb = QueryBuilder(session=db, model=Review)
-    review_obj: ClubEvent | None = await qb.base().filter(Review.id == review_reply_id).first()
+    review_obj: Review | None = await qb.base().filter(Review.id == review_reply_id).first()
 
     if not review_obj:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Review not found")

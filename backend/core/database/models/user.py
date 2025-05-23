@@ -11,6 +11,7 @@ from .base import Base
 class UserRole(PyEnum):
     default = "default"
     admin = "admin"
+    community_admin = "community_admin"
 
 
 class UserScope(PyEnum):
@@ -35,9 +36,11 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=True, index=True)
 
-    clubs_led = relationship("Club", back_populates="president_user")
-
+    communities_led = relationship("Community", back_populates="head_user")
     products = relationship("Product", back_populates="user")
     product_reports = relationship("ProductReport", back_populates="user")
     reviews = relationship("Review", back_populates="user")
     review_responses = relationship("ReviewReply", back_populates="user")
+    events = relationship("CommunityEvent", back_populates="creator")
+    posts = relationship("CommunityPost", back_populates="user")
+    communities = relationship("CommunityMember", back_populates="user")

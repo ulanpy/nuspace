@@ -2,10 +2,10 @@
 
 __all__ = [
     "Base",
-    "Club",
-    "ClubAnnouncement",
-    "ClubEvent",
-    "ClubManager",
+    "Community",
+    "CommunityPost",
+    "CommunityEvent",
+    "CommunityMember",
     "Media",
     "Product",
     "ProductReport",
@@ -16,7 +16,7 @@ __all__ = [
     "UserScope",
 ]
 from .base import Base
-from .club import Club, ClubAnnouncement, ClubEvent, ClubManager
+from .community import Community, CommunityEvent, CommunityMember, CommunityPost
 from .media import Media
 from .product import Product, ProductReport
 from .review import Review, ReviewReply

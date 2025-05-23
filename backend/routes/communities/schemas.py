@@ -1,17 +1,27 @@
-from datetime import datetime, timezone
-from typing import List, Optional
+from datetime import date, datetime, timezone
+from typing import List
 
 from pydantic import BaseModel, field_validator
 
 from backend.common.schemas import MediaResponse
-from backend.core.database.models.club import ClubType, EventPolicy
+from backend.core.database.models.community import (
+    CommunityCategory,
+    CommunityRecruitmentStatus,
+    CommunityType,
+    EventStatus,
+    EventTag,
+    RegistrationPolicy,
+)
 
 
-class ClubRequestSchema(BaseModel):
+class CommunityRequestSchema(BaseModel):
     name: str
-    type: ClubType
+    type: CommunityType
+    category: CommunityCategory
+    recruitment_status: CommunityRecruitmentStatus
     description: str
-    president: str
+    established: date
+    head: str
     telegram_url: str | None = None
     instagram_url: str | None = None
 
@@ -22,12 +32,16 @@ class ClubRequestSchema(BaseModel):
         return value
 
 
-class ClubResponseSchema(BaseModel):
+class CommunityResponseSchema(BaseModel):
     id: int
     name: str
-    type: ClubType
+    type: CommunityType
+    category: CommunityCategory
+    recruitment_status: CommunityRecruitmentStatus
     description: str
-    president: str
+    established: date
+    user_name: str
+    user_surname: str
     telegram_url: str
     instagram_url: str
     created_at: datetime
@@ -35,9 +49,10 @@ class ClubResponseSchema(BaseModel):
     media: List[MediaResponse] = []
 
 
-class ClubUpdateSchema(BaseModel):
-    club_id: int
+class CommunityUpdateSchema(BaseModel):
+    community_id: int
     name: str | None = None
+    recruitment_status: CommunityRecruitmentStatus | None = None
     description: str | None = None
     telegram_url: str | None = None
     instagram_url: str | None = None
@@ -52,14 +67,17 @@ class ClubUpdateSchema(BaseModel):
         from_attributes = True  # Make sure it can be used with SQLAlchemy models
 
 
-class ClubEventRequestSchema(BaseModel):
-    club_id: int
-    policy: EventPolicy
+class CommunityEventRequestSchema(BaseModel):
+    community_id: int | None = None
+    creator_sub: str
+    policy: RegistrationPolicy
     name: str
     place: str
     event_datetime: datetime
     description: str
     duration: int
+    status: EventStatus | None = EventStatus.personal
+    tag: EventTag | None = EventTag.regular
 
     @field_validator("duration")
     def validate_duration(cls, value):
@@ -75,27 +93,32 @@ class ClubEventRequestSchema(BaseModel):
         return value.astimezone(timezone.utc).replace(tzinfo=None)
 
 
-class ClubEventResponseSchema(BaseModel):
+class CommunityEventResponseSchema(BaseModel):
     id: int
-    club_id: int
+    community_id: int
+    user_name: str
+    user_surname: str
+    policy: RegistrationPolicy
     name: str
     place: str
+    event_datetime: datetime
     description: str
     duration: int
-    event_datetime: datetime
-    policy: EventPolicy
+    status: EventStatus
+    tag: EventTag
     created_at: datetime
     updated_at: datetime
     media: List[MediaResponse] = []
 
 
-class ClubEventUpdateSchema(BaseModel):
-    name: Optional[str] = None
-    place: Optional[str] = None
-    description: Optional[str] = None
-    duration: Optional[int] = None
-    event_datetime: Optional[datetime] = None
-    policy: Optional[EventPolicy] = None
+class CommunityEventUpdateSchema(BaseModel):
+    event_id: int
+    name: str | None = None
+    place: str | None = None
+    description: str | None = None
+    duration: int | None = None
+    event_datetime: datetime | None = None
+    policy: RegistrationPolicy | None = None
 
     @field_validator("name", "place", "description")
     def validate_emptiness(cls, value):
@@ -111,8 +134,8 @@ class ClubEventUpdateSchema(BaseModel):
         return value.astimezone(timezone.utc).replace(tzinfo=None)
 
 
-class ListEventSchema(BaseModel):
-    events: List[ClubEventResponseSchema] = []
+class ListCommunityEventSchema(BaseModel):
+    events: List[CommunityEventResponseSchema] = []
     num_of_pages: int
 
     @field_validator("num_of_pages")
@@ -122,8 +145,8 @@ class ListEventSchema(BaseModel):
         return value
 
 
-class ListClubSchema(BaseModel):
-    clubs: List[ClubResponseSchema] = []
+class ListCommunitySchema(BaseModel):
+    communities: List[CommunityResponseSchema] = []
     num_of_pages: int
 
     @field_validator("num_of_pages")

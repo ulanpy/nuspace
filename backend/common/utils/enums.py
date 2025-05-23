@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional
 
@@ -55,46 +55,6 @@ class DateFilterEnum(Enum):
             return func
 
         return decorator
-
-
-# Define filter functions and register them
-
-
-@DateFilterEnum.register(DateFilterEnum.today)
-def _filter_today(conditions: List[Any], column: Any, params: Dict[str, Any]) -> None:
-    today = datetime.now().date()
-    start = datetime.combine(today, datetime.min.time())
-    end = datetime.combine(today, datetime.max.time())
-    conditions.append(column.between(start, end))
-
-
-@DateFilterEnum.register(DateFilterEnum.tomorrow)
-def _filter_tomorrow(conditions: List[Any], column: Any, params: Dict[str, Any]) -> None:
-    tomorrow = datetime.now().date() + timedelta(days=1)
-    start = datetime.combine(tomorrow, datetime.min.time())
-    end = datetime.combine(tomorrow, datetime.max.time())
-    conditions.append(column.between(start, end))
-
-
-@DateFilterEnum.register(DateFilterEnum.weekend)
-def _filter_weekend(conditions: List[Any], column: Any, params: Dict[str, Any]) -> None:
-    today = datetime.now().date()
-    weekday = today.weekday()
-    days_until_saturday = (5 - weekday) % 7
-    saturday = today + timedelta(days=days_until_saturday)
-    sunday = saturday + timedelta(days=1)
-    start = datetime.combine(saturday, datetime.min.time())
-    end = datetime.combine(sunday, datetime.max.time())
-    conditions.append(column.between(start, end))
-
-
-@DateFilterEnum.register(DateFilterEnum.within_week)
-def _filter_within_week(conditions: List[Any], column: Any, params: Dict[str, Any]) -> None:
-    today = datetime.now().date()
-    week_later = today + timedelta(days=7)
-    start = datetime.combine(today, datetime.min.time())
-    end = datetime.combine(week_later, datetime.max.time())
-    conditions.append(column.between(start, end))
 
 
 @DateFilterEnum.register(DateFilterEnum.custom)

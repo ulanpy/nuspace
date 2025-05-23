@@ -6,7 +6,7 @@ class EntityType(PyEnum):
     Add new table names here to extend"""
 
     products = "products"
-    club_events = "club_events"
-    clubs = "clubs"
-    club_announcements = "club_announcements"
+    community_events = "community_events"
+    communities = "communities"
+    community_posts = "community_posts"
     reviews = "reviews"

@@ -10,31 +10,37 @@ from backend.common.dependencies import check_role, check_token, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.common.utils.enums import DateFilterEnum
-from backend.core.database.models.club import Club, ClubEvent, ClubType, EventPolicy
 from backend.core.database.models.common_enums import EntityType
+from backend.core.database.models.community import (
+    Community,
+    CommunityCategory,
+    CommunityEvent,
+    RegistrationPolicy,
+)
 from backend.core.database.models.media import Media, MediaFormat
 from backend.core.database.models.user import UserRole
-from backend.routes.clubs import utils
-from backend.routes.clubs.schemas import (
-    ClubEventRequestSchema,
-    ClubEventResponseSchema,
-    ClubEventUpdateSchema,
-    ListEventSchema,
+from backend.routes.communities import utils
+from backend.routes.communities.dependencies import mutate_event_status
+from backend.routes.communities.schemas import (
+    CommunityEventRequestSchema,
+    CommunityEventResponseSchema,
+    CommunityEventUpdateSchema,
+    ListCommunityEventSchema,
 )
 from backend.routes.google_bucket.utils import delete_bucket_object
 
 router = APIRouter(tags=["Events Routes"])
 
 
-@router.get("/events", response_model=ListEventSchema)
+@router.get("/events", response_model=ListCommunityEventSchema)
 async def get_events(
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
-    club_type: Optional[ClubType] = None,
-    event_policy: Optional[EventPolicy] = None,
-    club_id: Optional[int] = None,
+    community_type: Optional[CommunityCategory] = None,
+    event_policy: Optional[RegistrationPolicy] = None,
+    community_id: Optional[int] = None,
     date_filter: Optional[DateFilterEnum] = None,
     start_date: Optional[date] = Query(
         None,
@@ -50,16 +56,16 @@ async def get_events(
     ),
     keyword: str | None = None,
     db_session: AsyncSession = Depends(get_db_session),
-) -> ListEventSchema:
+) -> ListCommunityEventSchema:
     """
     Retrieves a paginated list of events with flexible filtering.
 
     **Parameters:**
     - `size`: Number of events per page (default: 20)
     - `page`: Page number (default: 1)
-    - `club_type`: Filter by club type (optional)
+    - `community_type`: Filter by community type (optional)
     - `event_policy`: Filter by event policy (optional)
-    - `club_id`: Filter by specific club (optional)
+    - `community_id`: Filter by specific community (optional)
     - `date_filter`: Filter by event date (optional)
     - `start_date`: Start date for filtering events (optional). Used with `date_filter.custom`
     - `end_date`: End date for filtering events (optional). Used with `date_filter.custom`
@@ -71,18 +77,20 @@ async def get_events(
     **Notes:**
     - Results are ordered by event datetime by default
     - Each event includes its associated media in carousel format
-    - When club_id is provided, returns only events for that specific club
-    - Returns 404 if specified club_id doesn't exist
+    - When community_id is provided, returns only events for that specific community
+    - Returns 404 if specified community_id doesn't exist
     """
     try:
-        # Verify club exists if club_id is provided
-        if club_id:
-            qb = QueryBuilder(session=db_session, model=Club)
-            club: Club | None = await qb.base().filter(Club.id == club_id).first()
+        # Verify community exists if community_id is provided
+        if community_id:
+            qb = QueryBuilder(session=db_session, model=Community)
+            community: Community | None = (
+                await qb.base().filter(Community.id == community_id).first()
+            )
 
-            if club is None:
+            if community is None:
                 raise HTTPException(
-                    status_code=404, detail=f"Event with club_id {club_id} not found"
+                    status_code=404, detail=f"Event with community_id {community_id} not found"
                 )
 
         # Build conditions list
@@ -91,7 +99,7 @@ async def get_events(
         if keyword:
             meili_result = await meilisearch.get(
                 request=request,
-                storage_name=EntityType.club_events.value,
+                storage_name=EntityType.community_events.value,
                 keyword=keyword,
                 page=page,
                 size=size,  # limit max returned IDs, adjust as needed
@@ -100,107 +108,109 @@ async def get_events(
             event_ids = [item["id"] for item in meili_result["hits"]]
 
             if not event_ids:
-                return ListEventSchema(products=[], num_of_pages=1)
+                return ListCommunityEventSchema(events=[], num_of_pages=1)
 
         # SQLAlchemy conditions
-        if club_type:
-            conditions.append(Club.type == club_type)
+        if community_type:
+            conditions.append(Community.type == community_type)
         if event_policy:
-            conditions.append(ClubEvent.policy == event_policy)
-        if club_id:
-            conditions.append(ClubEvent.club_id == club_id)
+            conditions.append(CommunityEvent.policy == event_policy)
+        if community_id:
+            conditions.append(CommunityEvent.community_id == community_id)
         if keyword:
-            conditions.append(ClubEvent.id.in_(event_ids))
+            conditions.append(CommunityEvent.id.in_(event_ids))
 
         if date_filter:
             try:
                 # Pass the ORM column you want to filter on
                 date_filter.apply(
                     conditions,
-                    column=ClubEvent.event_datetime,
+                    column=CommunityEvent.event_datetime,
                     start_date=start_date,
                     end_date=end_date,
                 )
             except ValueError as e:
                 raise HTTPException(status_code=400, detail=str(e))
 
-        qb = QueryBuilder(session=db_session, model=ClubEvent)
-        events: List[ClubEvent] = (
+        qb = QueryBuilder(session=db_session, model=CommunityEvent)
+        events: List[CommunityEvent] = (
             await qb.base()
             .filter(*conditions)
-            .join(Club if club_type else None)
-            .eager(ClubEvent.club)
+            .join(Community if community_type else None)
+            .eager(CommunityEvent.creator)
             .paginate(size if not keyword else None, page if not keyword else None)
-            .order(ClubEvent.event_datetime.asc())
+            .order(CommunityEvent.event_datetime.asc())
             .all()
         )
 
         # Build responses with media
-        event_responses: List[ClubEventResponseSchema] = await response_builder.build_responses(
-            request=request,
-            items=events,
-            session=db_session,
-            media_format=MediaFormat.carousel,
-            entity_type=EntityType.club_events,
-            response_builder=utils.build_event_response,
+        event_responses: List[CommunityEventResponseSchema] = (
+            await response_builder.build_responses(
+                request=request,
+                items=events,
+                session=db_session,
+                media_format=MediaFormat.carousel,
+                entity_type=EntityType.community_events,
+                response_builder=utils.build_event_response,
+            )
         )
 
         if keyword:
             count = meili_result.get("estimatedTotalHits", 0)
         else:
-            qb = QueryBuilder(session=db_session, model=ClubEvent)
+            qb = QueryBuilder(session=db_session, model=CommunityEvent)
             count: int = (
                 await qb.base(count=True)
                 .filter(*conditions)
-                .join(Club if club_type else None)
+                .join(Community if community_type else None)
                 .count()
             )
 
         num_of_pages: int = response_builder.calculate_pages(count=count, size=size)
-        return ListEventSchema(events=event_responses, num_of_pages=num_of_pages)
+        return ListCommunityEventSchema(events=event_responses, num_of_pages=num_of_pages)
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.post("/events", response_model=ClubEventResponseSchema)
+@router.post("/events", response_model=CommunityEventResponseSchema)
 async def add_event(
     request: Request,
-    event_data: ClubEventRequestSchema,
+    event_data: Annotated[CommunityEventRequestSchema, Depends(mutate_event_status)],
     user: Annotated[dict, Depends(check_token)],
-    role: Annotated[bool, Depends(check_role)],
     db_session: AsyncSession = Depends(get_db_session),
-) -> ClubEventResponseSchema:
+) -> CommunityEventResponseSchema:
     """
-    Creates a new event. Requires admin privileges.
+    Creates a new event.
 
     **Requirements:**
     - The user must be authenticated (`access_token` cookie required)
-    - The user must have admin privileges (checked via dependency)
 
     **Parameters:**
-    - `event_data`: Event data including name, description, club_id, etc.
+    - `event_data`: Event data including name, description, community_id, etc.
 
     **Returns:**
     - Created event with all its details and media
 
     **Notes:**
-    - The event is indexed in Meilisearch after creation
-    - Associated club must exist, otherwise returns 400
+    - For admin users: no status/tag mutations
+    - For non-admin users:
+      - If no community_id: creates a personal event
+      - If community_id provided:
+        - If user is head -> status = approved
+        - If not head -> status = pending
+      - Tag is always set to regular
     """
-    if role != UserRole.admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
-
     try:
         # Create event using common CRUD
-        qb = QueryBuilder(session=db_session, model=ClubEvent)
-        event: ClubEvent = await qb.add(data=event_data, preload=[ClubEvent.club])
+        qb = QueryBuilder(session=db_session, model=CommunityEvent)
+        event: CommunityEvent = await qb.add(data=event_data, preload=[CommunityEvent.creator])
 
     except IntegrityError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
-                f"Database integrity error: probably non-existent club_id. "
+                f"Database integrity error: probably non-existent community_id. "
                 f"Details: {str(e.orig)}"
             ),
         )
@@ -208,12 +218,12 @@ async def add_event(
     # Index in Meilisearch
     await meilisearch.upsert(
         request=request,
-        storage_name=ClubEvent.__tablename__,
+        storage_name=CommunityEvent.__tablename__,
         json_values={
             "id": event.id,
             "name": event.name,
             "description": event.description,
-            "club_id": event.club_id,
+            "community_id": event.community_id,
             "policy": event.policy.value if event.policy else None,
         },
     )
@@ -221,7 +231,7 @@ async def add_event(
     # Get associated media
     conditions = [
         Media.entity_id == event.id,
-        Media.entity_type == EntityType.club_events,
+        Media.entity_type == EntityType.community_events,
         Media.media_format == MediaFormat.carousel,
     ]
 
@@ -235,15 +245,15 @@ async def add_event(
     return utils.build_event_response(event=event, media_responses=media_responses)
 
 
-@router.patch("/events", response_model=ClubEventResponseSchema)
+@router.patch("/events", response_model=CommunityEventResponseSchema)
 async def update_event(
     request: Request,
     event_id: int,
-    new_data: ClubEventUpdateSchema,
+    new_data: CommunityEventUpdateSchema,
     user: Annotated[dict, Depends(check_token)],
     role: Annotated[bool, Depends(check_role)],
     db_session: AsyncSession = Depends(get_db_session),
-) -> ClubEventResponseSchema:
+) -> CommunityEventResponseSchema:
     """
     Updates fields of an existing event. Requires admin privileges.
 
@@ -268,11 +278,11 @@ async def update_event(
     try:
         # Get event with admin check
         conditions = []  # No additional conditions since admin check is done via dependency
-        qb = QueryBuilder(session=db_session, model=ClubEvent)
-        event: ClubEvent | None = (
+        qb = QueryBuilder(session=db_session, model=CommunityEvent)
+        event: CommunityEvent | None = (
             await qb.base()
-            .filter(ClubEvent.id == event_id, *conditions)
-            .eager(ClubEvent.club)
+            .filter(CommunityEvent.id == event_id, *conditions)
+            .eager(CommunityEvent.community)
             .first()
         )
 
@@ -280,18 +290,18 @@ async def update_event(
             raise HTTPException(status_code=404, detail="Event not found")
 
         # Update event in database
-        qb = QueryBuilder(session=db_session, model=ClubEvent)
-        updated_event: ClubEvent = await qb.update(instance=event, update_data=new_data)
+        qb = QueryBuilder(session=db_session, model=CommunityEvent)
+        updated_event: CommunityEvent = await qb.update(instance=event, update_data=new_data)
 
         # Update Meilisearch index
         await meilisearch.upsert(
             request=request,
-            storage_name=ClubEvent.__tablename__,
+            storage_name=CommunityEvent.__tablename__,
             json_values={
                 "id": updated_event.id,
                 "name": updated_event.name,
                 "description": updated_event.description,
-                "club_id": updated_event.club_id,
+                "community_id": updated_event.community_id,
                 "policy": updated_event.policy.value if updated_event.policy else None,
             },
         )
@@ -299,7 +309,7 @@ async def update_event(
         # Get associated media
         conditions = [
             Media.entity_id == updated_event.id,
-            Media.entity_type == EntityType.club_events,
+            Media.entity_type == EntityType.community_events,
             Media.media_format == MediaFormat.carousel,
         ]
 
@@ -351,9 +361,12 @@ async def delete_event(
 
     try:
         # Get event with admin check
-        qb = QueryBuilder(session=db_session, model=ClubEvent)
-        event: ClubEvent | None = (
-            await qb.base().filter(ClubEvent.id == event_id).eager(ClubEvent.club).first()
+        qb = QueryBuilder(session=db_session, model=CommunityEvent)
+        event: CommunityEvent | None = (
+            await qb.base()
+            .filter(CommunityEvent.id == event_id)
+            .eager(CommunityEvent.community)
+            .first()
         )
 
         if event is None:
@@ -362,7 +375,7 @@ async def delete_event(
         # Get and delete associated media files
         media_conditions = [
             Media.entity_id == event.id,
-            Media.entity_type == EntityType.club_events,
+            Media.entity_type == EntityType.community_events,
         ]
 
         qb = QueryBuilder(session=db_session, model=Media)
@@ -374,7 +387,7 @@ async def delete_event(
                 await delete_bucket_object(request, media.name)
 
         # Delete event from database
-        qb = QueryBuilder(session=db_session, model=ClubEvent)
+        qb = QueryBuilder(session=db_session, model=CommunityEvent)
         event_deleted: bool = await qb.delete(target=event)
 
         # Delete associated media records from database
@@ -386,7 +399,7 @@ async def delete_event(
 
         # Remove from search index
         await meilisearch.delete(
-            request=request, storage_name=ClubEvent.__tablename__, primary_key=str(event_id)
+            request=request, storage_name=CommunityEvent.__tablename__, primary_key=str(event_id)
         )
 
         return status.HTTP_204_NO_CONTENT
@@ -395,13 +408,13 @@ async def delete_event(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.get("/events/{event_id}", response_model=ClubEventResponseSchema)
+@router.get("/events/{event_id}", response_model=CommunityEventResponseSchema)
 async def get_event(
     event_id: int,
     request: Request,
     user: Annotated[dict, Depends(check_token)],
     db_session: AsyncSession = Depends(get_db_session),
-) -> ClubEventResponseSchema:
+) -> CommunityEventResponseSchema:
     """
     Retrieves a single event by its unique ID, including
     its associated media files.
@@ -412,17 +425,20 @@ async def get_event(
 
     **Returns:**
     - A detailed event object if found, including its name, description,
-    club details, policy, and media URLs
+    community details, policy, and media URLs
 
     **Errors:**
     - Returns `404 Not Found` if the event with the specified ID does not exist
     - Returns `401 Unauthorized` if no valid access token is provided
     """
     try:
-        # Get event with its club relationship
-        qb = QueryBuilder(session=db_session, model=ClubEvent)
-        event: ClubEvent = (
-            await qb.base().filter(ClubEvent.id == event_id).eager(ClubEvent.club).first()
+        # Get event with its community relationship
+        qb = QueryBuilder(session=db_session, model=CommunityEvent)
+        event: CommunityEvent = (
+            await qb.base()
+            .filter(CommunityEvent.id == event_id)
+            .eager(CommunityEvent.community)
+            .first()
         )
 
         if event is None:
@@ -431,7 +447,7 @@ async def get_event(
         # Get associated media
         conditions = [
             Media.entity_id == event.id,
-            Media.entity_type == EntityType.club_events,
+            Media.entity_type == EntityType.community_events,
             Media.media_format == MediaFormat.carousel,
         ]
 
