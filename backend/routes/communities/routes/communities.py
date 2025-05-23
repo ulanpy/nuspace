@@ -12,13 +12,13 @@ from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import Community, CommunityType
 from backend.core.database.models.media import Media, MediaFormat
 from backend.core.database.models.user import UserRole
-from backend.routes.communities import utils
-from backend.routes.communities.schemas import (
+from backend.routes.communities.schemas.communities import (
     CommunityRequestSchema,
     CommunityResponseSchema,
     CommunityUpdateSchema,
     ListCommunitySchema,
 )
+from backend.routes.communities.utils import events
 from backend.routes.google_bucket.utils import delete_bucket_object
 
 router = APIRouter(tags=["Community Routes"])
@@ -86,7 +86,7 @@ async def add_community(
         request=request, media_objects=media_objects
     )
 
-    return utils.build_community_response(community=community, media_responses=media_responses)
+    return events.build_community_response(community=community, media_responses=media_responses)
 
 
 @router.get("/communities", response_model=ListCommunitySchema)
@@ -137,7 +137,7 @@ async def get_communities(
                 session=db_session,
                 media_format=MediaFormat.profile,
                 entity_type=EntityType.communities,
-                response_builder=utils.build_community_response,
+                response_builder=events.build_community_response,
             )
         )
         qb = QueryBuilder(session=db_session, model=Community)
@@ -232,7 +232,7 @@ async def update_community(
             request=request, media_objects=media_objects
         )
 
-        return utils.build_community_response(
+        return events.build_community_response(
             community=updated_community, media_responses=media_responses
         )
 

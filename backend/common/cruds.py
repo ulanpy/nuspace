@@ -1,7 +1,7 @@
 from typing import List, Optional, Type, Union
 
 from pydantic import BaseModel
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, RelationshipProperty, selectinload
 from sqlalchemy.sql.elements import BinaryExpression
@@ -176,3 +176,7 @@ class QueryBuilder:
         except Exception:
             await self.session.rollback()
             return False
+
+    async def conditional_delete(self, conditions: Optional[BinaryExpression]):
+        await self.session.execute(delete(self.model).where(conditions))
+        await self.session.commit()

@@ -138,7 +138,6 @@ class CommunityPost(Base):
 
     user = relationship("User", back_populates="posts")
     community = relationship("Community")
-    comments = relationship("CommunityComment", back_populates="post")
 
 
 class CommunityMember(Base):
@@ -169,10 +168,4 @@ class CommunityComment(Base):
     created_at: Mapped[DateTime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[DateTime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
-
-    post = relationship("CommunityPost", back_populates="comments")
-    parent = relationship("CommunityComment", remote_side=[id], back_populates="children")
-    children = relationship(
-        "CommunityComment", back_populates="parent", cascade="all, delete-orphan"
     )

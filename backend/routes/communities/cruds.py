@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
 
-async def get_children_counts(
+async def get_replies_counts(
     session: AsyncSession, model: Type[DeclarativeBase], parent_field: Column, parent_ids: List[int]
 ) -> Dict[int, int]:
     """

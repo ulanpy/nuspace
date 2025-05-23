@@ -1,14 +1,16 @@
-from typing import List
+from sqlite3 import IntegrityError
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_db_session
+from backend.common.dependencies import check_token, get_db_session
 from backend.common.utils import response_builder
 from backend.core.database.models.community import CommunityComment
 from backend.routes.communities import cruds
-from backend.routes.communities.schemas import (
+from backend.routes.communities.dependencies import check_comment_ownership
+from backend.routes.communities.schemas.comments import (
     CommunityCommentRequestSchema,
     CommunityCommentResponseSchema,
     CommunityCommentSchema,
@@ -21,6 +23,7 @@ router = APIRouter()
 @router.get("/posts/comments", response_model=ListCommunityCommentResponseSchema)
 async def get(
     post_id: int,
+    user: Annotated[dict, Depends(check_token)],
     comment_id: int | None = None,
     size: int = Query(20, ge=1, le=100),
     page: int = Query(1, ge=1),
@@ -44,7 +47,7 @@ async def get(
 
     num_of_pages: int = response_builder.calculate_pages(count=count, size=size)
     root_comment_ids = [comment.id for comment in comments]
-    replies_count_map = await cruds.get_children_counts(
+    replies_count_map = await cruds.get_replies_counts(
         session=db_session,
         model=CommunityComment,
         parent_field=CommunityComment.parent_id,
@@ -66,19 +69,31 @@ async def get(
 
 @router.post("/posts/comments", response_model=CommunityCommentSchema)
 async def create(
-    comment: CommunityCommentRequestSchema, db_session: AsyncSession = Depends(get_db_session)
+    comment: CommunityCommentRequestSchema,
+    user: Annotated[dict, Depends(check_token)],
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> CommunityCommentSchema:
     qb: QueryBuilder = QueryBuilder(session=db_session, model=CommunityComment)
-    comment: CommunityComment = await qb.add(data=comment)
+    try:
+        comment: CommunityComment = await qb.add(data=comment)
+    except IntegrityError as e:
+        raise HTTPException(status_code=400, detail=f"Possibly invalid request: {e}")
     return comment
 
 
 @router.delete("/comments", status_code=status.HTTP_204_NO_CONTENT)
-async def delete(comment_id: int, db_session: AsyncSession = Depends(get_db_session)):
+async def delete(
+    comment_id: int,
+    user: Annotated[dict, Depends(check_token)],
+    permissions: Annotated[bool, Depends(check_comment_ownership)],
+    db_session: AsyncSession = Depends(get_db_session),
+):
     qb = QueryBuilder(session=db_session, model=CommunityComment)
     comment: CommunityComment | None = (
         await qb.base().filter(CommunityComment.id == comment_id).first()
     )
+
+    await qb.conditional_delete(conditions=(CommunityComment.parent_id == comment_id))
 
     if comment is None:
         raise HTTPException(status_code=404, detail="Comment not found")
