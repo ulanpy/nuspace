@@ -10,3 +10,4 @@ class EntityType(PyEnum):
     communities = "communities"
     community_posts = "community_posts"
     reviews = "reviews"
+    community_comments = "community_comments"

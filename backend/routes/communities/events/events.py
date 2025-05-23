@@ -19,14 +19,14 @@ from backend.core.database.models.community import (
 )
 from backend.core.database.models.media import Media, MediaFormat
 from backend.core.database.models.user import UserRole
-from backend.routes.communities.dependencies import mutate_event_status
-from backend.routes.communities.schemas.events import (
+from backend.routes.communities.events import utils
+from backend.routes.communities.events.dependencies import mutate_event_status
+from backend.routes.communities.events.schemas import (
     CommunityEventRequestSchema,
     CommunityEventResponseSchema,
     CommunityEventUpdateSchema,
     ListCommunityEventSchema,
 )
-from backend.routes.communities.utils import events as utils
 from backend.routes.google_bucket.utils import delete_bucket_object
 
 router = APIRouter(tags=["Events Routes"])

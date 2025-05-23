@@ -2,7 +2,7 @@ from typing import List
 
 from backend.common.schemas import MediaResponse
 from backend.core.database.models.community import Community
-from backend.routes.communities.schemas.communities import CommunityResponseSchema
+from backend.routes.communities.communities.schemas import CommunityResponseSchema
 
 
 def build_community_response(

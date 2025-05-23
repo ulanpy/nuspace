@@ -5,7 +5,10 @@ from fastapi import APIRouter
 from backend.routes.bot.bot import web_router
 
 from .auth import auth
-from .communities.routes import comments, communities, events, posts
+from .communities.comments import comments
+from .communities.communities import communities
+from .communities.events import events
+from .communities.posts import posts
 from .google_bucket import google_bucket
 from .kupiprodai import product
 from .review import reply, review

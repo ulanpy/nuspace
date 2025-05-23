@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import get_db_session
-from backend.routes.communities.schemas.posts import (
+from backend.routes.communities.posts.schemas import (
     CommunityPostRequestSchema,
     CommunityPostResponseSchema,
     ListCommunityPostResponseSchema,
