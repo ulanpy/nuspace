@@ -33,30 +33,3 @@ class AsyncDatabaseManager:
                 yield session
             finally:
                 await session.close()
-
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-
-
-class SyncDatabaseManager:
-    def __init__(self):
-        self.sync_engine = create_engine(
-            config.DATABASE_URL_SYNC,
-            pool_size=5,
-            max_overflow=10,
-            pool_timeout=30,
-            future=True,
-            echo=False,
-        )
-        self.sync_session_maker = sessionmaker(
-            bind=self.sync_engine,
-            expire_on_commit=False,
-        )
-
-    def create_all_tables(self) -> None:
-        with self.sync_engine.begin() as conn:
-            Base.metadata.create_all(conn)
-
-    def get_sync_session(self) -> Session:
-        return self.sync_session_maker()
