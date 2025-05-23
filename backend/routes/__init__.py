@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from backend.routes.bot.bot import web_router
 
 from .auth import auth
-from .communities import communities, events
+from .communities import comments, communities, events
 from .google_bucket import google_bucket
 from .kupiprodai import product
 from .review import reply, review
@@ -22,4 +22,5 @@ routers: List[APIRouter] = [
     web_router,
     review.router,
     reply.router,
+    comments.router,
 ]

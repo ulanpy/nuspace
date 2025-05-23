@@ -10,5 +10,7 @@ async def setup_db(app: FastAPI):
 
 
 async def cleanup_db(app: FastAPI):
-    await app.state.db_manager.async_engine.dispose()
-    app.state.db_manager_sync.sync_engine.dispose()
+    db_manager = getattr(app.state, "db_manager", None)
+    if db_manager:
+        await db_manager.async_engine.dispose()
+        app.state.db_manager_sync.sync_engine.dispose()
