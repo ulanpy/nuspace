@@ -2,7 +2,7 @@ from typing import List
 
 from backend.common.schemas import MediaResponse
 from backend.core.database.models.community import CommunityEvent
-from backend.routes.communities.schemas.events import CommunityEventResponseSchema
+from backend.routes.communities.events.schemas import CommunityEventResponseSchema
 
 
 def build_event_response(

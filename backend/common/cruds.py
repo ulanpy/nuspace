@@ -180,3 +180,6 @@ class QueryBuilder:
     async def conditional_delete(self, conditions: Optional[BinaryExpression]):
         await self.session.execute(delete(self.model).where(conditions))
         await self.session.commit()
+
+    def blank(self, model: Optional[Type[DeclarativeBase]] = None) -> "QueryBuilder":
+        return QueryBuilder(self.session, model or self.model)
