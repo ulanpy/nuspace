@@ -39,6 +39,7 @@ class CommunityResponseSchema(BaseModel):
     established: date
     user_name: str
     user_surname: str
+    user_picture: str
     telegram_url: str
     instagram_url: str
     created_at: datetime

@@ -66,7 +66,7 @@ async def create_user_schema(creds: dict) -> UserSchema:
         scope=UserScope.allowed,
         name=userinfo["given_name"],
         surname=userinfo["family_name"],
-        picture="asd",  # бля ахаххахаха
+        picture=userinfo["picture"],
         sub=userinfo["sub"],
     )
 

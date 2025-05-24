@@ -52,7 +52,6 @@ class CommunityEventResponseSchema(BaseModel):
 
 
 class CommunityEventUpdateSchema(BaseModel):
-    event_id: int
     name: str | None = None
     place: str | None = None
     description: str | None = None

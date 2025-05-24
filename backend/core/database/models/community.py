@@ -75,6 +75,9 @@ class Community(Base):
 
     head_user = relationship("User", back_populates="communities_led")
     tags = relationship("CommunityTag", back_populates="community", cascade="all, delete-orphan")
+    events = relationship(
+        "CommunityEvent", back_populates="community", cascade="all, delete-orphan"
+    )
 
 
 class CommunityEvent(Base):
@@ -104,7 +107,7 @@ class CommunityEvent(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     creator = relationship("User", back_populates="events")
-    community = relationship("Community")
+    community = relationship("Community", back_populates="events")
 
 
 class CommunityTag(Base):

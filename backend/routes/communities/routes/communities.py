@@ -18,7 +18,7 @@ from backend.routes.communities.schemas.communities import (
     CommunityUpdateSchema,
     ListCommunitySchema,
 )
-from backend.routes.communities.utils import events
+from backend.routes.communities.utils import communities as community_utils
 from backend.routes.google_bucket.utils import delete_bucket_object
 
 router = APIRouter(tags=["Community Routes"])
@@ -86,7 +86,9 @@ async def add_community(
         request=request, media_objects=media_objects
     )
 
-    return events.build_community_response(community=community, media_responses=media_responses)
+    return community_utils.build_community_response(
+        community=community, media_responses=media_responses
+    )
 
 
 @router.get("/communities", response_model=ListCommunitySchema)
@@ -137,7 +139,7 @@ async def get_communities(
                 session=db_session,
                 media_format=MediaFormat.profile,
                 entity_type=EntityType.communities,
-                response_builder=events.build_community_response,
+                response_builder=community_utils.build_community_response,
             )
         )
         qb = QueryBuilder(session=db_session, model=Community)
@@ -182,7 +184,7 @@ async def update_community(
     qb = QueryBuilder(session=db_session, model=Community)
     community: Community | None = (
         await qb.base()
-        .filter(Community.id == new_data.community_id)
+        .filter(Community.id == new_data.community_id, Community.head_user.sub == user["sub"])
         .eager(Community.head_user)
         .first()
     )
@@ -190,20 +192,10 @@ async def update_community(
     if community is None:
         raise HTTPException(status_code=404, detail="Community not found")
 
-    if community.head_user.sub != user["sub"] and role != UserRole.admin:
+    if community.head != user["sub"] and role != UserRole.admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
 
     try:
-        # Get community with admin check
-        conditions = []  # No additional conditions since admin check is done via dependency
-        qb = QueryBuilder(session=db_session, model=Community)
-        community: Community | None = (
-            await qb.base().filter(Community.id == new_data.community_id, *conditions).first()
-        )
-
-        if community is None:
-            raise HTTPException(status_code=404, detail="Community not found")
-
         qb = QueryBuilder(session=db_session, model=Community)
         updated_community: Community = await qb.update(instance=community, update_data=new_data)
 
@@ -232,7 +224,7 @@ async def update_community(
             request=request, media_objects=media_objects
         )
 
-        return events.build_community_response(
+        return community_utils.build_community_response(
             community=updated_community, media_responses=media_responses
         )
 

@@ -29,6 +29,7 @@ def build_community_response(
         established=community.established,
         user_name=community.head_user.name,
         user_surname=community.head_user.surname,
+        user_picture=community.head_user.picture,
         telegram_url=community.telegram_url,
         instagram_url=community.instagram_url,
         created_at=community.created_at,

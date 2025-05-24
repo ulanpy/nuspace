@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Annotated, List, Optional
+from typing import Annotated, Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.exc import IntegrityError
@@ -9,7 +9,6 @@ from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import check_role, check_token, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import meilisearch, response_builder
-from backend.common.utils.enums import DateFilterEnum
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import (
     Community,
@@ -19,7 +18,11 @@ from backend.core.database.models.community import (
 )
 from backend.core.database.models.media import Media, MediaFormat
 from backend.core.database.models.user import UserRole
-from backend.routes.communities.dependencies import mutate_event_status
+from backend.routes.communities.dependencies import (
+    can_edit_event,
+    get_date_conditions,
+    mutate_event_status,
+)
 from backend.routes.communities.schemas.events import (
     CommunityEventRequestSchema,
     CommunityEventResponseSchema,
@@ -41,20 +44,20 @@ async def get_events(
     community_type: Optional[CommunityCategory] = None,
     event_policy: Optional[RegistrationPolicy] = None,
     community_id: Optional[int] = None,
-    date_filter: Optional[DateFilterEnum] = None,
-    start_date: Optional[date] = Query(
+    start_date: date | None = Query(
         None,
         title="Start date",
-        description="Дата начала диапазона (формат: YYYY-MM-DD)",
+        description="Start date for event filtering (format: YYYY-MM-DD)",
         example="2025-05-19",
     ),
-    end_date: Optional[date] = Query(
+    end_date: date | None = Query(
         None,
         title="End date",
-        description="Дата конца диапазона (формат: YYYY-MM-DD)",
+        description="End date for event filtering (format: YYYY-MM-DD)",
         example="2025-05-25",
     ),
     keyword: str | None = None,
+    date_conditions: Annotated[List[Any], Depends(get_date_conditions)] = None,
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ListCommunityEventSchema:
     """
@@ -66,9 +69,8 @@ async def get_events(
     - `community_type`: Filter by community type (optional)
     - `event_policy`: Filter by event policy (optional)
     - `community_id`: Filter by specific community (optional)
-    - `date_filter`: Filter by event date (optional)
-    - `start_date`: Start date for filtering events (optional). Used with `date_filter.custom`
-    - `end_date`: End date for filtering events (optional). Used with `date_filter.custom`
+    - `start_date`: Start date for filtering events (optional)
+    - `end_date`: End date for filtering events (optional)
     - `keyword`: Search keyword for event name or description (optional)
 
     **Returns:**
@@ -120,17 +122,8 @@ async def get_events(
         if keyword:
             conditions.append(CommunityEvent.id.in_(event_ids))
 
-        if date_filter:
-            try:
-                # Pass the ORM column you want to filter on
-                date_filter.apply(
-                    conditions,
-                    column=CommunityEvent.event_datetime,
-                    start_date=start_date,
-                    end_date=end_date,
-                )
-            except ValueError as e:
-                raise HTTPException(status_code=400, detail=str(e))
+        # Add date conditions from dependency
+        conditions.extend(date_conditions or [])
 
         qb = QueryBuilder(session=db_session, model=CommunityEvent)
         events: List[CommunityEvent] = (
@@ -151,7 +144,7 @@ async def get_events(
                 session=db_session,
                 media_format=MediaFormat.carousel,
                 entity_type=EntityType.community_events,
-                response_builder=events.build_event_response,
+                response_builder=utils.build_event_response,
             )
         )
 
@@ -245,21 +238,21 @@ async def add_event(
     return utils.build_event_response(event=event, media_responses=media_responses)
 
 
-@router.patch("/events", response_model=CommunityEventResponseSchema)
+@router.patch("/events/{event_id}", response_model=CommunityEventResponseSchema)
 async def update_event(
     request: Request,
-    event_id: int,
     new_data: CommunityEventUpdateSchema,
     user: Annotated[dict, Depends(check_token)],
     role: Annotated[bool, Depends(check_role)],
+    event: Annotated[CommunityEvent, Depends(can_edit_event)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> CommunityEventResponseSchema:
     """
-    Updates fields of an existing event. Requires admin privileges.
+    Updates fields of an existing event. You must be the creator, admin, or head of the community.
 
     **Requirements:**
     - The user must be authenticated (`access_token` cookie required)
-    - The user must have admin privileges (checked via dependency)
+    - The user must be the creator, admin, or head of the community
 
     **Parameters:**
     - `event_id`: ID of the event to update
@@ -272,23 +265,7 @@ async def update_event(
     - Returns 404 if event is not found
     - Returns 500 on internal error
     """
-    if role != UserRole.admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
-
     try:
-        # Get event with admin check
-        conditions = []  # No additional conditions since admin check is done via dependency
-        qb = QueryBuilder(session=db_session, model=CommunityEvent)
-        event: CommunityEvent | None = (
-            await qb.base()
-            .filter(CommunityEvent.id == event_id, *conditions)
-            .eager(CommunityEvent.community)
-            .first()
-        )
-
-        if event is None:
-            raise HTTPException(status_code=404, detail="Event not found")
-
         # Update event in database
         qb = QueryBuilder(session=db_session, model=CommunityEvent)
         updated_event: CommunityEvent = await qb.update(instance=event, update_data=new_data)
