@@ -47,6 +47,13 @@ class CommunityResponseSchema(BaseModel):
     media: List[MediaResponse] = []
 
 
+class ShortCommunityResponseSchema(BaseModel):
+    id: int
+    name: str
+    description: str
+    media: List[MediaResponse] = []
+
+
 class CommunityUpdateSchema(BaseModel):
     community_id: int
     name: str | None = None

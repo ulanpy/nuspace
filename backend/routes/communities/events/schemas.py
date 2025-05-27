@@ -5,6 +5,7 @@ from pydantic import BaseModel, field_validator
 
 from backend.common.schemas import MediaResponse
 from backend.core.database.models.community import EventStatus, EventTag, RegistrationPolicy
+from backend.routes.communities.communities.schemas import ShortCommunityResponseSchema
 
 
 class CommunityEventRequestSchema(BaseModel):
@@ -35,9 +36,9 @@ class CommunityEventRequestSchema(BaseModel):
 
 class CommunityEventResponseSchema(BaseModel):
     id: int
-    community_id: int
-    user_name: str
-    user_surname: str
+    community: ShortCommunityResponseSchema
+    creator_name: str
+    creator_surname: str
     policy: RegistrationPolicy
     name: str
     place: str

@@ -146,6 +146,7 @@ class QueryBuilder:
         instance: DeclarativeBase,
         update_data: BaseModel,
         exclude_unset: bool = True,
+        preload: Optional[List[RelationshipProperty]] = None,
     ) -> DeclarativeBase:
         """
         Update an existing record with fields from a Pydantic model.
@@ -156,6 +157,14 @@ class QueryBuilder:
                 setattr(instance, field, val)
         await self.session.commit()
         await self.session.refresh(instance)
+
+        if preload:
+            pk = self.model.__table__.primary_key.columns.values()[0]
+            stmt = select(self.model).where(pk == getattr(instance, pk.name))
+            for rel in preload:
+                stmt = stmt.options(selectinload(rel))
+            result = await self.session.execute(stmt)
+            instance = result.scalars().first()
         return instance
 
     async def delete(
@@ -173,7 +182,8 @@ class QueryBuilder:
                 await self.session.delete(target)
             await self.session.commit()
             return True
-        except Exception:
+        except Exception as e:
+            print(e)
             await self.session.rollback()
             return False
 

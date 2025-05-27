@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Annotated, List, Optional
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.exc import IntegrityError
@@ -9,7 +9,6 @@ from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import check_role, check_token, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import meilisearch, response_builder
-from backend.common.utils.enums import DateFilterEnum
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import (
     Community,
@@ -38,17 +37,16 @@ async def get_events(
     user: Annotated[dict, Depends(check_token)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
-    community_type: Optional[CommunityCategory] = None,
-    event_policy: Optional[RegistrationPolicy] = None,
-    community_id: Optional[int] = None,
-    date_filter: Optional[DateFilterEnum] = None,
-    start_date: Optional[date] = Query(
+    community_type: CommunityCategory | None = None,
+    event_policy: RegistrationPolicy | None = None,
+    community_id: int | None = None,
+    start_date: date | None = Query(
         None,
         title="Start date",
         description="Дата начала диапазона (формат: YYYY-MM-DD)",
         example="2025-05-19",
     ),
-    end_date: Optional[date] = Query(
+    end_date: date | None = Query(
         None,
         title="End date",
         description="Дата конца диапазона (формат: YYYY-MM-DD)",
@@ -120,24 +118,12 @@ async def get_events(
         if keyword:
             conditions.append(CommunityEvent.id.in_(event_ids))
 
-        if date_filter:
-            try:
-                # Pass the ORM column you want to filter on
-                date_filter.apply(
-                    conditions,
-                    column=CommunityEvent.event_datetime,
-                    start_date=start_date,
-                    end_date=end_date,
-                )
-            except ValueError as e:
-                raise HTTPException(status_code=400, detail=str(e))
-
         qb = QueryBuilder(session=db_session, model=CommunityEvent)
         events: List[CommunityEvent] = (
             await qb.base()
             .filter(*conditions)
             .join(Community if community_type else None)
-            .eager(CommunityEvent.creator)
+            .eager(CommunityEvent.creator, CommunityEvent.community)
             .paginate(size if not keyword else None, page if not keyword else None)
             .order(CommunityEvent.event_datetime.asc())
             .all()
@@ -151,7 +137,7 @@ async def get_events(
                 session=db_session,
                 media_format=MediaFormat.carousel,
                 entity_type=EntityType.community_events,
-                response_builder=events.build_event_response,
+                response_builder=utils.build_event_response,
             )
         )
 
@@ -204,7 +190,10 @@ async def add_event(
     try:
         # Create event using common CRUD
         qb = QueryBuilder(session=db_session, model=CommunityEvent)
-        event: CommunityEvent = await qb.add(data=event_data, preload=[CommunityEvent.creator])
+        event: CommunityEvent = await qb.add(
+            data=event_data,
+            preload=[CommunityEvent.creator, CommunityEvent.community],
+        )
 
     except IntegrityError as e:
         raise HTTPException(
@@ -236,13 +225,31 @@ async def add_event(
     ]
 
     qb = QueryBuilder(session=db_session, model=Media)
-    media_objects: List[Media] = await qb.base().filter(*conditions).all()
+    event_media_objects: List[Media] = await qb.base().filter(*conditions).all()
 
-    media_responses: List[MediaResponse] = await response_builder.build_media_responses(
-        request=request, media_objects=media_objects
+    event_media_responses: List[MediaResponse] = await response_builder.build_media_responses(
+        request=request, media_objects=event_media_objects
     )
 
-    return utils.build_event_response(event=event, media_responses=media_responses)
+    community_media_objects: List[Media] = (
+        await qb.base()
+        .filter(
+            Media.entity_id == event.community_id,
+            Media.entity_type == EntityType.community,
+            Media.media_format == MediaFormat.profile,
+        )
+        .all()
+    )
+
+    community_media_responses: List[MediaResponse] = await response_builder.build_media_responses(
+        request=request, media_objects=community_media_objects
+    )
+
+    return utils.build_event_response(
+        event=event,
+        event_media_responses=event_media_responses,
+        community_media_responses=community_media_responses,
+    )
 
 
 @router.patch("/events", response_model=CommunityEventResponseSchema)
@@ -282,7 +289,7 @@ async def update_event(
         event: CommunityEvent | None = (
             await qb.base()
             .filter(CommunityEvent.id == event_id, *conditions)
-            .eager(CommunityEvent.community)
+            .eager(CommunityEvent.community, CommunityEvent.creator)
             .first()
         )
 
@@ -291,7 +298,11 @@ async def update_event(
 
         # Update event in database
         qb = QueryBuilder(session=db_session, model=CommunityEvent)
-        updated_event: CommunityEvent = await qb.update(instance=event, update_data=new_data)
+        updated_event: CommunityEvent = await qb.update(
+            instance=event,
+            update_data=new_data,
+            preload=[CommunityEvent.creator],
+        )
 
         # Update Meilisearch index
         await meilisearch.upsert(
