@@ -5,14 +5,19 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_role, check_token, get_db_session
+from backend.common.dependencies import get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import Community, CommunityType
 from backend.core.database.models.media import Media, MediaFormat
-from backend.core.database.models.user import UserRole
 from backend.routes.communities.communities import utils
+from backend.routes.communities.communities.policy import (
+    check_create_permission,
+    require_delete_permission,
+    require_read_permission,
+    require_update_permission,
+)
 from backend.routes.communities.communities.schemas import (
     CommunityRequestSchema,
     CommunityResponseSchema,
@@ -28,16 +33,14 @@ router = APIRouter(tags=["Community Routes"])
 async def add_community(
     request: Request,
     community_data: CommunityRequestSchema,
-    user: Annotated[dict, Depends(check_token)],
-    role: Annotated[bool, Depends(check_role)],
+    user: Annotated[dict, Depends(check_create_permission)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> CommunityResponseSchema:
     """
     Create a new community. Requires admin privileges.
 
-    **Requirements:**
-    - The user must be authenticated (`access_token` cookie required).
-    - The user must have admin privileges (checked via dependency).
+    **Access Policy:**
+    - The user must have admin privileges
 
     **Parameters:**
     - `community_data` (CommunityRequestSchema): Data for the new community.
@@ -49,9 +52,6 @@ async def add_community(
     - If admin privileges are not present, the request will fail with 403.
     - The club is indexed in Meilisearch after creation.
     """
-
-    if role != UserRole.admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
 
     try:
         qb = QueryBuilder(session=db_session, model=Community)
@@ -92,7 +92,7 @@ async def add_community(
 @router.get("/communities", response_model=ListCommunitySchema)
 async def get_communities(
     request: Request,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(require_read_permission)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     community_type: Optional[CommunityType] = None,
@@ -100,6 +100,9 @@ async def get_communities(
 ) -> ListCommunitySchema:
     """
     Retrieves a paginated list of communities with flexible filtering.
+
+    **Access Policy:**
+    - All users can access this endpoint
 
     **Parameters:**
     - `size`: Number of communities per page (default: 20)
@@ -113,6 +116,7 @@ async def get_communities(
     - Results are ordered by creation date (newest first)
     - Each community includes its associated media in profile format
     """
+
     try:
         # Build conditions list
         conditions = []
@@ -150,20 +154,19 @@ async def get_communities(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.patch("/communities", response_model=CommunityResponseSchema)
+@router.patch("/communities/{community_id}", response_model=CommunityResponseSchema)
 async def update_community(
     request: Request,
+    community_id: int,
     new_data: CommunityUpdateSchema,
-    user: Annotated[dict, Depends(check_token)],
-    role: Annotated[bool, Depends(check_role)],
+    user: Annotated[dict, Depends(require_update_permission)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> CommunityResponseSchema:
     """
-    Updates fields of an existing community. Requires admin privileges.
+    Updates fields of an existing community.
 
-    **Requirements:**
-    - The user must be authenticated (`access_token` cookie required)
-    - The user must have admin privileges (checked via dependency)
+    **Access Policy:**
+    - The user must be the head of the community or an admin
 
     **Parameters:**
     - `new_data`: Updated community data including community_id, name, description, type, etc.
@@ -176,29 +179,11 @@ async def update_community(
     - Returns 403 if user is not the head of the community and is not an admin
     - Returns 500 on internal error
     """
-    if role == UserRole.default:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
-
-    qb = QueryBuilder(session=db_session, model=Community)
-    community: Community | None = (
-        await qb.base()
-        .filter(Community.id == new_data.community_id)
-        .eager(Community.head_user)
-        .first()
-    )
-
-    if community is None:
-        raise HTTPException(status_code=404, detail="Community not found")
-
-    if community.head_user.sub != user["sub"] and role != UserRole.admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
 
     try:
-        # Get community with admin check
-        conditions = []  # No additional conditions since admin check is done via dependency
         qb = QueryBuilder(session=db_session, model=Community)
         community: Community | None = (
-            await qb.base().filter(Community.id == new_data.community_id, *conditions).first()
+            await qb.base().filter(Community.id == community_id).eager(Community.head_user).first()
         )
 
         if community is None:
@@ -240,20 +225,18 @@ async def update_community(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.delete("/communities", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/communities/{community_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_community(
     request: Request,
     community_id: int,
-    user: Annotated[dict, Depends(check_token)],
-    role: Annotated[bool, Depends(check_role)],
+    user: Annotated[dict, Depends(require_delete_permission)],
     db_session: AsyncSession = Depends(get_db_session),
 ):
     """
-    Deletes a specific community. Requires admin privileges.
+    Deletes a specific community.
 
-    **Requirements:**
-    - The user must be authenticated (`access_token` cookie required)
-    - The user must have admin privileges (checked via dependency)
+    **Access Policy:**
+    - The user must be an admin
 
     **Parameters:**
     - `community_id`: The ID of the community to delete
@@ -270,9 +253,6 @@ async def delete_community(
     - Returns 404 if the community is not found
     - Returns 500 on internal error
     """
-
-    if role != UserRole.admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
 
     try:
         # Get community with admin check

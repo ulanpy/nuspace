@@ -12,3 +12,10 @@ class MediaResponse(BaseModel):
     entity_id: int
     media_format: MediaFormat
     media_order: int
+
+
+class ShortUserResponse(BaseModel):
+    sub: str
+    name: str
+    surname: str
+    picture: str

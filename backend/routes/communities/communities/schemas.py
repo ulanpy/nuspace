@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel, field_validator
 
-from backend.common.schemas import MediaResponse
+from backend.common.schemas import MediaResponse, ShortUserResponse
 from backend.core.database.models.community import (
     CommunityCategory,
     CommunityRecruitmentStatus,
@@ -37,9 +37,7 @@ class CommunityResponseSchema(BaseModel):
     recruitment_status: CommunityRecruitmentStatus
     description: str
     established: date
-    user_name: str
-    user_surname: str
-    user_picture: str
+    head: ShortUserResponse
     telegram_url: str
     instagram_url: str
     created_at: datetime
@@ -55,7 +53,6 @@ class ShortCommunityResponseSchema(BaseModel):
 
 
 class CommunityUpdateSchema(BaseModel):
-    community_id: int
     name: str | None = None
     recruitment_status: CommunityRecruitmentStatus | None = None
     description: str | None = None

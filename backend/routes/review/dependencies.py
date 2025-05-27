@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import check_token, get_db_session
-from backend.core.database.models.community import CommunityEvent
+from backend.core.database.models import Event
 from backend.core.database.models.review import Review, ReviewableType, ReviewReply
 
 
@@ -31,12 +31,9 @@ class EventReviewOwnershipChecker(ReviewOwnershipChecker):
     async def check_ownership(
         self, review: Review, user: Annotated[dict, Depends(check_token)], db: AsyncSession
     ) -> bool:
-        qb = QueryBuilder(session=db, model=CommunityEvent)
-        club_event: CommunityEvent | None = (
-            await qb.base()
-            .filter(CommunityEvent.id == review.entity_id)
-            .eager(CommunityEvent.community)
-            .first()
+        qb = QueryBuilder(session=db, model=Event)
+        club_event: Event | None = (
+            await qb.base().filter(Event.id == review.entity_id).eager(Event.community).first()
         )
 
         if not club_event:

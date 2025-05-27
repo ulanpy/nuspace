@@ -8,11 +8,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 
 
-class RegistrationPolicy(PyEnum):
-    registration = "registration"
-    open = "open"
-
-
 class CommunityCategory(PyEnum):
     academic = "academic"
     professional = "professional"
@@ -33,21 +28,6 @@ class CommunityRecruitmentStatus(PyEnum):
     open = "open"
     closed = "closed"
     upcoming = "upcoming"
-
-
-class EventTag(PyEnum):
-    featured = "featured"
-    promotional = "promotional"
-    regular = "regular"
-    charity = "charity"
-
-
-class EventStatus(PyEnum):
-    pending = "pending"  # Awaiting approval (for club events)
-    approved = "approved"  # Approved and visible
-    rejected = "rejected"  # Rejected by head
-    personal = "personal"  # Created by user for themselves (not club event)
-    cancelled = "cancelled"  # Cancelled after approval
 
 
 class Community(Base):
@@ -75,39 +55,7 @@ class Community(Base):
 
     head_user = relationship("User", back_populates="communities_led")
     tags = relationship("CommunityPostTag", back_populates="community")
-    events = relationship("CommunityEvent", back_populates="community")
-
-
-class CommunityEvent(Base):
-    __tablename__ = "community_events"
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
-    community_id: Mapped[str] = mapped_column(
-        ForeignKey("communities.id", ondelete="SET NULL"), nullable=True, unique=False
-    )
-    creator_sub: Mapped[str] = mapped_column(
-        ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, unique=False
-    )
-    policy: Mapped[RegistrationPolicy] = mapped_column(
-        SQLEnum(RegistrationPolicy, name="event_policy"), nullable=False
-    )
-    name: Mapped[str] = mapped_column(nullable=False, unique=False)
-    place: Mapped[str] = mapped_column(nullable=False, unique=False)
-    event_datetime: Mapped[DateTime] = mapped_column(DateTime, nullable=False)  # DateTime column
-    description: Mapped[str] = mapped_column(nullable=False, unique=False)
-    duration: Mapped[int] = mapped_column(nullable=True, unique=False)
-
-    status: Mapped[EventStatus] = mapped_column(
-        SQLEnum(EventStatus, name="event_status"), nullable=False, default=EventStatus.personal
-    )
-    tag: Mapped[EventTag] = mapped_column(
-        SQLEnum(EventTag, name="event_tag"), nullable=False, default=EventTag.regular
-    )  # only admins can edit tag
-
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-
-    creator = relationship("User", back_populates="events")
-    community = relationship("Community", back_populates="events")
+    events = relationship("Event", back_populates="community")
 
 
 class CommunityPostTag(Base):

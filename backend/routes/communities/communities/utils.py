@@ -1,6 +1,6 @@
 from typing import List
 
-from backend.common.schemas import MediaResponse
+from backend.common.schemas import MediaResponse, ShortUserResponse
 from backend.core.database.models.community import Community
 from backend.routes.communities.communities.schemas import CommunityResponseSchema
 
@@ -27,9 +27,12 @@ def build_community_response(
         recruitment_status=community.recruitment_status,
         description=community.description,
         established=community.established,
-        user_name=community.head_user.name,
-        user_surname=community.head_user.surname,
-        user_picture=community.head_user.picture,
+        head=ShortUserResponse(
+            sub=community.head_user.sub,
+            name=community.head_user.name,
+            surname=community.head_user.surname,
+            picture=community.head_user.picture,
+        ),
         telegram_url=community.telegram_url,
         instagram_url=community.instagram_url,
         created_at=community.created_at,

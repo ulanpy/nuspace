@@ -8,7 +8,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 from backend.common.utils import meilisearch
 from backend.core.configs.config import config
-from backend.core.database.models import CommunityEvent, Product
+from backend.core.database.models import Event, Product
 
 
 @dataclass
@@ -63,10 +63,10 @@ async def setup_meilisearch(app: FastAPI):
             primary_key=Product.id,  # Explicitly specify primary key
         ),
         MeilisearchIndexConfig(
-            model=CommunityEvent,
-            searchable_columns=[CommunityEvent.name, CommunityEvent.description],
+            model=Event,
+            searchable_columns=[Event.name, Event.description],
             filterable_attributes=None,
-            primary_key=CommunityEvent.id,  # Explicitly specify primary key
+            primary_key=Event.id,  # Explicitly specify primary key
         ),
     ]
 

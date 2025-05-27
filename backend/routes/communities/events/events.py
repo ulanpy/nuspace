@@ -6,39 +6,34 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_role, check_token, get_db_session
+from backend.common.dependencies import get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import meilisearch, response_builder
-from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.community import (
-    Community,
-    CommunityCategory,
-    CommunityEvent,
+from backend.core.database.models import (
+    Event,
+    EventScope,
+    EventStatus,
+    EventType,
     RegistrationPolicy,
 )
+from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
-from backend.core.database.models.user import UserRole
-from backend.routes.communities.events import utils
-from backend.routes.communities.events.dependencies import mutate_event_status
-from backend.routes.communities.events.schemas import (
-    CommunityEventRequestSchema,
-    CommunityEventResponseSchema,
-    CommunityEventUpdateSchema,
-    ListCommunityEventSchema,
-)
+from backend.routes.communities.events import policy, schemas, utils
 from backend.routes.google_bucket.utils import delete_bucket_object
 
 router = APIRouter(tags=["Events Routes"])
 
 
-@router.get("/events", response_model=ListCommunityEventSchema)
+@router.get("/events", response_model=schemas.ListEventSchema)
 async def get_events(
     request: Request,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(policy.check_read_permission)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
-    community_type: CommunityCategory | None = None,
-    event_policy: RegistrationPolicy | None = None,
+    registration_policy: RegistrationPolicy | None = None,
+    event_scope: EventScope | None = None,
+    event_type: EventType | None = None,
+    event_status: EventStatus | None = EventStatus.approved,
     community_id: int | None = None,
     start_date: date | None = Query(
         None,
@@ -54,15 +49,22 @@ async def get_events(
     ),
     keyword: str | None = None,
     db_session: AsyncSession = Depends(get_db_session),
-) -> ListCommunityEventSchema:
+) -> schemas.ListEventSchema:
     """
     Retrieves a paginated list of events with flexible filtering.
 
+    **Access Policy:**
+    - All users can see approved and cancelled events
+    - Community heads and event creators can see pending and rejected events
+    - Admins can see all events
+
     **Parameters:**
-    - `size`: Number of events per page (default: 20)
+    - `size`: Number of events per page (default: 20, max: 100)
     - `page`: Page number (default: 1)
-    - `community_type`: Filter by community type (optional)
-    - `event_policy`: Filter by event policy (optional)
+    - `registration_policy`: Filter by event policy (optional)
+    - `event_scope`: Filter by event scope (optional)
+    - `event_type`: Filter by event type (optional)
+    - `event_status`: Filter by event status (optional)
     - `community_id`: Filter by specific community (optional)
     - `date_filter`: Filter by event date (optional)
     - `start_date`: Start date for filtering events (optional). Used with `date_filter.custom`
@@ -79,18 +81,6 @@ async def get_events(
     - Returns 404 if specified community_id doesn't exist
     """
     try:
-        # Verify community exists if community_id is provided
-        if community_id:
-            qb = QueryBuilder(session=db_session, model=Community)
-            community: Community | None = (
-                await qb.base().filter(Community.id == community_id).first()
-            )
-
-            if community is None:
-                raise HTTPException(
-                    status_code=404, detail=f"Event with community_id {community_id} not found"
-                )
-
         # Build conditions list
         conditions = []
 
@@ -106,93 +96,165 @@ async def get_events(
             event_ids = [item["id"] for item in meili_result["hits"]]
 
             if not event_ids:
-                return ListCommunityEventSchema(events=[], num_of_pages=1)
+                return schemas.ListEventSchema(events=[], num_of_pages=1)
 
         # SQLAlchemy conditions
-        if community_type:
-            conditions.append(Community.type == community_type)
-        if event_policy:
-            conditions.append(CommunityEvent.policy == event_policy)
+        if registration_policy:
+            conditions.append(Event.policy == registration_policy)
         if community_id:
-            conditions.append(CommunityEvent.community_id == community_id)
+            conditions.append(Event.community_id == community_id)
         if keyword:
-            conditions.append(CommunityEvent.id.in_(event_ids))
+            conditions.append(Event.id.in_(event_ids))
+        if event_type:
+            conditions.append(Event.type == event_type)
+        if event_status:
+            conditions.append(Event.status == event_status)
+        if event_scope:
+            conditions.append(Event.scope == event_scope)
 
-        qb = QueryBuilder(session=db_session, model=CommunityEvent)
-        events: List[CommunityEvent] = (
+        qb = QueryBuilder(session=db_session, model=Event)
+        events: List[Event] = (
             await qb.base()
             .filter(*conditions)
-            .join(Community if community_type else None)
-            .eager(CommunityEvent.creator, CommunityEvent.community)
+            .eager(Event.creator, Event.community)
             .paginate(size if not keyword else None, page if not keyword else None)
-            .order(CommunityEvent.event_datetime.asc())
+            .order(Event.event_datetime.asc())
             .all()
         )
 
         # Build responses with media
-        event_responses: List[CommunityEventResponseSchema] = (
-            await response_builder.build_responses(
-                request=request,
-                items=events,
-                session=db_session,
-                media_format=MediaFormat.carousel,
-                entity_type=EntityType.community_events,
-                response_builder=utils.build_event_response,
-            )
+        event_responses: List[schemas.EventResponseSchema] = await response_builder.build_responses(
+            request=request,
+            items=events,
+            session=db_session,
+            media_format=MediaFormat.carousel,
+            entity_type=EntityType.community_events,
+            response_builder=utils.build_event_response,
         )
 
         if keyword:
             count = meili_result.get("estimatedTotalHits", 0)
         else:
-            qb = QueryBuilder(session=db_session, model=CommunityEvent)
-            count: int = (
-                await qb.base(count=True)
-                .filter(*conditions)
-                .join(Community if community_type else None)
-                .count()
-            )
+            qb = QueryBuilder(session=db_session, model=Event)
+            count: int = await qb.base(count=True).filter(*conditions).count()
 
         num_of_pages: int = response_builder.calculate_pages(count=count, size=size)
-        return ListCommunityEventSchema(events=event_responses, num_of_pages=num_of_pages)
+        return schemas.ListEventSchema(events=event_responses, num_of_pages=num_of_pages)
 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.post("/events", response_model=CommunityEventResponseSchema)
-async def add_event(
+@router.post("/events/personal", response_model=schemas.EventResponseSchema)
+async def add_personal_event(
     request: Request,
-    event_data: Annotated[CommunityEventRequestSchema, Depends(mutate_event_status)],
-    user: Annotated[dict, Depends(check_token)],
+    event_data: schemas.PersonalEventRequestSchema,
+    user: Annotated[dict, Depends(policy.check_create_permission)],
     db_session: AsyncSession = Depends(get_db_session),
-) -> CommunityEventResponseSchema:
+) -> schemas.EventResponseSchema:
     """
-    Creates a new event.
+    Creates a new personal event.
 
-    **Requirements:**
-    - The user must be authenticated (`access_token` cookie required)
+    **Access Policy:**
+    - Any authenticated user can create personal events
 
     **Parameters:**
-    - `event_data`: Event data including name, description, community_id, etc.
+    - `event_data`: Event data including name, description, etc.
 
     **Returns:**
     - Created event with all its details and media
 
-    **Notes:**
-    - For admin users: no status/tag mutations
-    - For non-admin users:
-      - If no community_id: creates a personal event
-      - If community_id provided:
-        - If user is head -> status = approved
-        - If not head -> status = pending
-      - Tag is always set to regular
+    **Errors:**
+    - Returns 400 if community_id is provided
+    - Returns 400 if status is not personal
+    - Returns 403 if non-admin tries to set non-regular tag
     """
+
     try:
         # Create event using common CRUD
-        qb = QueryBuilder(session=db_session, model=CommunityEvent)
-        event: CommunityEvent = await qb.add(
+        qb = QueryBuilder(session=db_session, model=Event)
+        event: Event = await qb.add(
             data=event_data,
-            preload=[CommunityEvent.creator, CommunityEvent.community],
+            preload=[Event.creator, Event.community],
+        )
+
+    except IntegrityError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Database integrity error: {str(e.orig)}",
+        )
+
+    # Index in Meilisearch
+    await meilisearch.upsert(
+        request=request,
+        storage_name=Event.__tablename__,
+        json_values={
+            "id": event.id,
+            "name": event.name,
+            "description": event.description,
+            "policy": event.policy.value if event.policy else None,
+        },
+    )
+
+    # Get associated media
+    conditions = [
+        Media.entity_id == event.id,
+        Media.entity_type == EntityType.community_events,
+        Media.media_format == MediaFormat.carousel,
+    ]
+
+    qb = QueryBuilder(session=db_session, model=Media)
+    media_objects: List[Media] = await qb.base().filter(*conditions).all()
+
+    event_media_responses: List[MediaResponse] = await response_builder.build_media_responses(
+        request=request, media_objects=media_objects
+    )
+
+    return utils.build_event_response(event=event, event_media_responses=event_media_responses)
+
+
+@router.post("/events/community", response_model=schemas.EventResponseSchema)
+async def add_community_event(
+    request: Request,
+    event_data: schemas.CommunityEventRequestSchema,
+    user: Annotated[dict, Depends(policy.check_create_permission)],
+    db_session: AsyncSession = Depends(get_db_session),
+) -> schemas.EventResponseSchema:
+    """
+    Creates a new community event.
+
+    **Access Policy:**
+    - Any authenticated user can create community events
+    - If user is community head -> status must be approved
+    - If not community head -> status must be pending
+    - Event tag must be regular (admin can set other tags)
+
+    **Parameters:**
+    - `event_data`: Event data including name, description, community_id, etc.
+      Note: community_id is required
+
+    **Returns:**
+    - Created event with all its details and media, including community media
+
+    **Errors:**
+    - Returns 400 if community_id is not provided
+    - Returns 400 if community doesn't exist
+    - Returns 400 if status doesn't match user's role (approved for head, pending for others)
+    - Returns 403 if non-admin tries to set non-regular tag
+    """
+    # Ensure community_id is provided
+    if event_data.community_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Community events must have community_id",
+        )
+
+    try:
+        # Create event using common CRUD
+        qb = QueryBuilder(session=db_session, model=Event)
+        event: Event = await qb.add(
+            data=event_data,
+            preload=[Event.creator, Event.community],
         )
 
     except IntegrityError as e:
@@ -207,7 +269,7 @@ async def add_event(
     # Index in Meilisearch
     await meilisearch.upsert(
         request=request,
-        storage_name=CommunityEvent.__tablename__,
+        storage_name=Event.__tablename__,
         json_values={
             "id": event.id,
             "name": event.name,
@@ -231,6 +293,7 @@ async def add_event(
         request=request, media_objects=event_media_objects
     )
 
+    # Get community media
     community_media_objects: List[Media] = (
         await qb.base()
         .filter(
@@ -252,21 +315,25 @@ async def add_event(
     )
 
 
-@router.patch("/events", response_model=CommunityEventResponseSchema)
+@router.patch("/events", response_model=schemas.EventResponseSchema)
 async def update_event(
     request: Request,
     event_id: int,
-    new_data: CommunityEventUpdateSchema,
-    user: Annotated[dict, Depends(check_token)],
-    role: Annotated[bool, Depends(check_role)],
+    new_data: schemas.CommunityEventUpdateSchema,
+    user: Annotated[dict, Depends(policy.check_update_permission)],
     db_session: AsyncSession = Depends(get_db_session),
-) -> CommunityEventResponseSchema:
+) -> schemas.EventResponseSchema:
     """
-    Updates fields of an existing event. Requires admin privileges.
+    Updates fields of an existing event.
 
-    **Requirements:**
-    - The user must be authenticated (`access_token` cookie required)
-    - The user must have admin privileges (checked via dependency)
+    **Access Policy:**
+    - Event creator can update their own event
+    - Community head can update events in their community
+    - Admin can update any event
+    - Event status must match user's role:
+      - Admin: any status
+      - Community head: approved status
+      - Regular user: pending status for community events, personal for personal events
 
     **Parameters:**
     - `event_id`: ID of the event to update
@@ -277,19 +344,17 @@ async def update_event(
 
     **Errors:**
     - Returns 404 if event is not found
+    - Returns 403 if user doesn't have permission
+    - Returns 400 if event status is invalid for user's role
     - Returns 500 on internal error
     """
-    if role != UserRole.admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
-
     try:
-        # Get event with admin check
-        conditions = []  # No additional conditions since admin check is done via dependency
-        qb = QueryBuilder(session=db_session, model=CommunityEvent)
-        event: CommunityEvent | None = (
+        # Get event
+        qb = QueryBuilder(session=db_session, model=Event)
+        event: Event | None = (
             await qb.base()
-            .filter(CommunityEvent.id == event_id, *conditions)
-            .eager(CommunityEvent.community, CommunityEvent.creator)
+            .filter(Event.id == event_id)
+            .eager(Event.community, Event.creator)
             .first()
         )
 
@@ -297,17 +362,17 @@ async def update_event(
             raise HTTPException(status_code=404, detail="Event not found")
 
         # Update event in database
-        qb = QueryBuilder(session=db_session, model=CommunityEvent)
-        updated_event: CommunityEvent = await qb.update(
+        qb = QueryBuilder(session=db_session, model=Event)
+        updated_event: Event = await qb.update(
             instance=event,
             update_data=new_data,
-            preload=[CommunityEvent.creator],
+            preload=[Event.creator],
         )
 
         # Update Meilisearch index
         await meilisearch.upsert(
             request=request,
-            storage_name=CommunityEvent.__tablename__,
+            storage_name=Event.__tablename__,
             json_values={
                 "id": updated_event.id,
                 "name": updated_event.name,
@@ -341,16 +406,16 @@ async def update_event(
 async def delete_event(
     request: Request,
     event_id: int,
-    user: Annotated[dict, Depends(check_token)],
-    role: Annotated[bool, Depends(check_role)],
+    user: Annotated[dict, Depends(policy.check_delete_permission)],
     db_session: AsyncSession = Depends(get_db_session),
 ):
     """
-    Deletes a specific event. Requires admin privileges.
+    Deletes a specific event.
 
-    **Requirements:**
-    - The user must be authenticated (`access_token` cookie required)
-    - The user must have admin privileges (checked via dependency)
+    **Access Policy:**
+    - Event creator can delete their own event
+    - Community head can delete events in their community
+    - Admin can delete any event
 
     **Parameters:**
     - `event_id`: The ID of the event to delete
@@ -365,19 +430,14 @@ async def delete_event(
 
     **Errors:**
     - Returns 404 if the event is not found
+    - Returns 403 if user doesn't have permission
     - Returns 500 on internal error
     """
-    if role != UserRole.admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No permissions")
-
     try:
-        # Get event with admin check
-        qb = QueryBuilder(session=db_session, model=CommunityEvent)
-        event: CommunityEvent | None = (
-            await qb.base()
-            .filter(CommunityEvent.id == event_id)
-            .eager(CommunityEvent.community)
-            .first()
+        # Get event
+        qb = QueryBuilder(session=db_session, model=Event)
+        event: Event | None = (
+            await qb.base().filter(Event.id == event_id).eager(Event.community).first()
         )
 
         if event is None:
@@ -398,7 +458,7 @@ async def delete_event(
                 await delete_bucket_object(request, media.name)
 
         # Delete event from database
-        qb = QueryBuilder(session=db_session, model=CommunityEvent)
+        qb = QueryBuilder(session=db_session, model=Event)
         event_deleted: bool = await qb.delete(target=event)
 
         # Delete associated media records from database
@@ -410,7 +470,7 @@ async def delete_event(
 
         # Remove from search index
         await meilisearch.delete(
-            request=request, storage_name=CommunityEvent.__tablename__, primary_key=str(event_id)
+            request=request, storage_name=Event.__tablename__, primary_key=str(event_id)
         )
 
         return status.HTTP_204_NO_CONTENT
@@ -419,37 +479,35 @@ async def delete_event(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.get("/events/{event_id}", response_model=CommunityEventResponseSchema)
+@router.get("/events/{event_id}", response_model=schemas.EventResponseSchema)
 async def get_event(
     event_id: int,
     request: Request,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(policy.check_read_permission)],
     db_session: AsyncSession = Depends(get_db_session),
-) -> CommunityEventResponseSchema:
+) -> schemas.EventResponseSchema:
     """
-    Retrieves a single event by its unique ID, including
-    its associated media files.
+    Retrieves a single event by its unique ID.
+
+    **Access Policy:**
+    - All authenticated users can access this endpoint
 
     **Parameters:**
     - `event_id`: The unique identifier of the event to retrieve
-    - `access_token`: Required authentication token from cookies (via dependency)
 
     **Returns:**
     - A detailed event object if found, including its name, description,
     community details, policy, and media URLs
 
     **Errors:**
-    - Returns `404 Not Found` if the event with the specified ID does not exist
-    - Returns `401 Unauthorized` if no valid access token is provided
+    - Returns 404 if event is not found
+    - Returns 500 on internal error
     """
     try:
         # Get event with its community relationship
-        qb = QueryBuilder(session=db_session, model=CommunityEvent)
-        event: CommunityEvent = (
-            await qb.base()
-            .filter(CommunityEvent.id == event_id)
-            .eager(CommunityEvent.community)
-            .first()
+        qb = QueryBuilder(session=db_session, model=Event)
+        event: Event | None = (
+            await qb.base().filter(Event.id == event_id).eager(Event.community).first()
         )
 
         if event is None:
