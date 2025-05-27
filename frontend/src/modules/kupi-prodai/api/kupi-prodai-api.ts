@@ -142,10 +142,15 @@ export const kupiProdaiApi = {
     });
   },
 
-  getProduct: async (product_id: number): Promise<Product> => {
-    return apiCall<Product>(`/products/${product_id}`, {
-      method: "GET",
+  getProductQueryOptions: (id: string) => {
+    return queryOptions({
+      queryKey: ["product", id],
+      queryFn: () => apiCall<Product>(`/products/${id}`),
     });
+  },
+
+  getProduct: (id: number) => {
+    return apiCall<Product>(`/products/${id}`);
   },
 
   // Create a new product
@@ -182,12 +187,23 @@ export const kupiProdaiApi = {
       },
     });
   },
-  getSearchedProductsQueryOptions: ({page = defaultPage, size = defaultSize, keyword } : {page: number, size: number, keyword: string}) => {
+  getSearchedProductsQueryOptions: ({
+    page = defaultPage,
+    size = defaultSize,
+    keyword,
+  }: {
+    page: number;
+    size: number;
+    keyword: string;
+  }) => {
     return queryOptions({
-      queryKey: ["search-products", {page, size, keyword}],
-      queryFn: ({queryKey}) => {
-        const [, params] = queryKey as [string, {page: number, size: number, keyword: string}]
-        let endpoint = `/products/search/?keyword=${params.keyword}&size=${params.size}&page=${params.page}`
+      queryKey: ["search-products", { page, size, keyword }],
+      queryFn: ({ queryKey }) => {
+        const [, params] = queryKey as [
+          string,
+          { page: number; size: number; keyword: string }
+        ];
+        let endpoint = `/products/search/?keyword=${params.keyword}&size=${params.size}&page=${params.page}`;
         return apiCall<PaginatedResponse<Product>>(endpoint);
       },
     });
@@ -195,18 +211,14 @@ export const kupiProdaiApi = {
 
   // Get signed URLs for uploading images
   // AFTER (correct)
-getSignedUrls: async (
+  getSignedUrls: async (
     requests: SignedUrlRequest[]
   ): Promise<SignedUrlResponse[]> => {
-    return apiCall<SignedUrlResponse[]>(
-      `/bucket/upload-url`,
-      {
-        method: "POST",
-        json: requests,
-      }
-    );
+    return apiCall<SignedUrlResponse[]>(`/bucket/upload-url`, {
+      method: "POST",
+      json: requests,
+    });
   },
-
 
   // Upload an image to the bucket
   uploadImage: async (

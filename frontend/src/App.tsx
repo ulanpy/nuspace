@@ -1,15 +1,13 @@
 import { Routes, Route } from "react-router-dom";
 import HomePage from "./pages/home";
-import KupiProdaiPage from "./pages/apps/kupi-prodai";
-import ProductDetailPage from "./pages/apps/kupi-prodai/product/[id]";
-import NUEventsPage from "./pages/apps/nu-events";
-import DormEatsPage from "./pages/apps/dorm-eats";
-import { About } from "./pages/apps/about";
 import AppsLayout from "./layouts/apps-layout";
 import { Toasts } from "./components/atoms/toast";
 import { ListingProvider } from "./context/listing-context";
 import { ImageProvider } from "./context/image-context";
 import { MediaProvider } from "./context/media-context";
+import { LazyRoutes, ROUTES } from "./data/routes";
+import AdminLayout from "./layouts/admin-layout";
+import AdminPage from "./pages/admin/admin-page";
 
 function App() {
   return (
@@ -17,18 +15,18 @@ function App() {
       <ImageProvider>
         <MediaProvider>
           <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/apps" element={<AppsLayout />}>
-              <Route path="kupi-prodai" element={<KupiProdaiPage />}>
-                <Route path="search" element={<KupiProdaiPage />} />
-              </Route>
-              <Route
-                path="kupi-prodai/product/:id"
-                element={<ProductDetailPage />}
-              />
-              <Route path="about" element={<About />} />
-              <Route path="nu-events" element={<NUEventsPage />} />
-                <Route path="dorm-eats" element={<DormEatsPage />} />
+            <Route path={ROUTES.HOME} element={<HomePage />} />
+            <Route path={ROUTES.ADMIN.BASE.path} element={<AdminLayout />}>
+              <Route index element={<AdminPage />} />
+              {LazyRoutes.ADMINS.map(({ path, Component }) => (
+                <Route key={path} path={path} element={<Component />} />
+              ))}
+            </Route>
+
+            <Route path={ROUTES.APPS.BASEURL} element={<AppsLayout />}>
+              {LazyRoutes.APPS.map(({ path, Component }) => (
+                <Route key={path} path={path} element={<Component />} />
+              ))}
             </Route>
           </Routes>
           <Toasts />

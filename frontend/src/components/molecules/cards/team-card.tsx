@@ -3,9 +3,9 @@ import { Card, CardContent } from "@/components/atoms/card";
 import { FaUsers } from "react-icons/fa";
 
 import { teamMembers } from "@/data/team-members";
-import { TeamMemberCard } from "@/components/molecules/cards";
 import { Modal } from "@/components/atoms/modal";
 import { useTheme } from "@/context/theme-provider";
+import { TeamMemberCard } from "./team-member-card";
 
 export function TeamCard() {
   const { theme } = useTheme();

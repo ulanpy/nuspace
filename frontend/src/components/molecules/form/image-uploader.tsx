@@ -42,6 +42,7 @@ export function ImageUploader({
           name="images"
           ref={fileInputRef}
           className="hidden"
+          required
           accept="image/*"
           multiple
           onChange={onFileChange}
