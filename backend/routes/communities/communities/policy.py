@@ -120,7 +120,7 @@ async def check_create_permission(
     return user
 
 
-async def require_read_permission(
+async def check_read_permission(
     user: Annotated[dict, Depends(check_token)],
     role: Annotated[UserRole, Depends(check_role)],
     policy: Annotated[CommunityPolicy, Depends(get_community_policy)],
@@ -129,7 +129,7 @@ async def require_read_permission(
     return user
 
 
-async def require_update_permission(
+async def check_update_permission(
     community_id: int,
     user: Annotated[dict, Depends(check_token)],
     role: Annotated[UserRole, Depends(check_role)],

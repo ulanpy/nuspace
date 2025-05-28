@@ -8,7 +8,7 @@ from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import check_role, check_token, get_db_session
 from backend.core.database.models import Community, Event, EventStatus, EventTag
 from backend.core.database.models.user import UserRole
-from backend.routes.communities.events.schemas import CommunityEventRequestSchema
+from backend.routes.communities.events.schemas import EventRequest
 
 
 class EventAction(str, Enum):
@@ -43,7 +43,7 @@ class EventPolicy:
 
     async def _validate_event_status(
         self,
-        event_data: CommunityEventRequestSchema,
+        event_data: EventRequest,
         user: dict,
         user_role: UserRole,
     ) -> None:
@@ -103,7 +103,7 @@ class EventPolicy:
         user_role: UserRole,
         event_id: Optional[int] = None,
         community_id: Optional[int] = None,
-        event_data: Optional[CommunityEventRequestSchema] = None,
+        event_data: Optional[EventRequest] = None,
     ) -> bool:
         """
         Centralized permission checking and data validation for event actions.
@@ -219,7 +219,7 @@ async def get_event_policy(
 
 
 async def check_create_permission(
-    event_data: CommunityEventRequestSchema,
+    event_data: EventRequest,
     user: Annotated[dict, Depends(check_token)],
     role: Annotated[UserRole, Depends(check_role)],
     policy: Annotated[EventPolicy, Depends(get_event_policy)],
@@ -241,7 +241,7 @@ async def check_read_permission(
 
 async def check_update_permission(
     event_id: int,
-    event_data: CommunityEventRequestSchema,
+    event_data: EventRequest,
     user: Annotated[dict, Depends(check_token)],
     role: Annotated[UserRole, Depends(check_role)],
     policy: Annotated[EventPolicy, Depends(get_event_policy)],

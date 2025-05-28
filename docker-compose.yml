@@ -158,7 +158,7 @@ services:
     restart: always
     volumes:
       - ./frontend:/nuros           # Mount all project files
-      - /nuros/node_modules         # Anonymous volume to store node_modules inside container
+      - frontend-node-modules:/nuros/node_modules      
     environment:
       - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes (Docker-friendly)
     networks:
@@ -175,3 +175,4 @@ volumes:
     driver: local
   pgadmin-data:
   rabbitmq-data:  # Add this
+  frontend-node-modules:  # Added named volume for frontend node_modules

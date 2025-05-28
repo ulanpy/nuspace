@@ -2,13 +2,13 @@ from typing import List
 
 from backend.common.schemas import MediaResponse, ShortUserResponse
 from backend.core.database.models.community import Community
-from backend.routes.communities.communities.schemas import CommunityResponseSchema
+from backend.routes.communities.communities.schemas import BaseCommunity
 
 
 def build_community_response(
     community: Community,
     media_responses: List[MediaResponse],
-) -> CommunityResponseSchema:
+) -> BaseCommunity:
     """
     Build a CommunityResponseSchema from a Community ORM object and media responses.
 
@@ -19,7 +19,7 @@ def build_community_response(
     Returns:
     - CommunityResponseSchema: Formatted community response with all required fields
     """
-    return CommunityResponseSchema(
+    return BaseCommunity(
         id=community.id,
         name=community.name,
         type=community.type,

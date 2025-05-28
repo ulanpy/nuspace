@@ -6,36 +6,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_db_session
-from backend.common.schemas import MediaResponse
+from backend.common.schemas import MediaResponse, ShortUserResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import Community, CommunityType
 from backend.core.database.models.media import Media, MediaFormat
-from backend.routes.communities.communities import utils
-from backend.routes.communities.communities.policy import (
-    check_create_permission,
-    require_delete_permission,
-    require_read_permission,
-    require_update_permission,
-)
-from backend.routes.communities.communities.schemas import (
-    CommunityRequestSchema,
-    CommunityResponseSchema,
-    CommunityUpdateSchema,
-    ListCommunitySchema,
-)
+from backend.routes.communities.communities import policy, schemas
 from backend.routes.google_bucket.utils import delete_bucket_object
 
 router = APIRouter(tags=["Community Routes"])
 
 
-@router.post("/communities", response_model=CommunityResponseSchema)
+@router.post("/communities", response_model=schemas.CommunityResponse)
 async def add_community(
     request: Request,
-    community_data: CommunityRequestSchema,
-    user: Annotated[dict, Depends(check_create_permission)],
+    community_data: schemas.CommunityRequest,
+    user: Annotated[dict, Depends(policy.check_create_permission)],
     db_session: AsyncSession = Depends(get_db_session),
-) -> CommunityResponseSchema:
+) -> schemas.CommunityResponse:
     """
     Create a new community. Requires admin privileges.
 
@@ -43,10 +31,10 @@ async def add_community(
     - The user must have admin privileges
 
     **Parameters:**
-    - `community_data` (CommunityRequestSchema): Data for the new community.
+    - `community_data` (schemas.CommunityRequest): Data for the new community.
 
     **Returns:**
-    - `CommunityResponseSchema`: Created community with media.
+    - `schemas.CommunityResponse`: Created community with media.
 
     **Notes:**
     - If admin privileges are not present, the request will fail with 403.
@@ -73,31 +61,38 @@ async def add_community(
         },
     )
 
-    conditions = [
-        Media.entity_id == community.id,
-        Media.entity_type == EntityType.communities,
-        Media.media_format == MediaFormat.profile,
-    ]
-
-    qb = QueryBuilder(session=db_session, model=Media)
-    media_objects: List[Media] = await qb.base().filter(*conditions).all()
-
-    media_responses: List[MediaResponse] = await response_builder.build_media_responses(
-        request=request, media_objects=media_objects
+    media_objs: List[Media] = (
+        await qb.blank(model=Media)
+        .base()
+        .filter(
+            Media.entity_id == community.id,
+            Media.entity_type == EntityType.communities,
+            Media.media_format == MediaFormat.profile,
+        )
+        .all()
     )
 
-    return utils.build_community_response(community=community, media_responses=media_responses)
+    media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
+        request=request, media_objects=media_objs, resources=[community]
+    )
+
+    return response_builder.build_schema(
+        schemas.CommunityResponse,
+        schemas.CommunityResponse.model_validate(community),
+        head_user=ShortUserResponse.model_validate(community.head_user),
+        media=media_results[0],
+    )
 
 
-@router.get("/communities", response_model=ListCommunitySchema)
+@router.get("/communities", response_model=schemas.ListCommunity)
 async def get_communities(
     request: Request,
-    user: Annotated[dict, Depends(require_read_permission)],
+    user: Annotated[dict, Depends(policy.check_read_permission)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     community_type: Optional[CommunityType] = None,
     db_session: AsyncSession = Depends(get_db_session),
-) -> ListCommunitySchema:
+) -> schemas.ListCommunity:
     """
     Retrieves a paginated list of communities with flexible filtering.
 
@@ -116,52 +111,57 @@ async def get_communities(
     - Results are ordered by creation date (newest first)
     - Each community includes its associated media in profile format
     """
+    # Build conditions list
+    conditions = []
+    if community_type:
+        conditions.append(Community.type == community_type)
 
-    try:
-        # Build conditions list
-        conditions = []
-        if community_type:
-            conditions.append(Community.type == community_type)
+    qb = QueryBuilder(session=db_session, model=Community)
+    communities: List[Community] = (
+        await qb.base()
+        .filter(*conditions)
+        .eager(Community.head_user)
+        .paginate(size=size, page=page)
+        .order(Community.created_at.desc())
+        .all()
+    )
 
-        qb = QueryBuilder(session=db_session, model=Community)
-        communities: List[Community] = (
-            await qb.base()
-            .filter(*conditions)
-            .eager(Community.head_user)
-            .paginate(size=size, page=page)
-            .order(Community.created_at.desc())
-            .all()
+    media_objs: List[Media] = (
+        await qb.blank(model=Media)
+        .base()
+        .filter(
+            Media.entity_id.in_([community.id for community in communities]),
+            Media.entity_type == EntityType.communities,
+            Media.media_format == MediaFormat.carousel,
         )
+        .all()
+    )
 
-        # Build responses with media
-        communities_responses: List[CommunityResponseSchema] = (
-            await response_builder.build_responses(
-                request=request,
-                items=communities,
-                session=db_session,
-                media_format=MediaFormat.profile,
-                entity_type=EntityType.communities,
-                response_builder=utils.build_community_response,
-            )
+    media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
+        request=request, media_objects=media_objs, resources=communities
+    )
+
+    community_responses: List[schemas.CommunityResponse] = [
+        response_builder.build_schema(
+            schemas.CommunityResponse,
+            schemas.CommunityResponse.model_validate(community),
+            media=media,
         )
-        qb = QueryBuilder(session=db_session, model=Community)
-        count = await qb.base(count=True).filter(*conditions).count()
-        num_of_pages: int = response_builder.calculate_pages(count=count, size=size)
-
-        return ListCommunitySchema(communities=communities_responses, num_of_pages=num_of_pages)
-
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        for community, media in zip(communities, media_results)
+    ]
+    count: int = await qb.blank().base(count=True).filter(*conditions).count()
+    total_pages: int = response_builder.calculate_pages(count=count, size=size)
+    return schemas.ListCommunity(communities=community_responses, total_pages=total_pages)
 
 
-@router.patch("/communities/{community_id}", response_model=CommunityResponseSchema)
+@router.patch("/communities/{community_id}", response_model=schemas.CommunityResponse)
 async def update_community(
     request: Request,
     community_id: int,
-    new_data: CommunityUpdateSchema,
-    user: Annotated[dict, Depends(require_update_permission)],
+    new_data: schemas.CommunityUpdate,
+    user: Annotated[dict, Depends(policy.check_update_permission)],
     db_session: AsyncSession = Depends(get_db_session),
-) -> CommunityResponseSchema:
+) -> schemas.CommunityResponse:
     """
     Updates fields of an existing community.
 
@@ -180,56 +180,56 @@ async def update_community(
     - Returns 500 on internal error
     """
 
-    try:
-        qb = QueryBuilder(session=db_session, model=Community)
-        community: Community | None = (
-            await qb.base().filter(Community.id == community_id).eager(Community.head_user).first()
-        )
+    qb = QueryBuilder(session=db_session, model=Community)
+    community: Community | None = (
+        await qb.base().filter(Community.id == community_id).eager(Community.head_user).first()
+    )
 
-        if community is None:
-            raise HTTPException(status_code=404, detail="Community not found")
+    if community is None:
+        raise HTTPException(status_code=404, detail="Community not found")
 
-        qb = QueryBuilder(session=db_session, model=Community)
-        updated_community: Community = await qb.update(instance=community, update_data=new_data)
+    qb = QueryBuilder(session=db_session, model=Community)
+    community: Community = await qb.update(instance=community, update_data=new_data)
 
-        # Update Meilisearch index
-        await meilisearch.upsert(
-            request=request,
-            storage_name=Community.__tablename__,
-            json_values={
-                "id": updated_community.id,
-                "name": updated_community.name,
-                "description": updated_community.description,
-            },
-        )
+    # Update Meilisearch index
+    await meilisearch.upsert(
+        request=request,
+        storage_name=Community.__tablename__,
+        json_values={
+            "id": community.id,
+            "name": community.name,
+            "description": community.description,
+        },
+    )
 
-        # Get associated media
-        conditions = [
-            Media.entity_id == updated_community.id,
+    media_objs: List[Media] = (
+        await qb.blank(model=Media)
+        .base()
+        .filter(
+            Media.entity_id == community.id,
             Media.entity_type == EntityType.communities,
             Media.media_format == MediaFormat.profile,
-        ]
-
-        qb = QueryBuilder(session=db_session, model=Media)
-        media_objects: List[Media] = await qb.base().filter(*conditions).all()
-
-        media_responses: List[MediaResponse] = await response_builder.build_media_responses(
-            request=request, media_objects=media_objects
         )
+        .all()
+    )
 
-        return utils.build_community_response(
-            community=updated_community, media_responses=media_responses
-        )
+    media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
+        request=request, media_objects=media_objs, resources=[community]
+    )
 
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    return response_builder.build_schema(
+        schemas.CommunityResponse,
+        schemas.CommunityResponse.model_validate(community),
+        head_user=ShortUserResponse.model_validate(community.head_user),
+        media=media_results[0],
+    )
 
 
 @router.delete("/communities/{community_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_community(
     request: Request,
     community_id: int,
-    user: Annotated[dict, Depends(require_delete_permission)],
+    user: Annotated[dict, Depends(policy.require_delete_permission)],
     db_session: AsyncSession = Depends(get_db_session),
 ):
     """

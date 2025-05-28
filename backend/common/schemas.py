@@ -19,3 +19,6 @@ class ShortUserResponse(BaseModel):
     name: str
     surname: str
     picture: str
+
+    class Config:
+        from_attributes = True

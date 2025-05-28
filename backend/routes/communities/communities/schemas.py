@@ -1,6 +1,7 @@
 from datetime import date, datetime
 from typing import List
 
+from fastapi import Query
 from pydantic import BaseModel, field_validator
 
 from backend.common.schemas import MediaResponse, ShortUserResponse
@@ -11,7 +12,7 @@ from backend.core.database.models.community import (
 )
 
 
-class CommunityRequestSchema(BaseModel):
+class CommunityRequest(BaseModel):
     name: str
     type: CommunityType
     category: CommunityCategory
@@ -29,7 +30,7 @@ class CommunityRequestSchema(BaseModel):
         return value
 
 
-class CommunityResponseSchema(BaseModel):
+class BaseCommunity(BaseModel):
     id: int
     name: str
     type: CommunityType
@@ -37,22 +38,32 @@ class CommunityResponseSchema(BaseModel):
     recruitment_status: CommunityRecruitmentStatus
     description: str
     established: date
-    head: ShortUserResponse
+    head: str
     telegram_url: str
     instagram_url: str
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CommunityResponse(BaseCommunity):
+    head_user: ShortUserResponse
     media: List[MediaResponse] = []
 
 
-class ShortCommunityResponseSchema(BaseModel):
+class ShortCommunityResponse(BaseModel):
     id: int
     name: str
     description: str
     media: List[MediaResponse] = []
 
+    class Config:
+        from_attributes = True
 
-class CommunityUpdateSchema(BaseModel):
+
+class CommunityUpdate(BaseModel):
     name: str | None = None
     recruitment_status: CommunityRecruitmentStatus | None = None
     description: str | None = None
@@ -69,12 +80,6 @@ class CommunityUpdateSchema(BaseModel):
         from_attributes = True  # Make sure it can be used with SQLAlchemy models
 
 
-class ListCommunitySchema(BaseModel):
-    communities: List[CommunityResponseSchema] = []
-    num_of_pages: int
-
-    @field_validator("num_of_pages")
-    def validate_pages(cls, value):
-        if value <= 0:
-            raise ValueError("Number of pages should be positive")
-        return value
+class ListCommunity(BaseModel):
+    communities: List[BaseCommunity] = []
+    total_pages: int = Query(1, ge=1)
