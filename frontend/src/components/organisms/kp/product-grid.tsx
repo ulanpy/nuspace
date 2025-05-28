@@ -39,7 +39,7 @@ export function ProductGrid({
   return (
     <>
       <motion.div
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3"
+        className={className ? className : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3"}
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -51,9 +51,10 @@ export function ProductGrid({
               onClick={() =>
                 navigate(`/apps/kupi-prodai/product/${product.id}`)
               }
-            >
-              <MessageButton/>
-            </ProductCard>
+              actions={<MessageButton/>}
+            />
+
+
           </motion.div>
         ))}
       </motion.div>

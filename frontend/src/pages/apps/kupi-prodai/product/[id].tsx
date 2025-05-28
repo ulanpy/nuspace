@@ -22,7 +22,7 @@ import {
   formatRelativeTime,
 } from "@/utils/date-formatter";
 import { useUser } from "@/hooks/use-user";
-import { useProduct } from "@/modules/kupi-prodai/hooks/use-product";
+import { useProduct } from "@/modules/kupi-prodai/api/hooks/use-product";
 import { Spinner } from "@/components/atoms/spinner";
 
 export default function ProductDetailPage() {

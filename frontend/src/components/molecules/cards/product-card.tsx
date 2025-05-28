@@ -6,10 +6,10 @@ import { getCategoryDisplay, getConditionColor, getConditionDisplay, getPlacehol
 interface ProductCardProps {
   product: Types.Product;
   onClick: () => void;
-  children?: React.ReactNode;
+  actions?: React.ReactNode;
 }
 
-export function ProductCard({ product, onClick, children }: ProductCardProps) {
+export function ProductCard({ product, onClick, actions }: ProductCardProps) {
 
   return (
     <Card
@@ -47,7 +47,7 @@ export function ProductCard({ product, onClick, children }: ProductCardProps) {
           </div>
         </div>
         <div className="flex justify-between">
-          {children}
+          {actions}
         </div>
       </CardContent>
     </Card>

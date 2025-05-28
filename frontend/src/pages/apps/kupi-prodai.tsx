@@ -9,7 +9,6 @@ import {
   ImageIcon,
   Trash2,
   Plus,
-
 } from "lucide-react";
 import { Input } from "../../components/atoms/input";
 import { Button } from "../../components/atoms/button";
@@ -24,13 +23,13 @@ import {
 import { ConditionGroup } from "@/components/molecules/condition-group";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "../../components/atoms/progress";
-import { useProducts } from "@/modules/kupi-prodai/hooks/use-products";
-import { useUserProducts } from "@/modules/kupi-prodai/hooks/use-user-products";
-import { useCreateProduct } from "@/modules/kupi-prodai/hooks/use-create-product";
-import { useDeleteProduct } from "@/modules/kupi-prodai/hooks/use-delete-product";
-import { useUpdateProduct } from "@/modules/kupi-prodai/hooks/use-update-product";
+import { useProducts } from "@/modules/kupi-prodai/api/hooks/use-products";
+import { useUserProducts } from "@/modules/kupi-prodai/api/hooks/use-user-products";
+import { useCreateProduct } from "@/modules/kupi-prodai/api/hooks/use-create-product";
+import { useDeleteProduct } from "@/modules/kupi-prodai/api/hooks/use-delete-product";
+import { useUpdateProduct } from "@/modules/kupi-prodai/api/hooks/use-update-product";
 import { useEditModal } from "@/modules/kupi-prodai/form/use-edit-modal";
-import { useToggleProduct } from "@/modules/kupi-prodai/hooks/use-toggle-product";
+import { useToggleProduct } from "@/modules/kupi-prodai/api/hooks/use-toggle-product";
 import { useListingState } from "@/context/listing-context";
 import { useImageContext } from "@/context/image-context";
 import { useMediaContext } from "@/context/media-context";
@@ -50,9 +49,7 @@ import { ProductListingSection } from "@/components/organisms/kp/product-listing
 import { ProductCreateForm } from "@/components/molecules/form/product-create-form";
 import { useImage } from "@/modules/kupi-prodai/form/use-image";
 import { useProduct } from "@/components/molecules/form/use-product";
-import {
-  getCategoryDisplay,
-} from "@/utils/products-utils";
+import { getCategoryDisplay } from "@/utils/products-utils";
 
 const displayConditions = ["All Conditions", "New", "Used"];
 

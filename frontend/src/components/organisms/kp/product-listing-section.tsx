@@ -36,16 +36,16 @@ export function ProductListingSection({
               product={product}
               onClick={() => onProductClick(product.id)}
               key={product.id}
-            >
-              <ProductCardActions
+              actions={<ProductCardActions
                 product={product}
                 onEdit={onEditListing}
                 onDelete={onDeleteListing}
                 onToggleProductStatus={onToggleListingStatus}
                 getIsPendingDeleteMutation={getIsPendingDeleteMutation}
                 getIsPendingToggleMutation={getIsPendingToggleMutation}
-              />
-            </ProductCard>
+              />}
+            />
+
           ))}
         </div>
       ) : (

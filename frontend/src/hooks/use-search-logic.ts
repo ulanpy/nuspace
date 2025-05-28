@@ -1,8 +1,8 @@
 "use client";
 
 import { useListingState } from "@/context/listing-context";
-import { usePreSearchProducts } from "@/modules/kupi-prodai/hooks/use-pre-search-products";
-import { useSearchProducts } from "@/modules/kupi-prodai/hooks/use-search-products";
+import { usePreSearchProducts } from "@/modules/kupi-prodai/api/hooks/use-pre-search-products";
+import { useSearchProducts } from "@/modules/kupi-prodai/api/hooks/use-search-products";
 import { getSearchTextFromURL } from "@/utils/search-params";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
