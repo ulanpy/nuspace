@@ -1,7 +1,7 @@
+import asyncio
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from sqlalchemy.exc import IntegrityError
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
@@ -10,14 +10,17 @@ from backend.common.schemas import MediaResponse
 from backend.common.utils import response_builder
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import CommunityComment
-from backend.core.database.models.media import Media, MediaFormat
+from backend.core.database.models.media import Media
 from backend.routes.communities.comments import cruds, utils
-from backend.routes.communities.comments.dependencies import check_comment_ownership, verify_comment
+from backend.routes.communities.comments.dependencies import (
+    check_create_permission,
+    check_delete_permission,
+    check_read_permission,
+)
 from backend.routes.communities.comments.schemas import (
-    CommunityCommentRequestSchema,
-    CommunityCommentResponseSchema,
-    CommunityCommentSchema,
     ListCommunityCommentResponseSchema,
+    RequestCommunityCommentSchema,
+    ResponseCommunityCommentSchema,
 )
 
 router = APIRouter(tags=["Community Posts Comments Routes"])
@@ -26,8 +29,9 @@ router = APIRouter(tags=["Community Posts Comments Routes"])
 @router.get("/posts/comments", response_model=ListCommunityCommentResponseSchema)
 async def get(
     request: Request,
-    post_id: int,
     user: Annotated[dict, Depends(check_token)],
+    policy: Annotated[dict, Depends(check_read_permission)],
+    post_id: int,
     comment_id: int | None = None,
     size: int = Query(20, ge=1, le=100),
     page: int = Query(1, ge=1),
@@ -48,7 +52,7 @@ async def get(
         .filter(CommunityComment.post_id == post_id, CommunityComment.parent_id == comment_id)
         .count()
     )
-    num_of_pages: int = response_builder.calculate_pages(count=count, size=size)
+    total_pages: int = response_builder.calculate_pages(count=count, size=size)
 
     root_comment_ids: List[int] = [comment.id for comment in comments]
     replies_counter: dict[int, int] = await cruds.get_replies_counts(
@@ -58,64 +62,63 @@ async def get(
         parent_ids=root_comment_ids,
     )
 
-    comments_pre_response: List[CommunityCommentSchema] = await response_builder.build_responses(
-        request=request,
-        items=comments,
-        session=db_session,
-        media_format=MediaFormat.carousel,
-        entity_type=EntityType.community_comments,
-        response_builder=utils.build_comment_response,
+    media_objs: List[Media] = (
+        await qb.blank(model=Media)
+        .base()
+        .filter(
+            Media.entity_id.in_(root_comment_ids),
+            Media.entity_type == EntityType.community_comments,
+        )
+        .all()
     )
 
-    comments_response: List[CommunityCommentResponseSchema] = [
-        CommunityCommentResponseSchema(
-            **comment.model_dump(), total_replies=replies_counter.get(comment.id, 0)
+    media_results: List[List[MediaResponse]] = await asyncio.gather(
+        *[
+            response_builder.build_media_responses(
+                request=request,
+                media_objects=[media for media in media_objs if media.entity_id == comment.id],
+            )
+            for comment in comments
+        ]
+    )
+
+    comments_response: List[ResponseCommunityCommentSchema] = [
+        utils.build_schema(
+            ResponseCommunityCommentSchema,
+            ResponseCommunityCommentSchema.model_validate(comment),
+            total_replies=replies_counter.get(comment.id, 0),
+            media=media,
         )
-        for comment in comments_pre_response
+        for comment, media in zip(comments, media_results)
     ]
 
     return ListCommunityCommentResponseSchema(
         comments=comments_response,
-        num_of_pages=num_of_pages,
+        total_pages=total_pages,
     )
 
 
-@router.post("/posts/comments", response_model=CommunityCommentResponseSchema)
+@router.post("/posts/comments", response_model=ResponseCommunityCommentSchema)
 async def create(
     request: Request,
-    comment: CommunityCommentRequestSchema,
+    comment: RequestCommunityCommentSchema,
     user: Annotated[dict, Depends(check_token)],
-    permissions: Annotated[bool, Depends(verify_comment)],
+    policy: Annotated[dict, Depends(check_create_permission)],
     db_session: AsyncSession = Depends(get_db_session),
-) -> CommunityCommentResponseSchema:
+) -> ResponseCommunityCommentSchema:
     qb: QueryBuilder = QueryBuilder(session=db_session, model=CommunityComment)
-    if comment.parent_id is not None:
-        parent_comment: CommunityComment | None = (
-            await qb.base().filter(CommunityComment.id == comment.parent_id).first()
-        )
+    comment: CommunityComment = await qb.blank().add(data=comment)
 
-        if parent_comment is None:
-            raise HTTPException(status_code=404, detail="Parent comment not found")
-
-        if parent_comment.post_id != comment.post_id:
-            raise HTTPException(
-                status_code=400, detail="Parent comment does not belong to the post"
-            )
-
-    try:
-        comment: CommunityComment = await qb.blank().add(data=comment)
-    except IntegrityError:
-        raise HTTPException(status_code=400, detail="Possibly non-existing post id")
-
-    media: List[Media] = (
+    media_objs: List[Media] = (
         await qb.blank(model=Media)
         .base()
         .filter(Media.entity_id == comment.id, Media.entity_type == EntityType.community_comments)
         .all()
     )
     media_responses: List[MediaResponse] = await response_builder.build_media_responses(
-        request=request, media_objects=media
+        request=request, media_objects=media_objs
     )
+
     replies_counter: int = (
         await cruds.get_replies_counts(
             session=db_session,
@@ -125,8 +128,11 @@ async def create(
         )
     ).get(comment.id, 0)
 
-    comment_response: CommunityCommentResponseSchema = utils.build_comment_response(
-        comment=comment, total_replies=replies_counter, media=media_responses
+    comment_response: ResponseCommunityCommentSchema = utils.build_schema(
+        ResponseCommunityCommentSchema,
+        ResponseCommunityCommentSchema.model_validate(comment),
+        total_replies=replies_counter,
+        media=media_responses,
     )
     return comment_response
 
@@ -135,7 +141,7 @@ async def create(
 async def delete(
     comment_id: int,
     user: Annotated[dict, Depends(check_token)],
-    permissions: Annotated[bool, Depends(check_comment_ownership)],
+    policy: Annotated[dict, Depends(check_delete_permission)],
     db_session: AsyncSession = Depends(get_db_session),
 ):
     qb = QueryBuilder(session=db_session, model=CommunityComment)
@@ -143,5 +149,4 @@ async def delete(
         await qb.base().filter(CommunityComment.id == comment_id).first()
     )
 
-    await qb.conditional_delete(conditions=(CommunityComment.parent_id == comment_id))
     await qb.delete(target=comment)

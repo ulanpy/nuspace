@@ -1,16 +1,17 @@
 from datetime import datetime
 from typing import List
 
+from fastapi import Query
 from pydantic import BaseModel, field_validator
 
 from backend.common.schemas import MediaResponse
 
 
-class CommunityCommentRequestSchema(BaseModel):
+class RequestCommunityCommentSchema(BaseModel):
     post_id: int
     parent_id: int | None = None
     user_sub: str
-    content: str
+    content: str = Query(max_length=300)
 
     @field_validator("parent_id")
     def validate_parent_id(cls, value):
@@ -19,7 +20,7 @@ class CommunityCommentRequestSchema(BaseModel):
         return value
 
 
-class CommunityCommentSchema(BaseModel):
+class BaseCommunityCommentSchema(BaseModel):
     id: int
     post_id: int
     parent_id: int | None = None
@@ -27,25 +28,16 @@ class CommunityCommentSchema(BaseModel):
     content: str
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ResponseCommunityCommentSchema(BaseCommunityCommentSchema):
+    total_replies: int | None = Query(default=None, ge=0)
     media: List[MediaResponse] = []
 
 
-class CommunityCommentResponseSchema(CommunityCommentSchema):
-    total_replies: int | None = None
-
-    @field_validator("total_replies")
-    def validate_replies(cls, value):
-        if value <= 0:
-            raise ValueError("Number of replies should be positive")
-        return value
-
-
 class ListCommunityCommentResponseSchema(BaseModel):
-    comments: List[CommunityCommentResponseSchema] = []
-    num_of_pages: int
-
-    @field_validator("num_of_pages")
-    def validate_pages(cls, value):
-        if value <= 0:
-            raise ValueError("Number of pages should be positive")
-        return value
+    comments: List[ResponseCommunityCommentSchema] = []
+    total_pages: int = Query(default=1, ge=1)
