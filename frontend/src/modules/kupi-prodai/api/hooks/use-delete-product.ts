@@ -14,9 +14,11 @@ export function useDeleteProduct() {
     async onSuccess(_, deletedId) {
       queryClient.setQueryData(
         kupiProdaiApi.getUserProductsQueryOptions().queryKey,
-        (data) => data?.filter((product) => product.id !== deletedId)
+        (data) => data ? {
+          ...data,
+          products: data.products.filter(product => product.id !== deletedId),
+        } : undefined
       );
-
       toast({
         title: "Success",
         description: "Product deleted successfully",

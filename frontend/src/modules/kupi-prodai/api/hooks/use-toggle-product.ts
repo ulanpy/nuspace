@@ -23,9 +23,14 @@ export const useToggleProduct = () => {
         queryClient.setQueryData(
           kupiProdaiApi.getUserProductsQueryOptions().queryKey,
           (old) =>
-            old?.map((product) =>
-              product.id === product_id ? { ...product, status } : product
-            )
+            old
+              ? {
+                  ...old,
+                  products: old.products.map((product) =>
+                    product.id === product_id ? { ...product, status } : product
+                  ),
+                }
+              : old
         );
         queryClient.invalidateQueries({
           queryKey: [kupiProdaiApi.baseKey, "list"],

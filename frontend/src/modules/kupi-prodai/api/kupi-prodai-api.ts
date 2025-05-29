@@ -56,6 +56,7 @@ export interface NewProductRequest {
   category: ProductCategory;
   condition: ProductCondition;
   status: "active";
+  user_sub: string;
 }
 
 export interface UpdateProductRequest {
@@ -137,7 +138,7 @@ export const kupiProdaiApi = {
     return queryOptions({
       queryKey: [kupiProdaiApi.baseKey, "userProducts"],
       queryFn: () => {
-        return apiCall<Product[]>("/products/user");
+        return apiCall<PaginatedResponse<Product>>(`/products?size=${defaultSize}&page=${defaultPage}&owner_id=me`);
       },
     });
   },
@@ -163,7 +164,7 @@ export const kupiProdaiApi = {
 
   // Update a product - Fixed to use the correct endpoint and method
   updateProduct: async (product: UpdateProductRequest): Promise<any> => {
-    return apiCall<any>("/products/", {
+    return apiCall<any>("/products", {
       method: "PATCH",
       json: product,
     });

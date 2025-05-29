@@ -109,9 +109,9 @@ export default function KupiProdaiPage() {
   } = useProduct();
 
   // Active and inactive listings
-  const activeListings = myProducts?.filter((p) => p.status === "active");
-  const inactiveListings = myProducts?.filter((p) => p.status === "inactive");
-  const soldListings = myProducts?.filter((p) => p.status === "inactive");
+  const activeListings = myProducts?.products?.filter((p) => p.status === "active");
+  const inactiveListings = myProducts?.products?.filter((p) => p.status === "inactive");
+  const soldListings = myProducts?.products?.filter((p) => p.status === "inactive");
 
   // Product skeleton for loading state
 

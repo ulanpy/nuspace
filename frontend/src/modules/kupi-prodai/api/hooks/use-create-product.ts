@@ -48,6 +48,7 @@ export function useCreateProduct() {
     ).toLowerCase() as Types.ProductCategory,
     condition: String(form.get("condition")) as Types.ProductCondition,
     status: "active",
+    user_sub: user?.user.sub || "",
   });
 
   const checkTelegramLinked = (): boolean => {

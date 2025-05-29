@@ -387,7 +387,6 @@ export default function ProductDetailPage() {
       <CommentsSection
         productId={product.id}
         sellerName={product.user_name}
-        currentUser={user}
         isAuthenticated={!!user}
       />
 
