@@ -34,7 +34,7 @@ async def initialize_bot(
         url=f"{base_url}/api/webhook",
         drop_pending_updates=True,
         allowed_updates=app.state.dp.resolve_used_update_types(),
-        secret_token=config.SECRET_TOKEN,
+        secret_token=config.TG_WEBHOOK_SECRET_TOKEN,
     )
 
     start = BotCommand(command="start", description="start")

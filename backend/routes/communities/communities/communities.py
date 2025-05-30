@@ -5,13 +5,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_db_session
+from backend.common.dependencies import get_current_principals, get_db_session
 from backend.common.schemas import MediaResponse, ShortUserResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import Community, CommunityType
 from backend.core.database.models.media import Media, MediaFormat
-from backend.routes.communities.communities import policy, schemas
+from backend.routes.communities.communities import schemas
+from backend.routes.communities.communities.policy import CommunityPolicy, ResourceAction
 from backend.routes.google_bucket.utils import delete_bucket_object
 
 router = APIRouter(tags=["Community Routes"])
@@ -21,7 +22,7 @@ router = APIRouter(tags=["Community Routes"])
 async def add_community(
     request: Request,
     community_data: schemas.CommunityRequest,
-    user: Annotated[dict, Depends(policy.check_create_permission)],
+    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> schemas.CommunityResponse:
     """
@@ -40,7 +41,10 @@ async def add_community(
     - If admin privileges are not present, the request will fail with 403.
     - The club is indexed in Meilisearch after creation.
     """
-
+    policy = CommunityPolicy(db_session)
+    await policy.check_permission(
+        action=ResourceAction.CREATE, user=user, community_data=community_data
+    )
     try:
         qb = QueryBuilder(session=db_session, model=Community)
         community: Community = await qb.add(data=community_data, preload=[Community.head_user])
@@ -87,7 +91,7 @@ async def add_community(
 @router.get("/communities", response_model=schemas.ListCommunity)
 async def get_communities(
     request: Request,
-    user: Annotated[dict, Depends(policy.check_read_permission)],
+    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     community_type: Optional[CommunityType] = None,
@@ -111,6 +115,8 @@ async def get_communities(
     - Results are ordered by creation date (newest first)
     - Each community includes its associated media in profile format
     """
+    policy = CommunityPolicy(db_session)
+    await policy.check_permission(action=ResourceAction.READ, user=user)
     # Build conditions list
     conditions = []
     if community_type:
@@ -159,7 +165,7 @@ async def update_community(
     request: Request,
     community_id: int,
     new_data: schemas.CommunityUpdate,
-    user: Annotated[dict, Depends(policy.check_update_permission)],
+    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> schemas.CommunityResponse:
     """
@@ -179,15 +185,18 @@ async def update_community(
     - Returns 403 if user is not the head of the community and is not an admin
     - Returns 500 on internal error
     """
-
+    policy = CommunityPolicy(db_session)
     qb = QueryBuilder(session=db_session, model=Community)
     community: Community | None = (
         await qb.base().filter(Community.id == community_id).eager(Community.head_user).first()
     )
 
-    if community is None:
+    if not community:
         raise HTTPException(status_code=404, detail="Community not found")
 
+    await policy.check_permission(
+        action=ResourceAction.UPDATE, user=user, community=community, community_data=new_data
+    )
     qb = QueryBuilder(session=db_session, model=Community)
     community: Community = await qb.update(instance=community, update_data=new_data)
 
@@ -229,7 +238,7 @@ async def update_community(
 async def delete_community(
     request: Request,
     community_id: int,
-    user: Annotated[dict, Depends(policy.require_delete_permission)],
+    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
 ):
     """
@@ -253,7 +262,7 @@ async def delete_community(
     - Returns 404 if the community is not found
     - Returns 500 on internal error
     """
-
+    policy = CommunityPolicy(db_session)
     try:
         # Get community with admin check
         community_conditions = [Community.id == community_id]  # Admin check is done via dependency
@@ -263,6 +272,8 @@ async def delete_community(
 
         if community is None:
             raise HTTPException(status_code=404, detail="Community not found")
+
+        await policy.check_permission(action=ResourceAction.DELETE, user=user, community=community)
 
         # Get and delete associated media files
         media_conditions = [

@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import check_role, check_token, get_db_session
+from backend.common.dependencies import check_role, get_current_principals, get_db_session
 from backend.core.database.models.user import UserRole
 from backend.routes.communities.comments.policy import CommentAction, CommentPolicy
 from backend.routes.communities.comments.schemas import RequestCommunityCommentSchema
@@ -17,7 +17,7 @@ async def get_comment_policy(
 
 async def check_create_permission(
     comment: RequestCommunityCommentSchema,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     role: Annotated[UserRole, Depends(check_role)],
     policy: Annotated[CommentPolicy, Depends(get_comment_policy)],
 ) -> dict:
@@ -26,7 +26,7 @@ async def check_create_permission(
 
 
 async def check_read_permission(
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     role: Annotated[UserRole, Depends(check_role)],
     policy: Annotated[CommentPolicy, Depends(get_comment_policy)],
 ) -> dict:
@@ -36,7 +36,7 @@ async def check_read_permission(
 
 async def check_delete_permission(
     comment_id: int,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     role: Annotated[UserRole, Depends(check_role)],
     policy: Annotated[CommentPolicy, Depends(get_comment_policy)],
 ) -> dict:

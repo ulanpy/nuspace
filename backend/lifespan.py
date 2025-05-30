@@ -9,6 +9,7 @@ from backend.app_state.rbq import cleanup_rbq, setup_rbq
 from backend.app_state.redis import cleanup_redis, setup_redis
 from backend.core.configs.config import Config
 from backend.routes import routers
+from backend.routes.auth.app_token import AppTokenManager
 from backend.routes.auth.keycloak_manager import KeyCloakManager
 from backend.routes.google_bucket.utils import setup_gcs_pubsub
 
@@ -18,6 +19,7 @@ async def lifespan(app: FastAPI):
     try:
         app.state.kc_manager = KeyCloakManager()
         app.state.config = Config()
+        app.state.app_token_manager = AppTokenManager()
         setup_gcs_pubsub(app)
         await setup_rbq(app)
         await setup_db(app)

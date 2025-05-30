@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_role, check_tg, check_token, get_db_session
+from backend.common.dependencies import check_role, check_tg, get_current_principals, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models import UserRole
@@ -34,7 +34,7 @@ router = APIRouter(tags=["Kupi-Prodai Routes"])
 async def add_product(
     request: Request,
     product_data: ProductRequestSchema,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     tg: Annotated[bool, Depends(check_tg)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ProductResponseSchema:
@@ -107,7 +107,7 @@ async def add_product(
 @router.get("/products", response_model=ListProductSchema)  # works
 async def get_products(
     request: Request,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     role: Annotated[UserRole, Depends(check_role)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
@@ -220,7 +220,7 @@ async def get_products(
 async def update_product(
     request: Request,
     new_data: ProductUpdateSchema,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     role: Annotated[UserRole, Depends(check_role)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ProductResponseSchema:
@@ -292,7 +292,7 @@ async def update_product(
 @router.get("/products/{product_id}", response_model=ProductResponseSchema)  # works
 async def get_product_by_id(
     request: Request,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     role: Annotated[UserRole, Depends(check_role)],
     product_id: int,
     db_session: AsyncSession = Depends(get_db_session),
@@ -344,7 +344,7 @@ async def get_product_by_id(
 @router.delete("/products/{product_id}")  # works
 async def remove_product(
     request: Request,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     role: Annotated[UserRole, Depends(check_role)],
     product_id: int,
     db_session: AsyncSession = Depends(get_db_session),

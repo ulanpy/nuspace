@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_role, check_token, get_db_session
+from backend.common.dependencies import check_role, get_current_principals, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import response_builder
 from backend.core.database.models import Media, Review
@@ -31,7 +31,7 @@ router = APIRouter(tags=["review"])
 async def get(
     request: Request,
     reviewable_type: ReviewableType,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     entity_id: int | None = None,
     owner_id: str | int | None = None,
     size: int = Query(20, ge=1, le=100),
@@ -76,7 +76,7 @@ async def get(
 async def add(
     request: Request,
     review: ReviewRequestSchema,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     db: AsyncSession = Depends(get_db_session),
 ) -> ReviewResponseSchema:
     model: DeclarativeBase = service.REVIEWABLE_TYPE_MODEL_MAP.get(review.reviewable_type)
@@ -127,7 +127,7 @@ async def update(
     request: Request,
     review_id: int,
     new_data: ReviewUpdateSchema,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     role: Annotated[UserRole, Depends(check_role)],
     db: AsyncSession = Depends(get_db_session),
 ) -> ReviewResponseSchema:
@@ -168,7 +168,7 @@ async def update(
 async def delete(
     request: Request,
     review_id: int,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     role: Annotated[UserRole, Depends(check_role)],
     db: AsyncSession = Depends(get_db_session),
 ):
