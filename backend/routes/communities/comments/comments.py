@@ -8,15 +8,17 @@ from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_current_principals, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import response_builder
+from backend.common.utils.enums import ResourceAction
 from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.community import CommunityComment
+from backend.core.database.models.community import CommunityComment, CommunityPost
 from backend.core.database.models.media import Media
 from backend.routes.communities.comments import cruds, utils
 from backend.routes.communities.comments.dependencies import (
-    check_create_permission,
-    check_delete_permission,
-    check_read_permission,
+    comment_exists_or_404,
+    parent_comment_exists_or_404,
+    post_exists_or_404,
 )
+from backend.routes.communities.comments.policy import CommentPolicy
 from backend.routes.communities.comments.schemas import (
     ListCommunityCommentResponseSchema,
     RequestCommunityCommentSchema,
@@ -26,17 +28,46 @@ from backend.routes.communities.comments.schemas import (
 router = APIRouter(tags=["Community Posts Comments Routes"])
 
 
-@router.get("/posts/comments", response_model=ListCommunityCommentResponseSchema)
+@router.get("/posts/{post_id}/comments", response_model=ListCommunityCommentResponseSchema)
 async def get(
     request: Request,
     user: Annotated[dict, Depends(get_current_principals)],
-    policy: Annotated[dict, Depends(check_read_permission)],
     post_id: int,
     comment_id: int | None = None,
     size: int = Query(20, ge=1, le=100),
     page: int = Query(1, ge=1),
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ListCommunityCommentResponseSchema:
+    """
+    Retrieve paginated comments for a specific post.
+
+    **Access Policy:**
+    - All authenticated users can read comments
+    - No special permissions required beyond authentication
+
+    **Parameters:**
+    - `post_id` (int): ID of the post to get comments for
+
+    - `comment_id` (int, optional): If provided, returns replies to this comment instead of root
+       comments
+
+    - `size` (int): Number of comments per page (min: 1, max: 100, default: 20)
+
+    - `page` (int): Page number (min: 1, default: 1)
+
+    **Returns:**
+    - comments: List of comments with their media attachments and reply counts
+    - total_pages: Total number of pages available
+
+    Each comment includes:
+    - Basic comment information (id, content, created_at, etc.)
+    - Media attachments if any
+    - Total number of replies
+    """
+
+    policy = CommentPolicy(db_session)
+    await policy.check_permission(action=ResourceAction.READ, user=user)
+
     qb: QueryBuilder = QueryBuilder(session=db_session, model=CommunityComment)
     comments: List[CommunityComment] = (
         await qb.base()
@@ -98,16 +129,53 @@ async def get(
     )
 
 
-@router.post("/posts/comments", response_model=ResponseCommunityCommentSchema)
-async def create(
+@router.post("/posts/{post_id}/comments", response_model=ResponseCommunityCommentSchema)
+async def create_comment(
     request: Request,
-    comment: RequestCommunityCommentSchema,
+    comment_data: RequestCommunityCommentSchema,
     user: Annotated[dict, Depends(get_current_principals)],
-    policy: Annotated[dict, Depends(check_create_permission)],
     db_session: AsyncSession = Depends(get_db_session),
+    post: CommunityPost = Depends(post_exists_or_404),
+    parent_comment: CommunityComment | None = Depends(parent_comment_exists_or_404),
 ) -> ResponseCommunityCommentSchema:
+    """
+    Create a new comment for a post or reply to an existing comment.
+
+    **Access Policy:**
+    - All authenticated users can create comments
+    - Users can only create comments as themselves (cannot impersonate other users)
+    - Admin can create comments as any user
+
+    **Parameters:**
+    - `post_id` (int): ID of the post to comment on
+
+    - `comment_data` (RequestCommunityCommentSchema):
+
+        - `content`: Comment text
+
+        - `parent_id` (optional): ID of the parent comment if this is a reply
+
+        - `media_ids` (optional): List of media attachment IDs
+
+    **Returns:**
+    - Created comment with all details including media attachments
+
+    **Errors:**
+    - 404: If post not found or parent comment not found (when replying)
+    - 400: If parent comment belongs to different post
+    - 403: If trying to comment as another user
+    """
+    # Check permissions
+    policy = CommentPolicy(db_session)
+    await policy.check_permission(
+        action=ResourceAction.CREATE,
+        user=user,
+        comment_data=comment_data,
+    )
+
+    # Create the comment
     qb: QueryBuilder = QueryBuilder(session=db_session, model=CommunityComment)
-    comment: CommunityComment = await qb.blank().add(data=comment)
+    comment: CommunityComment = await qb.add(data=comment_data)
 
     media_objs: List[Media] = (
         await qb.blank(model=Media)
@@ -137,16 +205,37 @@ async def create(
     return comment_response
 
 
-@router.delete("/comments", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/posts/{post_id}/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete(
+    post_id: int,
     comment_id: int,
     user: Annotated[dict, Depends(get_current_principals)],
-    policy: Annotated[dict, Depends(check_delete_permission)],
     db_session: AsyncSession = Depends(get_db_session),
+    comment: CommunityComment = Depends(comment_exists_or_404),
 ):
-    qb = QueryBuilder(session=db_session, model=CommunityComment)
-    comment: CommunityComment | None = (
-        await qb.base().filter(CommunityComment.id == comment_id).first()
-    )
+    """
+    Delete a specific comment.
 
+    **Access Policy:**
+    - Comment owners can delete their own comments
+    - Admin can delete any comment
+    - Deleting a parent comment will not delete its replies
+
+    **Parameters:**
+    - `post_id` (int): ID of the post containing the comment
+
+    - `comment_id` (int): ID of the comment to delete
+
+    **Returns:**
+    - 204 No Content on successful deletion
+
+    **Errors:**
+    - 404: If comment not found or belongs to different post
+    - 403: If user is not the comment owner or admin
+    """
+
+    policy = CommentPolicy(db_session)
+    await policy.check_permission(action=ResourceAction.DELETE, user=user, comment_data=comment)
+
+    qb: QueryBuilder = QueryBuilder(session=db_session, model=CommunityComment)
     await qb.delete(target=comment)

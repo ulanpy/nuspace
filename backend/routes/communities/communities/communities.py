@@ -12,6 +12,7 @@ from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import Community, CommunityType
 from backend.core.database.models.media import Media, MediaFormat
 from backend.routes.communities.communities import schemas
+from backend.routes.communities.communities.dependencies import community_exists_or_404
 from backend.routes.communities.communities.policy import CommunityPolicy, ResourceAction
 from backend.routes.google_bucket.utils import delete_bucket_object
 
@@ -167,6 +168,7 @@ async def update_community(
     new_data: schemas.CommunityUpdate,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(community_exists_or_404),
 ) -> schemas.CommunityResponse:
     """
     Updates fields of an existing community.
@@ -186,19 +188,14 @@ async def update_community(
     - Returns 500 on internal error
     """
     policy = CommunityPolicy(db_session)
-    qb = QueryBuilder(session=db_session, model=Community)
-    community: Community | None = (
-        await qb.base().filter(Community.id == community_id).eager(Community.head_user).first()
-    )
-
-    if not community:
-        raise HTTPException(status_code=404, detail="Community not found")
-
     await policy.check_permission(
         action=ResourceAction.UPDATE, user=user, community=community, community_data=new_data
     )
+
     qb = QueryBuilder(session=db_session, model=Community)
-    community: Community = await qb.update(instance=community, update_data=new_data)
+    community: Community = await qb.update(
+        instance=community, update_data=new_data, preload=[Community.head_user]
+    )
 
     # Update Meilisearch index
     await meilisearch.upsert(
@@ -240,6 +237,7 @@ async def delete_community(
     community_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(community_exists_or_404),
 ):
     """
     Deletes a specific community.
@@ -263,47 +261,34 @@ async def delete_community(
     - Returns 500 on internal error
     """
     policy = CommunityPolicy(db_session)
-    try:
-        # Get community with admin check
-        community_conditions = [Community.id == community_id]  # Admin check is done via dependency
+    await policy.check_permission(action=ResourceAction.DELETE, user=user, community=community)
 
-        qb = QueryBuilder(session=db_session, model=Community)
-        community: Community | None = await qb.base().filter(*community_conditions).first()
+    # Get and delete associated media files
+    media_conditions = [
+        Media.entity_id == community.id,
+        Media.entity_type == EntityType.communities,
+    ]
 
-        if community is None:
-            raise HTTPException(status_code=404, detail="Community not found")
+    qb = QueryBuilder(session=db_session, model=Media)
+    media_objects: List[Media] = await qb.base().filter(*media_conditions).all()
 
-        await policy.check_permission(action=ResourceAction.DELETE, user=user, community=community)
+    # Delete media files from storage bucket
+    if media_objects:
+        for media in media_objects:
+            await delete_bucket_object(request, media.name)
 
-        # Get and delete associated media files
-        media_conditions = [
-            Media.entity_id == community.id,
-            Media.entity_type == EntityType.communities,
-        ]
+    # Delete community from database
+    qb = QueryBuilder(session=db_session, model=Community)
+    community_deleted: bool = await qb.delete(target=community)
+    # Delete associated media records from database
+    qb = QueryBuilder(session=db_session, model=Media)
+    media_deleted: bool = await qb.delete(target=media_objects)
+    if not community_deleted or not media_deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Community not found")
 
-        qb = QueryBuilder(session=db_session, model=Media)
-        media_objects: List[Media] = await qb.base().filter(*media_conditions).all()
+    # Remove from search index
+    await meilisearch.delete(
+        request=request, storage_name=Community.__tablename__, primary_key=str(community_id)
+    )
 
-        # Delete media files from storage bucket
-        if media_objects:
-            for media in media_objects:
-                await delete_bucket_object(request, media.name)
-
-        # Delete community from database
-        qb = QueryBuilder(session=db_session, model=Community)
-        community_deleted: bool = await qb.delete(target=community)
-        # Delete associated media records from database
-        qb = QueryBuilder(session=db_session, model=Media)
-        media_deleted: bool = await qb.delete(target=media_objects)
-        if not community_deleted or not media_deleted:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Community not found")
-
-        # Remove from search index
-        await meilisearch.delete(
-            request=request, storage_name=Community.__tablename__, primary_key=str(community_id)
-        )
-
-        return status.HTTP_204_NO_CONTENT
-
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    return status.HTTP_204_NO_CONTENT

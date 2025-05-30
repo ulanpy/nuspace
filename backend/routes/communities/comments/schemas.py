@@ -8,7 +8,6 @@ from backend.common.schemas import MediaResponse
 
 
 class RequestCommunityCommentSchema(BaseModel):
-    post_id: int
     parent_id: int | None = None
     user_sub: str
     content: str = Query(max_length=300)
