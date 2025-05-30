@@ -39,8 +39,8 @@ class BaseCommunity(BaseModel):
     description: str
     established: date
     head: str
-    telegram_url: str
-    instagram_url: str
+    telegram_url: str | None = None
+    instagram_url: str | None = None
     created_at: datetime
     updated_at: datetime
 

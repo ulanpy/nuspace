@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_token, get_db_session
+from backend.common.dependencies import get_current_principals, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import response_builder
 from backend.core.database.models.common_enums import EntityType
@@ -29,7 +29,7 @@ router = APIRouter(tags=["Community Posts Comments Routes"])
 @router.get("/posts/comments", response_model=ListCommunityCommentResponseSchema)
 async def get(
     request: Request,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     policy: Annotated[dict, Depends(check_read_permission)],
     post_id: int,
     comment_id: int | None = None,
@@ -102,7 +102,7 @@ async def get(
 async def create(
     request: Request,
     comment: RequestCommunityCommentSchema,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     policy: Annotated[dict, Depends(check_create_permission)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> ResponseCommunityCommentSchema:
@@ -140,7 +140,7 @@ async def create(
 @router.delete("/comments", status_code=status.HTTP_204_NO_CONTENT)
 async def delete(
     comment_id: int,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     policy: Annotated[dict, Depends(check_delete_permission)],
     db_session: AsyncSession = Depends(get_db_session),
 ):

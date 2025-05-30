@@ -1,67 +1,70 @@
-from enum import Enum
-from typing import Annotated, Optional
-
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_role, check_token, get_db_session
-from backend.core.database.models import Community, Event, EventStatus, EventTag
+from backend.common.utils.enums import ResourceAction
+from backend.core.database.models import Event, EventScope, EventStatus, EventTag
 from backend.core.database.models.user import UserRole
-from backend.routes.communities.events.schemas import EventRequest
-
-
-class EventAction(str, Enum):
-    CREATE = "create"
-    READ = "read"
-    UPDATE = "update"
-    DELETE = "delete"
+from backend.routes.communities.events.schemas import EventCreateRequest, EventUpdateRequest
 
 
 class EventPolicy:
     """
-    Event policy class for centralized permission checking and data validation.
+    Event policy class for centralized permission checking and authorization control.
+
+    This class focuses exclusively on permission and authorization checks, such as:
+    - Who can create, read, update, or delete events
+    - What roles have access to specific actions
+    - Special permissions for community heads and admins
 
     **Note**
-    When extending this class, keep in mind that it should only handle permission checking
-    and data validation. All other logic should be kept outside of this class.
+    This class should NOT handle logical data validation (e.g., whether a personal event can have a
+    community_id). Such validations belong in the schema layer as they represent fundamental
+    data model rules that apply regardless of user permissions. This class should only determine
+    WHO can perform actions, not WHAT makes valid event data.
+
+    **Example of schema/logical validations**
+    - Personal events cannot have a community_id
+    - Community events must have a community_id
+    - Event datetime must be in the future
+    - Event duration must be positive
+    - Event name must not be empty
+
+    **Example of permission checks(this class)**
+    - Only admins can create events
+    - Only community heads can update event status
+    - Only event creators can delete their own events
+
     """
 
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def _get_event(self, event_id: int) -> Optional[Event]:
-        """Helper method to fetch event"""
-        qb = QueryBuilder(session=self.db_session, model=Event)
-        return await qb.base().filter(Event.id == event_id).eager(Event.community).first()
-
-    async def _is_community_head(self, user_sub: str, community_id: int) -> bool:
-        """Helper method to check if user is head of community"""
-        qb = QueryBuilder(session=self.db_session, model=Community)
-        community = await qb.base().filter(Community.id == community_id).first()
-        return community is not None and community.head_user.sub == user_sub
-
-    async def _validate_event_status(
+    async def _check_create_permissions(
         self,
-        event_data: EventRequest,
-        user: dict,
-        user_role: UserRole,
+        event_data: EventCreateRequest,
+        user: tuple[dict, dict],
     ) -> None:
         """
-        Validates event status based on user role and event type.
-        Raises HTTPException if status is invalid.
+        Checks if the user has permission to create an event with the given configuration.
 
-        Rules:
-        - Admin can set any status and tag
-        - For personal events (no community_id):
-          - Status must be personal
-        - For community events (has community_id):
-          - If user is head -> status must be approved
-          - If not head -> status must be pending
-        - Non-admin users can only use regular tag
+        Permission rules:
+        - Admin can set any status and configuration
+        - Non-admin users:
+          - Can only use regular tag
+          - For community events:
+            - Must be head to set non-pending status
+
+        Note: Resource existence (e.g. if community exists) should be checked at the service layer,
+        not in the policy layer.
+
+        Raises:
+            HTTPException: If the user doesn't have required permissions
         """
-        # Admin can set any status and tag
-        if user_role == UserRole.admin:
+
+        user_role = user[1]["role"]
+        user_communities = user[1]["communities"]
+        # Admin can set any status and configuration
+        if user_role == UserRole.admin.value:
             return
 
         # Non-admin users can only use regular tag
@@ -71,39 +74,85 @@ class EventPolicy:
                 detail="Non admin users cannot set EventTag other than regular",
             )
 
-        # For personal events
-        if not event_data.community_id:
-            if event_data.status != EventStatus.personal:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Must set EventStatus.personal if community_id is not provided",
-                )
+        # Community scope permission checks
+        if event_data.scope == EventScope.community:
+            # Check if user is head of the community
+            is_head: bool = event_data.community_id in user_communities
+
+            if not is_head:
+                if event_data.status != EventStatus.pending:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=(
+                            f"Non-head users must set status to "
+                            f"{EventStatus.pending} for community events"
+                        ),
+                    )
             return
 
-        # For community events
-        is_head = await self._is_community_head(user["sub"], event_data.community_id)
+    async def _check_update_permissions(
+        self,
+        event: Event,
+        event_data: EventUpdateRequest,
+        user: tuple[dict, dict],
+    ) -> None:
+        """
+        Checks if the user has permission to update specific event fields.
 
-        if is_head:
-            if event_data.status != EventStatus.approved:
+        Permission rules:
+        - Admin can update any field
+        - Community head can update any field except: community_id, creator_sub, scope, tag
+        - Event creator can update any field except: community_id, creator_sub, scope, tag, status
+
+        Raises:
+            HTTPException: If the user doesn't have required permissions
+        """
+        user_role = user[1]["role"]
+        user_communities = user[1]["communities"]
+        # Admin can update anything
+        if user_role == UserRole.admin.value:
+            return
+
+        # Check if any restricted fields are being updated
+        restricted_fields = {
+            "community_id": event.community_id,
+            "creator_sub": event.creator_sub,
+            "scope": event.scope,
+            "tag": event.tag,
+        }
+
+        for field, original_value in restricted_fields.items():
+            new_value = getattr(event_data, field, None)
+            if new_value is not None and new_value != original_value:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Must set EventStatus.approved if user is community head",
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Field '{field}' cannot be modified by non-admin users",
                 )
-        else:
-            if event_data.status != EventStatus.pending:
+
+        # For community events, validate status based on user role
+        if event.scope == EventScope.community:
+            is_head: bool = event.community_id in user_communities
+
+            if not is_head:
+                if event_data.status is not None:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Non-head users cannot set status",
+                    )
+
+        elif event.scope == EventScope.personal:
+            if event_data.status is not None:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Must set EventStatus.pending if user is NOT community head",
+                    detail="Non-head users cannot update status",
                 )
 
     async def check_permission(
         self,
-        action: EventAction,
-        user: dict,
-        user_role: UserRole,
-        event_id: Optional[int] = None,
-        community_id: Optional[int] = None,
-        event_data: Optional[EventRequest] = None,
+        action: ResourceAction,
+        user: tuple[dict, dict],
+        event: Event | None = None,
+        event_data: EventCreateRequest | None = None,
     ) -> bool:
         """
         Centralized permission checking and data validation for event actions.
@@ -112,68 +161,39 @@ class EventPolicy:
             action: The action being performed
             user: The user performing the action
             user_role: The role of the user
-            event_id: Optional event ID for actions that require it
-            community_id: Optional community ID for create actions
-            event_data: Optional event data for create/update actions
+            event: Optional event object for update/delete actions
+            event_data: Optional event data for create actions
 
         Raises:
             HTTPException: If the user doesn't have permission or data is invalid
         """
 
+        user_role = user[1]["role"]
+        user_sub = user[0]["sub"]
+        user_communities = user[1]["communities"]
         # Admin can do everything
-        if user_role == UserRole.admin:
-            if action in [EventAction.CREATE, EventAction.UPDATE] and event_data:
-                # Still validate admin's event data
-                await self._validate_event_status(event_data, user, user_role)
+        if user_role == UserRole.admin.value:
             return True
 
-        if action == EventAction.CREATE:
-            if not event_data:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Event data required for create action",
-                )
-
-            # Validate event status and tag
-            await self._validate_event_status(event_data, user, user_role)
-
-            # For personal events (no community_id), any user can create
-            if not community_id:
-                return True
-
-            # For community events, non-head users can create events (they'll be pending)
+        if action == ResourceAction.CREATE:
+            await self._check_create_permissions(event_data, user)
             return True
 
-        elif action == EventAction.READ:
+        elif action == ResourceAction.READ:
             # All authenticated users can read
             return True
 
-        elif action == EventAction.UPDATE:
-            if not event_id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Event ID required for update"
-                )
+        elif action == ResourceAction.UPDATE:
 
-            if not event_data:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Event data required for update action",
-                )
-
-            event = await self._get_event(event_id)
-            if not event:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-
-            # Validate event status and tag
-            await self._validate_event_status(event_data, user, user_role)
+            await self._check_update_permissions(event, event_data, user)
 
             # Creator can update their own event
-            if event.creator_sub == user["sub"]:
+            if event.creator_sub == user_sub:
                 return True
 
             # Community head can update events in their community
             if event.community_id:
-                is_head = await self._is_community_head(user["sub"], event.community_id)
+                is_head: bool = event.community_id in user_communities
                 if is_head:
                     return True
 
@@ -182,23 +202,15 @@ class EventPolicy:
                 detail="Only event creator, community head, or admin can update events",
             )
 
-        elif action == EventAction.DELETE:
-            if not event_id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, detail="Event ID required for delete"
-                )
-
-            event = await self._get_event(event_id)
-            if not event:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        elif action == ResourceAction.DELETE:
 
             # Creator can delete their own event
-            if event.creator_sub == user["sub"]:
+            if event.creator_sub == user_sub:
                 return True
 
             # Community head can delete events in their community
             if event.community_id:
-                is_head = await self._is_community_head(user["sub"], event.community_id)
+                is_head: bool = event.community_id in user_communities
                 if is_head:
                     return True
 
@@ -209,54 +221,3 @@ class EventPolicy:
 
         # This should never happen as we've handled all enum cases
         raise ValueError(f"Unhandled action type: {action}")
-
-
-# Dependency functions for different actions
-async def get_event_policy(
-    db_session: AsyncSession = Depends(get_db_session),
-) -> EventPolicy:
-    return EventPolicy(db_session)
-
-
-async def check_create_permission(
-    event_data: EventRequest,
-    user: Annotated[dict, Depends(check_token)],
-    role: Annotated[UserRole, Depends(check_role)],
-    policy: Annotated[EventPolicy, Depends(get_event_policy)],
-) -> dict:
-    await policy.check_permission(
-        EventAction.CREATE, user, role, community_id=event_data.community_id, event_data=event_data
-    )
-    return user
-
-
-async def check_read_permission(
-    user: Annotated[dict, Depends(check_token)],
-    role: Annotated[UserRole, Depends(check_role)],
-    policy: Annotated[EventPolicy, Depends(get_event_policy)],
-) -> dict:
-    await policy.check_permission(EventAction.READ, user, role)
-    return user
-
-
-async def check_update_permission(
-    event_id: int,
-    event_data: EventRequest,
-    user: Annotated[dict, Depends(check_token)],
-    role: Annotated[UserRole, Depends(check_role)],
-    policy: Annotated[EventPolicy, Depends(get_event_policy)],
-) -> dict:
-    await policy.check_permission(
-        EventAction.UPDATE, user, role, event_id=event_id, event_data=event_data
-    )
-    return user
-
-
-async def check_delete_permission(
-    event_id: int,
-    user: Annotated[dict, Depends(check_token)],
-    role: Annotated[UserRole, Depends(check_role)],
-    policy: Annotated[EventPolicy, Depends(get_event_policy)],
-) -> dict:
-    await policy.check_permission(EventAction.DELETE, user, role, event_id=event_id)
-    return user
