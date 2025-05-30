@@ -1,254 +1,380 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react"
+import { Calendar, Home, Users, CalendarDays, Filter } from "lucide-react"
+import { Button } from "../../components/atoms/button"
+import { Card } from "../../components/atoms/card"
+import { Badge } from "../../components/atoms/badge"
+import { useNavigate } from "react-router-dom"
+import { useToast } from "../../hooks/use-toast"
+import { useUser } from "../../hooks/use-user"
 import {
-  Search,
-  Users,
-  BookOpen,
-  Building,
-  Star,
-  Clock,
-  MapPin,
-} from "lucide-react";
-import { Input } from "../../components/atoms/input";
-import { Button } from "../../components/atoms/button";
-import { Card, CardContent } from "../../components/atoms/card";
-import { Badge } from "../../components/atoms/badge";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../../components/atoms/tabs";
-import { format } from "date-fns";
+  mockApi,
+  todayEvents,
+  academicEvents,
+  culturalEvents,
+  sportsEvents,
+  socialEvents,
+  featuredEvents,
+} from "../../data/mock-events-data"
+import { EventCarousel } from "../../components/molecules/event-carousel"
+import { LoginModal } from "../../components/molecules/login-modal"
+import { NavTabs } from "../../components/molecules/nav-tabs"
+import { SearchInput } from "../../components/molecules/search-input"
+import { useSearchLogic } from "../../hooks/useSearchLogic"
+import { CategorySlider } from "../../components/organisms/category-slider"
 
-interface Event {
-  id: number;
-  title: string;
-  date: Date;
-  location: string;
-  organizer: string;
-  organizerType: "club" | "admin" | "other";
-  category: string;
-  image: string;
-  isFeatured: boolean;
+// Types for the API responses
+interface Club {
+  id: number
+  name: string
+  type: "academic" | "professional" | "recreational" | "cultural" | "sports" | "social" | "art" | "technology"
+  description: string
+  president: string
+  telegram_url: string
+  instagram_url: string
+  created_at: string
+  updated_at: string
+  media: Media[]
+  members: number
+  followers: number
+  isFollowing: boolean
 }
 
-const events: Event[] = [
-  {
-    id: 1,
-    title: "Freshman Orientation",
-    date: new Date(2023, 7, 25, 10, 0),
-    location: "Main Hall",
-    organizer: "Student Affairs",
-    organizerType: "admin",
-    category: "Academic",
-    image: "https://placehold.co/350x200",
-    isFeatured: true,
-  },
-  {
-    id: 2,
-    title: "Debate Club Meeting",
-    date: new Date(2023, 7, 26, 16, 30),
-    location: "Room 305",
-    organizer: "Debate Club",
-    organizerType: "club",
-    category: "Club",
-    image: "https://placehold.co/350x200",
-    isFeatured: false,
-  },
-  {
-    id: 3,
-    title: "Career Fair",
-    date: new Date(2023, 7, 28, 11, 0),
-    location: "Atrium",
-    organizer: "Career Center",
-    organizerType: "admin",
-    category: "Career",
-    image: "https://placehold.co/350x200",
-    isFeatured: true,
-  },
-  {
-    id: 4,
-    title: "Movie Night",
-    date: new Date(2023, 7, 27, 19, 0),
-    location: "Student Lounge",
-    organizer: "Film Society",
-    organizerType: "club",
-    category: "Entertainment",
-    image: "https://placehold.co/350x200",
-    isFeatured: false,
-  },
-  {
-    id: 5,
-    title: "Research Symposium",
-    date: new Date(2023, 7, 30, 9, 0),
-    location: "Conference Hall",
-    organizer: "Research Department",
-    organizerType: "admin",
-    category: "Academic",
-    image: "https://placehold.co/350x200",
-    isFeatured: true,
-  },
-  {
-    id: 6,
-    title: "Hackathon",
-    date: new Date(2023, 8, 2, 9, 0),
-    location: "Computer Lab",
-    organizer: "Tech Club",
-    organizerType: "club",
-    category: "Technology",
-    image: "https://placehold.co/350x200",
-    isFeatured: false,
-  },
-];
+interface Event {
+  id: number
+  club_id: number
+  name: string
+  place: string
+  description: string
+  duration: number
+  event_datetime: string
+  policy: "open" | "free_ticket" | "paid_ticket"
+  created_at: string
+  updated_at: string
+  media: Media[]
+  club?: Club
+  rating?: number // Mock rating for UI
+}
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
+interface Media {
+  id: number
+  url: string
+}
 
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      type: "spring",
-      stiffness: 100,
-      damping: 15,
-    },
-  },
-};
+// Helper function to get club type display text
+const getClubTypeDisplay = (type: string) => {
+  return type.charAt(0).toUpperCase() + type.slice(1)
+}
 
+// Main component
 export default function NUEventsPage() {
-  const [activeTab, setActiveTab] = useState("all");
-  const [savedEvents, setSavedEvents] = useState<number[]>([]);
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const { user } = useUser()
 
-  const toggleSave = (id: number) => {
-    if (savedEvents.includes(id)) {
-      setSavedEvents(savedEvents.filter((eventId) => eventId !== id));
+  // Navigation tabs
+  const navTabs = [
+    { label: "Home", path: "/apps/nu-events", icon: <Home className="h-4 w-4" /> },
+    { label: "Events", path: "/apps/nu-events/events", icon: <CalendarDays className="h-4 w-4" /> },
+    { label: "Clubs", path: "/apps/nu-events/clubs", icon: <Users className="h-4 w-4" /> },
+  ]
+
+  // State
+  const [events, setEvents] = useState<Event[]>([])
+  const [clubs, setClubs] = useState<Club[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [selectedCategory, setSelectedCategory] = useState<string>("")
+  const [selectedPolicy, setSelectedPolicy] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null)
+
+  // Search logic using the custom hook
+  const {
+    inputValue,
+    setInputValue,
+    handleSearch,
+    preSearchedProducts
+  } = useSearchLogic({
+    baseRoute: "/apps/nu-events",
+    searchParam: "search",
+    setSelectedCategory
+  })
+
+  // Event categories for the slider
+  const eventCategories = [
+    { title: "All", icon: <Calendar className="h-5 w-5" /> },
+    { title: "Academic", icon: <Calendar className="h-5 w-5" /> },
+    { title: "Professional", icon: <Calendar className="h-5 w-5" /> },
+    { title: "Cultural", icon: <Calendar className="h-5 w-5" /> },
+    { title: "Sports", icon: <Calendar className="h-5 w-5" /> },
+    { title: "Social", icon: <Calendar className="h-5 w-5" /> },
+    { title: "Art", icon: <Calendar className="h-5 w-5" /> },
+    { title: "Technology", icon: <Calendar className="h-5 w-5" /> },
+  ]
+
+  // Fetch events
+  const fetchEvents = async (page = 1, category = selectedCategory, policy = selectedPolicy) => {
+    setIsLoading(true)
+    try {
+      // Using mock API instead of real API call
+      const data = mockApi.getEvents(page, 20, category || null, policy)
+      setEvents(data.events)
+      setTotalPages(data.num_of_pages)
+      setCurrentPage(page)
+    } catch (error) {
+      console.error("Error fetching events:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load events. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Fetch clubs
+  const fetchClubs = async () => {
+    try {
+      // Using mock API instead of real API call
+      const data = mockApi.getClubs()
+      setClubs(data.clubs)
+    } catch (error) {
+      console.error("Error fetching clubs:", error)
+    }
+  }
+
+  // Handle filter changes
+  const applyFilters = () => {
+    fetchEvents(1, selectedCategory, selectedPolicy)
+    setShowFilters(false)
+  }
+
+  // Reset filters
+  const resetFilters = () => {
+    setSelectedCategory("")
+    setSelectedPolicy(null)
+    fetchEvents(1, null, null)
+    setShowFilters(false)
+  }
+
+  // Navigate to event details
+  const navigateToEventDetails = (eventId: number) => {
+    navigate(`/apps/nu-events/event/${eventId}`)
+  }
+
+  // Add to Google Calendar
+  const addToGoogleCalendar = (event: Event) => {
+    if (!user) {
+      setPendingAction(() => () => addToGoogleCalendar(event))
+      setShowLoginModal(true)
+      return
+    }
+
+    const eventDate = new Date(event.event_datetime)
+    const endDate = new Date(eventDate.getTime() + event.duration * 60000)
+
+    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+      event.name,
+    )}&dates=${eventDate
+      .toISOString()
+      .replace(/-|:|\.\d+/g, "")
+      .slice(0, -1)}/${endDate
+      .toISOString()
+      .replace(/-|:|\.\d+/g, "")
+      .slice(0, -1)}&details=${encodeURIComponent(event.description)}&location=${encodeURIComponent(event.place)}`
+
+    window.open(googleCalendarUrl, "_blank")
+
+    toast({
+      title: "Success",
+      description: "Event added to your Google Calendar",
+    })
+  }
+
+  // Handle login success
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false)
+    if (pendingAction) {
+      pendingAction()
+      setPendingAction(null)
+    }
+  }
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchEvents()
+    fetchClubs()
+  }, [])
+
+  // Effect for category or policy changes
+  useEffect(() => {
+    if (currentPage === 1) {
+      fetchEvents(1, selectedCategory, selectedPolicy)
     } else {
-      setSavedEvents([...savedEvents, id]);
+      setCurrentPage(1)
     }
-  };
-
-  const getOrganizerIcon = (type: Event["organizerType"]) => {
-    switch (type) {
-      case "club":
-        return <Users className="h-4 w-4" />;
-      case "admin":
-        return <Building className="h-4 w-4" />;
-      case "other":
-        return <BookOpen className="h-4 w-4" />;
-    }
-  };
-
-  const filteredEvents =
-    activeTab === "all"
-      ? events
-      : events.filter((event) =>
-          activeTab === "featured"
-            ? event.isFeatured
-            : event.organizerType === activeTab
-        );
+  }, [selectedCategory, selectedPolicy])
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col space-y-1 sm:space-y-2">
-        <h1 className="text-2xl sm:text-3xl font-bold">NU Events</h1>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Discover events happening at Nazarbayev University
-        </p>
+    <div className="space-y-4 pb-20">
+      {/* Navigation Tabs */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-3 sm:-mx-4">
+        <NavTabs tabs={navTabs} />
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search events..." className="pl-9 text-sm" />
+      <div className="flex flex-col space-y-1">
+        <h1 className="text-xl sm:text-2xl font-bold">NU Events</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground">Discover events at Nazarbayev University</p>
       </div>
 
-      <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4 text-xs sm:text-sm">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="featured">Featured</TabsTrigger>
-          <TabsTrigger value="club">Clubs</TabsTrigger>
-          <TabsTrigger value="admin">University</TabsTrigger>
-        </TabsList>
-        <TabsContent value={activeTab} className="pt-3 sm:pt-4">
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            key={activeTab}
-          >
-            {filteredEvents.map((event) => (
-              <motion.div key={event.id} variants={itemVariants}>
-                <Card className="overflow-hidden h-full">
-                  <div className="relative">
-                    <img
-                      src={event.image || "/placeholder.svg"}
-                      alt={event.title}
-                      className="object-cover w-full h-36 sm:h-48"
-                    />
-                    {event.isFeatured && (
-                      <Badge className="absolute top-2 right-2 bg-yellow-500 text-white text-xs">
-                        Featured
-                      </Badge>
-                    )}
+      {/* Search and filter */}
+      <div className="flex gap-2 relative">
+        <div className="relative flex-1">
+          <SearchInput
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            preSearchedProducts={preSearchedProducts}
+            handleSearch={handleSearch}
+            setSelectedCondition={setSelectedPolicy as (condition: string) => void}
+          />
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className={`h-8 w-8 p-0 ${showFilters ? "bg-primary text-primary-foreground" : ""}`}
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          <Filter className="h-3 w-3" />
+        </Button>
+      </div>
+
+      {/* Category slider */}
+      <div className="mt-4">
+        <CategorySlider
+          categories={eventCategories}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          setInputValue={setInputValue}
+          setSelectedCondition={setSelectedPolicy as (condition: string) => void}
+        />
+      </div>
+
+      {/* Filters panel */}
+      {showFilters && (
+        <Card className="p-3">
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-xs font-medium mb-1.5">Event Policy</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {["open", "free_ticket", "paid_ticket"].map((policy) => (
+                  <Badge
+                    key={policy}
+                    variant={selectedPolicy === policy ? "default" : "outline"}
+                    className="cursor-pointer text-[10px] px-2 py-0 h-5"
+                    onClick={() => setSelectedPolicy(selectedPolicy === policy ? null : policy)}
+                  >
+                    {policy === "open" ? "Open Entry" : policy === "free_ticket" ? "Free Ticket" : "Paid Ticket"}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={resetFilters}>
+                Reset
+              </Button>
+              <Button size="sm" className="h-7 text-xs" onClick={applyFilters}>
+                Apply
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Featured Events Carousel */}
+      <div className="mt-4">
+        <EventCarousel title="Featured Events" events={featuredEvents} viewAllLink="/apps/nu-events/featured" />
+      </div>
+
+      {/* Today's Events */}
+      <div className="mt-4">
+        <EventCarousel title="Today's Events" events={todayEvents} viewAllLink="/apps/nu-events/today" />
+      </div>
+
+      {/* Academic Events */}
+      <div className="mt-4">
+        <EventCarousel title="Academic & Professional" events={academicEvents} viewAllLink="/apps/nu-events/academic" />
+      </div>
+
+      {/* Cultural Events */}
+      <div className="mt-4">
+        <EventCarousel title="Cultural & Art" events={culturalEvents} viewAllLink="/apps/nu-events/cultural" />
+      </div>
+
+      {/* Sports Events */}
+      <div className="mt-4">
+        <EventCarousel title="Sports" events={sportsEvents} viewAllLink="/apps/nu-events/sports" />
+      </div>
+
+      {/* Social & Recreational Events */}
+      <div className="mt-4">
+        <EventCarousel title="Social & Recreational" events={socialEvents} viewAllLink="/apps/nu-events/social" />
+      </div>
+
+      {/* Popular clubs section */}
+      <div className="mt-6">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-base font-bold">Popular Clubs</h2>
+          <Button variant="link" className="text-xs p-0 h-auto" onClick={() => navigate("/apps/nu-events/clubs")}>
+            See All
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+          {clubs.slice(0, 4).map((club) => (
+            <Card
+              key={club.id}
+              className="overflow-hidden cursor-pointer"
+              onClick={() => navigate(`/apps/nu-events/club/${club.id}`)}
+            >
+              <div className="aspect-square relative">
+                {club.media && club.media.length > 0 ? (
+                  <img
+                    src={club.media[0].url || "/placeholder.svg"}
+                    alt={club.name}
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-muted flex items-center justify-center">
+                    <Calendar className="h-8 w-8 text-muted-foreground opacity-50" />
                   </div>
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="flex justify-between items-start mb-1 sm:mb-2">
-                      <h3 className="font-medium text-base sm:text-lg">
-                        {event.title}
-                      </h3>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 sm:h-8 sm:w-8"
-                        onClick={() => toggleSave(event.id)}
-                      >
-                        <Star
-                          className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                            savedEvents.includes(event.id)
-                              ? "fill-yellow-500 text-yellow-500"
-                              : "text-muted-foreground"
-                          }`}
-                        />
-                      </Button>
-                    </div>
-                    <Badge variant="outline" className="mb-2 sm:mb-3 text-xs">
-                      {event.category}
-                    </Badge>
-                    <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
-                      <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground">
-                        <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>
-                          {format(event.date, "EEEE, MMMM d, yyyy • h:mm a")}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground">
-                        <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>{event.location}</span>
-                      </div>
-                      <div className="flex items-center gap-1 sm:gap-2 text-muted-foreground">
-                        {getOrganizerIcon(event.organizerType)}
-                        <span>{event.organizer}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        </TabsContent>
-      </Tabs>
+                )}
+                <Badge className="absolute top-1 left-1 z-10 bg-primary text-primary-foreground text-[10px] px-1 py-0">
+                  {getClubTypeDisplay(club.type)}
+                </Badge>
+              </div>
+              <div className="p-2">
+                <h3 className="font-medium text-xs line-clamp-1">{club.name}</h3>
+                <div className="text-[10px] text-muted-foreground mt-0.5">{club.members} members</div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={handleLoginSuccess}
+        title="Login Required"
+        message="You need to be logged in to add events to your Google Calendar."
+      />
     </div>
-  );
+  )
 }
