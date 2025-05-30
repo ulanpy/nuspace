@@ -1,10 +1,9 @@
 import { Progress } from "@/components/atoms/progress";
-import { SubmitButton } from "../buttons/submit-button";
 import { ProductInfo } from "./product-info";
 import { ImageGalery } from "./image-galery";
 import { ImageIcon, RefreshCw } from "lucide-react";
 import { Button } from "@/components/atoms/button";
-import { useImage } from "@/modules/kupi-prodai/form/use-image";
+import { useImage } from "@/modules/kupi-prodai/hooks/use-image";
 import { useProduct } from "./use-product";
 import { useRef } from "react";
 import { useListingState } from "@/context/listing-context";

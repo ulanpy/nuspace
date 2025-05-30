@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { Pagination } from "../../molecules/pagination";
 import { useNavigate } from "react-router-dom";
-import { useListingState } from "@/context/listing-context";
 import { MessageButton } from "@/components/molecules/buttons/message-button";
 import { ProductCard } from "@/components/molecules/cards/product-card";
 
@@ -29,13 +28,16 @@ const itemVariants = {
 };
 export function ProductGrid({
   products,
+  page,
+  setPage,
   className,
 }: {
   products: Types.PaginatedResponse<Types.Product> | null;
+  page: number;
+  setPage: (page: number) => void;
   className?: string;
 }) {
   const navigate = useNavigate();
-  const { currentPage, setCurrentPage } = useListingState();
   return (
     <>
       <motion.div
@@ -60,8 +62,8 @@ export function ProductGrid({
       </motion.div>
       <Pagination
         length={products?.num_of_pages ?? 0}
-        currentPage={currentPage}
-        onChange={(page) => setCurrentPage(page)}
+        currentPage={page}
+        onChange={(page) => setPage(page)}
       />
     </>
   );

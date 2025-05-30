@@ -95,6 +95,7 @@ type QueryParams = {
   size: number;
   category?: string;
   condition?: string;
+  keyword?: string;
 };
 // API functions
 export const kupiProdaiApi = {
@@ -115,18 +116,20 @@ export const kupiProdaiApi = {
     size = defaultSize,
     category,
     condition,
+    keyword,
   }: QueryParams) => {
     return queryOptions({
       queryKey: [
         kupiProdaiApi.baseKey,
         "list",
-        { page, size, category, condition },
+        { page, size, category, condition, keyword },
       ],
       queryFn: ({ queryKey }) => {
         const [, , params] = queryKey as [string, string, QueryParams];
         let endpoint = `/products?size=${params.size}&page=${params.page}`;
         if (params.category) endpoint += `&category=${params.category}`;
         if (params.condition) endpoint += `&condition=${params.condition}`;
+        if (params.keyword) endpoint += `&keyword=${params.keyword}`;
 
         return apiCall<PaginatedResponse<Product>>(endpoint);
       },
@@ -182,7 +185,7 @@ export const kupiProdaiApi = {
     return queryOptions({
       queryKey: ["pre-search-products", keyword],
       queryFn: ({ signal }) => {
-        return apiCall<string[]>(`/products/pre_search/?keyword=${keyword}`, {
+        return apiCall<Types.PreSearchedProduct[]>(`/search/?keyword=${keyword}&storage_name=products&page=1&size=10`, {
           signal,
         });
       },
@@ -204,7 +207,7 @@ export const kupiProdaiApi = {
           string,
           { page: number; size: number; keyword: string }
         ];
-        let endpoint = `/products/search/?keyword=${params.keyword}&size=${params.size}&page=${params.page}`;
+        let endpoint = `/products?size=${params.size}&page=${params.page}&keyword=${params.keyword}`;
         return apiCall<PaginatedResponse<Product>>(endpoint);
       },
     });

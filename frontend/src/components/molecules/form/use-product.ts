@@ -1,5 +1,5 @@
 import { useListingState } from "@/context/listing-context";
-import { productCategories} from "@/data/product";
+import { productCategories} from "@/data/marketplace/product";
 
 export const useProduct = () => {
   const { setNewListing } = useListingState();

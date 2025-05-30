@@ -1,7 +1,7 @@
 import { Button } from "@/components/atoms/button";
 import { ArrowLeft } from "lucide-react";
 import { ProductForm } from "@/components/molecules/form/product-form";
-import { useProductForm } from "@/modules/kupi-prodai/form/use-product-form";
+import { useProductForm } from "@/modules/kupi-prodai/hooks/use-product-form";
 import { useNavigate, useParams } from "react-router-dom";
 
 // Mock product data (would be fetched from API in a real application)

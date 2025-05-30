@@ -49,6 +49,32 @@ export const LazyRoutes = {
       ),
     },
     {
+      path: "nu-events",
+      Component: withSuspense(lazy(() => import("@/pages/apps/nu-events"))),
+    },
+    {
+      path: "nu-events/events",
+      Component: withSuspense(lazy(() => import("@/pages/apps/nu-events/event/[id]"))),
+    },
+    {
+      path: "nu-events/event/:id",
+      Component: withSuspense(
+        lazy(() => import("@/pages/apps/nu-events/event/[id]"))
+      ),
+    },
+    {
+      path: "nu-events/club/:id",
+      Component: withSuspense(
+        lazy(() => import("@/pages/apps/nu-events/club/[id]"))
+      ),
+    },
+    {
+      path: "nu-events/clubs",
+      Component: withSuspense(
+        lazy(() => import("@/pages/apps/nu-events/clubs"))
+      ),
+    },
+    {
       path: "about",
       Component: withSuspense(lazy(() => import("@/pages/apps/about"))),
     },
@@ -81,6 +107,6 @@ export const LazyRoutes = {
     {
       path: "user/:id",
       Component: withSuspense(lazy(() => import("@/pages/admin/user-page"))),
-    }
+    },
   ],
 };

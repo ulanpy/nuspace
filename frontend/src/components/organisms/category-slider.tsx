@@ -1,11 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import { useListingState } from "@/context/listing-context";
 import { CategoryCard } from "@/components/atoms/category-card";
 import { SliderContainer } from "../molecules/slider-container";
 
 interface CategorySliderProps {
   categories: { title: string; icon: JSX.Element }[];
-  selectedCategory: string;
+  selectedCategory: string | "";
+  setPage: (page: number) => void;
   setSelectedCategory: (category: string) => void;
   setInputValue?: (value: string) => void;
   setSelectedCondition?: (condition: string) => void;
@@ -14,16 +14,16 @@ interface CategorySliderProps {
 export function CategorySlider({
   categories,
   selectedCategory,
+  setPage,
   setSelectedCategory,
   setInputValue,
   setSelectedCondition,
 }: CategorySliderProps) {
   const navigate = useNavigate();
-  const { setCurrentPage } = useListingState();
 
   const handleCategorySelect = (title: string) => {
     setSelectedCategory(title);
-    setCurrentPage(1);
+    setPage(1);
     setInputValue?.("");
     setSelectedCondition?.("All Conditions");
 

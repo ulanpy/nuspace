@@ -1,159 +1,186 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, Users, Calendar, Instagram, MessageCircle, Heart, ExternalLink } from "lucide-react"
-import { Button } from "../../../../components/atoms/button"
-import { Badge } from "../../../../components/atoms/badge"
-import { Card, CardContent } from "../../../../components/atoms/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../components/atoms/tabs"
-import { useToast } from "../../../../hooks/use-toast"
-import { useUser } from "../../../../hooks/use-user"
-import { mockApi } from "../../../../data/mock-events-data"
-import { NavTabs } from "../../../../components/molecules/nav-tabs"
-import { LoginModal } from "../../../../components/molecules/login-modal"
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  ArrowLeft,
+  Users,
+  Calendar,
+  Instagram,
+  MessageCircle,
+  Heart,
+  ExternalLink,
+} from "lucide-react";
+import { Button } from "../../../../components/atoms/button";
+import { Badge } from "../../../../components/atoms/badge";
+import { Card, CardContent } from "../../../../components/atoms/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../../../components/atoms/tabs";
+import { useToast } from "../../../../hooks/use-toast";
+import { useUser } from "../../../../hooks/use-user";
+import { mockApi } from "../../../../data/events/mock-events-data";
+import { NavTabs } from "../../../../components/molecules/nav-tabs";
+import { LoginModal } from "../../../../components/molecules/login-modal";
 
 interface Club {
-  id: number
-  name: string
-  type: string
-  description: string
-  president: string
-  telegram_url: string
-  instagram_url: string
-  created_at: string
-  updated_at: string
-  media: { id: number; url: string }[]
-  members: number
-  followers: number
-  isFollowing: boolean
+  id: number;
+  name: string;
+  type: string;
+  description: string;
+  president: string;
+  telegram_url: string;
+  instagram_url: string;
+  created_at: string;
+  updated_at: string;
+  media: { id: number; url: string }[];
+  members: number;
+  followers: number;
+  isFollowing: boolean;
 }
 
 interface Event {
-  id: number
-  club_id: number
-  name: string
-  place: string
-  description: string
-  duration: number
-  event_datetime: string
-  policy: string
-  created_at: string
-  updated_at: string
-  media: { id: number; url: string }[]
+  id: number;
+  club_id: number;
+  name: string;
+  place: string;
+  description: string;
+  duration: number;
+  event_datetime: string;
+  policy: string;
+  created_at: string;
+  updated_at: string;
+  media: { id: number; url: string }[];
 }
 
 // Helper function to get club type display text
 const getClubTypeDisplay = (type: string) => {
-  return type.charAt(0).toUpperCase() + type.slice(1)
-}
+  return type.charAt(0).toUpperCase() + type.slice(1);
+};
 
 export default function ClubDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const { toast } = useToast()
-  const { user } = useUser()
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useUser();
 
   // Navigation tabs
   const navTabs = [
-    { label: "Home", path: "/apps/nu-events", icon: <Calendar className="h-4 w-4" /> },
-    { label: "Events", path: "/apps/nu-events/events", icon: <Calendar className="h-4 w-4" /> },
-    { label: "Clubs", path: "/apps/nu-events/clubs", icon: <Users className="h-4 w-4" /> },
-  ]
+    {
+      label: "Home",
+      path: "/apps/nu-events",
+      icon: <Calendar className="h-4 w-4" />,
+    },
+    {
+      label: "Events",
+      path: "/apps/nu-events/events",
+      icon: <Calendar className="h-4 w-4" />,
+    },
+    {
+      label: "Clubs",
+      path: "/apps/nu-events/clubs",
+      icon: <Users className="h-4 w-4" />,
+    },
+  ];
 
-  const [club, setClub] = useState<Club | null>(null)
-  const [clubEvents, setClubEvents] = useState<Event[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("about")
-  const [isFollowing, setIsFollowing] = useState(false)
-  const [followerCount, setFollowerCount] = useState(0)
-  const [showLoginModal, setShowLoginModal] = useState(false)
-  const [pendingAction, setPendingAction] = useState<string | null>(null)
+  const [club, setClub] = useState<Club | null>(null);
+  const [clubEvents, setClubEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("about");
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   // Fetch club details
   useEffect(() => {
     const fetchClubDetails = async () => {
-      setIsLoading(true)
+      setIsLoading(true);
       try {
-        if (!id) return
+        if (!id) return;
 
         // Using mock API instead of real API call
-        const clubData = mockApi.getClub(Number.parseInt(id))
-        setClub(clubData)
+        const clubData = mockApi.getClub(Number.parseInt(id));
+        setClub(clubData);
 
         if (clubData) {
-            setIsFollowing(clubData.isFollowing)
-            setFollowerCount(clubData.followers)
+          setIsFollowing(clubData.isFollowing);
+          setFollowerCount(clubData.followers);
         }
 
         // Fetch club events
-        const eventsData = mockApi.getClub(Number.parseInt(id))
+        const eventsData = mockApi.getClub(Number.parseInt(id));
         if (eventsData) {
-            setClubEvents(eventsData)
+          setClubEvents(eventsData);
         }
       } catch (error) {
-        console.error("Error fetching club details:", error)
+        console.error("Error fetching club details:", error);
         toast({
           title: "Error",
           description: "Failed to load club details. Please try again.",
           variant: "destructive",
-        })
+        });
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchClubDetails()
-  }, [id, toast])
+    fetchClubDetails();
+  }, [id, toast]);
 
   // Handle follow/unfollow
   const handleFollowToggle = () => {
     if (!user) {
-      setPendingAction("follow")
-      setShowLoginModal(true)
-      return
+      setPendingAction("follow");
+      setShowLoginModal(true);
+      return;
     }
 
     // Toggle following state
-    setIsFollowing(!isFollowing)
-    setFollowerCount(isFollowing ? followerCount - 1 : followerCount + 1)
+    setIsFollowing(!isFollowing);
+    setFollowerCount(isFollowing ? followerCount - 1 : followerCount + 1);
 
     // Show toast
     toast({
       title: isFollowing ? "Unfollowed" : "Following",
-      description: isFollowing ? `You unfollowed ${club?.name}` : `You are now following ${club?.name}`,
-    })
+      description: isFollowing
+        ? `You unfollowed ${club?.name}`
+        : `You are now following ${club?.name}`,
+    });
 
     // In a real app, you would make an API call here
-  }
+  };
 
   // Handle join club
   const handleJoinClub = () => {
     if (!user) {
-      setPendingAction("join")
-      setShowLoginModal(true)
-      return
+      setPendingAction("join");
+      setShowLoginModal(true);
+      return;
     }
 
     // Show toast
     toast({
       title: "Request Sent",
       description: `Your request to join ${club?.name} has been sent.`,
-    })
+    });
 
     // In a real app, you would make an API call here
-  }
+  };
 
   // Handle login success
   const handleLoginSuccess = () => {
-    setShowLoginModal(false)
+    setShowLoginModal(false);
     if (pendingAction === "follow") {
-      handleFollowToggle()
+      handleFollowToggle();
     } else if (pendingAction === "join") {
-      handleJoinClub()
+      handleJoinClub();
     }
-    setPendingAction(null)
-  }
+    setPendingAction(null);
+  };
 
   if (isLoading) {
     return (
@@ -164,19 +191,24 @@ export default function ClubDetailPage() {
         <div className="h-4 bg-muted rounded w-1/4"></div>
         <div className="h-20 bg-muted rounded"></div>
       </div>
-    )
+    );
   }
 
   if (!club) {
     return (
       <div className="text-center py-12">
         <h2 className="text-xl font-bold">Club not found</h2>
-        <p className="text-muted-foreground mt-2">The club you're looking for doesn't exist or has been removed.</p>
-        <Button className="mt-4" onClick={() => navigate("/apps/nu-events/clubs")}>
+        <p className="text-muted-foreground mt-2">
+          The club you're looking for doesn't exist or has been removed.
+        </p>
+        <Button
+          className="mt-4"
+          onClick={() => navigate("/apps/nu-events/clubs")}
+        >
           Back to Clubs
         </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -257,14 +289,24 @@ export default function ClubDetailPage() {
           >
             {isFollowing ? "Following" : "Follow"}
           </Button>
-          <Button variant="default" size="sm" onClick={handleJoinClub} className="text-xs h-8">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleJoinClub}
+            className="text-xs h-8"
+          >
             Join Club
           </Button>
         </div>
       </div>
 
       {/* Club Content */}
-      <Tabs defaultValue="about" value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
+      <Tabs
+        defaultValue="about"
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full mt-4"
+      >
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="about">About</TabsTrigger>
           <TabsTrigger value="events">Events</TabsTrigger>
@@ -335,7 +377,9 @@ export default function ClubDetailPage() {
                     )}
                   </div>
                   <CardContent className="p-2">
-                    <h3 className="font-medium text-xs line-clamp-1">{event.name}</h3>
+                    <h3 className="font-medium text-xs line-clamp-1">
+                      {event.name}
+                    </h3>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
                       {new Date(event.event_datetime).toLocaleDateString()}
                     </p>
@@ -347,7 +391,9 @@ export default function ClubDetailPage() {
             <div className="text-center py-8">
               <Calendar className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
               <h3 className="text-base font-medium">No upcoming events</h3>
-              <p className="text-sm text-muted-foreground mt-1">This club doesn't have any scheduled events.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                This club doesn't have any scheduled events.
+              </p>
             </div>
           )}
         </TabsContent>
@@ -356,7 +402,10 @@ export default function ClubDetailPage() {
           {club.media && club.media.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {club.media.map((media, index) => (
-                <div key={index} className="aspect-square rounded-md overflow-hidden">
+                <div
+                  key={index}
+                  className="aspect-square rounded-md overflow-hidden"
+                >
                   <img
                     src={media.url || "/placeholder.svg"}
                     alt={`${club.name} gallery ${index + 1}`}
@@ -368,7 +417,9 @@ export default function ClubDetailPage() {
           ) : (
             <div className="text-center py-8">
               <h3 className="text-base font-medium">No gallery images</h3>
-              <p className="text-sm text-muted-foreground mt-1">This club hasn't uploaded any gallery images yet.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                This club hasn't uploaded any gallery images yet.
+              </p>
             </div>
           )}
         </TabsContent>
@@ -387,6 +438,5 @@ export default function ClubDetailPage() {
         }
       />
     </div>
-  )
+  );
 }
-

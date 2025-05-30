@@ -1,168 +1,186 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
-import { Search, Users, Filter, ChevronLeft, ChevronRight, Heart } from "lucide-react"
-import { Input } from "@/components/atoms/input"
-import { Button } from "@/components/atoms/button"
-import { Card } from "@/components/atoms/card"
-import { Badge } from "@/components/atoms/badge"
-import { useToast } from "@/hooks/use-toast"
-import { useUser } from "@/hooks/use-user"
-import { mockApi } from "@/data/mock-events-data"
-import { LoginModal } from "@/components/molecules/login-modal"
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Search,
+  Users,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+} from "lucide-react";
+import { Input } from "@/components/atoms/input";
+import { Button } from "@/components/atoms/button";
+import { Card } from "@/components/atoms/card";
+import { Badge } from "@/components/atoms/badge";
+import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/hooks/use-user";
+import { mockApi } from "@/data/events/mock-events-data";
+import { LoginModal } from "@/components/molecules/login-modal";
 
 interface Club {
-  id: number
-  name: string
-  type: "academic" | "professional" | "recreational" | "cultural" | "sports" | "social" | "art" | "technology"
-  description: string
-  president: string
-  telegram_url: string
-  instagram_url: string
-  created_at: string
-  updated_at: string
-  media: Media[]
-  members: number
-  followers: number
-  isFollowing: boolean
+  id: number;
+  name: string;
+  type:
+    | "academic"
+    | "professional"
+    | "recreational"
+    | "cultural"
+    | "sports"
+    | "social"
+    | "art"
+    | "technology";
+  description: string;
+  president: string;
+  telegram_url: string;
+  instagram_url: string;
+  created_at: string;
+  updated_at: string;
+  media: Media[];
+  members: number;
+  followers: number;
+  isFollowing: boolean;
 }
 
 interface Media {
-  id: number
-  url: string
+  id: number;
+  url: string;
 }
 
 interface PaginatedClubs {
-  clubs: Club[]
-  num_of_pages: number
+  clubs: Club[];
+  num_of_pages: number;
 }
 
 // Helper function to get club type display text
 const getClubTypeDisplay = (type: string) => {
-  return type.charAt(0).toUpperCase() + type.slice(1)
-}
+  return type.charAt(0).toUpperCase() + type.slice(1);
+};
 
 export default function ClubsPage() {
-  const navigate = useNavigate()
-  const { toast } = useToast()
-  const { user } = useUser()
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useUser();
 
-  const [clubs, setClubs] = useState<Club[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [selectedClubType, setSelectedClubType] = useState<string | null>(null)
-  const [showFilters, setShowFilters] = useState(false)
-  const [showLoginModal, setShowLoginModal] = useState(false)
-  const [pendingAction, setPendingAction] = useState<{ clubId: number; action: () => void } | null>(null)
+  const [clubs, setClubs] = useState<Club[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [selectedClubType, setSelectedClubType] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    clubId: number;
+    action: () => void;
+  } | null>(null);
 
   // Fetch clubs
   const fetchClubs = async (page = 1, clubType = selectedClubType) => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       // Using mock API instead of real API call
-      const data = mockApi.getClubs(page, 12, clubType)
-      setClubs(data.clubs)
-      setTotalPages(data.num_of_pages)
-      setCurrentPage(page)
+      const data = mockApi.getClubs(page, 12, clubType);
+      setClubs(data.clubs);
+      setTotalPages(data.num_of_pages);
+      setCurrentPage(page);
     } catch (error) {
-      console.error("Error fetching clubs:", error)
+      console.error("Error fetching clubs:", error);
       toast({
         title: "Error",
         description: "Failed to load clubs. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Search clubs
   const searchClubs = () => {
     // In a real app, we would have a search endpoint
     // For now, we'll just filter the clubs client-side
     if (!searchQuery.trim()) {
-      fetchClubs()
-      return
+      fetchClubs();
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const query = searchQuery.toLowerCase()
+      const query = searchQuery.toLowerCase();
       const filteredClubs = mockApi
         .getClubs()
         .clubs.filter(
           (club) =>
             club.name.toLowerCase().includes(query) ||
             club.description.toLowerCase().includes(query) ||
-            club.type.toLowerCase().includes(query),
-        )
+            club.type.toLowerCase().includes(query)
+        );
 
-      setClubs(filteredClubs)
-      setTotalPages(1)
-      setCurrentPage(1)
+      setClubs(filteredClubs);
+      setTotalPages(1);
+      setCurrentPage(1);
     } catch (error) {
-      console.error("Error searching clubs:", error)
+      console.error("Error searching clubs:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value)
-  }
+    setSearchQuery(e.target.value);
+  };
 
   // Handle filter changes
   const applyFilters = () => {
-    fetchClubs(1, selectedClubType)
-    setShowFilters(false)
-  }
+    fetchClubs(1, selectedClubType);
+    setShowFilters(false);
+  };
 
   // Reset filters
   const resetFilters = () => {
-    setSelectedClubType(null)
-    fetchClubs(1, null)
-    setShowFilters(false)
-  }
+    setSelectedClubType(null);
+    fetchClubs(1, null);
+    setShowFilters(false);
+  };
 
   // Toggle follow club
   const toggleFollowClub = (clubId: number) => {
     if (!user) {
-      setPendingAction({ clubId, action: () => toggleFollowClub(clubId) })
-      setShowLoginModal(true)
-      return
+      setPendingAction({ clubId, action: () => toggleFollowClub(clubId) });
+      setShowLoginModal(true);
+      return;
     }
 
-    const updatedClub = mockApi.toggleFollowClub(clubId)
+    const updatedClub = mockApi.toggleFollowClub(clubId);
     if (updatedClub) {
-      setClubs(clubs.map((club) => (club.id === clubId ? updatedClub : club)))
+      setClubs(clubs.map((club) => (club.id === clubId ? updatedClub : club)));
       toast({
         title: updatedClub.isFollowing ? "Following" : "Unfollowed",
         description: updatedClub.isFollowing
           ? `You are now following ${updatedClub.name}`
           : `You have unfollowed ${updatedClub.name}`,
-      })
+      });
     }
-  }
+  };
 
   // Handle login success
   const handleLoginSuccess = () => {
-    setShowLoginModal(false)
+    setShowLoginModal(false);
     if (pendingAction) {
-      pendingAction.action()
-      setPendingAction(null)
+      pendingAction.action();
+      setPendingAction(null);
     }
-  }
+  };
 
   // Initial data fetch
   useEffect(() => {
-    fetchClubs()
-  }, [])
+    fetchClubs();
+  }, []);
 
   // Loading skeleton
   const ClubSkeleton = () => (
@@ -173,12 +191,16 @@ export default function ClubsPage() {
         <div className="h-4 bg-muted animate-pulse rounded w-1/2" />
       </div>
     </Card>
-  )
+  );
 
   return (
     <div className="space-y-6 pb-20">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" className="flex items-center gap-1" onClick={() => navigate("/apps/nu-events")}>
+        <Button
+          variant="ghost"
+          className="flex items-center gap-1"
+          onClick={() => navigate("/apps/nu-events")}
+        >
           <ChevronLeft className="h-4 w-4" />
           <span>Back</span>
         </Button>
@@ -217,18 +239,29 @@ export default function ClubsPage() {
             <div>
               <h3 className="text-sm font-medium mb-2">Club Type</h3>
               <div className="flex flex-wrap gap-2">
-                {["academic", "professional", "recreational", "cultural", "sports", "social", "art", "technology"].map(
-                  (type) => (
-                    <Badge
-                      key={type}
-                      variant={selectedClubType === type ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => setSelectedClubType(selectedClubType === type ? null : type)}
-                    >
-                      {getClubTypeDisplay(type)}
-                    </Badge>
-                  ),
-                )}
+                {[
+                  "academic",
+                  "professional",
+                  "recreational",
+                  "cultural",
+                  "sports",
+                  "social",
+                  "art",
+                  "technology",
+                ].map((type) => (
+                  <Badge
+                    key={type}
+                    variant={selectedClubType === type ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() =>
+                      setSelectedClubType(
+                        selectedClubType === type ? null : type
+                      )
+                    }
+                  >
+                    {getClubTypeDisplay(type)}
+                  </Badge>
+                ))}
               </div>
             </div>
 
@@ -279,25 +312,39 @@ export default function ClubsPage() {
                   <div>
                     <h3
                       className="font-medium hover:text-primary cursor-pointer"
-                      onClick={() => navigate(`/apps/nu-events/club/${club.id}`)}
+                      onClick={() =>
+                        navigate(`/apps/nu-events/club/${club.id}`)
+                      }
                     >
                       {club.name}
                     </h3>
-                    <div className="text-xs text-muted-foreground mt-1">{club.members} members</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {club.members} members
+                    </div>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={club.isFollowing ? "text-primary" : "text-muted-foreground"}
+                    className={
+                      club.isFollowing
+                        ? "text-primary"
+                        : "text-muted-foreground"
+                    }
                     onClick={(e) => {
-                      e.stopPropagation()
-                      toggleFollowClub(club.id)
+                      e.stopPropagation();
+                      toggleFollowClub(club.id);
                     }}
                   >
-                    <Heart className={`h-5 w-5 ${club.isFollowing ? "fill-primary" : ""}`} />
+                    <Heart
+                      className={`h-5 w-5 ${
+                        club.isFollowing ? "fill-primary" : ""
+                      }`}
+                    />
                   </Button>
                 </div>
-                <div className="text-xs text-muted-foreground mt-2">{club.followers} followers</div>
+                <div className="text-xs text-muted-foreground mt-2">
+                  {club.followers} followers
+                </div>
               </div>
             </Card>
           ))}
@@ -310,8 +357,8 @@ export default function ClubsPage() {
             {searchQuery
               ? "No clubs match your search criteria. Try a different search term."
               : selectedClubType
-                ? `No ${selectedClubType} clubs found. Try a different filter.`
-                : "There are no clubs available at the moment."}
+              ? `No ${selectedClubType} clubs found. Try a different filter.`
+              : "There are no clubs available at the moment."}
           </p>
         </div>
       )}
@@ -319,7 +366,12 @@ export default function ClubsPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-6 gap-2">
-          <Button variant="outline" size="sm" onClick={() => fetchClubs(currentPage - 1)} disabled={currentPage === 1}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchClubs(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="flex items-center text-sm">
@@ -345,5 +397,5 @@ export default function ClubsPage() {
         message="You need to be logged in to follow clubs."
       />
     </div>
-  )
+  );
 }

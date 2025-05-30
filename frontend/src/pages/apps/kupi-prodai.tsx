@@ -28,7 +28,7 @@ import { useUserProducts } from "@/modules/kupi-prodai/api/hooks/use-user-produc
 import { useCreateProduct } from "@/modules/kupi-prodai/api/hooks/use-create-product";
 import { useDeleteProduct } from "@/modules/kupi-prodai/api/hooks/use-delete-product";
 import { useUpdateProduct } from "@/modules/kupi-prodai/api/hooks/use-update-product";
-import { useEditModal } from "@/modules/kupi-prodai/form/use-edit-modal";
+import { useEditModal } from "@/modules/kupi-prodai/hooks/use-edit-modal";
 import { useToggleProduct } from "@/modules/kupi-prodai/api/hooks/use-toggle-product";
 import { useListingState } from "@/context/listing-context";
 import { useImageContext } from "@/context/image-context";
@@ -47,7 +47,7 @@ import { ProductGrid } from "@/components/organisms/kp/product-grid";
 import { useUser } from "@/hooks/use-user";
 import { ProductListingSection } from "@/components/organisms/kp/product-listing-section";
 import { ProductCreateForm } from "@/components/molecules/form/product-create-form";
-import { useImage } from "@/modules/kupi-prodai/form/use-image";
+import { useImage } from "@/modules/kupi-prodai/hooks/use-image";
 import { useProduct } from "@/components/molecules/form/use-product";
 import { getCategoryDisplay } from "@/utils/products-utils";
 
@@ -69,6 +69,9 @@ export default function KupiProdaiPage() {
     selectedCondition,
     setSelectedCategory,
     setSelectedCondition,
+    setKeyword,
+    page,
+    setPage,
   } = useProducts();
   const { myProducts } = useUserProducts();
   const { handleCreate } = useCreateProduct();
@@ -109,11 +112,15 @@ export default function KupiProdaiPage() {
   } = useProduct();
 
   // Active and inactive listings
-  const activeListings = myProducts?.products?.filter((p) => p.status === "active");
-  const inactiveListings = myProducts?.products?.filter((p) => p.status === "inactive");
-  const soldListings = myProducts?.products?.filter((p) => p.status === "inactive");
-
-  // Product skeleton for loading state
+  const activeListings = myProducts?.products?.filter(
+    (p) => p.status === "active"
+  );
+  const inactiveListings = myProducts?.products?.filter(
+    (p) => p.status === "inactive"
+  );
+  const soldListings = myProducts?.products?.filter(
+    (p) => p.status === "inactive"
+  );
 
   // search section
   const {
@@ -121,24 +128,13 @@ export default function KupiProdaiPage() {
     setInputValue,
     preSearchedProducts,
     handleSearch,
-    searchedProducts,
   } = useSearchLogic({
     setSelectedCategory,
     baseRoute: "/apps/kupi-prodai",
     searchParam: "text",
+    setKeyword,
+    setPage,
   });
-  const [products, setProducts] =
-    useState<Types.PaginatedResponse<Types.Product> | null>(null);
-
-  useEffect(() => {
-    if (searchedProducts) {
-      setProducts(searchedProducts);
-    }
-  }, [searchedProducts]);
-
-  useEffect(() => {
-    setProducts(productItems);
-  }, [productItems]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -175,6 +171,7 @@ export default function KupiProdaiPage() {
                   setInputValue={setInputValue}
                   preSearchedProducts={preSearchedProducts}
                   handleSearch={handleSearch}
+                  setKeyword={setKeyword}
                   setSelectedCondition={setSelectedCondition}
                 />
               </div>
@@ -187,6 +184,7 @@ export default function KupiProdaiPage() {
             <CategorySlider
               categories={categories}
               selectedCategory={selectedCategory}
+              setPage={setPage}
               setSelectedCategory={setSelectedCategory}
               setInputValue={setInputValue}
               setSelectedCondition={setSelectedCondition}
@@ -198,8 +196,8 @@ export default function KupiProdaiPage() {
               <ProductLoadingState />
             ) : error ? (
               <ProductErrorState error={error} />
-            ) : (products?.products.length ?? 0) > 0 ? (
-              <ProductGrid products={products} />
+            ) : (productItems?.products.length ?? 0) > 0 ? (
+              <ProductGrid products={productItems} page={page} setPage={setPage}/>
             ) : (
               <ProductEmptyState />
             )}
