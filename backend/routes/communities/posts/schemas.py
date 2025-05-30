@@ -3,6 +3,8 @@ from typing import List
 
 from pydantic import BaseModel, field_validator
 
+from backend.common.schemas import MediaResponse, ShortUserResponse
+
 
 class CommunityPostRequestSchema(BaseModel):
     community_id: int
@@ -12,7 +14,12 @@ class CommunityPostRequestSchema(BaseModel):
     tag_id: int  # FK to CommunityTag
 
 
-class CommunityPostResponseSchema(BaseModel):
+class PostTagResponse(BaseModel):
+    id: int
+    name: str
+
+
+class BaseCommunityPostSchema(BaseModel):
     id: int
     community_id: int
     user_sub: str
@@ -27,11 +34,16 @@ class CommunityPostResponseSchema(BaseModel):
         from_attributes = True
 
 
-class ListCommunityPostResponseSchema(BaseModel):
-    posts: List[CommunityPostResponseSchema] = []
-    num_of_pages: int
+class CommunityPostResponse(BaseCommunityPostSchema):
+    media: List[MediaResponse] = []
+    user: ShortUserResponse
 
-    @field_validator("num_of_pages")
+
+class ListCommunityPostResponseSchema(BaseModel):
+    posts: List[CommunityPostResponse] = []
+    total_pages: int
+
+    @field_validator("total_pages")
     def validate_pages(cls, value):
         if value <= 0:
             raise ValueError("Number of pages should be positive")
