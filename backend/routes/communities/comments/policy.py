@@ -18,17 +18,23 @@ class CommentPolicy:
         user: tuple[dict, dict],  # kc_principal and app_principal
         comment: CommunityComment | None = None,
         comment_data: RequestCommunityCommentSchema | None = None,
+        include_deleted: bool = False,
     ) -> bool:
         """
         Check if the user has permission to perform the action on the comment.
         """
-        user_role: UserRole = user["role"]
-        user_sub: str = user["sub"]
+        user_role: UserRole = user[1]["role"]
+        user_sub: str = user[0]["sub"]
         if user_role == UserRole.admin.value:
             return True
 
         match action:
             case ResourceAction.READ:
+                if include_deleted:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="You are not allowed to read this comment",
+                    )
                 return True
             case ResourceAction.CREATE:
                 if comment_data.user_sub != user_sub:

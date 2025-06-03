@@ -9,12 +9,19 @@ from backend.common.dependencies import get_current_principals, get_db_session
 from backend.common.schemas import MediaResponse, ShortUserResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.community import Community, CommunityType
+from backend.core.database.models.community import (
+    Community,
+    CommunityCategory,
+    CommunityComment,
+    CommunityPost,
+    CommunityRecruitmentStatus,
+    CommunityType,
+)
 from backend.core.database.models.media import Media, MediaFormat
 from backend.routes.communities.communities import schemas
 from backend.routes.communities.communities.dependencies import community_exists_or_404
 from backend.routes.communities.communities.policy import CommunityPolicy, ResourceAction
-from backend.routes.google_bucket.utils import delete_bucket_object
+from backend.routes.google_bucket.utils import batch_delete_blobs
 
 router = APIRouter(tags=["Community Routes"])
 
@@ -86,6 +93,7 @@ async def add_community(
         schemas.CommunityResponse.model_validate(community),
         head_user=ShortUserResponse.model_validate(community.head_user),
         media=media_results[0],
+        can_edit=community.head == user[0].get("sub"),
     )
 
 
@@ -96,6 +104,9 @@ async def get_communities(
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     community_type: Optional[CommunityType] = None,
+    community_category: Optional[CommunityCategory] = None,
+    recruitment_status: Optional[CommunityRecruitmentStatus] = None,
+    head_sub: str | None = None,
     db_session: AsyncSession = Depends(get_db_session),
 ) -> schemas.ListCommunity:
     """
@@ -120,8 +131,17 @@ async def get_communities(
     await policy.check_permission(action=ResourceAction.READ, user=user)
     # Build conditions list
     conditions = []
+
+    head_sub = user[0].get("sub") if head_sub == "me" else head_sub
+
     if community_type:
         conditions.append(Community.type == community_type)
+    if community_category:
+        conditions.append(Community.category == community_category)
+    if recruitment_status:
+        conditions.append(Community.recruitment_status == recruitment_status)
+    if head_sub:
+        conditions.append(Community.head == head_sub)
 
     qb = QueryBuilder(session=db_session, model=Community)
     communities: List[Community] = (
@@ -153,6 +173,7 @@ async def get_communities(
             schemas.CommunityResponse,
             schemas.CommunityResponse.model_validate(community),
             media=media,
+            can_edit=community.head == user[0].get("sub"),
         )
         for community, media in zip(communities, media_results)
     ]
@@ -228,6 +249,7 @@ async def update_community(
         schemas.CommunityResponse.model_validate(community),
         head_user=ShortUserResponse.model_validate(community.head_user),
         media=media_results[0],
+        can_edit=community.head == user[0].get("sub"),
     )
 
 
@@ -249,8 +271,8 @@ async def delete_community(
     - `community_id`: The ID of the community to delete
 
     **Process:**
-    - Deletes the community entry from the database
-    - Deletes all related media files from the storage bucket and their DB records
+    - Deletes all media files (community, posts, comments) from storage
+    - Deletes the community entry from the database (cascades to posts, comments)
     - Removes the community from the Meilisearch index
 
     **Returns:**
@@ -260,33 +282,67 @@ async def delete_community(
     - Returns 404 if the community is not found
     - Returns 500 on internal error
     """
+    # Check permissions
     policy = CommunityPolicy(db_session)
     await policy.check_permission(action=ResourceAction.DELETE, user=user, community=community)
 
-    # Get and delete associated media files
-    media_conditions = [
-        Media.entity_id == community.id,
-        Media.entity_type == EntityType.communities,
-    ]
+    # Initialize query builder
+    qb = QueryBuilder(session=db_session, model=CommunityPost)
 
-    qb = QueryBuilder(session=db_session, model=Media)
-    media_objects: List[Media] = await qb.base().filter(*media_conditions).all()
+    # 1. Get all posts in the community
+    posts: List[CommunityPost] = await (
+        qb.base().filter(CommunityPost.community_id == community_id).all()
+    )
+    post_ids = [post.id for post in posts]
 
-    # Delete media files from storage bucket
-    if media_objects:
-        for media in media_objects:
-            await delete_bucket_object(request, media.name)
+    # 2. Handle comments and their media
+    if post_ids:
+        # Get all comments
+        comments: List[CommunityComment] = await (
+            qb.blank(model=CommunityComment)
+            .base()
+            .filter(CommunityComment.post_id.in_(post_ids))
+            .all()
+        )
+        comment_ids = [comment.id for comment in comments]
 
-    # Delete community from database
-    qb = QueryBuilder(session=db_session, model=Community)
-    community_deleted: bool = await qb.delete(target=community)
-    # Delete associated media records from database
-    qb = QueryBuilder(session=db_session, model=Media)
-    media_deleted: bool = await qb.delete(target=media_objects)
-    if not community_deleted or not media_deleted:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Community not found")
+        # Get and delete comment media
+        comment_media_objects: List[Media] = await (
+            qb.blank(model=Media)
+            .base()
+            .filter(
+                Media.entity_id.in_(comment_ids), Media.entity_type == EntityType.community_comments
+            )
+            .all()
+        )
+        await batch_delete_blobs(request, media_objects=comment_media_objects)
 
-    # Remove from search index
+        # Delete comments
+        await qb.blank(CommunityComment).delete(target=comments)
+
+    # 3. Handle post media
+    post_media_objects: List[Media] = await (
+        qb.blank(model=Media)
+        .base()
+        .filter(Media.entity_id.in_(post_ids), Media.entity_type == EntityType.community_posts)
+        .all()
+    )
+    await batch_delete_blobs(request, media_objects=post_media_objects)
+    await qb.blank(CommunityPost).delete(target=posts)
+
+    # 4. Handle community media
+    community_media_objects: List[Media] = await (
+        qb.blank(model=Media)
+        .base()
+        .filter(Media.entity_id == community_id, Media.entity_type == EntityType.communities)
+        .all()
+    )
+    await batch_delete_blobs(request, media_objects=community_media_objects)
+
+    # 5. Delete the community itself
+    await qb.blank(Community).delete(target=community)
+
+    # 6. Clean up search index
     await meilisearch.delete(
         request=request, storage_name=Community.__tablename__, primary_key=str(community_id)
     )

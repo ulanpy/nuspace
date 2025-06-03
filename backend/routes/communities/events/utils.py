@@ -1,0 +1,77 @@
+from typing import Tuple
+
+from backend.core.database.models import Event, EventScope
+from backend.core.database.models.user import UserRole
+from backend.routes.communities.events.schemas import EventPermissions
+
+
+def get_event_permissions(
+    event: Event,
+    user: Tuple[dict, dict],
+) -> EventPermissions:
+    """
+    Determines event permissions for a user based on their role and the event state.
+
+    Args:
+        event: The event to check permissions for
+        user: The user tuple containing user info and claims
+
+    Returns:
+        EventPermissions object containing can_edit, can_delete flags and list of editable fields
+    """
+    user_role = user[1]["role"]
+    user_sub = user[0]["sub"]
+    user_communities = user[1]["communities"]
+
+    # Initialize permissions
+    permissions = EventPermissions()
+
+    # Admin can do everything
+    if user_role == UserRole.admin.value:
+        permissions.can_edit = True
+        permissions.can_delete = True
+        permissions.editable_fields = [
+            "name",
+            "place",
+            "event_datetime",
+            "description",
+            "duration",
+            "policy",
+            "status",
+            "type",
+            "community_id",
+            "creator_sub",
+            "scope",
+            "tag",
+        ]
+        return permissions
+
+    # Check if user is event creator
+    is_creator = event.creator_sub == user_sub
+
+    # Check if user is community head (for community events)
+    is_head = False
+    if event.community_id:
+        is_head = event.community_id in user_communities
+
+    # Set can_delete permission
+    permissions.can_delete = is_creator or (event.scope == EventScope.community and is_head)
+
+    # Set can_edit and editable_fields based on role
+    if is_creator or (event.scope == EventScope.community and is_head):
+        permissions.can_edit = True
+        permissions.editable_fields = [
+            "name",
+            "place",
+            "event_datetime",
+            "description",
+            "duration",
+            "policy",
+            "type",
+        ]
+
+        # Community head can also edit status
+        if is_head:
+            permissions.editable_fields.append("status")
+
+    return permissions

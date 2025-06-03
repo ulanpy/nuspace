@@ -82,7 +82,7 @@ class CommunityPost(Base):
     )
     title: Mapped[str] = mapped_column(nullable=False, unique=False)
     description: Mapped[str] = mapped_column(nullable=False, unique=False)
-    tag: Mapped[CommunityPostTag] = mapped_column(
+    tag_id: Mapped[int] = mapped_column(
         ForeignKey("community_post_tags.id", ondelete="SET NULL"), nullable=True, unique=False
     )
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -91,6 +91,7 @@ class CommunityPost(Base):
 
     user = relationship("User", back_populates="posts")
     community = relationship("Community")
+    tag = relationship("CommunityPostTag")
 
 
 class CommunityMember(Base):
@@ -127,3 +128,5 @@ class CommunityComment(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
     deleted_at: Mapped[DateTime] = mapped_column(DateTime, nullable=True)
+
+    user = relationship("User")

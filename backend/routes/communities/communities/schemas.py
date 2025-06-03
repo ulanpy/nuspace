@@ -51,6 +51,7 @@ class BaseCommunity(BaseModel):
 class CommunityResponse(BaseCommunity):
     head_user: ShortUserResponse
     media: List[MediaResponse] = []
+    can_edit: bool = False
 
 
 class ShortCommunityResponse(BaseModel):
@@ -81,5 +82,5 @@ class CommunityUpdate(BaseModel):
 
 
 class ListCommunity(BaseModel):
-    communities: List[BaseCommunity] = []
+    communities: List[CommunityResponse] = []
     total_pages: int = Query(1, ge=1)

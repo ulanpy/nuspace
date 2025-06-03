@@ -1,4 +1,6 @@
 import asyncio
+from copy import deepcopy
+from datetime import datetime
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, Query, Request, status
@@ -23,12 +25,13 @@ from backend.routes.communities.comments.schemas import (
     ListCommunityCommentResponseSchema,
     RequestCommunityCommentSchema,
     ResponseCommunityCommentSchema,
+    UpdateCommunityCommentSchema,
 )
 
 router = APIRouter(tags=["Community Posts Comments Routes"])
 
 
-@router.get("/posts/{post_id}/comments", response_model=ListCommunityCommentResponseSchema)
+@router.get("/comments", response_model=ListCommunityCommentResponseSchema)
 async def get(
     request: Request,
     user: Annotated[dict, Depends(get_current_principals)],
@@ -37,6 +40,9 @@ async def get(
     size: int = Query(20, ge=1, le=100),
     page: int = Query(1, ge=1),
     db_session: AsyncSession = Depends(get_db_session),
+    include_deleted: bool | None = Query(
+        False, description="Include deleted comments in the response"
+    ),
 ) -> ListCommunityCommentResponseSchema:
     """
     Retrieve paginated comments for a specific post.
@@ -55,6 +61,8 @@ async def get(
 
     - `page` (int): Page number (min: 1, default: 1)
 
+    - `include_deleted` (bool, optional): If True, include deleted comments in the response
+
     **Returns:**
     - comments: List of comments with their media attachments and reply counts
     - total_pages: Total number of pages available
@@ -66,16 +74,31 @@ async def get(
     """
 
     policy = CommentPolicy(db_session)
-    await policy.check_permission(action=ResourceAction.READ, user=user)
+    await policy.check_permission(
+        action=ResourceAction.READ,
+        user=user,
+        include_deleted=include_deleted,
+    )
 
     qb: QueryBuilder = QueryBuilder(session=db_session, model=CommunityComment)
     comments: List[CommunityComment] = (
         await qb.base()
         .filter(CommunityComment.post_id == post_id, CommunityComment.parent_id == comment_id)
+        .eager(CommunityComment.user)
         .paginate(size, page)
         .order(CommunityComment.created_at.desc())
         .all()
     )
+
+    # Transform deleted comments to hide sensitive data
+    if not include_deleted:
+        for i, comment in enumerate(comments):
+            if comment.deleted_at is not None:
+                safe_comment = deepcopy(comment)
+                safe_comment.user_sub = None
+                safe_comment.content = None
+                safe_comment.user = None
+                comments[i] = safe_comment
 
     count: int = (
         await qb.blank()
@@ -119,6 +142,8 @@ async def get(
             ResponseCommunityCommentSchema.model_validate(comment),
             total_replies=replies_counter.get(comment.id, 0),
             media=media,
+            user=comment.user,
+            can_edit=comment.user_sub == user[0].get("sub"),
         )
         for comment, media in zip(comments, media_results)
     ]
@@ -129,7 +154,7 @@ async def get(
     )
 
 
-@router.post("/posts/{post_id}/comments", response_model=ResponseCommunityCommentSchema)
+@router.post("/comments", response_model=ResponseCommunityCommentSchema)
 async def create_comment(
     request: Request,
     comment_data: RequestCommunityCommentSchema,
@@ -164,6 +189,9 @@ async def create_comment(
     - 404: If post not found or parent comment not found (when replying)
     - 400: If parent comment belongs to different post
     - 403: If trying to comment as another user
+
+    **Note:**
+    - `user_sub` can be `me` to indicate the authenticated user
     """
     # Check permissions
     policy = CommentPolicy(db_session)
@@ -173,9 +201,12 @@ async def create_comment(
         comment_data=comment_data,
     )
 
+    if comment_data.user_sub == "me":
+        comment_data.user_sub = user[0].get("sub")
+
     # Create the comment
     qb: QueryBuilder = QueryBuilder(session=db_session, model=CommunityComment)
-    comment: CommunityComment = await qb.add(data=comment_data)
+    comment: CommunityComment = await qb.add(data=comment_data, preload=[CommunityComment.user])
 
     media_objs: List[Media] = (
         await qb.blank(model=Media)
@@ -201,33 +232,34 @@ async def create_comment(
         ResponseCommunityCommentSchema.model_validate(comment),
         total_replies=replies_counter,
         media=media_responses,
+        user=comment.user,
+        can_edit=comment.user_sub == user[0].get("sub"),
     )
     return comment_response
 
 
-@router.delete("/posts/{post_id}/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete(
-    post_id: int,
     comment_id: int,
     user: Annotated[dict, Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
     comment: CommunityComment = Depends(comment_exists_or_404),
 ):
     """
-    Delete a specific comment.
+    Soft delete a specific comment.
 
     **Access Policy:**
-    - Comment owners can delete their own comments
-    - Admin can delete any comment
-    - Deleting a parent comment will not delete its replies
+    - Comment owners can soft delete their own comments
+    - Admin can soft delete any comment
+    - Soft deleting a parent comment will not delete its replies
 
     **Parameters:**
     - `post_id` (int): ID of the post containing the comment
 
-    - `comment_id` (int): ID of the comment to delete
+    - `comment_id` (int): ID of the comment to soft delete
 
     **Returns:**
-    - 204 No Content on successful deletion
+    - 204 No Content on successful soft deletion
 
     **Errors:**
     - 404: If comment not found or belongs to different post
@@ -237,5 +269,7 @@ async def delete(
     policy = CommentPolicy(db_session)
     await policy.check_permission(action=ResourceAction.DELETE, user=user, comment_data=comment)
 
+    # Soft delete the comment
     qb: QueryBuilder = QueryBuilder(session=db_session, model=CommunityComment)
-    await qb.delete(target=comment)
+    update_data = UpdateCommunityCommentSchema(deleted_at=datetime.now())
+    await qb.update(instance=comment, update_data=update_data)

@@ -8,8 +8,11 @@ from backend.routes.communities.comments.schemas import RequestCommunityCommentS
 
 
 async def post_exists_or_404(
-    post_id: int, db_session: AsyncSession = Depends(get_db_session)
+    comment_data: RequestCommunityCommentSchema,
+    db_session: AsyncSession = Depends(get_db_session),
 ) -> CommunityPost:
+    """Verify post exists and return it, or raise 404."""
+    post_id = comment_data.post_id
     qb = QueryBuilder(session=db_session, model=CommunityPost)
     post = await qb.base().filter(CommunityPost.id == post_id).first()
     if post is None:
@@ -19,9 +22,12 @@ async def post_exists_or_404(
 
 async def parent_comment_exists_or_404(
     comment_data: RequestCommunityCommentSchema,
-    post_id: int,
     db_session: AsyncSession = Depends(get_db_session),
 ) -> CommunityComment | None:
+    """
+    Verify parent comment exists and belongs to the same post.
+    Returns None if no parent_id provided, otherwise returns the parent comment or raises 404/400.
+    """
     if comment_data.parent_id is None:
         return None
 
@@ -31,7 +37,7 @@ async def parent_comment_exists_or_404(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Parent comment not found"
         )
-    if parent_comment.post_id != post_id:
+    if parent_comment.post_id != comment_data.post_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Parent comment does not belong to the post",
@@ -40,15 +46,14 @@ async def parent_comment_exists_or_404(
 
 
 async def comment_exists_or_404(
-    comment_id: int, post_id: int, db_session: AsyncSession = Depends(get_db_session)
+    comment_id: int, db_session: AsyncSession = Depends(get_db_session)
 ) -> CommunityComment:
+    """
+    Verify comment exists and belongs to the specified post.
+    Raises 404 if comment not found or 400 if comment doesn't belong to post.
+    """
     qb = QueryBuilder(session=db_session, model=CommunityComment)
     comment = await qb.base().filter(CommunityComment.id == comment_id).first()
     if comment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
-    if comment.post_id != post_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Comment does not belong to the specified post",
-        )
     return comment

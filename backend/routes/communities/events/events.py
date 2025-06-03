@@ -2,6 +2,7 @@ from datetime import date
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
@@ -20,7 +21,8 @@ from backend.core.database.models.media import Media, MediaFormat
 from backend.routes.communities.events import schemas
 from backend.routes.communities.events.dependencies import event_exists_or_404
 from backend.routes.communities.events.policy import EventPolicy, ResourceAction
-from backend.routes.google_bucket.utils import delete_bucket_object
+from backend.routes.communities.events.utils import get_event_permissions
+from backend.routes.google_bucket.utils import batch_delete_blobs
 
 router = APIRouter(tags=["Events Routes"])
 
@@ -35,7 +37,7 @@ async def get_events(
     registration_policy: RegistrationPolicy | None = None,
     event_scope: EventScope | None = None,
     event_type: EventType | None = None,
-    event_status: EventStatus | None = EventStatus.approved,
+    event_status: EventStatus | None = None,
     community_id: int | None = None,
     start_date: date | None = Query(
         None,
@@ -49,13 +51,15 @@ async def get_events(
         description="Дата конца диапазона (формат: YYYY-MM-DD)",
         example="2025-05-25",
     ),
+    creator_sub: str | None = None,
     keyword: str | None = None,
 ) -> schemas.ListEvent:
     """
     Retrieves a paginated list of events with flexible filtering.
 
     **Access Policy:**
-    - All users can see approved and cancelled events
+    - All users can see their own created events without any restrictions
+    - All users can see approved events of others
     - Community heads and event creators can see pending and rejected events
     - Admins can see all events
 
@@ -70,6 +74,9 @@ async def get_events(
     - `date_filter`: Filter by event date (optional)
     - `start_date`: Start date for filtering events (optional). Used with `date_filter.custom`
     - `end_date`: End date for filtering events (optional). Used with `date_filter.custom`
+    - `creator_sub`: Filter by event creator (optional)
+        - If set to "me", returns the current user's events
+        - If set to a specific user_sub, returns that user's approved events (if authorized)
     - `keyword`: Search keyword for event name or description (optional)
 
     **Returns:**
@@ -77,16 +84,26 @@ async def get_events(
 
     **Notes:**
     - Results are ordered by event datetime by default
-    - Each event includes its associated media in carousel format
     - When community_id is provided, returns only events for that specific community
     - Returns 404 if specified community_id doesn't exist
+    - When creator_sub is not specified, returns all events (approved)
+    - When creator_sub="me", returns all user's events (all statuses)
     """
     # Create policy and check permissions
     policy = EventPolicy(db_session)
-    await policy.check_permission(action=ResourceAction.READ, user=user)
+    await policy.check_permission(
+        action=ResourceAction.READ,
+        user=user,
+        creator_sub=creator_sub,
+        event_status=event_status,
+        community_id=community_id,
+        event_scope=event_scope,
+    )
 
     # Build conditions list
     filters = []
+
+    creator_sub = user[0].get("sub") if creator_sub == "me" else creator_sub
 
     if keyword:
         meili_result = await meilisearch.get(
@@ -94,7 +111,7 @@ async def get_events(
             storage_name=EntityType.community_events.value,
             keyword=keyword,
             page=page,
-            size=size,  # limit max returned IDs, adjust as needed
+            size=size,
             filters=None,
         )
         event_ids = [item["id"] for item in meili_result["hits"]]
@@ -115,6 +132,14 @@ async def get_events(
         filters.append(Event.status == event_status)
     if event_scope:
         filters.append(Event.scope == event_scope)
+    if creator_sub:
+        filters.append(Event.creator_sub == creator_sub)
+
+    # Add date range filtering
+    if start_date:
+        filters.append(func.date(Event.event_datetime) >= start_date)
+    if end_date:
+        filters.append(func.date(Event.event_datetime) <= end_date)
 
     qb = QueryBuilder(session=db_session, model=Event)
     events: List[Event] = (
@@ -154,6 +179,7 @@ async def get_events(
             collaborators=event.collaborators,
             community=event.community,
             creator=event.creator,
+            permissions=get_event_permissions(event, user),
         )
         for event, media in zip(events, media_results)
     ]
@@ -197,10 +223,16 @@ async def add_event(
     - Returns 400 if event status is invalid for user's role
     - Returns 403 if non-admin tries to set non-regular tag
     - Returns 404 if specified community does not exist
+
+    **Note:**
+    - `creator_sub` can be `me` to indicate the authenticated user
     """
     # Create policy and check permissions
     policy = EventPolicy(db_session)
     await policy.check_permission(action=ResourceAction.CREATE, user=user, event_data=event_data)
+
+    if event_data.creator_sub == "me":
+        event_data.creator_sub = user[0].get("sub")
 
     qb = QueryBuilder(session=db_session, model=Event)
     event: Event = await qb.add(
@@ -246,6 +278,7 @@ async def add_event(
             if event.community
             else None
         ),
+        permissions=get_event_permissions(event, user),
     )
 
 
@@ -342,6 +375,7 @@ async def update_event(
             if event.community
             else None
         ),
+        permissions=get_event_permissions(event, user),
     )
 
 
@@ -390,9 +424,7 @@ async def delete_event(
     media_objects: List[Media] = await qb.base().filter(*media_conditions).all()
 
     # Delete media files from storage bucket
-    if media_objects:
-        for media in media_objects:
-            await delete_bucket_object(request, media.name)
+    await batch_delete_blobs(request, media_objects)
 
     # Delete event from database
     event_deleted: bool = await qb.blank(Event).delete(target=event)
@@ -473,4 +505,5 @@ async def get_event(
             if event.community
             else None
         ),
+        permissions=get_event_permissions(event, user),
     )

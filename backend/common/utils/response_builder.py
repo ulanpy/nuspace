@@ -71,6 +71,35 @@ def calculate_pages(count: int, size: int):
 
 
 def build_schema(schema_class: Type[BaseModel], *models: BaseModel, **extra_fields) -> BaseModel:
+    """
+    Build a Pydantic schema instance by combining multiple models and additional fields.
+
+    This utility function creates a new schema instance by merging the data from multiple
+    Pydantic models and any additional fields provided. It's useful when you need to
+    combine data from multiple models into a single schema response.
+
+    Args:
+        schema_class (Type[BaseModel]): The target Pydantic model class to instantiate
+        *models (BaseModel): Variable number of Pydantic model instances to merge
+        **extra_fields: Additional keyword arguments to include in the final schema
+
+    Returns:
+        BaseModel: A new instance of schema_class containing merged data from all sources
+
+    Examples:
+        >>> user_model = UserModel(name="John", age=30)
+        >>> profile_model = ProfileModel(bio="Developer")
+        >>> combined = build_schema(
+        ...     UserProfileSchema,
+        ...     user_model,
+        ...     profile_model,
+        ...     extra_field="value"
+        ... )
+
+    Note:
+        - Later models will override fields from earlier models if there are conflicts
+        - Extra fields will override any conflicting fields from the models
+    """
     data = {}
     for model in models:
         data.update(model.model_dump())

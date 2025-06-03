@@ -9,6 +9,7 @@ from .communities.comments import comments
 from .communities.communities import communities
 from .communities.events import events
 from .communities.posts import posts
+from .communities.tags import tags
 from .google_bucket import google_bucket
 from .kupiprodai import product
 from .review import reply, review
@@ -20,6 +21,7 @@ routers: List[APIRouter] = [
     communities.router,
     events.router,
     posts.router,
+    tags.router,
     comments.router,
     product.router,
     search.router,
