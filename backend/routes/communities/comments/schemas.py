@@ -4,7 +4,7 @@ from typing import List
 from fastapi import Query
 from pydantic import BaseModel, field_validator
 
-from backend.common.schemas import MediaResponse, ShortUserResponse
+from backend.common.schemas import MediaResponse, ResourcePermissions, ShortUserResponse
 
 
 class RequestCommunityCommentSchema(BaseModel):
@@ -38,7 +38,7 @@ class ResponseCommunityCommentSchema(BaseCommunityCommentSchema):
     total_replies: int = Query(default=0, ge=0)
     media: List[MediaResponse] = []
     user: ShortUserResponse | None = None
-    can_edit: bool = False
+    permissions: ResourcePermissions = ResourcePermissions()
 
 
 class ListCommunityCommentResponseSchema(BaseModel):

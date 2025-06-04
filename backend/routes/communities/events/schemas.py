@@ -15,10 +15,7 @@ from backend.core.database.models import (
 from backend.routes.communities.communities.schemas import ShortCommunityResponse
 
 
-class EventPermissions(BaseModel):
-    can_edit: bool = False
-    can_delete: bool = False
-    editable_fields: List[str] = []
+from backend.common.schemas import ResourcePermissions
 
 
 class EventCreateRequest(BaseModel):
@@ -115,7 +112,7 @@ class EventResponse(BaseEventSchema):
     media: List[MediaResponse] = []
     community: Optional[ShortCommunityResponse] = None
     creator: ShortUserResponse
-    permissions: EventPermissions = EventPermissions()
+    permissions: ResourcePermissions = ResourcePermissions()
 
     class Config:
         from_attributes = True

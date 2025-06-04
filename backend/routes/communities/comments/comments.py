@@ -143,7 +143,7 @@ async def get(
             total_replies=replies_counter.get(comment.id, 0),
             media=media,
             user=comment.user,
-            can_edit=comment.user_sub == user[0].get("sub"),
+            permissions=utils.get_comment_permissions(comment, user),
         )
         for comment, media in zip(comments, media_results)
     ]
@@ -233,7 +233,7 @@ async def create_comment(
         total_replies=replies_counter,
         media=media_responses,
         user=comment.user,
-        can_edit=comment.user_sub == user[0].get("sub"),
+        permissions=utils.get_comment_permissions(comment, user),
     )
     return comment_response
 

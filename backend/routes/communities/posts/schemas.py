@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from backend.common.schemas import MediaResponse, ShortUserResponse
 from backend.routes.communities.tags.schemas import ShortCommunityTag
+from backend.common.schemas import ResourcePermissions
 
 
 class CommunityPostRequest(BaseModel):
@@ -42,7 +43,7 @@ class CommunityPostResponse(BaseCommunityPost):
     user: ShortUserResponse
     total_comments: int = Query(default=0, ge=0)
     tag: ShortCommunityTag | None = None
-
+    permissions: ResourcePermissions = ResourcePermissions()
 
 class ListCommunityPostResponse(BaseModel):
     posts: List[CommunityPostResponse] = []

@@ -22,6 +22,7 @@ from backend.routes.communities.posts.schemas import (
     CommunityPostUpdate,
     ListCommunityPostResponse,
 )
+from backend.routes.communities.posts.utils import get_post_permissions
 from backend.routes.communities.tags.schemas import ShortCommunityTag
 from backend.routes.google_bucket.utils import batch_delete_blobs
 
@@ -87,6 +88,7 @@ async def create_post(
         media=media_results[0],
         total_comments=total_comments,
         tag=ShortCommunityTag.model_validate(post.tag) if post.tag else None,
+        permissions=get_post_permissions(post, user),
     )
 
 
@@ -158,6 +160,7 @@ async def get_posts(
             media=media,
             total_comments=comments_count.get(post.id, 0),
             tag=ShortCommunityTag.model_validate(post.tag) if post.tag else None,
+            permissions=get_post_permissions(post, user),
         )
         for post, media in zip(posts, media_results)
     ]
@@ -218,6 +221,7 @@ async def get_post(
         media=media_results[0] if media_results else [],
         total_comments=total_comments,
         tag=ShortCommunityTag.model_validate(post.tag) if post.tag else None,
+        permissions=get_post_permissions(post, user),
     )
 
 
@@ -225,7 +229,7 @@ async def get_post(
 async def update_post(
     request: Request,
     post_id: int,
-    post_data: CommunityPostUpdate,  # Changed to CommunityPostUpdateSchema
+    post_data: CommunityPostUpdate,  # Changed to CommunityPostUpdate
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
     post: CommunityPost = Depends(post_exists_or_404),
@@ -287,6 +291,7 @@ async def update_post(
         media=media_results[0] if media_results else [],
         total_comments=total_comments,
         tag=ShortCommunityTag.model_validate(updated_post.tag) if updated_post.tag else None,
+        permissions=get_post_permissions(updated_post, user),
     )
 
 

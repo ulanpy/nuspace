@@ -54,15 +54,15 @@ class Community(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     head_user = relationship("User", back_populates="communities_led")
-    tags = relationship("CommunityPostTag", back_populates="community")
-    events = relationship("Event", back_populates="community")
+    tags = relationship("CommunityPostTag", back_populates="community", cascade="all, delete-orphan")
+    events = relationship("Event", back_populates="community", cascade="all, delete-orphan")
 
 
 class CommunityPostTag(Base):
     __tablename__ = "community_post_tags"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     community_id: Mapped[str] = mapped_column(
-        ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, unique=False
+        ForeignKey("communities.id", ondelete="CASCADE"), nullable=True, unique=False
     )
     name: Mapped[str] = mapped_column(nullable=False, unique=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -83,7 +83,7 @@ class CommunityPost(Base):
     title: Mapped[str] = mapped_column(nullable=False, unique=False)
     description: Mapped[str] = mapped_column(nullable=False, unique=False)
     tag_id: Mapped[int] = mapped_column(
-        ForeignKey("community_post_tags.id", ondelete="SET NULL"), nullable=True, unique=False
+        ForeignKey("community_post_tags.id", ondelete="CASCADE"), nullable=True, unique=False
     )
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

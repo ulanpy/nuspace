@@ -2,13 +2,13 @@ from typing import Tuple
 
 from backend.core.database.models import Event, EventScope
 from backend.core.database.models.user import UserRole
-from backend.routes.communities.events.schemas import EventPermissions
+from backend.common.schemas import ResourcePermissions
 
 
 def get_event_permissions(
     event: Event,
     user: Tuple[dict, dict],
-) -> EventPermissions:
+) -> ResourcePermissions:
     """
     Determines event permissions for a user based on their role and the event state.
 
@@ -24,7 +24,7 @@ def get_event_permissions(
     user_communities = user[1]["communities"]
 
     # Initialize permissions
-    permissions = EventPermissions()
+    permissions = ResourcePermissions()
 
     # Admin can do everything
     if user_role == UserRole.admin.value:

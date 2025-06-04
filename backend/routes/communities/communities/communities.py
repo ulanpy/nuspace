@@ -21,6 +21,7 @@ from backend.core.database.models.media import Media, MediaFormat
 from backend.routes.communities.communities import schemas
 from backend.routes.communities.communities.dependencies import community_exists_or_404
 from backend.routes.communities.communities.policy import CommunityPolicy, ResourceAction
+from backend.routes.communities.communities.utils import get_community_permissions
 from backend.routes.google_bucket.utils import batch_delete_blobs
 
 router = APIRouter(tags=["Community Routes"])
@@ -93,7 +94,7 @@ async def add_community(
         schemas.CommunityResponse.model_validate(community),
         head_user=ShortUserResponse.model_validate(community.head_user),
         media=media_results[0],
-        can_edit=community.head == user[0].get("sub"),
+        permissions=get_community_permissions(community, user),
     )
 
 
@@ -173,7 +174,7 @@ async def get_communities(
             schemas.CommunityResponse,
             schemas.CommunityResponse.model_validate(community),
             media=media,
-            can_edit=community.head == user[0].get("sub"),
+            permissions=get_community_permissions(community, user),
         )
         for community, media in zip(communities, media_results)
     ]
@@ -249,7 +250,7 @@ async def update_community(
         schemas.CommunityResponse.model_validate(community),
         head_user=ShortUserResponse.model_validate(community.head_user),
         media=media_results[0],
-        can_edit=community.head == user[0].get("sub"),
+        permissions=get_community_permissions(community, user),
     )
 
 
@@ -316,9 +317,7 @@ async def delete_community(
             .all()
         )
         await batch_delete_blobs(request, media_objects=comment_media_objects)
-
-        # Delete comments
-        await qb.blank(CommunityComment).delete(target=comments)
+        await qb.blank(Media).delete(target=comment_media_objects)
 
     # 3. Handle post media
     post_media_objects: List[Media] = await (
@@ -328,8 +327,7 @@ async def delete_community(
         .all()
     )
     await batch_delete_blobs(request, media_objects=post_media_objects)
-    await qb.blank(CommunityPost).delete(target=posts)
-
+    await qb.blank(Media).delete(target=post_media_objects)
     # 4. Handle community media
     community_media_objects: List[Media] = await (
         qb.blank(model=Media)
@@ -338,7 +336,7 @@ async def delete_community(
         .all()
     )
     await batch_delete_blobs(request, media_objects=community_media_objects)
-
+    await qb.blank(Media).delete(target=community_media_objects)
     # 5. Delete the community itself
     await qb.blank(Community).delete(target=community)
 
@@ -347,4 +345,3 @@ async def delete_community(
         request=request, storage_name=Community.__tablename__, primary_key=str(community_id)
     )
 
-    return status.HTTP_204_NO_CONTENT

@@ -37,7 +37,7 @@ class CommentPolicy:
                     )
                 return True
             case ResourceAction.CREATE:
-                if comment_data.user_sub != user_sub:
+                if comment_data.user_sub != user_sub and comment_data.user_sub != "me":
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail="You are not allowed do this as another user",

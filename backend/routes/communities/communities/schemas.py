@@ -10,6 +10,7 @@ from backend.core.database.models.community import (
     CommunityRecruitmentStatus,
     CommunityType,
 )
+from backend.common.schemas import ResourcePermissions
 
 
 class CommunityRequest(BaseModel):
@@ -51,7 +52,7 @@ class BaseCommunity(BaseModel):
 class CommunityResponse(BaseCommunity):
     head_user: ShortUserResponse
     media: List[MediaResponse] = []
-    can_edit: bool = False
+    permissions: ResourcePermissions = ResourcePermissions()
 
 
 class ShortCommunityResponse(BaseModel):
