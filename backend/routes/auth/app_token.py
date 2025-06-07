@@ -28,11 +28,14 @@ class AppTokenManager:
             await qb.blank(Community).filter(Community.head == user_sub).all()
         )
 
+        tg_id = (await qb.blank().filter(User.sub == user_sub).first()).telegram_id
+
         claims = {
             "sub": user_sub,
             "role": user_role.value,
             "communities": [community.id for community in headed_communities],
             "exp": datetime.now(UTC) + self.token_expiry,
+            "tg_id": tg_id,
         }
 
         token = jwt.encode(claims, self.secret_key, algorithm="HS256")

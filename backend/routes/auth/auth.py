@@ -165,17 +165,17 @@ async def get_current_user(
         )
     qb = QueryBuilder(db_session, User)
     user: User = await qb.filter(User.sub == sub).first()
-    tg_linked: bool = bool(user.telegram_id)
+    tg_id: int = user.telegram_id
 
     # Construct user response. You might want to combine info from kc_principal and app_principal
     # For example, user profile from kc_principal, roles from app_principal
     user_data_for_response = {
         **kc_principal,  # Contains name, email, etc.
         "role": app_principal.get("role"),  # Example from your AppTokenManager
-        "communities": app_principal.get("communities"),  # Example
+        "communities": app_principal.get("communities"),
     }
 
-    return CurrentUserResponse(user=user_data_for_response, tg_linked=tg_linked)
+    return CurrentUserResponse(user=user_data_for_response, tg_id=tg_id)
 
 
 @router.get("/logout")

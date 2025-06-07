@@ -53,7 +53,6 @@ async def get(
         .count()
     )
     total_pages: int = response_builder.calculate_pages(count=count, size=size)
-
     comment_ids: List[int] = [comment.id for comment in comments]
     replies_counter: dict[int, int] = await cruds.get_replies_counts(
         session=db_session,

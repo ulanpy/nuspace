@@ -11,6 +11,7 @@ from .communities.events import events
 from .communities.posts import posts
 from .google_bucket import google_bucket
 from .kupiprodai import product
+from .notification import notification
 from .review import reply, review
 from .search import search
 
@@ -27,4 +28,5 @@ routers: List[APIRouter] = [
     reply.router,
     comments.router,
     posts.router,
+    notification.router,
 ]
