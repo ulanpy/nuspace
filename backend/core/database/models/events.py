@@ -74,7 +74,7 @@ class Event(Base):
     __tablename__ = "events"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     community_id: Mapped[str] = mapped_column(
-        ForeignKey("communities.id", ondelete="SET NULL"), nullable=True, unique=False
+        ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, unique=False
     )
     creator_sub: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, unique=False

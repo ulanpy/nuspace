@@ -74,6 +74,12 @@ class EventPolicy:
                 detail="Non admin users cannot set EventTag other than regular",
             )
 
+        if event_data.creator_sub != "me" and event_data.creator_sub != user[0].get("sub"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only create events for yourself",
+            )
+
         # Community scope permission checks
         if event_data.scope == EventScope.community:
             # Check if user is head of the community
@@ -89,6 +95,51 @@ class EventPolicy:
                         ),
                     )
             return
+
+    async def _check_read_permissions(
+        self,
+        user: tuple[dict, dict],
+        creator_sub: str | None = None,
+        event_status: EventStatus | None = None,
+        community_id: int | None = None,
+        event_scope: EventScope | None = None,
+    ) -> None:
+        """
+        Checks if the user has permission to read the event.
+
+        Permission rules:
+        - Admin can read any event
+        - Users can always read their created events (when creator_sub = "me" or indicates their
+            user_sub)
+        - Community heads can read all events in their communities
+        - For other users:
+          - Can only read approved events for others' personal/community events
+
+        Raises:
+            HTTPException: If the user doesn't have required permissions
+        """
+        user_role = user[1]["role"]
+        user_sub = user[0]["sub"]
+        user_communities = user[1]["communities"]
+
+        # Admin can read everything
+        if user_role == UserRole.admin.value:
+            return
+
+        # If user is requesting their own events
+        if creator_sub == "me" or creator_sub == user_sub:
+            return
+
+        # If it's a community event and user is the head
+        if event_scope == EventScope.community and community_id in user_communities:
+            return
+
+        # For all other cases, only show approved events
+        if event_status != EventStatus.approved:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only view approved events",
+            )
 
     async def _check_update_permissions(
         self,
@@ -152,7 +203,11 @@ class EventPolicy:
         action: ResourceAction,
         user: tuple[dict, dict],
         event: Event | None = None,
-        event_data: EventCreateRequest | None = None,
+        event_data: EventCreateRequest | EventUpdateRequest | None = None,
+        creator_sub: str | None = None,
+        event_status: EventStatus | None = None,
+        community_id: int | None = None,
+        event_scope: EventScope | None = None,
     ) -> bool:
         """
         Centralized permission checking and data validation for event actions.
@@ -160,17 +215,17 @@ class EventPolicy:
         Args:
             action: The action being performed
             user: The user performing the action
-            user_role: The role of the user
-            event: Optional event object for update/delete actions
-            event_data: Optional event data for create actions
+            event: Optional event object for update/delete/read actions
+            event_data: Optional event data for create/update actions
+            creator_sub: Optional creator_sub for filtering events (used in read operations)
 
         Raises:
             HTTPException: If the user doesn't have permission or data is invalid
         """
-
         user_role = user[1]["role"]
         user_sub = user[0]["sub"]
         user_communities = user[1]["communities"]
+
         # Admin can do everything
         if user_role == UserRole.admin.value:
             return True
@@ -180,11 +235,12 @@ class EventPolicy:
             return True
 
         elif action == ResourceAction.READ:
-            # All authenticated users can read
+            await self._check_read_permissions(
+                user, creator_sub, event_status, community_id, event_scope
+            )
             return True
 
         elif action == ResourceAction.UPDATE:
-
             await self._check_update_permissions(event, event_data, user)
 
             # Creator can update their own event
@@ -203,7 +259,6 @@ class EventPolicy:
             )
 
         elif action == ResourceAction.DELETE:
-
             # Creator can delete their own event
             if event.creator_sub == user_sub:
                 return True

@@ -15,6 +15,9 @@ from backend.core.database.models import (
 from backend.routes.communities.communities.schemas import ShortCommunityResponse
 
 
+from backend.common.schemas import ResourcePermissions
+
+
 class EventCreateRequest(BaseModel):
     community_id: Optional[int] = None
     creator_sub: str
@@ -109,6 +112,7 @@ class EventResponse(BaseEventSchema):
     media: List[MediaResponse] = []
     community: Optional[ShortCommunityResponse] = None
     creator: ShortUserResponse
+    permissions: ResourcePermissions = ResourcePermissions()
 
     class Config:
         from_attributes = True

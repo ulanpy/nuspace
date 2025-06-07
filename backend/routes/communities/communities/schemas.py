@@ -10,6 +10,7 @@ from backend.core.database.models.community import (
     CommunityRecruitmentStatus,
     CommunityType,
 )
+from backend.common.schemas import ResourcePermissions
 
 
 class CommunityRequest(BaseModel):
@@ -51,6 +52,7 @@ class BaseCommunity(BaseModel):
 class CommunityResponse(BaseCommunity):
     head_user: ShortUserResponse
     media: List[MediaResponse] = []
+    permissions: ResourcePermissions = ResourcePermissions()
 
 
 class ShortCommunityResponse(BaseModel):
@@ -81,5 +83,5 @@ class CommunityUpdate(BaseModel):
 
 
 class ListCommunity(BaseModel):
-    communities: List[BaseCommunity] = []
+    communities: List[CommunityResponse] = []
     total_pages: int = Query(1, ge=1)

@@ -1,44 +1,59 @@
-from typing import Annotated
-
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import check_role, get_current_principals, get_db_session
-from backend.core.database.models.user import UserRole
-from backend.routes.communities.comments.policy import CommentAction, CommentPolicy
+from backend.common.cruds import QueryBuilder
+from backend.common.dependencies import get_db_session
+from backend.core.database.models.community import CommunityComment, CommunityPost
 from backend.routes.communities.comments.schemas import RequestCommunityCommentSchema
 
 
-async def get_comment_policy(
+async def post_exists_or_404(
+    comment_data: RequestCommunityCommentSchema,
     db_session: AsyncSession = Depends(get_db_session),
-) -> CommentPolicy:
-    return CommentPolicy(db_session)
+) -> CommunityPost:
+    """Verify post exists and return it, or raise 404."""
+    post_id = comment_data.post_id
+    qb = QueryBuilder(session=db_session, model=CommunityPost)
+    post = await qb.base().filter(CommunityPost.id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+    return post
 
 
-async def check_create_permission(
-    comment: RequestCommunityCommentSchema,
-    user: Annotated[dict, Depends(get_current_principals)],
-    role: Annotated[UserRole, Depends(check_role)],
-    policy: Annotated[CommentPolicy, Depends(get_comment_policy)],
-) -> dict:
-    await policy.check_permission(CommentAction.CREATE, user, role, comment=comment)
-    return user
+async def parent_comment_exists_or_404(
+    comment_data: RequestCommunityCommentSchema,
+    db_session: AsyncSession = Depends(get_db_session),
+) -> CommunityComment | None:
+    """
+    Verify parent comment exists and belongs to the same post.
+    Returns None if no parent_id provided, otherwise returns the parent comment or raises 404/400.
+    """
+    if comment_data.parent_id is None:
+        return None
+
+    qb = QueryBuilder(session=db_session, model=CommunityComment)
+    parent_comment = await qb.base().filter(CommunityComment.id == comment_data.parent_id).first()
+    if parent_comment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Parent comment not found"
+        )
+    if parent_comment.post_id != comment_data.post_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Parent comment does not belong to the post",
+        )
+    return parent_comment
 
 
-async def check_read_permission(
-    user: Annotated[dict, Depends(get_current_principals)],
-    role: Annotated[UserRole, Depends(check_role)],
-    policy: Annotated[CommentPolicy, Depends(get_comment_policy)],
-) -> dict:
-    await policy.check_permission(CommentAction.READ, user, role)
-    return user
-
-
-async def check_delete_permission(
-    comment_id: int,
-    user: Annotated[dict, Depends(get_current_principals)],
-    role: Annotated[UserRole, Depends(check_role)],
-    policy: Annotated[CommentPolicy, Depends(get_comment_policy)],
-) -> dict:
-    await policy.check_permission(CommentAction.DELETE, user, role, comment_id=comment_id)
-    return user
+async def comment_exists_or_404(
+    comment_id: int, db_session: AsyncSession = Depends(get_db_session)
+) -> CommunityComment:
+    """
+    Verify comment exists and belongs to the specified post.
+    Raises 404 if comment not found or 400 if comment doesn't belong to post.
+    """
+    qb = QueryBuilder(session=db_session, model=CommunityComment)
+    comment = await qb.base().filter(CommunityComment.id == comment_id).first()
+    if comment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
+    return comment

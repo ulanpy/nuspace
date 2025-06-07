@@ -147,7 +147,6 @@ async def get_products(
                 user_sub = user.get("sub")
                 include_inactive = True
             else:
-                # Optional: Add authorization check here if needed
                 user_sub = owner_id
                 if role == UserRole.admin:
                     include_inactive = True

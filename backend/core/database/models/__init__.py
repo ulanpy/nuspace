@@ -4,6 +4,7 @@ __all__ = [
     "Base",
     "Community",
     "CommunityPost",
+    "CommunityComment",
     "Event",
     "EventTag",
     "EventStatus",
@@ -30,6 +31,7 @@ from .base import Base
 from .community import (
     Community,
     CommunityCategory,
+    CommunityComment,
     CommunityMember,
     CommunityPost,
     CommunityPostTag,
