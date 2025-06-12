@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.exc import IntegrityError
@@ -30,7 +30,7 @@ router = APIRouter(tags=["Community Routes"])
 @router.post("/communities", response_model=schemas.CommunityResponse)
 async def add_community(
     request: Request,
-    community_data: schemas.CommunityRequest,
+    community_data: schemas.CommunityCreateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> schemas.CommunityResponse:
@@ -104,10 +104,13 @@ async def get_communities(
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
-    community_type: Optional[CommunityType] = None,
-    community_category: Optional[CommunityCategory] = None,
-    recruitment_status: Optional[CommunityRecruitmentStatus] = None,
-    head_sub: str | None = None,
+    community_type: CommunityType | None = None,
+    community_category: CommunityCategory | None = None,
+    recruitment_status: CommunityRecruitmentStatus | None = None,
+    head_sub: str | None = Query(
+        default=None,
+        description=("if 'me' then current user's sub will be used"),
+    ),
     db_session: AsyncSession = Depends(get_db_session),
 ) -> schemas.ListCommunity:
     """
@@ -120,11 +123,15 @@ async def get_communities(
     - `size`: Number of communities per page (default: 20)
     - `page`: Page number (default: 1)
     - `community_type`: Filter by community type (optional)
+    - `community_category`: Filter by community category (optional)
+    - `recruitment_status`: Filter by recruitment status (optional)
+    - `head_sub`: Filter by head sub (optional)
 
     **Returns:**
     - List of communities matching the criteria with pagination info
 
     **Notes:**
+    - If head_sub is 'me', the current user's sub will be used
     - Results are ordered by creation date (newest first)
     - Each community includes its associated media in profile format
     """
@@ -187,7 +194,7 @@ async def get_communities(
 async def update_community(
     request: Request,
     community_id: int,
-    new_data: schemas.CommunityUpdate,
+    new_data: schemas.CommunityUpdateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
     community: Community = Depends(community_exists_or_404),
