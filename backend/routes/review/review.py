@@ -68,8 +68,8 @@ async def get(
 
     count: int = await qb.blank().base(count=True).filter(*conditions).count()
 
-    num_of_pages: int = response_builder.calculate_pages(count=count, size=size)
-    return ListReviewResponseSchema(reviews=review_responses, num_of_pages=num_of_pages)
+    total_pages: int = response_builder.calculate_pages(count=count, size=size)
+    return ListReviewResponseSchema(reviews=review_responses, total_pages=total_pages)
 
 
 @router.post("/reviews", response_model=ReviewResponseSchema)

@@ -9,7 +9,6 @@ from backend.common.dependencies import check_tg, get_current_principals, get_db
 from backend.common.schemas import MediaResponse, ShortUserResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.common.utils.enums import ResourceAction
-from backend.core.database.models import UserRole
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
 from backend.core.database.models.product import (
@@ -19,15 +18,14 @@ from backend.core.database.models.product import (
     ProductStatus,
 )
 from backend.routes.google_bucket.utils import delete_bucket_object
-from backend.routes.kupiprodai import utils
-from backend.routes.kupiprodai.policy import ProductPolicy
-from backend.routes.kupiprodai import schemas
+from backend.routes.kupiprodai import schemas, utils
 from backend.routes.kupiprodai.dependencies import product_exists_or_404
+from backend.routes.kupiprodai.policy import ProductPolicy
 
 router = APIRouter(tags=["Kupi-Prodai Routes"])
 
 
-@router.post("/products", response_model=schemas.ProductResponse) 
+@router.post("/products", response_model=schemas.ProductResponse)
 async def add_product(
     request: Request,
     product_data: schemas.ProductRequest,
@@ -52,7 +50,12 @@ async def add_product(
     - The product is indexed in Meilisearch after creation.
     """
     policy = ProductPolicy()
-    await policy.check_permission(action=ResourceAction.CREATE, user=user, product_data=product_data)
+    await policy.check_permission(
+        action=ResourceAction.CREATE, user=user, product_data=product_data
+    )
+
+    if product_data.user_sub == "me":
+        product_data.user_sub = user[0].get("sub")
 
     try:
         qb = QueryBuilder(session=db_session, model=Product)
@@ -98,21 +101,25 @@ async def add_product(
         seller=ShortUserResponse.model_validate(product.user),
         permissions=utils.get_product_permissions(product, user),
     )
-    
 
-@router.get("/products", response_model=schemas.ListProduct) 
+
+@router.get("/products", response_model=schemas.ListProductResponse)
 async def get_products(
     request: Request,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
-    category: ProductCategory | None = None,
-    condition: ProductCondition | None = None,
-    status: ProductStatus | None = ProductStatus.active,
-    owner_sub: str | None = None,
-    keyword: str | None = None,
+    category: ProductCategory | None = Query(default=None),
+    condition: ProductCondition | None = Query(default=None),
+    status: ProductStatus | None = Query(
+        default=None, description="Not setting this parameter returns all products"
+    ),
+    owner_sub: str | None = Query(
+        default=None, description="If 'me', returns the current user's products"
+    ),
+    keyword: str | None = Query(default=None, description="Search keyword for product name"),
     db_session: AsyncSession = Depends(get_db_session),
-) -> schemas.ListProduct:
+) -> schemas.ListProductResponse:
     """
     Retrieves a paginated list of products with flexible filtering.
 
@@ -123,19 +130,22 @@ async def get_products(
     - `condition`: Filter by product condition (optional)
     - `owner_sub`: Filter by product owner (optional)
         - If set to "me", returns the current user's products
-        - If set to a specific user_sub, returns that user's products (if authorized)
+        - If set to a specific user_sub, returns that user's products
     - `keyword`: Search keyword for product name (optional)
     - `status`: Filter by product status (optional). If not specified, returns all products
-    
+
     **Returns:**
     - List of products matching the criteria with pagination info
     """
     policy = ProductPolicy()
-    await policy.check_permission(action=ResourceAction.READ, user=user, owner_sub=owner_sub, status=status)
-
+    await policy.check_permission(
+        action=ResourceAction.READ, user=user, owner_sub=owner_sub, status=status
+    )
 
     conditions = []
-    owner_sub = user[0]["sub"] if owner_sub == "me" else owner_sub
+
+    if owner_sub == "me":
+        owner_sub = user[0].get("sub")
 
     if keyword:
         meili_result = await meilisearch.get(
@@ -144,14 +154,12 @@ async def get_products(
             keyword=keyword,
             page=page,
             size=size,
-            filters=(
-                [f"status = {status.value}"] if status else None
-            ),
+            filters=([f"status = {status.value}"] if status else None),
         )
         product_ids = [item["id"] for item in meili_result["hits"]]
 
         if not product_ids:
-            return schemas.ListProduct(products=[], num_of_pages=1)
+            return schemas.ListProductResponse(products=[], total_pages=1)
 
     # SQLAlchemy conditions
     if status:
@@ -189,7 +197,7 @@ async def get_products(
         )
         .all()
     )
-        
+
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
         request=request, media_objects=media_objs, resources=products
     )
@@ -212,14 +220,13 @@ async def get_products(
     ]
 
     total_pages: int = response_builder.calculate_pages(count=count, size=size)
-    return schemas.ListProduct(products=product_responses, total_pages=total_pages)
-
+    return schemas.ListProductResponse(products=product_responses, total_pages=total_pages)
 
 
 @router.patch("/products/{product_id}", response_model=schemas.ProductResponse)
 async def update_product(
     request: Request,
-    product_data: schemas.ProductUpdate,
+    product_data: schemas.ProductUpdateRequest,
     product_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
@@ -243,7 +250,9 @@ async def update_product(
     - Returns 404 if product is not found or doesn't belong to the user
     """
     policy = ProductPolicy()
-    await policy.check_permission(action=ResourceAction.UPDATE, user=user, product=product, product_data=product_data)
+    await policy.check_permission(
+        action=ResourceAction.UPDATE, user=user, product=product, product_data=product_data
+    )
 
     # Update product in database first
     qb = QueryBuilder(session=db_session, model=Product)
@@ -261,7 +270,6 @@ async def update_product(
         },
     )
 
-
     media_objs: List[Media] = (
         await qb.blank(model=Media)
         .base()
@@ -272,7 +280,7 @@ async def update_product(
         )
         .all()
     )
-        
+
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
         request=request, media_objects=media_objs, resources=[updated_product]
     )
@@ -286,7 +294,8 @@ async def update_product(
         permissions=utils.get_product_permissions(updated_product, user),
     )
 
-@router.get("/products/{product_id}", response_model=schemas.ProductResponse) 
+
+@router.get("/products/{product_id}", response_model=schemas.ProductResponse)
 async def get_product_by_id(
     request: Request,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
@@ -314,12 +323,11 @@ async def get_product_by_id(
     """
     policy = ProductPolicy()
     await policy.check_permission(
-        action=ResourceAction.READ, 
+        action=ResourceAction.READ,
         user=user,
         owner_sub=product.user_sub,
         product=product,
     )
-    
 
     conditions = [
         Media.entity_id == product.id,
@@ -328,13 +336,8 @@ async def get_product_by_id(
     ]
 
     qb = QueryBuilder(session=db_session, model=Media)
-    media_objs: List[Media] = (
-        await qb.blank(model=Media)
-        .base()
-        .filter(*conditions)
-        .all()
-    )
-    
+    media_objs: List[Media] = await qb.blank(model=Media).base().filter(*conditions).all()
+
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
         request=request, media_objects=media_objs, resources=[product]
     )
@@ -348,7 +351,7 @@ async def get_product_by_id(
     )
 
 
-@router.delete("/products/{product_id}") 
+@router.delete("/products/{product_id}")
 async def remove_product(
     request: Request,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],

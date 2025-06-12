@@ -27,7 +27,7 @@ from backend.routes.google_bucket.utils import batch_delete_blobs
 router = APIRouter(tags=["Events Routes"])
 
 
-@router.get("/events", response_model=schemas.ListEvent)
+@router.get("/events", response_model=schemas.ListEventResponse)
 async def get_events(
     request: Request,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
@@ -40,20 +40,25 @@ async def get_events(
     event_status: EventStatus | None = None,
     community_id: int | None = None,
     start_date: date | None = Query(
-        None,
+        default=None,
         title="Start date",
         description="Дата начала диапазона (формат: YYYY-MM-DD)",
         example="2025-05-19",
     ),
     end_date: date | None = Query(
-        None,
+        default=None,
         title="End date",
         description="Дата конца диапазона (формат: YYYY-MM-DD)",
         example="2025-05-25",
     ),
-    creator_sub: str | None = None,
-    keyword: str | None = None,
-) -> schemas.ListEvent:
+    creator_sub: str | None = Query(
+        default=None,
+        description="If 'me', returns the current user's events (all statuses)",
+    ),
+    keyword: str | None = Query(
+        default=None, description="Search keyword for event name or description"
+    ),
+) -> schemas.ListEventResponse:
     """
     Retrieves a paginated list of events with flexible filtering.
 
@@ -90,7 +95,7 @@ async def get_events(
     - When creator_sub="me", returns all user's events (all statuses)
     """
     # Create policy and check permissions
-    policy = EventPolicy(db_session)
+    policy = EventPolicy()
     await policy.check_permission(
         action=ResourceAction.READ,
         user=user,
@@ -117,7 +122,7 @@ async def get_events(
         event_ids = [item["id"] for item in meili_result["hits"]]
 
         if not event_ids:
-            return schemas.ListEvent(events=[], total_pages=1)
+            return schemas.ListEventResponse(events=[], total_pages=1)
 
     # SQLAlchemy conditions
     if registration_policy:
@@ -185,7 +190,7 @@ async def get_events(
     ]
 
     total_pages: int = response_builder.calculate_pages(count=count, size=size)
-    return schemas.ListEvent(events=event_responses, total_pages=total_pages)
+    return schemas.ListEventResponse(events=event_responses, total_pages=total_pages)
 
 
 @router.post("/events", response_model=schemas.EventResponse)
@@ -228,7 +233,7 @@ async def add_event(
     - `creator_sub` can be `me` to indicate the authenticated user
     """
     # Create policy and check permissions
-    policy = EventPolicy(db_session)
+    policy = EventPolicy()
     await policy.check_permission(action=ResourceAction.CREATE, user=user, event_data=event_data)
 
     if event_data.creator_sub == "me":
@@ -323,7 +328,7 @@ async def update_event(
     - Returns 500 on internal error
     """
     # Create policy
-    policy = EventPolicy(db_session)
+    policy = EventPolicy()
     await policy.check_permission(
         action=ResourceAction.UPDATE, user=user, event=event, event_data=event_data
     )
@@ -411,7 +416,7 @@ async def delete_event(
     - Returns 403 if user doesn't have permission
     - Returns 500 on internal error
     """
-    policy = EventPolicy(db_session)
+    policy = EventPolicy()
     await policy.check_permission(action=ResourceAction.DELETE, user=user, event=event)
 
     # Get and delete associated media files
@@ -449,6 +454,7 @@ async def get_event(
     request: Request,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
+    event: Event = Depends(event_exists_or_404),
 ) -> schemas.EventResponse:
     """
     Retrieves a single event by its unique ID.
@@ -468,8 +474,8 @@ async def get_event(
     - Returns 500 on internal error
     """
     # Create policy and check permissions
-    policy = EventPolicy(db_session)
-    await policy.check_permission(ResourceAction.READ, user)
+    policy = EventPolicy()
+    await policy.check_permission(ResourceAction.READ, user, event=event)
 
     # Get event with its community relationship
     qb = QueryBuilder(session=db_session, model=Event)

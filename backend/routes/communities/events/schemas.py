@@ -2,9 +2,9 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import Query
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-from backend.common.schemas import MediaResponse, ShortUserResponse
+from backend.common.schemas import MediaResponse, ResourcePermissions, ShortUserResponse
 from backend.core.database.models import (
     EventScope,
     EventStatus,
@@ -15,22 +15,31 @@ from backend.core.database.models import (
 from backend.routes.communities.communities.schemas import ShortCommunityResponse
 
 
-from backend.common.schemas import ResourcePermissions
-
-
 class EventCreateRequest(BaseModel):
-    community_id: Optional[int] = None
-    creator_sub: str
-    policy: RegistrationPolicy
-    name: str
-    place: str
-    event_datetime: datetime
-    description: str
-    duration: int
-    scope: EventScope
-    type: EventType
-    status: EventStatus
-    tag: EventTag = EventTag.regular  # Default to regular for non-admin users
+    community_id: int | None = Field(
+        default=None, description="The community id of the event", example=1
+    )
+    creator_sub: str = Field(..., description="The creator sub of the event", example="me")
+    policy: RegistrationPolicy = Field(
+        ..., description="The policy of the event", example=RegistrationPolicy.open
+    )
+    name: str = Field(..., description="The name of the event", example="NUspace 2025")
+    place: str = Field(..., description="The place of the event", example="NU 3rd block, 3rd floor")
+    event_datetime: datetime = Field(
+        ..., description="The datetime of the event", example="2026-06-12T10:00:00Z"
+    )
+    description: str = Field(
+        ..., description="The description of the event", example="NUspace is a community event"
+    )
+    duration: int = Field(..., description="The duration of the event in minutes", example=120)
+    scope: EventScope = Field(
+        ..., description="The scope of the event", example=EventScope.community
+    )
+    type: EventType = Field(..., description="The type of the event", example=EventType.academic)
+    status: EventStatus = Field(
+        ..., description="The status of the event", example=EventStatus.approved
+    )
+    tag: EventTag = Field(..., description="The tag of the event", example=EventTag.regular)
 
     @field_validator("duration")
     def validate_duration(cls, value):
@@ -57,14 +66,37 @@ class EventCreateRequest(BaseModel):
 
 
 class EventUpdateRequest(BaseModel):
-    name: Optional[str] = None
-    place: Optional[str] = None
-    event_datetime: Optional[datetime] = None
-    description: Optional[str] = None
-    duration: Optional[int] = None
-    policy: Optional[RegistrationPolicy] = None
-    status: Optional[EventStatus] = None
-    type: Optional[EventType] = None
+    name: str | None = Field(
+        default=None, description="The name of the event", example="NUspace 2025"
+    )
+    place: str | None = Field(
+        default=None, description="The place of the event", example="NU 3rd block, 3rd floor"
+    )
+    event_datetime: datetime | None = Field(
+        default=None, description="The datetime of the event", example="2026-06-12T10:00:00Z"
+    )
+    description: str | None = Field(
+        default=None,
+        description="The description of the event",
+        example="NUspace is a community event",
+    )
+    duration: int | None = Field(
+        default=None, description="The duration of the event in minutes", example=120
+    )
+    policy: RegistrationPolicy | None = Field(
+        default=None, description="The policy of the event", example=RegistrationPolicy.open
+    )
+    status: EventStatus | None = Field(
+        default=None, description="The status of the event", example=EventStatus.approved
+    )
+    type: EventType | None = Field(
+        default=None, description="The type of the event", example=EventType.academic
+    )
+
+    # admin only fields
+    tag: EventTag | None = Field(
+        default=None, description="The tag of the event. Admin only", example=None
+    )
 
     @field_validator("duration")
     def validate_duration(cls, value):
@@ -118,6 +150,6 @@ class EventResponse(BaseEventSchema):
         from_attributes = True
 
 
-class ListEvent(BaseModel):
+class ListEventResponse(BaseModel):
     events: List[EventResponse] = []
     total_pages: int = Query(1, ge=1)

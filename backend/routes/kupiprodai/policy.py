@@ -1,10 +1,10 @@
-from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException
+from fastapi import status as http_status
 
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.models.product import Product, ProductStatus
 from backend.core.database.models.user import UserRole
-from backend.routes.kupiprodai.schemas import ProductRequest, ProductUpdate
+from backend.routes.kupiprodai.schemas import ProductRequest, ProductUpdateRequest
 
 
 class ProductPolicy:
@@ -32,14 +32,14 @@ class ProductPolicy:
         user: tuple[dict, dict],
         # For resource-based authorization (single product operations)
         product: Product | None = None,
-        product_data: ProductRequest | ProductUpdate | None = None,
+        product_data: ProductRequest | ProductUpdateRequest | None = None,
         # For intent-based authorization (listing/filtering)
         owner_sub: str | None = None,
         status: ProductStatus | None = None,
     ) -> bool:
         """
         Centralized permission checking for product actions.
-        
+
         Handles two authorization patterns:
         1. Resource-based: Can user access this specific product? (when product is provided)
         2. Intent-based: Can user request products with these filters? (when product is None)
@@ -63,12 +63,12 @@ class ProductPolicy:
         user_sub = user[0]["sub"]
 
         # Admin can do everything
-        if user_role == UserRole.admin:
+        if user_role == UserRole.admin.value:
             return True
 
         if action == ResourceAction.CREATE:
             return await self._check_create_permission(user_sub, product_data)
-        
+
         elif action == ResourceAction.READ:
             if product:
                 # Resource-based authorization (single product)
@@ -76,115 +76,97 @@ class ProductPolicy:
             else:
                 # Intent-based authorization (listing)
                 return await self._check_listing_permission(user, owner_sub, status)
-        
+
         elif action == ResourceAction.UPDATE:
             return await self._check_update_permission(user_sub, product, product_data)
-        
+
         elif action == ResourceAction.DELETE:
             return await self._check_delete_permission(user_sub, product)
 
         # This should never happen as we've handled all enum cases
         raise ValueError(f"Unhandled action type: {action}")
 
-    async def _check_create_permission(
-        self, 
-        user_sub: str, 
-        product_data: ProductRequest | ProductUpdate | None
-    ) -> bool:
+    async def _check_create_permission(self, user_sub: str, product_data: ProductRequest) -> bool:
         """Check if user can create a product."""
-        if product_data and product_data.user_sub != user_sub:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to create products for other users",
-            )
+        if product_data.user_sub != "me":
+            if product_data.user_sub != user_sub:
+                raise HTTPException(
+                    status_code=http_status.HTTP_403_FORBIDDEN,
+                    detail="You are not allowed to create products for other users",
+                )
         return True
 
     async def _check_product_access(self, user: tuple[dict, dict], product: Product) -> bool:
         """
         Resource-based authorization: Check if user can access this specific product.
-        
+
         Rules:
         - Anyone can access active products
         - Only owners can access their own inactive products
         - Admins already handled above
         """
         user_sub = user[0]["sub"]
-        
-        if product.status == ProductStatus.active:
-            return True
-        
+
         # For inactive products, only owner can access
-        if product.status == ProductStatus.inactive:
+        if product.status != ProductStatus.active:
             if product.user_sub != user_sub:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Product not found"  # Don't reveal it exists but is inactive
+                    status_code=http_status.HTTP_404_NOT_FOUND,
+                    detail="Product not found",  # Don't reveal it exists but is inactive
                 )
-        
+
         return True
 
     async def _check_listing_permission(
-        self, 
-        user: tuple[dict, dict], 
-        owner_sub: str | None, 
-        status: ProductStatus | None
+        self,
+        user: tuple[dict, dict],
+        owner_sub: str | None = None,
+        status: ProductStatus | None = None,
     ) -> bool:
         """
         Intent-based authorization: Check if user can request products with these filters.
-        
+
         Rules:
         - Anyone can request active products
-        - Only owners can request their own inactive products  
+        - Only owners can request their own inactive products
         - Users cannot request inactive products for others
         """
         user_sub = user[0]["sub"]
-        
+
         # If filtering by owner
         if owner_sub == "me" or owner_sub == user_sub:
             return True  # Users can always request their own products
-        
-        # If requesting inactive products for someone else or in general
-        if status == ProductStatus.inactive:
+
+        # If requesting other than active products raise error
+        if status != ProductStatus.active:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=http_status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to view inactive products",
             )
-        
+
         # If status is None, they want all products (which defaults to active in router)
         # If status is active, that's allowed for everyone
         return True
 
     async def _check_update_permission(
-        self, 
-        user_sub: str, 
-        product: Product | None, 
-        product_data: ProductRequest | ProductUpdate | None
+        self, user_sub: str, product: Product, product_data: ProductUpdateRequest
     ) -> bool:
         """Check if user can update a product."""
-        if product and product.user_sub != user_sub:
+
+        # Verifies that the user owns the existing product
+        if product.user_sub != user_sub:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=http_status.HTTP_403_FORBIDDEN,
                 detail="You are not allowed to update products for other users",
             )
-        
-        if product_data and hasattr(product_data, 'user_sub') and product_data.user_sub != user_sub:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You are not allowed to update products for other users",
-            )
-        
+
         return True
 
     async def _check_delete_permission(self, user_sub: str, product: Product) -> bool:
         """Check if user can delete a product."""
         if product.user_sub != user_sub:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=http_status.HTTP_404_NOT_FOUND,
                 detail="Product not found or doesn't belong to you",
             )
         return True
-
-
-
-
-

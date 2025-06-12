@@ -1,5 +1,4 @@
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.models import Event, EventScope, EventStatus, EventTag
@@ -36,8 +35,8 @@ class EventPolicy:
 
     """
 
-    def __init__(self, db_session: AsyncSession):
-        self.db_session = db_session
+    def __init__(self):
+        pass
 
     async def _check_create_permissions(
         self,
@@ -96,50 +95,84 @@ class EventPolicy:
                     )
             return
 
-    async def _check_read_permissions(
+    async def _check_event_access(self, user: tuple[dict, dict], event: Event) -> bool:
+        """
+        Resource-based authorization: Check if user can access this specific event.
+
+        Rules:
+        - Admin can access any event
+        - Users can always access their created events
+        - Community heads can access all events in their communities
+        - For other users:
+          - Can only access approved events for others' personal/community events
+        """
+        user_role = user[1]["role"]
+        user_sub = user[0]["sub"]
+        user_communities = user[1]["communities"]
+
+        # Admin can access everything
+        if user_role == UserRole.admin.value:
+            return True
+
+        # If user is the creator
+        if event.creator_sub == user_sub:
+            return True
+
+        # If it's a community event and user is the head
+        if event.scope == EventScope.community and event.community_id in user_communities:
+            return True
+
+        # For all other cases, only show approved events
+        if event.status != EventStatus.approved:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only view approved events",
+            )
+
+        return True
+
+    async def _check_listing_permission(
         self,
         user: tuple[dict, dict],
         creator_sub: str | None = None,
         event_status: EventStatus | None = None,
         community_id: int | None = None,
         event_scope: EventScope | None = None,
-    ) -> None:
+    ) -> bool:
         """
-        Checks if the user has permission to read the event.
+        Intent-based authorization: Check if user can request events with these filters.
 
-        Permission rules:
-        - Admin can read any event
-        - Users can always read their created events (when creator_sub = "me" or indicates their
-            user_sub)
-        - Community heads can read all events in their communities
+        Rules:
+        - Admin can request any events
+        - Users can always request their own events
+        - Community heads can request all events in their communities
         - For other users:
-          - Can only read approved events for others' personal/community events
-
-        Raises:
-            HTTPException: If the user doesn't have required permissions
+          - Can only request approved events for others' personal/community events
         """
         user_role = user[1]["role"]
         user_sub = user[0]["sub"]
         user_communities = user[1]["communities"]
 
-        # Admin can read everything
+        # Admin can request everything
         if user_role == UserRole.admin.value:
-            return
+            return True
 
-        # If user is requesting their own events
+        # If requesting own events
         if creator_sub == "me" or creator_sub == user_sub:
-            return
+            return True
 
-        # If it's a community event and user is the head
+        # If requesting community events and user is head
         if event_scope == EventScope.community and community_id in user_communities:
-            return
+            return True
 
-        # For all other cases, only show approved events
+        # For all other cases, only allow approved events
         if event_status != EventStatus.approved:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You can only view approved events",
             )
+
+        return True
 
     async def _check_update_permissions(
         self,
@@ -218,6 +251,9 @@ class EventPolicy:
             event: Optional event object for update/delete/read actions
             event_data: Optional event data for create/update actions
             creator_sub: Optional creator_sub for filtering events (used in read operations)
+            event_status: Optional status filter for read operations
+            community_id: Optional community_id for filtering events
+            event_scope: Optional scope filter for read operations
 
         Raises:
             HTTPException: If the user doesn't have permission or data is invalid
@@ -235,10 +271,14 @@ class EventPolicy:
             return True
 
         elif action == ResourceAction.READ:
-            await self._check_read_permissions(
-                user, creator_sub, event_status, community_id, event_scope
-            )
-            return True
+            if event:
+                # Resource-based authorization (single event)
+                return await self._check_event_access(user, event)
+            else:
+                # Intent-based authorization (listing)
+                return await self._check_listing_permission(
+                    user, creator_sub, event_status, community_id, event_scope
+                )
 
         elif action == ResourceAction.UPDATE:
             await self._check_update_permissions(event, event_data, user)

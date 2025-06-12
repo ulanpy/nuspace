@@ -60,7 +60,7 @@ class EventCollaborator(Base):
     user_sub: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="CASCADE"), nullable=True
     )
-    community_id: Mapped[str] = mapped_column(
+    community_id: Mapped[int] = mapped_column(
         ForeignKey("communities.id", ondelete="CASCADE"), nullable=True
     )
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -73,8 +73,8 @@ class EventCollaborator(Base):
 class Event(Base):
     __tablename__ = "events"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
-    community_id: Mapped[str] = mapped_column(
-        ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, unique=False
+    community_id: Mapped[int] = mapped_column(
+        ForeignKey("communities.id", ondelete="CASCADE"), nullable=True, unique=False
     )
     creator_sub: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, unique=False

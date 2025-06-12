@@ -21,4 +21,4 @@ class Sub(BaseModel):
 
 class CurrentUserResponse(BaseModel):
     user: Dict[str, Any]  # This will store user token data
-    tg_id: int  # Indicates if user exists in the database
+    tg_id: int | None = None  # Indicates if user exists in the database

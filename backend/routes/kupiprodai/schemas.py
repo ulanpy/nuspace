@@ -47,7 +47,14 @@ class ProductRequest(ProductBase):
         description="Price of the product in whole currency units",
         examples=[999],
     )
-    user_sub: str = Field(..., description="User identifier who is creating the product")
+    user_sub: str = Field(
+        ...,
+        description=(
+            "User identifier who is creating the product. "
+            "If 'me', the current user will be used."
+        ),
+        example="me",
+    )
     category: ProductCategory = Field(..., description="Category of the product")
     condition: ProductCondition = Field(..., description="Physical condition of the product")
     status: ProductStatus = Field(
@@ -62,7 +69,7 @@ class ProductRequest(ProductBase):
     )
 
 
-class BaseProduct(ProductBase): #ORM to Pydantic
+class BaseProduct(ProductBase):  # ORM to Pydantic
     id: int = Field(..., description="Unique identifier of the product")
     name: str = Field(..., description="Name of the product")
     description: str = Field(..., description="Detailed description of the product")
@@ -78,9 +85,7 @@ class BaseProduct(ProductBase): #ORM to Pydantic
 
 
 class ProductResponse(BaseProduct):
-    seller: ShortUserResponse | None = Field(
-        default=None, description="Seller of the product"
-    )
+    seller: ShortUserResponse | None = Field(default=None, description="Seller of the product")
     user_telegram_id: int | None = Field(
         default=None, description="Telegram ID of the product owner"
     )
@@ -99,7 +104,7 @@ class ProductResponse(BaseProduct):
     )
 
 
-class ProductUpdate(ProductBase):
+class ProductUpdateRequest(ProductBase):
     """Schema for updating an existing product."""
 
     name: str | None = Field(default=None, description="New name of the product")
@@ -112,7 +117,6 @@ class ProductUpdate(ProductBase):
         default=None, description="New condition of the product"
     )
     status: ProductStatus | None = Field(default=None, description="New status of the product")
-
     model_config = ConfigDict(
         json_schema_extra={
             "title": "Product Update Schema",
@@ -121,7 +125,7 @@ class ProductUpdate(ProductBase):
     )
 
 
-class ListProduct(BaseModel):
+class ListProductResponse(BaseModel):
     products: List[ProductResponse] = []
     total_pages: int
 
