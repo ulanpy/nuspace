@@ -104,34 +104,6 @@ async def get_tags(
     return ListCommunityTagResponse(tags=tag_responses, total_pages=total_pages)
 
 
-@router.get("/tags/{tag_id}", response_model=CommunityTagResponse)
-async def get_tag(
-    tag_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
-    db_session: AsyncSession = Depends(get_db_session),
-    tag: CommunityPostTag = Depends(tag_exists_or_404),
-) -> CommunityTagResponse:
-    """
-    Retrieve a specific tag by ID.
-
-    **Access Policy:**
-    - All authenticated users can read tags
-
-    **Parameters:**
-    - `tag_id`: ID of the tag to retrieve
-
-    **Returns:**
-    - Tag details
-
-    **Errors:**
-    - Returns 404 if tag not found
-    """
-    policy = TagPolicy(db_session)
-    await policy.check_permission(action=ResourceAction.READ, user=user, tag=tag)
-
-    return CommunityTagResponse.model_validate(tag)
-
-
 @router.delete("/tags/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_tag(
     tag_id: int,

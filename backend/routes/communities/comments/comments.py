@@ -107,20 +107,19 @@ async def get(
         .count()
     )
     total_pages: int = response_builder.calculate_pages(count=count, size=size)
-
-    root_comment_ids: List[int] = [comment.id for comment in comments]
+    comment_ids: List[int] = [comment.id for comment in comments]
     replies_counter: dict[int, int] = await cruds.get_replies_counts(
         session=db_session,
         model=CommunityComment,
         parent_field=CommunityComment.parent_id,
-        parent_ids=root_comment_ids,
+        parent_ids=comment_ids,
     )
 
     media_objs: List[Media] = (
         await qb.blank(model=Media)
         .base()
         .filter(
-            Media.entity_id.in_(root_comment_ids),
+            Media.entity_id.in_(comment_ids),
             Media.entity_type == EntityType.community_comments,
         )
         .all()

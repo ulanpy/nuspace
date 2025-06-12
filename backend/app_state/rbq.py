@@ -4,7 +4,7 @@ import aio_pika
 from fastapi import FastAPI
 
 from backend.core.configs.config import config
-from backend.rbq.consumer import consumer_notification
+from backend.routes.notification.broker.consumer import consumer_notification
 
 
 async def setup_rbq(app: FastAPI):

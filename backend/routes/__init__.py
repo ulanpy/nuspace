@@ -12,6 +12,7 @@ from .communities.posts import posts
 from .communities.tags import tags
 from .google_bucket import google_bucket
 from .kupiprodai import product
+from .notification import notification
 from .review import reply, review
 from .search import search
 
@@ -29,4 +30,7 @@ routers: List[APIRouter] = [
     web_router,
     review.router,
     reply.router,
+    comments.router,
+    posts.router,
+    notification.router,
 ]
