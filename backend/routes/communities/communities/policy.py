@@ -1,5 +1,4 @@
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.models.community import Community
@@ -16,8 +15,8 @@ class CommunityPolicy:
     All other logic should be kept outside of this class.
     """
 
-    def __init__(self, db_session: AsyncSession):
-        self.db_session = db_session
+    def __init__(self):
+        pass
 
     async def check_permission(
         self,

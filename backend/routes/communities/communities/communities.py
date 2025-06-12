@@ -50,7 +50,7 @@ async def add_community(
     - If admin privileges are not present, the request will fail with 403.
     - The club is indexed in Meilisearch after creation.
     """
-    policy = CommunityPolicy(db_session)
+    policy = CommunityPolicy()
     await policy.check_permission(
         action=ResourceAction.CREATE, user=user, community_data=community_data
     )
@@ -128,7 +128,7 @@ async def get_communities(
     - Results are ordered by creation date (newest first)
     - Each community includes its associated media in profile format
     """
-    policy = CommunityPolicy(db_session)
+    policy = CommunityPolicy()
     await policy.check_permission(action=ResourceAction.READ, user=user)
     # Build conditions list
     conditions = []
@@ -209,7 +209,7 @@ async def update_community(
     - Returns 403 if user is not the head of the community and is not an admin
     - Returns 500 on internal error
     """
-    policy = CommunityPolicy(db_session)
+    policy = CommunityPolicy()
     await policy.check_permission(
         action=ResourceAction.UPDATE, user=user, community=community, community_data=new_data
     )
@@ -284,7 +284,7 @@ async def delete_community(
     - Returns 500 on internal error
     """
     # Check permissions
-    policy = CommunityPolicy(db_session)
+    policy = CommunityPolicy()
     await policy.check_permission(action=ResourceAction.DELETE, user=user, community=community)
 
     # Initialize query builder
@@ -292,7 +292,10 @@ async def delete_community(
 
     # 1. Get all posts in the community
     post_ids: List[int] = await (
-        qb.base().filter(CommunityPost.community_id == community_id).attributes(CommunityPost.id).all()
+        qb.base()
+        .filter(CommunityPost.community_id == community_id)
+        .attributes(CommunityPost.id)
+        .all()
     )
 
     # 2. Handle comments and their media
@@ -343,4 +346,3 @@ async def delete_community(
     await meilisearch.delete(
         request=request, storage_name=Community.__tablename__, primary_key=str(community_id)
     )
-

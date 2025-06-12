@@ -42,7 +42,7 @@ async def create_tag(
     - Returns 400 if tag data violates schema rules
     - Returns 400 if database integrity error occurs (e.g., duplicate tag name)
     """
-    policy = TagPolicy(db_session)
+    policy = TagPolicy()
     await policy.check_permission(action=ResourceAction.CREATE, user=user, tag_data=tag_data)
 
     try:
@@ -80,7 +80,7 @@ async def get_tags(
     - tags: List of tags
     - total_pages: Total number of pages available
     """
-    policy = TagPolicy(db_session)
+    policy = TagPolicy()
     await policy.check_permission(action=ResourceAction.READ, user=user)
 
     qb = QueryBuilder(session=db_session, model=CommunityPostTag)
@@ -127,7 +127,7 @@ async def delete_tag(
     **Errors:**
     - Returns 404 if tag not found
     """
-    policy = TagPolicy(db_session)
+    policy = TagPolicy()
     await policy.check_permission(action=ResourceAction.DELETE, user=user, tag=tag)
 
     qb = QueryBuilder(session=db_session, model=CommunityPostTag)

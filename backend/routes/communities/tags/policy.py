@@ -1,5 +1,4 @@
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.models import CommunityPostTag
@@ -16,8 +15,8 @@ class TagPolicy:
     - Only admins and community heads can create or delete tags
     """
 
-    def __init__(self, db_session: AsyncSession):
-        self.db_session = db_session
+    def __init__(self):
+        pass
 
     async def check_permission(
         self,
