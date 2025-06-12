@@ -246,7 +246,8 @@ async def update_post(
         )
         if not tag:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
-
+    
+    qb = QueryBuilder(session=db_session, model=CommunityPost)
     updated_post: CommunityPost = await qb.blank(CommunityPost).update(
         instance=post,
         update_data=post_data,

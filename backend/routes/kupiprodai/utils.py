@@ -1,40 +1,60 @@
-from typing import List
+from typing import Tuple
 
-from backend.common.schemas import MediaResponse
-from backend.core.database.models.product import Product
-from backend.routes.kupiprodai.schemas import (
-    ProductResponseSchema,
-)
+from backend.core.database.models import Product
+from backend.core.database.models.user import UserRole
+from backend.common.schemas import ResourcePermissions
 
 
-def build_product_response(
+def get_product_permissions(
     product: Product,
-    media_responses: List[MediaResponse],
-) -> ProductResponseSchema:
+    user: Tuple[dict, dict],
+) -> ResourcePermissions:
     """
-    Build a ProductResponseSchema from a Product ORM object and media responses.
+    Determines product permissions for a user based on their role and the product state.
 
-    Parameters:
-    - product (Product): Product ORM object with loaded user relationship
-    - media_responses (List[MediaResponse]): List of media response objects
+    Args:
+        product: The product to check permissions for
+        user: The user tuple containing user info and claims
 
     Returns:
-    - ProductResponseSchema: Formatted product response with all required fields
+        ProductPermissions object containing can_edit, can_delete flags and list of editable fields
     """
-    return ProductResponseSchema(
-        id=product.id,
-        name=product.name,
-        description=product.description,
-        price=product.price,
-        category=product.category,
-        condition=product.condition,
-        status=product.status,
-        created_at=product.created_at,
-        updated_at=product.updated_at,
-        # Map user attributes to response fields
-        user_name=product.user.name,
-        user_surname=product.user.surname,
-        user_telegram_id=product.user.telegram_id,
-        # Add media responses
-        media=media_responses,
-    )
+    user_role = user[1]["role"]
+    user_sub = user[0]["sub"] 
+
+    # Initialize permissions
+    permissions = ResourcePermissions()
+
+    # Admin can do everything
+    if user_role == UserRole.admin.value:
+        permissions.can_edit = True
+        permissions.can_delete = True
+        permissions.editable_fields = [
+            "name",
+            "description",
+            "price",
+            "category",
+            "condition",
+            "media",
+        ]
+        return permissions
+
+    # Check if user is product owner
+    is_owner = product.user_sub == user_sub
+
+    # Set can_delete permission
+    permissions.can_delete = is_owner
+
+    # Set can_edit and editable_fields based on role
+    if is_owner:
+        permissions.can_edit = True
+        permissions.editable_fields = [
+            "name",
+            "description",
+            "price",
+            "category",
+            "condition",
+            "media",
+        ]
+
+    return permissions

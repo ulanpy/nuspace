@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, Union
+from typing import List, Optional, Type, Union, Any
 
 from pydantic import BaseModel
 from sqlalchemy import and_, delete, func, select
@@ -38,6 +38,7 @@ class QueryBuilder:
         self._size: Optional[int] = None
         self._page: Optional[int] = None
         self._is_count: bool = False
+        self._selected_entities: Optional[List[Any]] = None
 
     # —— READ QUERIES —— #
     def base(self, count: bool = False) -> "QueryBuilder":
@@ -73,23 +74,61 @@ class QueryBuilder:
                 self._order_by.append(c)
         return self
 
+    def attributes(self, *entities: Any) -> "QueryBuilder":
+        """
+        Specify specific model attributes, columns, or other selectable entities.
+        Calling with no arguments clears any specific selection, reverting to selecting the full model.
+        """
+        if not entities:
+            self._selected_entities = None
+        else:
+            self._selected_entities = list(entities)
+        return self
+
     def paginate(self, size: Optional[int], page: Optional[int]) -> "QueryBuilder":
         """Set pagination parameters"""
         self._size = size
         self._page = page
         return self
 
-    async def all(self) -> List[DeclarativeBase]:
-        """Execute and return list of results"""
+    async def all(self) -> List[Any]:
+        """
+        Execute and return list of results.
+        - If multiple entities were selected via .attributes() (e.g., .attributes(User.id, User.name)),
+          returns List[sqlalchemy.engine.Row].
+        - If a single entity was selected via .attributes() (e.g., .attributes(User.id) or .attributes(User)),
+          or if .attributes() was not used (default, selecting the full model),
+          returns a list of those items directly (e.g., List[int], List[User]).
+        - If query was set for count (e.g. via .base(count=True)), returns a list containing the count [count_value].
+        """
         stmt = self._build_select()
-        if not self._is_count and self._size:
+        if not self._is_count and self._size is not None:
             page = max(1, (self._page or 1))
             stmt = stmt.offset((page - 1) * self._size).limit(self._size)
+        
         result = await self.session.execute(stmt)
-        return result.scalars().all()
 
-    async def first(self) -> Optional[DeclarativeBase]:
-        """Execute and return the first result"""
+        if self._is_count:
+            # For count queries, scalars().all() correctly returns [count_value]
+            return result.scalars().all()
+        
+        if self._selected_entities:
+            if len(self._selected_entities) > 1:
+                # Multiple entities selected (e.g., User.id, User.name) -> List[Row]
+                return result.all()
+            else:
+                # Single entity selected (e.g., User.id or User) -> List[value] or List[ModelInstance]
+                return result.scalars().all()
+        else:
+            # Default: selecting full model instances -> List[ModelInstance]
+            return result.scalars().all()
+
+    async def first(self) -> Optional[Any]:
+        """
+        Execute and return the first result.
+        The type of the returned item depends on what was selected and how .all() processes it.
+        It could be a model instance, a sqlalchemy.engine.Row, a single attribute value, or the count.
+        """
         results = await self.all()
         return results[0] if results else None
 
@@ -106,14 +145,23 @@ class QueryBuilder:
             pk = self.model.__table__.primary_key.columns.values()[0]
             stmt = select(func.count(pk))
         else:
-            stmt = select(self.model)
+            if self._selected_entities:
+                stmt = select(*self._selected_entities)
+            else:
+                stmt = select(self.model)
 
         if self._filters:
             stmt = stmt.where(and_(*self._filters))
+        
         for t in self._joins:
             stmt = stmt.join(t)
-        for opt in self._options:
-            stmt = stmt.options(opt)
+        
+        # Eager loading options only apply if we are selecting full model instances
+        # and not specific columns/attributes.
+        if not self._selected_entities and self._options:
+            for opt in self._options:
+                stmt = stmt.options(opt)
+        
         for o in self._order_by:
             stmt = stmt.order_by(o)
         return stmt

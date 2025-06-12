@@ -291,21 +291,20 @@ async def delete_community(
     qb = QueryBuilder(session=db_session, model=CommunityPost)
 
     # 1. Get all posts in the community
-    posts: List[CommunityPost] = await (
-        qb.base().filter(CommunityPost.community_id == community_id).all()
+    post_ids: List[int] = await (
+        qb.base().filter(CommunityPost.community_id == community_id).attributes(CommunityPost.id).all()
     )
-    post_ids = [post.id for post in posts]
 
     # 2. Handle comments and their media
     if post_ids:
         # Get all comments
-        comments: List[CommunityComment] = await (
+        comment_ids: List[int] = await (
             qb.blank(model=CommunityComment)
             .base()
+            .attributes(CommunityComment.id)
             .filter(CommunityComment.post_id.in_(post_ids))
             .all()
         )
-        comment_ids = [comment.id for comment in comments]
 
         # Get and delete comment media
         comment_media_objects: List[Media] = await (

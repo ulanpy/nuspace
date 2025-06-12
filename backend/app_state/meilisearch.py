@@ -58,7 +58,7 @@ async def setup_meilisearch(app: FastAPI):
     index_configs = [
         MeilisearchIndexConfig(
             model=Product,
-            searchable_columns=[Product.name, Product.condition, Product.status, Product.category],
+            searchable_columns=[Product.name, Product.status, Product.category],
             filterable_attributes=[Product.status],
             primary_key=Product.id,  # Explicitly specify primary key
         ),
