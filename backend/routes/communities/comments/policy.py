@@ -1,7 +1,5 @@
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.cruds import QueryBuilder
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.models.community import CommunityComment
 from backend.core.database.models.user import UserRole
@@ -9,8 +7,8 @@ from backend.routes.communities.comments.schemas import RequestCommunityCommentS
 
 
 class CommentPolicy:
-    def __init__(self, db_session: AsyncSession):
-        self.qb = QueryBuilder(session=db_session, model=CommunityComment)
+    def __init__(self):
+        pass
 
     async def check_permission(
         self,

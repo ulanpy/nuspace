@@ -4,8 +4,7 @@ from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.core.database.models.base import Base
-from backend.core.database.models.common_enums import EntityType
-from backend.routes.notification.schemas import NotificationType
+from backend.core.database.models.common_enums import EntityType, NotificationType
 
 
 class Notification(Base):

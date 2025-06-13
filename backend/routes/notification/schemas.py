@@ -1,13 +1,8 @@
 import datetime
-from enum import Enum
 
 from pydantic import BaseModel, field_validator
 
-from backend.core.database.models.common_enums import EntityType
-
-
-class NotificationType(str, Enum):
-    info = "info"
+from backend.core.database.models.common_enums import EntityType, NotificationType
 
 
 class RequestNotiification(BaseModel):

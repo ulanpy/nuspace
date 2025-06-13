@@ -75,7 +75,7 @@ async def get(
     - Total number of replies
     """
 
-    policy = CommentPolicy(db_session)
+    policy = CommentPolicy()
     await policy.check_permission(
         action=ResourceAction.READ,
         user=user,
@@ -213,7 +213,7 @@ async def create_comment(
     - `user_sub` can be `me` to indicate the authenticated user
     """
     # Check permissions
-    policy = CommentPolicy(db_session)
+    policy = CommentPolicy()
     await policy.check_permission(
         action=ResourceAction.CREATE,
         user=user,
@@ -285,7 +285,7 @@ async def delete(
     - 403: If user is not the comment owner or admin
     """
 
-    policy = CommentPolicy(db_session)
+    policy = CommentPolicy()
     await policy.check_permission(action=ResourceAction.DELETE, user=user, comment_data=comment)
 
     # Soft delete the comment

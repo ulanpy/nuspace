@@ -61,8 +61,8 @@ class Community(Base):
 class CommunityPostTag(Base):
     __tablename__ = "community_post_tags"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
-    community_id: Mapped[str] = mapped_column(
-        ForeignKey("communities.id", ondelete="CASCADE"), nullable=True, unique=False
+    community_id: Mapped[int] = mapped_column(
+        ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, unique=False
     )
     name: Mapped[str] = mapped_column(nullable=False, unique=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -74,7 +74,7 @@ class CommunityPostTag(Base):
 class CommunityPost(Base):
     __tablename__ = "community_posts"
     id: Mapped[BigInteger] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
-    community_id: Mapped[str] = mapped_column(
+    community_id: Mapped[int] = mapped_column(
         ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, unique=False
     )
     user_sub: Mapped[str] = mapped_column(
@@ -83,7 +83,7 @@ class CommunityPost(Base):
     title: Mapped[str] = mapped_column(nullable=False, unique=False)
     description: Mapped[str] = mapped_column(nullable=False, unique=False)
     tag_id: Mapped[int] = mapped_column(
-        ForeignKey("community_post_tags.id", ondelete="CASCADE"), nullable=True, unique=False
+        ForeignKey("community_post_tags.id", ondelete="SET NULL"), nullable=True, unique=False
     )
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -97,7 +97,7 @@ class CommunityPost(Base):
 class CommunityMember(Base):
     __tablename__ = "community_members"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
-    community_id: Mapped[str] = mapped_column(
+    community_id: Mapped[int] = mapped_column(
         ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, unique=False
     )
     user_sub: Mapped[str] = mapped_column(

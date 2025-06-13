@@ -105,9 +105,9 @@ class ReviewResponseSchema(BaseModel):
 
 class ListReviewResponseSchema(BaseModel):
     reviews: List[ReviewResponseSchema]
-    num_of_pages: int
+    total_pages: int
 
-    @field_validator("num_of_pages")
+    @field_validator("total_pages")
     def validate_pages(cls, value):
         if value <= 0:
             raise ValueError("Number of pages should be positive")

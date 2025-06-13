@@ -36,7 +36,7 @@ async def create_post(
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> CommunityPostResponse:
-    policy = PostPolicy(db_session)
+    policy = PostPolicy()
     await policy.check_permission(action=ResourceAction.CREATE, user=user, post_data=post_data)
 
     if post_data.user_sub == "me":
@@ -102,7 +102,7 @@ async def get_posts(
     db_session: AsyncSession = Depends(get_db_session),
     keyword: str | None = None,
 ) -> ListCommunityPostResponse:
-    policy = PostPolicy(db_session)
+    policy = PostPolicy()
     await policy.check_permission(action=ResourceAction.READ, user=user)
 
     conditions = [CommunityPost.community_id == community_id]
@@ -185,7 +185,7 @@ async def get_post(
     db_session: AsyncSession = Depends(get_db_session),
     post: CommunityPost = Depends(post_exists_or_404),
 ) -> CommunityPostResponse:
-    policy = PostPolicy(db_session)
+    policy = PostPolicy()
     await policy.check_permission(action=ResourceAction.READ, user=user, post=post)
 
     qb = QueryBuilder(
@@ -234,7 +234,7 @@ async def update_post(
     db_session: AsyncSession = Depends(get_db_session),
     post: CommunityPost = Depends(post_exists_or_404),
 ) -> CommunityPostResponse:
-    policy = PostPolicy(db_session)
+    policy = PostPolicy()
     await policy.check_permission(
         action=ResourceAction.UPDATE, user=user, post=post, post_data=post_data
     )
@@ -247,6 +247,7 @@ async def update_post(
         if not tag:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
 
+    qb = QueryBuilder(session=db_session, model=CommunityPost)
     updated_post: CommunityPost = await qb.blank(CommunityPost).update(
         instance=post,
         update_data=post_data,
@@ -311,7 +312,7 @@ async def delete_post(
     - Removes the post from the Meilisearch index
     """
     # Check permissions
-    policy = PostPolicy(db_session)
+    policy = PostPolicy()
     await policy.check_permission(action=ResourceAction.DELETE, user=user, post=post)
 
     # Initialize query builder

@@ -1,10 +1,9 @@
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.models.community import Community
 from backend.core.database.models.user import UserRole
-from backend.routes.communities.communities.schemas import CommunityRequest
+from backend.routes.communities.communities.schemas import CommunityCreateRequest
 
 
 class CommunityPolicy:
@@ -16,15 +15,15 @@ class CommunityPolicy:
     All other logic should be kept outside of this class.
     """
 
-    def __init__(self, db_session: AsyncSession):
-        self.db_session = db_session
+    def __init__(self):
+        pass
 
     async def check_permission(
         self,
         action: ResourceAction,
         user: tuple[dict, dict],
         community: Community | None = None,
-        community_data: CommunityRequest | None = None,
+        community_data: CommunityCreateRequest | None = None,
     ) -> bool:
         """
         Centralized permission checking for community actions.
