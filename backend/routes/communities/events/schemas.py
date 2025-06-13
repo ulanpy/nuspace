@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import Query
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator
 
 from backend.common.schemas import MediaResponse, ResourcePermissions, ShortUserResponse
 from backend.core.database.models import (
@@ -17,7 +17,11 @@ from backend.routes.communities.communities.schemas import ShortCommunityRespons
 
 class EventCreateRequest(BaseModel):
     community_id: int | None = Field(
-        default=None, description="The community id of the event", example=1
+        default=None,
+        description=(
+            "The community id of the event."
+            "If set the event scope is community. otherwise it is personal"
+        ),
     )
     creator_sub: str = Field(..., description="The creator sub of the event", example="me")
     policy: RegistrationPolicy = Field(
@@ -25,21 +29,13 @@ class EventCreateRequest(BaseModel):
     )
     name: str = Field(..., description="The name of the event", example="NUspace 2025")
     place: str = Field(..., description="The place of the event", example="NU 3rd block, 3rd floor")
-    event_datetime: datetime = Field(
-        ..., description="The datetime of the event", example="2026-06-12T10:00:00Z"
-    )
+    event_datetime: datetime = Field(..., description="The datetime of the event")
     description: str = Field(
         ..., description="The description of the event", example="NUspace is a community event"
     )
     duration: int = Field(..., description="The duration of the event in minutes", example=120)
-    scope: EventScope = Field(
-        ..., description="The scope of the event", example=EventScope.community
-    )
+
     type: EventType = Field(..., description="The type of the event", example=EventType.academic)
-    status: EventStatus = Field(
-        ..., description="The status of the event", example=EventStatus.approved
-    )
-    tag: EventTag = Field(..., description="The tag of the event", example=EventTag.regular)
 
     @field_validator("duration")
     def validate_duration(cls, value):
@@ -49,20 +45,27 @@ class EventCreateRequest(BaseModel):
 
     @field_validator("event_datetime")
     def validate_event_datetime(cls, value):
+        if not value.tzinfo:
+            value = value.replace(tzinfo=timezone.utc)
         if value <= datetime.now(timezone.utc):
             raise ValueError("Event datetime must be in the future")
         return value.astimezone(timezone.utc).replace(tzinfo=None)
 
-    """The reason why i placed this validator outside of the policy is because 
-    this is logical validation and not a policy validation"""
 
-    @model_validator(mode="after")
-    def validate_scope_and_community(self):
-        if self.scope == EventScope.personal and self.community_id is not None:
-            raise ValueError("Personal events cannot have a community_id")
-        if self.scope == EventScope.community and self.community_id is None:
-            raise ValueError("Community events must have a community_id")
-        return self
+class EnrichedEventCreateRequest(EventCreateRequest):
+    """
+    Internal model that extends EventCreateRequest with system-controlled fields.
+    These fields are set by the backend based on business logic and permissions.
+    """
+
+    scope: EventScope = Field(
+        ..., description="The scope of the event", example=EventScope.community
+    )
+    tag: EventTag = Field(..., description="The tag of the event", example=EventTag.regular)
+
+    status: EventStatus = Field(
+        ..., description="The status of the event", example=EventStatus.approved
+    )
 
 
 class EventUpdateRequest(BaseModel):
@@ -106,7 +109,9 @@ class EventUpdateRequest(BaseModel):
 
     @field_validator("event_datetime")
     def validate_event_datetime(cls, value):
-        if value is not None and value <= datetime.now(timezone.utc):
+        if not value.tzinfo:
+            value = value.replace(tzinfo=timezone.utc)
+        if value <= datetime.now(timezone.utc):
             raise ValueError("Event datetime must be in the future")
         return value.astimezone(timezone.utc).replace(tzinfo=None)
 

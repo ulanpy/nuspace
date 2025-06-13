@@ -18,10 +18,9 @@ from backend.core.database.models import (
 )
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
-from backend.routes.communities.events import schemas
+from backend.routes.communities.events import schemas, utils
 from backend.routes.communities.events.dependencies import event_exists_or_404
 from backend.routes.communities.events.policy import EventPolicy, ResourceAction
-from backend.routes.communities.events.utils import get_event_permissions
 from backend.routes.google_bucket.utils import batch_delete_blobs
 
 router = APIRouter(tags=["Events Routes"])
@@ -40,16 +39,10 @@ async def get_events(
     event_status: EventStatus | None = None,
     community_id: int | None = None,
     start_date: date | None = Query(
-        default=None,
-        title="Start date",
-        description="Дата начала диапазона (формат: YYYY-MM-DD)",
-        example="2025-05-19",
+        default=None, title="Start date", description="Дата начала диапазона (формат: YYYY-MM-DD)"
     ),
     end_date: date | None = Query(
-        default=None,
-        title="End date",
-        description="Дата конца диапазона (формат: YYYY-MM-DD)",
-        example="2025-05-25",
+        default=None, title="End date", description="Дата конца диапазона (формат: YYYY-MM-DD)"
     ),
     creator_sub: str | None = Query(
         default=None,
@@ -63,10 +56,18 @@ async def get_events(
     Retrieves a paginated list of events with flexible filtering.
 
     **Access Policy:**
-    - All users can see their own created events without any restrictions
-    - All users can see approved events of others
-    - Community heads and event creators can see pending and rejected events
-    - Admins can see all events
+    - Admin can view all events without restrictions
+    - Users can view their own events without restrictions
+    - Community heads can view all events in their communities without restrictions
+    - For other users viewing events they don't own:
+      - Must explicitly specify status=approved
+      - Cannot view events with other statuses
+
+    **Examples:**
+    - GET /events (own events) → All statuses allowed
+    - GET /events (others' events) → Must specify status=approved
+    - GET /events?status=approved → Allowed
+    - GET /events?status=pending → Not allowed (if don't own event)
 
     **Parameters:**
     - `size`: Number of events per page (default: 20, max: 100)
@@ -76,9 +77,8 @@ async def get_events(
     - `event_type`: Filter by event type (optional)
     - `event_status`: Filter by event status (optional)
     - `community_id`: Filter by specific community (optional)
-    - `date_filter`: Filter by event date (optional)
-    - `start_date`: Start date for filtering events (optional). Used with `date_filter.custom`
-    - `end_date`: End date for filtering events (optional). Used with `date_filter.custom`
+    - `start_date`: Start date for filtering events (optional)
+    - `end_date`: End date for filtering events (optional)
     - `creator_sub`: Filter by event creator (optional)
         - If set to "me", returns the current user's events
         - If set to a specific user_sub, returns that user's approved events (if authorized)
@@ -88,17 +88,15 @@ async def get_events(
     - List of events matching the criteria with pagination info
 
     **Notes:**
+    - When status is not specified, it means user wants to see all statuses
+    - Regular users must explicitly request approved events when viewing others' events
+    - No silent filtering is applied - user must be explicit about their intent
     - Results are ordered by event datetime by default
-    - When community_id is provided, returns only events for that specific community
     - Returns 404 if specified community_id doesn't exist
-    - When creator_sub is not specified, returns all events (approved)
-    - When creator_sub="me", returns all user's events (all statuses)
     """
     # Create policy and check permissions
-    policy = EventPolicy()
-    await policy.check_permission(
+    await EventPolicy(user=user).check_permission(
         action=ResourceAction.READ,
-        user=user,
         creator_sub=creator_sub,
         event_status=event_status,
         community_id=community_id,
@@ -184,7 +182,7 @@ async def get_events(
             collaborators=event.collaborators,
             community=event.community,
             creator=event.creator,
-            permissions=get_event_permissions(event, user),
+            permissions=utils.get_event_permissions(event, user),
         )
         for event, media in zip(events, media_results)
     ]
@@ -210,34 +208,37 @@ async def add_event(
       - Any authenticated user can create
     - For community events:
       - Must have a community_id (enforced by schema)
-      - If user is community head:
-        - Can set any status
-      - If user is not community head:
-        - Status must be pending
-    - Non-admin users can only use regular tag
+
+    **Data Enrichment:**
+    The following fields are automatically set by the backend based on business rules:
+    - `scope`: Set to personal if no community_id, community if community_id provided
+    - `status`: Set based on user role and event type
+      - Admin: approved
+      - Community head: approved
+      - Regular user: pending if community_id provided, approved if no community_id
+    - `tag`: Set to regular always (changed to other tags with patch by admin)
 
     **Parameters:**
     - `event_data`: Event data including name, description, etc.
 
     **Returns:**
-    - Created event with all its details and media
+    - Created event with all its details, including enriched fields
 
     **Errors:**
-    - Returns 400 if event data violates schema rules (e.g., mixing personal scope
-      with community_id)
-    - Returns 400 if event status is invalid for user's role
-    - Returns 403 if non-admin tries to set non-regular tag
+    - Returns 403 if user doesn't have permission to create the event
     - Returns 404 if specified community does not exist
 
     **Note:**
     - `creator_sub` can be `me` to indicate the authenticated user
+    - `community_id` is optional, if not provided the event is personal
     """
-    # Create policy and check permissions
-    policy = EventPolicy()
-    await policy.check_permission(action=ResourceAction.CREATE, user=user, event_data=event_data)
-
-    if event_data.creator_sub == "me":
-        event_data.creator_sub = user[0].get("sub")
+    # check permissions and enrich event data (Business logic)
+    await EventPolicy(user=user).check_permission(
+        action=ResourceAction.CREATE, event_data=event_data
+    )
+    event_data: schemas.EnrichedEventCreateRequest = await utils.EventEnrichmentService(
+        user=user
+    ).enrich_event_data(event_data)
 
     qb = QueryBuilder(session=db_session, model=Event)
     event: Event = await qb.add(
@@ -283,7 +284,7 @@ async def add_event(
             if event.community
             else None
         ),
-        permissions=get_event_permissions(event, user),
+        permissions=utils.get_event_permissions(event, user),
     )
 
 
@@ -380,7 +381,7 @@ async def update_event(
             if event.community
             else None
         ),
-        permissions=get_event_permissions(event, user),
+        permissions=utils.get_event_permissions(event, user),
     )
 
 
@@ -511,5 +512,5 @@ async def get_event(
             if event.community
             else None
         ),
-        permissions=get_event_permissions(event, user),
+        permissions=utils.get_event_permissions(event, user),
     )

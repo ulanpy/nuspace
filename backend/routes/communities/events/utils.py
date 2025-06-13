@@ -1,8 +1,9 @@
 from typing import Tuple
 
-from backend.core.database.models import Event, EventScope
-from backend.core.database.models.user import UserRole
 from backend.common.schemas import ResourcePermissions
+from backend.core.database.models import Event, EventScope, EventStatus, EventTag
+from backend.core.database.models.user import UserRole
+from backend.routes.communities.events import schemas
 
 
 def get_event_permissions(
@@ -75,3 +76,42 @@ def get_event_permissions(
             permissions.editable_fields.append("status")
 
     return permissions
+
+
+class EventEnrichmentService:
+    """Handles the business logic for enriching event data"""
+
+    def __init__(self, user: tuple[dict, dict]):
+        self.user = user
+        self.user_communities = user[1]["communities"]
+
+    async def enrich_event_data(
+        self, event_data: schemas.EventCreateRequest
+    ) -> schemas.EnrichedEventCreateRequest:
+        # Handle creator_sub
+        if event_data.creator_sub == "me":
+            event_data.creator_sub = self.user[0].get("sub")
+
+        # Determine scope based on community_id
+        scope = EventScope.community if event_data.community_id else EventScope.personal
+
+        if scope == EventScope.community:
+            # Determine status based on user role and community membership
+            status = await self._determine_event_status(event_data)
+        else:
+            # don't set status for personal events
+            status = EventStatus.approved
+
+        # All created events are regular when created
+        tag = EventTag.regular
+
+        return schemas.EnrichedEventCreateRequest(
+            **event_data.model_dump(), scope=scope, status=status, tag=tag
+        )
+
+    async def _determine_event_status(self, event_data: schemas.EventCreateRequest) -> EventStatus:
+        # Business logic for determining status
+        if event_data.community_id in self.user_communities:
+            return EventStatus.approved
+        else:
+            return EventStatus.pending

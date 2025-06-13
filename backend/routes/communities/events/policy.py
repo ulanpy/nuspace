@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 
 from backend.common.utils.enums import ResourceAction
-from backend.core.database.models import Event, EventScope, EventStatus, EventTag
+from backend.core.database.models import Event, EventScope, EventStatus
 from backend.core.database.models.user import UserRole
 from backend.routes.communities.events.schemas import EventCreateRequest, EventUpdateRequest
 
@@ -35,13 +35,12 @@ class EventPolicy:
 
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, user: tuple[dict, dict]):
+        self.user = user
 
     async def _check_create_permissions(
         self,
         event_data: EventCreateRequest,
-        user: tuple[dict, dict],
     ) -> None:
         """
         Checks if the user has permission to create an event with the given configuration.
@@ -60,42 +59,15 @@ class EventPolicy:
             HTTPException: If the user doesn't have required permissions
         """
 
-        user_role = user[1]["role"]
-        user_communities = user[1]["communities"]
-        # Admin can set any status and configuration
-        if user_role == UserRole.admin.value:
-            return
-
-        # Non-admin users can only use regular tag
-        if event_data.tag is not EventTag.regular:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Non admin users cannot set EventTag other than regular",
-            )
-
-        if event_data.creator_sub != "me" and event_data.creator_sub != user[0].get("sub"):
+        if event_data.creator_sub != "me" and event_data.creator_sub != self.user[0].get("sub"):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You can only create events for yourself",
             )
 
-        # Community scope permission checks
-        if event_data.scope == EventScope.community:
-            # Check if user is head of the community
-            is_head: bool = event_data.community_id in user_communities
+        return
 
-            if not is_head:
-                if event_data.status != EventStatus.pending:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=(
-                            f"Non-head users must set status to "
-                            f"{EventStatus.pending} for community events"
-                        ),
-                    )
-            return
-
-    async def _check_event_access(self, user: tuple[dict, dict], event: Event) -> bool:
+    async def _check_event_access(self, event: Event) -> bool:
         """
         Resource-based authorization: Check if user can access this specific event.
 
@@ -106,13 +78,8 @@ class EventPolicy:
         - For other users:
           - Can only access approved events for others' personal/community events
         """
-        user_role = user[1]["role"]
-        user_sub = user[0]["sub"]
-        user_communities = user[1]["communities"]
-
-        # Admin can access everything
-        if user_role == UserRole.admin.value:
-            return True
+        user_sub = self.user[0]["sub"]
+        user_communities = self.user[1]["communities"]
 
         # If user is the creator
         if event.creator_sub == user_sub:
@@ -133,7 +100,6 @@ class EventPolicy:
 
     async def _check_listing_permission(
         self,
-        user: tuple[dict, dict],
         creator_sub: str | None = None,
         event_status: EventStatus | None = None,
         community_id: int | None = None,
@@ -143,19 +109,26 @@ class EventPolicy:
         Intent-based authorization: Check if user can request events with these filters.
 
         Rules:
-        - Admin can request any events
-        - Users can always request their own events
-        - Community heads can request all events in their communities
-        - For other users:
-          - Can only request approved events for others' personal/community events
-        """
-        user_role = user[1]["role"]
-        user_sub = user[0]["sub"]
-        user_communities = user[1]["communities"]
+        - Admin can request any events without restrictions
+        - Users can always request their own events without restrictions
+        - Community heads can request all events in their communities without restrictions
+        - For other users viewing events they don't own:
+          - Must explicitly specify status=approved
+          - Cannot view events with other statuses
 
-        # Admin can request everything
-        if user_role == UserRole.admin.value:
-            return True
+        Examples:
+        - GET /events (own events) → All statuses allowed
+        - GET /events (others' events) → Must specify status=approved
+        - GET /events?status=approved → Allowed
+        - GET /events?status=pending → Not allowed
+
+        Note:
+        - When status is not specified, it means user wants to see all statuses
+        - Regular users must explicitly request approved events when viewing others' events
+        - No silent filtering is applied - user must be explicit about their intent
+        """
+        user_sub = self.user[0]["sub"]
+        user_communities = self.user[1]["communities"]
 
         # If requesting own events
         if creator_sub == "me" or creator_sub == user_sub:
@@ -178,7 +151,6 @@ class EventPolicy:
         self,
         event: Event,
         event_data: EventUpdateRequest,
-        user: tuple[dict, dict],
     ) -> None:
         """
         Checks if the user has permission to update specific event fields.
@@ -191,17 +163,10 @@ class EventPolicy:
         Raises:
             HTTPException: If the user doesn't have required permissions
         """
-        user_role = user[1]["role"]
-        user_communities = user[1]["communities"]
-        # Admin can update anything
-        if user_role == UserRole.admin.value:
-            return
+        user_communities = self.user[1]["communities"]
 
         # Check if any restricted fields are being updated
         restricted_fields = {
-            "community_id": event.community_id,
-            "creator_sub": event.creator_sub,
-            "scope": event.scope,
             "tag": event.tag,
         }
 
@@ -234,7 +199,6 @@ class EventPolicy:
     async def check_permission(
         self,
         action: ResourceAction,
-        user: tuple[dict, dict],
         event: Event | None = None,
         event_data: EventCreateRequest | EventUpdateRequest | None = None,
         creator_sub: str | None = None,
@@ -258,30 +222,30 @@ class EventPolicy:
         Raises:
             HTTPException: If the user doesn't have permission or data is invalid
         """
-        user_role = user[1]["role"]
-        user_sub = user[0]["sub"]
-        user_communities = user[1]["communities"]
+        user_role = self.user[1]["role"]
+        user_sub = self.user[0]["sub"]
+        user_communities = self.user[1]["communities"]
 
         # Admin can do everything
         if user_role == UserRole.admin.value:
             return True
 
         if action == ResourceAction.CREATE:
-            await self._check_create_permissions(event_data, user)
+            await self._check_create_permissions(event_data)
             return True
 
         elif action == ResourceAction.READ:
             if event:
                 # Resource-based authorization (single event)
-                return await self._check_event_access(user, event)
+                return await self._check_event_access(event)
             else:
                 # Intent-based authorization (listing)
                 return await self._check_listing_permission(
-                    user, creator_sub, event_status, community_id, event_scope
+                    creator_sub, event_status, community_id, event_scope
                 )
 
         elif action == ResourceAction.UPDATE:
-            await self._check_update_permissions(event, event_data, user)
+            await self._check_update_permissions(event, event_data)
 
             # Creator can update their own event
             if event.creator_sub == user_sub:
