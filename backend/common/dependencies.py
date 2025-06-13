@@ -11,6 +11,7 @@ from backend.core.database.models import User, UserRole
 from backend.routes.auth.app_token import AppTokenManager
 from backend.routes.auth.keycloak_manager import KeyCloakManager
 from backend.routes.auth.utils import set_kc_auth_cookies
+from backend.routes.notification import tasks
 
 
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
@@ -172,3 +173,7 @@ async def check_role(
     if not role:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not found")
     return role
+
+
+def broker():
+    return tasks.broker

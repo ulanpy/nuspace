@@ -4,10 +4,11 @@ from datetime import datetime
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, Query, Request, status
+from faststream.rabbit import RabbitBroker
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_current_principals, get_db_session
+from backend.common.dependencies import broker, get_current_principals, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import response_builder
 from backend.common.utils.enums import ResourceAction
@@ -35,6 +36,7 @@ router = APIRouter(tags=["Community Posts Comments Routes"])
 async def get(
     request: Request,
     user: Annotated[dict, Depends(get_current_principals)],
+    broker: Annotated[RabbitBroker, Depends(broker)],
     post_id: int,
     comment_id: int | None = None,
     size: int = Query(20, ge=1, le=100),
@@ -90,6 +92,24 @@ async def get(
         .all()
     )
 
+    from backend.common.notification import send
+    from backend.routes.notification.schemas import NotificationType, RequestNotiification
+
+    await send(
+        request=request,
+        user=user,
+        notification_data=RequestNotiification(
+            title="Rsgsge",
+            message="mess",
+            notification_source=EntityType.community_comments,
+            receiver_sub=user[0].get("sub"),
+            tg_id=user[1].get("tg_id"),
+            type=NotificationType.info,
+            url=None,
+        ),
+        session=db_session,
+        broker=broker,
+    )
     # Transform deleted comments to hide sensitive data
     if not include_deleted:
         for i, comment in enumerate(comments):

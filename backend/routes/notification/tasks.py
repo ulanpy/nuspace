@@ -1,18 +1,18 @@
-import json
-
-from aio_pika.abc import AbstractIncomingMessage
 from aiogram import Bot
 from aiogram.exceptions import TelegramForbiddenError, TelegramRetryAfter
+from faststream.rabbit import RabbitBroker
+from faststream.rabbit.annotations import RabbitMessage
 
 from backend.core.configs.config import config
-from backend.routes.bot.keyboards.kb import kb_url
 from backend.routes.notification import schemas
 
+broker: RabbitBroker = RabbitBroker(config.CELERY_BROKER_URL)
 
-async def task(message: AbstractIncomingMessage):
-    notification: schemas.BaseNotification = schemas.ModifiedNotification(
-        **json.loads(message.body.decode("utf-8"))
-    )
+
+@broker.subscriber("notifications")
+async def process_notification(notification: schemas.ModifiedNotification, msg: RabbitMessage):
+    from backend.routes.bot.keyboards.kb import kb_url
+
     if not notification.switch:
         return
     bot = Bot(token=config.TG_API_KEY)
@@ -24,10 +24,10 @@ async def task(message: AbstractIncomingMessage):
             f"\nFrom service: {notification.notification_source}",
             reply_markup=kb_url(notification.url) if notification.url else None,
         )
-        await message.ack()
+        await msg.ack()
     except TelegramForbiddenError:
-        await message.nack(requeue=False)
+        await msg.reject()
     except TelegramRetryAfter:
-        await message.nack(requeue=True)
+        await msg.nack()
     finally:
         await bot.session.close()

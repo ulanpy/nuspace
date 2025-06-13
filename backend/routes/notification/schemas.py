@@ -15,13 +15,13 @@ class RequestNotiification(BaseModel):
     message: str
     notification_source: EntityType
     receiver_sub: str
-    tg_id: int | None = None
+    tg_id: int
     type: NotificationType
     url: str | None = None
 
     @field_validator("url")
     def validate_url(cls, v):
-        if not v.startswith("https://"):
+        if isinstance(v, str) and (not v.startswith("https://")):
             raise ValueError("URL must start with https://")
         return v
 
