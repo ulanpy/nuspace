@@ -1,37 +1,62 @@
-from typing import List
-
-from backend.common.schemas import MediaResponse
-from backend.core.database.models.community import Community
-from backend.routes.communities.communities.schemas import CommunityResponseSchema
+from backend.core.database.models import Community
+from backend.common.schemas import ResourcePermissions
+from backend.core.database.models.user import UserRole
 
 
-def build_community_response(
+def get_community_permissions(
     community: Community,
-    media_responses: List[MediaResponse],
-) -> CommunityResponseSchema:
+    user: tuple[dict, dict],
+) -> ResourcePermissions:
     """
-    Build a CommunityResponseSchema from a Community ORM object and media responses.
+    Determines community permissions for a user based on their role and community state.
 
-    Parameters:
-    - community (Community): Community ORM object with loaded head_user relationship
-    - media_responses (List[MediaResponse]): List of media response objects
+    Args:
+        community: The community to check permissions for
+        user: The user tuple containing user info and claims
 
     Returns:
-    - CommunityResponseSchema: Formatted community response with all required fields
+        ResourcePermissions object containing can_edit, can_delete flags and list of editable fields
     """
-    return CommunityResponseSchema(
-        id=community.id,
-        name=community.name,
-        type=community.type,
-        category=community.category,
-        recruitment_status=community.recruitment_status,
-        description=community.description,
-        established=community.established,
-        user_name=community.head_user.name,
-        user_surname=community.head_user.surname,
-        telegram_url=community.telegram_url,
-        instagram_url=community.instagram_url,
-        created_at=community.created_at,
-        updated_at=community.updated_at,
-        media=media_responses,
-    )
+    user_role = user[1]["role"]
+    user_sub = user[0]["sub"]
+
+    # Initialize permissions
+    permissions = ResourcePermissions()
+
+    # Admin can do everything
+    if user_role == UserRole.admin.value:
+        permissions.can_edit = True
+        permissions.can_delete = True
+        permissions.editable_fields = [
+            "name",
+            "type",
+            "category",
+            "recruitment_status",
+            "description",
+            "established",
+            "head",
+            "telegram_url",
+            "instagram_url",
+        ]
+        return permissions
+
+    # Check if user is community head
+    is_head = community.head_user.sub == user_sub
+
+    # Set permissions based on role
+    if is_head:
+        permissions.can_edit = True
+        permissions.can_delete = False  # Only admins can delete communities
+        permissions.editable_fields = [
+            "name",
+            "type",
+            "category",
+            "recruitment_status",
+            "description",
+            "established",
+            "telegram_url",
+            "instagram_url",
+        ]
+
+    return permissions
+    

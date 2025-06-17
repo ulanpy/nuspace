@@ -37,3 +37,4 @@ configs/**/__pycache__/
 Thumbs.db
 
 
+**/.vscode/

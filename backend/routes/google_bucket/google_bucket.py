@@ -9,7 +9,7 @@ from google.cloud.exceptions import NotFound
 from google.cloud.storage import Bucket
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import check_token, get_db_session
+from backend.common.dependencies import get_current_principals, get_db_session
 from backend.core.configs.config import Config
 from backend.core.database.models.media import EntityType, MediaFormat
 
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/bucket", tags=["Google Bucket Routes"])
 async def generate_upload_url(
     request: Request,
     signed_url_request: List[SignedUrlRequest],
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
 ):
     MAX_UPLOAD_URLS = 5
     if len(signed_url_request) > MAX_UPLOAD_URLS:

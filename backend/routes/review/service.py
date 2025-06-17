@@ -1,9 +1,9 @@
-from backend.core.database.models import Community, CommunityEvent, Product, User
+from backend.core.database.models import Community, Event, Product, User
 from backend.core.database.models.review import OwnerType, ReviewableType
 
 REVIEWABLE_TYPE_MODEL_MAP = {
     ReviewableType.products: Product,
-    ReviewableType.club_events: CommunityEvent,
+    ReviewableType.club_events: Event,
 }
 
 REVIEWABLE_TYPE_PARENT_MODEL_MAP = {
@@ -13,5 +13,5 @@ REVIEWABLE_TYPE_PARENT_MODEL_MAP = {
 
 SECOND_REVIEWABLE_TYPE_PARENT_MODEL_MAP = {
     Product: User,
-    CommunityEvent: Community,
+    Event: Community,
 }

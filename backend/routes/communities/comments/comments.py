@@ -1,46 +1,122 @@
+import asyncio
+from copy import deepcopy
+from datetime import datetime
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from sqlalchemy.exc import IntegrityError
+from fastapi import APIRouter, Depends, Query, Request, status
+from faststream.rabbit import RabbitBroker
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_token, get_db_session
+from backend.common.dependencies import broker, get_current_principals, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import response_builder
+from backend.common.utils.enums import ResourceAction
 from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.community import CommunityComment
-from backend.core.database.models.media import Media, MediaFormat
+from backend.core.database.models.community import CommunityComment, CommunityPost
+from backend.core.database.models.media import Media
 from backend.routes.communities.comments import cruds, utils
-from backend.routes.communities.comments.dependencies import check_comment_ownership, verify_comment
+from backend.routes.communities.comments.dependencies import (
+    comment_exists_or_404,
+    parent_comment_exists_or_404,
+    post_exists_or_404,
+)
+from backend.routes.communities.comments.policy import CommentPolicy
 from backend.routes.communities.comments.schemas import (
-    CommunityCommentRequestSchema,
-    CommunityCommentResponseSchema,
-    CommunityCommentSchema,
     ListCommunityCommentResponseSchema,
+    RequestCommunityCommentSchema,
+    ResponseCommunityCommentSchema,
+    UpdateCommunityCommentSchema,
 )
 
 router = APIRouter(tags=["Community Posts Comments Routes"])
 
 
-@router.get("/posts/comments", response_model=ListCommunityCommentResponseSchema)
+@router.get("/comments", response_model=ListCommunityCommentResponseSchema)
 async def get(
     request: Request,
+    user: Annotated[dict, Depends(get_current_principals)],
+    broker: Annotated[RabbitBroker, Depends(broker)],
     post_id: int,
-    user: Annotated[dict, Depends(check_token)],
     comment_id: int | None = None,
     size: int = Query(20, ge=1, le=100),
     page: int = Query(1, ge=1),
     db_session: AsyncSession = Depends(get_db_session),
+    include_deleted: bool = Query(
+        default=False, description="Include deleted comments in the response"
+    ),
 ) -> ListCommunityCommentResponseSchema:
+    """
+    Retrieve paginated comments for a specific post.
+
+    **Access Policy:**
+    - All authenticated users can read comments
+    - No special permissions required beyond authentication
+
+    **Parameters:**
+    - `post_id` (int): ID of the post to get comments for
+
+    - `comment_id` (int, optional): If provided, returns replies to this comment instead of root
+       comments
+
+    - `size` (int): Number of comments per page (min: 1, max: 100, default: 20)
+
+    - `page` (int): Page number (min: 1, default: 1)
+
+    - `include_deleted` (bool, optional): If True, include deleted comments in the response
+
+    **Returns:**
+    - comments: List of comments with their media attachments and reply counts
+    - total_pages: Total number of pages available
+
+    Each comment includes:
+    - Basic comment information (id, content, created_at, etc.)
+    - Media attachments if any
+    - Total number of replies
+    """
+
+    await CommentPolicy(user=user).check_permission(
+        action=ResourceAction.READ,
+        include_deleted=include_deleted,
+    )
+
     qb: QueryBuilder = QueryBuilder(session=db_session, model=CommunityComment)
     comments: List[CommunityComment] = (
         await qb.base()
         .filter(CommunityComment.post_id == post_id, CommunityComment.parent_id == comment_id)
+        .eager(CommunityComment.user)
         .paginate(size, page)
         .order(CommunityComment.created_at.desc())
         .all()
     )
+
+    from backend.common.notification import send
+    from backend.routes.notification.schemas import NotificationType, RequestNotiification
+
+    await send(
+        request=request,
+        user=user,
+        notification_data=RequestNotiification(
+            title="Rsgsge",
+            message="mess",
+            notification_source=EntityType.community_comments,
+            receiver_sub=user[0].get("sub"),
+            tg_id=user[1].get("tg_id"),
+            type=NotificationType.info,
+            url=None,
+        ),
+        session=db_session,
+        broker=broker,
+    )
+    # Transform deleted comments to hide sensitive data
+    if not include_deleted:
+        for i, comment in enumerate(comments):
+            if comment.deleted_at is not None:
+                safe_comment = deepcopy(comment)
+                safe_comment.user_sub = None
+                safe_comment.content = None
+                safe_comment.user = None
+                comments[i] = safe_comment
 
     count: int = (
         await qb.blank()
@@ -48,74 +124,115 @@ async def get(
         .filter(CommunityComment.post_id == post_id, CommunityComment.parent_id == comment_id)
         .count()
     )
-    num_of_pages: int = response_builder.calculate_pages(count=count, size=size)
-
-    root_comment_ids: List[int] = [comment.id for comment in comments]
+    total_pages: int = response_builder.calculate_pages(count=count, size=size)
+    comment_ids: List[int] = [comment.id for comment in comments]
     replies_counter: dict[int, int] = await cruds.get_replies_counts(
         session=db_session,
         model=CommunityComment,
         parent_field=CommunityComment.parent_id,
-        parent_ids=root_comment_ids,
+        parent_ids=comment_ids,
     )
 
-    comments_pre_response: List[CommunityCommentSchema] = await response_builder.build_responses(
-        request=request,
-        items=comments,
-        session=db_session,
-        media_format=MediaFormat.carousel,
-        entity_type=EntityType.community_comments,
-        response_builder=utils.build_comment_response,
-    )
-
-    comments_response: List[CommunityCommentResponseSchema] = [
-        CommunityCommentResponseSchema(
-            **comment.model_dump(), total_replies=replies_counter.get(comment.id, 0)
+    media_objs: List[Media] = (
+        await qb.blank(model=Media)
+        .base()
+        .filter(
+            Media.entity_id.in_(comment_ids),
+            Media.entity_type == EntityType.community_comments,
         )
-        for comment in comments_pre_response
+        .all()
+    )
+
+    media_results: List[List[MediaResponse]] = await asyncio.gather(
+        *[
+            response_builder.build_media_responses(
+                request=request,
+                media_objects=[media for media in media_objs if media.entity_id == comment.id],
+            )
+            for comment in comments
+        ]
+    )
+
+    comments_response: List[ResponseCommunityCommentSchema] = [
+        utils.build_schema(
+            ResponseCommunityCommentSchema,
+            ResponseCommunityCommentSchema.model_validate(comment),
+            total_replies=replies_counter.get(comment.id, 0),
+            media=media,
+            user=comment.user,
+            permissions=utils.get_comment_permissions(comment, user),
+        )
+        for comment, media in zip(comments, media_results)
     ]
 
     return ListCommunityCommentResponseSchema(
         comments=comments_response,
-        num_of_pages=num_of_pages,
+        total_pages=total_pages,
     )
 
 
-@router.post("/posts/comments", response_model=CommunityCommentResponseSchema)
-async def create(
+@router.post("/comments", response_model=ResponseCommunityCommentSchema)
+async def create_comment(
     request: Request,
-    comment: CommunityCommentRequestSchema,
-    user: Annotated[dict, Depends(check_token)],
-    permissions: Annotated[bool, Depends(verify_comment)],
+    comment_data: RequestCommunityCommentSchema,
+    user: Annotated[dict, Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
-) -> CommunityCommentResponseSchema:
+    post: CommunityPost = Depends(post_exists_or_404),
+    parent_comment: CommunityComment | None = Depends(parent_comment_exists_or_404),
+) -> ResponseCommunityCommentSchema:
+    """
+    Create a new comment for a post or reply to an existing comment.
+
+    **Access Policy:**
+    - All authenticated users can create comments
+    - Users can only create comments as themselves (cannot impersonate other users)
+    - Admin can create comments as any user
+
+    **Parameters:**
+    - `post_id` (int): ID of the post to comment on
+
+    - `comment_data` (RequestCommunityCommentSchema):
+
+        - `content`: Comment text
+
+        - `parent_id` (optional): ID of the parent comment if this is a reply
+
+        - `media_ids` (optional): List of media attachment IDs
+
+    **Returns:**
+    - Created comment with all details including media attachments
+
+    **Errors:**
+    - 404: If post not found or parent comment not found (when replying)
+    - 400: If parent comment belongs to different post
+    - 403: If trying to comment as another user
+
+    **Note:**
+    - `user_sub` can be `me` to indicate the authenticated user
+    """
+    # Check permissions
+    await CommentPolicy(user=user).check_permission(
+        action=ResourceAction.CREATE,
+        comment_data=comment_data,
+    )
+
+    if comment_data.user_sub == "me":
+        comment_data.user_sub = user[0].get("sub")
+
+    # Create the comment
     qb: QueryBuilder = QueryBuilder(session=db_session, model=CommunityComment)
-    if comment.parent_id is not None:
-        parent_comment: CommunityComment | None = (
-            await qb.base().filter(CommunityComment.id == comment.parent_id).first()
-        )
+    comment: CommunityComment = await qb.add(data=comment_data, preload=[CommunityComment.user])
 
-        if parent_comment is None:
-            raise HTTPException(status_code=404, detail="Parent comment not found")
-
-        if parent_comment.post_id != comment.post_id:
-            raise HTTPException(
-                status_code=400, detail="Parent comment does not belong to the post"
-            )
-
-    try:
-        comment: CommunityComment = await qb.blank().add(data=comment)
-    except IntegrityError:
-        raise HTTPException(status_code=400, detail="Possibly non-existing post id")
-
-    media: List[Media] = (
+    media_objs: List[Media] = (
         await qb.blank(model=Media)
         .base()
         .filter(Media.entity_id == comment.id, Media.entity_type == EntityType.community_comments)
         .all()
     )
     media_responses: List[MediaResponse] = await response_builder.build_media_responses(
-        request=request, media_objects=media
+        request=request, media_objects=media_objs
     )
+
     replies_counter: int = (
         await cruds.get_replies_counts(
             session=db_session,
@@ -125,23 +242,48 @@ async def create(
         )
     ).get(comment.id, 0)
 
-    comment_response: CommunityCommentResponseSchema = utils.build_comment_response(
-        comment=comment, total_replies=replies_counter, media=media_responses
+    comment_response: ResponseCommunityCommentSchema = utils.build_schema(
+        ResponseCommunityCommentSchema,
+        ResponseCommunityCommentSchema.model_validate(comment),
+        total_replies=replies_counter,
+        media=media_responses,
+        user=comment.user,
+        permissions=utils.get_comment_permissions(comment, user),
     )
     return comment_response
 
 
-@router.delete("/comments", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete(
     comment_id: int,
-    user: Annotated[dict, Depends(check_token)],
-    permissions: Annotated[bool, Depends(check_comment_ownership)],
+    user: Annotated[dict, Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
+    comment: CommunityComment = Depends(comment_exists_or_404),
 ):
-    qb = QueryBuilder(session=db_session, model=CommunityComment)
-    comment: CommunityComment | None = (
-        await qb.base().filter(CommunityComment.id == comment_id).first()
-    )
+    """
+    Soft delete a specific comment.
 
-    await qb.conditional_delete(conditions=(CommunityComment.parent_id == comment_id))
-    await qb.delete(target=comment)
+    **Access Policy:**
+    - Comment owners can soft delete their own comments
+    - Admin can soft delete any comment
+    - Soft deleting a parent comment will not delete its replies
+
+    **Parameters:**
+    - `post_id` (int): ID of the post containing the comment
+
+    - `comment_id` (int): ID of the comment to soft delete
+
+    **Returns:**
+    - 204 No Content on successful soft deletion
+
+    **Errors:**
+    - 404: If comment not found or belongs to different post
+    - 403: If user is not the comment owner or admin
+    """
+
+    await CommentPolicy(user=user).check_permission(action=ResourceAction.DELETE, comment=comment)
+
+    # Soft delete the comment
+    qb: QueryBuilder = QueryBuilder(session=db_session, model=CommunityComment)
+    update_data = UpdateCommunityCommentSchema(deleted_at=datetime.now())
+    await qb.update(instance=comment, update_data=update_data)

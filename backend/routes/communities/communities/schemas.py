@@ -1,9 +1,10 @@
 from datetime import date, datetime
 from typing import List
 
-from pydantic import BaseModel, field_validator
+from fastapi import Query
+from pydantic import BaseModel, Field, field_validator
 
-from backend.common.schemas import MediaResponse
+from backend.common.schemas import MediaResponse, ResourcePermissions, ShortUserResponse
 from backend.core.database.models.community import (
     CommunityCategory,
     CommunityRecruitmentStatus,
@@ -11,7 +12,55 @@ from backend.core.database.models.community import (
 )
 
 
-class CommunityRequestSchema(BaseModel):
+class CommunityCreateRequest(BaseModel):
+    name: str = Field(
+        ...,
+        min_length=3,
+        max_length=100,
+        description="The name of the community",
+        example="NU Fencing Club",
+    )
+    type: CommunityType = Field(
+        ..., description="The type of the community", example=CommunityType.club
+    )
+    category: CommunityCategory = Field(
+        ..., description="The category of the community", example=CommunityCategory.academic
+    )
+    recruitment_status: CommunityRecruitmentStatus = Field(
+        ...,
+        description="The recruitment status of the community",
+        example=CommunityRecruitmentStatus.open,
+    )
+    description: str = Field(
+        ...,
+        max_length=1000,
+        description="The description of the community",
+        example="We are a club that does fencing",
+    )
+    established: date = Field(
+        ..., description="The date the community was established", example=date(2025, 1, 1)
+    )
+    head: str = Field(..., description="The head of the community (user_sub)")
+    telegram_url: str | None = Field(
+        default=None,
+        description="The Telegram URL of the community",
+        example="https://t.me/nufencingclub",
+    )
+    instagram_url: str | None = Field(
+        default=None,
+        description="The Instagram URL of the community",
+        example="https://www.instagram.com/nufencingclub",
+    )
+
+    @field_validator("telegram_url", "instagram_url")
+    def validate_url(cls, value):
+        if not value.startswith(("http://", "https://")):
+            raise ValueError("Invalid URL format")
+        return value
+
+
+class BaseCommunity(BaseModel):
+    id: int
     name: str
     type: CommunityType
     category: CommunityCategory
@@ -21,38 +70,53 @@ class CommunityRequestSchema(BaseModel):
     head: str
     telegram_url: str | None = None
     instagram_url: str | None = None
-
-    @field_validator("telegram_url", "instagram_url")
-    def validate_url(cls, value):
-        if not value.startswith(("http://", "https://")):
-            raise ValueError("Invalid URL format")
-        return value
-
-
-class CommunityResponseSchema(BaseModel):
-    id: int
-    name: str
-    type: CommunityType
-    category: CommunityCategory
-    recruitment_status: CommunityRecruitmentStatus
-    description: str
-    established: date
-    user_name: str
-    user_surname: str
-    telegram_url: str
-    instagram_url: str
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CommunityResponse(BaseCommunity):
+    head_user: ShortUserResponse
+    media: List[MediaResponse] = []
+    permissions: ResourcePermissions = ResourcePermissions()
+
+
+class ShortCommunityResponse(BaseModel):
+    id: int
+    name: str
+    description: str
     media: List[MediaResponse] = []
 
+    class Config:
+        from_attributes = True
 
-class CommunityUpdateSchema(BaseModel):
-    community_id: int
-    name: str | None = None
-    recruitment_status: CommunityRecruitmentStatus | None = None
-    description: str | None = None
-    telegram_url: str | None = None
-    instagram_url: str | None = None
+
+class CommunityUpdateRequest(BaseModel):
+    name: str | None = Field(
+        default=None, description="The name of the community", example="NU Fencing Club"
+    )
+    recruitment_status: CommunityRecruitmentStatus | None = Field(
+        default=None,
+        description="The recruitment status of the community",
+        example=CommunityRecruitmentStatus.open,
+    )
+    description: str | None = Field(
+        default=None,
+        description="The description of the community",
+        example="We are a club that does fencing",
+    )
+    telegram_url: str | None = Field(
+        default=None,
+        description="The Telegram URL of the community",
+        example="https://t.me/nufencingclub",
+    )
+    instagram_url: str | None = Field(
+        default=None,
+        description="The Instagram URL of the community",
+        example="https://www.instagram.com/nufencingclub",
+    )
 
     @field_validator("name", "description", "telegram_url", "instagram_url")
     def validate_emptiness(cls, value):
@@ -64,12 +128,6 @@ class CommunityUpdateSchema(BaseModel):
         from_attributes = True  # Make sure it can be used with SQLAlchemy models
 
 
-class ListCommunitySchema(BaseModel):
-    communities: List[CommunityResponseSchema] = []
-    num_of_pages: int
-
-    @field_validator("num_of_pages")
-    def validate_pages(cls, value):
-        if value <= 0:
-            raise ValueError("Number of pages should be positive")
-        return value
+class ListCommunity(BaseModel):
+    communities: List[CommunityResponse] = []
+    total_pages: int = Query(1, ge=1)

@@ -1,38 +1,117 @@
-from typing import List
+from typing import Tuple
 
-from backend.common.schemas import MediaResponse
-from backend.core.database.models.community import CommunityEvent
-from backend.routes.communities.events.schemas import CommunityEventResponseSchema
+from backend.common.schemas import ResourcePermissions
+from backend.core.database.models import Event, EventScope, EventStatus, EventTag
+from backend.core.database.models.user import UserRole
+from backend.routes.communities.events import schemas
 
 
-def build_event_response(
-    event: CommunityEvent,
-    media_responses: List[MediaResponse],
-) -> CommunityEventResponseSchema:
+def get_event_permissions(
+    event: Event,
+    user: Tuple[dict, dict],
+) -> ResourcePermissions:
     """
-    Build a CommunityEventResponseSchema from a CommunityEvent ORM object and media responses.
+    Determines event permissions for a user based on their role and the event state.
 
-    Parameters:
-    - event (CommunityEvent): CommunityEvent ORM object with any needed relationships
-    - media_responses (List[MediaResponse]): List of media response objects
+    Args:
+        event: The event to check permissions for
+        user: The user tuple containing user info and claims
 
     Returns:
-    - CommunityEventResponseSchema: Formatted event response with all required fields
+        EventPermissions object containing can_edit, can_delete flags and list of editable fields
     """
-    return CommunityEventResponseSchema(
-        id=event.id,
-        community_id=event.community_id,
-        user_name=event.creator.name,
-        user_surname=event.creator.surname,
-        policy=event.policy,
-        name=event.name,
-        place=event.place,
-        event_datetime=event.event_datetime,
-        description=event.description,
-        duration=event.duration,
-        status=event.status,
-        tag=event.tag,
-        created_at=event.created_at,
-        updated_at=event.updated_at,
-        media=media_responses,
-    )
+    user_role = user[1]["role"]
+    user_sub = user[0]["sub"]
+    user_communities = user[1]["communities"]
+
+    # Initialize permissions
+    permissions = ResourcePermissions()
+
+    # Admin can do everything
+    if user_role == UserRole.admin.value:
+        permissions.can_edit = True
+        permissions.can_delete = True
+        permissions.editable_fields = [
+            "name",
+            "place",
+            "event_datetime",
+            "description",
+            "duration",
+            "policy",
+            "status",
+            "type",
+            "community_id",
+            "creator_sub",
+            "scope",
+            "tag",
+        ]
+        return permissions
+
+    # Check if user is event creator
+    is_creator = event.creator_sub == user_sub
+
+    # Check if user is community head (for community events)
+    is_head = False
+    if event.community_id:
+        is_head = event.community_id in user_communities
+
+    # Set can_delete permission
+    permissions.can_delete = is_creator or (event.scope == EventScope.community and is_head)
+
+    # Set can_edit and editable_fields based on role
+    if is_creator or (event.scope == EventScope.community and is_head):
+        permissions.can_edit = True
+        permissions.editable_fields = [
+            "name",
+            "place",
+            "event_datetime",
+            "description",
+            "duration",
+            "policy",
+            "type",
+        ]
+
+        # Community head can also edit status
+        if is_head:
+            permissions.editable_fields.append("status")
+
+    return permissions
+
+
+class EventEnrichmentService:
+    """Handles the business logic for enriching event data"""
+
+    def __init__(self, user: tuple[dict, dict]):
+        self.user = user
+        self.user_communities = user[1]["communities"]
+
+    async def enrich_event_data(
+        self, event_data: schemas.EventCreateRequest
+    ) -> schemas.EnrichedEventCreateRequest:
+        # Handle creator_sub
+        if event_data.creator_sub == "me":
+            event_data.creator_sub = self.user[0].get("sub")
+
+        # Determine scope based on community_id
+        scope = EventScope.community if event_data.community_id else EventScope.personal
+
+        if scope == EventScope.community:
+            # Determine status based on user role and community membership
+            status = await self._determine_event_status(event_data)
+        else:
+            # don't set status for personal events
+            status = EventStatus.approved
+
+        # All created events are regular when created
+        tag = EventTag.regular
+
+        return schemas.EnrichedEventCreateRequest(
+            **event_data.model_dump(), scope=scope, status=status, tag=tag
+        )
+
+    async def _determine_event_status(self, event_data: schemas.EventCreateRequest) -> EventStatus:
+        # Business logic for determining status
+        if event_data.community_id in self.user_communities:
+            return EventStatus.approved
+        else:
+            return EventStatus.pending

@@ -41,6 +41,6 @@ class User(Base):
     product_reports = relationship("ProductReport", back_populates="user")
     reviews = relationship("Review", back_populates="user")
     review_responses = relationship("ReviewReply", back_populates="user")
-    events = relationship("CommunityEvent", back_populates="creator")
+    events = relationship("Event", back_populates="creator")
     posts = relationship("CommunityPost", back_populates="user")
     communities = relationship("CommunityMember", back_populates="user")

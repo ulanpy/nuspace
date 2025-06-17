@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_role, check_token, get_db_session
+from backend.common.dependencies import check_role, get_current_principals, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import response_builder
 from backend.core.database.models import Media, Review
@@ -31,7 +31,7 @@ router = APIRouter(tags=["review"])
 async def get(
     request: Request,
     reviewable_type: ReviewableType,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     entity_id: int | None = None,
     owner_id: str | int | None = None,
     size: int = Query(20, ge=1, le=100),
@@ -66,33 +66,31 @@ async def get(
         response_builder=utils.build_review_response,
     )
 
-    qb = QueryBuilder(session=db, model=Review)
-    count: int = await qb.base(count=True).filter(*conditions).count()
+    count: int = await qb.blank().base(count=True).filter(*conditions).count()
 
-    num_of_pages: int = response_builder.calculate_pages(count=count, size=size)
-    return ListReviewResponseSchema(reviews=review_responses, num_of_pages=num_of_pages)
+    total_pages: int = response_builder.calculate_pages(count=count, size=size)
+    return ListReviewResponseSchema(reviews=review_responses, total_pages=total_pages)
 
 
 @router.post("/reviews", response_model=ReviewResponseSchema)
 async def add(
     request: Request,
     review: ReviewRequestSchema,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     db: AsyncSession = Depends(get_db_session),
 ) -> ReviewResponseSchema:
     model: DeclarativeBase = service.REVIEWABLE_TYPE_MODEL_MAP.get(review.reviewable_type)
 
-    qb = QueryBuilder(session=db, model=model)
+    qb: QueryBuilder = QueryBuilder(session=db, model=model)
     obj: DeclarativeBase | None = await qb.base().filter(model.id == review.entity_id).first()
 
     try:
-        qb = QueryBuilder(
-            session=db, model=service.REVIEWABLE_TYPE_PARENT_MODEL_MAP.get(review.owner_type)
-        )
         obj_parent: DeclarativeBase | None = (
-            await qb.base().filter(model.id == review.owner_id).first()
+            await qb.blank(model=service.REVIEWABLE_TYPE_PARENT_MODEL_MAP.get(review.owner_type))
+            .base()
+            .filter(model.id == review.owner_id)
+            .first()
         )
-
     except ProgrammingError:
         raise HTTPException(status_code=404, detail="Owner id is not valid")
 
@@ -105,8 +103,9 @@ async def add(
         update={"owner_id": str(review.owner_id)}
     )
 
-    qb = QueryBuilder(session=db, model=Review)
-    review_obj: Review | None = await qb.add(data=updated_review, preload=[Review.reply])
+    review_obj: Review | None = await qb.blank(model=Review).add(
+        data=updated_review, preload=[Review.reply]
+    )
 
     conditions = [
         Media.entity_id == review_obj.id,
@@ -114,8 +113,7 @@ async def add(
         Media.media_format == MediaFormat.carousel,
     ]
 
-    qb = QueryBuilder(session=db, model=Media)
-    media_objects: List[Media] = await qb.base().filter(*conditions).all()
+    media_objects: List[Media] = await qb.blank(model=Media).base().filter(*conditions).all()
 
     media_responses: List[MediaResponse] = await response_builder.build_media_responses(
         request=request, media_objects=media_objects
@@ -129,7 +127,7 @@ async def update(
     request: Request,
     review_id: int,
     new_data: ReviewUpdateSchema,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     role: Annotated[UserRole, Depends(check_role)],
     db: AsyncSession = Depends(get_db_session),
 ) -> ReviewResponseSchema:
@@ -149,8 +147,7 @@ async def update(
     if review is None:
         raise HTTPException(status_code=404, detail="Review not found or doesn't belong to you")
 
-    qb = QueryBuilder(session=db, model=Review)
-    updated_review: Review = await qb.update(instance=review, update_data=new_data)
+    updated_review: Review = await qb.blank().update(instance=review, update_data=new_data)
 
     conditions = [
         Media.entity_id == updated_review.id,
@@ -158,8 +155,7 @@ async def update(
         Media.media_format == MediaFormat.carousel,
     ]
 
-    qb = QueryBuilder(session=db, model=Media)
-    media_objects: List[Media] = await qb.base().filter(*conditions).all()
+    media_objects: List[Media] = await qb.blank(model=Media).base().filter(*conditions).all()
 
     media_responses: List[MediaResponse] = await response_builder.build_media_responses(
         request=request, media_objects=media_objects
@@ -172,7 +168,7 @@ async def update(
 async def delete(
     request: Request,
     review_id: int,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
     role: Annotated[UserRole, Depends(check_role)],
     db: AsyncSession = Depends(get_db_session),
 ):
@@ -194,20 +190,17 @@ async def delete(
         Media.entity_type == EntityType.club_events,
     ]
 
-    qb = QueryBuilder(session=db, model=Media)
-    media_objects: List[Media] = await qb.base().filter(*media_conditions).all()
+    media_objects: List[Media] = await qb.blank(model=Media).base().filter(*media_conditions).all()
 
     # Delete media files from storage bucket
     if media_objects:
         for media in media_objects:
             await delete_bucket_object(request, media.name)
 
-    qb = QueryBuilder(session=db, model=Review)
-    review_deleted: bool = await qb.delete(target=review)
+    review_deleted: bool = await qb.blank(model=Review).delete(target=review)
 
     # Delete associated media records from database
-    qb = QueryBuilder(session=db, model=Media)
-    media_deleted: bool = await qb.delete(target=media_objects)
+    media_deleted: bool = await qb.blank(model=Media).delete(target=media_objects)
 
     if not review_deleted or not media_deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")

@@ -1,16 +1,17 @@
 from datetime import datetime
 from typing import List
 
+from fastapi import Query
 from pydantic import BaseModel, field_validator
 
-from backend.common.schemas import MediaResponse
+from backend.common.schemas import MediaResponse, ResourcePermissions, ShortUserResponse
 
 
-class CommunityCommentRequestSchema(BaseModel):
+class RequestCommunityCommentSchema(BaseModel):
     post_id: int
     parent_id: int | None = None
     user_sub: str
-    content: str
+    content: str = Query(max_length=300)
 
     @field_validator("parent_id")
     def validate_parent_id(cls, value):
@@ -19,33 +20,34 @@ class CommunityCommentRequestSchema(BaseModel):
         return value
 
 
-class CommunityCommentSchema(BaseModel):
+class BaseCommunityCommentSchema(BaseModel):
     id: int
     post_id: int
     parent_id: int | None = None
-    user_sub: str
-    content: str
+    user_sub: str | None
+    content: str | None
     created_at: datetime
     updated_at: datetime
+    deleted_at: datetime | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class ResponseCommunityCommentSchema(BaseCommunityCommentSchema):
+    total_replies: int = Query(default=0, ge=0)
     media: List[MediaResponse] = []
-
-
-class CommunityCommentResponseSchema(CommunityCommentSchema):
-    total_replies: int | None = None
-
-    @field_validator("total_replies")
-    def validate_replies(cls, value):
-        if value <= 0:
-            raise ValueError("Number of replies should be positive")
-        return value
+    user: ShortUserResponse | None = None
+    permissions: ResourcePermissions = ResourcePermissions()
 
 
 class ListCommunityCommentResponseSchema(BaseModel):
-    comments: List[CommunityCommentResponseSchema] = []
-    num_of_pages: int
+    comments: List[ResponseCommunityCommentSchema] = []
+    total_pages: int = Query(default=1, ge=1)
 
-    @field_validator("num_of_pages")
-    def validate_pages(cls, value):
-        if value <= 0:
-            raise ValueError("Number of pages should be positive")
-        return value
+
+class UpdateCommunityCommentSchema(BaseModel):
+    deleted_at: datetime | None = None
+
+    class Config:
+        from_attributes = True
