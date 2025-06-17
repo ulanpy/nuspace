@@ -1,41 +1,43 @@
 "use client";
 
-import { useListingState } from "@/context/listing-context";
-import { usePreSearchProducts } from "@/modules/kupi-prodai/hooks/use-pre-search-products";
-import { useSearchProducts } from "@/modules/kupi-prodai/hooks/use-search-products";
+import { usePreSearchProducts } from "@/modules/kupi-prodai/api/hooks/use-pre-search-products";
+import { useProducts } from "@/modules/kupi-prodai/api/hooks/use-products";
 import { getSearchTextFromURL } from "@/utils/search-params";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-type SearchLogicProps = {
+type SearchLogicProps<T = string> = {
+  setKeyword: (keyword: string) => void;
+  setPage: (page: number) => void;
   baseRoute: string;
   searchParam: string;
-  setSelectedCategory?: (category: string) => void;
+  setSelectedCategory?: (category: T) => void;
 };
 
-export const useSearchLogic = ({
+export const useSearchLogic = <T>({
+  setKeyword,
+  setPage,
   baseRoute,
   searchParam = "text",
   setSelectedCategory,
-}: SearchLogicProps) => {
+}: SearchLogicProps<T>) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [inputValue, setInputValue] = useState(
     getSearchTextFromURL(location.search)
   );
   const { preSearchedProducts } = usePreSearchProducts(inputValue);
-  const { searchedProducts } = useSearchProducts();
-  const { setSearchQuery, setCurrentPage } = useListingState();
+
   useEffect(() => {
     const textFromURL = getSearchTextFromURL(location.search);
-    setSearchQuery(textFromURL);
+    setKeyword(textFromURL);
   }, [location.search]);
 
   const handleSearch = (inputValue: string) => {
     if (!!inputValue.trim()) {
-      setSearchQuery(inputValue);
-      setCurrentPage(1);
-      setSelectedCategory?.("");
+      setKeyword(inputValue);
+      setPage(1);
+      setSelectedCategory?.("" as T);
       navigate(`${baseRoute}?${searchParam}=${encodeURIComponent(inputValue)}`);
     }
     if (!inputValue.trim()) {
@@ -47,7 +49,6 @@ export const useSearchLogic = ({
     inputValue,
     setInputValue,
     handleSearch,
-    searchedProducts,
     preSearchedProducts,
   };
 };

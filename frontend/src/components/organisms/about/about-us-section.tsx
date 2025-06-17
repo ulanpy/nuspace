@@ -1,4 +1,6 @@
-import { ReportCard, TeamCard } from "@/components/molecules/cards";
+import { ReportCard } from "@/components/molecules/cards/report-card";
+import { TeamCard } from "@/components/molecules/cards/team-card";
+
 export function AboutUsSection() {
   return (
     <div className="mb-16">

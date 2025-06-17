@@ -6,9 +6,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useListingState } from "@/context/listing-context";
 import { useImageContext } from "@/context/image-context";
-import { useEditModal } from "../form/use-edit-modal";
+import { useEditModal } from "../../hooks/use-edit-modal";
 import { useUser } from "@/hooks/use-user";
-import { useProductImages } from "./use-product-images";
+import { useProductImages } from "../../hooks/use-product-images";
 import { pollForProductImages } from "@/utils/polling";
 
 export function useCreateProduct() {
@@ -48,6 +48,7 @@ export function useCreateProduct() {
     ).toLowerCase() as Types.ProductCategory,
     condition: String(form.get("condition")) as Types.ProductCondition,
     status: "active",
+    user_sub: user?.user.sub || "",
   });
 
   const checkTelegramLinked = (): boolean => {

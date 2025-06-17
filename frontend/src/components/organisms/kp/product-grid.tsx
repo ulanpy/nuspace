@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { Pagination } from "../../molecules/pagination";
-import { ProductCard } from "../../molecules/cards";
 import { useNavigate } from "react-router-dom";
-import { useListingState } from "@/context/listing-context";
+import { MessageButton } from "@/components/molecules/buttons/message-button";
+import { ProductCard } from "@/components/molecules/cards/product-card";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -28,17 +28,20 @@ const itemVariants = {
 };
 export function ProductGrid({
   products,
+  page,
+  setPage,
   className,
 }: {
   products: Types.PaginatedResponse<Types.Product> | null;
+  page: number;
+  setPage: (page: number) => void;
   className?: string;
 }) {
   const navigate = useNavigate();
-  const { currentPage, setCurrentPage } = useListingState();
   return (
     <>
       <motion.div
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3"
+        className={className ? className : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3"}
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -50,14 +53,17 @@ export function ProductGrid({
               onClick={() =>
                 navigate(`/apps/kupi-prodai/product/${product.id}`)
               }
+              actions={<MessageButton/>}
             />
+
+
           </motion.div>
         ))}
       </motion.div>
       <Pagination
         length={products?.num_of_pages ?? 0}
-        currentPage={currentPage}
-        onChange={(page) => setCurrentPage(page)}
+        currentPage={page}
+        onChange={(page) => setPage(page)}
       />
     </>
   );

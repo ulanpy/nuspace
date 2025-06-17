@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useListingState } from "@/context/listing-context";
 import { useImageContext } from "@/context/image-context";
 import { useMediaContext } from "@/context/media-context";
-import { useProductImages } from "./use-product-images";
+import { useProductImages } from "../../hooks/use-product-images";
 import { pollForProductImages } from "@/utils/polling";
 
 export function useUpdateProduct() {

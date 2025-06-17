@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
@@ -13,10 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Badge } from "@/components/atoms/badge";
-import {
-  kupiProdaiApi,
-  type Product,
-} from "@/modules/kupi-prodai/api/kupi-prodai-api";
+
 import { useToast } from "@/hooks/use-toast";
 import { Modal } from "@/components/atoms/modal";
 import CommentsSection from "../comment-section";
@@ -25,57 +22,30 @@ import {
   formatRelativeTime,
 } from "@/utils/date-formatter";
 import { useUser } from "@/hooks/use-user";
+import { useProduct } from "@/modules/kupi-prodai/api/hooks/use-product";
+import { Spinner } from "@/components/atoms/spinner";
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { user_name } = useParams<{ user_name: string }>();
-  const { user_surname } = useParams<{ user_surname: string }>();
   const navigate = useNavigate();
   const { user } = useUser();
-  const [product, setProduct] = useState<Product | null>(null);
+  const { product, isLoading, isError } = useProduct();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [showImageModal, setShowImageModal] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [telegramLink, setTelegramLink] = useState("");
   const [isContactLoading, setIsContactLoading] = useState(false);
 
   const { toast } = useToast();
 
-  // Fetch product data
-  useEffect(() => {
-    const fetchProduct = async () => {
-      if (!id) return;
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await kupiProdaiApi.getProduct(Number.parseInt(id));
-        setProduct(data);
-      } catch (err) {
-        console.error("Failed to fetch product:", err);
-        setError("Failed to fetch product details");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProduct();
-  }, [id]);
-
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <Spinner />;
   }
 
-  if (error || !product) {
+  if (isError || !product) {
     return (
       <div className="container mx-auto px-4 py-6">
         <Button
@@ -89,7 +59,7 @@ export default function ProductDetailPage() {
 
         <div className="text-center py-12">
           <h2 className="text-xl font-bold text-destructive mb-4">
-            {error || "Product not found"}
+            {isError || "Product not found"}
           </h2>
           <Button onClick={() => navigate("/apps/kupi-prodai")}>
             Return to Marketplace
@@ -223,7 +193,7 @@ export default function ProductDetailPage() {
     });
   };
 
-  const getPlaceholderImage = (product: Product) => {
+  const getPlaceholderImage = (product: Types.Product) => {
     if (
       product.media &&
       product.media.length > 0 &&
@@ -417,7 +387,6 @@ export default function ProductDetailPage() {
       <CommentsSection
         productId={product.id}
         sellerName={product.user_name}
-        currentUser={user}
         isAuthenticated={!!user}
       />
 
