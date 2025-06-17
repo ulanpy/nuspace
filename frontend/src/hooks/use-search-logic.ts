@@ -8,7 +8,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 type SearchLogicProps<T = string> = {
   setKeyword: (keyword: string) => void;
-  setPage: (page: number) => void;
+  setPage?: (page: number) => void;
   baseRoute: string;
   searchParam: string;
   setSelectedCategory?: (category: T) => void;
@@ -36,7 +36,7 @@ export const useSearchLogic = <T>({
   const handleSearch = (inputValue: string) => {
     if (!!inputValue.trim()) {
       setKeyword(inputValue);
-      setPage(1);
+      setPage?.(1);
       setSelectedCategory?.("" as T);
       navigate(`${baseRoute}?${searchParam}=${encodeURIComponent(inputValue)}`);
     }

@@ -191,27 +191,6 @@ export const kupiProdaiApi = {
       },
     });
   },
-  getSearchedProductsQueryOptions: ({
-    page = defaultPage,
-    size = defaultSize,
-    keyword,
-  }: {
-    page: number;
-    size: number;
-    keyword: string;
-  }) => {
-    return queryOptions({
-      queryKey: ["search-products", { page, size, keyword }],
-      queryFn: ({ queryKey }) => {
-        const [, params] = queryKey as [
-          string,
-          { page: number; size: number; keyword: string }
-        ];
-        let endpoint = `/products?size=${params.size}&page=${params.page}&keyword=${params.keyword}`;
-        return apiCall<PaginatedResponse<Product>>(endpoint);
-      },
-    });
-  },
 
   // Get signed URLs for uploading images
   // AFTER (correct)
