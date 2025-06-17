@@ -2,7 +2,6 @@
 
 import { Search, X } from "lucide-react";
 import { Input } from "../atoms/input";
-import { useListingState } from "@/context/listing-context";
 import { useState, useEffect, useRef, KeyboardEvent, ChangeEvent } from "react";
 import { useTheme } from "../../context/theme-provider";
 
@@ -11,11 +10,11 @@ export function SearchInput({
   setInputValue,
   preSearchedProducts,
   handleSearch,
+  setKeyword,
   setSelectedCondition,
 }: Types.SearchInputProps) {
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
-  const { setSearchQuery } = useListingState();
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -48,7 +47,7 @@ export function SearchInput({
     },
     selectItem: (item: string) => {
       setInputValue(item);
-      setSearchQuery(item);
+      setKeyword(item);
       handleSearch(item);
       setSelectedCondition?.("All Conditions");
       setIsDropdownOpen(false);
@@ -70,7 +69,7 @@ export function SearchInput({
         )),
       Enter: () => {
         if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-          handlers.selectItem(suggestions[selectedIndex]);
+          handlers.selectItem(suggestions[selectedIndex].name);
         } else {
           handleSearch(inputValue);
           setSelectedCondition?.("All Conditions");
@@ -148,10 +147,10 @@ export function SearchInput({
                   ? "text-gray-400 hover:bg-gray-700"
                   : "text-slate-500 hover:bg-slate-300"
               }`}
-              onClick={() => handlers.selectItem(product)}
+              onClick={() => handlers.selectItem(product.name)}
               onMouseEnter={() => setSelectedIndex(index)}
             >
-              {product}
+              {product.name}
             </li>
           ))}
         </ul>

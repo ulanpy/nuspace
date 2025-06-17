@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ExternalLink, CheckCheck } from "lucide-react";
+import { Link as LinkIcon, CheckCheck } from "lucide-react";
 import { Button } from "../../atoms/button";
 import { Modal } from "../../atoms/modal";
 import { Badge } from "../../atoms/badge";
 import { useToast } from "../../../hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
 import { PrivacyModal } from "@/components/molecules/privacy-modal";
+import { FaTelegram } from "react-icons/fa";
 
 // Emoji mapping based on the backend logic
 const numberToEmoji = (num: number): string => {
@@ -153,11 +154,14 @@ export function BindTelegramButton() {
       <Button
         variant="outline"
         size="sm"
-        className="flex items-center gap-1"
+        className="flex items-center gap-1.5"
         onClick={handleBindTelegram}
         disabled={isLoading}
       >
-        <ExternalLink className="h-4 w-4" />
+        <div className="flex items-center gap-1">
+          <LinkIcon className="h-3.5 w-3.5" />
+          <FaTelegram className="h-3.5 w-3.5" />
+        </div>
         <span>{isLoading ? "Processing..." : "Connect Telegram"}</span>
       </Button>
 
@@ -183,7 +187,7 @@ export function BindTelegramButton() {
                 window.open(telegramLink, "_blank", "width=600,height=600");
               }}
             >
-              <ExternalLink className="h-4 w-4" />
+              <LinkIcon className="h-4 w-4" />
               Open Telegram Bot
             </a>
 

@@ -15,6 +15,7 @@ import { Badge } from "@/components/atoms/badge";
 import { Card, CardContent } from "@/components/atoms/card";
 import { useToast } from "@/hooks/use-toast";
 import { formatRelativeTime } from "@/utils/date-formatter";
+import { useUser } from "@/hooks/use-user";
 
 interface Comment {
   id: number;
@@ -29,14 +30,12 @@ interface Comment {
 interface CommentsSectionProps {
   productId: number;
   sellerName?: string;
-  currentUser: any;
   isAuthenticated: boolean;
 }
 
 const CommentsSection: React.FC<CommentsSectionProps> = ({
   productId,
   sellerName,
-  currentUser,
   isAuthenticated,
 }) => {
   const [message, setMessage] = useState("");
@@ -48,7 +47,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
   const commentsPerPage = 5;
 
   const { toast } = useToast();
-
+  const { user } = useUser();
   // Fetch comments on component mount and when page changes
   useEffect(() => {
     fetchComments(currentPage);
@@ -60,7 +59,7 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
     try {
       setIsLoading(true);
       const response = await fetch(
-        `/api/products/feedback/${productId}?size=${commentsPerPage}&page=${page}`,
+        `/api/reviews?reviewable_type=products&entity_id=${productId}&size=${commentsPerPage}&page=${page}`,
         {
           method: "GET",
           credentials: "include",
@@ -110,17 +109,21 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
       });
       return;
     }
-
     try {
-      const response = await fetch(`/api/products/feedback/${productId}`, {
+      const response = await fetch(`/api/reviews`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
         body: JSON.stringify({
-          product_id: productId,
-          text: message,
+          reviewable_type: "products",
+          entity_id: productId,
+          user_sub: user?.user.sub,
+          content: message,
+          owner_id: user?.user.sub,
+          owner_type: "users",
+          rating: 1,
         }),
       });
 
@@ -186,17 +189,20 @@ const CommentsSection: React.FC<CommentsSectionProps> = ({
 
   // Helper function to check if the current user is the comment owner
   const isCommentOwner = (comment: Comment) => {
-    if (!currentUser) return false;
+    if (!user) return false;
 
     // Check different possible structures of the user object
-    if (currentUser.sub && currentUser.sub === String(comment.user_id)) {
+    if (
+      user.user.sub &&
+      user.user.sub === String(comment.user_id)
+    ) {
       return true;
     }
 
     if (
-      currentUser.user &&
-      currentUser.user.sub &&
-      currentUser.user.sub === String(comment.user_id)
+      user.user &&
+      user.user.sub &&
+      user.user.sub === String(comment.user_id)
     ) {
       return true;
     }

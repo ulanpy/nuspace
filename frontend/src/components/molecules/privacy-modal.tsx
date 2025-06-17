@@ -1,4 +1,3 @@
-// components/atoms/PrivacyModal.tsx
 import { Modal } from "../atoms/modal";
 
 export function PrivacyModal({

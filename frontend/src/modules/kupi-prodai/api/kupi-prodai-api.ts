@@ -56,6 +56,7 @@ export interface NewProductRequest {
   category: ProductCategory;
   condition: ProductCondition;
   status: "active";
+  user_sub: string;
 }
 
 export interface UpdateProductRequest {
@@ -69,7 +70,7 @@ export interface UpdateProductRequest {
 }
 
 export interface SignedUrlRequest {
-  media_table: string;
+  entity_type: string;
   entity_id: number;
   media_format: string;
   media_order: number;
@@ -80,7 +81,7 @@ export interface SignedUrlRequest {
 export interface SignedUrlResponse {
   filename: string;
   upload_url: string;
-  media_table: string;
+  entity_type: string;
   entity_id: number;
   media_format: string;
   media_order: number;
@@ -94,6 +95,7 @@ type QueryParams = {
   size: number;
   category?: string;
   condition?: string;
+  keyword?: string;
 };
 // API functions
 export const kupiProdaiApi = {
@@ -114,18 +116,20 @@ export const kupiProdaiApi = {
     size = defaultSize,
     category,
     condition,
+    keyword,
   }: QueryParams) => {
     return queryOptions({
       queryKey: [
         kupiProdaiApi.baseKey,
         "list",
-        { page, size, category, condition },
+        { page, size, category, condition, keyword },
       ],
       queryFn: ({ queryKey }) => {
         const [, , params] = queryKey as [string, string, QueryParams];
-        let endpoint = `/products/list?size=${params.size}&page=${params.page}`;
+        let endpoint = `/products?size=${params.size}&page=${params.page}`;
         if (params.category) endpoint += `&category=${params.category}`;
         if (params.condition) endpoint += `&condition=${params.condition}`;
+        if (params.keyword) endpoint += `&keyword=${params.keyword}`;
 
         return apiCall<PaginatedResponse<Product>>(endpoint);
       },
@@ -137,20 +141,25 @@ export const kupiProdaiApi = {
     return queryOptions({
       queryKey: [kupiProdaiApi.baseKey, "userProducts"],
       queryFn: () => {
-        return apiCall<Product[]>("/products/user");
+        return apiCall<PaginatedResponse<Product>>(`/products?size=${defaultSize}&page=${defaultPage}&owner_id=me`);
       },
     });
   },
 
-  getProduct: async (product_id: number): Promise<Product> => {
-    return apiCall<Product>(`/products/${product_id}`, {
-      method: "GET",
+  getProductQueryOptions: (id: string) => {
+    return queryOptions({
+      queryKey: ["product", id],
+      queryFn: () => apiCall<Product>(`/products/${id}`),
     });
+  },
+
+  getProduct: (id: number) => {
+    return apiCall<Product>(`/products/${id}`);
   },
 
   // Create a new product
   createProduct: async (product: NewProductRequest): Promise<Product> => {
-    return apiCall<Product>("/products/new", {
+    return apiCall<Product>("/products", {
       method: "POST",
       json: product,
     });
@@ -158,7 +167,7 @@ export const kupiProdaiApi = {
 
   // Update a product - Fixed to use the correct endpoint and method
   updateProduct: async (product: UpdateProductRequest): Promise<any> => {
-    return apiCall<any>("/products/", {
+    return apiCall<any>("/products", {
       method: "PATCH",
       json: product,
     });
@@ -176,18 +185,29 @@ export const kupiProdaiApi = {
     return queryOptions({
       queryKey: ["pre-search-products", keyword],
       queryFn: ({ signal }) => {
-        return apiCall<string[]>(`/products/pre_search/?keyword=${keyword}`, {
+        return apiCall<Types.PreSearchedProduct[]>(`/search/?keyword=${keyword}&storage_name=products&page=1&size=10`, {
           signal,
         });
       },
     });
   },
-  getSearchedProductsQueryOptions: ({page = defaultPage, size = defaultSize, keyword } : {page: number, size: number, keyword: string}) => {
+  getSearchedProductsQueryOptions: ({
+    page = defaultPage,
+    size = defaultSize,
+    keyword,
+  }: {
+    page: number;
+    size: number;
+    keyword: string;
+  }) => {
     return queryOptions({
-      queryKey: ["search-products", {page, size, keyword}],
-      queryFn: ({queryKey}) => {
-        const [, params] = queryKey as [string, {page: number, size: number, keyword: string}]
-        let endpoint = `/products/search/?keyword=${params.keyword}&size=${params.size}&page=${params.page}`
+      queryKey: ["search-products", { page, size, keyword }],
+      queryFn: ({ queryKey }) => {
+        const [, params] = queryKey as [
+          string,
+          { page: number; size: number; keyword: string }
+        ];
+        let endpoint = `/products?size=${params.size}&page=${params.page}&keyword=${params.keyword}`;
         return apiCall<PaginatedResponse<Product>>(endpoint);
       },
     });
@@ -195,18 +215,14 @@ export const kupiProdaiApi = {
 
   // Get signed URLs for uploading images
   // AFTER (correct)
-getSignedUrls: async (
+  getSignedUrls: async (
     requests: SignedUrlRequest[]
   ): Promise<SignedUrlResponse[]> => {
-    return apiCall<SignedUrlResponse[]>(
-      `/bucket/upload-url`,
-      {
-        method: "POST",
-        json: requests,
-      }
-    );
+    return apiCall<SignedUrlResponse[]>(`/bucket/upload-url`, {
+      method: "POST",
+      json: requests,
+    });
   },
-
 
   // Upload an image to the bucket
   uploadImage: async (
@@ -219,7 +235,7 @@ getSignedUrls: async (
     formData.append("file", file);
     formData.append("filename", filename);
     formData.append("mime_type", file.type);
-    formData.append("media_table", "products"); // products for Kupi&Prodai
+    formData.append("entity_type", "products"); // products for Kupi&Prodai
     formData.append("entity_id", entityId.toString());
     formData.append("media_format", "carousel");
     formData.append("media_order", mediaOrder.toString());

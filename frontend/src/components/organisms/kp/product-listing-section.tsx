@@ -1,5 +1,6 @@
+
 import { ProductCardActions } from "@/components/molecules/actions/product-card-actions";
-import { ProductCard } from "@/components/molecules/cards";
+import { ProductCard } from "@/components/molecules/cards/product-card";
 import { UseMutateFunction } from "@tanstack/react-query";
 
 interface ProductListingSectionProps {
@@ -35,16 +36,16 @@ export function ProductListingSection({
               product={product}
               onClick={() => onProductClick(product.id)}
               key={product.id}
-            >
-              <ProductCardActions
+              actions={<ProductCardActions
                 product={product}
                 onEdit={onEditListing}
                 onDelete={onDeleteListing}
                 onToggleProductStatus={onToggleListingStatus}
                 getIsPendingDeleteMutation={getIsPendingDeleteMutation}
                 getIsPendingToggleMutation={getIsPendingToggleMutation}
-              />
-            </ProductCard>
+              />}
+            />
+
           ))}
         </div>
       ) : (

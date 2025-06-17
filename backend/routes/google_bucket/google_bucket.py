@@ -9,9 +9,9 @@ from google.cloud.exceptions import NotFound
 from google.cloud.storage import Bucket
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import check_token, get_db_session
+from backend.common.dependencies import get_current_principals, get_db_session
 from backend.core.configs.config import Config
-from backend.core.database.models.media import MediaFormat, MediaTable
+from backend.core.database.models.media import EntityType, MediaFormat
 
 from .cruds import confirm_uploaded_media_to_db, delete_media, get_filename
 from .schemas import SignedUrlRequest, SignedUrlResponse, UploadConfirmation
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/bucket", tags=["Google Bucket Routes"])
 async def generate_upload_url(
     request: Request,
     signed_url_request: List[SignedUrlRequest],
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[dict, Depends(get_current_principals)],
 ):
     MAX_UPLOAD_URLS = 5
     if len(signed_url_request) > MAX_UPLOAD_URLS:
@@ -48,7 +48,7 @@ async def generate_upload_url(
 
         required_headers = {
             "x-goog-meta-filename": str(filename),
-            "x-goog-meta-media-table": item.media_table.value,
+            "x-goog-meta-media-table": item.entity_type.value,
             "x-goog-meta-entity-id": str(item.entity_id),
             "x-goog-meta-media-format": item.media_format.value,
             "x-goog-meta-media-order": str(item.media_order),
@@ -66,7 +66,7 @@ async def generate_upload_url(
             {
                 "filename": filename,
                 "upload_url": signed_url,
-                "media_table": item.media_table.value,
+                "entity_type": item.entity_type.value,
                 "entity_id": item.entity_id,
                 "media_format": item.media_format.value,
                 "media_order": item.media_order,
@@ -108,7 +108,7 @@ async def gcs_webhook(request: Request, db_session: AsyncSession = Depends(get_d
         confirmation = UploadConfirmation(
             filename=blob.metadata.get("filename"),
             mime_type=blob.metadata.get("mime-type"),
-            media_table=MediaTable(blob.metadata.get("media-table")),
+            entity_type=EntityType(blob.metadata.get("media-table")),
             entity_id=int(blob.metadata["entity-id"]),
             media_format=MediaFormat(blob.metadata["media-format"]),
             media_order=int(blob.metadata.get("media-order")),

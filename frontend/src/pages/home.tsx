@@ -7,6 +7,8 @@ import { GlowCarouselWithImage } from "../components/organisms/glow-carousel-wit
 import { Link } from "react-router-dom";
 import { useUser } from "@/hooks/use-user";
 import { ReportButton } from "@/components/molecules/buttons/report-button";
+import { TelegramStatus } from "@/components/molecules/telegram-status";
+import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
 // Define carousel items with your image for the homepage
 
 const homeCarouselItems = [
@@ -62,11 +64,20 @@ export default function HomePage() {
             {isLoading ? (
               <span>Loading...</span>
             ) : isSuccess && user?.user.given_name ? (
-              <div className="flex items-center gap-2">
-                <img src={user.user.picture} alt="" className="rounded-full w-[clamp(24px,5vw,40px)] h-[clamp(24px,5vw,40px)]"/>
-                <span className="text-[clamp(14px,4vw,36px)]">Welcome back, {user.user.given_name}!</span>
-                {user.tg_linked && <img src="/svg/telegram-connected.svg" className="rounded-full w-[clamp(24px,5vw,40px)] h-[clamp(24px,5vw,40px)]" alt="" />}
-
+              <div className="flex items-center gap-3 flex-wrap justify-center">
+                <img 
+                  src={user.user.picture} 
+                  alt="" 
+                  className="rounded-full w-[clamp(32px,6vw,48px)] h-[clamp(32px,6vw,48px)]"
+                />
+                <span className="text-[clamp(24px,5vw,42px)] font-bold">
+                  Welcome back, {user.user.given_name}!
+                </span>
+                {user.tg_linked ? (
+                  <TelegramStatus isConnected={true} />
+                ) : (
+                  <BindTelegramButton />
+                )}
               </div>
             ) : (
               <span>Welcome to NU Space</span>

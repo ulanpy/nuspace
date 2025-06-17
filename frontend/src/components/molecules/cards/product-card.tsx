@@ -1,48 +1,15 @@
 "use client";
-import { MessageSquare } from "lucide-react";
 import { Card, CardContent } from "../../atoms/card";
 import { Badge } from "../../atoms/badge";
-import { Button } from "../../atoms/button";
+import { getCategoryDisplay, getConditionColor, getConditionDisplay, getPlaceholderImage } from "@/utils/products-utils";
 
 interface ProductCardProps {
   product: Types.Product;
   onClick: () => void;
-  children?: React.ReactNode;
+  actions?: React.ReactNode;
 }
 
-export function ProductCard({ product, onClick, children }: ProductCardProps) {
-  const getConditionColor = (condition: Types.Product["condition"]) => {
-    switch (condition) {
-      case "new":
-        return "bg-green-500";
-      case "used":
-        return "bg-orange-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-  const getConditionDisplay = (condition: string) => {
-    switch (condition) {
-      case "new":
-        return "New";
-      case "like_new":
-        return "Like New";
-      case "used":
-        return "Used";
-      default:
-        return condition;
-    }
-  };
-  const getPlaceholderImage = () => {
-    return (
-      product.media[0]?.url || "https://placehold.co/200x200?text=No+Image"
-    );
-  };
-  const getCategoryDisplay = (category: string) => {
-    return (
-      category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, " ")
-    );
-  };
+export function ProductCard({ product, onClick, actions }: ProductCardProps) {
 
   return (
     <Card
@@ -51,7 +18,7 @@ export function ProductCard({ product, onClick, children }: ProductCardProps) {
     >
       <div className="aspect-square relative">
         <img
-          src={getPlaceholderImage()}
+          src={getPlaceholderImage(product)}
           alt={product.name}
           className="object-cover w-full h-full"
         />
@@ -79,7 +46,9 @@ export function ProductCard({ product, onClick, children }: ProductCardProps) {
             </span>
           </div>
         </div>
-        {children}
+        <div className="flex justify-between">
+          {actions}
+        </div>
       </CardContent>
     </Card>
   );

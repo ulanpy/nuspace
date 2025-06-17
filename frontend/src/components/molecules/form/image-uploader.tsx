@@ -18,7 +18,6 @@ export function ImageUploader({
   fileInputRef,
   onFileChange,
 }: ImageUploaderProps) {
-
   return (
     <div
       ref={dropZoneRef}
@@ -43,6 +42,7 @@ export function ImageUploader({
           name="images"
           ref={fileInputRef}
           className="hidden"
+          required
           accept="image/*"
           multiple
           onChange={onFileChange}

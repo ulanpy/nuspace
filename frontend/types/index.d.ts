@@ -41,7 +41,7 @@ declare global {
       category: ProductCategory;
       condition: ProductCondition;
       status: string;
-    }
+    };
 
     interface ProductMedia {
       id: number;
@@ -87,12 +87,20 @@ declare global {
       num_of_pages: number;
     }
     // SearchInput
+    interface PreSearchedProduct {
+      id: number;
+      name: string;
+      condition: ProductCondition;
+      category: ProductCategory;
+    }
     type SearchInputProps = {
       inputValue: string;
       setInputValue: (value: string) => void;
-      preSearchedProducts: string[] | null;
+      preSearchedProducts: PreSearchedProduct[] | null;
       handleSearch: (inputValue: string) => void;
+      setKeyword: (keyword: string) => void;
       setSelectedCondition?: (condition: string) => void;
+
     };
     type KeyActions = Record<string, () => void>;
     type InputHandlers = {
@@ -128,6 +136,52 @@ declare global {
     interface DisplayCategory {
       title: string;
       icon: JSX.Element;
+    }
+  }
+  namespace NuEvents {
+    interface Media {
+      id: number;
+      url: string;
+    }
+    type ClubType =
+      | "academic"
+      | "professional"
+      | "recreational"
+      | "cultural"
+      | "sports"
+      | "social"
+      | "art"
+      | "technology";
+    interface Club {
+      id: number;
+      name: string;
+      type: ClubType;
+      description: string;
+      president: string;
+      telegram_url: string;
+      instagram_url: string;
+      created_at: string;
+      updated_at: string;
+      media: Media[];
+      members: number;
+      followers: number;
+      isFollowing: boolean;
+    }
+    type EventPolicy = "open" | "free_ticket" | "paid_ticket";
+    interface Event {
+      id: number;
+      club_id: number;
+      name: string;
+      place: string;
+      description: string;
+      duration: number;
+      event_datetime: string;
+      policy: EventPolicy;
+      created_at: string;
+      updated_at: string;
+      media: Media[];
+      club?: Club;
+      rating?: number; // Mock rating for UI
     }
   }
 }

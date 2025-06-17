@@ -29,17 +29,34 @@ class Config(BaseSettings):
     CELERY_RESULT_BACKEND: str
     IS_DEBUG: bool = True
     TG_API_KEY: str
-    SECRET_TOKEN: str
+    TG_WEBHOOK_SECRET_TOKEN: str
     CLOUDFLARED_TUNNEL_URL: str
     NUSPACE: str
     GCP_PROJECT_ID: str
     GCP_TOPIC_ID: str
     ORIGINS: List[str] = ["*"]
+    APP_JWT_SECRET_256: str
+    _COOKIE_ACCESS_NAME: str = "access_token"
+    _COOKIE_REFRESH_NAME: str = "refresh_token"
+    _COOKIE_APP_NAME: str = "app_token"
+    APP_TOKEN_EXPIRY_MINUTES: int = 5
 
     class Config:
         env_file = os.path.join(ENV_DIR, ".env")
         env_file_encoding = "utf-8"
         extra = "allow"
+
+    @cached_property
+    def COOKIE_ACCESS_NAME(self) -> str:
+        return self._COOKIE_ACCESS_NAME if not self.IS_DEBUG else "access_token"
+
+    @cached_property
+    def COOKIE_REFRESH_NAME(self) -> str:
+        return self._COOKIE_REFRESH_NAME if not self.IS_DEBUG else "refresh_token"
+
+    @cached_property
+    def COOKIE_APP_NAME(self) -> str:
+        return self._COOKIE_APP_NAME if not self.IS_DEBUG else "app_token"
 
     @cached_property
     def FRONTEND_HOST(self) -> str:
@@ -48,10 +65,6 @@ class Config(BaseSettings):
     @cached_property
     def DATABASE_URL(self) -> str:
         return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-
-    @cached_property
-    def DATABASE_URL_SYNC(self) -> str:
-        return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     @cached_property
     def REDIS_URL(self):

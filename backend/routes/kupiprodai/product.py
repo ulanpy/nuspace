@@ -1,171 +1,315 @@
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import check_tg, check_token, get_db_session
-from backend.common.utils import search_for_meilisearch_data
-
-from ...core.configs.config import config
-from ...rbq.producer import send_notification
-from ...rbq.schemas import Notification
-from .cruds import (
+from backend.common.cruds import QueryBuilder
+from backend.common.dependencies import check_tg, get_current_principals, get_db_session
+from backend.common.schemas import MediaResponse, ShortUserResponse
+from backend.common.utils import meilisearch, response_builder
+from backend.common.utils.enums import ResourceAction
+from backend.core.database.models.common_enums import EntityType
+from backend.core.database.models.media import Media, MediaFormat
+from backend.core.database.models.product import (
+    Product,
     ProductCategory,
     ProductCondition,
-    add_new_product_feedback_to_db,
-    add_new_product_to_db,
-    add_product_report,
-    get_product_feedbacks_from_db,
-    get_product_from_db,
-    get_products_of_user_from_db,
-    remove_product_feedback_from_db,
-    remove_product_from_db,
-    show_products_for_search,
-    show_products_from_db,
-    update_product_in_db,
+    ProductStatus,
 )
-from .schemas import (
-    ListProductFeedbackResponseSchema,
-    ListResponseSchema,
-    ProductFeedbackResponseSchema,
-    ProductFeedbackSchema,
-    ProductReportResponseSchema,
-    ProductReportSchema,
-    ProductRequestSchema,
-    ProductResponseSchema,
-    ProductUpdateResponseSchema,
-    ProductUpdateSchema,
-)
+from backend.routes.google_bucket.utils import delete_bucket_object
+from backend.routes.kupiprodai import schemas, utils
+from backend.routes.kupiprodai.dependencies import product_exists_or_404
+from backend.routes.kupiprodai.policy import ProductPolicy
 
-router = APIRouter(prefix="/products", tags=["Kupi-Prodai Routes"])
+router = APIRouter(tags=["Kupi-Prodai Routes"])
 
 
-@router.post("/new", response_model=ProductResponseSchema)  # works
-async def add_new_product(
+@router.post("/products", response_model=schemas.ProductResponse)
+async def add_product(
     request: Request,
-    user: Annotated[dict, Depends(check_token)],
+    product_data: schemas.ProductRequest,
     tg: Annotated[bool, Depends(check_tg)],
-    product_data: ProductRequestSchema,
+    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
-):
+) -> schemas.ProductResponse:
     """
     Creates a new product under the 'Kupi-Prodai' section.
 
     **Requirements:**
     - The user must be authenticated (`access_token` cookie required).
 
-    - The user must have a linked Telegram account (checked via dependency).
-
     **Parameters:**
     - `product_data`: JSON body containing product fields
-    (name, description, price, category, condition, etc.)
-
-    - Automatically associates the product with the authenticated user.
+    (name, description, price, user_sub, category, condition, etc.)
 
     **Returns:**
-    - The newly created product with full details including associated media (if any).
+    - 'ProductResponseSchema': Created product with media .
 
     **Notes:**
-    - If Telegram is not linked, the request will fail with 403.
-
     - The product is indexed in Meilisearch after creation.
     """
+    policy = ProductPolicy()
+    await policy.check_permission(
+        action=ResourceAction.CREATE, user=user, product_data=product_data
+    )
+
+    if product_data.user_sub == "me":
+        product_data.user_sub = user[0].get("sub")
 
     try:
-        new_product = await add_new_product_to_db(
-            db_session, product_data, user_sub=user["sub"], request=request
+        qb = QueryBuilder(session=db_session, model=Product)
+        product: Product = await qb.add(
+            data=product_data,
+            preload=[Product.user],
         )
-        return new_product
-    except HTTPException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-
-@router.get("/user", response_model=List[ProductResponseSchema])  # works # todo add pagination
-async def get_products_of_user(
-    request: Request,
-    user: Annotated[dict, Depends(check_token)],
-    db_session: AsyncSession = Depends(get_db_session),
-):
-    """
-    Retrieves a list of all products created by the currently authenticated user,
-    including both active and inactive items.
-    Results are ordered by most recently updated.
-
-    **Parameters:**
-
-    - `access_token`: Required authentication token from cookies (via dependency).
-
-    **Returns:**
-    - A list of the user's own products, each with full
-    product details and associated media.
-
-    **Notes:**
-    - Pagination is not yet implemented (all products are returned at once).
-
-    - Only products belonging to the authenticated user are included.
-    """
-    user_sub = user.get("sub")
-    try:
-        return await get_products_of_user_from_db(
-            request=request, user_sub=user_sub, session=db_session
+    except IntegrityError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Database integrity error: {str(e.orig)}",
         )
-    except HTTPException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
 
-
-@router.get("/list", response_model=ListResponseSchema)  # works
-async def get_products(
-    request: Request,
-    user: Annotated[dict, Depends(check_token)],
-    db_session: AsyncSession = Depends(get_db_session),
-    size: int = 20,
-    page: int = 1,
-    category: ProductCategory = None,
-    condition: ProductCondition = None,
-):
-    """
-    Retrieves a paginated list of active products, with optional filtering
-    by category and condition.
-
-    **Parameters:**
-
-    - `size`: Number of products per page (default: 20)
-
-    - `page`: Page number (default: 1)
-
-    - `category`: Filter by product category (optional)
-
-    - `condition`: Filter by product condition (optional)
-
-    **Returns:**
-    - A list of active products, sorted by most recently updated.
-    """
-
-    return await show_products_from_db(
+    await meilisearch.upsert(
         request=request,
-        session=db_session,
-        size=size,
-        page=page,
-        category=category,
-        condition=condition,
+        storage_name=Product.__tablename__,
+        json_values={
+            "id": product.id,
+            "name": product.name,
+            "status": product.status.value,
+            "category": product.category.value,
+        },
+    )
+
+    conditions = [
+        Media.entity_id == product.id,
+        Media.entity_type == EntityType.products,
+        Media.media_format == MediaFormat.carousel,
+    ]
+
+    media_objects: List[Media] = await qb.blank(model=Media).base().filter(*conditions).all()
+
+    media_responses: List[MediaResponse] = await response_builder.build_media_responses(
+        request=request, media_objects=media_objects
+    )
+
+    return response_builder.build_schema(
+        schemas.ProductResponse,
+        schemas.ProductResponse.model_validate(product),
+        media=media_responses,
+        user_telegram_id=product.user.telegram_id,
+        seller=ShortUserResponse.model_validate(product.user),
+        permissions=utils.get_product_permissions(product, user),
     )
 
 
-@router.get("/{product_id}", response_model=ProductResponseSchema)  # works
-async def get_product(
+@router.get("/products", response_model=schemas.ListProductResponse)
+async def get_products(
     request: Request,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    size: int = Query(20, ge=1, le=100),
+    page: int = 1,
+    category: ProductCategory | None = Query(default=None),
+    condition: ProductCondition | None = Query(default=None),
+    status: ProductStatus | None = Query(
+        default=None, description="Not setting this parameter returns all products"
+    ),
+    owner_sub: str | None = Query(
+        default=None, description="If 'me', returns the current user's products"
+    ),
+    keyword: str | None = Query(default=None, description="Search keyword for product name"),
+    db_session: AsyncSession = Depends(get_db_session),
+) -> schemas.ListProductResponse:
+    """
+    Retrieves a paginated list of products with flexible filtering.
+
+    **Parameters:**
+    - `size`: Number of products per page (default: 20)
+    - `page`: Page number (default: 1)
+    - `category`: Filter by product category (optional)
+    - `condition`: Filter by product condition (optional)
+    - `owner_sub`: Filter by product owner (optional)
+        - If set to "me", returns the current user's products
+        - If set to a specific user_sub, returns that user's products
+    - `keyword`: Search keyword for product name (optional)
+    - `status`: Filter by product status (optional). If not specified, returns all products
+
+    **Returns:**
+    - List of products matching the criteria with pagination info
+    """
+    policy = ProductPolicy()
+    await policy.check_permission(
+        action=ResourceAction.READ, user=user, owner_sub=owner_sub, status=status
+    )
+
+    conditions = []
+
+    if owner_sub == "me":
+        owner_sub = user[0].get("sub")
+
+    if keyword:
+        meili_result = await meilisearch.get(
+            request=request,
+            storage_name=EntityType.products.value,
+            keyword=keyword,
+            page=page,
+            size=size,
+            filters=([f"status = {status.value}"] if status else None),
+        )
+        product_ids = [item["id"] for item in meili_result["hits"]]
+
+        if not product_ids:
+            return schemas.ListProductResponse(products=[], total_pages=1)
+
+    # SQLAlchemy conditions
+    if status:
+        conditions.append(Product.status == status)
+    if category:
+        conditions.append(Product.category == category)
+    if condition:
+        conditions.append(Product.condition == condition)
+    if owner_sub:
+        conditions.append(Product.user_sub == owner_sub)
+    if keyword:
+        conditions.append(Product.id.in_(product_ids))
+
+    # Fetch products from the database with conditions
+    qb = QueryBuilder(session=db_session, model=Product)
+    products: List[Product] = (
+        await qb.base()
+        .filter(*conditions)
+        .eager(Product.user)
+        .paginate(
+            size=size if not keyword else None,
+            page=page if not keyword else None,
+        )
+        .order(Product.created_at.desc())
+        .all()
+    )
+
+    media_objs: List[Media] = (
+        await qb.blank(model=Media)
+        .base()
+        .filter(
+            Media.entity_id.in_([product.id for product in products]),
+            Media.entity_type == EntityType.products,
+            Media.media_format == MediaFormat.carousel,
+        )
+        .all()
+    )
+
+    media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
+        request=request, media_objects=media_objs, resources=products
+    )
+
+    if keyword:
+        count = meili_result.get("estimatedTotalHits", 0)
+    else:
+        count: int = await qb.blank(model=Product).base(count=True).filter(*conditions).count()
+
+    product_responses: List[schemas.ProductResponse] = [
+        response_builder.build_schema(
+            schemas.ProductResponse,
+            schemas.ProductResponse.model_validate(product),
+            media=media,
+            seller=ShortUserResponse.model_validate(product.user),
+            user_telegram_id=product.user.telegram_id,
+            permissions=utils.get_product_permissions(product, user),
+        )
+        for product, media in zip(products, media_results)
+    ]
+
+    total_pages: int = response_builder.calculate_pages(count=count, size=size)
+    return schemas.ListProductResponse(products=product_responses, total_pages=total_pages)
+
+
+@router.patch("/products/{product_id}", response_model=schemas.ProductResponse)
+async def update_product(
+    request: Request,
+    product_data: schemas.ProductUpdateRequest,
+    product_id: int,
+    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    db_session: AsyncSession = Depends(get_db_session),
+    product: Product = Depends(product_exists_or_404),
+) -> schemas.ProductResponse:
+    """
+    Updates fields of an existing product owned by the authenticated user.
+
+    **Requirements:**
+    - The user must be authenticated (`access_token` cookie required).
+    - Only the product owner can update their product.
+
+    **Parameters:**
+    - `product_id`: ID of the product to update
+    - `new_data`: Updated product data including name, description, price, etc.
+
+    **Returns:**
+    - Updated product with all its details and media
+
+    **Errors:**
+    - Returns 404 if product is not found or doesn't belong to the user
+    """
+    policy = ProductPolicy()
+    await policy.check_permission(
+        action=ResourceAction.UPDATE, user=user, product=product, product_data=product_data
+    )
+
+    # Update product in database first
+    qb = QueryBuilder(session=db_session, model=Product)
+    updated_product: Product = await qb.update(instance=product, update_data=product_data)
+
+    # Single Meilisearch update with all fields
+    await meilisearch.upsert(
+        request=request,
+        storage_name=Product.__tablename__,
+        json_values={
+            "id": updated_product.id,
+            "name": updated_product.name,
+            "status": updated_product.status.value,
+            "category": updated_product.category.value,
+        },
+    )
+
+    media_objs: List[Media] = (
+        await qb.blank(model=Media)
+        .base()
+        .filter(
+            Media.entity_id.in_([updated_product.id]),
+            Media.entity_type == EntityType.products,
+            Media.media_format == MediaFormat.carousel,
+        )
+        .all()
+    )
+
+    media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
+        request=request, media_objects=media_objs, resources=[updated_product]
+    )
+
+    return response_builder.build_schema(
+        schemas.ProductResponse,
+        schemas.ProductResponse.model_validate(updated_product),
+        media=media_results[0],
+        seller=ShortUserResponse.model_validate(updated_product.user),
+        user_telegram_id=updated_product.user.telegram_id,
+        permissions=utils.get_product_permissions(updated_product, user),
+    )
+
+
+@router.get("/products/{product_id}", response_model=schemas.ProductResponse)
+async def get_product_by_id(
+    request: Request,
+    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     product_id: int,
     db_session: AsyncSession = Depends(get_db_session),
-):
+    product: Product = Depends(product_exists_or_404),
+) -> schemas.ProductResponse:
     """
-    Retrieves a single active product by its unique ID, including
+    Retrieves a single active/inactive product by its unique ID, including
     its associated media files.
 
     **Parameters:**
-
     - `product_id`: The unique identifier of the product to retrieve.
-
+    - `status`: Filter by product status (optional)
     - `access_token`: Required authentication token from cookies (via dependency).
 
     **Returns:**
@@ -175,31 +319,50 @@ async def get_product(
     **Errors:**
     - Returns `404 Not Found` if the product with the specified ID
     does not exist or is inactive.
-
     - Returns `401 Unauthorized` if no valid access token is provided.
     """
+    policy = ProductPolicy()
+    await policy.check_permission(
+        action=ResourceAction.READ,
+        user=user,
+        owner_sub=product.user_sub,
+        product=product,
+    )
 
-    product = await get_product_from_db(request=request, product_id=product_id, session=db_session)
+    conditions = [
+        Media.entity_id == product.id,
+        Media.entity_type == EntityType.products,
+        Media.media_format == MediaFormat.carousel,
+    ]
 
-    if product is None:
-        raise HTTPException(status_code=404, detail="Product not found")
+    qb = QueryBuilder(session=db_session, model=Media)
+    media_objs: List[Media] = await qb.blank(model=Media).base().filter(*conditions).all()
 
-    return product
+    media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
+        request=request, media_objects=media_objs, resources=[product]
+    )
+
+    return response_builder.build_schema(
+        schemas.ProductResponse,
+        schemas.ProductResponse.model_validate(product),
+        media=media_results[0],
+        seller=ShortUserResponse.model_validate(product.user),
+        permissions=utils.get_product_permissions(product, user),
+    )
 
 
-@router.delete("/{product_id}")  # works
+@router.delete("/products/{product_id}")
 async def remove_product(
     request: Request,
-    user: Annotated[dict, Depends(check_token)],
+    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     product_id: int,
     db_session: AsyncSession = Depends(get_db_session),
+    product: Product = Depends(product_exists_or_404),
 ):
     """
     Deletes a specific product owned by the authenticated user.
 
     **Requirements:**
-    - The user must be authenticated (`access_token` cookie required).
-
     - Only the owner of the product can delete it.
 
     **Parameters:**
@@ -214,307 +377,35 @@ async def remove_product(
     - HTTP 204 No Content on successful deletion.
 
     **Errors:**
-    - Returns 403 if the product does not belong to the user.
-    - Returns 404 if the product is not found.
+    - Returns 404 if the product is not found or doesn't belong to the user.
     - Returns 500 on internal error.
     """
+    policy = ProductPolicy()
+    await policy.check_permission(action=ResourceAction.DELETE, user=user, product=product)
 
     try:
-        await remove_product_from_db(
-            request=request,
-            user_sub=user.get("sub"),
-            product_id=product_id,
-            session=db_session,
-        )
-        return status.HTTP_204_NO_CONTENT
+        media_conditions = [Media.entity_id == product.id, Media.entity_type == EntityType.products]
 
-    except HTTPException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        qb = QueryBuilder(session=db_session, model=Media)
+        media_objects: List[Media] = await qb.base().filter(*media_conditions).all()
 
+        if media_objects:
+            for media in media_objects:
+                await delete_bucket_object(request, media.name)
 
-@router.patch("/", response_model=ProductUpdateResponseSchema)  # works
-async def update_product(
-    request: Request,
-    user: Annotated[dict, Depends(check_token)],
-    product_update: ProductUpdateSchema,
-    db_session: AsyncSession = Depends(get_db_session),
-):
-    """
-    Updates fields of an existing product owned by the authenticated user.
+        product_deleted: bool = await qb.blank(Product).delete(target=product)
+        media_deleted: bool = await qb.blank(Media).delete(target=media_objects)
 
-    **Requirements:**
-    - The user must be authenticated (`access_token` cookie required).
-
-    - Only the product owner can update their product.
-
-    **Parameters:**
-    - `product_id`: ID of the product to update (included in the request body).
-
-    - `name`, `description`, `price`, `category`, `condition`, `status` —
-    any of these fields can be updated individually or together.
-
-    **Process:**
-    - Validates that the product exists and belongs to the user.
-    - Applies only the provided (non-null) updates.
-    - Updates Meilisearch index if the name changes.
-
-    **Returns:**
-    - A dictionary with the `product_id` and the updated fields.
-
-    **Errors:**
-    - Returns 404 if the product does not exist or doesn't belong to the user.
-    - Returns 500 on internal error.
-    """
-    try:
-        product_update = await update_product_in_db(
-            request=request,
-            product_update=product_update,
-            user_sub=user.get("sub"),
-            session=db_session,
-        )
-    except HTTPException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
-    return {
-        "product_id": product_update.product_id,
-        "updated_fields": product_update.dict(exclude_unset=True),
-    }
-
-
-@router.get("/search/", response_model=ListResponseSchema)
-async def search(
-    request: Request,
-    user: Annotated[dict, Depends(check_token)],
-    keyword: str,
-    condition: ProductCondition = None,
-    size: int = 20,
-    page: int = 1,
-    db_session=Depends(get_db_session),
-):
-    """
-    Retrieves product objects from database based on the
-    search result of pre_search router.
-    - The returned products contain details such as id, name,
-    description, price, condition, and category.
-
-    **Parameters:**
-    - `keyword`: word for searching products
-    - `size`: Number of products per page (default: 20)
-    - `page`: Page number (default: 1)
-
-    **Returns:**
-    - A list of product objects that match the keyword from the search.
-    - Products will be returned with their full details (from the database).
-    """
-    if condition:
-        filters = [f"condition = {condition.value}"]
-    else:
-        filters = None
-    search_results = await search_for_meilisearch_data(
-        keyword=keyword,
-        request=request,
-        page=page,
-        size=size,
-        filters=filters,
-        storage_name="products",
-    )
-    product_ids = [product["id"] for product in search_results["hits"]]
-    return await show_products_for_search(
-        size=size,
-        request=request,
-        session=db_session,
-        product_ids=product_ids,
-        num_of_products=search_results["estimatedTotalHits"],
-    )
-
-
-@router.get("/pre_search/", response_model=list[str])
-async def pre_search(
-    request: Request,
-    user: Annotated[dict, Depends(check_token)],
-    keyword: str,
-    db_session=Depends(get_db_session),
-):
-    """
-    Searches for products based on the provided keyword:
-    - Uses Meilisearch to find matching products.
-    - Will return active products only that match the keyword.
-    - The search results are then used to fetch product details from the database.
-    - The returned products contain details such as id, name,
-    description, price, condition, and category.
-
-    **Parameters:**
-    - `keyword`: The search term used to find products.
-    It will be used for querying in Meilisearch.
-
-    **Returns:**
-    - A list of product objects that match the keyword from the search.
-    """
-    distinct_keywords = []
-    seen = set()
-    page = 1
-    while len(distinct_keywords) < 5:
-        result = await search_for_meilisearch_data(
-            request=request,
-            storage_name="products",
-            keyword=keyword,
-            page=page,
-            size=20,
-        )
-        for object in result["hits"]:
-            if object["name"] not in seen:
-                seen.add(object["name"])
-                distinct_keywords.append(object["name"])
-            if len(distinct_keywords) >= 5:
-                break
-        else:
-            break
-        page += 1
-    return distinct_keywords
-
-
-@router.post(
-    "/feedback/{product_id}", response_model=ProductFeedbackResponseSchema
-)  # added description
-async def store_new_product_feedback(
-    feedback_data: ProductFeedbackSchema,
-    user: Annotated[dict, Depends(check_token)],
-    request: Request,
-    db_session=Depends(get_db_session),
-):
-    """
-    Adds new feedback to the product
-
-    ***Parameters:***
-    - `feedback_data`: json object with values for product_id and text of the feedback.
-
-    ***Returns:***
-    - The newly added product feedback with all of its values;
-
-    ***Errors:***
-    - Returns 500 on internal error.
-    """
-
-    try:
-        product = await get_product_from_db(
-            request=request, product_id=feedback_data.product_id, session=db_session
-        )
-        key_exist: bool = await request.app.state.redis.exists(
-            f"notification:{product.user_telegram_id}"
-        )
-        if not key_exist:
-            await send_notification(
-                channel=request.app.state.rbq_channel,
-                notification=Notification(
-                    user_id=product.user_telegram_id,
-                    text=feedback_data.text,
-                    url=f"https://{config.ROUTING_PREFIX}/apps/kupi-prodai/product/{feedback_data.product_id}",
-                ),
+        if not product_deleted or not media_deleted:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete product or media",
             )
-        return await add_new_product_feedback_to_db(
-            feedback_data=feedback_data, user_sub=user.get("sub"), session=db_session
-        )
-    except HTTPException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-
-@router.get(
-    "/feedback/{product_id}", response_model=ListProductFeedbackResponseSchema
-)  # added description
-async def get_product_feedbacks(
-    product_id: int,
-    user: Annotated[dict, Depends(check_token)],
-    db_session=Depends(get_db_session),
-    size: int = 20,
-    page: int = 1,
-):
-    """
-    Retrieves a paginated list of feedbacks of the product.
-
-    **Parameters:**
-
-    - `size`: Number of products per page (default: 20)
-
-    - `page`: Page number (default: 1)
-
-    - `product_id`: ID of the product
-
-    **Returns:**
-    - A list of feedbacks of the product, sorted by most recently added.
-    """
-    return await get_product_feedbacks_from_db(
-        product_id=product_id, session=db_session, size=size, page=page
-    )
-
-
-@router.delete("/feedback/{feedback_id}")  # added description
-async def remove_product_feedback(
-    feedback_id: int,
-    user: Annotated[dict, Depends(check_token)],
-    db_session=Depends(get_db_session),
-):
-    """
-    Deletes a specific product feedback added by the authenticated user.
-
-    **Requirements:**
-    - The user must be authenticated (`access_token` cookie required).
-
-    - Only the owner of the product feedback can delete it.
-
-    **Parameters:**
-    - `feedback_id`: The ID of the product feedback to delete.
-
-    **Process:**
-    - Deletes the product feedback from the database.
-
-    **Returns:**
-    - HTTP 204 No Content on successful deletion.
-
-    **Errors:**
-    - Returns 403 if the product does not belong to the user.
-    - Returns 404 if the product is not found.
-    - Returns 500 on internal error.
-    """
-    try:
-        await remove_product_feedback_from_db(
-            feedback_id=feedback_id, user_sub=user.get("sub"), session=db_session
+        await meilisearch.delete(
+            request=request, storage_name=Product.__tablename__, primary_key=str(product_id)
         )
         return status.HTTP_204_NO_CONTENT
-    except HTTPException as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-
-@router.post(
-    "/{product_id}/report", response_model=ProductReportResponseSchema
-)  # added description
-async def store_new_product_report(
-    report_data: ProductReportSchema,
-    user: Annotated[dict, Depends(check_token)],
-    request: Request,
-    db_session=Depends(get_db_session),
-):
-    """
-    Adds a new product report.
-
-    ***Requirements:***
-    - The user must be authenticated (`access_token` cookie required).
-
-    ***Parameters:***
-    - `report_data`: JSON body containing product fields (product_id, text)
-
-    - Automatically associates the product report with the authenticated user.
-
-    ***Returns:***
-    - The newly created product report with full details including associated
-    media (if any).
-
-    ***Errors:***
-    - Returns 500 on internal error.
-    """
-
-    try:
-        return await add_product_report(
-            report_data=report_data, user_sub=user.get("sub"), session=db_session
-        )
-    except HTTPException as e:
+    except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
