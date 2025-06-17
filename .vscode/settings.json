@@ -1,5 +1,0 @@
-{
-    "python.analysis.extraPaths": [
-        "./backend/routes/notification"
-    ]
-}
