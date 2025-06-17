@@ -42,8 +42,8 @@ async def get(
     size: int = Query(20, ge=1, le=100),
     page: int = Query(1, ge=1),
     db_session: AsyncSession = Depends(get_db_session),
-    include_deleted: bool | None = Query(
-        False, description="Include deleted comments in the response"
+    include_deleted: bool = Query(
+        default=False, description="Include deleted comments in the response"
     ),
 ) -> ListCommunityCommentResponseSchema:
     """
@@ -75,10 +75,8 @@ async def get(
     - Total number of replies
     """
 
-    policy = CommentPolicy()
-    await policy.check_permission(
+    await CommentPolicy(user=user).check_permission(
         action=ResourceAction.READ,
-        user=user,
         include_deleted=include_deleted,
     )
 
@@ -213,10 +211,8 @@ async def create_comment(
     - `user_sub` can be `me` to indicate the authenticated user
     """
     # Check permissions
-    policy = CommentPolicy()
-    await policy.check_permission(
+    await CommentPolicy(user=user).check_permission(
         action=ResourceAction.CREATE,
-        user=user,
         comment_data=comment_data,
     )
 
@@ -285,8 +281,7 @@ async def delete(
     - 403: If user is not the comment owner or admin
     """
 
-    policy = CommentPolicy()
-    await policy.check_permission(action=ResourceAction.DELETE, user=user, comment_data=comment)
+    await CommentPolicy(user=user).check_permission(action=ResourceAction.DELETE, comment=comment)
 
     # Soft delete the comment
     qb: QueryBuilder = QueryBuilder(session=db_session, model=CommunityComment)

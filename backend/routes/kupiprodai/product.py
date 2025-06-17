@@ -380,10 +380,10 @@ async def remove_product(
     - Returns 404 if the product is not found or doesn't belong to the user.
     - Returns 500 on internal error.
     """
-    try:
-        policy = ProductPolicy()
-        await policy.check_permission(action=ResourceAction.DELETE, user=user, product=product)
+    policy = ProductPolicy()
+    await policy.check_permission(action=ResourceAction.DELETE, user=user, product=product)
 
+    try:
         media_conditions = [Media.entity_id == product.id, Media.entity_type == EntityType.products]
 
         qb = QueryBuilder(session=db_session, model=Media)

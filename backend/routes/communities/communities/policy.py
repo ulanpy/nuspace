@@ -15,13 +15,15 @@ class CommunityPolicy:
     All other logic should be kept outside of this class.
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, user: tuple[dict, dict]):
+        self.user = user
+        self.user_role: UserRole = user[1]["role"]
+        self.user_sub: str = user[0]["sub"]
+        self.user_communities: list[int] = user[1]["communities"]
 
     async def check_permission(
         self,
         action: ResourceAction,
-        user: tuple[dict, dict],
         community: Community | None = None,
         community_data: CommunityCreateRequest | None = None,
     ) -> bool:
@@ -36,14 +38,12 @@ class CommunityPolicy:
         Raises:
             HTTPException: If the user doesn't have permission
         """
-        user_role: UserRole = user[1]["role"]
-        user_sub: str = user[0]["sub"]
         # Admin can do everything
-        if user_role == UserRole.admin:
+        if self.user_role == UserRole.admin:
             return True
 
         if action == ResourceAction.CREATE:
-            if user_role != UserRole.admin.value:
+            if self.user_role != UserRole.admin.value:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Only admins can create communities",
@@ -57,7 +57,7 @@ class CommunityPolicy:
         elif action == ResourceAction.UPDATE:
 
             # Check if user is head of community
-            if community.head_user.sub == user_sub:
+            if community.head_user.sub == self.user_sub or community.id in self.user_communities:
                 return True
 
             raise HTTPException(
@@ -66,7 +66,7 @@ class CommunityPolicy:
             )
 
         elif action == ResourceAction.DELETE:
-            if user_role != UserRole.admin.value:
+            if self.user_role != UserRole.admin.value:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Only admins can delete communities",

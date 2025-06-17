@@ -36,8 +36,7 @@ async def create_post(
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> CommunityPostResponse:
-    policy = PostPolicy()
-    await policy.check_permission(action=ResourceAction.CREATE, user=user, post_data=post_data)
+    await PostPolicy(user=user).check_permission(action=ResourceAction.CREATE, post_data=post_data)
 
     if post_data.user_sub == "me":
         post_data.user_sub = user[0].get("sub")
@@ -102,8 +101,7 @@ async def get_posts(
     db_session: AsyncSession = Depends(get_db_session),
     keyword: str | None = None,
 ) -> ListCommunityPostResponse:
-    policy = PostPolicy()
-    await policy.check_permission(action=ResourceAction.READ, user=user)
+    await PostPolicy(user=user).check_permission(action=ResourceAction.READ)
 
     conditions = [CommunityPost.community_id == community_id]
 
@@ -185,8 +183,7 @@ async def get_post(
     db_session: AsyncSession = Depends(get_db_session),
     post: CommunityPost = Depends(post_exists_or_404),
 ) -> CommunityPostResponse:
-    policy = PostPolicy()
-    await policy.check_permission(action=ResourceAction.READ, user=user, post=post)
+    await PostPolicy(user=user).check_permission(action=ResourceAction.READ, post=post)
 
     qb = QueryBuilder(
         session=db_session, model=CommunityPost
@@ -234,9 +231,8 @@ async def update_post(
     db_session: AsyncSession = Depends(get_db_session),
     post: CommunityPost = Depends(post_exists_or_404),
 ) -> CommunityPostResponse:
-    policy = PostPolicy()
-    await policy.check_permission(
-        action=ResourceAction.UPDATE, user=user, post=post, post_data=post_data
+    await PostPolicy(user=user).check_permission(
+        action=ResourceAction.UPDATE, post=post, post_data=post_data
     )
 
     if post_data.tag_id:
@@ -312,8 +308,7 @@ async def delete_post(
     - Removes the post from the Meilisearch index
     """
     # Check permissions
-    policy = PostPolicy()
-    await policy.check_permission(action=ResourceAction.DELETE, user=user, post=post)
+    await PostPolicy(user=user).check_permission(action=ResourceAction.DELETE, post=post)
 
     # Initialize query builder
     qb = QueryBuilder(session=db_session, model=CommunityComment)

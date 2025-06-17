@@ -20,13 +20,15 @@ class PostPolicy:
       - Only post creators and admins can modify/delete their posts
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, user: tuple[dict, dict]):
+        self.user = user
+        self.user_role: UserRole = user[1]["role"]
+        self.user_sub: str = user[0]["sub"]
+        self.user_communities: list[int] = user[1]["communities"]
 
     async def check_permission(
         self,
         action: ResourceAction,
-        user: tuple[dict, dict],
         post: CommunityPost | None = None,
         post_data: CommunityPostRequest | None = None,
     ) -> bool:
@@ -46,17 +48,14 @@ class PostPolicy:
             HTTPException: If the user doesn't have permission
             ValueError: If the action type is not handled
         """
-        user_role = user[1]["role"]
-        user_sub = user[0]["sub"]
-        user_communities = user[1]["communities"]
 
         # Admin can do everything
-        if user_role == UserRole.admin.value:
+        if self.user_role == UserRole.admin.value:
             return True
 
         if action == ResourceAction.CREATE:
             # Validate user_sub - only admins can write as other users
-            if post_data.user_sub != "me" and post_data.user_sub != user_sub:
+            if post_data.user_sub != "me" and post_data.user_sub != self.user_sub:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You can only create posts as yourself",
@@ -65,7 +64,7 @@ class PostPolicy:
             # Validate from_community flag
             if post_data.from_community is True:
                 # Check if user is head of the community
-                is_head = post_data.community_id in user_communities
+                is_head = post_data.community_id in self.user_communities
                 if not is_head:
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
@@ -79,7 +78,7 @@ class PostPolicy:
 
         elif action == ResourceAction.UPDATE:
             # Only post creator can update their posts
-            if post.user_sub != user_sub:
+            if post.user_sub != self.user_sub:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Only post creators can update their posts",
@@ -88,7 +87,7 @@ class PostPolicy:
 
         elif action == ResourceAction.DELETE:
             # Only post creator can delete their posts
-            if post.user_sub != user_sub:
+            if post.user_sub != self.user_sub:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Only post creators can delete their posts",

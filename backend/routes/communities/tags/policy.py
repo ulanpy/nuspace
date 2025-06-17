@@ -15,13 +15,15 @@ class TagPolicy:
     - Only admins and community heads can create or delete tags
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, user: tuple[dict, dict]):
+        self.user = user
+        self.user_role: UserRole = user[1]["role"]
+        self.user_sub: str = user[0]["sub"]
+        self.user_communities: list[int] = user[1]["communities"]
 
     async def check_permission(
         self,
         action: ResourceAction,
-        user: tuple[dict, dict],
         tag: CommunityPostTag | None = None,
         tag_data: CommunityTagRequest | None = None,
     ) -> bool:
@@ -41,11 +43,9 @@ class TagPolicy:
             HTTPException: If the user doesn't have permission
             ValueError: If the action type is not handled
         """
-        user_role = user[1]["role"]
-        user_communities = user[1]["communities"]
 
         # Admin can do everything
-        if user_role == UserRole.admin.value:
+        if self.user_role == UserRole.admin.value:
             return True
 
         if action == ResourceAction.READ:
@@ -55,7 +55,7 @@ class TagPolicy:
         elif action in [ResourceAction.CREATE, ResourceAction.DELETE]:
             # For create/delete, check if user is community head
             community_id = tag_data.community_id if tag_data else tag.community_id
-            is_head = community_id in user_communities
+            is_head = community_id in self.user_communities
 
             if not is_head:
                 raise HTTPException(

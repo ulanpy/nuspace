@@ -50,9 +50,8 @@ async def add_community(
     - If admin privileges are not present, the request will fail with 403.
     - The club is indexed in Meilisearch after creation.
     """
-    policy = CommunityPolicy()
-    await policy.check_permission(
-        action=ResourceAction.CREATE, user=user, community_data=community_data
+    await CommunityPolicy(user=user).check_permission(
+        action=ResourceAction.CREATE, community_data=community_data
     )
     try:
         qb = QueryBuilder(session=db_session, model=Community)
@@ -135,8 +134,8 @@ async def get_communities(
     - Results are ordered by creation date (newest first)
     - Each community includes its associated media in profile format
     """
-    policy = CommunityPolicy()
-    await policy.check_permission(action=ResourceAction.READ, user=user)
+    policy = CommunityPolicy(user=user)
+    await policy.check_permission(action=ResourceAction.READ)
     # Build conditions list
     conditions = []
 
@@ -216,9 +215,8 @@ async def update_community(
     - Returns 403 if user is not the head of the community and is not an admin
     - Returns 500 on internal error
     """
-    policy = CommunityPolicy()
-    await policy.check_permission(
-        action=ResourceAction.UPDATE, user=user, community=community, community_data=new_data
+    await CommunityPolicy(user=user).check_permission(
+        action=ResourceAction.UPDATE, community=community, community_data=new_data
     )
 
     qb = QueryBuilder(session=db_session, model=Community)
@@ -291,8 +289,9 @@ async def delete_community(
     - Returns 500 on internal error
     """
     # Check permissions
-    policy = CommunityPolicy()
-    await policy.check_permission(action=ResourceAction.DELETE, user=user, community=community)
+    await CommunityPolicy(user=user).check_permission(
+        action=ResourceAction.DELETE, community=community
+    )
 
     # Initialize query builder
     qb = QueryBuilder(session=db_session, model=CommunityPost)

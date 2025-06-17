@@ -329,9 +329,8 @@ async def update_event(
     - Returns 500 on internal error
     """
     # Create policy
-    policy = EventPolicy()
-    await policy.check_permission(
-        action=ResourceAction.UPDATE, user=user, event=event, event_data=event_data
+    await EventPolicy(user=user).check_permission(
+        action=ResourceAction.UPDATE, event=event, event_data=event_data
     )
 
     # Update event in database
@@ -417,8 +416,7 @@ async def delete_event(
     - Returns 403 if user doesn't have permission
     - Returns 500 on internal error
     """
-    policy = EventPolicy()
-    await policy.check_permission(action=ResourceAction.DELETE, user=user, event=event)
+    await EventPolicy(user=user).check_permission(action=ResourceAction.DELETE, event=event)
 
     # Get and delete associated media files
     media_conditions = [
@@ -475,8 +473,7 @@ async def get_event(
     - Returns 500 on internal error
     """
     # Create policy and check permissions
-    policy = EventPolicy()
-    await policy.check_permission(ResourceAction.READ, user, event=event)
+    await EventPolicy(user=user).check_permission(action=ResourceAction.READ, event=event)
 
     # Get event with its community relationship
     qb = QueryBuilder(session=db_session, model=Event)
