@@ -1,6 +1,6 @@
+from backend.common.schemas import ResourcePermissions
 from backend.core.database.models import CommunityPost
 from backend.core.database.models.user import UserRole
-from backend.common.schemas import ResourcePermissions
 
 
 def get_post_permissions(
@@ -19,7 +19,6 @@ def get_post_permissions(
     """
     user_role = user[1]["role"]
     user_sub = user[0]["sub"]
-    user_communities = user[1]["communities"]
 
     # Initialize permissions
     permissions = ResourcePermissions()
@@ -28,14 +27,7 @@ def get_post_permissions(
     if user_role == UserRole.admin.value:
         permissions.can_edit = True
         permissions.can_delete = True
-        permissions.editable_fields = [
-            "title",
-            "description",
-            "user_sub",
-            "community_id",
-            "from_community",
-            "tag_id"
-    ]
+        permissions.editable_fields = ["title", "description", "tag_id"]
         return permissions
 
     # Check if user is post creator

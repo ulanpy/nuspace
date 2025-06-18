@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_current_principals, get_db_session
 from backend.common.utils import response_builder
-from backend.core.database.models import CommunityPostTag
+from backend.core.database.models import Community, CommunityPostTag
+from backend.routes.communities.tags import dependencies as deps
 from backend.routes.communities.tags.dependencies import tag_exists_or_404
 from backend.routes.communities.tags.policy import ResourceAction, TagPolicy
 from backend.routes.communities.tags.schemas import (
@@ -24,6 +25,7 @@ async def create_tag(
     tag_data: CommunityTagRequest,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(deps.community_exists_or_404),
 ) -> CommunityTagResponse:
     """
     Create a new tag for a community.
@@ -42,8 +44,7 @@ async def create_tag(
     - Returns 400 if tag data violates schema rules
     - Returns 400 if database integrity error occurs (e.g., duplicate tag name)
     """
-    policy = TagPolicy()
-    await policy.check_permission(action=ResourceAction.CREATE, user=user, tag_data=tag_data)
+    await TagPolicy(user=user).check_permission(action=ResourceAction.CREATE, tag_data=tag_data)
 
     try:
         qb = QueryBuilder(session=db_session, model=CommunityPostTag)
@@ -80,8 +81,7 @@ async def get_tags(
     - tags: List of tags
     - total_pages: Total number of pages available
     """
-    policy = TagPolicy()
-    await policy.check_permission(action=ResourceAction.READ, user=user)
+    await TagPolicy(user=user).check_permission(action=ResourceAction.READ)
 
     qb = QueryBuilder(session=db_session, model=CommunityPostTag)
     tags: List[CommunityPostTag] = (
@@ -127,8 +127,7 @@ async def delete_tag(
     **Errors:**
     - Returns 404 if tag not found
     """
-    policy = TagPolicy()
-    await policy.check_permission(action=ResourceAction.DELETE, user=user, tag=tag)
+    await TagPolicy(user=user).check_permission(action=ResourceAction.DELETE, tag=tag)
 
     qb = QueryBuilder(session=db_session, model=CommunityPostTag)
     await qb.delete(target=tag)

@@ -18,8 +18,9 @@ from backend.core.database.models.community import (
     CommunityType,
 )
 from backend.core.database.models.media import Media, MediaFormat
+from backend.core.database.models.user import User
+from backend.routes.communities.communities import dependencies as deps
 from backend.routes.communities.communities import schemas
-from backend.routes.communities.communities.dependencies import community_exists_or_404
 from backend.routes.communities.communities.policy import CommunityPolicy, ResourceAction
 from backend.routes.communities.communities.utils import get_community_permissions
 from backend.routes.google_bucket.utils import batch_delete_blobs
@@ -33,6 +34,7 @@ async def add_community(
     community_data: schemas.CommunityCreateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
+    community_head: User = Depends(deps.user_exists_or_404),
 ) -> schemas.CommunityResponse:
     """
     Create a new community. Requires admin privileges.
@@ -53,6 +55,9 @@ async def add_community(
     await CommunityPolicy(user=user).check_permission(
         action=ResourceAction.CREATE, community_data=community_data
     )
+
+    community_data.head = user[0].get("sub") if community_data.head == "me" else community_data.head
+
     try:
         qb = QueryBuilder(session=db_session, model=Community)
         community: Community = await qb.add(data=community_data, preload=[Community.head_user])
@@ -196,7 +201,7 @@ async def update_community(
     new_data: schemas.CommunityUpdateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
-    community: Community = Depends(community_exists_or_404),
+    community: Community = Depends(deps.community_exists_or_404),
 ) -> schemas.CommunityResponse:
     """
     Updates fields of an existing community.
@@ -265,7 +270,7 @@ async def delete_community(
     community_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
-    community: Community = Depends(community_exists_or_404),
+    community: Community = Depends(deps.community_exists_or_404),
 ):
     """
     Deletes a specific community.

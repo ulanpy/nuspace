@@ -17,9 +17,10 @@ from backend.core.database.models.product import (
     ProductCondition,
     ProductStatus,
 )
+from backend.core.database.models.user import User
 from backend.routes.google_bucket.utils import delete_bucket_object
+from backend.routes.kupiprodai import dependencies as deps
 from backend.routes.kupiprodai import schemas, utils
-from backend.routes.kupiprodai.dependencies import product_exists_or_404
 from backend.routes.kupiprodai.policy import ProductPolicy
 
 router = APIRouter(tags=["Kupi-Prodai Routes"])
@@ -32,6 +33,7 @@ async def add_product(
     tg: Annotated[bool, Depends(check_tg)],
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
+    product_user: User = Depends(deps.user_exists_or_404),
 ) -> schemas.ProductResponse:
     """
     Creates a new product under the 'Kupi-Prodai' section.
@@ -49,9 +51,8 @@ async def add_product(
     **Notes:**
     - The product is indexed in Meilisearch after creation.
     """
-    policy = ProductPolicy()
-    await policy.check_permission(
-        action=ResourceAction.CREATE, user=user, product_data=product_data
+    await ProductPolicy(user=user).check_permission(
+        action=ResourceAction.CREATE, product_data=product_data
     )
 
     if product_data.user_sub == "me":
@@ -137,9 +138,8 @@ async def get_products(
     **Returns:**
     - List of products matching the criteria with pagination info
     """
-    policy = ProductPolicy()
-    await policy.check_permission(
-        action=ResourceAction.READ, user=user, owner_sub=owner_sub, status=status
+    await ProductPolicy(user=user).check_permission(
+        action=ResourceAction.READ, owner_sub=owner_sub, status=status
     )
 
     conditions = []
@@ -230,7 +230,7 @@ async def update_product(
     product_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
-    product: Product = Depends(product_exists_or_404),
+    product: Product = Depends(deps.product_exists_or_404),
 ) -> schemas.ProductResponse:
     """
     Updates fields of an existing product owned by the authenticated user.
@@ -249,9 +249,8 @@ async def update_product(
     **Errors:**
     - Returns 404 if product is not found or doesn't belong to the user
     """
-    policy = ProductPolicy()
-    await policy.check_permission(
-        action=ResourceAction.UPDATE, user=user, product=product, product_data=product_data
+    await ProductPolicy(user=user).check_permission(
+        action=ResourceAction.UPDATE, product=product, product_data=product_data
     )
 
     # Update product in database first
@@ -301,7 +300,7 @@ async def get_product_by_id(
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     product_id: int,
     db_session: AsyncSession = Depends(get_db_session),
-    product: Product = Depends(product_exists_or_404),
+    product: Product = Depends(deps.product_exists_or_404),
 ) -> schemas.ProductResponse:
     """
     Retrieves a single active/inactive product by its unique ID, including
@@ -321,10 +320,8 @@ async def get_product_by_id(
     does not exist or is inactive.
     - Returns `401 Unauthorized` if no valid access token is provided.
     """
-    policy = ProductPolicy()
-    await policy.check_permission(
+    await ProductPolicy(user=user).check_permission(
         action=ResourceAction.READ,
-        user=user,
         owner_sub=product.user_sub,
         product=product,
     )
@@ -357,7 +354,7 @@ async def remove_product(
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     product_id: int,
     db_session: AsyncSession = Depends(get_db_session),
-    product: Product = Depends(product_exists_or_404),
+    product: Product = Depends(deps.product_exists_or_404),
 ):
     """
     Deletes a specific product owned by the authenticated user.
@@ -380,8 +377,7 @@ async def remove_product(
     - Returns 404 if the product is not found or doesn't belong to the user.
     - Returns 500 on internal error.
     """
-    policy = ProductPolicy()
-    await policy.check_permission(action=ResourceAction.DELETE, user=user, product=product)
+    await ProductPolicy(user=user).check_permission(action=ResourceAction.DELETE, product=product)
 
     try:
         media_conditions = [Media.entity_id == product.id, Media.entity_type == EntityType.products]
