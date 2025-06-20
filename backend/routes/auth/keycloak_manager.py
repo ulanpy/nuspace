@@ -1,3 +1,4 @@
+from functools import cached_property
 from pathlib import Path
 
 import httpx
@@ -8,7 +9,7 @@ from jose import jwt
 from jwt import PyJWKClient
 from pydantic_settings import BaseSettings
 
-from backend.core.configs.config import ENV_DIR
+from backend.core.configs.config import ENV_DIR, config
 
 load_dotenv(ENV_DIR)
 
@@ -18,7 +19,6 @@ class KeyCloakManager(BaseSettings):
     REALM: str
     KEYCLOAK_CLIENT_ID: str
     KEYCLOAK_CLIENT_SECRET: str
-    KEYCLOAK_REDIRECT_URI: str
     client_kwargs: dict = {
         "scope": "openid profile email",
     }
@@ -27,7 +27,11 @@ class KeyCloakManager(BaseSettings):
     _jwks_client: PyJWKClient | None = None
     _jwks_cache = TTLCache(maxsize=1, ttl=3600)  # Cache JWKS for 1 hour
 
-    @property
+    @cached_property
+    def KEYCLOAK_REDIRECT_URI(self):
+        return f"{config.FRONTEND_HOST}/api/auth/callback"
+
+    @cached_property
     def JWKS_URI(self):
         return f"{self.KEYCLOAK_URL}/realms/{self.REALM}/protocol/openid-connect/certs"
 
@@ -35,13 +39,13 @@ class KeyCloakManager(BaseSettings):
         env_file = Path(".env").resolve()
         extra = "allow"
 
-    @property
+    @cached_property
     def oauth(self):
         if self._oauth is None:
             self.initialize_oauth()
         return self._oauth
 
-    @property
+    @cached_property
     def SERVER_METADATA_URL(self):
         return f"{self.KEYCLOAK_URL}/realms/{self.REALM}/.well-known/openid-configuration"
 
