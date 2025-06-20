@@ -4,14 +4,19 @@ import react from "@vitejs/plugin-react"
 import tailwindcss from 'tailwindcss'
 import path from "path"
 
+// Parse tunnel URL from environment variable
+const tunnelUrl = process.env.CLOUDFLARED_TUNNEL_URL || "https://tunnel1.nuspace.kz"
+const tunnelHost = new URL(tunnelUrl).hostname
+const tunnelProtocol = new URL(tunnelUrl).protocol
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
   ],
   define: {
-    // Consider if VITE_BASE_URL should reflect the tunnel or just be for API proxy path
-    "import.meta.env.VITE_BASE_URL": JSON.stringify("localhost"),
+    // Use the tunnel URL from environment variable
+    "import.meta.env.VITE_BASE_URL": JSON.stringify(tunnelUrl),
   },
   server: {
     host: "0.0.0.0",       // Correct: Listen on all interfaces inside the container
@@ -34,10 +39,12 @@ export default defineConfig({
     allowedHosts: true, //not for production!!!!!!!!!
     // --- Configure HMR ---
     hmr: {
-      // Instruct the client-side HMR code to connect back through the public port
-      // Assuming your Cloudflare tunnel serves traffic on standard HTTPS port 443
-      clientPort: 80,
-      // If your tunnel is HTTP only (port 80), use clientPort: 80
+      // For tunnel setup, we need to configure HMR to work through the tunnel
+      clientPort: tunnelProtocol === 'https:' ? 443 : 80,
+      host: tunnelHost,
+      protocol: tunnelProtocol === 'https:' ? "wss" : "ws",
+      timeout: 30000,
+      overlay: true
     }
     // --- End added section ---
   },

@@ -33,6 +33,7 @@ async def login(request: Request):
     Redirect user to Google login via Keycloak.
     """
     kc: KeyCloakManager = request.app.state.kc_manager
+    print(kc.KEYCLOAK_REDIRECT_URI)
     return await getattr(kc.oauth, kc.__class__.__name__.lower()).authorize_redirect(
         request, kc.KEYCLOAK_REDIRECT_URI
     )
@@ -44,6 +45,7 @@ async def auth_callback(
     db_session: AsyncSession = Depends(get_db_session),
     creds: dict = Depends(exchange_code_for_credentials),
 ):
+    print(request.app.state.kc_manager.KEYCLOAK_REDIRECT_URI)
     """
     Handle the OAuth2 callback to exchange authorization code for tokens, issue JWT, and app token.
     """

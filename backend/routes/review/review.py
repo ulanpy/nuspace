@@ -57,18 +57,34 @@ async def get(
         .all()
     )
 
-    review_responses: List[ReviewResponseSchema] = await response_builder.build_responses(
-        request=request,
-        items=reviews,
-        session=db,
-        media_format=MediaFormat.carousel,
-        entity_type=EntityType.reviews,
-        response_builder=utils.build_review_response,
+    media_objs: List[Media] = (
+        await qb.blank(model=Media)
+        .base()
+        .filter(
+            Media.entity_id.in_([review.id for review in reviews]),
+            Media.entity_type == EntityType.reviews,
+            Media.media_format == MediaFormat.carousel,  # Assuming carousel for reviews
+        )
+        .all()
     )
 
-    count: int = await qb.blank().base(count=True).filter(*conditions).count()
+    media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
+        request=request, media_objects=media_objs, resources=reviews
+    )
+
+    review_responses: List[ReviewResponseSchema] = [
+        response_builder.build_schema(
+            ReviewResponseSchema,
+            ReviewResponseSchema.model_validate(review),
+            media=media,
+        )
+        for review, media in zip(reviews, media_results)
+    ]
+
+    count: int = await qb.blank(model=Review).base(count=True).filter(*conditions).count()
 
     total_pages: int = response_builder.calculate_pages(count=count, size=size)
+
     return ListReviewResponseSchema(reviews=review_responses, total_pages=total_pages)
 
 
@@ -80,16 +96,21 @@ async def add(
     db: AsyncSession = Depends(get_db_session),
 ) -> ReviewResponseSchema:
     model: DeclarativeBase = service.REVIEWABLE_TYPE_MODEL_MAP.get(review.reviewable_type)
+    parent_model: DeclarativeBase = service.REVIEWABLE_TYPE_PARENT_MODEL_MAP.get(review.owner_type)
 
     qb: QueryBuilder = QueryBuilder(session=db, model=model)
     obj: DeclarativeBase | None = await qb.base().filter(model.id == review.entity_id).first()
 
     try:
+        # Get the primary key field name for the parent model
+        pk_field_name = service.MODEL_PRIMARY_KEY_MAP.get(parent_model)
+        if not pk_field_name:
+            raise HTTPException(status_code=400, detail="Unsupported owner type")
+
+        # Use getattr to dynamically access the primary key field
+        pk_field = getattr(parent_model, pk_field_name)
         obj_parent: DeclarativeBase | None = (
-            await qb.blank(model=service.REVIEWABLE_TYPE_PARENT_MODEL_MAP.get(review.owner_type))
-            .base()
-            .filter(model.id == review.owner_id)
-            .first()
+            await qb.blank(model=parent_model).base().filter(pk_field == review.owner_id).first()
         )
     except ProgrammingError:
         raise HTTPException(status_code=404, detail="Owner id is not valid")
@@ -107,19 +128,26 @@ async def add(
         data=updated_review, preload=[Review.reply]
     )
 
-    conditions = [
-        Media.entity_id == review_obj.id,
-        Media.entity_type == EntityType.reviews,
-        Media.media_format == MediaFormat.carousel,
-    ]
-
-    media_objects: List[Media] = await qb.blank(model=Media).base().filter(*conditions).all()
-
-    media_responses: List[MediaResponse] = await response_builder.build_media_responses(
-        request=request, media_objects=media_objects
+    media_objs: List[Media] = (
+        await qb.blank(model=Media)
+        .base()
+        .filter(
+            Media.entity_id == review_obj.id,
+            Media.entity_type == EntityType.reviews,
+            Media.media_format
+            == MediaFormat.carousel,  # Assuming carousel for posts, adjust if needed
+        )
+        .all()
     )
+    media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
+        request=request, media_objects=media_objs, resources=[review_obj]
+    )  # one to one mapping
 
-    return utils.build_review_response(review=review_obj, media=media_responses)
+    return response_builder.build_schema(
+        ReviewResponseSchema,
+        ReviewResponseSchema.model_validate(review_obj),
+        media=media_results[0],
+    )
 
 
 @router.patch("/reviews", response_model=ReviewResponseSchema)
@@ -187,7 +215,7 @@ async def delete(
     # Get and delete associated media files
     media_conditions = [
         Media.entity_id == review.id,
-        Media.entity_type == EntityType.club_events,
+        Media.entity_type == EntityType.reviews,
     ]
 
     media_objects: List[Media] = await qb.blank(model=Media).base().filter(*media_conditions).all()
