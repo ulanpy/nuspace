@@ -43,7 +43,7 @@ async def generate_upload_url(
     )[1]
     bucket: Bucket = request.app.state.storage_client.bucket(request.app.state.config.BUCKET_NAME)
     for item in signed_url_request:
-        filename = f"{base_url}/{user.get('sub')}_{timestamp}_{uuid.uuid4().hex}"
+        filename = f"{base_url}/{user[0].get('sub')}_{timestamp}_{uuid.uuid4().hex}"
         blob = bucket.blob(filename)
 
         required_headers = {
