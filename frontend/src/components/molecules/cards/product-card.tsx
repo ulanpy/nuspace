@@ -10,7 +10,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onClick, actions }: ProductCardProps) {
-
+  console.log(product)
   return (
     <Card
       className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"

@@ -80,7 +80,7 @@ declare global {
           };
         };
       };
-      tg_linked: boolean;
+      tg_id: boolean;
     }
     type PaginatedResponse<T, TKey extends string> = {
       [K in TKey]: T[];

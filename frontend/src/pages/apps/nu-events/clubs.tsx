@@ -1,7 +1,5 @@
 "use client";
 
-import type React from "react";
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,13 +10,10 @@ import {
   ChevronRight,
   Heart,
 } from "lucide-react";
-import { Input } from "@/components/atoms/input";
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
-import { Badge } from "@/components/atoms/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
-import { mockApi } from "@/data/events/mock-events-data";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { ConditionGroup } from "@/components/molecules/condition-group";
 import { clubTypes } from "@/data/clubs/club-types";

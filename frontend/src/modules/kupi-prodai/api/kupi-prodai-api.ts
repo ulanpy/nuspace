@@ -141,7 +141,7 @@ export const kupiProdaiApi = {
     return queryOptions({
       queryKey: [kupiProdaiApi.baseKey, "userProducts"],
       queryFn: () => {
-        return apiCall<PaginatedResponse<Product>>(`/products?size=${defaultSize}&page=${defaultPage}&owner_id=me`);
+        return apiCall<PaginatedResponse<Product>>(`/products?size=${defaultSize}&page=${defaultPage}&owner_sub=me`);
       },
     });
   },
@@ -167,7 +167,7 @@ export const kupiProdaiApi = {
 
   // Update a product - Fixed to use the correct endpoint and method
   updateProduct: async (product: UpdateProductRequest): Promise<any> => {
-    return apiCall<any>("/products", {
+    return apiCall<any>(`/products/${product.product_id}`, {
       method: "PATCH",
       json: product,
     });
@@ -231,7 +231,7 @@ export const kupiProdaiApi = {
   },
 
   // Check Telegram binding status
-  checkTelegramStatus: async (): Promise<{ tg_linked: boolean }> => {
-    return apiCall<{ tg_linked: boolean }>("/me/tg-status");
+  checkTelegramStatus: async (): Promise<{ tg_id: boolean }> => {
+    return apiCall<{ tg_id: boolean }>("/me/tg-status");
   },
 };

@@ -59,7 +59,7 @@ export default function KupiProdaiPage() {
   const { user, login } = useUser();
   const [error] = useState<string | null>(null);
   const [isDragging] = useState(false);
-  const isTelegramLinked = user?.tg_linked || false;
+  const isTelegramLinked = user?.tg_id || false;
 
   // Products state [CRUD Hooks]
   const {
@@ -73,6 +73,7 @@ export default function KupiProdaiPage() {
     page,
     setPage,
   } = useProducts();
+  console.log("Product items:", productItems);
   const { myProducts } = useUserProducts();
   const { handleCreate } = useCreateProduct();
   const {
