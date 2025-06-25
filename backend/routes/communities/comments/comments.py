@@ -15,24 +15,15 @@ from backend.common.utils.enums import ResourceAction
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import CommunityComment, CommunityPost
 from backend.core.database.models.media import Media
-from backend.routes.communities.comments import cruds, utils
-from backend.routes.communities.comments.dependencies import (
-    comment_exists_or_404,
-    parent_comment_exists_or_404,
-    post_exists_or_404,
-)
+from backend.core.database.models.user import User
+from backend.routes.communities.comments import cruds, schemas, utils
+from backend.routes.communities.comments import dependencies as deps
 from backend.routes.communities.comments.policy import CommentPolicy
-from backend.routes.communities.comments.schemas import (
-    ListCommunityCommentResponseSchema,
-    RequestCommunityCommentSchema,
-    ResponseCommunityCommentSchema,
-    UpdateCommunityCommentSchema,
-)
 
 router = APIRouter(tags=["Community Posts Comments Routes"])
 
 
-@router.get("/comments", response_model=ListCommunityCommentResponseSchema)
+@router.get("/comments", response_model=schemas.ListCommunityCommentResponseSchema)
 async def get(
     request: Request,
     user: Annotated[dict, Depends(get_current_principals)],
@@ -45,7 +36,7 @@ async def get(
     include_deleted: bool = Query(
         default=False, description="Include deleted comments in the response"
     ),
-) -> ListCommunityCommentResponseSchema:
+) -> schemas.ListCommunityCommentResponseSchema:
     """
     Retrieve paginated comments for a specific post.
 
@@ -153,10 +144,10 @@ async def get(
         ]
     )
 
-    comments_response: List[ResponseCommunityCommentSchema] = [
+    comments_response: List[schemas.ResponseCommunityCommentSchema] = [
         utils.build_schema(
-            ResponseCommunityCommentSchema,
-            ResponseCommunityCommentSchema.model_validate(comment),
+            schemas.ResponseCommunityCommentSchema,
+            schemas.ResponseCommunityCommentSchema.model_validate(comment),
             total_replies=replies_counter.get(comment.id, 0),
             media=media,
             user=comment.user,
@@ -165,21 +156,22 @@ async def get(
         for comment, media in zip(comments, media_results)
     ]
 
-    return ListCommunityCommentResponseSchema(
+    return schemas.ListCommunityCommentResponseSchema(
         comments=comments_response,
         total_pages=total_pages,
     )
 
 
-@router.post("/comments", response_model=ResponseCommunityCommentSchema)
+@router.post("/comments", response_model=schemas.ResponseCommunityCommentSchema)
 async def create_comment(
     request: Request,
-    comment_data: RequestCommunityCommentSchema,
+    comment_data: schemas.RequestCommunityCommentSchema,
     user: Annotated[dict, Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
-    post: CommunityPost = Depends(post_exists_or_404),
-    parent_comment: CommunityComment | None = Depends(parent_comment_exists_or_404),
-) -> ResponseCommunityCommentSchema:
+    post: CommunityPost = Depends(deps.post_exists_or_404),
+    parent_comment: CommunityComment | None = Depends(deps.parent_comment_exists_or_404),
+    comment_user: User = Depends(deps.user_exists_or_404),
+) -> schemas.ResponseCommunityCommentSchema:
     """
     Create a new comment for a post or reply to an existing comment.
 
@@ -242,9 +234,9 @@ async def create_comment(
         )
     ).get(comment.id, 0)
 
-    comment_response: ResponseCommunityCommentSchema = utils.build_schema(
-        ResponseCommunityCommentSchema,
-        ResponseCommunityCommentSchema.model_validate(comment),
+    comment_response: schemas.ResponseCommunityCommentSchema = utils.build_schema(
+        schemas.ResponseCommunityCommentSchema,
+        schemas.ResponseCommunityCommentSchema.model_validate(comment),
         total_replies=replies_counter,
         media=media_responses,
         user=comment.user,
@@ -258,7 +250,7 @@ async def delete(
     comment_id: int,
     user: Annotated[dict, Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
-    comment: CommunityComment = Depends(comment_exists_or_404),
+    comment: CommunityComment = Depends(deps.comment_exists_or_404),
 ):
     """
     Soft delete a specific comment.
@@ -285,5 +277,5 @@ async def delete(
 
     # Soft delete the comment
     qb: QueryBuilder = QueryBuilder(session=db_session, model=CommunityComment)
-    update_data = UpdateCommunityCommentSchema(deleted_at=datetime.now())
+    update_data = schemas.UpdateCommunityCommentSchema(deleted_at=datetime.now())
     await qb.update(instance=comment, update_data=update_data)

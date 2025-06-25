@@ -40,9 +40,6 @@ def get_event_permissions(
             "policy",
             "status",
             "type",
-            "community_id",
-            "creator_sub",
-            "scope",
             "tag",
         ]
         return permissions
@@ -72,7 +69,7 @@ def get_event_permissions(
         ]
 
         # Community head can also edit status
-        if is_head:
+        if is_head or event.scope == EventScope.personal:
             permissions.editable_fields.append("status")
 
     return permissions

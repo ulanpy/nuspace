@@ -1,9 +1,10 @@
 from typing import Type
 
 from pydantic import BaseModel
+
+from backend.common.schemas import ResourcePermissions
 from backend.core.database.models import CommunityComment
 from backend.core.database.models.user import UserRole
-from backend.common.schemas import ResourcePermissions
 
 
 def build_schema(schema_class: Type[BaseModel], *models: BaseModel, **extra_fields) -> BaseModel:
@@ -36,14 +37,15 @@ def get_comment_permissions(
 
     # Admin can do everything
     if user_role == UserRole.admin.value:
-        permissions.can_edit = True
+        permissions.can_edit = False  # Change when patch is implemented
         permissions.can_delete = True
-        permissions.editable_fields = [
-            "post_id",
-            "parent_id",
-            "user_sub",
-            "content",
-        ]
+        permissions.editable_fields = []
+        # permissions.editable_fields = [
+        #     "post_id",
+        #     "parent_id",
+        #     "user_sub",
+        #     "content",
+        # ]
         return permissions
 
     # Check if user is comment owner
@@ -51,10 +53,11 @@ def get_comment_permissions(
 
     # Set permissions based on ownership
     if is_owner:
-        permissions.can_edit = True
+        permissions.can_edit = False  # Change when patch is implemented
         permissions.can_delete = True
-        permissions.editable_fields = [
-            "content",  #comment owner can only change content
-        ]
+        permissions.editable_fields = []
+        # permissions.editable_fields = [
+        #     "content",  #comment owner can only change content
+        # ]
 
     return permissions

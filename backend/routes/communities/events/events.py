@@ -18,8 +18,9 @@ from backend.core.database.models import (
 )
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
+from backend.core.database.models.user import User
+from backend.routes.communities.events import dependencies as deps
 from backend.routes.communities.events import schemas, utils
-from backend.routes.communities.events.dependencies import event_exists_or_404
 from backend.routes.communities.events.policy import EventPolicy, ResourceAction
 from backend.routes.google_bucket.utils import batch_delete_blobs
 
@@ -197,6 +198,7 @@ async def add_event(
     event_data: schemas.EventCreateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
+    event_user: User = Depends(deps.user_exists_or_404),
 ) -> schemas.EventResponse:
     """
     Creates a new event.
@@ -294,25 +296,20 @@ async def update_event(
     event_data: schemas.EventUpdateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
-    event: Event = Depends(event_exists_or_404),
+    event: Event = Depends(deps.event_exists_or_404),
 ) -> schemas.EventResponse:
     """
     Updates fields of an existing event.
 
     **Access Policy:**
     - Admin can update any field
-    - Community head:
+    - Community head of the event that belongs to the community:
       - Can update any field except: community_id, creator_sub, scope, tag
       - Can modify event status freely
-    - Event creator:
+    - Event creator of the personal event:
+      - Can update any field except: community_id, creator_sub, scope, tag
+    - Event creator of the community event:
       - Can update any field except: community_id, creator_sub, scope, tag, status
-      - Cannot modify status
-    - For personal events:
-      - Only creator and admin can update
-      - Non-admin users cannot update status
-    - For community events:
-      - Only creator, community head, and admin can update
-      - Non-head users cannot update status
 
     **Parameters:**
     - `event_id`: ID of the event to update
@@ -390,7 +387,7 @@ async def delete_event(
     event_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
-    event: Event = Depends(event_exists_or_404),
+    event: Event = Depends(deps.event_exists_or_404),
 ):
     """
     Deletes a specific event.
@@ -453,7 +450,7 @@ async def get_event(
     request: Request,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
-    event: Event = Depends(event_exists_or_404),
+    event: Event = Depends(deps.event_exists_or_404),
 ) -> schemas.EventResponse:
     """
     Retrieves a single event by its unique ID.

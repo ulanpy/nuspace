@@ -10,6 +10,7 @@ from pydantic_settings import BaseSettings
 ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 load_dotenv(os.path.join(ENV_DIR, ".env"))
 
+# should be in /nuspace/backend/core/configs/nuspace.json
 CREDENTIALS_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "nuspace.json"))
 
 
@@ -60,7 +61,7 @@ class Config(BaseSettings):
 
     @cached_property
     def FRONTEND_HOST(self) -> str:
-        return self.NUSPACE if not self.IS_DEBUG else "http://localhost"
+        return self.NUSPACE if not self.IS_DEBUG else self.CLOUDFLARED_TUNNEL_URL
 
     @cached_property
     def DATABASE_URL(self) -> str:

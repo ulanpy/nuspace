@@ -3,7 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_db_session
-from backend.core.database.models import CommunityPostTag
+from backend.core.database.models import Community, CommunityPostTag
+from backend.routes.communities.tags.schemas import CommunityTagRequest
 
 
 async def tag_exists_or_404(
@@ -27,3 +28,13 @@ async def tag_exists_or_404(
     if tag is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
     return tag
+
+
+async def community_exists_or_404(
+    tag_data: CommunityTagRequest, db_session: AsyncSession = Depends(get_db_session)
+) -> Community:
+    qb = QueryBuilder(session=db_session, model=Community)
+    community = await qb.base().filter(Community.id == tag_data.community_id).first()
+    if community is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Community not found")
+    return community

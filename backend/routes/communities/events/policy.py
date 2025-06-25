@@ -158,7 +158,9 @@ class EventPolicy:
         Permission rules:
         - Admin can update any field
         - Community head can update any field except: community_id, creator_sub, scope, tag
-        - Event creator can update any field except: community_id, creator_sub, scope, tag, status
+        - Personal event creator can update any field except: community_id, creator_sub, scope, tag
+        - Community event creator can update any field except:
+            community_id, creator_sub, scope, tag, status
 
         Raises:
             HTTPException: If the user doesn't have required permissions
@@ -190,10 +192,10 @@ class EventPolicy:
                     )
 
         elif event.scope == EventScope.personal:
-            if event_data.status is not None:
+            if event.creator_sub != self.user[0]["sub"]:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Non-head users cannot update status",
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You can only update your own events",
                 )
 
     async def check_permission(

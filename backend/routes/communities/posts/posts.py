@@ -9,12 +9,13 @@ from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_current_principals, get_db_session
 from backend.common.schemas import MediaResponse, ShortUserResponse
 from backend.common.utils import response_builder
-from backend.core.database.models import CommunityPost, CommunityPostTag, Media
+from backend.core.database.models import Community, CommunityPost, CommunityPostTag, Media
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import CommunityComment
 from backend.core.database.models.media import MediaFormat
+from backend.core.database.models.user import User
 from backend.routes.communities.posts import cruds
-from backend.routes.communities.posts.dependencies import post_exists_or_404
+from backend.routes.communities.posts import dependencies as deps
 from backend.routes.communities.posts.policy import PostPolicy, ResourceAction
 from backend.routes.communities.posts.schemas import (
     CommunityPostRequest,
@@ -35,6 +36,9 @@ async def create_post(
     post_data: CommunityPostRequest,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(deps.community_exists_or_404),
+    post_user: User = Depends(deps.user_exists_or_404),
+    tag: CommunityPostTag | None = Depends(deps.tag_exists_or_404),
 ) -> CommunityPostResponse:
     await PostPolicy(user=user).check_permission(action=ResourceAction.CREATE, post_data=post_data)
 
@@ -181,18 +185,14 @@ async def get_post(
     post_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
-    post: CommunityPost = Depends(post_exists_or_404),
+    post: CommunityPost = Depends(deps.post_exists_or_404),
 ) -> CommunityPostResponse:
     await PostPolicy(user=user).check_permission(action=ResourceAction.READ, post=post)
 
-    qb = QueryBuilder(
-        session=db_session, model=CommunityPost
-    )  # Not strictly needed if post is passed by dependency
-    # but good for consistency or further operations
+    qb = QueryBuilder(session=db_session, model=Media)
 
     media_objs: List[Media] = (
-        await qb.blank(model=Media)
-        .base()
+        await qb.base()
         .filter(
             Media.entity_id == post.id,
             Media.entity_type == EntityType.community_posts,
@@ -229,19 +229,12 @@ async def update_post(
     post_data: CommunityPostUpdate,  # Changed to CommunityPostUpdate
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
-    post: CommunityPost = Depends(post_exists_or_404),
+    post: CommunityPost = Depends(deps.post_exists_or_404),
+    tag: CommunityPostTag | None = Depends(deps.tag_exists_or_404),
 ) -> CommunityPostResponse:
     await PostPolicy(user=user).check_permission(
         action=ResourceAction.UPDATE, post=post, post_data=post_data
     )
-
-    if post_data.tag_id:
-        qb = QueryBuilder(session=db_session, model=CommunityPostTag)
-        tag: CommunityPostTag = await (
-            qb.base().filter(CommunityPostTag.id == post_data.tag_id).first()
-        )
-        if not tag:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
 
     qb = QueryBuilder(session=db_session, model=CommunityPost)
     updated_post: CommunityPost = await qb.blank(CommunityPost).update(
@@ -297,7 +290,7 @@ async def delete_post(
     request: Request,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
-    post: CommunityPost = Depends(post_exists_or_404),
+    post: CommunityPost = Depends(deps.post_exists_or_404),
 ):
     """
     Delete a specific post and its associated resources.

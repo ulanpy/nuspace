@@ -15,3 +15,11 @@ SECOND_REVIEWABLE_TYPE_PARENT_MODEL_MAP = {
     Product: User,
     Event: Community,
 }
+
+# Mapping for primary key field names
+MODEL_PRIMARY_KEY_MAP = {
+    User: "sub",
+    Community: "id",
+    Product: "id",
+    Event: "id",
+}
