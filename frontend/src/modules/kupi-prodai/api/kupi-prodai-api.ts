@@ -126,7 +126,7 @@ export const kupiProdaiApi = {
       ],
       queryFn: ({ queryKey }) => {
         const [, , params] = queryKey as [string, string, QueryParams];
-        let endpoint = `/products?size=${params.size}&page=${params.page}`;
+        let endpoint = `/products?size=${params.size}&page=${params.page}&status=active`;
         if (params.category) endpoint += `&category=${params.category}`;
         if (params.condition) endpoint += `&condition=${params.condition}`;
         if (params.keyword) endpoint += `&keyword=${params.keyword}`;
