@@ -1,5 +1,3 @@
-import base64
-import json
 import uuid
 from datetime import datetime, timedelta
 from typing import Annotated, List
@@ -9,25 +7,51 @@ from google.cloud.exceptions import NotFound
 from google.cloud.storage import Bucket
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_current_principals, get_db_session
 from backend.core.configs.config import Config
-from backend.core.database.models.media import EntityType, MediaFormat
-
-from .cruds import confirm_uploaded_media_to_db, delete_media, get_filename
-from .schemas import SignedUrlRequest, SignedUrlResponse, UploadConfirmation
+from backend.core.database.models.media import Media
+from backend.routes.google_bucket import dependencies as deps
+from backend.routes.google_bucket import schemas
 
 router = APIRouter(prefix="/bucket", tags=["Google Bucket Routes"])
 
 
-@router.post(
-    "/upload-url",
-    response_model=List[SignedUrlResponse],
-)
+@router.post("/upload-url", response_model=List[schemas.SignedUrlResponse])
 async def generate_upload_url(
     request: Request,
-    signed_url_request: List[SignedUrlRequest],
+    signed_url_request: List[schemas.SignedUrlRequest],
     user: Annotated[dict, Depends(get_current_principals)],
 ):
+    """
+    Generates pre-signed URLs for direct upload to Google Cloud Storage bucket.
+
+    This endpoint creates temporary, secure URLs that allow frontend clients to upload files
+    directly to GCS without exposing bucket credentials. Each URL is valid for 15 minutes
+    and includes required metadata headers for proper file categorization.
+
+    **How it works:**
+    1. Client sends file metadata (entity_type, entity_id, media_format, etc.)
+    2. Server generates a unique filename and pre-signed URL with required headers
+    3. Client uses the URL to upload file directly to GCS via PUT request
+    4. GCS automatically triggers a webhook to /api/bucket/gcs-hook when upload completes
+
+    **Usage:**
+    - Send file metadata in request body
+    - Receive signed URL and filename
+    - Upload file directly to GCS using the signed URL
+    - File will be automatically processed via webhook
+
+    **Limitations:**
+    - Maximum 5 upload URLs per request
+    - Each URL expires in 15 minutes
+    - File must be uploaded with exact headers provided
+
+    **Response includes:**
+    - filename: Unique identifier for the file in GCS
+    - upload_url: Pre-signed URL for direct upload
+    - All metadata fields for client reference
+    """
     MAX_UPLOAD_URLS = 5
     if len(signed_url_request) > MAX_UPLOAD_URLS:
         raise HTTPException(
@@ -38,22 +62,21 @@ async def generate_upload_url(
     urls = []
     timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%S")
     config: Config = request.app.state.config
-    base_url = (config.CLOUDFLARED_TUNNEL_URL if config.IS_DEBUG else config.NUSPACE).split(
-        sep="https://", maxsplit=1
-    )[1]
     bucket: Bucket = request.app.state.storage_client.bucket(request.app.state.config.BUCKET_NAME)
     for item in signed_url_request:
-        filename = f"{base_url}/{user[0].get('sub')}_{timestamp}_{uuid.uuid4().hex}"
+        filename = f"{config.ROUTING_PREFIX}/{user[0].get('sub')}_{timestamp}_{uuid.uuid4().hex}"
         blob = bucket.blob(filename)
 
         required_headers = {
-            "x-goog-meta-filename": str(filename),
-            "x-goog-meta-media-table": item.entity_type.value,
-            "x-goog-meta-entity-id": str(item.entity_id),
-            "x-goog-meta-media-format": item.media_format.value,
-            "x-goog-meta-media-order": str(item.media_order),
-            "x-goog-meta-mime-type": item.mime_type,
-            "Content-Type": item.mime_type,
+            config.GCS_METADATA_HEADERS["filename"]: str(filename),
+            config.GCS_METADATA_HEADERS[
+                "media_table"
+            ]: item.entity_type.value,  # pass values since we need str
+            config.GCS_METADATA_HEADERS["entity_id"]: str(item.entity_id),
+            config.GCS_METADATA_HEADERS["media_format"]: item.media_format.value,
+            config.GCS_METADATA_HEADERS["media_order"]: str(item.media_order),
+            config.GCS_METADATA_HEADERS["mime_type"]: item.mime_type,
+            config.GCS_METADATA_HEADERS["content_type"]: item.mime_type,
         }
 
         signed_url = blob.generate_signed_url(
@@ -78,59 +101,58 @@ async def generate_upload_url(
 
 
 @router.post("/gcs-hook")
-async def gcs_webhook(request: Request, db_session: AsyncSession = Depends(get_db_session)):
+async def gcs_webhook(
+    request: Request,
+    db_session: AsyncSession = Depends(get_db_session),
+    media_metadata: schemas.MediaMetadata = Depends(deps.get_media_metadata),
+    validate_routing_prefix: bool = Depends(deps.validate_routing_prefix),
+):
+    """
+    Processes GCS notifications from Pub/Sub.
+    The business logic for creating MediaMetadata is now in get_media_metadata_from_gcs_event.
+    The webhook now focuses on the database interaction part.
+    """
+    filters = [
+        Media.name == media_metadata.name,
+        Media.entity_type == media_metadata.entity_type,
+        Media.entity_id == media_metadata.entity_id,
+        Media.media_format == media_metadata.media_format,
+    ]
+    qb = QueryBuilder(db_session, Media)
+    media: Media | None = await qb.base().filter(*filters).first()
     try:
-        body = await request.json()
-        message = body.get("message", {})
-        data_b64 = message.get("data")
-
-        if not data_b64:
-            raise HTTPException(status_code=400, detail="Missing 'data' in Pub/Sub message.")
-
-        decoded_data = base64.b64decode(data_b64).decode("utf-8")
-        gcs_event = json.loads(decoded_data)
-
-        object_name = gcs_event.get("name")
-        bucket_name = gcs_event.get("bucket")
-
-        if not object_name or not bucket_name:
-            raise HTTPException(status_code=400, detail="Missing 'name' or 'bucket' in event data.")
-
-        parts = object_name.split("/", maxsplit=1)
-        if len(parts) < 2 or parts[0] != request.app.state.config.ROUTING_PREFIX:
-            return {"status": "ok"}
-
-        bucket = request.app.state.storage_client.bucket(gcs_event["bucket"])
-        blob = bucket.get_blob(gcs_event["name"])
-
-        if blob is None:
-            raise HTTPException(status_code=404, detail="Blob not found in GCS.")
-        confirmation = UploadConfirmation(
-            filename=blob.metadata.get("filename"),
-            mime_type=blob.metadata.get("mime-type"),
-            entity_type=EntityType(blob.metadata.get("media-table")),
-            entity_id=int(blob.metadata["entity-id"]),
-            media_format=MediaFormat(blob.metadata["media-format"]),
-            media_order=int(blob.metadata.get("media-order")),
-        )
-        await confirm_uploaded_media_to_db(confirmation, db_session)
+        if media:
+            await qb.update(instance=media, update_data=media_metadata)
+        else:
+            await qb.add(data=media_metadata)
+    except Exception:
+        # just ack message but log this error in future
         return {"status": "ok"}
-
-    except (ValueError, json.JSONDecodeError):
-        return {"status": "ok"}
+    return {"status": "ok"}
 
 
 @router.delete("/{filename}")
 async def delete_bucket_object(
     request: Request, media_id: int, db_session: AsyncSession = Depends(get_db_session)
 ):
-    filename = await get_filename(db_session, media_id)
+    """
+    This endpoint is used by the client(frontend) when he is editing the media carousel
+    and during the process deletes the media object from the carousel.
+    It deletes the media object from the bucket and the database.
+    """
+    qb = QueryBuilder(db_session, Media)
+    media: Media | None = await qb.base().filter(Media.id == media_id).first()
+
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+
+    filename = media.name
     blob = request.app.state.storage_client.bucket(request.app.state.config.BUCKET_NAME).blob(
         filename
     )
     try:
         blob.delete()
-        await delete_media(db_session, media_id)
+        await qb.delete(target=media)
         return {"status": "success", "deleted": filename}
     except NotFound:
         raise HTTPException(status_code=404, detail="File not found")
