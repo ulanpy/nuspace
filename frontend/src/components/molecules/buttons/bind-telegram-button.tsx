@@ -24,13 +24,13 @@ export function BindTelegramButton() {
   const [telegramLink, setTelegramLink] = useState("");
   const [confirmationEmoji, setConfirmationEmoji] = useState("");
   const [error, setError] = useState("");
-  const [isLinked, setIsLinked] = useState(user?.tg_linked || false);
+  const [isLinked, setIsLinked] = useState(user?.tg_id || false);
   const { toast } = useToast();
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [showPrivacy, setShowPrivacy] = useState(false);
   // Check if user is linked to Telegram directly from the user object
   useEffect(() => {
-    setIsLinked(user?.tg_linked || false);
+    setIsLinked(user?.tg_id || false);
   }, [user]);
 
   // Clean up polling interval on unmount
@@ -70,7 +70,7 @@ export function BindTelegramButton() {
           const userData = await response.json();
 
           // If Telegram is now linked, update UI and stop polling
-          if (userData.tg_linked) {
+          if (userData.tg_id) {
             setIsLinked(true);
             setShowModal(false);
 

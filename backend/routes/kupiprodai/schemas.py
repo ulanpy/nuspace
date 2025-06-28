@@ -36,7 +36,6 @@ class ProductRequest(ProductBase):
     description: str = Field(
         ...,
         description="Detailed description of the product",
-        min_length=10,
         max_length=1000,
         examples=["Like new iPhone 13 Pro, 256GB storage, with original box and accessories"],
     )

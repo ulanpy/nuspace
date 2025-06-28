@@ -38,6 +38,7 @@ export function ProductGrid({
   className?: string;
 }) {
   const navigate = useNavigate();
+  console.log("ProductGrid rendered", products);
   return (
     <>
       <motion.div

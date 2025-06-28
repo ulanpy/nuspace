@@ -29,6 +29,7 @@ services:
       - .env
     volumes:
       - .:/nuros  # Sync local backend folder with container's /nuros
+      - cursor-server:/root/.cursor-server
     depends_on:
       - postgres
     environment:
@@ -169,6 +170,7 @@ networks:
   nuros:
     name: nuspace_nuros
     driver: bridge
+    external: true
 
 volumes:
   postgres-data:
@@ -177,3 +179,4 @@ volumes:
   pgadmin-data:
   rabbitmq-data:  # Add this
   frontend-node-modules:  # Added named volume for frontend node_modules
+  cursor-server:

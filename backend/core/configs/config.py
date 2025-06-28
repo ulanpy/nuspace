@@ -35,7 +35,19 @@ class Config(BaseSettings):
     NUSPACE: str
     GCP_PROJECT_ID: str
     GCP_TOPIC_ID: str
+    PUSH_AUTH_SERVICE_ACCOUNT: str
+    PUSH_AUTH_AUDIENCE: str
     ORIGINS: List[str] = ["*"]
+    # Header mapping for easy reference when setting values
+    GCS_METADATA_HEADERS: dict = {
+        "filename": "x-goog-meta-filename",
+        "media_table": "x-goog-meta-media-table",
+        "entity_id": "x-goog-meta-entity-id",
+        "media_format": "x-goog-meta-media-format",
+        "media_order": "x-goog-meta-media-order",
+        "mime_type": "x-goog-meta-mime-type",
+        "content_type": "Content-Type",
+    }
     APP_JWT_SECRET_256: str
     _COOKIE_ACCESS_NAME: str = "access_token"
     _COOKIE_REFRESH_NAME: str = "refresh_token"
@@ -60,7 +72,7 @@ class Config(BaseSettings):
         return self._COOKIE_APP_NAME if not self.IS_DEBUG else "app_token"
 
     @cached_property
-    def FRONTEND_HOST(self) -> str:
+    def HOME_URL(self) -> str:
         return self.NUSPACE if not self.IS_DEBUG else self.CLOUDFLARED_TUNNEL_URL
 
     @cached_property
@@ -79,8 +91,19 @@ class Config(BaseSettings):
 
     @cached_property
     def ROUTING_PREFIX(self) -> str:
+        """
+        Used to differentiate between different backend services.
+        For example, if we have two backend services:
+        - nuspace.kz (main service)
+        - tunnel1.nuspace.kz (tunnel service)
+        Then the routing prefix for the first service is nuspace.kz and for the second
+        service is tunnel1.nuspace.kz.
+        Use cases:
+        - Used to generate blob filename for the media upload.
+        - Used to validate if the GCS event belongs to the current backend service.
+        """
         raw_url = self.NUSPACE if not self.IS_DEBUG else self.CLOUDFLARED_TUNNEL_URL
-        return raw_url.split("https://", 1)[1]
+        return raw_url.split("https://", 1)[1]  # for example https://nuspace.kz -> nuspace.kz
 
 
 config = Config()

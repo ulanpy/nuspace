@@ -15,11 +15,10 @@ async def initialize_bot(
 ):
     app.state.bot = Bot(token=token)
     app.state.dp = Dispatcher(storage=RedisStorage(app.state.redis))
-    base_url = f"https://{config.ROUTING_PREFIX}"
 
     setup_middlewares(
         dp=app.state.dp,
-        url=base_url.replace("/api", "") if config.IS_DEBUG else config.NUSPACE,
+        url=config.HOME_URL,
         redis=app.state.redis,
         db_manager=app.state.db_manager,
         storage_client=app.state.storage_client,
@@ -29,9 +28,9 @@ async def initialize_bot(
     include_routers(app.state.dp)
 
     # await set_commands(app.state.bot)
-    print(f"webhook {base_url}", flush=True)
+    print(f"webhook {config.HOME_URL}", flush=True)
     await app.state.bot.set_webhook(
-        url=f"{base_url}/api/webhook",
+        url=f"{config.HOME_URL}/api/webhook",
         drop_pending_updates=True,
         allowed_updates=app.state.dp.resolve_used_update_types(),
         secret_token=config.TG_WEBHOOK_SECRET_TOKEN,
@@ -39,6 +38,7 @@ async def initialize_bot(
 
     start = BotCommand(command="start", description="start")
     language = BotCommand(command="language", description="language")
+    notification = BotCommand(command="notification", description="notification")
     await app.state.bot.set_my_commands(
-        commands=[start, language], scope=BotCommandScopeAllPrivateChats()
+        commands=[start, language, notification], scope=BotCommandScopeAllPrivateChats()
     )

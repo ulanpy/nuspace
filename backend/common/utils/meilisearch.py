@@ -51,7 +51,7 @@ async def get(
     request: Request,
     storage_name: str,
     keyword: str,
-    filters: list = None,
+    filters: list | None = None,
     page: int = 0,
     size: int = 20,
 ) -> dict:

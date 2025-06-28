@@ -70,7 +70,7 @@ async def auth_callback(
         user.sub, db_session  # or kc_principal["sub"]
     )
 
-    redirect_response = RedirectResponse(url=config.FRONTEND_HOST, status_code=303)
+    redirect_response = RedirectResponse(url=config.HOME_URL, status_code=303)
     set_kc_auth_cookies(redirect_response, creds)  # Set Keycloak cookies
     redirect_response.set_cookie(  # Set App token cookie
         key=config.COOKIE_APP_NAME,

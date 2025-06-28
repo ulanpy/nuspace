@@ -16,7 +16,6 @@ import { Badge } from "@/components/atoms/badge";
 
 import { useToast } from "@/hooks/use-toast";
 import { Modal } from "@/components/atoms/modal";
-import CommentsSection from "../comment-section";
 import {
   formatDateWithContext,
   formatRelativeTime,
@@ -384,11 +383,7 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Comments Section */}
-      <CommentsSection
-        productId={product.id}
-        sellerName={product.user_name}
-        isAuthenticated={!!user}
-      />
+
 
       {/* Report Modal */}
       <Modal

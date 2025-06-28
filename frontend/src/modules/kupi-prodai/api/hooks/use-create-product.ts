@@ -52,7 +52,7 @@ export function useCreateProduct() {
   });
 
   const checkTelegramLinked = (): boolean => {
-    const isTelegramLinked = user?.tg_linked || false;
+    const isTelegramLinked = user?.tg_id || false;
     if (!isTelegramLinked) {
       toast({
         title: "Telegram Required",

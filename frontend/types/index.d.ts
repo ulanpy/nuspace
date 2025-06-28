@@ -80,12 +80,13 @@ declare global {
           };
         };
       };
-      tg_linked: boolean;
+      tg_id: boolean;
     }
-    interface PaginatedResponse<T> {
-      products: T[];
+    type PaginatedResponse<T, TKey extends string> = {
+      [K in TKey]: T[];
+    } & {
       num_of_pages: number;
-    }
+    };
     // SearchInput
     interface PreSearchedProduct {
       id: number;
@@ -100,7 +101,6 @@ declare global {
       handleSearch: (inputValue: string) => void;
       setKeyword: (keyword: string) => void;
       setSelectedCondition?: (condition: string) => void;
-
     };
     type KeyActions = Record<string, () => void>;
     type InputHandlers = {
@@ -167,7 +167,7 @@ declare global {
       followers: number;
       isFollowing: boolean;
     }
-    type EventPolicy = "open" | "free_ticket" | "paid_ticket";
+    type EventPolicy = "all" | "open" | "free_ticket" | "paid_ticket";
     interface Event {
       id: number;
       club_id: number;

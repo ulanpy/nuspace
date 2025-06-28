@@ -49,7 +49,7 @@ async def setup_meilisearch(app: FastAPI):
     try:
         response = await app.state.meilisearch_client.get("/indexes")
         existing_indexes = response.json()
-        for index in existing_indexes:
+        for index in existing_indexes["results"]:
             await app.state.meilisearch_client.delete(f"/indexes/{index['uid']}")
     except Exception as e:
         print(f"Error clearing existing indexes: {str(e)}")

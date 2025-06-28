@@ -1,11 +1,9 @@
 from datetime import timedelta
 from typing import List
 
-from fastapi import FastAPI, Request
-from google.api_core.exceptions import AlreadyExists
-from google.cloud import pubsub_v1, storage
+from fastapi import Request
+from google.cloud import storage
 
-from backend.core.configs.config import config
 from backend.core.database.models import Media
 
 
@@ -41,40 +39,6 @@ async def delete_bucket_object(
         blob.delete()
     except Exception:
         pass
-
-
-def setup_gcs_pubsub(app: FastAPI) -> None:
-    app.state.storage_client = storage.Client(credentials=config.BUCKET_CREDENTIALS)
-    client = pubsub_v1.SubscriberClient(credentials=config.BUCKET_CREDENTIALS)
-    topic_path = client.topic_path(config.GCP_PROJECT_ID, config.GCP_TOPIC_ID)
-    subscription_path = client.subscription_path(
-        project=config.GCP_PROJECT_ID,
-        subscription=f"gcs-object-created-sub-{config.ROUTING_PREFIX}",
-    )
-    try:
-        subscription = client.create_subscription(
-            name=subscription_path,
-            topic=topic_path,
-        )
-        print(f"Subscription created: {subscription.name}")
-    except AlreadyExists:
-        print(f"Subscription already exists: {subscription_path}")
-
-    push_config = pubsub_v1.types.PushConfig(
-        push_endpoint=f"https://{config.ROUTING_PREFIX}/api/bucket/gcs-hook"
-    )
-    update_mask = {"paths": ["push_config"]}
-
-    response = client.update_subscription(
-        request={
-            "subscription": {
-                "name": subscription_path,
-                "push_config": push_config,
-            },
-            "update_mask": update_mask,
-        }
-    )
-    print(f"✅ Updated push endpoint to: {response.push_config.push_endpoint}")
 
 
 async def batch_delete_blobs(request: Request, media_objects: List[Media]) -> None:

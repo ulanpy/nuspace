@@ -26,7 +26,7 @@ const getRandomRating = () => {
   ] as const
 
   // Event policies
-  export const eventPolicies = ["open", "free_ticket", "paid_ticket"] as const
+  export const eventPolicies: NuEvents.EventPolicy[] = ["open", "free_ticket", "paid_ticket"];
 
   // Places
   const places = [

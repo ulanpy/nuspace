@@ -29,7 +29,7 @@ class KeyCloakManager(BaseSettings):
 
     @cached_property
     def KEYCLOAK_REDIRECT_URI(self):
-        return f"{config.FRONTEND_HOST}/api/auth/callback"
+        return f"{config.HOME_URL}/api/auth/callback"
 
     @cached_property
     def JWKS_URI(self):

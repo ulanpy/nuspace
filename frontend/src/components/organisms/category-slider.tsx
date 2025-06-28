@@ -5,7 +5,7 @@ import { SliderContainer } from "../molecules/slider-container";
 interface CategorySliderProps {
   categories: { title: string; icon: JSX.Element }[];
   selectedCategory: string | "";
-  setPage: (page: number) => void;
+  setPage?: (page: number) => void;
   setSelectedCategory: (category: string) => void;
   setInputValue?: (value: string) => void;
   setSelectedCondition?: (condition: string) => void;
@@ -23,7 +23,7 @@ export function CategorySlider({
 
   const handleCategorySelect = (title: string) => {
     setSelectedCategory(title);
-    setPage(1);
+    setPage?.(1);
     setInputValue?.("");
     setSelectedCondition?.("All Conditions");
 

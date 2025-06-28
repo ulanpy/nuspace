@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/atoms/sonner";
 export const useProductForm = () => {
-const navigate = useNavigate();
+  const navigate = useNavigate();
   const { id } = useParams();
   const isNewProduct = id === "new";
   const [product, setProduct] = useState(

@@ -1,10 +1,15 @@
-from typing import List, Optional, Type, Union, Any
+from typing import Any, List, Optional, Type, Union
 
 from pydantic import BaseModel
 from sqlalchemy import and_, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import DeclarativeBase, RelationshipProperty, selectinload
-from sqlalchemy.sql.elements import BinaryExpression
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    InstrumentedAttribute,
+    RelationshipProperty,
+    selectinload,
+)
+from sqlalchemy.sql.elements import BinaryExpression, ColumnElement
 
 
 class QueryBuilder:
@@ -29,12 +34,12 @@ class QueryBuilder:
         self.session = session
         self.model = model
         # default filters (e.g. soft-delete)
-        self._filters: List[BinaryExpression] = []
+        self._filters: List[ColumnElement] = []
         if soft_delete_field is not None:
             self._filters.append(soft_delete_field.is_(None))
         self._joins: List[DeclarativeBase] = []
         self._options: List = []
-        self._order_by: List[BinaryExpression] = []
+        self._order_by: List[ColumnElement] = []
         self._size: Optional[int] = None
         self._page: Optional[int] = None
         self._is_count: bool = False
@@ -46,7 +51,7 @@ class QueryBuilder:
         self._is_count = count
         return self
 
-    def filter(self, *conditions: Optional[BinaryExpression]) -> "QueryBuilder":
+    def filter(self, *conditions: Optional[ColumnElement]) -> "QueryBuilder":
         """Add WHERE clauses"""
         for cond in conditions:
             if cond is not None:
@@ -60,14 +65,14 @@ class QueryBuilder:
                 self._joins.append(t)
         return self
 
-    def eager(self, *relationships: Optional[RelationshipProperty]) -> "QueryBuilder":
+    def eager(self, *relationships: Optional[InstrumentedAttribute]) -> "QueryBuilder":
         """Add eager-load options (selectinload)"""
         for rel in relationships:
             if rel is not None:
                 self._options.append(selectinload(rel))
         return self
 
-    def order(self, *clauses: Optional[BinaryExpression]) -> "QueryBuilder":
+    def order(self, *clauses: Optional[ColumnElement]) -> "QueryBuilder":
         """Add ORDER BY clauses"""
         for c in clauses:
             if c is not None:
@@ -77,7 +82,8 @@ class QueryBuilder:
     def attributes(self, *entities: Any) -> "QueryBuilder":
         """
         Specify specific model attributes, columns, or other selectable entities.
-        Calling with no arguments clears any specific selection, reverting to selecting the full model.
+        Calling with no arguments clears any specific selection, reverting to selecting
+        the full model.
         """
         if not entities:
             self._selected_entities = None
@@ -94,40 +100,44 @@ class QueryBuilder:
     async def all(self) -> List[Any]:
         """
         Execute and return list of results.
-        - If multiple entities were selected via .attributes() (e.g., .attributes(User.id, User.name)),
-          returns List[sqlalchemy.engine.Row].
-        - If a single entity was selected via .attributes() (e.g., .attributes(User.id) or .attributes(User)),
-          or if .attributes() was not used (default, selecting the full model),
-          returns a list of those items directly (e.g., List[int], List[User]).
-        - If query was set for count (e.g. via .base(count=True)), returns a list containing the count [count_value].
+        - If multiple entities were selected via .attributes() (e.g.,
+          .attributes(User.id, User.name)), returns List[sqlalchemy.engine.Row].
+        - If a single entity was selected via .attributes() (e.g.,
+          .attributes(User.id) or .attributes(User)), or if .attributes() was not
+          used (default, selecting the full model), returns a list of those items
+          directly (e.g., List[int], List[User]).
+        - If query was set for count (e.g. via .base(count=True)), returns a list
+          containing the count [count_value].
         """
         stmt = self._build_select()
         if not self._is_count and self._size is not None:
             page = max(1, (self._page or 1))
             stmt = stmt.offset((page - 1) * self._size).limit(self._size)
-        
+
         result = await self.session.execute(stmt)
 
         if self._is_count:
             # For count queries, scalars().all() correctly returns [count_value]
-            return result.scalars().all()
-        
+            return list(result.scalars().all())
+
         if self._selected_entities:
             if len(self._selected_entities) > 1:
                 # Multiple entities selected (e.g., User.id, User.name) -> List[Row]
-                return result.all()
+                return list(result.all())
             else:
-                # Single entity selected (e.g., User.id or User) -> List[value] or List[ModelInstance]
-                return result.scalars().all()
+                # Single entity selected (e.g., User.id or User) -> List[value] or
+                # List[ModelInstance]
+                return list(result.scalars().all())
         else:
             # Default: selecting full model instances -> List[ModelInstance]
-            return result.scalars().all()
+            return list(result.scalars().all())
 
     async def first(self) -> Optional[Any]:
         """
         Execute and return the first result.
-        The type of the returned item depends on what was selected and how .all() processes it.
-        It could be a model instance, a sqlalchemy.engine.Row, a single attribute value, or the count.
+        The type of the returned item depends on what was selected and how .all()
+        processes it. It could be a model instance, a sqlalchemy.engine.Row, a
+        single attribute value, or the count.
         """
         results = await self.all()
         return results[0] if results else None
@@ -142,7 +152,7 @@ class QueryBuilder:
     def _build_select(self):
         """Compose the SQLAlchemy Select statement"""
         if self._is_count:
-            pk = self.model.__table__.primary_key.columns.values()[0]
+            pk = list(self.model.__table__.primary_key)[0]
             stmt = select(func.count(pk))
         else:
             if self._selected_entities:
@@ -152,16 +162,16 @@ class QueryBuilder:
 
         if self._filters:
             stmt = stmt.where(and_(*self._filters))
-        
+
         for t in self._joins:
             stmt = stmt.join(t)
-        
+
         # Eager loading options only apply if we are selecting full model instances
         # and not specific columns/attributes.
         if not self._selected_entities and self._options:
             for opt in self._options:
                 stmt = stmt.options(opt)
-        
+
         for o in self._order_by:
             stmt = stmt.order_by(o)
         return stmt
@@ -170,7 +180,7 @@ class QueryBuilder:
     async def add(
         self,
         data: BaseModel,
-        preload: Optional[List[RelationshipProperty]] = None,
+        preload: Optional[List[InstrumentedAttribute]] = None,
     ) -> DeclarativeBase:
         """
         Add a new record and optionally preload relationships.
@@ -181,7 +191,7 @@ class QueryBuilder:
         await self.session.refresh(instance)
 
         if preload:
-            pk = self.model.__table__.primary_key.columns.values()[0]
+            pk = list(self.model.__table__.primary_key)[0]
             stmt = select(self.model).where(pk == getattr(instance, pk.name))
             for rel in preload:
                 stmt = stmt.options(selectinload(rel))

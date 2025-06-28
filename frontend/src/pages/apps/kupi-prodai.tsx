@@ -59,7 +59,7 @@ export default function KupiProdaiPage() {
   const { user, login } = useUser();
   const [error] = useState<string | null>(null);
   const [isDragging] = useState(false);
-  const isTelegramLinked = user?.tg_linked || false;
+  const isTelegramLinked = user?.tg_id || false;
 
   // Products state [CRUD Hooks]
   const {
@@ -73,6 +73,7 @@ export default function KupiProdaiPage() {
     page,
     setPage,
   } = useProducts();
+  console.log("Product items:", productItems);
   const { myProducts } = useUserProducts();
   const { handleCreate } = useCreateProduct();
   const {
@@ -123,18 +124,14 @@ export default function KupiProdaiPage() {
   );
 
   // search section
-  const {
-    inputValue,
-    setInputValue,
-    preSearchedProducts,
-    handleSearch,
-  } = useSearchLogic({
-    setSelectedCategory,
-    baseRoute: "/apps/kupi-prodai",
-    searchParam: "text",
-    setKeyword,
-    setPage,
-  });
+  const { inputValue, setInputValue, preSearchedProducts, handleSearch } =
+    useSearchLogic({
+      setSelectedCategory,
+      baseRoute: "/apps/kupi-prodai",
+      searchParam: "text",
+      setKeyword,
+      setPage,
+    });
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -164,18 +161,17 @@ export default function KupiProdaiPage() {
         >
           {/* Categories section - separate row */}
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-              <div className="relative flex-1">
-                <SearchInput
-                  inputValue={inputValue}
-                  setInputValue={setInputValue}
-                  preSearchedProducts={preSearchedProducts}
-                  handleSearch={handleSearch}
-                  setKeyword={setKeyword}
-                  setSelectedCondition={setSelectedCondition}
-                />
-              </div>
+            <div className="relative flex-1">
+              <SearchInput
+                inputValue={inputValue}
+                setInputValue={setInputValue}
+                preSearchedProducts={preSearchedProducts}
+                handleSearch={handleSearch}
+                setKeyword={setKeyword}
+                setSelectedCondition={setSelectedCondition}
+              />
             </div>
+
             <ConditionGroup
               conditions={conditions}
               selectedCondition={selectedCondition}
@@ -197,7 +193,11 @@ export default function KupiProdaiPage() {
             ) : error ? (
               <ProductErrorState error={error} />
             ) : (productItems?.products.length ?? 0) > 0 ? (
-              <ProductGrid products={productItems} page={page} setPage={setPage}/>
+              <ProductGrid
+                products={productItems}
+                page={page}
+                setPage={setPage}
+              />
             ) : (
               <ProductEmptyState />
             )}

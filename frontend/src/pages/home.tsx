@@ -46,6 +46,7 @@ const homeCarouselItems = [
 
 export default function HomePage() {
   const { user, isLoading, isSuccess } = useUser();
+  console.log(user)
   return (
     <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4">
       {/* Header with login button */}
@@ -65,15 +66,15 @@ export default function HomePage() {
               <span>Loading...</span>
             ) : isSuccess && user?.user.given_name ? (
               <div className="flex items-center gap-3 flex-wrap justify-center">
-                <img 
-                  src={user.user.picture} 
-                  alt="" 
+                <img
+                  src={user.user.picture}
+                  alt=""
                   className="rounded-full w-[clamp(32px,6vw,48px)] h-[clamp(32px,6vw,48px)]"
                 />
                 <span className="text-[clamp(24px,5vw,42px)] font-bold">
                   Welcome back, {user.user.given_name}!
                 </span>
-                {user.tg_linked ? (
+                {user.tg_id ? (
                   <TelegramStatus isConnected={true} />
                 ) : (
                   <BindTelegramButton />

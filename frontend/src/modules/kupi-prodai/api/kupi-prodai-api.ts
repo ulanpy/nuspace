@@ -126,7 +126,7 @@ export const kupiProdaiApi = {
       ],
       queryFn: ({ queryKey }) => {
         const [, , params] = queryKey as [string, string, QueryParams];
-        let endpoint = `/products?size=${params.size}&page=${params.page}`;
+        let endpoint = `/products?size=${params.size}&page=${params.page}&status=active`;
         if (params.category) endpoint += `&category=${params.category}`;
         if (params.condition) endpoint += `&condition=${params.condition}`;
         if (params.keyword) endpoint += `&keyword=${params.keyword}`;
@@ -141,7 +141,7 @@ export const kupiProdaiApi = {
     return queryOptions({
       queryKey: [kupiProdaiApi.baseKey, "userProducts"],
       queryFn: () => {
-        return apiCall<PaginatedResponse<Product>>(`/products?size=${defaultSize}&page=${defaultPage}&owner_id=me`);
+        return apiCall<PaginatedResponse<Product>>(`/products?size=${defaultSize}&page=${defaultPage}&owner_sub=me`);
       },
     });
   },
@@ -167,7 +167,7 @@ export const kupiProdaiApi = {
 
   // Update a product - Fixed to use the correct endpoint and method
   updateProduct: async (product: UpdateProductRequest): Promise<any> => {
-    return apiCall<any>("/products", {
+    return apiCall<any>(`/products/${product.product_id}`, {
       method: "PATCH",
       json: product,
     });
@@ -188,27 +188,6 @@ export const kupiProdaiApi = {
         return apiCall<Types.PreSearchedProduct[]>(`/search/?keyword=${keyword}&storage_name=products&page=1&size=10`, {
           signal,
         });
-      },
-    });
-  },
-  getSearchedProductsQueryOptions: ({
-    page = defaultPage,
-    size = defaultSize,
-    keyword,
-  }: {
-    page: number;
-    size: number;
-    keyword: string;
-  }) => {
-    return queryOptions({
-      queryKey: ["search-products", { page, size, keyword }],
-      queryFn: ({ queryKey }) => {
-        const [, params] = queryKey as [
-          string,
-          { page: number; size: number; keyword: string }
-        ];
-        let endpoint = `/products?size=${params.size}&page=${params.page}&keyword=${params.keyword}`;
-        return apiCall<PaginatedResponse<Product>>(endpoint);
       },
     });
   },
@@ -252,7 +231,7 @@ export const kupiProdaiApi = {
   },
 
   // Check Telegram binding status
-  checkTelegramStatus: async (): Promise<{ tg_linked: boolean }> => {
-    return apiCall<{ tg_linked: boolean }>("/me/tg-status");
+  checkTelegramStatus: async (): Promise<{ tg_id: boolean }> => {
+    return apiCall<{ tg_id: boolean }>("/me/tg-status");
   },
 };
