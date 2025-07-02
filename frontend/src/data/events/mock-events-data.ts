@@ -1,3 +1,126 @@
+interface allEvents {
+    id: string;
+    title: string;
+    clubName: string;
+    clubId: string;
+    date: string;
+    time: string;
+    location: string;
+    category: string;
+    attendees: number;
+    imageUrl: string;
+}
+export const allEvents: allEvents[] = [
+  {
+    id: "1",
+    title: "Tech Summit 2025",
+    clubName: "NU Tech Club",
+    clubId: "1",
+    date: "April 30, 2025",
+    time: "2:00 PM",
+    location: "Main Auditorium",
+    category: "Technology",
+    attendees: 120,
+    imageUrl: "/placeholder.svg",
+  },
+  {
+    id: "2",
+    title: "Poetry Night",
+    clubName: "Literature Club",
+    clubId: "2",
+    date: "May 5, 2025",
+    time: "7:00 PM",
+    location: "Student Center",
+    category: "Arts",
+    attendees: 45,
+    imageUrl: "/placeholder.svg",
+  },
+  {
+    id: "3",
+    title: "Basketball Tournament",
+    clubName: "Sports Association",
+    clubId: "3",
+    date: "May 8, 2025",
+    time: "10:00 AM",
+    location: "Sports Complex",
+    category: "Sports",
+    attendees: 200,
+    imageUrl: "/placeholder.svg",
+  },
+  {
+    id: "4",
+    title: "Entrepreneurship Workshop",
+    clubName: "Business Club",
+    clubId: "4",
+    date: "May 12, 2025",
+    time: "3:00 PM",
+    location: "Room 305, Business School",
+    category: "Workshop",
+    attendees: 50,
+    imageUrl: "/placeholder.svg",
+  },
+  {
+    id: "5",
+    title: "Charity Run",
+    clubName: "Volunteer Club",
+    clubId: "5",
+    date: "May 15, 2025",
+    time: "8:00 AM",
+    location: "University Park",
+    category: "Charity",
+    attendees: 150,
+    imageUrl: "/placeholder.svg",
+  },
+  {
+    id: "6",
+    title: "Cultural Festival",
+    clubName: "International Students Association",
+    clubId: "6",
+    date: "May 20, 2025",
+    time: "12:00 PM",
+    location: "Main Square",
+    category: "Culture",
+    attendees: 300,
+    imageUrl: "/placeholder.svg",
+  },
+  {
+    id: "7",
+    title: "Research Symposium",
+    clubName: "Science Society",
+    clubId: "7",
+    date: "May 22, 2025",
+    time: "9:00 AM",
+    location: "Science Building",
+    category: "Academic",
+    attendees: 80,
+    imageUrl: "/placeholder.svg",
+  },
+  {
+    id: "8",
+    title: "Music Concert",
+    clubName: "Music Club",
+    clubId: "8",
+    date: "May 25, 2025",
+    time: "6:00 PM",
+    location: "Concert Hall",
+    category: "Concert",
+    attendees: 250,
+    imageUrl: "/placeholder.svg",
+  },
+  {
+    id: "9",
+    title: "Hackathon",
+    clubName: "NU Tech Club",
+    clubId: "1",
+    date: "May 28, 2025",
+    time: "9:00 AM",
+    location: "Computer Lab",
+    category: "Technology",
+    attendees: 100,
+    imageUrl: "/placeholder.svg",
+  },
+];
+
 // Helper function to get random rating
 const getRandomRating = () => {
     return (Math.floor(Math.random() * 30) + 65) / 10

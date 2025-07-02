@@ -1,38 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Search,
-  Users,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  Heart,
-} from "lucide-react";
+import { Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
-import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/hooks/use-user";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { ConditionGroup } from "@/components/molecules/condition-group";
 import { clubTypes } from "@/data/clubs/club-types";
 import { SearchInput } from "@/components/molecules/search-input";
 import { CommunityCard } from "@/components/molecules/cards/community-card";
 import { useCommunities } from "@/modules/nu-events/clubs/api/hooks/use-communities";
-
-
 // Helper function to get club type display text
 const getClubTypeDisplay = (type: string) => {
   return type.charAt(0).toUpperCase() + type.slice(1);
 };
 
 export default function ClubsPage() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { user } = useUser();
-
-  const {communities, isLoading} = useCommunities()
+  const { communities, isLoading } = useCommunities();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -44,7 +28,6 @@ export default function ClubsPage() {
     action: () => void;
   } | null>(null);
 
-
   // Loading skeleton
   const ClubSkeleton = () => (
     <Card className="overflow-hidden h-full">
@@ -55,21 +38,8 @@ export default function ClubsPage() {
       </div>
     </Card>
   );
-
   return (
-    <div className="space-y-6 pb-20">
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          className="flex items-center gap-1"
-          onClick={() => navigate("/apps/nu-events")}
-        >
-          <ChevronLeft className="h-4 w-4" />
-          <span>Back</span>
-        </Button>
-        <h1 className="text-2xl font-bold">Clubs</h1>
-      </div>
-
+    <>
       {/* Search and filter */}
       <div className="flex gap-2">
         <div className="relative flex-1">
@@ -89,8 +59,6 @@ export default function ClubsPage() {
         selectedCondition={selectedClubType}
         setSelectedCondition={setSelectedClubType}
       />
-
-
 
       {/* Clubs Grid */}
       {isLoading ? (
@@ -152,6 +120,6 @@ export default function ClubsPage() {
         title="Login Required"
         message="You need to be logged in to follow clubs."
       />
-    </div>
+    </>
   );
 }

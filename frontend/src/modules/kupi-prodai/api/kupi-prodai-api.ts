@@ -149,7 +149,7 @@ export const kupiProdaiApi = {
   getProductQueryOptions: (id: string) => {
     return queryOptions({
       queryKey: ["product", id],
-      queryFn: () => apiCall<Product>(`/products/${id}`),
+      queryFn: () => apiCall<Types.Product>(`/products/${id}`),
     });
   },
 
