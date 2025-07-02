@@ -170,7 +170,6 @@ networks:
   nuros:
     name: nuspace_nuros
     driver: bridge
-    external: true
 
 volumes:
   postgres-data:
