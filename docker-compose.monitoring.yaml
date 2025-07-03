@@ -1,0 +1,103 @@
+services:
+  loki:
+    container_name: loki
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/loki/service-account-key.json
+    volumes:
+      - ./nuspace_bucket.json:/loki/service-account-key.json:ro
+      - ./monitoring/loki.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml -log.level="warn" -config.expand-env=true
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0' # 1 CPU core
+          memory: 1G # 2 GB RAM
+        # reservations:
+        #   cpus: '0.5' # Reserve 0.5 CPU core
+        #   memory: 1G # Reserve 1 GB RAM
+    networks:
+      - nuspace_nuros
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-remote-write-receiver"
+      - "--storage.tsdb.retention.time=30d"
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    networks:
+      - nuspace_nuros
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - DS_PROMETHEUS=prometheus
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+      - GF_LOG_LEVEL=warn
+    volumes:
+      - "grafana-data:/var/lib/grafana"
+      - "./monitoring/grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
+      - "./monitoring/grafana/dashboards/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
+      - "./monitoring/grafana/provisioning/dashboards/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
+      - "./monitoring/grafana/provisioning/alerting/contact-points.yaml:/etc/grafana/provisioning/alerting/contact-points.yaml"
+      - "./monitoring/grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"
+      - "./monitoring/grafana/provisioning/alerting/alerts.yaml:/etc/grafana/provisioning/alerting/alerts.yaml"
+    # privileged: true
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0' # 1 CPU core
+          memory: 1G # 2 GB RAM
+        # reservations:
+        #   cpus: '0.5' # Reserve 0.5 CPU core
+        #   memory: 1G # Reserve 1 GB RAM
+    networks:
+      - nuspace_nuros
+    depends_on:
+      - alloy
+
+  alloy:
+    container_name: alloy
+    image: grafana/alloy:latest
+    ports:
+      - 12345:12345
+      - 4317:4317
+      - 4318:4318
+    volumes:
+      - ./monitoring/config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    restart: unless-stopped
+    networks:
+      - nuspace_nuros
+    depends_on:
+      - prometheus
+      - loki
+
+# Important to persis the monitoring data
+volumes:
+  grafana-data:
+  prometheus_data:
+  loki_data:
+
+networks:
+  nuspace_nuros:
+    external: true

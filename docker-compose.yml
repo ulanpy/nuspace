@@ -1,13 +1,32 @@
 services:
 
   postgres:
+    container_name: postgres
+    command:
+      - "postgres"
+      - "-c"
+      - "log_destination=stderr" # Log to stderr so Docker can get it
+      - "-c"
+      - "logging_collector=on"
+      - "-c"
+      - "log_line_prefix=" # Clear the default prefix
+      - "-c"
+      - "log_statement=all"
+      - "-c"
+      - "log_min_messages=info"
+      - "-c"
+      - "log_min_error_statement=info"
+      - "-c"
+      - "log_timezone=UTC"
+      # THIS IS THE MAGIC PART
+      - "-c"
+      - "log_destination=jsonlog"
     image: postgres
     env_file:
       - .env
     networks:
       - nuros
     restart: always
-    container_name: postgres
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -121,10 +140,12 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      # RABBITMQ_LOGS: -
     ports:
       - "15672:15672"  # Management UI
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
+      - ./backend/core/configs/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     healthcheck:
       test: ["CMD", "rabbitmq", "status"]
       interval: 30s
