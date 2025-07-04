@@ -1,8 +1,6 @@
-# This is a complete configuration to deploy Loki locally.
+# This is a complete configuration to deploy Loki backed by GCS.
 # It uses the modern TSDB store and configures retention via the compactor.
 # Includes relevant limits_config for structured metadata and volume features.
-# This configuration is suitable for local development or testing environments.
-# It is not recommended for production use due to the use of local filesystem storage.
 
 auth_enabled: false
 
@@ -31,18 +29,22 @@ schema_config:
   configs:
     - from: 2020-05-15
       store: tsdb
-      object_store: filesystem
+      object_store: gcs
       schema: v13
       index:
         prefix: index_
         period: 24h
 
 storage_config:
-  # Filesystem configuration for chunks and index
-  filesystem: # Added filesystem configuration
-    directory: /loki/chunks # Directory for storing chunks
+  # GCS configuration for chunks and index
+  gcs:
+    bucket_name: nuspace-logs
+    # You MUST ensure your GOOGLE_APPLICATION_CREDENTIALS volume mount
+    # in docker-compose.yml correctly points to a service account key
+    # with sufficient permissions for this bucket (Storage Object Admin or similar).
 
   # TSDB shipper configuration for the index.
+  # These are *local* directories used by the shipper before uploading to GCS.
   tsdb_shipper:
     active_index_directory: /loki/active_index_data # Local temporary for active writes
     cache_location: /loki/index_cache # Local directory for index cache
@@ -51,10 +53,12 @@ ingester:
   chunk_target_size: 1536 # Value in KB.
 
 compactor:
+  # The working_directory is for local temporary files *before* compaction results are uploaded to GCS.
   working_directory: /loki/compactor_work # Must be writable by Loki user in container
   compaction_interval: 10m
   retention_enabled: true
-  delete_request_store: filesystem
+  # When using GCS object store, delete requests should also use GCS.
+  delete_request_store: gcs # Changed from 'filesystem' to 'gcs'
   retention_delete_delay: 2h
   retention_delete_worker_count: 50
 

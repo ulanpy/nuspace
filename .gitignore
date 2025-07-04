@@ -34,6 +34,7 @@ configs/**/__pycache__/
 
 # OS-specific files
 .DS_Store
+**/.DS_Store
 Thumbs.db
 
 
