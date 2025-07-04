@@ -316,13 +316,11 @@ export default function ProductDetailPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                <User className="h-5 w-5" />
+                <img src={product.seller.picture} alt="" className="w-8 h-8 rounded-full" />
               </div>
               <div>
                 <div className="flex items-center">
-                  <p className="font-medium">{`${product.user_name} ${
-                    product.user_surname?.[0] ?? ""
-                  }.`}</p>
+                  <p className="font-medium">{`${product.seller.name} ${product.seller.surname}.`}</p>
                 </div>
               </div>
             </div>

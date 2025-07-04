@@ -19,19 +19,32 @@ declare global {
       | "transport"
       | "others";
     type Status = "inactive" | "active";
+    interface Seller {
+      sub: string;
+      name: string;
+      surname: string;
+      picture: string;
+    }
+    interface Permission {
+      can_edit: boolean;
+      can_delete: boolean;
+      editable_fields: string[];
+    }
     interface Product {
       id: number;
       name: string;
       description: string;
+      user_sub: string;
       price: number;
       category: ProductCategory;
       condition: "new" | "like_new" | "used";
       status: Status;
       media: ProductMedia[];
-      user_name?: string;
-      user_surname?: string;
       created_at?: string;
       updated_at?: string;
+      seller: Seller;
+      user_telegram_id: 0;
+      permissions: Permission;
     }
 
     type NewProductRequest = {
@@ -152,17 +165,34 @@ declare global {
       | "social"
       | "art"
       | "technology";
+    interface HeadUser {
+      sub: string;
+      name: string;
+      surname: string;
+      picture: string;
+    }
+
+    interface Permissions {
+      can_edit: boolean;
+      can_delete: boolean;
+      editable_fields: string[];
+    }
     interface Club {
       id: number;
       name: string;
       type: ClubType;
+      category: string;
+      recruitment_status: string;
       description: string;
-      president: string;
+      head: string;
+      established: string;
       telegram_url: string;
       instagram_url: string;
       created_at: string;
       updated_at: string;
+      head_user: HeadUser;
       media: Media[];
+      permissions: Permissions;
       members: number;
       followers: number;
       isFollowing: boolean;

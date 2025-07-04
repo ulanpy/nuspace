@@ -37,7 +37,8 @@ export const ROUTES = {
 };
 
 export const LazyRoutes = {
-  APPS: [
+  APPS: {
+    BASIC: [
     {
       path: "kupi-prodai",
       Component: withSuspense(lazy(() => import("@/pages/apps/kupi-prodai"))),
@@ -49,12 +50,22 @@ export const LazyRoutes = {
       ),
     },
     {
+      path: "about",
+      Component: withSuspense(lazy(() => import("@/pages/apps/about"))),
+    },
+    {
+      path: "dorm-eats",
+      Component: withSuspense(lazy(() => import("@/pages/apps/dorm-eats"))),
+    },
+  ],
+  EVENTS: [
+     {
       path: "nu-events",
       Component: withSuspense(lazy(() => import("@/pages/apps/nu-events"))),
     },
     {
       path: "nu-events/events",
-      Component: withSuspense(lazy(() => import("@/pages/apps/nu-events/event/[id]"))),
+      Component: withSuspense(lazy(() => import("@/pages/apps/nu-events/events"))),
     },
     {
       path: "nu-events/event/:id",
@@ -74,19 +85,8 @@ export const LazyRoutes = {
         lazy(() => import("@/pages/apps/nu-events/clubs"))
       ),
     },
-    {
-      path: "about",
-      Component: withSuspense(lazy(() => import("@/pages/apps/about"))),
-    },
-    {
-      path: "nu-events",
-      Component: withSuspense(lazy(() => import("@/pages/apps/nu-events"))),
-    },
-    {
-      path: "dorm-eats",
-      Component: withSuspense(lazy(() => import("@/pages/apps/dorm-eats"))),
-    },
-  ],
+  ]
+  },
   ADMINS: [
     {
       path: "products",

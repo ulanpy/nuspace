@@ -194,6 +194,62 @@ async def get_communities(
     return schemas.ListCommunity(communities=community_responses, total_pages=total_pages)
 
 
+@router.get("/communities/{community_id}", response_model=schemas.CommunityResponse)
+async def get_community(
+    request: Request,
+    community_id: int,
+    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(deps.community_exists_or_404),
+) -> schemas.CommunityResponse:
+    """
+    Retrieves a specific community by ID.
+
+    **Access Policy:**
+    - All authenticated users can access this endpoint
+
+    **Parameters:**
+    - `community_id`: The unique identifier of the community to retrieve
+
+    **Returns:**
+    - A detailed community object if found, including its name, description,
+    head user details, and media URLs
+
+    **Errors:**
+    - Returns 404 if community is not found
+    - Returns 500 on internal error
+    """
+    # Create policy and check permissions
+    await CommunityPolicy(user=user).check_permission(
+        action=ResourceAction.READ, community=community
+    )
+
+    # Get associated media
+    qb = QueryBuilder(session=db_session, model=Community)
+    media_objs: List[Media] = (
+        await qb.blank(model=Media)
+        .base()
+        .filter(
+            Media.entity_id == community.id,
+            Media.entity_type == EntityType.communities,
+            Media.media_format == MediaFormat.profile,
+        )
+        .all()
+    )
+
+    media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
+        request=request, media_objects=media_objs, resources=[community]
+    )
+
+    return response_builder.build_schema(
+        schemas.CommunityResponse,
+        schemas.CommunityResponse.model_validate(community),
+        head_user=ShortUserResponse.model_validate(community.head_user),
+        media=media_results[0],
+        permissions=get_community_permissions(community, user),
+    )
+
+
 @router.patch("/communities/{community_id}", response_model=schemas.CommunityResponse)
 async def update_community(
     request: Request,

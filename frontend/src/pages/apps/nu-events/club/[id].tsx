@@ -10,6 +10,7 @@ import {
   MessageCircle,
   Heart,
   ExternalLink,
+  Edit,
 } from "lucide-react";
 import { Button } from "../../../../components/atoms/button";
 import { Badge } from "../../../../components/atoms/badge";
@@ -25,6 +26,7 @@ import { useUser } from "../../../../hooks/use-user";
 import { mockApi } from "../../../../data/events/mock-events-data";
 import { NavTabs } from "../../../../components/molecules/nav-tabs";
 import { LoginModal } from "../../../../components/molecules/login-modal";
+import { useCommunity } from "@/modules/nu-events/clubs/api/hooks/use-cummunity";
 
 interface Club {
   id: number;
@@ -86,50 +88,13 @@ export default function ClubDetailPage() {
     },
   ];
 
-  const [club, setClub] = useState<Club | null>(null);
+  const { club, isLoading } = useCommunity();
   const [clubEvents, setClubEvents] = useState<Event[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("about");
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
-
-  // Fetch club details
-  useEffect(() => {
-    const fetchClubDetails = async () => {
-      setIsLoading(true);
-      try {
-        if (!id) return;
-
-        // Using mock API instead of real API call
-        const clubData = mockApi.getClub(Number.parseInt(id));
-        setClub(clubData);
-
-        if (clubData) {
-          setIsFollowing(clubData.isFollowing);
-          setFollowerCount(clubData.followers);
-        }
-
-        // Fetch club events
-        const eventsData = mockApi.getClub(Number.parseInt(id));
-        if (eventsData) {
-          setClubEvents(eventsData);
-        }
-      } catch (error) {
-        console.error("Error fetching club details:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load club details. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchClubDetails();
-  }, [id, toast]);
 
   // Handle follow/unfollow
   const handleFollowToggle = () => {
@@ -201,23 +166,12 @@ export default function ClubDetailPage() {
         <p className="text-muted-foreground mt-2">
           The club you're looking for doesn't exist or has been removed.
         </p>
-        <Button
-          className="mt-4"
-          onClick={() => navigate("/apps/nu-events/clubs")}
-        >
-          Back to Clubs
-        </Button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 pb-20">
-      {/* Navigation Tabs */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-3 sm:-mx-4">
-        <NavTabs tabs={navTabs} />
-      </div>
-
+    <>
       {/* Club Header */}
       <div className="relative">
         {/* Banner */}
@@ -230,17 +184,6 @@ export default function ClubDetailPage() {
             />
           )}
         </div>
-
-        {/* Back button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute top-2 left-2 bg-background/50 backdrop-blur-sm hover:bg-background/70"
-          onClick={() => navigate("/apps/nu-events/clubs")}
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back
-        </Button>
 
         {/* Profile picture */}
         <div className="absolute -bottom-10 left-4">
@@ -272,7 +215,7 @@ export default function ClubDetailPage() {
           <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
             <div className="flex items-center">
               <Users className="h-3 w-3 mr-1" />
-              {club.members} members
+              {0} members
             </div>
             <div className="flex items-center">
               <Heart className="h-3 w-3 mr-1" />
@@ -281,6 +224,9 @@ export default function ClubDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="icon" className="h-8">
+            <Edit className="h-4 w-4" />
+          </Button>
           <Button
             variant={isFollowing ? "outline" : "default"}
             size="sm"
@@ -315,8 +261,8 @@ export default function ClubDetailPage() {
 
         <TabsContent value="about" className="pt-4 space-y-4">
           <div>
-            <h2 className="text-lg font-semibold mb-2">About Us</h2>
-            <p className="text-sm text-muted-foreground">{club.description}</p>
+            <h2 className="text-xl font-semibold mb-2">About Us</h2>
+            <p className="text-md text-muted-foreground">{club.description}</p>
           </div>
 
           <div>
@@ -324,7 +270,9 @@ export default function ClubDetailPage() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
                 <Users className="h-4 w-4 text-muted-foreground" />
-                <span>President: {club.president}</span>
+                <span>
+                  President: {club.head_user.name} {club.head_user.surname}
+                </span>
               </div>
               {club.instagram_url && (
                 <a
@@ -437,6 +385,6 @@ export default function ClubDetailPage() {
             : "You need to be logged in to join clubs."
         }
       />
-    </div>
+    </>
   );
 }
