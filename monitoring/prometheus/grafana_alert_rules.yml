@@ -1,0 +1,11 @@
+groups:
+  - name: GrafanaDown
+    rules:
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Grafana is down"
+          description: "No Grafana instance has been reachable for more than 1 minute."

@@ -8,7 +8,7 @@ services:
       - GOOGLE_APPLICATION_CREDENTIALS=/loki/service-account-key.json
     volumes:
       - ./nuspace_bucket.json:/loki/service-account-key.json:ro
-      - ./loki.prod.yaml:/etc/loki/local-config.yaml:ro
+      - ./loki/loki.prod.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml -log.level="warn" -config.expand-env=true
     restart: unless-stopped
@@ -27,7 +27,8 @@ services:
     container_name: prometheus
     image: prom/prometheus:latest
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/grafana_alert_rules.yml:/etc/prometheus/grafana_alert_rules.yml:ro
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -91,6 +92,17 @@ services:
     depends_on:
       - prometheus
       - loki
+
+  alertmanager:
+    container_name: alertmanager
+    image: prom/alertmanager:latest
+    volumes:
+      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports:
+      - "9093:9093"
+    restart: unless-stopped
+    networks:
+      - nuspace_nuros
 
 # Important to persis the monitoring data
 volumes:

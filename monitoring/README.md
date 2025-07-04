@@ -5,13 +5,17 @@
 1. Add Grafana credentials to `.env`:
 
 ```
+# Grafana credentials
 GF_SECURITY_ADMIN_USER=your_login
 GF_SECURITY_ADMIN_PASSWORD=your_secure_password
 ```
 
-Also note that `TG_API_KEY` field in the `.env` is required for Grafana alerting. Grafana won't start if value is not provided.
+2. Note that `TG_API_KEY` field in the `.env` is required for Grafana alerting. Grafana won't start if value is not provided. Next, get the chat ID and update the `chatid: "123456789"` field in `/monitoring/grafana/provisioning/alerting/contact-pints.yaml`. [Here](https://stackoverflow.com/a/61215414/23123006) is how to get the chat ID.
 
-2. Start the monitoring services `docker compose -f ./monitoring/docker-compose.monitoring.yaml up -d` (run inside root folder).
+3. Start the monitoring services (run inside root folder):
+   ```sh
+   docker compose -f ./monitoring/docker-compose.monitoring.yaml up -d
+   ```
 
 ## Service Addresses
 
@@ -20,7 +24,7 @@ Also note that `TG_API_KEY` field in the `.env` is required for Grafana alerting
 | Grafana                                                         | `localhost:3000`        |
 | Prometheus                                                      | `localhost:9090`        |
 | Alloy                                                           | `localhost:12345 `      |
-| Loki </br>(No UI, if running `404 page not found` is displayed) | `localhost:3100 `       |
+| Loki <br/>(No UI, if running `404 page not found` is displayed) | `localhost:3100 `       |
 | FastAPI Metrics endpoint                                        | `localhost/api/metrics` |
 
 
@@ -37,13 +41,22 @@ Also note that `TG_API_KEY` field in the `.env` is required for Grafana alerting
 ## Using Google Bucket for logs storage
 
 1. Add `nuspace_bucket.json` under `/monitoring` directory. It is a service account credentials that has bucket access. Obtain it from [Google Cloud Console](https://console.cloud.google.com).
-2. Add Grafana credentials to `.env`:
+2. (THIS WILL PROBABLY CHANGE FOR PROD) Add Grafana credentials to `.env`:
 
 ```
+# Grafana credentials
 GF_SECURITY_ADMIN_USER=your_login
 GF_SECURITY_ADMIN_PASSWORD=your_secure_password
 ```
 
-Also note that `TG_API_KEY` field in the `.env` is required for Grafana alerting. Grafana won't start if value is not provided.
+3. Note that `TG_API_KEY` field in the `.env` is required for Grafana alerting. Grafana won't start if value is not provided. Next, get the chat ID and update the `chatid: "123456789"` field in `/monitoring/grafana/provisioning/alerting/contact-pints.yaml`. [Here](https://stackoverflow.com/a/61215414/23123006) is how to get the chat ID.
 
-3. Start the monitoring services `docker compose -f ./monitoring/docker-compose.monitoring.prod.yaml up -d` (run inside root folder).
+4. Start the monitoring services (run inside root folder):
+   
+   ```sh
+   docker compose -f ./monitoring/docker-compose.monitoring.prod.yaml up -d
+   ```
+
+## Explanation
+
+For explanation look [here](https://github.com/sagyzdop/simple_monitoring) and a future post at [blog.sagyzdop.com](https://blog.sagyzdop.com).
