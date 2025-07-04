@@ -51,7 +51,9 @@ class CommunityPolicy:
             return True
 
         elif action == ResourceAction.READ:
-            # All authenticated users can read
+            # All authenticated users can read communities
+            # If a specific community is provided, we could add additional checks here
+            # For now, all authenticated users can read any community
             return True
 
         elif action == ResourceAction.UPDATE:
