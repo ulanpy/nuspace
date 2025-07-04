@@ -12,7 +12,9 @@ GF_SECURITY_ADMIN_PASSWORD=your_secure_password
 
 2. Note that `TG_API_KEY` field in the `.env` is required for Grafana alerting. Grafana won't start if value is not provided. Next, get the chat ID and update the `chatid: "123456789"` field in `/monitoring/grafana/provisioning/alerting/contact-pints.yaml`. [Here](https://stackoverflow.com/a/61215414/23123006) is how to get the chat ID.
 
-3. Start the monitoring services (run inside root folder):
+3. Update the same Telegram credentials in relevant fields in `monitoring/prometheus/alertmanager.yml`.
+
+4. Start the monitoring services (run inside root folder):
    ```sh
    docker compose -f ./monitoring/docker-compose.monitoring.yaml up -d
    ```
@@ -51,11 +53,17 @@ GF_SECURITY_ADMIN_PASSWORD=your_secure_password
 
 3. Note that `TG_API_KEY` field in the `.env` is required for Grafana alerting. Grafana won't start if value is not provided. Next, get the chat ID and update the `chatid: "123456789"` field in `/monitoring/grafana/provisioning/alerting/contact-pints.yaml`. [Here](https://stackoverflow.com/a/61215414/23123006) is how to get the chat ID.
 
-4. Start the monitoring services (run inside root folder):
+4. Update the same Telegram credentials in relevant fields in `monitoring/prometheus/alertmanager.yml`.
+
+5. Start the monitoring services (run inside root folder):
    
    ```sh
    docker compose -f ./monitoring/docker-compose.monitoring.prod.yaml up -d
    ```
+
+## Next Steps
+
+Next is configuring the endpoints to be accessible over the internet, and securing it with stronger authentication methods, like [Google OAuth](https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/google/). 
 
 ## Explanation
 
