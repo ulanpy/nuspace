@@ -6,12 +6,12 @@ import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { ConditionGroup } from "@/components/molecules/condition-group";
-import { clubTypes } from "@/data/clubs/club-types";
+import { clubCategories } from "@/data/clubs/club-categories";
 import { SearchInput } from "@/components/molecules/search-input";
 import { CommunityCard } from "@/components/molecules/cards/community-card";
 import { useCommunities } from "@/modules/nu-events/clubs/api/hooks/use-communities";
 // Helper function to get club type display text
-const getClubTypeDisplay = (type: string) => {
+const getClubCategoryDisplay = (type: string) => {
   return type.charAt(0).toUpperCase() + type.slice(1);
 };
 
@@ -20,7 +20,7 @@ export default function ClubsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [selectedClubType, setSelectedClubType] = useState<string>("");
+  const [selectedClubCategory, setSelectedClubCategory] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<{
@@ -49,15 +49,15 @@ export default function ClubsPage() {
             setInputValue={setSearchQuery}
             preSearchedProducts={[]}
             handleSearch={() => {}}
-            setSelectedCondition={setSelectedClubType}
+            setSelectedCondition={setSelectedClubCategory}
           />
         </div>
       </div>
 
       <ConditionGroup
-        conditions={clubTypes}
-        selectedCondition={selectedClubType}
-        setSelectedCondition={setSelectedClubType}
+        conditions={clubCategories}
+        selectedCondition={selectedClubCategory}
+        setSelectedCondition={setSelectedClubCategory}
       />
 
       {/* Clubs Grid */}
@@ -80,8 +80,8 @@ export default function ClubsPage() {
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
             {searchQuery
               ? "No clubs match your search criteria. Try a different search term."
-              : selectedClubType
-              ? `No ${selectedClubType} clubs found. Try a different filter.`
+              : selectedClubCategory
+              ? `No ${selectedClubCategory} clubs found. Try a different filter.`
               : "There are no clubs available at the moment."}
           </p>
         </div>

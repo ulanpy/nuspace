@@ -15,5 +15,11 @@ export const nuEventsAPI = {
         return apiCall<NuEvents.Club>(`/communities/${id}`)
       }
     })
-  }
+  }, 
+  editCommunity: (id: string, data: NuEvents.Club) => {
+    return apiCall<NuEvents.Club>(`/communities/${id}`, {
+      method: 'PUT',
+      json: data
+    })
+  },
 }
