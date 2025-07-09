@@ -39,9 +39,6 @@ storage_config:
   # GCS configuration for chunks and index
   gcs:
     bucket_name: nuspace-logs
-    # You MUST ensure your GOOGLE_APPLICATION_CREDENTIALS volume mount
-    # in docker-compose.yml correctly points to a service account key
-    # with sufficient permissions for this bucket (Storage Object Admin or similar).
 
   # TSDB shipper configuration for the index.
   # These are *local* directories used by the shipper before uploading to GCS.

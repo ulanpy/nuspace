@@ -133,7 +133,7 @@ services:
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/loki/service-account-key.json
     volumes:
-      - ./nuspace_bucket.json:/loki/service-account-key.json:ro
+      - ./monitoring/nuspace_bucket.json:/loki/service-account-key.json:ro
       - ./monitoring/loki/loki.prod.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml -log.level="warn" -config.expand-env=true
