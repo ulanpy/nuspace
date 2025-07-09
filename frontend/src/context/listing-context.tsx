@@ -18,10 +18,6 @@ type ListingContextType = {
   setEditingListing: React.Dispatch<React.SetStateAction<Types.Product | null>>;
   showEditModal: boolean;
   setShowEditModal: React.Dispatch<React.SetStateAction<boolean>>;
-  searchQuery: string;
-  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
-  currentPage: number;
-  setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
   itemsPerPage: number;
   activeTab: Types.ActiveTab;
   setActiveTab: React.Dispatch<React.SetStateAction<Types.ActiveTab>>;
@@ -66,11 +62,7 @@ export const ListingProvider = ({
         setEditingListing,
         showEditModal,
         setShowEditModal,
-        searchQuery,
-        setSearchQuery,
-        currentPage,
-        setCurrentPage,
-        itemsPerPage, 
+        itemsPerPage,
         activeTab,
         setActiveTab,
       }}

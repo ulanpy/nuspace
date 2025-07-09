@@ -19,19 +19,32 @@ declare global {
       | "transport"
       | "others";
     type Status = "inactive" | "active";
+    interface Seller {
+      sub: string;
+      name: string;
+      surname: string;
+      picture: string;
+    }
+    interface Permission {
+      can_edit: boolean;
+      can_delete: boolean;
+      editable_fields: string[];
+    }
     interface Product {
       id: number;
       name: string;
       description: string;
+      user_sub: string;
       price: number;
       category: ProductCategory;
       condition: "new" | "like_new" | "used";
       status: Status;
       media: ProductMedia[];
-      user_name?: string;
-      user_surname?: string;
       created_at?: string;
       updated_at?: string;
+      seller: Seller;
+      user_telegram_id: 0;
+      permissions: Permission;
     }
 
     type NewProductRequest = {
@@ -41,7 +54,7 @@ declare global {
       category: ProductCategory;
       condition: ProductCondition;
       status: string;
-    }
+    };
 
     interface ProductMedia {
       id: number;
@@ -80,18 +93,26 @@ declare global {
           };
         };
       };
-      tg_linked: boolean;
+      tg_id: boolean;
     }
-    interface PaginatedResponse<T> {
-      products: T[];
+    type PaginatedResponse<T, TKey extends string> = {
+      [K in TKey]: T[];
+    } & {
       num_of_pages: number;
-    }
+    };
     // SearchInput
+    interface PreSearchedProduct {
+      id: number;
+      name: string;
+      condition: ProductCondition;
+      category: ProductCategory;
+    }
     type SearchInputProps = {
       inputValue: string;
       setInputValue: (value: string) => void;
-      preSearchedProducts: string[] | null;
+      preSearchedProducts: PreSearchedProduct[] | null;
       handleSearch: (inputValue: string) => void;
+      setKeyword: (keyword: string) => void;
       setSelectedCondition?: (condition: string) => void;
     };
     type KeyActions = Record<string, () => void>;
@@ -128,6 +149,69 @@ declare global {
     interface DisplayCategory {
       title: string;
       icon: JSX.Element;
+    }
+  }
+  namespace NuEvents {
+    interface Media {
+      id: number;
+      url: string;
+    }
+    type ClubType =
+      | "academic"
+      | "professional"
+      | "recreational"
+      | "cultural"
+      | "sports"
+      | "social"
+      | "art"
+      | "technology";
+    interface HeadUser {
+      sub: string;
+      name: string;
+      surname: string;
+      picture: string;
+    }
+
+    interface Permissions {
+      can_edit: boolean;
+      can_delete: boolean;
+      editable_fields: string[];
+    }
+    interface Club {
+      id: number;
+      name: string;
+      type: ClubType;
+      category: string;
+      recruitment_status: string;
+      description: string;
+      head: string;
+      established: string;
+      telegram_url: string;
+      instagram_url: string;
+      created_at: string;
+      updated_at: string;
+      head_user: HeadUser;
+      media: Media[];
+      permissions: Permissions;
+      members: number;
+      followers: number;
+      isFollowing: boolean;
+    }
+    type EventPolicy = "all" | "open" | "free_ticket" | "paid_ticket";
+    interface Event {
+      id: number;
+      club_id: number;
+      name: string;
+      place: string;
+      description: string;
+      duration: number;
+      event_datetime: string;
+      policy: EventPolicy;
+      created_at: string;
+      updated_at: string;
+      media: Media[];
+      club?: Club;
+      rating?: number; // Mock rating for UI
     }
   }
 }

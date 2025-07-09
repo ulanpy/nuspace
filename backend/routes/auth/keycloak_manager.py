@@ -1,13 +1,15 @@
+from functools import cached_property
 from pathlib import Path
 
 import httpx
 from authlib.integrations.starlette_client import OAuth
 from cachetools import TTLCache
 from dotenv import load_dotenv
+from jose import jwt
 from jwt import PyJWKClient
 from pydantic_settings import BaseSettings
 
-from backend.core.configs.config import ENV_DIR
+from backend.core.configs.config import ENV_DIR, config
 
 load_dotenv(ENV_DIR)
 
@@ -17,7 +19,6 @@ class KeyCloakManager(BaseSettings):
     REALM: str
     KEYCLOAK_CLIENT_ID: str
     KEYCLOAK_CLIENT_SECRET: str
-    KEYCLOAK_REDIRECT_URI: str
     client_kwargs: dict = {
         "scope": "openid profile email",
     }
@@ -26,7 +27,11 @@ class KeyCloakManager(BaseSettings):
     _jwks_client: PyJWKClient | None = None
     _jwks_cache = TTLCache(maxsize=1, ttl=3600)  # Cache JWKS for 1 hour
 
-    @property
+    @cached_property
+    def KEYCLOAK_REDIRECT_URI(self):
+        return f"{config.HOME_URL}/api/auth/callback"
+
+    @cached_property
     def JWKS_URI(self):
         return f"{self.KEYCLOAK_URL}/realms/{self.REALM}/protocol/openid-connect/certs"
 
@@ -34,17 +39,15 @@ class KeyCloakManager(BaseSettings):
         env_file = Path(".env").resolve()
         extra = "allow"
 
-    @property
+    @cached_property
     def oauth(self):
         if self._oauth is None:
             self.initialize_oauth()
         return self._oauth
 
-    @property
+    @cached_property
     def SERVER_METADATA_URL(self):
-        return (
-            f"{self.KEYCLOAK_URL}/realms/{self.REALM}/.well-known/openid-configuration"
-        )
+        return f"{self.KEYCLOAK_URL}/realms/{self.REALM}/.well-known/openid-configuration"
 
     def initialize_oauth(self):
         """Initialize OAuth with Keycloak configured to use Google as the identity provider"""
@@ -69,47 +72,24 @@ class KeyCloakManager(BaseSettings):
         if not self._jwks_client:
             custom_headers = {
                 # Use a common browser User-Agent or one identifying your app
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/135.0.0.0 Safari/537.36"
+                )
                 # Alternatively: "User-Agent": "NurosBackend/1.0 (Authentication Key Fetch)"
             }
 
             # Pass headers during PyJWKClient initialization
-            # Make sure to include any other options you were already using (like cache_jwk_set, lifespan)
-            self._jwks_client = PyJWKClient(
-                self.JWKS_URI, headers=custom_headers  # <-- Add this
-            )
-
-        return self._jwks_client.get_signing_key_from_jwt(token).key
-
-    def get_pub_key_sync(self, token: str):
-        """Fetch and cache Keycloak's public key for JWT validation synchronously."""
-        if "keys" not in self._jwks_cache:
-            with httpx.Client() as client:
-                response = client.get(self.JWKS_URI)
-                response.raise_for_status()
-                self._jwks_cache["keys"] = response.json()["keys"]
-
-        # Use PyJWKClient to extract the signing key from the cached keys
-        if not self._jwks_client:
-            custom_headers = {
-                # Use a common browser User-Agent or one identifying your app
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
-                # Alternatively: "User-Agent": "NurosBackend/1.0 (Authentication Key Fetch)"
-            }
-
-            # Pass headers during PyJWKClient initialization
-            # Make sure to include any other options you were already using (like cache_jwk_set, lifespan)
-            self._jwks_client = PyJWKClient(
-                self.JWKS_URI, headers=custom_headers  # <-- Add this
-            )
+            # Make sure to include any other options you were already using
+            # (like cache_jwk_set, lifespan)
+            self._jwks_client = PyJWKClient(self.JWKS_URI, headers=custom_headers)  # <-- Add this
 
         return self._jwks_client.get_signing_key_from_jwt(token).key
 
     async def refresh_access_token(self, refresh_token: str) -> dict:
         """Request a new access token using a refresh token."""
-        token_url = (
-            f"{self.KEYCLOAK_URL}/realms/{self.REALM}/protocol/openid-connect/token"
-        )
+        token_url = f"{self.KEYCLOAK_URL}/realms/{self.REALM}/protocol/openid-connect/token"
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -128,9 +108,7 @@ class KeyCloakManager(BaseSettings):
 
     async def revoke_offline_refresh_token(self, refresh_token: str) -> None:
         """Revoke the offline refresh token in Keycloak."""
-        revoke_url = (
-            f"{self.KEYCLOAK_URL}/realms/{self.REALM}/protocol/openid-connect/revoke"
-        )
+        revoke_url = f"{self.KEYCLOAK_URL}/realms/{self.REALM}/protocol/openid-connect/revoke"
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -145,3 +123,13 @@ class KeyCloakManager(BaseSettings):
             )
 
         response.raise_for_status()  # Выкидывает исключение при ошибке
+
+    async def validate_keycloak_token(self, token: str) -> dict:
+        """Validate a keycloak JWT token"""
+        return jwt.decode(
+            token,
+            key=await self.get_pub_key(token),
+            algorithms=["RS256"],
+            audience="account",
+            issuer=f"{self.KEYCLOAK_URL}/realms/{self.REALM}",
+        )

@@ -24,8 +24,8 @@
       community.docker.docker_compose_v2:
         project_src: /opt/nuspace
         files:
-          - docker-compose.prod.yml
-        pull: always
+          - prod.docker-compose.yml
+        pull: always`
         recreate: always
         state: present
       environment:

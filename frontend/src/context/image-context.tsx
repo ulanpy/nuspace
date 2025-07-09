@@ -8,7 +8,6 @@ interface ImageContextType {
   setImageFiles: React.Dispatch<React.SetStateAction<File[]>>;
   setPreviewImages: React.Dispatch<React.SetStateAction<string[]>>;
   setIsUploading: React.Dispatch<React.SetStateAction<boolean>>;
-  removeImage: (index: number) => void;
 }
 
 const ImageContext = createContext<ImageContextType | undefined>(undefined);
@@ -17,14 +16,7 @@ export const ImageProvider = ({ children }: { children: ReactNode }) => {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const removeImage = (index: number) => {
-    const newPreviewImages = [...previewImages];
-    const newImageFiles = [...imageFiles];
-    newPreviewImages.splice(index, 1);
-    newImageFiles.splice(index, 1);
-    setPreviewImages(newPreviewImages);
-    setImageFiles(newImageFiles);
-  };
+
   return (
     <ImageContext.Provider
       value={{
@@ -34,7 +26,6 @@ export const ImageProvider = ({ children }: { children: ReactNode }) => {
         setImageFiles,
         setPreviewImages,
         setIsUploading,
-        removeImage,
       }}
     >
       {children}

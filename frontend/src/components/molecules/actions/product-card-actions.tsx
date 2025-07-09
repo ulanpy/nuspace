@@ -17,7 +17,7 @@ export function ProductCardActions({
   getIsPendingToggleMutation,
 }: ProductCardActionsProps) {
   return (
-    <div className="flex justify-between mt-2">
+    <>
       <Button
         variant="outline"
         size="sm"
@@ -50,6 +50,6 @@ export function ProductCardActions({
       >
         Mark as Sold
       </Button>
-    </div>
+    </>
   );
 }

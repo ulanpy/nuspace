@@ -1,10 +1,9 @@
 import { useTheme } from "@/context/theme-provider";
-import {
-  AboutHeader,
-  AboutUsSection,
-  FeatureSection,
-  MessionSection,
-} from "../organisms/about";
+import { AboutHeader } from "../organisms/about/about-header";
+import { MessionSection } from "../organisms/about/mession-section";
+import { FeatureSection } from "../organisms/about/feature-section";
+import { AboutUsSection } from "../organisms/about/about-us-section";
+
 
 export function AboutTemplate() {
   const { theme } = useTheme();
