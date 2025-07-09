@@ -9,7 +9,7 @@ contactPoints:
         disableResolveMessage: false
         allowedit: true
         settings:
-          bottoken: ${TELEGRAM_BOT_TOKEN}
-          chatid: "123456789"
+          bottoken: '${TELEGRAM_BOT_TOKEN}'
+          chatid: '${TELEGRAM_CHAT_ID}'
           message: |
-            {{ template "default.message" . }}
+            {{ template "default.message" . }} 

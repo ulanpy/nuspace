@@ -60,3 +60,4 @@ groups:
         isPaused: false
         notification_settings:
           receiver: Telegram
+

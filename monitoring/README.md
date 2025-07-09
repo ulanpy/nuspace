@@ -10,7 +10,7 @@ GF_SECURITY_ADMIN_USER=your_login
 GF_SECURITY_ADMIN_PASSWORD=your_secure_password
 ```
 
-2. Note that `TG_API_KEY` field in the `.env` is required for Grafana alerting. Grafana won't start if value is not provided. Next, get the chat ID and update the `chatid: "123456789"` field in `/monitoring/grafana/provisioning/alerting/contact-pints.yaml`. [Here](https://stackoverflow.com/a/61215414/23123006) is how to get the chat ID.
+2. Note that `TELEGRAM_BOT_TOKEN` field in the `.env` is required for Grafana alerting. Grafana won't start if value is not provided. Next, get the chat ID and update the `chatid: "123456789"` field in `/monitoring/grafana/provisioning/alerting/contact-pints.yaml`. [Here](https://stackoverflow.com/a/61215414/23123006) is how to get the chat ID.
 
 3. Update the same Telegram credentials in relevant fields in `monitoring/prometheus/alertmanager.yml`.
 
@@ -51,7 +51,7 @@ GF_SECURITY_ADMIN_USER=your_login
 GF_SECURITY_ADMIN_PASSWORD=your_secure_password
 ```
 
-3. Note that `TG_API_KEY` field in the `.env` is required for Grafana alerting. Grafana won't start if value is not provided. Next, get the chat ID and update the `chatid: "123456789"` field in `/monitoring/grafana/provisioning/alerting/contact-pints.yaml`. [Here](https://stackoverflow.com/a/61215414/23123006) is how to get the chat ID.
+3. Note that `TELEGRAM_BOT_TOKEN` field in the `.env` is required for Grafana alerting. Grafana won't start if value is not provided. Next, get the chat ID and update the `chatid: "123456789"` field in `/monitoring/grafana/provisioning/alerting/contact-pints.yaml`. [Here](https://stackoverflow.com/a/61215414/23123006) is how to get the chat ID.
 
 4. Update the same Telegram credentials in relevant fields in `monitoring/prometheus/alertmanager.yml`.
 

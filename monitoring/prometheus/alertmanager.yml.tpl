@@ -7,10 +7,10 @@ route:
 receivers:
   - name: 'telegram'
     telegram_configs:
-      - bot_token: '<bot token>'
-        chat_id: <chat id>
+      - bot_token: '${TELEGRAM_BOT_TOKEN}'
+        chat_id: ${TELEGRAM_CHAT_ID}
         message: |
           [{{ .Status | toUpper }}] {{ .CommonAnnotations.summary }}
           {{ range .Alerts }}
           Description: {{ .Annotations.description }}
-          {{ end }}
+          {{ end }} 

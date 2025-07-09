@@ -2,25 +2,6 @@ services:
 
   postgres:
     container_name: postgres
-    command:
-      - "postgres"
-      - "-c"
-      - "log_destination=stderr" # Log to stderr so Docker can get it
-      - "-c"
-      - "logging_collector=on"
-      - "-c"
-      - "log_line_prefix=" # Clear the default prefix
-      - "-c"
-      - "log_statement=all"
-      - "-c"
-      - "log_min_messages=info"
-      - "-c"
-      - "log_min_error_statement=info"
-      - "-c"
-      - "log_timezone=UTC"
-      # THIS IS THE MAGIC PART
-      - "-c"
-      - "log_destination=jsonlog"
     image: postgres
     env_file:
       - .env
@@ -186,6 +167,129 @@ services:
     networks:
       - nuros
 
+  loki:
+    container_name: loki
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki/loki.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml -log.level="warn" -config.expand-env=true
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0' # 1 CPU core
+          memory: 1G # 2 GB RAM
+        # reservations:
+        #   cpus: '0.5' # Reserve 0.5 CPU core
+        #   memory: 1G # Reserve 1 GB RAM
+    networks:
+      - nuros
+    profiles:
+      - monitoring
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/grafana_alert_rules.yml:/etc/prometheus/grafana_alert_rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-remote-write-receiver"
+      - "--storage.tsdb.retention.time=30d"
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    networks:
+      - nuros
+    profiles:
+      - monitoring
+
+
+
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - DS_PROMETHEUS=prometheus
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+      - GF_LOG_LEVEL=warn
+    volumes:
+      - "grafana-data:/var/lib/grafana"
+      - "./monitoring/grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
+      - "./monitoring/grafana/dashboards/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
+      - "./monitoring/grafana/provisioning/dashboards/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
+      - "./monitoring/grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
+      - "./monitoring/grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"
+      - "./monitoring/grafana/provisioning/alerting/alerts.yaml:/etc/grafana/provisioning/alerting/alerts.yaml"
+      - "./monitoring/scripts/start-grafana.sh:/start-grafana.sh"
+    entrypoint: ["/bin/sh", "/start-grafana.sh"]
+    # privileged: true
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0' # 1 CPU core
+          memory: 1G # 2 GB RAM
+        # reservations:
+        #   cpus: '0.5' # Reserve 0.5 CPU core
+        #   memory: 1G # Reserve 1 GB RAM
+    networks:
+      - nuros
+    depends_on:
+      - alloy
+    profiles:
+      - monitoring
+
+
+  alloy:
+    container_name: alloy
+    image: grafana/alloy:latest
+    ports:
+      - 12345:12345
+      - 4317:4317
+      - 4318:4318
+    volumes:
+      - ./monitoring/alloy/config.alloy/config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    restart: unless-stopped
+    networks:
+      - nuros
+    depends_on:
+      - prometheus
+      - loki
+    profiles:
+      - monitoring
+
+  alertmanager:
+    container_name: alertmanager
+    image: prom/alertmanager:latest
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/prometheus/alertmanager.yml.tpl:/etc/alertmanager/alertmanager.yml.tpl:ro
+      - ./monitoring/scripts/start-alertmanager.sh:/start-alertmanager.sh:ro
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    entrypoint: ["/bin/sh", "/start-alertmanager.sh"]
+    restart: unless-stopped
+    networks:
+      - nuros
+    profiles:
+      - monitoring
 
 networks:
   nuros:
@@ -200,3 +304,6 @@ volumes:
   rabbitmq-data:  # Add this
   frontend-node-modules:  # Named volume for frontend node_modules
   cursor-server:
+  grafana-data:
+  prometheus_data:
+  loki_data:

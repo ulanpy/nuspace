@@ -36,6 +36,9 @@ services:
       - "--storage.tsdb.retention.time=30d"
     ports:
       - "9090:9090"
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
     restart: unless-stopped
     networks:
       - nuspace_nuros
@@ -48,7 +51,8 @@ services:
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - DS_PROMETHEUS=prometheus
-      - TELEGRAM_BOT_TOKEN=${TG_API_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
       - GF_LOG_LEVEL=warn
@@ -97,9 +101,15 @@ services:
     container_name: alertmanager
     image: prom/alertmanager:latest
     volumes:
-      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./prometheus/alertmanager.yml.tpl:/etc/alertmanager/alertmanager.yml.tpl:ro
+      - ./scripts/start-alertmanager.sh:/start-alertmanager.sh:ro
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
     ports:
       - "9093:9093"
+    command:
+      - "/start-alertmanager.sh"
     restart: unless-stopped
     networks:
       - nuspace_nuros
