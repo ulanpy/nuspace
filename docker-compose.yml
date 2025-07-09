@@ -151,7 +151,7 @@ services:
       - CELERY_WORKER_CONCURRENCY=4  # Adjust based on your needs
       - CELERY_WORKER_PREFETCH_MULTIPLIER=1
     deploy:
-      replicas: 2  # For scalability
+      replicas: 1  # For scalability
 
 
   frontend:
@@ -225,6 +225,8 @@ services:
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
       - GF_LOG_LEVEL=warn
+      - GF_SERVER_ROOT_URL=http://localhost:80/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
     volumes:
       - "grafana-data:/var/lib/grafana"
       - "./monitoring/grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
