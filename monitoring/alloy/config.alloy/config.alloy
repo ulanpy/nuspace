@@ -34,7 +34,7 @@ prometheus.scrape "node_exporter_scrape" {
 // Configure a prometheus.remote_write component to send metrics to a Prometheus server.
 prometheus.remote_write "prometheus_write" {
 	endpoint {
-		url = "http://prometheus:9090/api/v1/write"
+		url = "http://prometheus:9090/prometheus/api/v1/write"
 	}
 }
 
