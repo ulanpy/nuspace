@@ -185,7 +185,7 @@ services:
     profiles:
       - monitoring
 
-  prometheus:
+  prometheus: # 9090
     container_name: prometheus
     image: prom/prometheus:latest
     volumes:
@@ -196,19 +196,17 @@ services:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--web.enable-remote-write-receiver"
       - "--storage.tsdb.retention.time=30d"
-    ports:
-      - "9090:9090"
+      - "--web.external-url=/prometheus/"
+      - "--web.route-prefix=/prometheus/"
     restart: unless-stopped
     networks:
       - nuros
     profiles:
       - monitoring
 
-  grafana:
+  grafana: # 3000
     container_name: grafana
     image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - DS_PROMETHEUS=prometheus
@@ -217,7 +215,7 @@ services:
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
       - GF_LOG_LEVEL=warn
-      - GF_SERVER_ROOT_URL=http://localhost:80/grafana/
+      - GF_SERVER_ROOT_URL=http://localhost/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=false
     volumes:
       - "grafana-data:/var/lib/grafana"
@@ -246,13 +244,9 @@ services:
     profiles:
       - monitoring
 
-  alloy:
+  alloy: # 12345, 4317, 4318
     container_name: alloy
     image: grafana/alloy:latest
-    ports:
-      - 12345:12345
-      - 4317:4317
-      - 4318:4318
     volumes:
       - ./monitoring/alloy/config.alloy/config.alloy:/etc/alloy/config.alloy
       - /var/run/docker.sock:/var/run/docker.sock
@@ -266,11 +260,9 @@ services:
     profiles:
       - monitoring
 
-  alertmanager:
+  alertmanager: # 9093
     container_name: alertmanager
     image: prom/alertmanager:latest
-    ports:
-      - "9093:9093"
     volumes:
       - ./monitoring/prometheus/alertmanager.yml.tpl:/etc/alertmanager/alertmanager.yml.tpl:ro
       - ./monitoring/scripts/start-alertmanager.sh:/start-alertmanager.sh:ro

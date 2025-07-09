@@ -130,8 +130,6 @@ services:
   loki:
     container_name: loki
     image: grafana/loki:latest
-    ports:
-      - "3100:3100"
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/loki/service-account-key.json
     volumes:
@@ -161,8 +159,6 @@ services:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--web.enable-remote-write-receiver"
       - "--storage.tsdb.retention.time=30d"
-    ports:
-      - "9090:9090"
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
@@ -175,8 +171,6 @@ services:
   grafana:
     container_name: grafana
     image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - DS_PROMETHEUS=prometheus
@@ -209,10 +203,6 @@ services:
   alloy:
     container_name: alloy
     image: grafana/alloy:latest
-    ports:
-      - 12345:12345
-      - 4317:4317
-      - 4318:4318
     volumes:
       - ./monitoring/config.alloy:/etc/alloy/config.alloy
       - /var/run/docker.sock:/var/run/docker.sock
@@ -235,8 +225,6 @@ services:
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
-    ports:
-      - "9093:9093"
     command:
       - "/start-alertmanager.sh"
     restart: unless-stopped
