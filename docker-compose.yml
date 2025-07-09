@@ -1,5 +1,4 @@
 services:
-
   postgres:
     container_name: postgres
     image: postgres
@@ -21,21 +20,20 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        IS_DEBUG: ${IS_DEBUG:-true}  # Default to 'true' if not set
+        IS_DEBUG: ${IS_DEBUG:-true} # Default to 'true' if not set
     networks:
       - nuros
     restart: always
     env_file:
       - .env
     volumes:
-      - .:/nuros  # Sync local backend folder with container's /nuros
+      - .:/nuros # Sync local backend folder with container's /nuros
       - cursor-server:/root/.cursor-server
     depends_on:
       - postgres
     environment:
       - PYTHONUNBUFFERED=1
       - WORKERS=${GUNICORN_WORKERS:-4}
-
 
   nginx:
     container_name: nginx
@@ -44,39 +42,41 @@ services:
       - nuros
     restart: always
     ports:
-      - "80:80"  # Expose Nginx on port 80 of localhost
+      - "80:80" # Expose Nginx on port 80 of localhost
     volumes:
       - ./backend/core/configs/nginx.dev.conf:/etc/nginx/nginx.conf
-      - ./frontend/dist:/var/www/my-app/dist  # Make sure this folder exists in production builds
+      - ./frontend/dist:/var/www/my-app/dist # Make sure this folder exists in production builds
     depends_on:
       - fastapi
       - pgadmin
-    command: [ "/bin/sh", "-c", "
-      apt update && apt install -y inotify-tools &&
-      (while inotifywait -e modify /etc/nginx/nginx.conf; do
+    command: [
+        "/bin/sh",
+        "-c",
+        "
+        apt update && apt install -y inotify-tools &&
+        (while inotifywait -e modify /etc/nginx/nginx.conf; do
         echo 'nginx config changed, copying and reloading Nginx...' &&
         nginx -t && nginx -s reload;
-      done) &
-      nginx -g 'daemon off;'
-      " ]
-
+        done) &
+        nginx -g 'daemon off;'
+        ",
+      ]
 
   pgadmin:
-      image: dpage/pgadmin4
-      container_name: pgadmindev
-      environment:
-        PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-        PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-      depends_on:
-        - postgres
-      restart: always
-      networks:
-        - nuros
-      volumes:
-        - pgadmin-data:/var/lib/pgadmin  # Named volume for persistent data
-        - ./backend/core/configs/pgadmin_config/servers.json:/pgadmin4/servers.json  # Auto-connect to PostgreSQL
-        - ./backend/core/configs/pgadmin_config/pgpass:/pgpass  # Auto-login credentials
-
+    image: dpage/pgadmin4
+    container_name: pgadmindev
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    depends_on:
+      - postgres
+    restart: always
+    networks:
+      - nuros
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin # Named volume for persistent data
+      - ./backend/core/configs/pgadmin_config/servers.json:/pgadmin4/servers.json # Auto-connect to PostgreSQL
+      - ./backend/core/configs/pgadmin_config/pgpass:/pgpass # Auto-login credentials
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -85,11 +85,10 @@ services:
       - nuros
     restart: always
     environment:
-      - TUNNEL_TOKEN=${CLOUDFLARED_TOKEN}  # Each developer sets their token
+      - TUNNEL_TOKEN=${CLOUDFLARED_TOKEN} # Each developer sets their token
     command: tunnel run
     depends_on:
-      - nginx  # Ensure nginx is up before starting tunnel
-
+      - nginx # Ensure nginx is up before starting tunnel
 
   redis:
     image: redis:latest
@@ -110,9 +109,6 @@ services:
     ports:
       - 7700:7700
 
-
-
-
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -123,7 +119,7 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
       # RABBITMQ_LOGS: -
     ports:
-      - "15672:15672"  # Management UI
+      - "15672:15672" # Management UI
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
       - ./backend/core/configs/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
@@ -132,7 +128,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-
 
   celery-worker:
     build:
@@ -148,11 +143,10 @@ services:
       - fastapi
     command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
     environment:
-      - CELERY_WORKER_CONCURRENCY=4  # Adjust based on your needs
+      - CELERY_WORKER_CONCURRENCY=4 # Adjust based on your needs
       - CELERY_WORKER_PREFETCH_MULTIPLIER=1
     deploy:
-      replicas: 2  # For scalability
-
+      replicas: 2 # For scalability
 
   frontend:
     build:
@@ -160,10 +154,10 @@ services:
       dockerfile: Dockerfile_vite
     restart: always
     volumes:
-      - ./frontend:/nuros           # Mount all project files
-      - frontend-node-modules:/nuros/node_modules      # Use named volume for node_modules
+      - ./frontend:/nuros # Mount all project files
+      - frontend-node-modules:/nuros/node_modules # Use named volume for node_modules
     environment:
-      - CHOKIDAR_USEPOLLING=true  # Enable polling for file changes (Docker-friendly)
+      - CHOKIDAR_USEPOLLING=true # Enable polling for file changes (Docker-friendly)
     networks:
       - nuros
 
@@ -180,7 +174,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0' # 1 CPU core
+          cpus: "1.0" # 1 CPU core
           memory: 1G # 2 GB RAM
         # reservations:
         #   cpus: '0.5' # Reserve 0.5 CPU core
@@ -208,9 +202,6 @@ services:
       - nuros
     profiles:
       - monitoring
-
-
-
 
   grafana:
     container_name: grafana
@@ -240,7 +231,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0' # 1 CPU core
+          cpus: "1.0" # 1 CPU core
           memory: 1G # 2 GB RAM
         # reservations:
         #   cpus: '0.5' # Reserve 0.5 CPU core
@@ -251,7 +242,6 @@ services:
       - alloy
     profiles:
       - monitoring
-
 
   alloy:
     container_name: alloy
@@ -301,8 +291,8 @@ volumes:
   redis-data:
     driver: local
   pgadmin-data:
-  rabbitmq-data:  # Add this
-  frontend-node-modules:  # Named volume for frontend node_modules
+  rabbitmq-data: # Add this
+  frontend-node-modules: # Named volume for frontend node_modules
   cursor-server:
   grafana-data:
   prometheus_data:
