@@ -39,4 +39,6 @@ Thumbs.db
 
 
 **/.vscode/
-nuspace_bucket.json
+
+# Loki bucket service account 
+**/nuspace_bucket.json
