@@ -165,8 +165,6 @@ services:
   loki:
     container_name: loki
     image: grafana/loki:latest
-    ports:
-      - "3100:3100"
     volumes:
       - ./monitoring/loki/loki.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
@@ -215,7 +213,7 @@ services:
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
       - GF_LOG_LEVEL=warn
-      - GF_SERVER_ROOT_URL=http://localhost/grafana/
+      - GF_SERVER_ROOT_URL=http://localhost/grafana/ # this is the dev server url
       - GF_SERVER_SERVE_FROM_SUB_PATH=false
     volumes:
       - "grafana-data:/var/lib/grafana"
