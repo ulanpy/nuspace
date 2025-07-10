@@ -191,7 +191,6 @@ services:
       - "./monitoring/grafana/provisioning/alerting/alerts.yaml:/etc/grafana/provisioning/alerting/alerts.yaml"
       - "./monitoring/scripts/start-grafana.sh:/start-grafana.sh"
     entrypoint: ["/bin/sh", "/start-grafana.sh"]
-
     restart: unless-stopped
     deploy:
       resources:
@@ -237,12 +236,12 @@ services:
     profiles:
       - monitoring
 
-  wireguard:
+wireguard:
     image: lscr.io/linuxserver/wireguard:latest
     container_name: wireguard
     cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
+      - NET_ADMIN  # Essential for iptables
+      - SYS_MODULE # Essential for WireGuard kernel module
     networks:
       nuros:
         ipv4_address: 172.28.0.10
@@ -252,17 +251,23 @@ services:
       - TZ=Etc/UTC
       - SERVERURL=nuspace.kz
       - PEERS=admin
-      - PEERDNS=auto
+      # IMPORTANT: For full tunnel, use a public DNS for clients
+      # The client's DNS requests will go through the tunnel.
+      - PEERDNS=8.8.8.8 # Or 1.1.1.1, 9.9.9.9, etc.
       - INTERNAL_SUBNET=10.13.13.0/24
+      # This is already correct for full tunnel: send ALL client traffic
       - ALLOWEDIPS=0.0.0.0/0
       - LOG_CONFS=true
+      # *** ADD THESE LINES for IP forwarding and NAT ***
+      - POST_UP_SCRIPT=sysctl -w net.ipv4.ip_forward=1; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+      - POST_DOWN_SCRIPT=iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
     volumes:
       - ./wireguard/config:/config
       - /lib/modules:/lib/modules
     ports:
       - 51820:51820/udp
     sysctls:
-      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.conf.all.src_valid_mark=1 # Already correct and needed for WireGuard
     restart: unless-stopped
 
 networks:
