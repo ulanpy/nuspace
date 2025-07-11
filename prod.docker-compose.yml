@@ -84,12 +84,14 @@ services:
     networks:
       - nuros
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     ports:
       - "127.0.0.1:15672:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
+      - ./backend/core/configs/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+
     healthcheck:
       test: ["CMD", "rabbitmq", "status"]
       interval: 30s
