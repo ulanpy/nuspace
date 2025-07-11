@@ -233,7 +233,7 @@ services:
     profiles:
       - monitoring
 
-wireguard:
+  wireguard:
     image: lscr.io/linuxserver/wireguard:latest
     container_name: wireguard
     cap_add:
