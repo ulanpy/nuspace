@@ -20,6 +20,24 @@
         username: "{{ docker_username }}"
         password: "{{ docker_password }}"
 
+    - name: Check if user sa_107337867689943056764 has sudo privileges
+      command: sudo -l -U sa_107337867689943056764
+      register: sudo_check
+      failed_when: false
+      changed_when: false
+
+    - name: Ensure user sa_107337867689943056764 is in docker group
+      user:
+        name: sa_107337867689943056764
+        groups: docker
+        append: yes
+
+    - name: Ensure user sa_107337867689943056764 is in devs group
+      user:
+        name: sa_107337867689943056764
+        groups: devs
+        append: yes
+
     - name: Pull new images & recreate services
       community.docker.docker_compose_v2:
         project_src: /opt/nuspace
