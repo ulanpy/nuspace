@@ -159,9 +159,6 @@ services:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--web.enable-remote-write-receiver"
       - "--storage.tsdb.retention.time=30d"
-    # environment:
-    #   - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-    #   - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
     restart: unless-stopped
     networks:
       - nuros
