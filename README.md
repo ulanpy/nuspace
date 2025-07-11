@@ -114,7 +114,7 @@ msgfmt backend/routes/bot/locales/kz/LC_MESSAGES/messages.po -o backend/routes/b
 *   **Kupi Prodai:** A marketplace service exclusively for NU students to buy and sell items. This ensures a trusted environment for transactions within the university community.
 
 **Roadmap/Upcoming Features:**
-*   **NU Events:** A dedicated section for information about holidays, meetings, and events happening on the University campus. Students will be able to discover activities and events that align with their interests, fostering a more connected campus life.
+*   **Campus Current:** A dedicated section for information about holidays, meetings, and events happening on the University campus. Students will be able to discover activities and events that align with their interests, fostering a more connected campus life.
 *   **Dorm Eats:** Daily menu in the university canteen. What dishes are available, what dishes are being prepared - all this students have the opportunity to find out in advance.
 
 ## Development Guidelines
