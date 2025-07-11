@@ -25,6 +25,8 @@
         project_src: /opt/nuspace
         files:
           - prod.docker-compose.yml
+        profiles:
+          - monitoring
         pull: always
         recreate: always
         state: present
