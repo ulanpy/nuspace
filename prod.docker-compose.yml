@@ -32,6 +32,7 @@ services:
     volumes:
       - ./backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
       - .env:/nuros/.env:ro
+
   nginx:
     container_name: nginx
     image: nginx:latest
@@ -44,8 +45,8 @@ services:
     volumes:
       - ./backend/core/configs/nginx.conf:/etc/nginx/nginx.conf
       - ./frontend/dist:/var/www/my-app/dist
-      - ./ssl/cloudflare.crt:/etc/ssl/cloudflare/origin.crt # Cloudflare origin certificate
-      - ./ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key # Cloudflare private key
+      - ./ssl/cloudflare.crt:/etc/ssl/cloudflare/origin.crt
+      - ./ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key
     depends_on:
       - fastapi
       - frontend-builder
@@ -86,7 +87,7 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     ports:
-      - "127.0.0.1:15672:15672" # Management UI
+      - "127.0.0.1:15672:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
@@ -123,10 +124,9 @@ services:
       - nuros
     volumes:
       - ./frontend/dist:/app/dist
-    command: sh -c "npm run build" # Run build command on container start
+    command: sh -c "npm run build"
     restart: "no"
 
-  # --- Monitoring Services ---
   loki:
     container_name: loki
     image: grafana/loki:latest
@@ -176,7 +176,7 @@ services:
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
       - GF_LOG_LEVEL=warn
-      - GF_SERVER_ROOT_URL=https://nuspace.kz/grafana/ # this is the prod server url under VPN
+      - GF_SERVER_ROOT_URL=https://nuspace.kz/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     volumes:
       - "grafana-data:/var/lib/grafana"
@@ -237,8 +237,8 @@ services:
     image: lscr.io/linuxserver/wireguard:latest
     container_name: wireguard
     cap_add:
-      - NET_ADMIN  # Essential for iptables
-      - SYS_MODULE # Essential for WireGuard kernel module
+      - NET_ADMIN
+      - SYS_MODULE
     networks:
       nuros:
         ipv4_address: 172.28.0.10
@@ -248,14 +248,10 @@ services:
       - TZ=Etc/UTC
       - SERVERURL=nuspace.kz
       - PEERS=admin
-      # IMPORTANT: For full tunnel, use a public DNS for clients
-      # The client's DNS requests will go through the tunnel.
-      - PEERDNS=8.8.8.8 # Or 1.1.1.1, 9.9.9.9, etc.
+      - PEERDNS=8.8.8.8
       - INTERNAL_SUBNET=10.13.13.0/24
-      # This is already correct for full tunnel: send ALL client traffic
       - ALLOWEDIPS=0.0.0.0/0
       - LOG_CONFS=true
-      # *** ADD THESE LINES for IP forwarding and NAT ***
       - POST_UP_SCRIPT=sysctl -w net.ipv4.ip_forward=1; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
       - POST_DOWN_SCRIPT=iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
     volumes:
@@ -264,7 +260,7 @@ services:
     ports:
       - 51820:51820/udp
     sysctls:
-      - net.ipv4.conf.all.src_valid_mark=1 # Already correct and needed for WireGuard
+      - net.ipv4.conf.all.src_valid_mark=1
     restart: unless-stopped
 
 networks:
