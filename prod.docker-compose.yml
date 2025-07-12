@@ -49,6 +49,7 @@ services:
       - ./frontend/dist:/var/www/my-app/dist
       - ./ssl/cloudflare.crt:/etc/ssl/cloudflare/origin.crt
       - ./ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key
+      - ./monitoring/vpn-index.html:/etc/nginx/vpn-index.html:ro
     depends_on:
       - fastapi
       - frontend-builder
@@ -163,6 +164,7 @@ services:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--web.enable-remote-write-receiver"
       - "--storage.tsdb.retention.time=30d"
+      - "--web.external-url=/prometheus/"
     restart: unless-stopped
     networks:
       - nuros
