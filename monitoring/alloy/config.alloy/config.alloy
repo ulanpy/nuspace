@@ -11,21 +11,20 @@ prometheus.exporter.unix "node_exporter" {
 
 }
 
+prometheus.scrape "cadvisor_scrape" {
+	targets    = prometheus.exporter.cadvisor.cadvisor_exporter.targets
+	forward_to = [prometheus.relabel.cadvisor_container_names.receiver] 
+	job_name   = "cadvisor"
+}
+
 // Configure a relabeling block for cadvisor to add container names as labels.
 prometheus.relabel "cadvisor_container_names" {
-	forward_to = [prometheus.scrape.cadvisor_scrape.receiver]
+	forward_to = [prometheus.remote_write.prometheus_write.receiver]
 	rule {
 		source_labels = ["__meta_docker_container_name"]
 		regex         = "/(.*)"
 		target_label  = "service_name"
 	}
-}
-
-prometheus.scrape "cadvisor_scrape" {
-	targets    = prometheus.exporter.cadvisor.cadvisor_exporter.targets
-	forward_to = [prometheus.remote_write.prometheus_write.receiver]
-	job_name   = "cadvisor"
-
 }
 
 // Configure a prometheus.scrape component to collect custom metrics 

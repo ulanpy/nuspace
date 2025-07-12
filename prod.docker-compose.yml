@@ -210,7 +210,7 @@ services:
     volumes:
       - ./monitoring/alloy/config.alloy/config.alloy:/etc/alloy/config.alloy
       - /var/run/docker.sock:/var/run/docker.sock
-    command: run --server.http.listen-addr=0.0.0.0:12345 --server.http.ui-path-prefix=/alloy --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    command: run --server.http.listen-addr=0.0.0.0:12345 --server.http.ui-path-prefix=/alloy/ --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     restart: unless-stopped
     networks:
       - nuros
@@ -246,11 +246,11 @@ services:
       nuros:
         ipv4_address: 172.28.0.10
     environment:
-      - PUID=1000
-      - PGID=1000
+      - PUID=3182562138
+      - PGID=1007
       - TZ=Etc/UTC
       - SERVERURL=vpn.nuspace.kz
-      - PEERS=admin, ulan, biha, vault
+      - PEERS=10
       - PEERDNS=1.1.1.1
       - INTERNAL_SUBNET=10.13.13.0/24
       - ALLOWEDIPS=0.0.0.0/0
