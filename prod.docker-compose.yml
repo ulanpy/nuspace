@@ -250,7 +250,7 @@ services:
       - PGID=1000
       - TZ=Etc/UTC
       - SERVERURL=vpn.nuspace.kz
-      - PEERS=admin
+      - PEERS=admin, ulan, biha, vault
       - PEERDNS=1.1.1.1
       - INTERNAL_SUBNET=10.13.13.0/24
       - ALLOWEDIPS=0.0.0.0/0
