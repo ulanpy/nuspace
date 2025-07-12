@@ -153,7 +153,7 @@ export default function EventDetailPage() {
     const endDate = new Date(eventDate.getTime() + event.duration * 60000);
 
     const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-      event.name
+      event.name,
     )}&dates=${eventDate
       .toISOString()
       .replace(/-|:|\.\d+/g, "")
@@ -161,7 +161,7 @@ export default function EventDetailPage() {
       .toISOString()
       .replace(/-|:|\.\d+/g, "")
       .slice(0, -1)}&details=${encodeURIComponent(
-      event.description
+      event.description,
     )}&location=${encodeURIComponent(event.place)}`;
 
     window.open(googleCalendarUrl, "_blank");
@@ -436,7 +436,7 @@ export default function EventDetailPage() {
                         <div className="absolute top-2 left-2">
                           <Badge
                             className={`${getPolicyColor(
-                              clubEvent.policy
+                              clubEvent.policy,
                             )} text-white`}
                           >
                             {getPolicyDisplay(clubEvent.policy)}
@@ -449,7 +449,7 @@ export default function EventDetailPage() {
                         </h3>
                         <p className="text-sm text-muted-foreground mt-1">
                           {new Date(
-                            clubEvent.event_datetime
+                            clubEvent.event_datetime,
                           ).toLocaleDateString()}
                         </p>
                       </CardContent>

@@ -1,14 +1,12 @@
 services:
-
   fastapi:
     image: kamikadze24/fastapi:${TAG}
 
     build:
       context: .
-      dockerfile: Dockerfile 
+      dockerfile: Dockerfile
       args:
-        IS_DEBUG: ${IS_DEBUG:-true}  # Default to 'true' if not set
-
+        IS_DEBUG: ${IS_DEBUG:-true} # Default to 'true' if not set
 
   celeryworker:
     image: kamikadze24/celeryworker:${TAG}
@@ -25,5 +23,5 @@ services:
     build:
       context: .
       dockerfile: Dockerfile_static_builder
-    command: sh -c "npm run build"  # Run build command on container start
+    command: sh -c "npm run build" # Run build command on container start
     restart: "no"

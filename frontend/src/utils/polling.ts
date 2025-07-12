@@ -1,4 +1,4 @@
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient } from "@tanstack/react-query";
 
 interface PollOptions<T> {
   checkFn: () => Promise<T | null>;
@@ -32,7 +32,7 @@ export const pollWithExponentialBackoff = async <T>({
         return result;
       }
       delay = Math.min(delay * backoffRate, 10000); // Макс. 10 секунд
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         setTimeout(() => {
           resolve(poll());
         }, delay);
@@ -46,12 +46,11 @@ export const pollWithExponentialBackoff = async <T>({
   return poll();
 };
 
-
 export const pollForProductImages = (
   productId: number,
   queryClient: QueryClient,
   apiBaseKey: string,
-  getProductById: (id: number) => Promise<any>
+  getProductById: (id: number) => Promise<any>,
 ) => {
   return pollWithExponentialBackoff({
     checkFn: async () => {
@@ -66,10 +65,10 @@ export const pollForProductImages = (
         queryKey: [apiBaseKey],
       });
 
-      console.log('Product images loaded successfully:', product.id);
+      console.log("Product images loaded successfully:", product.id);
     },
     onError: (error) => {
-      console.error('Error checking product images:', error);
+      console.error("Error checking product images:", error);
     },
   });
 };

@@ -3,7 +3,7 @@ import { UseMutateFunction } from "@tanstack/react-query";
 interface ProductCardActionsProps {
   product: Types.Product;
   onEdit: (product: Types.Product) => void;
-  onDelete: UseMutateFunction<string, Error, number, unknown>
+  onDelete: UseMutateFunction<string, Error, number, unknown>;
   onToggleProductStatus: (id: number, currentStatus: Types.Status) => void;
   getIsPendingDeleteMutation: (id: number) => boolean;
   getIsPendingToggleMutation: (id: number) => boolean;

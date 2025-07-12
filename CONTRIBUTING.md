@@ -33,11 +33,11 @@ If you encounter a bug, please help us by reporting it!
 
 - **Ensure the bug was not already reported** by searching on GitHub under [Issues](https://github.com/ulanpy/nuspace/issues).
 - If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/ulanpy/nuspace/issues/new). Be sure to include:
-    - A **clear and descriptive title**.
-    - **Steps to reproduce** the bug.
-    - What you **expected to happen** and what **actually happened**.
-    - Your **environment details** (e.g., browser version, OS) if relevant.
-    - Screenshots or error messages if applicable.
+  - A **clear and descriptive title**.
+  - **Steps to reproduce** the bug.
+  - What you **expected to happen** and what **actually happened**.
+  - Your **environment details** (e.g., browser version, OS) if relevant.
+  - Screenshots or error messages if applicable.
 
 ### Suggesting Enhancements
 
@@ -45,9 +45,9 @@ We welcome suggestions for new features or improvements to existing functionalit
 
 - **Check if the enhancement has already been suggested** by searching on GitHub under [Issues](https://github.com/ulanpy/nuspace/issues).
 - If it hasn't, [open a new issue](https://github.com/ulanpy/nuspace/issues/new).
-    - Provide a **clear and descriptive title**.
-    - Explain **why this enhancement would be useful** to Nuspace.kz users.
-    - Provide as much detail as possible about the **suggested functionality** and any potential use cases.
+  - Provide a **clear and descriptive title**.
+  - Explain **why this enhancement would be useful** to Nuspace.kz users.
+  - Provide as much detail as possible about the **suggested functionality** and any potential use cases.
 
 ### Your First Code Contribution
 
@@ -114,6 +114,7 @@ We aim for clear and informative commit messages. While we don't strictly enforc
 - Optionally, provide more details in the body of the commit message.
 
 Example:
+
 ```
 feat: Add user profile page
 
@@ -125,4 +126,4 @@ feat: Add user profile page
 
 If you have any questions about contributing, feel free to ask on the [project's Issues page](https://github.com/ulanpy/nuspace/issues) or contact the maintainers listed in the `README.md`.
 
-Thank you for contributing to Nuspace.kz! 
+Thank you for contributing to Nuspace.kz!

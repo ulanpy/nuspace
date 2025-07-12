@@ -120,6 +120,6 @@ export const useImage = () => {
     setIsUploading,
     handleImageUpload,
     handleDeleteImage,
-    processFiles
+    processFiles,
   };
 };

@@ -8,7 +8,6 @@ import { getSeachPageFromURL } from "@/utils/search-params";
 import React, { createContext, useContext, useState } from "react";
 import { useLocation } from "react-router-dom";
 
-
 type ListingContextType = {
   newListing: Types.NewProductRequest;
   setNewListing: React.Dispatch<React.SetStateAction<Types.NewProductRequest>>;
@@ -39,7 +38,7 @@ export const ListingProvider = ({
     status: "active",
   });
   const [editingListing, setEditingListing] = useState<Types.Product | null>(
-    null
+    null,
   );
 
   const location = useLocation();
@@ -47,7 +46,7 @@ export const ListingProvider = ({
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(
-    getSeachPageFromURL(location.search)
+    getSeachPageFromURL(location.search),
   );
   const [itemsPerPage] = useState(defaultSize);
   const [activeTab, setActiveTab] = useState<Types.ActiveTab>("buy");

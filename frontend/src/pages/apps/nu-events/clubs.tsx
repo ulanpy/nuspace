@@ -81,8 +81,8 @@ export default function ClubsPage() {
             {searchQuery
               ? "No clubs match your search criteria. Try a different search term."
               : selectedClubType
-              ? `No ${selectedClubType} clubs found. Try a different filter.`
-              : "There are no clubs available at the moment."}
+                ? `No ${selectedClubType} clubs found. Try a different filter.`
+                : "There are no clubs available at the moment."}
           </p>
         </div>
       )}

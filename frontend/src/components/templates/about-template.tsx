@@ -4,7 +4,6 @@ import { MessionSection } from "../organisms/about/mession-section";
 import { FeatureSection } from "../organisms/about/feature-section";
 import { AboutUsSection } from "../organisms/about/about-us-section";
 
-
 export function AboutTemplate() {
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";

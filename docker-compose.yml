@@ -146,8 +146,7 @@ services:
       - CELERY_WORKER_CONCURRENCY=4 # Adjust based on your needs
       - CELERY_WORKER_PREFETCH_MULTIPLIER=1
     deploy:
-      replicas: 1  # For scalability
-
+      replicas: 1 # For scalability
 
   frontend:
     build:

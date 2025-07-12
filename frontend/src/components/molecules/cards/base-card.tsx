@@ -12,7 +12,7 @@ interface Event {
   };
 }
 
-export function BaseCard({event}: { event: Event }) {
+export function BaseCard({ event }: { event: Event }) {
   const navigate = useNavigate();
   return (
     <Card

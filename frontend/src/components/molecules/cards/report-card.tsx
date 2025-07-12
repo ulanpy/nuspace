@@ -8,9 +8,7 @@ export function ReportCard() {
   return (
     <Card
       className={`transform transition-transform text-center ${
-        isDark
-          ? "bg-gray-800 border-gray-700 "
-          : "bg-white hover:bg-gray-50"
+        isDark ? "bg-gray-800 border-gray-700 " : "bg-white hover:bg-gray-50"
       }`}
     >
       <CardContent className="py-8 px-6 flex flex-col items-center">
@@ -18,7 +16,9 @@ export function ReportCard() {
           <FaHeadset className="text-purple-500" size={42} />
         </div>
         <h3 className="text-xl font-semibold mb-2">Need Help?</h3>
-        <p className={(`text-sm mb-4 ${isDark ? "text-gray-400" : "text-gray-500"}`)}>
+        <p
+          className={`text-sm mb-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+        >
           Found a bug or having issues? We're here to help. Reach out directly
           for quick assistance.
         </p>

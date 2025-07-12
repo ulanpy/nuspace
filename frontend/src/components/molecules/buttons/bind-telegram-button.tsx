@@ -134,7 +134,7 @@ export function BindTelegramButton() {
     } catch (error) {
       console.error("Error binding Telegram:", error);
       setError(
-        error instanceof Error ? error.message : "An unknown error occurred"
+        error instanceof Error ? error.message : "An unknown error occurred",
       );
     } finally {
       setIsLoading(false);
@@ -146,7 +146,7 @@ export function BindTelegramButton() {
   }
 
   if (isLinked) {
-    return null
+    return null;
   }
 
   return (

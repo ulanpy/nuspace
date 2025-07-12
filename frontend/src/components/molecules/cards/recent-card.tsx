@@ -24,7 +24,10 @@ export const RecentCard = ({ title, items, typeContent }: RecentCardProps) => {
       <CardContent>
         <div className="space-y-4">
           {items.map((item, index) => (
-            <div className="flex items-center p-3 border border-gray-100 rounded-md hover:bg-gray-50 transition-colors" key={index}>
+            <div
+              className="flex items-center p-3 border border-gray-100 rounded-md hover:bg-gray-50 transition-colors"
+              key={index}
+            >
               <img
                 src={item.srcImg}
                 alt=""

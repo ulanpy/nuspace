@@ -15,7 +15,13 @@ import {
 } from "@/components/atoms/popover";
 import { Calendar as CalendarComponent } from "@/components/atoms/calendar";
 import { format } from "date-fns";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/atoms/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/atoms/sheet";
 import { Button } from "../atoms/button";
 import { Input } from "../atoms/input";
 
@@ -39,10 +45,7 @@ export function FilterBar() {
     <div className="flex flex-col md:flex-row gap-2 p-4 bg-muted/50 rounded-lg">
       <div className="relative flex-grow">
         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search events..."
-          className="pl-9"
-        />
+        <Input placeholder="Search events..." className="pl-9" />
       </div>
 
       <div className="flex gap-2">
@@ -61,7 +64,10 @@ export function FilterBar() {
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="w-[140px] flex justify-between">
+            <Button
+              variant="outline"
+              className="w-[140px] flex justify-between"
+            >
               <Calendar className="h-4 w-4 mr-2" />
               {date ? format(date, "PPP") : "Pick a date"}
             </Button>

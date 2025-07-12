@@ -1,21 +1,28 @@
 import { Badge } from "@/components/atoms/badge";
 import { Button } from "@/components/atoms/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/atoms/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/atoms/table";
 import { ROUTES } from "@/data/routes";
 import { Link } from "react-router-dom";
 interface FilteredUser {
-    id: number;
-    name: string;
-    email: string;
-    products: number;
-    status: string;
-    lastActive: string;
-    registeredOn: string;
+  id: number;
+  name: string;
+  email: string;
+  products: number;
+  status: string;
+  lastActive: string;
+  registeredOn: string;
 }
 interface UsersTableProps {
-  filteredUsers: FilteredUser[]
+  filteredUsers: FilteredUser[];
 }
-export const UsersTable = ({filteredUsers}: UsersTableProps) => {
+export const UsersTable = ({ filteredUsers }: UsersTableProps) => {
   return (
     <Table>
       <TableHeader>
@@ -49,8 +56,8 @@ export const UsersTable = ({filteredUsers}: UsersTableProps) => {
                   user.status === "Active"
                     ? "bg-green-100 text-green-800 hover:bg-green-200"
                     : user.status === "Suspended"
-                    ? "bg-red-100 text-red-800 hover:bg-red-200"
-                    : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                      ? "bg-red-100 text-red-800 hover:bg-red-200"
+                      : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
                 }
                 variant="outline"
               >

@@ -24,7 +24,7 @@ export const useSearchLogic = <T>({
   const navigate = useNavigate();
   const location = useLocation();
   const [inputValue, setInputValue] = useState(
-    getSearchTextFromURL(location.search)
+    getSearchTextFromURL(location.search),
   );
   const { preSearchedProducts } = usePreSearchProducts(inputValue);
 

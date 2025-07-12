@@ -178,8 +178,9 @@ services:
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
       - GF_LOG_LEVEL=warn
-      - GF_SERVER_ROOT_URL=https://nuspace.kz/grafana/
-      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SERVER_ROOT_URL=https://vpn.nuspace.kz/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+      - GF_DATABASE_WAL=true
     volumes:
       - "grafana-data:/var/lib/grafana"
       - "./monitoring/grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
@@ -248,9 +249,9 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Etc/UTC
-      - SERVERURL=nuspace.kz
+      - SERVERURL=vpn.nuspace.kz
       - PEERS=admin
-      - PEERDNS=8.8.8.8
+      - PEERDNS=1.1.1.1
       - INTERNAL_SUBNET=10.13.13.0/24
       - ALLOWEDIPS=0.0.0.0/0
       - LOG_CONFS=true

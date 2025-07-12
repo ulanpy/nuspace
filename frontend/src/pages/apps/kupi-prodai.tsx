@@ -114,13 +114,13 @@ export default function KupiProdaiPage() {
 
   // Active and inactive listings
   const activeListings = myProducts?.products?.filter(
-    (p) => p.status === "active"
+    (p) => p.status === "active",
   );
   const inactiveListings = myProducts?.products?.filter(
-    (p) => p.status === "inactive"
+    (p) => p.status === "inactive",
   );
   const soldListings = myProducts?.products?.filter(
-    (p) => p.status === "inactive"
+    (p) => p.status === "inactive",
   );
 
   // search section
@@ -505,7 +505,7 @@ export default function KupiProdaiPage() {
                                     setCurrentMediaIndex((prev) =>
                                       prev === 0
                                         ? previewImages.length - 1
-                                        : prev - 1
+                                        : prev - 1,
                                     );
                                   }}
                                   type="button"
@@ -522,7 +522,7 @@ export default function KupiProdaiPage() {
                                     setCurrentMediaIndex((prev) =>
                                       prev === previewImages.length - 1
                                         ? 0
-                                        : prev + 1
+                                        : prev + 1,
                                     );
                                   }}
                                   type="button"
@@ -564,7 +564,8 @@ export default function KupiProdaiPage() {
                                   e.stopPropagation();
                                   const mediaToRemove = originalMedia.find(
                                     (m) =>
-                                      m.url === previewImages[currentMediaIndex]
+                                      m.url ===
+                                      previewImages[currentMediaIndex],
                                   );
                                   if (mediaToRemove) {
                                     handleDeleteImage(mediaToRemove.id);
@@ -574,11 +575,11 @@ export default function KupiProdaiPage() {
                                     const newPreviewImages = [...previewImages];
                                     newImageFiles.splice(
                                       currentMediaIndex - originalMedia.length,
-                                      1
+                                      1,
                                     );
                                     newPreviewImages.splice(
                                       currentMediaIndex,
-                                      1
+                                      1,
                                     );
                                     setImageFiles(newImageFiles);
                                     setPreviewImages(newPreviewImages);
@@ -588,7 +589,7 @@ export default function KupiProdaiPage() {
                                       newPreviewImages.length > 0
                                     ) {
                                       setCurrentMediaIndex(
-                                        newPreviewImages.length - 1
+                                        newPreviewImages.length - 1,
                                       );
                                     }
                                   }

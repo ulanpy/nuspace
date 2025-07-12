@@ -46,7 +46,7 @@ const homeCarouselItems = [
 
 export default function HomePage() {
   const { user, isLoading, isSuccess } = useUser();
-  console.log(user)
+  console.log(user);
   return (
     <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4">
       {/* Header with login button */}
