@@ -3,27 +3,17 @@
 // ###############################
 
 // Host Cadvisor on the Docker socket to expose container metrics.
-prometheus.exporter.cadvisor "cadvisor" {
+prometheus.exporter.cadvisor "cadvisor_exporter" {
 	docker_host = "unix:///var/run/docker.sock"
-
-	storage_duration = "5m"
 }
 
-prometheus.exporter.unix "node_exporter" { }
+prometheus.exporter.unix "node_exporter" { 
+
+}
 
 // Configure a relabeling block for cadvisor to add container names as labels.
-discovery.relabel "cadvisor_container_names" {
-	targets = []
-
-	// rule {
-	// 	source_labels = ["__meta_docker_container_name"]
-	// 	regex         = "/(.*)" // Captures the container name (e.g., from "/my-container" to "my-container")
-	// 	target_label  = "container_name" // Adds a new label 'container_name'
-	// 	action        = "replace"
-	// }
-
-	// Optional: You could also choose to set the 'instance' label to the container name
-	// for better identification in Prometheus/Grafana if you prefer.
+prometheus.relabel "cadvisor_container_names" {
+	forward_to = [prometheus.scrape.cadvisor_scrape.receiver]
 	rule {
 		source_labels = ["__meta_docker_container_name"]
 		regex         = "/(.*)"
@@ -31,12 +21,11 @@ discovery.relabel "cadvisor_container_names" {
 	}
 }
 
-// Configure a prometheus.scrape component to collect cadvisor and fastapi metrics.
 prometheus.scrape "cadvisor_scrape" {
-	// Use the relabeled targets from cadvisor_container_names
-	targets    = prometheus.exporter.cadvisor.cadvisor.targets
-	relabel_rules = discovery.relabel.cadvisor_container_names.rules
+	targets    = prometheus.exporter.cadvisor.cadvisor_exporter.targets
 	forward_to = [prometheus.remote_write.prometheus_write.receiver]
+	job_name   = "cadvisor"
+
 }
 
 // Configure a prometheus.scrape component to collect custom metrics 
@@ -47,7 +36,7 @@ prometheus.scrape "nuspace_scrape" {
 		__metrics_path__ = "/api/metrics",
 	}]
 	forward_to = [prometheus.remote_write.prometheus_write.receiver]
-	job_name   = "fasapi"
+	job_name   = "fastapi"
 }
 
 // Configure a prometheus.scrape component to collect Node Exporter metrics.
