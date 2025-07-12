@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     python3-dev \
     libpq-dev \
+    iproute2 \
     && pip install --no-cache-dir poetry \
     && rm -rf /var/lib/apt/lists/*
 
@@ -31,6 +32,7 @@ COPY . .
 
 # Create a simple entrypoint shell script to conditionally run Uvicorn or Gunicorn
 RUN echo '#!/bin/sh \n\
+ip route add 10.13.13.0/24 via 172.28.0.10 \n\
 if [ "$IS_DEBUG" = "false" ]; then \n\
     gunicorn -w $(( $(nproc) * 2 + 1 )) -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 backend.main:app; \n\
 else \n\

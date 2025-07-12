@@ -182,7 +182,7 @@ services:
     profiles:
       - monitoring
 
-  prometheus: # 9090
+  prometheus: 
     container_name: prometheus
     image: prom/prometheus:latest
     volumes:
@@ -196,12 +196,14 @@ services:
       - "--web.external-url=/prometheus/"
       - "--web.route-prefix=/prometheus/"
     restart: unless-stopped
+    ports:
+      - "9090:9090"
     networks:
       - nuros
     profiles:
       - monitoring
 
-  grafana: # 3000
+  grafana: 
     container_name: grafana
     image: grafana/grafana:latest
     environment:
@@ -214,6 +216,8 @@ services:
       - GF_LOG_LEVEL=warn
       - GF_SERVER_ROOT_URL=http://localhost/grafana/ # this is the dev server url
       - GF_SERVER_SERVE_FROM_SUB_PATH=false
+    ports:
+      - "3000:3000"
     volumes:
       - "grafana-data:/var/lib/grafana"
       - "./monitoring/grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
@@ -241,7 +245,7 @@ services:
     profiles:
       - monitoring
 
-  alloy: # 12345, 4317, 4318
+  alloy: 
     container_name: alloy
     image: grafana/alloy:latest
     volumes:
@@ -249,6 +253,10 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     restart: unless-stopped
+    ports:
+      - "12345:12345"
+      - "4317:4317"
+      - "4318:4318"
     networks:
       - nuros
     depends_on:
@@ -257,7 +265,7 @@ services:
     profiles:
       - monitoring
 
-  alertmanager: # 9093
+  alertmanager: 
     container_name: alertmanager
     image: prom/alertmanager:latest
     volumes:
@@ -268,10 +276,32 @@ services:
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
     entrypoint: ["/bin/sh", "/start-alertmanager.sh"]
     restart: unless-stopped
+    ports:
+      - "9093:9093"
     networks:
       - nuros
     profiles:
       - monitoring
+
+
+  wireguard:
+    image: lscr.io/linuxserver/wireguard
+    container_name: wireguard-client
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    volumes:
+      - ./wireguard/config:/config
+      - /lib/modules:/lib/modules
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+    networks:
+      - nuros
 
 networks:
   nuros:
