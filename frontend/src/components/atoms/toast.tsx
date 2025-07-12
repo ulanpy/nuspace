@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { X } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-import { useToast } from "../../hooks/use-toast"
+import { X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "../../hooks/use-toast";
 
 export function Toasts() {
-  const { toasts, dismissToast } = useToast()
+  const { toasts, dismissToast } = useToast();
 
   return (
     <div className="fixed bottom-0 right-0 z-50 p-4 space-y-2 max-w-md w-full pointer-events-none">
@@ -31,8 +31,14 @@ export function Toasts() {
             >
               <div className="flex justify-between items-start gap-2">
                 <div className="grid gap-1">
-                  {toast.title && <div className="font-medium">{toast.title}</div>}
-                  {toast.description && <div className="text-sm opacity-90">{toast.description}</div>}
+                  {toast.title && (
+                    <div className="font-medium">{toast.title}</div>
+                  )}
+                  {toast.description && (
+                    <div className="text-sm opacity-90">
+                      {toast.description}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => dismissToast(toast.id)}
@@ -46,6 +52,5 @@ export function Toasts() {
         ))}
       </AnimatePresence>
     </div>
-  )
+  );
 }
-

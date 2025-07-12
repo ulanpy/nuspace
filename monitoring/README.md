@@ -1,6 +1,6 @@
-# Monitoring 
+# Monitoring
 
-## Running Monitoring Locally 
+## Running Monitoring Locally
 
 1. Add Grafana credentials to `.env`:
 
@@ -29,10 +29,9 @@ GF_SECURITY_ADMIN_PASSWORD=your_secure_password
 | Loki <br/>(No UI, if running `404 page not found` is displayed) | `localhost:3100 `       |
 | FastAPI Metrics endpoint                                        | `localhost/api/metrics` |
 
-
 ## Stack
 
-- **Grafana Alloy** – collector of metrics and logs 
+- **Grafana Alloy** – collector of metrics and logs
   - Scraper from FastAPI
   - Scraper from Cadvisor exporter
   - Scraper from Node Exporter exporter
@@ -56,14 +55,14 @@ GF_SECURITY_ADMIN_PASSWORD=your_secure_password
 4. Update the same Telegram credentials in relevant fields in `monitoring/prometheus/alertmanager.yml`.
 
 5. Start the monitoring services (run inside root folder):
-   
+
    ```sh
    docker compose -f ./monitoring/docker-compose.monitoring.prod.yaml up -d
    ```
 
 ## Next Steps
 
-Next is configuring the endpoints to be accessible over the internet, and securing it with stronger authentication methods, like [Google OAuth](https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/google/). 
+Next is configuring the endpoints to be accessible over the internet, and securing it with stronger authentication methods, like [Google OAuth](https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/google/).
 
 ## Explanation
 

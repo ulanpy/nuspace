@@ -1,4 +1,3 @@
-
 import { ProductCardActions } from "@/components/molecules/actions/product-card-actions";
 import { ProductCard } from "@/components/molecules/cards/product-card";
 import { UseMutateFunction } from "@tanstack/react-query";
@@ -36,16 +35,17 @@ export function ProductListingSection({
               product={product}
               onClick={() => onProductClick(product.id)}
               key={product.id}
-              actions={<ProductCardActions
-                product={product}
-                onEdit={onEditListing}
-                onDelete={onDeleteListing}
-                onToggleProductStatus={onToggleListingStatus}
-                getIsPendingDeleteMutation={getIsPendingDeleteMutation}
-                getIsPendingToggleMutation={getIsPendingToggleMutation}
-              />}
+              actions={
+                <ProductCardActions
+                  product={product}
+                  onEdit={onEditListing}
+                  onDelete={onDeleteListing}
+                  onToggleProductStatus={onToggleListingStatus}
+                  getIsPendingDeleteMutation={getIsPendingDeleteMutation}
+                  getIsPendingToggleMutation={getIsPendingToggleMutation}
+                />
+              }
             />
-
           ))}
         </div>
       ) : (

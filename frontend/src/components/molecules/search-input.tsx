@@ -59,13 +59,13 @@ export function SearchInput({
         hasSuggestions &&
         (setIsDropdownOpen(true),
         setSelectedIndex((prev) =>
-          prev < suggestions.length - 1 ? prev + 1 : 0
+          prev < suggestions.length - 1 ? prev + 1 : 0,
         )),
       ArrowUp: () =>
         hasSuggestions &&
         (setIsDropdownOpen(true),
         setSelectedIndex((prev) =>
-          prev > 0 ? prev - 1 : suggestions.length - 1
+          prev > 0 ? prev - 1 : suggestions.length - 1,
         )),
       Enter: () => {
         if (selectedIndex >= 0 && suggestions[selectedIndex]) {
@@ -119,7 +119,7 @@ export function SearchInput({
       )}
       <div
         onClick={handlers.search}
-        className={(`absolute right-4 top-1/2 -translate-y-1/2 rounded-lg p-1 ${isDarkTheme ? 'bg-slate-600 hover:bg-slate-700' : 'bg-slate-200 hover:bg-slate-300'}`)}
+        className={`absolute right-4 top-1/2 -translate-y-1/2 rounded-lg p-1 ${isDarkTheme ? "bg-slate-600 hover:bg-slate-700" : "bg-slate-200 hover:bg-slate-300"}`}
       >
         <Search
           className="h-4 w-4 text-muted-foreground cursor-pointer"
@@ -144,8 +144,8 @@ export function SearchInput({
                     ? "bg-gray-900 text-white"
                     : "bg-gray-200 text-black"
                   : isDarkTheme
-                  ? "text-gray-400 hover:bg-gray-700"
-                  : "text-slate-500 hover:bg-slate-300"
+                    ? "text-gray-400 hover:bg-gray-700"
+                    : "text-slate-500 hover:bg-slate-300"
               }`}
               onClick={() => handlers.selectItem(product.name)}
               onMouseEnter={() => setSelectedIndex(index)}

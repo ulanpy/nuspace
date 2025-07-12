@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { defaultSize, kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
+import {
+  defaultSize,
+  kupiProdaiApi,
+} from "@/modules/kupi-prodai/api/kupi-prodai-api";
 import { useState } from "react";
 import { useUser } from "@/hooks/use-user";
 import {
@@ -14,10 +17,10 @@ export function useProducts() {
   const [keyword, setKeyword] = useState<string>("");
   const [page, setPage] = useState<number>(1);
   const [selectedCategory, setSelectedCategory] = useState(
-    getSearchCategoryFromURL(location.search)
+    getSearchCategoryFromURL(location.search),
   );
   const [selectedCondition, setSelectedCondition] = useState(
-    getSearchConditionFromURL(location.search)
+    getSearchConditionFromURL(location.search),
   );
   const category =
     selectedCategory !== "All" ? selectedCategory.toLowerCase() : undefined;

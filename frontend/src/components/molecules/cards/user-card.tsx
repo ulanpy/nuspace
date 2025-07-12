@@ -7,18 +7,18 @@ import {
   CardTitle,
 } from "@/components/atoms/card";
 interface MockUser {
-    id: number;
-    name: string;
-    email: string;
-    products: number;
-    status: string;
-    lastActive: string;
-    registeredOn: string;
+  id: number;
+  name: string;
+  email: string;
+  products: number;
+  status: string;
+  lastActive: string;
+  registeredOn: string;
 }
 interface UserCardProps {
-  mockUser: MockUser
+  mockUser: MockUser;
 }
-export const UserCard = ({mockUser}: UserCardProps) => {
+export const UserCard = ({ mockUser }: UserCardProps) => {
   return (
     <Card>
       <CardHeader>

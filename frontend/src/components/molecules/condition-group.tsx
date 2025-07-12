@@ -40,8 +40,8 @@ export function ConditionGroup({
                   ? "bg-slate-800 text-white shadow-md border-slate-700"
                   : "bg-slate-100 text-slate-900 shadow-md border-slate-200"
                 : isDarkTheme
-                ? "text-slate-400 hover:bg-slate-800/70 hover:text-slate-200"
-                : "text-slate-500 hover:bg-slate-200/70 hover:text-slate-800"
+                  ? "text-slate-400 hover:bg-slate-800/70 hover:text-slate-200"
+                  : "text-slate-500 hover:bg-slate-200/70 hover:text-slate-800"
             }
           `}
         >

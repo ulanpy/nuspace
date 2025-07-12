@@ -6,7 +6,8 @@ export const useEditModal = () => {
   const { setOriginalMedia, setCurrentMediaIndex } = useMediaContext();
   const { setImageFiles, setPreviewImages } = useImageContext();
 
-  const { showEditModal, setShowEditModal, setEditingListing, setNewListing } = useListingState();
+  const { showEditModal, setShowEditModal, setEditingListing, setNewListing } =
+    useListingState();
 
   const handleEditListing = (product: Types.Product) => {
     setEditingListing(product);
@@ -40,9 +41,9 @@ export const useEditModal = () => {
   };
 
   const closeEditModal = () => {
-    resetEditListing()
-    setShowEditModal(false)
-  }
+    resetEditListing();
+    setShowEditModal(false);
+  };
 
   return {
     showEditModal,

@@ -35,7 +35,7 @@ export function useUpdateProduct() {
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: [kupiProdaiApi.baseKey] });
       const previousTodos = queryClient.getQueryData(
-        kupiProdaiApi.getUserProductsQueryOptions().queryKey
+        kupiProdaiApi.getUserProductsQueryOptions().queryKey,
       );
       return { previousTodos };
     },
@@ -49,7 +49,7 @@ export function useUpdateProduct() {
       if (context) {
         queryClient.setQueryData(
           kupiProdaiApi.getUserProductsQueryOptions().queryKey,
-          context.previousTodos
+          context.previousTodos,
         );
       }
       toast({
@@ -62,7 +62,7 @@ export function useUpdateProduct() {
 
   const calculateMediaOrder = () => {
     const remainingMedia = originalMedia.filter(
-      (media) => !mediaToDelete.includes(media.id)
+      (media) => !mediaToDelete.includes(media.id),
     );
 
     const validOrders = remainingMedia
@@ -125,7 +125,7 @@ export function useUpdateProduct() {
         editingListing.id,
         queryClient,
         kupiProdaiApi.baseKey,
-        kupiProdaiApi.getProduct
+        kupiProdaiApi.getProduct,
       );
       resetState();
     } catch (error) {

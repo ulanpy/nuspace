@@ -44,7 +44,7 @@ export function useCreateProduct() {
     description: String(form.get("description")),
     price: Number(form.get("price")),
     category: String(
-      form.get("category")
+      form.get("category"),
     ).toLowerCase() as Types.ProductCategory,
     condition: String(form.get("condition")) as Types.ProductCondition,
     status: "active",
@@ -87,7 +87,7 @@ export function useCreateProduct() {
         newProduct.id,
         queryClient,
         kupiProdaiApi.baseKey,
-        kupiProdaiApi.getProduct
+        kupiProdaiApi.getProduct,
       );
 
       resetEditListing();

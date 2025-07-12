@@ -100,13 +100,13 @@ export default function ProductDetailPage() {
 
   const nextImage = () => {
     setCurrentImageIndex((prevIndex) =>
-      prevIndex === product.media.length - 1 ? 0 : prevIndex + 1
+      prevIndex === product.media.length - 1 ? 0 : prevIndex + 1,
     );
   };
 
   const prevImage = () => {
     setCurrentImageIndex((prevIndex) =>
-      prevIndex === 0 ? product.media.length - 1 : prevIndex - 1
+      prevIndex === 0 ? product.media.length - 1 : prevIndex - 1,
     );
   };
 
@@ -316,7 +316,11 @@ export default function ProductDetailPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                <img src={product.seller.picture} alt="" className="w-8 h-8 rounded-full" />
+                <img
+                  src={product.seller.picture}
+                  alt=""
+                  className="w-8 h-8 rounded-full"
+                />
               </div>
               <div>
                 <div className="flex items-center">
@@ -381,7 +385,6 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Comments Section */}
-
 
       {/* Report Modal */}
       <Modal

@@ -155,7 +155,7 @@ export function GlowCarouselWithImage({
       const newDirection = index > itemIndex ? 1 : -1;
       setPage([index, newDirection]);
     },
-    [itemIndex]
+    [itemIndex],
   );
 
   useEffect(() => {
@@ -210,7 +210,7 @@ export function GlowCarouselWithImage({
             className={`absolute inset-0 flex items-center justify-center ${
               React.isValidElement(currentItem.content) &&
               React.isValidElement(
-                (currentItem.content as any).props?.children
+                (currentItem.content as any).props?.children,
               ) &&
               (currentItem.content as any).props?.children?.type === "img"
                 ? "p-0"

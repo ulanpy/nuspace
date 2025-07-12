@@ -62,4 +62,3 @@ export const productCategories: Types.DisplayCategory[] = [
     icon: <BiSolidCategory />,
   },
 ];
-

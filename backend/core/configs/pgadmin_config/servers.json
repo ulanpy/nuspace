@@ -1,16 +1,15 @@
 {
-    "Servers": {
-        "1": {
-            "Name": "PostgreSQL",
-            "Group": "Servers",
-            "Host": "postgres",
-            "Port": 5432,
-            "MaintenanceDB": "postgres",
-            "Username": "postgres",
-            "PassFile": "/var/lib/pgadmin/pgpass",
-            "SSLMode": "prefer",
-            "ConnectNow": true
-        }
+  "Servers": {
+    "1": {
+      "Name": "PostgreSQL",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "postgres",
+      "Username": "postgres",
+      "PassFile": "/var/lib/pgadmin/pgpass",
+      "SSLMode": "prefer",
+      "ConnectNow": true
     }
+  }
 }
-

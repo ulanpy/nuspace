@@ -1,34 +1,41 @@
-import { academicEvents, culturalEvents, featuredEvents, socialEvents, sportsEvents, todayEvents } from "./mock-events-data";
+import {
+  academicEvents,
+  culturalEvents,
+  featuredEvents,
+  socialEvents,
+  sportsEvents,
+  todayEvents,
+} from "./mock-events-data";
 
 export const eventSections = [
   {
     title: "Featured Events",
     link: "/apps/nu-events/featured",
-    events: featuredEvents
+    events: featuredEvents,
   },
   {
     title: "Today's Events",
     link: "/apps/nu-events/today",
-    events: todayEvents
+    events: todayEvents,
   },
   {
     title: "Academic Events",
     link: "/apps/nu-events/Academic",
-    events: academicEvents
+    events: academicEvents,
   },
   {
     title: "Cultural Events",
     link: "/apps/nu-events/cultural",
-    events: culturalEvents
+    events: culturalEvents,
   },
   {
     title: "Sport Events",
     link: "/apps/nu-events/sports",
-    events: sportsEvents
+    events: sportsEvents,
   },
   {
     title: "Social & Recreational Events",
     link: "/apps/nu-events/social",
-    events: socialEvents
-  }
+    events: socialEvents,
+  },
 ];

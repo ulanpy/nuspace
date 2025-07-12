@@ -29,14 +29,14 @@ export function useProductImages() {
     return Promise.all(
       files.map(async (imageFile) => {
         return await imageCompression(imageFile, options);
-      })
+      }),
     );
   };
 
   const getSignedUrls = async (
     entityId: number,
     files: File[],
-    options: Omit<UploadImageOptions, "entityId">
+    options: Omit<UploadImageOptions, "entityId">,
   ) => {
     const requests: SignedUrlRequest[] = files.map((file, idx) => ({
       entity_type: options.entity_type,
@@ -78,7 +78,7 @@ export function useProductImages() {
           headers,
           body: file,
         });
-      })
+      }),
     );
   };
 

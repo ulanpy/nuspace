@@ -4,9 +4,11 @@ interface ProductInfoProps {
   newListing: Types.NewProductRequest;
   categories: Types.DisplayCategory[];
   conditions: string[];
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  handlePriceInputFocus: (e: React.FocusEvent<HTMLInputElement>) => void
-  handlePriceInputBlur: (e: React.FocusEvent<HTMLInputElement>) => void
+  handleInputChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => void;
+  handlePriceInputFocus: (e: React.FocusEvent<HTMLInputElement>) => void;
+  handlePriceInputBlur: (e: React.FocusEvent<HTMLInputElement>) => void;
   handleSelectChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 }
 export function ProductInfo({

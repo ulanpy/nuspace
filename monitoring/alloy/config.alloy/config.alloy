@@ -3,14 +3,29 @@
 // ###############################
 
 // Host Cadvisor on the Docker socket to expose container metrics.
-prometheus.exporter.cadvisor "cadvisor" { }
+prometheus.exporter.cadvisor "cadvisor_exporter" {
+	docker_host = "unix:///var/run/docker.sock"
+}
 
-prometheus.exporter.unix "node_exporter" { }
+prometheus.exporter.unix "node_exporter" { 
 
-// Configure a prometheus.scrape component to collect cadvisor and fastapi metrics.
+}
+
+// Configure a relabeling block for cadvisor to add container names as labels.
+prometheus.relabel "cadvisor_container_names" {
+	forward_to = [prometheus.scrape.cadvisor_scrape.receiver]
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.*)"
+		target_label  = "service_name"
+	}
+}
+
 prometheus.scrape "cadvisor_scrape" {
-	targets    = prometheus.exporter.cadvisor.cadvisor.targets
+	targets    = prometheus.exporter.cadvisor.cadvisor_exporter.targets
 	forward_to = [prometheus.remote_write.prometheus_write.receiver]
+	job_name   = "cadvisor"
+
 }
 
 // Configure a prometheus.scrape component to collect custom metrics 
@@ -21,7 +36,7 @@ prometheus.scrape "nuspace_scrape" {
 		__metrics_path__ = "/api/metrics",
 	}]
 	forward_to = [prometheus.remote_write.prometheus_write.receiver]
-	job_name   = "fasapi"
+	job_name   = "fastapi"
 }
 
 // Configure a prometheus.scrape component to collect Node Exporter metrics.
@@ -34,7 +49,7 @@ prometheus.scrape "node_exporter_scrape" {
 // Configure a prometheus.remote_write component to send metrics to a Prometheus server.
 prometheus.remote_write "prometheus_write" {
 	endpoint {
-		url = "http://prometheus:9090/prometheus/api/v1/write"
+		url = "http://prometheus:9090/api/v1/write"
 	}
 }
 

@@ -15,7 +15,7 @@ scrape_configs:
     metric_relabel_configs:
       - source_labels: [__name__]
         action: keep
-        regex: '(up)'
+        regex: "(up)"
 
 alerting:
   alertmanagers:

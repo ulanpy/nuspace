@@ -20,7 +20,7 @@ const UserPage = () => {
 
   // Filter products based on search term
   const filteredProducts = mockUserProducts.filter((product) =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    product.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (

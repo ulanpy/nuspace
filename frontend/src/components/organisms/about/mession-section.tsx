@@ -1,8 +1,8 @@
 import { useTheme } from "@/context/theme-provider";
 
 export const MessionSection = () => {
-    const { theme } = useTheme();
-    const isDark = theme === "dark";
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   return (
     <div
       className={`rounded-2xl p-8 mb-16 ${

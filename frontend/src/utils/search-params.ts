@@ -20,6 +20,6 @@ export const getSearchConditionFromURL = (query: string) => {
 };
 
 export const getProductIdFromURL = (query: string) => {
-  const params = new URLSearchParams(query)
-  console.log(params.get('id'))
-}
+  const params = new URLSearchParams(query);
+  console.log(params.get("id"));
+};

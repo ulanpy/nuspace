@@ -1,30 +1,31 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useLocation, Link } from "react-router-dom"
-import { cn } from "../../utils/utils"
+import { useLocation, Link } from "react-router-dom";
+import { cn } from "../../utils/utils";
 
 interface Tab {
-  label: string
-  path: string
-  icon?: React.ReactNode
+  label: string;
+  path: string;
+  icon?: React.ReactNode;
 }
 
 interface NavTabsProps {
-  tabs: Tab[]
+  tabs: Tab[];
 }
 
 export const NavTabs = ({ tabs }: NavTabsProps) => {
-  const location = useLocation()
-  const currentPath = location.pathname
+  const location = useLocation();
+  const currentPath = location.pathname;
 
   return (
     <div className="flex border-b overflow-x-auto no-scrollbar">
       {tabs.map((tab) => {
         const isActive =
-          (tab.path === "/apps/nu-events" && currentPath === "/apps/nu-events") ||
-          (tab.path !== "/apps/nu-events" && currentPath.startsWith(tab.path))
+          (tab.path === "/apps/nu-events" &&
+            currentPath === "/apps/nu-events") ||
+          (tab.path !== "/apps/nu-events" && currentPath.startsWith(tab.path));
 
         return (
           <Link
@@ -40,8 +41,8 @@ export const NavTabs = ({ tabs }: NavTabsProps) => {
             {tab.icon}
             {tab.label}
           </Link>
-        )
+        );
       })}
     </div>
-  )
-}
+  );
+};

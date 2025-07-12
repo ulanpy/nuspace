@@ -13,11 +13,9 @@ import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
 import { ROUTES } from "@/data/routes";
 
-
-
 const AdminLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const navItems = ROUTES.ADMIN
+  const navItems = ROUTES.ADMIN;
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
@@ -28,13 +26,16 @@ const AdminLayout: React.FC = () => {
       <aside
         className={cn(
           "bg-white border-r border-gray-200 transition-all duration-300 flex flex-col",
-          sidebarCollapsed ? "w-16" : "w-64"
+          sidebarCollapsed ? "w-16" : "w-64",
         )}
       >
         {/* Logo area */}
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           {!sidebarCollapsed && (
-            <Link to={ROUTES.APPS.KP} className="font-bold text-lg text-blue-600">
+            <Link
+              to={ROUTES.APPS.KP}
+              className="font-bold text-lg text-blue-600"
+            >
               Kupi&Prodai
             </Link>
           )}
@@ -62,10 +63,8 @@ const AdminLayout: React.FC = () => {
                 icon={item.icon}
                 label={item.label}
                 collapsed={sidebarCollapsed}
-                />
+              />
             ))}
-
-
           </ul>
         </nav>
 

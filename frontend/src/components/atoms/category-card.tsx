@@ -31,8 +31,8 @@ export const CategoryCard = ({
               ? "bg-slate-900 text-white scale-105 shadow-lg border-slate-700"
               : "bg-slate-100 text-slate-900 scale-105 shadow-lg border-slate-200"
             : isDarkTheme
-            ? "bg-slate-800 text-slate-400 hover:bg-slate-900 hover:text-slate-300 hover:scale-105"
-            : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 hover:scale-105"
+              ? "bg-slate-800 text-slate-400 hover:bg-slate-900 hover:text-slate-300 hover:scale-105"
+              : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 hover:scale-105"
         }
       `}
     >

@@ -392,7 +392,7 @@ export default function DormEatsPage() {
       items: category.items.filter(
         (item) =>
           item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.description.toLowerCase().includes(searchQuery.toLowerCase())
+          item.description.toLowerCase().includes(searchQuery.toLowerCase()),
       ),
     }))
     .filter((category) => category.items.length > 0);

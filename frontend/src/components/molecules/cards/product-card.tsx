@@ -1,7 +1,12 @@
 "use client";
 import { Card, CardContent } from "../../atoms/card";
 import { Badge } from "../../atoms/badge";
-import { getCategoryDisplay, getConditionColor, getConditionDisplay, getPlaceholderImage } from "@/utils/products-utils";
+import {
+  getCategoryDisplay,
+  getConditionColor,
+  getConditionDisplay,
+  getPlaceholderImage,
+} from "@/utils/products-utils";
 
 interface ProductCardProps {
   product: Types.Product;
@@ -10,7 +15,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onClick, actions }: ProductCardProps) {
-  console.log(product)
+  console.log(product);
   return (
     <Card
       className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"
@@ -24,7 +29,7 @@ export function ProductCard({ product, onClick, actions }: ProductCardProps) {
         />
         <Badge
           className={`absolute top-2 right-2 ${getConditionColor(
-            product.condition
+            product.condition,
           )} text-white text-xs`}
         >
           {getConditionDisplay(product.condition)}
@@ -46,9 +51,7 @@ export function ProductCard({ product, onClick, actions }: ProductCardProps) {
             </span>
           </div>
         </div>
-        <div className="flex justify-between">
-          {actions}
-        </div>
+        <div className="flex justify-between">{actions}</div>
       </CardContent>
     </Card>
   );

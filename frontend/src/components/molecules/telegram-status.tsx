@@ -7,15 +7,18 @@ interface TelegramStatusProps {
   className?: string;
 }
 
-export function TelegramStatus({ isConnected, className = "" }: TelegramStatusProps) {
+export function TelegramStatus({
+  isConnected,
+  className = "",
+}: TelegramStatusProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
   if (!isConnected) return null;
 
   return (
-    <Badge 
-      variant="outline" 
+    <Badge
+      variant="outline"
       className={`
         flex 
         items-center 
@@ -34,4 +37,4 @@ export function TelegramStatus({ isConnected, className = "" }: TelegramStatusPr
       <span className="text-xs font-medium">Connected</span>
     </Badge>
   );
-} 
+}

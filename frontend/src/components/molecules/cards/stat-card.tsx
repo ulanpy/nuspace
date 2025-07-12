@@ -9,7 +9,13 @@ interface StatCardProps {
   trend: "up" | "down";
 }
 
-export const StatCard = ({ title, value, icon, change, trend }: StatCardProps) => {
+export const StatCard = ({
+  title,
+  value,
+  icon,
+  change,
+  trend,
+}: StatCardProps) => {
   return (
     <Card>
       <CardContent className="p-6">

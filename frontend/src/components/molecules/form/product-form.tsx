@@ -37,7 +37,9 @@ interface ProductFormProps {
     images: { id: number; url: string; main: boolean }[];
   };
   handleSave: (e: React.FormEvent) => void;
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
+  handleInputChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => void;
   handleSelectChange: (name: string, value: string) => void;
   setMainImage: (imageId: number) => void;
   removeImage: (imageId: number) => void;
