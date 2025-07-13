@@ -1,4 +1,3 @@
-//import imageCompression from "browser-image-compression";
 import {
   kupiProdaiApi,
   SignedUrlRequest,
@@ -39,7 +38,7 @@ export function useProductImages() {
               } else {
                 reject(new Error("Failed to compress image"));
               }
-            }, 'image/webp');
+            }, 'image/webp', 0.8);
           };
           img.onerror = reject;
           img.src = URL.createObjectURL(imageFile);
