@@ -38,7 +38,7 @@ export function useProductImages() {
               } else {
                 reject(new Error("Failed to compress image"));
               }
-            }, 'image/webp', 0.8);
+            }, 'image/webp', 0.03);
           };
           img.onerror = reject;
           img.src = URL.createObjectURL(imageFile);
