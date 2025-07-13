@@ -172,8 +172,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.0" # 1 CPU core
-          memory: 1G # 2 GB RAM
+          cpus: "1.0"
+          memory: 1G
         # reservations:
         #   cpus: '0.5' # Reserve 0.5 CPU core
         #   memory: 1G # Reserve 1 GB RAM
@@ -186,8 +186,8 @@ services:
     container_name: prometheus
     image: prom/prometheus:latest
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/prometheus/grafana_alert_rules.yml:/etc/prometheus/grafana_alert_rules.yml:ro
+      # - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # - ./monitoring/prometheus/grafana_alert_rules.yml:/etc/prometheus/grafana_alert_rules.yml:ro
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -223,18 +223,18 @@ services:
       - "./monitoring/grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
       - "./monitoring/grafana/dashboards/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
       - "./monitoring/grafana/provisioning/dashboards/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
-      - "./monitoring/grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
-      - "./monitoring/grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"
-      - "./monitoring/grafana/provisioning/alerting/alerts.yaml:/etc/grafana/provisioning/alerting/alerts.yaml"
-      - "./monitoring/scripts/start-grafana.sh:/start-grafana.sh"
+      # No need for alerting in development
+      # - "./monitoring/grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
+      # - "./monitoring/grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"
+      # - "./monitoring/grafana/provisioning/alerting/alerts.yaml:/etc/grafana/provisioning/alerting/alerts.yaml"
+      # - "./monitoring/scripts/start-grafana.sh:/start-grafana.sh"
     entrypoint: ["/bin/sh", "/start-grafana.sh"]
-    # privileged: true
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          cpus: "1.0" # 1 CPU core
-          memory: 1G # 2 GB RAM
+          cpus: "1.0"
+          memory: 1G
         # reservations:
         #   cpus: '0.5' # Reserve 0.5 CPU core
         #   memory: 1G # Reserve 1 GB RAM
@@ -293,8 +293,8 @@ volumes:
   redis-data:
     driver: local
   pgadmin-data:
-  rabbitmq-data: # Add this
-  frontend-node-modules: # Named volume for frontend node_modules
+  rabbitmq-data:
+  frontend-node-modules:
   cursor-server:
   grafana-data:
   prometheus_data:
