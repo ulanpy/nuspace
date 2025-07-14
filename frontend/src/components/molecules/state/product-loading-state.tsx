@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/atoms/card";
 import { Skeleton } from "@/components/atoms/skeleton";
 
-export function ProductLoadingState({count = 8}: {count?: number}) {
+export function ProductLoadingState({ count = 8 }: { count?: number }) {
   return (
     <>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">

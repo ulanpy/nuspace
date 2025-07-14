@@ -1,10 +1,15 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "../atoms/button";
 
-export function GeneralSection({title, link, children}: {
+export function GeneralSection({
+  title,
+  link,
+  children,
+}: {
   title: string;
   link: string;
-  children: React.ReactNode;}) {
+  children: React.ReactNode;
+}) {
   const navigate = useNavigate();
   return (
     <div className="mt-6">
@@ -20,7 +25,7 @@ export function GeneralSection({title, link, children}: {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-       {children}
+        {children}
       </div>
     </div>
   );

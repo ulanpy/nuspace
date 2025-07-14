@@ -29,7 +29,7 @@ class Config(BaseSettings):
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
     IS_DEBUG: bool = True
-    TG_API_KEY: str
+    TELEGRAM_BOT_TOKEN: str
     TG_WEBHOOK_SECRET_TOKEN: str
     CLOUDFLARED_TUNNEL_URL: str
     NUSPACE: str

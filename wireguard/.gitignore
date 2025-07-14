@@ -1,0 +1,6 @@
+# Ignore all files in wireguard directory except README.md and .gitkeep
+*
+
+# Allow README.md and .gitkeep to be tracked
+!README.md
+!.gitkeep 

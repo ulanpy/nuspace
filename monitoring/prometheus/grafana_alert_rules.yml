@@ -1,0 +1,11 @@
+groups:
+  - name: GrafanaDown
+    rules:
+      - alert: GrafanaDown
+        expr: up{job="grafana"} == 0
+        for: 40m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Графана не доступна"
+          description: "@sagyzdop Графана не доступна более 40 минут"

@@ -14,10 +14,15 @@ export function useDeleteProduct() {
     async onSuccess(_, deletedId) {
       queryClient.setQueryData(
         kupiProdaiApi.getUserProductsQueryOptions().queryKey,
-        (data) => data ? {
-          ...data,
-          products: data.products.filter(product => product.id !== deletedId),
-        } : undefined
+        (data) =>
+          data
+            ? {
+                ...data,
+                products: data.products.filter(
+                  (product) => product.id !== deletedId,
+                ),
+              }
+            : undefined,
       );
       toast({
         title: "Success",

@@ -30,8 +30,8 @@ export function FilterCard({
                 {policy === "open"
                   ? "Open Entry"
                   : policy === "free_ticket"
-                  ? "Free Ticket"
-                  : "Paid Ticket"}
+                    ? "Free Ticket"
+                    : "Paid Ticket"}
               </Badge>
             ))}
           </div>

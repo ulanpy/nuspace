@@ -141,7 +141,9 @@ export const kupiProdaiApi = {
     return queryOptions({
       queryKey: [kupiProdaiApi.baseKey, "userProducts"],
       queryFn: () => {
-        return apiCall<PaginatedResponse<Product>>(`/products?size=${defaultSize}&page=${defaultPage}&owner_sub=me`);
+        return apiCall<PaginatedResponse<Product>>(
+          `/products?size=${defaultSize}&page=${defaultPage}&owner_sub=me`,
+        );
       },
     });
   },
@@ -185,9 +187,12 @@ export const kupiProdaiApi = {
     return queryOptions({
       queryKey: ["pre-search-products", keyword],
       queryFn: ({ signal }) => {
-        return apiCall<Types.PreSearchedProduct[]>(`/search/?keyword=${keyword}&storage_name=products&page=1&size=10`, {
-          signal,
-        });
+        return apiCall<Types.PreSearchedProduct[]>(
+          `/search/?keyword=${keyword}&storage_name=products&page=1&size=10`,
+          {
+            signal,
+          },
+        );
       },
     });
   },
@@ -195,7 +200,7 @@ export const kupiProdaiApi = {
   // Get signed URLs for uploading images
   // AFTER (correct)
   getSignedUrls: async (
-    requests: SignedUrlRequest[]
+    requests: SignedUrlRequest[],
   ): Promise<SignedUrlResponse[]> => {
     return apiCall<SignedUrlResponse[]>(`/bucket/upload-url`, {
       method: "POST",
@@ -208,7 +213,7 @@ export const kupiProdaiApi = {
     file: File,
     filename: string,
     entityId: number,
-    mediaOrder: number
+    mediaOrder: number,
   ): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);

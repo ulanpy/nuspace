@@ -4,13 +4,13 @@ import { useUser } from "@/hooks/use-user";
 export const addToGoogleCalendar = (
   event: NuEvents.Event,
   setPendingAction: (action: () => void) => void,
-  setShowLoginModal: (show: boolean) => void
+  setShowLoginModal: (show: boolean) => void,
 ) => {
   const { toast } = useToast();
   const user = useUser();
   if (!user) {
     setPendingAction(() =>
-      addToGoogleCalendar(event, setPendingAction, setShowLoginModal)
+      addToGoogleCalendar(event, setPendingAction, setShowLoginModal),
     );
     setShowLoginModal(true);
     return;
@@ -20,7 +20,7 @@ export const addToGoogleCalendar = (
   const endDate = new Date(eventDate.getTime() + event.duration * 60000);
 
   const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-    event.name
+    event.name,
   )}&dates=${eventDate
     .toISOString()
     .replace(/-|:|\.\d+/g, "")
@@ -28,7 +28,7 @@ export const addToGoogleCalendar = (
     .toISOString()
     .replace(/-|:|\.\d+/g, "")
     .slice(0, -1)}&details=${encodeURIComponent(
-    event.description
+    event.description,
   )}&location=${encodeURIComponent(event.place)}`;
 
   window.open(googleCalendarUrl, "_blank");

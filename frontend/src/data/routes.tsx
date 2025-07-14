@@ -39,65 +39,67 @@ export const ROUTES = {
 export const LazyRoutes = {
   APPS: {
     BASIC: [
-    {
-      path: "kupi-prodai",
-      Component: withSuspense(lazy(() => import("@/pages/apps/kupi-prodai"))),
-    },
-    {
-      path: "kupi-prodai/product/:id",
-      Component: withSuspense(
-        lazy(() => import("@/pages/apps/kupi-prodai/product/[id]"))
-      ),
-    },
-    {
-      path: "about",
-      Component: withSuspense(lazy(() => import("@/pages/apps/about"))),
-    },
-    {
-      path: "dorm-eats",
-      Component: withSuspense(lazy(() => import("@/pages/apps/dorm-eats"))),
-    },
-  ],
-  EVENTS: [
-     {
-      path: "nu-events",
-      Component: withSuspense(lazy(() => import("@/pages/apps/nu-events"))),
-    },
-    {
-      path: "nu-events/events",
-      Component: withSuspense(lazy(() => import("@/pages/apps/nu-events/events"))),
-    },
-    {
-      path: "nu-events/event/:id",
-      Component: withSuspense(
-        lazy(() => import("@/pages/apps/nu-events/event/[id]"))
-      ),
-    },
-    {
-      path: "nu-events/club/:id",
-      Component: withSuspense(
-        lazy(() => import("@/pages/apps/nu-events/club/[id]"))
-      ),
-    },
-    {
-      path: "nu-events/clubs",
-      Component: withSuspense(
-        lazy(() => import("@/pages/apps/nu-events/clubs"))
-      ),
-    },
-  ]
+      {
+        path: "kupi-prodai",
+        Component: withSuspense(lazy(() => import("@/pages/apps/kupi-prodai"))),
+      },
+      {
+        path: "kupi-prodai/product/:id",
+        Component: withSuspense(
+          lazy(() => import("@/pages/apps/kupi-prodai/product/[id]")),
+        ),
+      },
+      {
+        path: "about",
+        Component: withSuspense(lazy(() => import("@/pages/apps/about"))),
+      },
+      {
+        path: "dorm-eats",
+        Component: withSuspense(lazy(() => import("@/pages/apps/dorm-eats"))),
+      },
+    ],
+    EVENTS: [
+      {
+        path: "nu-events",
+        Component: withSuspense(lazy(() => import("@/pages/apps/nu-events"))),
+      },
+      {
+        path: "nu-events/events",
+        Component: withSuspense(
+          lazy(() => import("@/pages/apps/nu-events/events")),
+        ),
+      },
+      {
+        path: "nu-events/event/:id",
+        Component: withSuspense(
+          lazy(() => import("@/pages/apps/nu-events/event/[id]")),
+        ),
+      },
+      {
+        path: "nu-events/club/:id",
+        Component: withSuspense(
+          lazy(() => import("@/pages/apps/nu-events/club/[id]")),
+        ),
+      },
+      {
+        path: "nu-events/clubs",
+        Component: withSuspense(
+          lazy(() => import("@/pages/apps/nu-events/clubs")),
+        ),
+      },
+    ],
   },
   ADMINS: [
     {
       path: "products",
       Component: withSuspense(
-        lazy(() => import("@/pages/admin/products-page"))
+        lazy(() => import("@/pages/admin/products-page")),
       ),
     },
     {
       path: "product/:id",
       Component: withSuspense(
-        lazy(() => import("@/pages/admin/product-detail-page"))
+        lazy(() => import("@/pages/admin/product-detail-page")),
       ),
     },
     {

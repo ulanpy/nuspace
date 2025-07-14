@@ -1,6 +1,5 @@
 import { Button } from "@/components/atoms/button";
 
-
 export function ProductErrorState({ error }: { error: string }) {
   return (
     <div className="text-center py-12 text-destructive">

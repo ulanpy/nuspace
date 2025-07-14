@@ -6,8 +6,8 @@ import { useNavigate } from "react-router-dom";
 export function CommunityCard({ club }: { club: NuEvents.Club }) {
   const navigate = useNavigate();
   const getClubTypeDisplay = (type: string) => {
-  return type.charAt(0).toUpperCase() + type.slice(1);
-};
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  };
   return (
     <Card
       key={club.id}

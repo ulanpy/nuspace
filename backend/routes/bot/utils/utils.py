@@ -11,7 +11,7 @@ from backend.routes.bot.routes import include_routers
 
 async def initialize_bot(
     app: FastAPI,
-    token: str = config.TG_API_KEY,
+    token: str = config.TELEGRAM_BOT_TOKEN,
 ):
     app.state.bot = Bot(token=token)
     app.state.dp = Dispatcher(storage=RedisStorage(app.state.redis))

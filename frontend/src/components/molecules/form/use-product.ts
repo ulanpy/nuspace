@@ -1,12 +1,12 @@
 import { useListingState } from "@/context/listing-context";
-import { productCategories} from "@/data/kp/product";
+import { productCategories } from "@/data/kp/product";
 
 export const useProduct = () => {
   const { setNewListing } = useListingState();
   const conditions = ["All Conditions", "new", "used"];
-  const categories = productCategories
+  const categories = productCategories;
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
 

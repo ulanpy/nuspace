@@ -2,6 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
+# Import both the instrumentor and the metrics_app
+from monitoring.prometheus.prometheus_metrics import instrument_app, metrics_app
+
 from backend.core.configs.config import config
 from backend.lifespan import lifespan
 
@@ -20,6 +23,7 @@ app = FastAPI(
     version="1.0.1",
 )
 
+app.mount("/metrics", metrics_app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,3 +31,5 @@ app.add_middleware(
     allow_credentials=True,
 )
 app.add_middleware(SessionMiddleware, secret_key=config.SESSION_MIDDLEWARE_KEY)
+
+instrument_app(app)

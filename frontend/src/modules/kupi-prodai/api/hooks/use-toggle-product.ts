@@ -12,7 +12,7 @@ export const useToggleProduct = () => {
       await queryClient.cancelQueries({ queryKey: [kupiProdaiApi.baseKey] });
 
       const previousTodos = queryClient.getQueryData(
-        kupiProdaiApi.getUserProductsQueryOptions().queryKey
+        kupiProdaiApi.getUserProductsQueryOptions().queryKey,
       );
 
       return { previousTodos };
@@ -27,10 +27,12 @@ export const useToggleProduct = () => {
               ? {
                   ...old,
                   products: old.products.map((product) =>
-                    product.id === product_id ? { ...product, status } : product
+                    product.id === product_id
+                      ? { ...product, status }
+                      : product,
                   ),
                 }
-              : old
+              : old,
         );
         queryClient.invalidateQueries({
           queryKey: [kupiProdaiApi.baseKey, "list"],
@@ -48,7 +50,7 @@ export const useToggleProduct = () => {
       if (context) {
         queryClient.setQueryData(
           kupiProdaiApi.getUserProductsQueryOptions().queryKey,
-          context.previousTodos
+          context.previousTodos,
         );
       }
       toast({
@@ -61,7 +63,7 @@ export const useToggleProduct = () => {
 
   const handleToggleProductStatus = (
     id: number,
-    currentStatus: Types.Status
+    currentStatus: Types.Status,
   ) => {
     const newStatus = currentStatus === "active" ? "inactive" : "active";
 

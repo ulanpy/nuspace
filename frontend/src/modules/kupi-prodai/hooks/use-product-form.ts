@@ -18,13 +18,13 @@ export const useProductForm = () => {
           quantity: 0,
           images: [],
         }
-      : mockProductData
+      : mockProductData,
   );
 
   const [isUploading, setIsUploading] = useState(false);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setProduct({
@@ -46,7 +46,7 @@ export const useProductForm = () => {
     toast.success(
       isNewProduct
         ? "Product created successfully"
-        : "Product updated successfully"
+        : "Product updated successfully",
     );
     navigate("/admin/products");
   };

@@ -8,7 +8,7 @@ class ApiError extends Error {
 // Helper function for API calls
 export const apiCall = async <T>(
   endpoint: string,
-  init?: RequestInit & { json?: unknown }
+  init?: RequestInit & { json?: unknown },
 ): Promise<T> => {
   let headers = init?.headers ?? {};
 
@@ -31,4 +31,4 @@ export const apiCall = async <T>(
   }
 
   return response.json();
-}
+};

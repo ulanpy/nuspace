@@ -1,0 +1,293 @@
+services:
+  postgres:
+    image: postgres
+    env_file:
+      - .env
+    networks:
+      - nuros
+    restart: always
+    container_name: postgres
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  fastapi:
+    container_name: fastapi
+    image: kamikadze24/fastapi:${DOCKER_IMAGE_TAG}
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - nuros
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    environment:
+      - PYTHONUNBUFFERED=1
+      - WORKERS=${GUNICORN_WORKERS:-4}
+    volumes:
+      - ./backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
+      - .env:/nuros/.env:ro
+
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    networks:
+      - nuros
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./backend/core/configs/nginx.conf:/etc/nginx/nginx.conf
+      - ./frontend/dist:/var/www/my-app/dist
+      - ./ssl/cloudflare.crt:/etc/ssl/cloudflare/origin.crt
+      - ./ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key
+      - ./monitoring/vpn-index.html:/etc/nginx/vpn-index.html:ro
+    depends_on:
+      - fastapi
+      - frontend-builder
+    command: >
+      /bin/sh -c "
+        apt update && apt install -y inotify-tools &&
+        (while inotifywait -e modify /etc/nginx/nginx.conf; do
+          echo 'nginx config changed, copying and reloading Nginx...' &&
+          nginx -t && nginx -s reload;
+        done) &
+        nginx -g 'daemon off;'"
+
+  redis:
+    image: redis:latest
+    networks:
+      - nuros
+    container_name: redis
+    restart: always
+    volumes:
+      - redis-data:/data
+      - ./backend/core/configs/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server --bind 0.0.0.0 --protected-mode no
+
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    networks:
+      - nuros
+    container_name: meilisearch
+    ports:
+      - "127.0.0.1:7700:7700"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    networks:
+      - nuros
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+      - ./backend/core/configs/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+
+    healthcheck:
+      test: ["CMD", "rabbitmq", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  celery-worker:
+    image: kamikadze24/celeryworker:${DOCKER_IMAGE_TAG}
+    networks:
+      - nuros
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+      - redis
+      - fastapi
+    command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
+    environment:
+      - CELERY_WORKER_CONCURRENCY=4
+      - CELERY_WORKER_PREFETCH_MULTIPLIER=1
+    deploy:
+      replicas: 2
+
+  frontend-builder:
+    container_name: frontend-builder
+    image: kamikadze24/frontendbuilder:${DOCKER_IMAGE_TAG}
+    build:
+      context: .
+      dockerfile: Dockerfile_static_builder
+    networks:
+      - nuros
+    volumes:
+      - ./frontend/dist:/app/dist
+    command: sh -c "npm run build"
+    restart: "no"
+
+  loki:
+    container_name: loki
+    image: grafana/loki:latest
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/loki/service-account-key.json
+    volumes:
+      - ./monitoring/nuspace_bucket.json:/loki/service-account-key.json:ro
+      - ./monitoring/loki/loki.prod.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml -log.level="warn" -config.expand-env=true
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+    networks:
+      - nuros
+    profiles:
+      - monitoring
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/grafana_alert_rules.yml:/etc/prometheus/grafana_alert_rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-remote-write-receiver"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.external-url=/prometheus/"
+    restart: unless-stopped
+    networks:
+      - nuros
+    profiles:
+      - monitoring
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - DS_PROMETHEUS=prometheus
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+      - GF_LOG_LEVEL=warn
+      - GF_SERVER_ROOT_URL=https://vpn.nuspace.kz/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+      - GF_DATABASE_WAL=true
+    volumes:
+      - "grafana-data:/var/lib/grafana"
+      - "./monitoring/grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
+      - "./monitoring/grafana/dashboards/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
+      - "./monitoring/grafana/provisioning/dashboards/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
+      - "./monitoring/grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
+      - "./monitoring/grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"
+      - "./monitoring/grafana/provisioning/alerting/alerts.yaml:/etc/grafana/provisioning/alerting/alerts.yaml"
+      - "./monitoring/scripts/start-grafana.sh:/start-grafana.sh"
+    entrypoint: ["/bin/sh", "/start-grafana.sh"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+    networks:
+      - nuros
+    depends_on:
+      - alloy
+    profiles:
+      - monitoring
+
+  alloy:
+    container_name: alloy
+    image: grafana/alloy:latest
+    volumes:
+      - ./monitoring/alloy/config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run:/var/run:ro
+      - /:/rootfs:ro
+      - /sys:/sys:ro
+    command: run --server.http.listen-addr=0.0.0.0:12345 --server.http.ui-path-prefix=/alloy/ --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    restart: unless-stopped
+    networks:
+      - nuros
+    depends_on:
+      - prometheus
+      - loki
+    profiles:
+      - monitoring
+
+  alertmanager:
+    container_name: alertmanager
+    image: prom/alertmanager:latest
+    volumes:
+      - ./monitoring/prometheus/alertmanager.yml.tpl:/etc/alertmanager/alertmanager.yml.tpl:ro
+      - ./monitoring/scripts/start-alertmanager.sh:/start-alertmanager.sh:ro
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    entrypoint: ["/bin/sh", "/start-alertmanager.sh"]
+    restart: unless-stopped
+    networks:
+      - nuros
+    profiles:
+      - monitoring
+
+  wireguard:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    networks:
+      nuros:
+        ipv4_address: 172.28.0.10
+    environment:
+      - PUID=3182562138
+      - PGID=1007
+      - TZ=Etc/UTC
+      - SERVERURL=vpn.nuspace.kz
+      - PEERS=10
+      - PEERDNS=1.1.1.1
+      - INTERNAL_SUBNET=10.13.13.0/24
+      - ALLOWEDIPS=0.0.0.0/0
+      - LOG_CONFS=true
+      - POST_UP_SCRIPT=sysctl -w net.ipv4.ip_forward=1; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE; iptables -t nat -A POSTROUTING -s 172.28.0.0/24 -o wg0 -j MASQUERADE
+      - POST_DOWN_SCRIPT=iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE; iptables -t nat -D POSTROUTING -s 172.28.0.0/24 -o wg0 -j MASQUERADE
+    volumes:
+      - ./wireguard/config:/config
+      - /lib/modules:/lib/modules
+    ports:
+      - 51820:51820/udp
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+
+networks:
+  nuros:
+    name: nuspace_nuros
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+          gateway: 172.28.0.1
+
+volumes:
+  postgres-data:
+  redis-data:
+    driver: local
+  rabbitmq-data:
+  grafana-data:
+  prometheus_data:
+  loki_data:

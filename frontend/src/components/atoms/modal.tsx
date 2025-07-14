@@ -50,7 +50,7 @@ export function Modal({
       <div
         className={cn(
           "bg-background rounded-lg shadow-lg w-full overflow-hidden",
-          className
+          className,
         )}
         onClick={(e) => e.stopPropagation()}
       >
@@ -68,6 +68,6 @@ export function Modal({
         <div className="p-4">{children}</div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

@@ -15,7 +15,7 @@ async def process_notification(notification: schemas.ModifiedNotification, msg: 
 
     if not notification.switch:
         return
-    bot = Bot(token=config.TG_API_KEY)
+    bot = Bot(token=config.TELEGRAM_BOT_TOKEN)
     try:
         await bot.send_message(
             notification.tg_id,

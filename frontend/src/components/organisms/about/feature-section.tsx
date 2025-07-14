@@ -1,4 +1,3 @@
-
 import { FeatureCard } from "@/components/molecules/cards/feature-card";
 import { features } from "@/data/features";
 import { Link } from "react-router-dom";
