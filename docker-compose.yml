@@ -182,7 +182,7 @@ services:
     profiles:
       - monitoring
 
-  prometheus: 
+  prometheus:
     container_name: prometheus
     image: prom/prometheus:latest
     volumes:
@@ -204,7 +204,7 @@ services:
     profiles:
       - monitoring
 
-  grafana: 
+  grafana:
     container_name: grafana
     image: grafana/grafana:latest
     environment:
@@ -246,12 +246,16 @@ services:
     profiles:
       - monitoring
 
-  alloy: 
+  alloy:
     container_name: alloy
     image: grafana/alloy:latest
     volumes:
-      - ./monitoring/alloy/config.alloy/config.alloy:/etc/alloy/config.alloy
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./monitoring/alloy/config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run:/var/run:ro
+      - /:/rootfs:ro
+      - /sys:/sys:ro
     command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     restart: unless-stopped
     ports:
@@ -266,7 +270,7 @@ services:
     profiles:
       - monitoring
 
-  alertmanager: 
+  alertmanager:
     container_name: alertmanager
     image: prom/alertmanager:latest
     volumes:

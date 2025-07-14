@@ -710,7 +710,7 @@
           },
           "direction": "backward",
           "editorMode": "builder",
-          "expr": "{service_name=\"fastapi\"} |= ``",
+          "expr": "{service_name=\"application\"} |= ``",
           "queryType": "range",
           "refId": "A"
         }

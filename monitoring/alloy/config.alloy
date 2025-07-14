@@ -1,36 +1,44 @@
-// ###############################
-// #### Metrics Configuration ####
-// ###############################
+/* ####################################### */
+/* ######## Metrics Configuration ######## */
+/* ####################################### */
 
-// Host Cadvisor on the Docker socket to expose container metrics.
+/* -------- EXPORTERS -------- */
+
+//Cadvisor exporter component for exposing Docker container metrics
 prometheus.exporter.cadvisor "docker" {
 	docker_host = "unix:///var/run/docker.sock"
 }
 
-prometheus.exporter.unix "node_exporter" { }
+// Node Exporter exporter component for exposing Docker container metrics
+prometheus.exporter.unix "host" { }
 
-prometheus.scrape "cadvisor" {
+/* -------- SCRAPERS -------- */
+
+// Cadvisor Scraper Job
+prometheus.scrape "docker_scrape" {
 	targets    = prometheus.exporter.cadvisor.docker.targets
 	forward_to = [prometheus.remote_write.prometheus_write.receiver]
+	job_name   = "cadvisor"
 }
 
-// Configure a prometheus.scrape component to collect custom metrics 
-// with business logic from the fastapi service.
-prometheus.scrape "nuspace_scrape" {
+// Node Exporter Scraper Job
+prometheus.scrape "host_scrape" {
+	targets    = prometheus.exporter.unix.host.targets
+	forward_to = [prometheus.remote_write.prometheus_write.receiver]
+	job_name   = "node_exporter"
+}
+
+// FastAPI Scraper Job
+prometheus.scrape "application_scrape" {
 	targets = [{
 		__address__      = "fastapi:8000",
 		__metrics_path__ = "/api/metrics",
 	}]
 	forward_to = [prometheus.remote_write.prometheus_write.receiver]
-	job_name   = "fastapi"
+	job_name   = "application"
 }
 
-// Configure a prometheus.scrape component to collect Node Exporter metrics.
-prometheus.scrape "node_exporter_scrape" {
-	targets    = prometheus.exporter.unix.node_exporter.targets
-	forward_to = [prometheus.remote_write.prometheus_write.receiver]
-	job_name   = "node_exporter"
-}
+/* -------- REMOTE WRITE -------- */
 
 // Configure a prometheus.remote_write component to send metrics to a Prometheus server.
 prometheus.remote_write "prometheus_write" {
@@ -39,11 +47,11 @@ prometheus.remote_write "prometheus_write" {
 	}
 }
 
-// ###############################
-// #### Logging Configuration ####
-// ###############################
+/* ####################################### */
+/* ######## Logging Configuration ######## */
+/* ####################################### */
 
-// Discover Docker containers and extract metadata.
+// Discover Docker containers and extract metadata
 discovery.docker "linux" {
 	host = "unix:///var/run/docker.sock"
 }

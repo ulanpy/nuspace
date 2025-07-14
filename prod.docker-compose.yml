@@ -212,7 +212,7 @@ services:
     container_name: alloy
     image: grafana/alloy:latest
     volumes:
-      - ./monitoring/alloy/config.alloy/config.alloy:/etc/alloy/config.alloy
+      - ./monitoring/alloy/config.alloy:/etc/alloy/config.alloy
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /var/run:/var/run:ro
