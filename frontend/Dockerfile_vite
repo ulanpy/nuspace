@@ -5,15 +5,13 @@ FROM node:20-alpine
 WORKDIR /nuros
 
 # Copy only package.json and package-lock.json for caching dependencies
-COPY ./frontend/package*.json ./
+COPY frontend/package*.json ./
 
 # Install dependencies (node_modules will be inside the container)
 RUN npm install
 
 # Copy the rest of the project files
-COPY . .
-
-# Expose port used by Vite
+COPY frontend .
 
 # Start the Vite development server
 CMD ["npm", "run", "dev", "--", "--host"]

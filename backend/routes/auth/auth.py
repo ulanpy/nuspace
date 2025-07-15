@@ -83,7 +83,7 @@ async def auth_callback(
     return redirect_response
 
 
-@router.post("/bingtg")
+@router.post("/connect-tg")
 async def bind_tg(request: Request, sub_param: Sub):
     bot: Bot = request.app.state.bot
     sub_value = sub_param.sub

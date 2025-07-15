@@ -14,8 +14,14 @@ export const nuEventsAPI = {
     return queryOptions({
       queryKey: ["nuEvents", "community", id],
       queryFn: () => {
-        return apiCall<NuEvents.Club>(`/communities/${id}`);
-      },
-    });
+        return apiCall<NuEvents.Club>(`/communities/${id}`)
+      }
+    })
+  }, 
+  editCommunity: (id: string, data: NuEvents.Club) => {
+    return apiCall<NuEvents.Club>(`/communities/${id}`, {
+      method: 'PUT',
+      json: data
+    })
   },
-};
+}

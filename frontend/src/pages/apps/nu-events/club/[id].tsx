@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
   Users,
   Calendar,
   Instagram,
@@ -11,6 +10,7 @@ import {
   Heart,
   ExternalLink,
   Edit,
+  Plus,
 } from "lucide-react";
 import { Button } from "../../../../components/atoms/button";
 import { Badge } from "../../../../components/atoms/badge";
@@ -23,40 +23,11 @@ import {
 } from "../../../../components/atoms/tabs";
 import { useToast } from "../../../../hooks/use-toast";
 import { useUser } from "../../../../hooks/use-user";
-import { mockApi } from "../../../../data/events/mock-events-data";
-import { NavTabs } from "../../../../components/molecules/nav-tabs";
 import { LoginModal } from "../../../../components/molecules/login-modal";
 import { useCommunity } from "@/modules/nu-events/clubs/api/hooks/use-cummunity";
+import { EditCommunityModal } from "@/components/molecules/edit-community-modal";
+import { CreateEventModal } from "@/components/molecules/create-event-modal";
 
-interface Club {
-  id: number;
-  name: string;
-  type: string;
-  description: string;
-  president: string;
-  telegram_url: string;
-  instagram_url: string;
-  created_at: string;
-  updated_at: string;
-  media: { id: number; url: string }[];
-  members: number;
-  followers: number;
-  isFollowing: boolean;
-}
-
-interface Event {
-  id: number;
-  club_id: number;
-  name: string;
-  place: string;
-  description: string;
-  duration: number;
-  event_datetime: string;
-  policy: string;
-  created_at: string;
-  updated_at: string;
-  media: { id: number; url: string }[];
-}
 
 // Helper function to get club type display text
 const getClubTypeDisplay = (type: string) => {
@@ -89,12 +60,15 @@ export default function ClubDetailPage() {
   ];
 
   const { club, isLoading } = useCommunity();
-  const [clubEvents, setClubEvents] = useState<Event[]>([]);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [clubEvents, setClubEvents] = useState<NuEvents.Event[]>([]);
   const [activeTab, setActiveTab] = useState("about");
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+
 
   // Handle follow/unfollow
   const handleFollowToggle = () => {
@@ -169,7 +143,7 @@ export default function ClubDetailPage() {
       </div>
     );
   }
-
+  
   return (
     <>
       {/* Club Header */}
@@ -224,9 +198,22 @@ export default function ClubDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" className="h-8">
+          <Button variant="outline" 
+                  size="icon" 
+                  className="h-8" 
+                  onClick={() => setIsEditModalOpen(true)}>
             <Edit className="h-4 w-4" />
           </Button>
+          {isEditModalOpen && (
+            <EditCommunityModal
+              club={club}
+              onSave={(updatedClub: NuEvents.Club) => {
+                // need to refetch the club
+                console.log("Updated Club:", updatedClub);
+              }}
+              onClose={() => setIsEditModalOpen(false)}
+            />
+          )}
           <Button
             variant={isFollowing ? "outline" : "default"}
             size="sm"
@@ -245,6 +232,7 @@ export default function ClubDetailPage() {
           </Button>
         </div>
       </div>
+          
 
       {/* Club Content */}
       <Tabs
@@ -342,6 +330,23 @@ export default function ClubDetailPage() {
               <p className="text-sm text-muted-foreground mt-1">
                 This club doesn't have any scheduled events.
               </p>
+              <Button
+                variant="outline"
+                size="icon"
+                className="mt-4"
+                onClick={() => setIsCreateModalOpen(true)}
+              >
+                {/* {isCreateModalOpen && (
+              <CreateEventModal
+                isOpen={isCreateModalOpen}
+                onSave={(newEvent: NuEvents.Event) => {
+                  setClubEvents([...clubEvents, newEvent]); // saving the new event to the club events
+                }}
+                onClose={() => setIsCreateModalOpen(false)}
+              />
+            )} */}
+                <Plus className="h-4 w-4" /> 
+              </Button>
             </div>
           )}
         </TabsContent>

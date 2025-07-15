@@ -5,10 +5,9 @@ import tailwindcss from "tailwindcss";
 import path from "path";
 
 // Parse tunnel URL from environment variable
-const tunnelUrl =
-  process.env.CLOUDFLARED_TUNNEL_URL || "https://tunnel1.nuspace.kz";
-const tunnelHost = new URL(tunnelUrl).hostname;
-const tunnelProtocol = new URL(tunnelUrl).protocol;
+const tunnelUrl = process.env.CLOUDFLARED_TUNNEL_URL || 'http://localhost:5173';
+const tunnelHost = tunnelUrl ? new URL(tunnelUrl).hostname : 'localhost';
+const tunnelProtocol = tunnelUrl ? new URL(tunnelUrl).protocol : 'http:';
 
 // https://vitejs.dev/config/
 export default defineConfig({

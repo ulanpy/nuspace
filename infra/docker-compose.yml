@@ -17,8 +17,8 @@ services:
   fastapi:
     container_name: fastapi
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: backend/Dockerfile
       args:
         IS_DEBUG: ${IS_DEBUG:-true} # Default to 'true' if not set
     networks:
@@ -27,7 +27,7 @@ services:
     env_file:
       - .env
     volumes:
-      - .:/nuros # Sync local backend folder with container's /nuros
+      - ..:/nuros # Sync local backend folder with container's /nuros
       - cursor-server:/root/.cursor-server
     depends_on:
       - postgres
@@ -44,8 +44,8 @@ services:
     ports:
       - "80:80" # Expose Nginx on port 80 of localhost
     volumes:
-      - ./backend/core/configs/nginx.dev.conf:/etc/nginx/nginx.conf
-      - ./frontend/dist:/var/www/my-app/dist # Make sure this folder exists in production builds
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf
+      - ../frontend/dist:/var/www/my-app/dist # Make sure this folder exists in production builds
     depends_on:
       - fastapi
       - pgadmin
@@ -75,8 +75,8 @@ services:
       - nuros
     volumes:
       - pgadmin-data:/var/lib/pgadmin # Named volume for persistent data
-      - ./backend/core/configs/pgadmin_config/servers.json:/pgadmin4/servers.json # Auto-connect to PostgreSQL
-      - ./backend/core/configs/pgadmin_config/pgpass:/pgpass # Auto-login credentials
+      - ./pgadmin/servers.json:/pgadmin4/servers.json # Auto-connect to PostgreSQL
+      - ./pgadmin/pgpass:/pgpass # Auto-login credentials
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -98,7 +98,7 @@ services:
     restart: always
     volumes:
       - redis-data:/data
-      - ./backend/core/configs/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server --bind 0.0.0.0 --protected-mode no
 
   meilisearch:
@@ -122,7 +122,7 @@ services:
       - "15672:15672" # Management UI
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-      - ./backend/core/configs/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     healthcheck:
       test: ["CMD", "rabbitmq", "status"]
       interval: 30s
@@ -131,8 +131,8 @@ services:
 
   celery-worker:
     build:
-      context: .
-      dockerfile: Dockerfile_celery
+      context: ..
+      dockerfile: backend/Dockerfile_celery
     networks:
       - nuros
     env_file:
@@ -150,11 +150,13 @@ services:
 
   frontend:
     build:
-      context: .
-      dockerfile: Dockerfile_vite
+      context: ..
+      dockerfile: frontend/Dockerfile_vite
     restart: always
+    env_file:
+      - .env
     volumes:
-      - ./frontend:/nuros # Mount all project files
+      - ../frontend:/nuros # Mount all project files
       - frontend-node-modules:/nuros/node_modules # Use named volume for node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true # Enable polling for file changes (Docker-friendly)
@@ -165,15 +167,15 @@ services:
     container_name: loki
     image: grafana/loki:latest
     volumes:
-      - ./monitoring/loki/loki.yaml:/etc/loki/local-config.yaml:ro
+      - ./loki/loki.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml -log.level="warn" -config.expand-env=true
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          cpus: "1.0" # 1 CPU core
-          memory: 1G # 2 GB RAM
+          cpus: "1.0"
+          memory: 1G
         # reservations:
         #   cpus: '0.5' # Reserve 0.5 CPU core
         #   memory: 1G # Reserve 1 GB RAM
@@ -182,12 +184,13 @@ services:
     profiles:
       - monitoring
 
-  prometheus: # 9090
+  prometheus:
     container_name: prometheus
     image: prom/prometheus:latest
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/prometheus/grafana_alert_rules.yml:/etc/prometheus/grafana_alert_rules.yml:ro
+      # No need for alerts in development
+      # - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # - ./prometheus/grafana_alert_rules.yml:/etc/prometheus/grafana_alert_rules.yml:ro
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -196,12 +199,14 @@ services:
       - "--web.external-url=/prometheus/"
       - "--web.route-prefix=/prometheus/"
     restart: unless-stopped
+    ports:
+      - "9090:9090"
     networks:
       - nuros
     profiles:
       - monitoring
 
-  grafana: # 3000
+  grafana:
     container_name: grafana
     image: grafana/grafana:latest
     environment:
@@ -212,25 +217,25 @@ services:
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
       - GF_LOG_LEVEL=warn
-      - GF_SERVER_ROOT_URL=http://localhost/grafana/ # this is the dev server url
-      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+    ports:
+      - "3000:3000"
     volumes:
       - "grafana-data:/var/lib/grafana"
-      - "./monitoring/grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
-      - "./monitoring/grafana/dashboards/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
-      - "./monitoring/grafana/provisioning/dashboards/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
-      - "./monitoring/grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
-      - "./monitoring/grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"
-      - "./monitoring/grafana/provisioning/alerting/alerts.yaml:/etc/grafana/provisioning/alerting/alerts.yaml"
-      - "./monitoring/scripts/start-grafana.sh:/start-grafana.sh"
-    entrypoint: ["/bin/sh", "/start-grafana.sh"]
-    # privileged: true
+      - "./grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
+      - "./grafana/dashboards/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
+      - "./grafana/provisioning/dashboards/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
+      # No need for alerting in development
+      # - "./grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
+      # - "./grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"
+      # - "./grafana/provisioning/alerting/alerts.yaml:/etc/grafana/provisioning/alerting/alerts.yaml"
+      # - "./scripts/start-grafana.sh:/start-grafana.sh"
+    # entrypoint: ["/bin/sh", "/start-grafana.sh"]
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          cpus: "1.0" # 1 CPU core
-          memory: 1G # 2 GB RAM
+          cpus: "1.0"
+          memory: 1G
         # reservations:
         #   cpus: '0.5' # Reserve 0.5 CPU core
         #   memory: 1G # Reserve 1 GB RAM
@@ -241,14 +246,22 @@ services:
     profiles:
       - monitoring
 
-  alloy: # 12345, 4317, 4318
+  alloy:
     container_name: alloy
     image: grafana/alloy:latest
     volumes:
-      - ./monitoring/alloy/config.alloy/config.alloy:/etc/alloy/config.alloy
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run:/var/run:ro
+      - /:/rootfs:ro
+      - /sys:/sys:ro
     command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     restart: unless-stopped
+    ports:
+      - "12345:12345"
+      - "4317:4317"
+      - "4318:4318"
     networks:
       - nuros
     depends_on:
@@ -257,17 +270,19 @@ services:
     profiles:
       - monitoring
 
-  alertmanager: # 9093
+  alertmanager:
     container_name: alertmanager
     image: prom/alertmanager:latest
     volumes:
-      - ./monitoring/prometheus/alertmanager.yml.tpl:/etc/alertmanager/alertmanager.yml.tpl:ro
-      - ./monitoring/scripts/start-alertmanager.sh:/start-alertmanager.sh:ro
+      - ./prometheus/alertmanager.yml.tpl:/etc/alertmanager/alertmanager.yml.tpl:ro
+      - ./scripts/start-alertmanager.sh:/start-alertmanager.sh:ro
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
     entrypoint: ["/bin/sh", "/start-alertmanager.sh"]
     restart: unless-stopped
+    ports:
+      - "9093:9093"
     networks:
       - nuros
     profiles:
@@ -283,8 +298,8 @@ volumes:
   redis-data:
     driver: local
   pgadmin-data:
-  rabbitmq-data: # Add this
-  frontend-node-modules: # Named volume for frontend node_modules
+  rabbitmq-data:
+  frontend-node-modules:
   cursor-server:
   grafana-data:
   prometheus_data:
