@@ -51,7 +51,6 @@ faststream = "^0.5.42"
 pytest-asyncio = "^1.0.0"
 aiosqlite = "^0.21.0"
 pytest = "^8.4.1"
-psutil = "^7.0.0"
 prometheus-client = "^0.22.1"
 
 [tool.poetry.group.dev.dependencies]
