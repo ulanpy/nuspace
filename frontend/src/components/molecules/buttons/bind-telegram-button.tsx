@@ -110,7 +110,7 @@ export function BindTelegramButton() {
     setError("");
 
     try {
-      const response = await fetch("/api/bingtg", {
+      const response = await fetch("/api/connect-tg", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

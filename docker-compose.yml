@@ -215,8 +215,6 @@ services:
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
       - GF_LOG_LEVEL=warn
-      - GF_SERVER_ROOT_URL=http://localhost/grafana/ # this is the dev server url
-      - GF_SERVER_SERVE_FROM_SUB_PATH=false
     ports:
       - "3000:3000"
     volumes:
@@ -229,7 +227,7 @@ services:
       # - "./monitoring/grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"
       # - "./monitoring/grafana/provisioning/alerting/alerts.yaml:/etc/grafana/provisioning/alerting/alerts.yaml"
       # - "./monitoring/scripts/start-grafana.sh:/start-grafana.sh"
-    entrypoint: ["/bin/sh", "/start-grafana.sh"]
+    # entrypoint: ["/bin/sh", "/start-grafana.sh"]
     restart: unless-stopped
     deploy:
       resources:
