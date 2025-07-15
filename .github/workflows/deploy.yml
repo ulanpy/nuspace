@@ -29,8 +29,8 @@ jobs:
         run: |
           set -e
           export TAG=$GIT_SHA
-          docker compose -f build.docker-compose.yaml build
-          docker compose -f build.docker-compose.yaml push
+          docker compose -f infra/build.docker-compose.yaml build
+          docker compose -f infra/build.docker-compose.yaml push
 
       - name: Set up Python
         uses: actions/setup-python@v2
