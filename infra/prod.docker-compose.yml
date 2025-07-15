@@ -47,8 +47,8 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ../frontend/dist:/var/www/my-app/dist
-      - ./ssl/cloudflare.crt:/etc/ssl/cloudflare/origin.crt
-      - ./ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key
+      - ../ssl/cloudflare.crt:/etc/ssl/cloudflare/origin.crt
+      - ../ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key
       - ./nginx/vpn-index.html:/etc/nginx/vpn-index.html:ro
     depends_on:
       - fastapi
