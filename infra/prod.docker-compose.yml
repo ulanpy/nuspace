@@ -32,8 +32,8 @@ services:
       - PYTHONUNBUFFERED=1
       - WORKERS=${GUNICORN_WORKERS:-4}
     volumes:
-      - ./backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
-      - .env:/nuros/.env:ro
+      - ../backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
+      - ./.env:/nuros/.env:ro
 
   nginx:
     container_name: nginx
@@ -45,11 +45,11 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./backend/core/configs/nginx.conf:/etc/nginx/nginx.conf
-      - ./frontend/dist:/var/www/my-app/dist
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ../frontend/dist:/var/www/my-app/dist
       - ./ssl/cloudflare.crt:/etc/ssl/cloudflare/origin.crt
       - ./ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key
-      - ./monitoring/vpn-index.html:/etc/nginx/vpn-index.html:ro
+      - ./vpn-index.html:/etc/nginx/vpn-index.html:ro
     depends_on:
       - fastapi
       - frontend-builder
@@ -70,7 +70,7 @@ services:
     restart: always
     volumes:
       - redis-data:/data
-      - ./backend/core/configs/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server --bind 0.0.0.0 --protected-mode no
 
   meilisearch:
@@ -93,7 +93,7 @@ services:
       - "127.0.0.1:15672:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-      - ./backend/core/configs/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
 
     healthcheck:
       test: ["CMD", "rabbitmq", "status"]
@@ -124,11 +124,11 @@ services:
     image: kamikadze24/frontendbuilder:${DOCKER_IMAGE_TAG}
     build:
       context: .
-      dockerfile: Dockerfile_static_builder
+      dockerfile: ../frontend/Dockerfile_static_builder
     networks:
       - nuros
     volumes:
-      - ./frontend/dist:/app/dist
+      - ../frontend/dist:/app/dist
     command: sh -c "npm run build"
     restart: "no"
 
@@ -138,8 +138,8 @@ services:
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/loki/service-account-key.json
     volumes:
-      - ./monitoring/nuspace_bucket.json:/loki/service-account-key.json:ro
-      - ./monitoring/loki/loki.prod.yaml:/etc/loki/local-config.yaml:ro
+      - ./nuspace_bucket.json:/loki/service-account-key.json:ro
+      - ./loki/loki.prod.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml -log.level="warn" -config.expand-env=true
     restart: unless-stopped
@@ -157,8 +157,8 @@ services:
     container_name: prometheus
     image: prom/prometheus:latest
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/prometheus/grafana_alert_rules.yml:/etc/prometheus/grafana_alert_rules.yml:ro
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/grafana_alert_rules.yml:/etc/prometheus/grafana_alert_rules.yml:ro
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -187,13 +187,13 @@ services:
       - GF_DATABASE_WAL=true
     volumes:
       - "grafana-data:/var/lib/grafana"
-      - "./monitoring/grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
-      - "./monitoring/grafana/dashboards/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
-      - "./monitoring/grafana/provisioning/dashboards/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
-      - "./monitoring/grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
-      - "./monitoring/grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"
-      - "./monitoring/grafana/provisioning/alerting/alerts.yaml:/etc/grafana/provisioning/alerting/alerts.yaml"
-      - "./monitoring/scripts/start-grafana.sh:/start-grafana.sh"
+      - "./grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
+      - "./grafana/dashboards/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
+      - "./grafana/provisioning/dashboards/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
+      - "./grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
+      - "./grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"
+      - "./grafana/provisioning/alerting/alerts.yaml:/etc/grafana/provisioning/alerting/alerts.yaml"
+      - "./scripts/start-grafana.sh:/start-grafana.sh"
     entrypoint: ["/bin/sh", "/start-grafana.sh"]
     restart: unless-stopped
     deploy:
@@ -212,7 +212,7 @@ services:
     container_name: alloy
     image: grafana/alloy:latest
     volumes:
-      - ./monitoring/alloy/config.alloy:/etc/alloy/config.alloy
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /var/run:/var/run:ro
@@ -232,8 +232,8 @@ services:
     container_name: alertmanager
     image: prom/alertmanager:latest
     volumes:
-      - ./monitoring/prometheus/alertmanager.yml.tpl:/etc/alertmanager/alertmanager.yml.tpl:ro
-      - ./monitoring/scripts/start-alertmanager.sh:/start-alertmanager.sh:ro
+      - ./prometheus/alertmanager.yml.tpl:/etc/alertmanager/alertmanager.yml.tpl:ro
+      - ./scripts/start-alertmanager.sh:/start-alertmanager.sh:ro
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}

@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from google.oauth2 import service_account
 from pydantic_settings import BaseSettings
 
-ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../infra"))
 load_dotenv(os.path.join(ENV_DIR, ".env"))
 
 # should be in /nuspace/backend/core/configs/nuspace.json
