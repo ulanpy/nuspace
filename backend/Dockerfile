@@ -28,7 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/pyproject.toml backend/poetry.lock ./
 RUN poetry install --no-root --no-cache
 
-COPY backend .
+COPY .. .
 
 # Create a simple entrypoint shell script to conditionally run Uvicorn or Gunicorn
 RUN echo '#!/bin/sh \n\
