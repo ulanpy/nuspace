@@ -1,8 +1,8 @@
 import { useState, useRef } from "react";
+import { format } from "date-fns";
 import { Trash2, 
   Users,
   Calendar,
-  format,
 } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Modal } from "@/components/atoms/modal";
