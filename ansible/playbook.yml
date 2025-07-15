@@ -40,9 +40,9 @@
 
     - name: Pull new images & recreate services
       community.docker.docker_compose_v2:
-        project_src: /opt/nuspace
+        project_src: /opt/nuspace/infra
         files:
-          - infra/prod.docker-compose.yml
+          - prod.docker-compose.yml
         profiles:
           - monitoring
         pull: always
@@ -53,9 +53,9 @@
 
     - name: Prune all unused Docker images
       community.docker.docker_compose_v2:
-        project_src: /opt/nuspace
+        project_src: /opt/nuspace/infra
         files:
-          - infra/prod.docker-compose.yml
+          - prod.docker-compose.yml
         state: absent
         remove_images: all
         remove_volumes: true
