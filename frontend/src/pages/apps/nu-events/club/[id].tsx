@@ -28,7 +28,6 @@ import { useCommunity } from "@/modules/nu-events/clubs/api/hooks/use-cummunity"
 import { EditCommunityModal } from "@/components/molecules/edit-community-modal";
 import { CreateEventModal } from "@/components/molecules/create-event-modal";
 
-
 // Helper function to get club type display text
 const getClubTypeDisplay = (type: string) => {
   return type.charAt(0).toUpperCase() + type.slice(1);

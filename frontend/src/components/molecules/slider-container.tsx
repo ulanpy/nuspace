@@ -1,6 +1,5 @@
 // components/molecules/SliderContainer.tsx
 import { useRef, useState, ReactNode, useEffect } from "react"; // useEffect қосылды
-import { SliderButton } from "@/components/atoms/slider-button";
 import { Button } from "../atoms/button";
 import { useNavigate } from "react-router-dom";
 
@@ -70,9 +69,9 @@ export function SliderContainer({
         )}
       </div>
       <div className="relative">
-        {canScrollLeft && (
+        {/* {canScrollLeft && (
           <SliderButton direction="left" onClick={() => scroll("left")} />
-        )}
+        )} */}
 
         <div
           ref={containerRef}
@@ -82,9 +81,9 @@ export function SliderContainer({
           {children}
         </div>
 
-        {canScrollRight && (
+        {/* {canScrollRight && (
           <SliderButton direction="right" onClick={() => scroll("right")} />
-        )}
+        )} */}
       </div>
     </div>
   );

@@ -36,8 +36,8 @@ export const CategoryCard = ({
         }
       `}
     >
-      <div className="text-lg mb-1">{icon}</div>
-      <div className="text-2xs font-bold tracking-wide">{title}</div>
+      <span className="text-lg mb-1">{icon}</span>
+      <span className="text-2xs font-bold tracking-wide">{title}</span>
     </div>
   );
 };
