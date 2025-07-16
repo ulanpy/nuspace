@@ -44,6 +44,7 @@
         files:
           - prod.docker-compose.yml
         profiles:
+          - default
           - monitoring
         pull: always
         recreate: always
