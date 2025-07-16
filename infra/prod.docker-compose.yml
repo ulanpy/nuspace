@@ -144,8 +144,6 @@ services:
           memory: 1G
     networks:
       - nuros
-    profiles:
-      - monitoring
 
   prometheus:
     container_name: prometheus
@@ -162,8 +160,6 @@ services:
     restart: unless-stopped
     networks:
       - nuros
-    profiles:
-      - monitoring
 
   grafana:
     container_name: grafana
@@ -199,8 +195,7 @@ services:
       - nuros
     depends_on:
       - alloy
-    profiles:
-      - monitoring
+
 
   alloy:
     container_name: alloy
@@ -219,8 +214,7 @@ services:
     depends_on:
       - prometheus
       - loki
-    profiles:
-      - monitoring
+
 
   alertmanager:
     container_name: alertmanager
@@ -235,8 +229,6 @@ services:
     restart: unless-stopped
     networks:
       - nuros
-    profiles:
-      - monitoring
 
   wireguard:
     image: lscr.io/linuxserver/wireguard:latest
