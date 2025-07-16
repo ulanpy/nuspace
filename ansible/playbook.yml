@@ -50,13 +50,7 @@
         DOCKER_IMAGE_TAG: "{{ docker_image_tag }}"
 
     - name: Prune all unused Docker images
-      community.docker.docker_compose_v2:
-        project_src: /opt/nuspace/infra
-        files:
-          - prod.docker-compose.yml
-        state: absent
-        remove_images: all
-        remove_volumes: true
+      command: docker system prune -a -f
 
     - name: Ensure DOCKER_IMAGE_TAG is set correctly in .bashrc
       lineinfile:
