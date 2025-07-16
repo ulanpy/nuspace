@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Trash2, Calendar, format } from "lucide-react";
+import { Trash2, Calendar } from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "@/components/atoms/button";
 import { Modal } from "@/components/atoms/modal";
 import { Input } from "@/components/atoms/input";
@@ -17,36 +18,48 @@ import { eventCategories } from "@/data/events/event-categories";
 import { Textarea } from "../atoms/textarea";
 import { Calendar as CalendarComponent } from "../atoms/calendar";
 import { toast } from "../atoms/sonner";
-
-const [createForm, setCreateForm] = useState({
-  name: "",
-  place: "",
-  description: "",
-  duration: 60,
-  event_datetime: "",
-  policy: "open" as const,
-  type: "academic" as const
-});
-const [date, setDate] = useState<Date | undefined>(undefined);
-const fileInputRefEvent = useRef<HTMLInputElement>(null);
-const {handleImageUpload, handleDeleteImage} = useImage();
-
-
-const handleCreateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-  setCreateForm({ ...createForm, [e.target.name]: e.target.value });
-};
-const handleCreateSelectChange = (name: string, value: string) => {
-  setCreateForm({ ...createForm, [name]: value });
-};
+// import { EventPolicy } from "../../../types/index.d";
 
 interface CreateEventModalProps {
+  clubId: number;
+  eventId: number;
   isOpen: boolean;
   onClose: () => void;
   onSave: (event: NuEvents.Event) => void;
 }
 
-export function CreateEventModal( { isOpen, onClose, onSave }: CreateEventModalProps ) {
-    return (
+export function CreateEventModal( { clubId, eventId, isOpen, onClose, onSave }: CreateEventModalProps ) {
+
+  const [createForm, setCreateForm] = useState<NuEvents.Event>({
+    id: 0,
+    club_id: 0,
+    name: "",
+    place: "",  
+    description: "",
+    duration: 0,
+    event_datetime: "",
+    policy: "open" as const,
+    category: "",
+    created_at: "",
+    updated_at: "",
+    media: [],
+    club: undefined,
+    rating: 0,
+  });
+
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const fileInputRefEvent = useRef<HTMLInputElement>(null);
+  const {handleImageUpload, handleDeleteImage} = useImage();
+  //const { mutate: createEvent, isPending } = useCreateEvent(); 
+
+  const handleCreateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setCreateForm({ ...createForm, [e.target.name]: e.target.value });
+  };
+  const handleCreateSelectChange = (name: string, value: string) => {
+    setCreateForm({ ...createForm, [name]: value });
+  };  
+  
+  return (
       <Modal
         isOpen={isOpen}
         onClose={onClose}
@@ -148,12 +161,14 @@ export function CreateEventModal( { isOpen, onClose, onSave }: CreateEventModalP
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+              <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
               <Button 
                 variant="default"
                 onClick={() => {
+                  createForm.club_id = clubId;
+                  createForm.id = eventId;
                   // Handle event creation here
                   console.log("Creating event:", createForm);
                   onClose();  

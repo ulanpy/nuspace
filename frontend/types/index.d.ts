@@ -207,6 +207,7 @@ declare global {
       duration: number;
       event_datetime: string;
       policy: EventPolicy;
+      category: string;
       created_at: string;
       updated_at: string;
       media: Media[];

@@ -212,7 +212,7 @@ export default function ClubDetailPage() {
                 console.log("Updated Club:", updatedClub);
               }}
               onClose={() => setIsEditModalOpen(false)}
-            />
+            />  
           )}
           <Button
             variant={isFollowing ? "outline" : "default"}
@@ -334,17 +334,22 @@ export default function ClubDetailPage() {
                 variant="outline"
                 size="icon"
                 className="mt-4"
-                onClick={() => setIsCreateModalOpen(true)}
+                onClick={() => {
+                  setIsCreateModalOpen(true);
+                  console.log("Event creation");
+                }}
               >
-                {/* {isCreateModalOpen && (
+                {isCreateModalOpen && (
               <CreateEventModal
+                clubId={club.id}
+                eventId={clubEvents.length + 1}
                 isOpen={isCreateModalOpen}
                 onSave={(newEvent: NuEvents.Event) => {
                   setClubEvents([...clubEvents, newEvent]); // saving the new event to the club events
                 }}
                 onClose={() => setIsCreateModalOpen(false)}
-              />
-            )} */}
+              />          
+            )}
                 <Plus className="h-4 w-4" /> 
               </Button>
             </div>
@@ -354,7 +359,7 @@ export default function ClubDetailPage() {
         <TabsContent value="gallery" className="pt-4">
           {club.media && club.media.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {club.media.map((media, index) => (
+              {club.media.map((media: NuEvents.Media, index: number) => (
                 <div
                   key={index}
                   className="aspect-square rounded-md overflow-hidden"
