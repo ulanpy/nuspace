@@ -24,37 +24,23 @@ import {
 } from "@/components/atoms/sheet";
 import { Button } from "../atoms/button";
 import { Input } from "../atoms/input";
-
-const categories = [
-  "All",
-  "Academic",
-  "Arts",
-  "Business",
-  "Charity",
-  "Concert",
-  "Culture",
-  "Sports",
-  "Technology",
-  "Workshop",
-];
-
+import { eventCategories } from "@/data/events/event-categories";
 export function FilterBar() {
   const [date, setDate] = useState<Date | undefined>(undefined);
 
   return (
-    <div className="flex flex-col md:flex-row gap-2 p-4 bg-muted/50 rounded-lg">
+    <div className="flex flex-col md:flex-row gap-2 p-4 rounded-lg">
       <div className="relative flex-grow">
         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search events..." className="pl-9" />
+        <Input placeholder="Search..." className="pl-9" />
       </div>
-
       <div className="flex gap-2">
         <Select>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
-            {categories.map((category) => (
+            {eventCategories.map((category) => (
               <SelectItem key={category} value={category.toLowerCase()}>
                 {category}
               </SelectItem>
@@ -99,7 +85,7 @@ export function FilterBar() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((category) => (
+                    {eventCategories.map((category) => (
                       <SelectItem key={category} value={category.toLowerCase()}>
                         {category}
                       </SelectItem>
