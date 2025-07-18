@@ -9,7 +9,7 @@ import { LoginRequirementModal } from "../components/molecules/login-requirement
 import { useUser } from "@/hooks/use-user";
 
 export default function AppsLayout() {
-  const { user, login } = useUser();
+  const { user, login, isLoading } = useUser();
   const location = useLocation();
   const navigate = useNavigate();
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -19,7 +19,7 @@ export default function AppsLayout() {
 
   // Show login modal for unauthenticated users trying to access Kupi&Prodai
   useEffect(() => {
-    if (!user && isKupiProdaiPath) {
+    if (!user && !isLoading && isKupiProdaiPath) {
       setShowLoginModal(true);
     } else {
       setShowLoginModal(false);

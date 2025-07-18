@@ -1,6 +1,5 @@
 // components/molecules/SliderContainer.tsx
 import { useRef, useState, ReactNode, useEffect } from "react"; // useEffect қосылды
-import { SliderButton } from "@/components/atoms/slider-button";
 import { Button } from "../atoms/button";
 import { useNavigate } from "react-router-dom";
 
@@ -20,8 +19,6 @@ export function SliderContainer({
   className = "",
 }: SliderContainerProps) {
   const navigate = useNavigate();
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -48,11 +45,7 @@ export function SliderContainer({
     if (!el) return;
 
     // Скролл күйін жаңарту
-    const canScrollLeft = el.scrollLeft > 0;
-    const canScrollRight = el.scrollLeft < el.scrollWidth - el.clientWidth - 5; // 5px қор
 
-    setCanScrollLeft(canScrollLeft);
-    setCanScrollRight(canScrollRight);
   };
 
   return (
@@ -70,9 +63,6 @@ export function SliderContainer({
         )}
       </div>
       <div className="relative">
-        {canScrollLeft && (
-          <SliderButton direction="left" onClick={() => scroll("left")} />
-        )}
 
         <div
           ref={containerRef}
@@ -81,10 +71,6 @@ export function SliderContainer({
         >
           {children}
         </div>
-
-        {canScrollRight && (
-          <SliderButton direction="right" onClick={() => scroll("right")} />
-        )}
       </div>
     </div>
   );

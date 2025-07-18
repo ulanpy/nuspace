@@ -98,34 +98,33 @@ export function SearchInput({
 
   return (
     <>
+    <div className="relative flex-grow">
+      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
       <Input
         ref={inputRef}
-        placeholder="Search"
-        className="text-sm"
+        placeholder="Search..."
+        className="text-sm pl-9"
         value={inputValue.trim()}
         onChange={handlers.input.change}
         onKeyDown={handlers.input.keyDown}
         onFocus={handlers.input.focus}
         onBlur={handlers.input.blur}
       />
+      </div>
       {!!inputValue.trim() && (
         <button
           type="button"
           onClick={handlers.clear}
-          className="absolute right-14 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 hover:text-slate-600"
+          className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 hover:text-slate-600"
         >
           <X className="h-5 w-5" />
         </button>
       )}
-      <div
+      {/* <div
         onClick={handlers.search}
         className={`absolute right-4 top-1/2 -translate-y-1/2 rounded-lg p-1 ${isDarkTheme ? "bg-slate-600 hover:bg-slate-700" : "bg-slate-200 hover:bg-slate-300"}`}
       >
-        <Search
-          className="h-4 w-4 text-muted-foreground cursor-pointer"
-          color="#020817"
-        />
-      </div>
+      </div> */}
       {isDropdownOpen && hasSuggestions && (
         <ul
           className={`absolute top-full left-0 right-0  border border-t-0  shadow-md z-10 rounded-b-lg ${
