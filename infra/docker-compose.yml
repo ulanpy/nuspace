@@ -25,6 +25,7 @@ services:
     volumes:
       - ..:/nuros # Sync local backend folder with container's /nuros
       - cursor-server:/root/.cursor-server
+      - .env:/nuros/.env:ro
     depends_on:
       - postgres
     environment:
@@ -135,6 +136,8 @@ services:
       - rabbitmq
       - redis
       - fastapi
+    volumes:
+      - .env:/nuros/.env:ro
     command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
     environment:
       - CELERY_WORKER_CONCURRENCY=4 # Adjust based on your needs

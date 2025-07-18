@@ -110,6 +110,8 @@ services:
     environment:
       - CELERY_WORKER_CONCURRENCY=4
       - CELERY_WORKER_PREFETCH_MULTIPLIER=1
+    volumes:
+      - .env:/nuros/.env:ro
     deploy:
       replicas: 2
 
