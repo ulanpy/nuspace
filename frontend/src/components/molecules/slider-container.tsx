@@ -19,8 +19,6 @@ export function SliderContainer({
   className = "",
 }: SliderContainerProps) {
   const navigate = useNavigate();
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -47,11 +45,7 @@ export function SliderContainer({
     if (!el) return;
 
     // Скролл күйін жаңарту
-    const canScrollLeft = el.scrollLeft > 0;
-    const canScrollRight = el.scrollLeft < el.scrollWidth - el.clientWidth - 5; // 5px қор
 
-    setCanScrollLeft(canScrollLeft);
-    setCanScrollRight(canScrollRight);
   };
 
   return (
