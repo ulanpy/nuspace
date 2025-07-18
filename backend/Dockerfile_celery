@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/pyproject.toml backend/poetry.lock ./
 
 # Copy application code
-COPY . .
+COPY .. .
 
 # Install project dependencies
 RUN poetry install --no-root --no-cache
