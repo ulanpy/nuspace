@@ -24,7 +24,7 @@ import {
 import { useToast } from "../../../../hooks/use-toast";
 import { useUser } from "../../../../hooks/use-user";
 import { LoginModal } from "../../../../components/molecules/login-modal";
-import { useCommunity } from "@/modules/nu-events/clubs/api/hooks/use-cummunity";
+import { useCommunity } from "@/modules/campuscurrent/clubs/api/hooks/use-cummunity";
 import { EditCommunityModal } from "@/components/molecules/edit-community-modal";
 import { CreateEventModal } from "@/components/molecules/create-event-modal";
 
@@ -44,17 +44,17 @@ export default function ClubDetailPage() {
   const navTabs = [
     {
       label: "Home",
-      path: "/apps/nu-events",
+      path: "/apps/campuscurrent",
       icon: <Calendar className="h-4 w-4" />,
     },
     {
       label: "Events",
-      path: "/apps/nu-events/events",
+      path: "/apps/campuscurrent/events",
       icon: <Calendar className="h-4 w-4" />,
     },
     {
       label: "Clubs",
-      path: "/apps/nu-events/clubs",
+      path: "/apps/campuscurrent/clubs",
       icon: <Users className="h-4 w-4" />,
     },
   ];
@@ -297,7 +297,7 @@ export default function ClubDetailPage() {
                 <Card
                   key={event.id}
                   className="overflow-hidden cursor-pointer"
-                  onClick={() => navigate(`/apps/nu-events/event/${event.id}`)}
+                  onClick={() => navigate(`/apps/campuscurrent/event/${event.id}`)}
                 >
                   <div className="aspect-[3/2] relative">
                     {event.media && event.media.length > 0 ? (

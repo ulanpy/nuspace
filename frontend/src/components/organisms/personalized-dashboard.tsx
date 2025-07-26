@@ -293,7 +293,7 @@ export function PersonalizedDashboard() {
 
               <div className="mt-3 pt-3 border-t border-border/40">
                 <Link
-                  to="/apps/nu-events"
+                  to="/apps/campuscurrent"
                   className="flex items-center justify-end text-xs text-muted-foreground hover:text-foreground"
                 >
                   <span>Explore clubs</span>
@@ -340,7 +340,7 @@ export function PersonalizedDashboard() {
 
               <div className="mt-3 pt-3 border-t border-border/40">
                 <Link
-                  to="/apps/nu-events"
+                  to="/apps/campuscurrent"
                   className="flex items-center justify-end text-xs text-muted-foreground hover:text-foreground"
                 >
                   <span>View all events</span>

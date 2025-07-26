@@ -25,7 +25,7 @@ export function AppGrid() {
     {
       icon: <Calendar className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
       title: "Campus Current",
-      href: "/apps/nu-events",
+      href: "/apps/campuscurrent",
       gradient:
         "radial-gradient(circle, rgba(249,115,22,0.3) 0%, rgba(234,88,12,0.15) 50%, rgba(194,65,12,0) 100%)",
       iconColor: "text-orange-500",

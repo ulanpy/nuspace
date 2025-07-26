@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { mockClubs } from "../../data/events/mock-events-data";
 import { LoginModal } from "../../components/molecules/login-modal";
-import { useCommunities } from "@/modules/nu-events/clubs/api/hooks/use-communities";
+import { useCommunities } from "@/modules/campuscurrent/clubs/api/hooks/use-communities";
 import { SliderContainer } from "@/components/molecules/slider-container";
 import { BaseCard } from "@/components/molecules/cards/base-card";
 import { eventSections } from "@/data/events/event-sections";
@@ -38,7 +38,7 @@ export default function NUEventsPage() {
       ))}
 
       {/* Popular clubs section */}
-      <GeneralSection title="Popular Clubs" link="/apps/nu-events/clubs">
+      <GeneralSection title="Popular Clubs" link="/apps/campuscurrent/clubs">
         {mockClubs.slice(0, 4).map((club) => (
           <CommunityCard key={club.id} club={club} />
         ))}

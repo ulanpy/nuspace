@@ -12,7 +12,7 @@ export function CommunityCard({ club }: { club: NuEvents.Club }) {
     <Card
       key={club.id}
       className="overflow-hidden cursor-pointer"
-      onClick={() => navigate(`/apps/nu-events/club/${club.id}`)}
+      onClick={() => navigate(`/apps/campuscurrent/club/${club.id}`)}
     >
       <div className="aspect-square relative">
         {club.media && club.media.length > 0 ? (

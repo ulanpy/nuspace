@@ -215,7 +215,7 @@ export default function EventDetailPage() {
         <Button
           variant="ghost"
           className="mb-4 flex items-center gap-1"
-          onClick={() => navigate("/apps/nu-events")}
+          onClick={() => navigate("/apps/campuscurrent")}
         >
           <ChevronLeft className="h-4 w-4" />
           <span>Back to Events</span>
@@ -225,7 +225,7 @@ export default function EventDetailPage() {
           <h2 className="text-xl font-bold text-destructive mb-4">
             {error || "Event not found"}
           </h2>
-          <Button onClick={() => navigate("/apps/nu-events")}>
+          <Button onClick={() => navigate("/apps/campuscurrent")}>
             Return to Events
           </Button>
         </div>
@@ -241,7 +241,7 @@ export default function EventDetailPage() {
       <Button
         variant="ghost"
         className="mb-4 flex items-center gap-1"
-        onClick={() => navigate("/apps/nu-events")}
+        onClick={() => navigate("/apps/campuscurrent")}
       >
         <ChevronLeft className="h-4 w-4" />
         <span>Back to Events</span>
@@ -284,7 +284,7 @@ export default function EventDetailPage() {
                 <div
                   className="text-primary hover:underline cursor-pointer mt-1"
                   onClick={() =>
-                    navigate(`/apps/nu-events/club/${event.club?.id}`)
+                    navigate(`/apps/campuscurrent/club/${event.club?.id}`)
                   }
                 >
                   {event.club.name}
@@ -364,7 +364,7 @@ export default function EventDetailPage() {
               </p>
             </div>
             <Button
-              onClick={() => navigate(`/apps/nu-events/club/${event.club?.id}`)}
+              onClick={() => navigate(`/apps/campuscurrent/club/${event.club?.id}`)}
               className="flex items-center gap-2"
             >
               <Users className="h-4 w-4" />
@@ -418,7 +418,7 @@ export default function EventDetailPage() {
                       key={clubEvent.id}
                       className="overflow-hidden cursor-pointer"
                       onClick={() =>
-                        navigate(`/apps/nu-events/event/${clubEvent.id}`)
+                        navigate(`/apps/campuscurrent/event/${clubEvent.id}`)
                       }
                     >
                       <div className="aspect-[1/1.414] relative">

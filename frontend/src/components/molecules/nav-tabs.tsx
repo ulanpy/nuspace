@@ -23,9 +23,9 @@ export const NavTabs = ({ tabs }: NavTabsProps) => {
     <div className="flex border-b overflow-x-auto no-scrollbar">
       {tabs.map((tab) => {
         const isActive =
-          (tab.path === "/apps/nu-events" &&
-            currentPath === "/apps/nu-events") ||
-          (tab.path !== "/apps/nu-events" && currentPath.startsWith(tab.path));
+          (tab.path === "/apps/campuscurrent" &&
+            currentPath === "/apps/campuscurrent") ||
+          (tab.path !== "/apps/campuscurrent" && currentPath.startsWith(tab.path));
 
         return (
           <Link

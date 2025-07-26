@@ -12,7 +12,7 @@ export const features = [
     description:
       "Information about holidays, meetings and events that take place on the territory of the University. Students will be able to find activities that are interesting to them.",
     icon: MdEvent,
-    link: "/apps/nu-events",
+    link: "/apps/campuscurrent",
   },
   {
     title: "Dorm Eats",

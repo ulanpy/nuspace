@@ -9,7 +9,7 @@ import { ConditionGroup } from "@/components/molecules/condition-group";
 import { clubCategories } from "@/data/clubs/club-categories";
 import { SearchInput } from "@/components/molecules/search-input";
 import { CommunityCard } from "@/components/molecules/cards/community-card";
-import { useCommunities } from "@/modules/nu-events/clubs/api/hooks/use-communities";
+import { useCommunities } from "@/modules/campuscurrent/clubs/api/hooks/use-communities";
 // Helper function to get club type display text
 const getClubCategoryDisplay = (type: string) => {
   return type.charAt(0).toUpperCase() + type.slice(1);

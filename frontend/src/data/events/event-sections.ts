@@ -10,32 +10,32 @@ import {
 export const eventSections = [
   {
     title: "Featured Events",
-    link: "/apps/nu-events/featured",
+    link: "/apps/campuscurrent/featured",
     events: featuredEvents,
   },
   {
     title: "Today's Events",
-    link: "/apps/nu-events/today",
+    link: "/apps/campuscurrent/today",
     events: todayEvents,
   },
   {
     title: "Academic Events",
-    link: "/apps/nu-events/Academic",
+    link: "/apps/campuscurrent/Academic",
     events: academicEvents,
   },
   {
     title: "Cultural Events",
-    link: "/apps/nu-events/cultural",
+    link: "/apps/campuscurrent/cultural",
     events: culturalEvents,
   },
   {
     title: "Sport Events",
-    link: "/apps/nu-events/sports",
+    link: "/apps/campuscurrent/sports",
     events: sportsEvents,
   },
   {
     title: "Social & Recreational Events",
-    link: "/apps/nu-events/social",
+    link: "/apps/campuscurrent/social",
     events: socialEvents,
   },
 ];
