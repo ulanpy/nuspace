@@ -2,18 +2,16 @@ import { withSuspense } from "@/components/molecules/hoc/with-suspense";
 import { lazy } from "react";
 import { LayoutDashboard, Package, Users } from "lucide-react";
 const APPS = "apps";
-const KP = "kupi-prodai";
-const APPSKP = `${APPS}/${KP}`;
 
 export const ROUTES = {
   HOME: "/",
   APPS: {
-    BASEURL: "/apps",
-    KP: `/${APPSKP}`,
-    KP_PRODUCT_ID: `/${APPSKP}/product`,
-    NU_EVENTS: `/${APPSKP}/nu-events`,
-    DORM_EATS: `/${APPSKP}/dorm-eats`,
-    ABOUT: `/${APPSKP}/about`,
+    BASEURL: `/${APPS}`,
+    KP: `/${APPS}/kupi-prodai`,
+    KP_PRODUCT_ID: `/${APPS}/kupi-prodai/product`,
+    NU_EVENTS: `/${APPS}/nu-events`,
+    DORM_EATS: `/${APPS}/dorm-eats`,``
+    ABOUT: `/${APPS}/about`,
   },
   ADMIN: {
     BASE: {
