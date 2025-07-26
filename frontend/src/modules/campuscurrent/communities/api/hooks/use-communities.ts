@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { nuEventsAPI } from "../communities-api";
+import { campuscurrentAPI } from "../communities-api";
 import { useState } from "react";
 
 export const useCommunities = () => {
   const { data, isLoading, isError } = useQuery({
-    ...nuEventsAPI.getCommunitiesQueryOptions,
+    ...campuscurrentAPI.getCommunitiesQueryOptions,
   });
 
   const [page, setPage] = useState(1);

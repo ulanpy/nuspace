@@ -3,21 +3,21 @@ import { lazy } from "react";
 import { LayoutDashboard, Package, Users } from "lucide-react";
 
 // --- Path Segments ---
-const ADMIN = "admin";
-const APPS = "apps";
-const PRODUCTS = "products";
-const USERS = "users";
-const PRODUCT = "product";
-const USER = "user";
-const KUPI_PRODAI = "kupi-prodai";
-const CAMPUS_CURRENT = "campuscurrent";
-const DORM_EATS = "dorm-eats";
-const POSTS = "posts";
-const ABOUT = "about";
-const EVENTS = "events";
-const EVENT = "event";
-const COMMUNITY = "community";
-const COMMUNITIES = "communities";
+export const ADMIN = "admin";
+export const APPS = "apps";
+export const PRODUCTS = "products";
+export const USERS = "users";
+export const PRODUCT = "product";
+export const USER = "user";
+export const KUPI_PRODAI = "kupi-prodai";
+export const CAMPUS_CURRENT = "campuscurrent";
+export const DORM_EATS = "dorm-eats";
+export const POSTS = "posts";
+export const ABOUT = "about";
+export const EVENTS = "events";
+export const EVENT = "event";
+export const COMMUNITY = "community";
+export const COMMUNITIES = "communities";
 
 // --- Helper to build paths ---
 const buildPath = (...args: string[]) => `/${args.filter(Boolean).join("/")}`;

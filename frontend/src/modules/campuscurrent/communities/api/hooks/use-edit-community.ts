@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { nuEventsAPI } from "../communities-api";
+import { campuscurrentAPI } from "../communities-api";
 import { useParams } from "react-router-dom";
 
 export const useEditCommunity = () => {
@@ -9,10 +9,10 @@ export const useEditCommunity = () => {
 
   return useMutation({
     mutationFn: (data: club) =>
-      nuEventsAPI.editCommunity(data.id, data), 
+      campuscurrentAPI.editCommunity(data.id, data), 
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: nuEventsAPI.getCommunityQueryOptions(variables.id),
+        queryKey: campuscurrentAPI.getCommunityQueryOptions(variables.id),
       });
       queryClient.invalidateQueries({ queryKey: ['nuEvents', 'community', id] });
     },

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { nuEventsAPI } from "../communities-api";
+import { campuscurrentAPI } from "../communities-api";
 import { useParams } from "react-router-dom";
 
 export const useCommunity = () => {
@@ -11,7 +11,7 @@ export const useCommunity = () => {
     isLoading,
     isError,
   } = useQuery({
-    ...nuEventsAPI.getCommunityQueryOptions(id || ""),
+    ...campuscurrentAPI.getCommunityQueryOptions(id || ""),
     enabled: !!id,
   });
   return { club: club || null, isPending, isLoading, isError };
