@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { campuscurrentAPI } from "../communities-api";
+import { campuscurrentAPI } from "../api/communities-api";
 import { useState } from "react";
 
 export const useCommunities = () => {
