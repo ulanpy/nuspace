@@ -9,70 +9,54 @@ import {
 import { Badge } from "@/components/atoms/badge";
 import { Button } from "@/components/atoms/button";
 
-interface EventCardProps {
-  id: string;
-  title: string;
-  clubName: string;
-  clubId: string;
-  date: string;
-  time: string;
-  location: string;
-  category: string;
-  attendees: number;
-  imageUrl: string;
-}
+interface EventCardProps extends NuEvents.Event {}
 
 export function EventCard({
   id,
-  title,
-  clubName,
-  clubId,
-  date,
-  time,
-  location,
-  category,
-  attendees,
-  imageUrl,
+  name,
+  club,
+  event_datetime,
+  place,
+  policy,
+  media,
 }: EventCardProps) {
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
-      <Link to={`/events/${id}`}>
+      <Link to={`/apps/campuscurrent/event/${id}`}>
         <div className="aspect-video relative overflow-hidden">
           <img
-            src={imageUrl || "/placeholder.svg"}
-            alt={title}
+            src={media[0]?.url || "/placeholder.svg"}
+            alt={name}
             className="object-cover w-full h-full"
           />
           <Badge className="absolute top-2 right-2 bg-nublue hover:bg-nublue-600">
-            {category}
+            {policy}
           </Badge>
         </div>
       </Link>
       <CardHeader className="p-4 pb-0">
-        <Link to={`/events/${id}`} className="hover:underline">
-          <h3 className="text-lg font-semibold line-clamp-2">{title}</h3>
+        <Link to={`/apps/campuscurrent/event/${id}`} className="hover:underline">
+          <h3 className="text-lg font-semibold line-clamp-2">{name}</h3>
         </Link>
         <Link
-          to={`/clubs/${clubId}`}
+          to={`/apps/campuscurrent/community/${club?.id}`}
           className="text-sm text-muted-foreground hover:text-primary"
         >
-          {clubName}
+          {club?.name}
         </Link>
       </CardHeader>
       <CardContent className="p-4 pt-2 space-y-2">
         <div className="flex items-center text-sm text-muted-foreground">
           <Calendar className="mr-2 h-4 w-4" />
-          <span>
-            {date} • {time}
-          </span>
+          <span>{new Date(event_datetime).toLocaleDateString()}</span>
         </div>
         <div className="flex items-center text-sm text-muted-foreground">
           <MapPin className="mr-2 h-4 w-4" />
-          <span className="truncate">{location}</span>
+          <span className="truncate">{place}</span>
         </div>
         <div className="flex items-center text-sm text-muted-foreground">
           <Users className="mr-2 h-4 w-4" />
-          <span>{attendees} attending</span>
+          <span>{club?.followers} attending</span>
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between">

@@ -11,7 +11,7 @@ export const useEvents = () => {
   const [keyword, setKeyword] = useState("");
 
   return {
-    communities: data || null,
+    events: data || null,
     isLoading,
     isError,
     page,

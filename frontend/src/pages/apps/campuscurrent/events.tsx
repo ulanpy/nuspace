@@ -7,11 +7,20 @@ import {
 import { EventCard } from "@/components/molecules/cards/event-card";
 import { FilterBar } from "@/components/molecules/filter-bar";
 import { Pagination } from "@/components/molecules/pagination";
-import { allEvents } from "@/data/events/mock-events-data";
 import { useEvents } from "@/modules/campuscurrent/events/hooks/use-events";
 
 
 export default function Events() {
+  const { events, isLoading, isError } = useEvents();
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (isError) {
+    return <div>Error loading events.</div>;
+  }
+  
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-grow">
@@ -25,7 +34,7 @@ export default function Events() {
           <TabsContent value="all" className="mt-4">
             <FilterBar />
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-6">
-              {allEvents.map((event) => (
+              {(events?.events || []).map((event) => (
                 <EventCard key={event.id} {...event} />
               ))}
             </div>
@@ -33,7 +42,7 @@ export default function Events() {
           <TabsContent value="today">
             <FilterBar />
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-6">
-              {allEvents.slice(0, 3).map((event) => (
+              {(events?.events || []).slice(0, 3).map((event) => (
                 <EventCard key={event.id} {...event} />
               ))}
             </div>
@@ -41,7 +50,7 @@ export default function Events() {
           <TabsContent value="thisWeek">
             <FilterBar />
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-6">
-              {allEvents.slice(0, 6).map((event) => (
+              {(events?.events || []).slice(0, 6).map((event) => (
                 <EventCard key={event.id} {...event} />
               ))}
             </div>
@@ -49,14 +58,14 @@ export default function Events() {
           <TabsContent value="thisMonth">
             <FilterBar />
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-6">
-              {allEvents.map((event) => (
+              {(events?.events || []).map((event) => (
                 <EventCard key={event.id} {...event} />
               ))}
             </div>
           </TabsContent>
         </Tabs>
 
-        <Pagination length={3} currentPage={1} onChange={() => {}} />
+        <Pagination length={events?.num_of_pages || 1} currentPage={1} onChange={() => {}} />
       </main>
     </div>
   );
