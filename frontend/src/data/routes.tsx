@@ -9,8 +9,8 @@ export const ROUTES = {
     BASEURL: `/${APPS}`,
     KP: `/${APPS}/kupi-prodai`,
     KP_PRODUCT_ID: `/${APPS}/kupi-prodai/product`,
-    NU_EVENTS: `/${APPS}/campuscurrent`,
-    COMMUNITIES: `/${APPS}/campuscurrent/communities`,
+    NU_EVENTS: `/${APPS}/nu-events`,
+    COMMUNITIES: `/${APPS}/nu-events/communities`,
     DORM_EATS: `/${APPS}/dorm-eats`,
     ABOUT: `/${APPS}/about`,
   },
@@ -59,31 +59,31 @@ export const LazyRoutes = {
     ],
     EVENTS: [
       {
-        path: "campuscurrent",
-        Component: withSuspense(lazy(() => import("@/pages/apps/campuscurrent"))),
+        path: "nu-events",
+        Component: withSuspense(lazy(() => import("@/pages/apps/nu-events"))),
       },
       {
-        path: "campuscurrent/events",
+        path: "nu-events/events",
         Component: withSuspense(
-          lazy(() => import("@/pages/apps/campuscurrent/events")),
+          lazy(() => import("@/pages/apps/nu-events/events")),
         ),
       },
       {
-        path: "campuscurrent/event/:id",
+        path: "nu-events/event/:id",
         Component: withSuspense(
-          lazy(() => import("@/pages/apps/campuscurrent/event/[id]")),
+          lazy(() => import("@/pages/apps/nu-events/event/[id]")),
         ),
       },
       {
-        path: "campuscurrent/club/:id",
+        path: "nu-events/club/:id",
         Component: withSuspense(
-          lazy(() => import("@/pages/apps/campuscurrent/club/[id]")),
+          lazy(() => import("@/pages/apps/nu-events/club/[id]")),
         ),
       },
       {
-        path: "campuscurrent/clubs",
+        path: "nu-events/clubs",
         Component: withSuspense(
-          lazy(() => import("@/pages/apps/campuscurrent/clubs")),
+          lazy(() => import("@/pages/apps/nu-events/clubs")),
         ),
       },
     ],
