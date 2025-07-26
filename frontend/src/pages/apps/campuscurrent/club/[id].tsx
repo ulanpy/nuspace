@@ -5,12 +5,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   Users,
   Calendar,
-  Instagram,
   MessageCircle,
   Heart,
   ExternalLink,
   Edit,
   Plus,
+  InstagramIcon,
 } from "lucide-react";
 import { Button } from "../../../../components/atoms/button";
 import { Badge } from "../../../../components/atoms/badge";
@@ -24,7 +24,7 @@ import {
 import { useToast } from "../../../../hooks/use-toast";
 import { useUser } from "../../../../hooks/use-user";
 import { LoginModal } from "../../../../components/molecules/login-modal";
-import { useCommunity } from "@/modules/campuscurrent/communities/hooks/use-cummunity";
+import { useCommunity } from "@/modules/campuscurrent/communities/hooks/use-community";
 import { EditCommunityModal } from "@/components/molecules/edit-community-modal";
 import { CreateEventModal } from "@/components/molecules/create-event-modal";
 import { ROUTES } from "@/data/routes";
@@ -45,7 +45,7 @@ export default function ClubDetailPage() {
   const navTabs = [
     { name: "Home", path: ROUTES.APPS.CAMPUS_CURRENT.ROOT },
     { name: "Events", path: ROUTES.APPS.CAMPUS_CURRENT.EVENTS },
-    { name: "Clubs", path: ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES },
+    { name: "Clubs", path: ROUTES.APPS.CAMPUS_CURRENT.CLUBS },
   ];
 
   const { club, isLoading } = useCommunity();
@@ -228,16 +228,9 @@ export default function ClubDetailPage() {
         defaultValue="about"
         value={activeTab}
         onValueChange={setActiveTab}
-        className="w-full mt-4"
+        className="w-full my-4"
       >
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="about">About</TabsTrigger>
-          <TabsTrigger value="events">Events</TabsTrigger>
-          <TabsTrigger value="gallery">Gallery</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="about" className="pt-4 space-y-4">
-          <div>
+        <div>
             <h2 className="text-xl font-semibold mb-2">About Us</h2>
             <p className="text-md text-muted-foreground">{club.description}</p>
           </div>
@@ -258,7 +251,7 @@ export default function ClubDetailPage() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm text-primary hover:underline"
                 >
-                  <Instagram className="h-4 w-4" />
+                  <InstagramIcon className="h-4 w-4" />
                   <span>Instagram</span>
                   <ExternalLink className="h-3 w-3" />
                 </a>
@@ -277,6 +270,15 @@ export default function ClubDetailPage() {
               )}
             </div>
           </div>
+
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="posts">Posts</TabsTrigger>
+          <TabsTrigger value="events">Events</TabsTrigger>
+          <TabsTrigger value="gallery">Gallery</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="posts" className="pt-4 space-y-4">
+          
         </TabsContent>
 
         <TabsContent value="events" className="pt-4">
