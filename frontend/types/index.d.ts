@@ -197,6 +197,33 @@ declare global {
       followers: number;
       isFollowing: boolean;
     }
+
+    interface Tag {
+      id: number;
+      community_id: number;
+      name: string;
+      created_at: string;
+      updated_at: string;
+    }
+
+
+    interface Post {
+      id: number;
+      community_id: number;
+      user_sub: string;
+      title: string;
+      description: string;
+      tag_id?: number;
+      created_at: string;
+      updated_at: string;
+      from_community: boolean;
+      media?: Media[];
+      user: HeadUser;
+      total_comments: number;
+      tag: Tag;
+      permissions: Permissions;
+    }
+    
     type EventPolicy = "all" | "open" | "free_ticket" | "paid_ticket";
     interface Event {
       id: number;

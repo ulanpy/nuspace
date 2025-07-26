@@ -13,7 +13,7 @@ export function CommunityCard({ club }: { club: Types.Club }) {
     <Card
       key={club.id}
       className="overflow-hidden cursor-pointer"
-      onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.CLUB.DETAIL_FN(club.id))}
+      onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(club.id))}
     >
       <div className="aspect-square relative">
         {club.media && club.media.length > 0 ? (

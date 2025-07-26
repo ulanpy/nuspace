@@ -41,7 +41,7 @@ export default function NUEventsPage() {
       {/* Popular clubs section */}
       <GeneralSection
         title="Popular Clubs"
-        link={ROUTES.APPS.CAMPUS_CURRENT.CLUBS}
+        link={ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES}
       >
         {mockClubs.slice(0, 4).map((club) => (
           <CommunityCard key={club.id} club={club} />

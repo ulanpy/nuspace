@@ -16,8 +16,7 @@ const POSTS = "posts";
 const ABOUT = "about";
 const EVENTS = "events";
 const EVENT = "event";
-const CLUB = "club";
-const CLUBS = "clubs";
+const COMMUNITY = "community";
 const COMMUNITIES = "communities";
 
 // --- Helper to build paths ---
@@ -66,12 +65,11 @@ export const ROUTES = {
         DETAIL_FN: (id: string) =>
           buildPath(APPS, CAMPUS_CURRENT, EVENT, id),
       },
-      CLUBS: buildPath(APPS, CAMPUS_CURRENT, CLUBS),
-      CLUB: {
-        DETAIL: buildPath(APPS, CAMPUS_CURRENT, CLUB, ":id"),
-        DETAIL_FN: (id: string) => buildPath(APPS, CAMPUS_CURRENT, CLUB, id),
-      },
       COMMUNITIES: buildPath(APPS, CAMPUS_CURRENT, COMMUNITIES),
+      COMMUNITY: {
+        DETAIL: buildPath(APPS, CAMPUS_CURRENT, COMMUNITY, ":id"),
+        DETAIL_FN: (id: string) => buildPath(APPS, CAMPUS_CURRENT, COMMUNITY, id),
+      },
       POSTS: buildPath(APPS, CAMPUS_CURRENT, POSTS),
     },
     DORM_EATS: {
@@ -96,8 +94,8 @@ const LAZY_ROUTES_REL = {
     CAMPUS_CURRENT_ROOT: CAMPUS_CURRENT,
     CAMPUS_CURRENT_EVENTS: `${CAMPUS_CURRENT}/${EVENTS}`,
     CAMPUS_CURRENT_EVENT_DETAIL: `${CAMPUS_CURRENT}/${EVENT}/:id`,
-    CAMPUS_CURRENT_CLUB_DETAIL: `${CAMPUS_CURRENT}/${CLUB}/:id`,
-    CAMPUS_CURRENT_CLUBS: `${CAMPUS_CURRENT}/${CLUBS}`,
+    CAMPUS_CURRENT_COMMUNITY_DETAIL: `${CAMPUS_CURRENT}/${COMMUNITY}/:id`,
+    CAMPUS_CURRENT_COMMUNITIES: `${CAMPUS_CURRENT}/${COMMUNITIES}`,
   },
 };
 export const LazyRoutes = {
@@ -142,13 +140,13 @@ export const LazyRoutes = {
         ),
       },
       {
-        path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_CLUB_DETAIL,
+        path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_COMMUNITY_DETAIL,
         Component: withSuspense(
           lazy(() => import("@/pages/apps/campuscurrent/club/[id]")),
         ),
       },
       {
-        path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_CLUBS,
+        path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_COMMUNITIES,
         Component: withSuspense(
           lazy(() => import("@/pages/apps/campuscurrent/clubs")),
         ),

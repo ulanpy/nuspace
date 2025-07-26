@@ -5,6 +5,6 @@ import { ROUTES } from "@/data/routes";
 export const campusCurrentPostQueryOptions = queryOptions({
   queryKey: ["campusCurrentPost"],
   queryFn: () => {
-    return apiCall<Types.Post>(`${ROUTES.APPS.CAMPUS_CURRENT.POSTS}`);
+    return apiCall<Types.PaginatedResponse<NuEvents.Post, "posts">>(`${ROUTES.APPS.CAMPUS_CURRENT.POSTS}`);
   },
 });

@@ -11,6 +11,6 @@ export const navTabs = [
   },
   {
     name: "Clubs",
-    path: ROUTES.APPS.CAMPUS_CURRENT.CLUBS,
+    path: ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES,
   },
 ];

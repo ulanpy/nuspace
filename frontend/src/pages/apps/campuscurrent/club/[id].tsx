@@ -45,7 +45,7 @@ export default function ClubDetailPage() {
   const navTabs = [
     { name: "Home", path: ROUTES.APPS.CAMPUS_CURRENT.ROOT },
     { name: "Events", path: ROUTES.APPS.CAMPUS_CURRENT.EVENTS },
-    { name: "Clubs", path: ROUTES.APPS.CAMPUS_CURRENT.CLUBS },
+    { name: "Clubs", path: ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES },
   ];
 
   const { club, isLoading } = useCommunity();
