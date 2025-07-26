@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { campuscurrentAPI } from "../api/events-api";
 import { useParams } from "react-router-dom";
 
-export const useCommunity = () => {
+export const useEvent = () => {
   const { id } = useParams<{ id: string }>();
   console.log("id", id);
   const {
-    data: club,
+    data: event,
     isPending,
     isLoading,
     isError,
@@ -14,5 +14,5 @@ export const useCommunity = () => {
     ...campuscurrentAPI.getEventQueryOptions(id || ""),
     enabled: !!id,
   });
-  return { club: club || null, isPending, isLoading, isError };
+  return { event: event || null, isPending, isLoading, isError };
 };

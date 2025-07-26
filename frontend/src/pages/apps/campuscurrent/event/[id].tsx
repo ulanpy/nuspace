@@ -16,11 +16,10 @@ import { Badge } from "@/components/atoms/badge";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
-import { mockApi } from "@/data/events/mock-events-data";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { Card, CardContent } from "@/components/atoms/card";
 import { ROUTES } from "@/data/routes";
-import { useGetEventById, useGetEventsByClubId } from "@/api/events";
+import { useEvent } from "@/modules/campuscurrent/events/hooks/use-event";
 import { BaseCard } from "@/components/molecules/cards/base-card";
 import {
   Carousel,
@@ -115,40 +114,10 @@ export default function EventDetailPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useUser();
+  const { event, isLoading, isError } = useEvent();
 
-  const [event, setEvent] = useState<Event | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-
-  // Fetch event data
-  useEffect(() => {
-    const fetchEvent = async () => {
-      if (!id) return;
-
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        // Using mock API instead of real API call
-        const foundEvent = mockApi.getEvent(Number(id));
-
-        if (!foundEvent) {
-          throw new Error("Event not found");
-        }
-
-        setEvent(foundEvent);
-      } catch (err) {
-        console.error("Failed to fetch event:", err);
-        setError("Failed to fetch event details");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchEvent();
-  }, [id]);
 
   // Add to Google Calendar
   const addToGoogleCalendar = () => {
@@ -220,7 +189,7 @@ export default function EventDetailPage() {
     );
   }
 
-  if (error || !event) {
+  if (isError || !event) {
     return (
       <div className="container mx-auto px-4 py-6">
         <Button
@@ -234,7 +203,7 @@ export default function EventDetailPage() {
 
         <div className="text-center py-12">
           <h2 className="text-xl font-bold text-destructive mb-4">
-            {error || "Event not found"}
+            {isError ? "Failed to fetch event details" : "Event not found"}
           </h2>
           <Button onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.ROOT)}>
             Return to Events
@@ -417,66 +386,13 @@ export default function EventDetailPage() {
             <h2 className="text-xl font-bold mb-4">
               Other events from this club
             </h2>
-
-            {(() => {
-              // Get other events from the same club
-              const otherEvents = mockApi.getClubEvents(event.club_id).events;
-
-              return otherEvents.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {otherEvents.map((clubEvent) => (
-                    <Card
-                      key={clubEvent.id}
-                      className="overflow-hidden cursor-pointer"
-                      onClick={() =>
-                        navigate(ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(clubEvent.id))
-                      }
-                    >
-                      <div className="aspect-[1/1.414] relative">
-                        {clubEvent.media && clubEvent.media.length > 0 ? (
-                          <img
-                            src={clubEvent.media[0].url || "/placeholder.svg"}
-                            alt={clubEvent.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-muted flex items-center justify-center">
-                            <Calendar className="h-8 w-8 text-muted-foreground opacity-50" />
-                          </div>
-                        )}
-                        <div className="absolute top-2 left-2">
-                          <Badge
-                            className={`${getPolicyColor(
-                              clubEvent.policy,
-                            )} text-white`}
-                          >
-                            {getPolicyDisplay(clubEvent.policy)}
-                          </Badge>
-                        </div>
-                      </div>
-                      <CardContent className="p-4">
-                        <h3 className="font-medium line-clamp-1">
-                          {clubEvent.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {new Date(
-                            clubEvent.event_datetime,
-                          ).toLocaleDateString()}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 border rounded-md bg-muted/20">
-                  <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-                  <h3 className="text-lg font-medium mb-1">No other events</h3>
-                  <p className="text-sm text-muted-foreground">
-                    This club doesn't have any other scheduled events
-                  </p>
-                </div>
-              );
-            })()}
+            <div className="text-center py-8 border rounded-md bg-muted/20">
+              <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+              <h3 className="text-lg font-medium mb-1">No other events</h3>
+              <p className="text-sm text-muted-foreground">
+                This feature is not available yet.
+              </p>
+            </div>
           </div>
         </div>
       )}
