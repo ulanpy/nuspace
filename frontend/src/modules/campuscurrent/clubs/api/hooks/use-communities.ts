@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { nuEventsAPI } from "../nu-events-api";
+import { nuEventsAPI } from "../communities-api";
 import { useState } from "react";
 
 export const useCommunities = () => {

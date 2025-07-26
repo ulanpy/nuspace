@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { nuEventsAPI } from "../nu-events-api";
+import { nuEventsAPI } from "../communities-api";
 import { useParams } from "react-router-dom";
 
 export const useEditCommunity = () => {
