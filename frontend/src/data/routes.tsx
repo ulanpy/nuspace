@@ -10,6 +10,7 @@ export const ROUTES = {
     KP: `/${APPS}/kupi-prodai`,
     KP_PRODUCT_ID: `/${APPS}/kupi-prodai/product`,
     NU_EVENTS: `/${APPS}/nu-events`,
+    COMMUNITIES: `/${APPS}/nu-events/communities`,
     DORM_EATS: `/${APPS}/dorm-eats`,
     ABOUT: `/${APPS}/about`,
   },
