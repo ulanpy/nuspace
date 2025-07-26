@@ -223,6 +223,36 @@ declare global {
       tag: Tag;
       permissions: Permissions;
     }
+
+    // Post creation request and response types
+    interface CommunityPostRequest {
+      community_id: number;
+      title: string;
+      description: string;
+      tag_id?: number;
+    }
+
+    interface CommunityPostResponse {
+      id: number;
+      community_id: number;
+      user_sub: string;
+      title: string;
+      description: string;
+      tag_id?: number;
+      created_at: string;
+      updated_at: string;
+      from_community: boolean;
+      media?: Media[];
+      user: HeadUser;
+      total_comments: number;
+      tag: Tag;
+      permissions: Permissions;
+    }
+
+    interface ListCommunityPostResponse {
+      posts: Post[];
+      num_of_pages: number;
+    }
     
     type EventPolicy = "all" | "open" | "free_ticket" | "paid_ticket";
     interface Event {
