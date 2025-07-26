@@ -19,6 +19,17 @@ import { useUser } from "@/hooks/use-user";
 import { mockApi } from "@/data/events/mock-events-data";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { Card, CardContent } from "@/components/atoms/card";
+import { ROUTES } from "@/data/routes";
+import { useGetEventById, useGetEventsByClubId } from "@/api/events";
+import { BaseCard } from "@/components/molecules/cards/base-card";
+import {
+  Carousel,
+  CarouselApi,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/atoms/carousel";
 
 interface Club {
   id: number;
@@ -215,7 +226,7 @@ export default function EventDetailPage() {
         <Button
           variant="ghost"
           className="mb-4 flex items-center gap-1"
-          onClick={() => navigate("/apps/campuscurrent")}
+          onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.ROOT)}
         >
           <ChevronLeft className="h-4 w-4" />
           <span>Back to Events</span>
@@ -225,7 +236,7 @@ export default function EventDetailPage() {
           <h2 className="text-xl font-bold text-destructive mb-4">
             {error || "Event not found"}
           </h2>
-          <Button onClick={() => navigate("/apps/campuscurrent")}>
+          <Button onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.ROOT)}>
             Return to Events
           </Button>
         </div>
@@ -241,7 +252,7 @@ export default function EventDetailPage() {
       <Button
         variant="ghost"
         className="mb-4 flex items-center gap-1"
-        onClick={() => navigate("/apps/campuscurrent")}
+        onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.ROOT)}
       >
         <ChevronLeft className="h-4 w-4" />
         <span>Back to Events</span>
@@ -284,7 +295,7 @@ export default function EventDetailPage() {
                 <div
                   className="text-primary hover:underline cursor-pointer mt-1"
                   onClick={() =>
-                    navigate(`/apps/campuscurrent/club/${event.club?.id}`)
+                    navigate(ROUTES.APPS.CAMPUS_CURRENT.CLUB.DETAIL_FN(event.club?.id))
                   }
                 >
                   {event.club.name}
@@ -364,7 +375,7 @@ export default function EventDetailPage() {
               </p>
             </div>
             <Button
-              onClick={() => navigate(`/apps/campuscurrent/club/${event.club?.id}`)}
+              onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.CLUB.DETAIL_FN(event.club?.id))}
               className="flex items-center gap-2"
             >
               <Users className="h-4 w-4" />
@@ -418,7 +429,7 @@ export default function EventDetailPage() {
                       key={clubEvent.id}
                       className="overflow-hidden cursor-pointer"
                       onClick={() =>
-                        navigate(`/apps/campuscurrent/event/${clubEvent.id}`)
+                        navigate(ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(clubEvent.id))
                       }
                     >
                       <div className="aspect-[1/1.414] relative">

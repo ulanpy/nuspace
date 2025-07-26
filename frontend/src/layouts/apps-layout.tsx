@@ -7,6 +7,9 @@ import { ThemeToggle } from "../components/molecules/theme-toggle";
 import { LoginButton } from "../components/molecules/buttons/login-button";
 import { LoginRequirementModal } from "../components/molecules/login-requirement-modal";
 import { useUser } from "@/hooks/use-user";
+import { ROUTES } from "@/data/routes";
+import { Header } from "@/components/organisms/header";
+import { cn } from "@/utils/utils";
 
 export default function AppsLayout() {
   const { user, login, isLoading } = useUser();
@@ -15,7 +18,9 @@ export default function AppsLayout() {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Check if the current path is for Kupi&Prodai
-  const isKupiProdaiPath = location.pathname.includes("/apps/kupi-prodai");
+  const isKupiProdaiPath = location.pathname.includes(
+    ROUTES.APPS.KUPI_PRODAI.ROOT,
+  );
 
   // Show login modal for unauthenticated users trying to access Kupi&Prodai
   useEffect(() => {

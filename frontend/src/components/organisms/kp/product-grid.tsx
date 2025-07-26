@@ -3,6 +3,7 @@ import { Pagination } from "../../molecules/pagination";
 import { useNavigate } from "react-router-dom";
 import { MessageButton } from "@/components/molecules/buttons/message-button";
 import { ProductCard } from "@/components/molecules/cards/product-card";
+import { ROUTES } from "@/data/routes";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -56,7 +57,7 @@ export function ProductGrid({
             <ProductCard
               product={product}
               onClick={() =>
-                navigate(`/apps/kupi-prodai/product/${product.id}`)
+                navigate(ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(product.id))
               }
               actions={<MessageButton />}
             />

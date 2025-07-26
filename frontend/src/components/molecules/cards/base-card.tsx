@@ -1,6 +1,14 @@
-import { Card, CardContent } from "@/components/atoms/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/atoms/card";
 import { Badge, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/data/routes";
 
 interface Event {
   id: number;
@@ -12,26 +20,21 @@ interface Event {
   };
 }
 
-export function BaseCard({ event }: { event: Event }) {
+export const BaseCard = ({ event }: { event: Types.Event }) => {
   const navigate = useNavigate();
   return (
     <Card
-      key={event.id}
-      className="min-w-[160px] max-w-[160px] sm:min-w-[180px] sm:max-w-[180px] flex-shrink-0 overflow-hidden cursor-pointer snap-start"
-      onClick={() => navigate(`/apps/campuscurrent/event/${event.id}`)}
+      className="overflow-hidden h-[350px] flex flex-col justify-between"
+      onClick={() =>
+        navigate(ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(event.id))
+      }
     >
-      <div className="aspect-[1/1.414] relative">
-        {event.media && event.media.length > 0 ? (
-          <img
+      <CardHeader className="p-0 relative">
+        <img
             src={event.media[0].url || "/placeholder.svg"}
             alt={event.name}
             className="w-full h-full object-cover"
           />
-        ) : (
-          <div className="w-full h-full bg-muted flex items-center justify-center">
-            <Calendar className="h-8 w-8 text-muted-foreground opacity-50" />
-          </div>
-        )}
         <div className="absolute top-1 left-1 z-10">
           <Badge className={` text-white text-[10px] px-1 py-0`}></Badge>
         </div>
@@ -40,7 +43,7 @@ export function BaseCard({ event }: { event: Event }) {
             {event.rating.toFixed(1)}
           </div>
         )}
-      </div>
+      </CardHeader>
       <CardContent className="p-2">
         <h3 className="font-medium text-xs line-clamp-1">{event.name}</h3>
         <div className="text-[10px] text-muted-foreground mt-0.5">

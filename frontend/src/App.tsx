@@ -17,14 +17,14 @@ function App() {
         <MediaProvider>
           <Routes>
             <Route path={ROUTES.HOME} element={<HomePage />} />
-            <Route path={ROUTES.ADMIN.BASE.path} element={<AdminLayout />}>
+            <Route path={ROUTES.ADMIN.ROOT} element={<AdminLayout />}>
               <Route index element={<AdminPage />} />
               {LazyRoutes.ADMINS.map(({ path, Component }) => (
                 <Route key={path} path={path} element={<Component />} />
               ))}
             </Route>
 
-            <Route path={ROUTES.APPS.BASEURL} element={<AppsLayout />}>
+            <Route path={ROUTES.APPS.ROOT} element={<AppsLayout />}>
               {LazyRoutes.APPS.BASIC.map(({ path, Component }) => (
                 <Route key={path} path={path} element={<Component />} />
               ))}

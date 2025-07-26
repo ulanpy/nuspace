@@ -7,9 +7,6 @@ WORKDIR /nuros
 # Copy only package.json and package-lock.json for caching dependencies
 COPY frontend/package*.json ./
 
-# Install bash
-RUN apk add --no-cache bash
-
 # Install dependencies (node_modules will be inside the container)
 RUN npm install
 

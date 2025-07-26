@@ -6,36 +6,37 @@ import {
   sportsEvents,
   todayEvents,
 } from "./mock-events-data";
+import { ROUTES } from "../routes";
 
 export const eventSections = [
   {
     title: "Featured Events",
-    link: "/apps/campuscurrent/featured",
-    events: featuredEvents,
+    description: "Handpicked events you won't want to miss.",
+    link: ROUTES.APPS.CAMPUS_CURRENT.EVENTS,
   },
   {
     title: "Today's Events",
-    link: "/apps/campuscurrent/today",
-    events: todayEvents,
+    description: "What's happening on campus today.",
+    link: ROUTES.APPS.CAMPUS_CURRENT.EVENTS,
   },
   {
-    title: "Academic Events",
-    link: "/apps/campuscurrent/Academic",
-    events: academicEvents,
+    title: "Academic",
+    description: "Lectures, workshops, and academic deadlines.",
+    link: ROUTES.APPS.CAMPUS_CURRENT.EVENTS,
   },
   {
-    title: "Cultural Events",
-    link: "/apps/campuscurrent/cultural",
-    events: culturalEvents,
+    title: "Cultural",
+    description: "Celebrate diversity and culture.",
+    link: ROUTES.APPS.CAMPUS_CURRENT.EVENTS,
   },
   {
-    title: "Sport Events",
-    link: "/apps/campuscurrent/sports",
-    events: sportsEvents,
+    title: "Sports",
+    description: "Get in the game with university sports.",
+    link: ROUTES.APPS.CAMPUS_CURRENT.EVENTS,
   },
   {
-    title: "Social & Recreational Events",
-    link: "/apps/campuscurrent/social",
-    events: socialEvents,
+    title: "Social",
+    description: "Meet new people and have fun.",
+    link: ROUTES.APPS.CAMPUS_CURRENT.EVENTS,
   },
 ];

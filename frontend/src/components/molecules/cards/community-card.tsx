@@ -2,8 +2,9 @@ import { Badge } from "@/components/atoms/badge";
 import { Card } from "@/components/atoms/card";
 import { Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/data/routes";
 
-export function CommunityCard({ club }: { club: NuEvents.Club }) {
+export function CommunityCard({ club }: { club: Types.Club }) {
   const navigate = useNavigate();
   const getClubTypeDisplay = (type: string) => {
     return type.charAt(0).toUpperCase() + type.slice(1);
@@ -12,7 +13,7 @@ export function CommunityCard({ club }: { club: NuEvents.Club }) {
     <Card
       key={club.id}
       className="overflow-hidden cursor-pointer"
-      onClick={() => navigate(`/apps/campuscurrent/club/${club.id}`)}
+      onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.CLUB.DETAIL_FN(club.id))}
     >
       <div className="aspect-square relative">
         {club.media && club.media.length > 0 ? (

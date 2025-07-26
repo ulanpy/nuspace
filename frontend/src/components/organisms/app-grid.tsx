@@ -2,6 +2,8 @@
 
 import { ShoppingBag, Calendar, Coffee } from "lucide-react";
 import { AppButton } from "../molecules/buttons/app-button";
+import { ROUTES } from "@/data/routes";
+
 interface AppButtonProps {
   icon: React.ReactNode;
   title: string;
@@ -11,12 +13,13 @@ interface AppButtonProps {
   delay?: number;
   comingSoon?: boolean;
 }
+
 export function AppGrid() {
   const apps: AppButtonProps[] = [
     {
       icon: <ShoppingBag className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
       title: "Kupi&Prodai",
-      href: "/apps/kupi-prodai",
+      href: ROUTES.APPS.KUPI_PRODAI.ROOT,
       gradient:
         "radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(37,99,235,0.15) 50%, rgba(29,78,216,0) 100%)",
       iconColor: "text-blue-500",
@@ -25,7 +28,7 @@ export function AppGrid() {
     {
       icon: <Calendar className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
       title: "Campus Current",
-      href: "/apps/campuscurrent",
+      href: ROUTES.APPS.CAMPUS_CURRENT.ROOT,
       gradient:
         "radial-gradient(circle, rgba(249,115,22,0.3) 0%, rgba(234,88,12,0.15) 50%, rgba(194,65,12,0) 100%)",
       iconColor: "text-orange-500",
@@ -34,7 +37,7 @@ export function AppGrid() {
     {
       icon: <Coffee className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
       title: "Dorm Eats",
-      href: "/apps/dorm-eats",
+      href: ROUTES.APPS.DORM_EATS.ROOT,
       gradient:
         "radial-gradient(circle, rgba(34,197,94,0.3) 0%, rgba(22,163,74,0.15) 50%, rgba(21,128,61,0) 100%)",
       iconColor: "text-green-500",

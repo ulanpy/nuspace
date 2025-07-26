@@ -1,19 +1,16 @@
-import { CalendarDays, Home, Users } from "lucide-react";
+import { ROUTES } from "../routes";
 
 export const navTabs = [
   {
-    label: "Home",
-    path: "/apps/campuscurrent",
-    icon: <Home className="h-4 w-4" />,
+    name: "Home",
+    path: ROUTES.APPS.CAMPUS_CURRENT.ROOT,
   },
   {
-    label: "Events",
-    path: "/apps/campuscurrent/events",
-    icon: <CalendarDays className="h-4 w-4" />,
+    name: "Events",
+    path: ROUTES.APPS.CAMPUS_CURRENT.EVENTS,
   },
   {
-    label: "Clubs",
-    path: "/apps/campuscurrent/clubs",
-    icon: <Users className="h-4 w-4" />,
+    name: "Clubs",
+    path: ROUTES.APPS.CAMPUS_CURRENT.CLUBS,
   },
 ];

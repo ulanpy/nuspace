@@ -27,6 +27,7 @@ import { LoginModal } from "../../../../components/molecules/login-modal";
 import { useCommunity } from "@/modules/campuscurrent/clubs/api/hooks/use-cummunity";
 import { EditCommunityModal } from "@/components/molecules/edit-community-modal";
 import { CreateEventModal } from "@/components/molecules/create-event-modal";
+import { ROUTES } from "@/data/routes";
 
 
 // Helper function to get club type display text
@@ -42,21 +43,9 @@ export default function ClubDetailPage() {
 
   // Navigation tabs
   const navTabs = [
-    {
-      label: "Home",
-      path: "/apps/campuscurrent",
-      icon: <Calendar className="h-4 w-4" />,
-    },
-    {
-      label: "Events",
-      path: "/apps/campuscurrent/events",
-      icon: <Calendar className="h-4 w-4" />,
-    },
-    {
-      label: "Clubs",
-      path: "/apps/campuscurrent/clubs",
-      icon: <Users className="h-4 w-4" />,
-    },
+    { name: "Home", path: ROUTES.APPS.CAMPUS_CURRENT.ROOT },
+    { name: "Events", path: ROUTES.APPS.CAMPUS_CURRENT.EVENTS },
+    { name: "Clubs", path: ROUTES.APPS.CAMPUS_CURRENT.CLUBS },
   ];
 
   const { club, isLoading } = useCommunity();
@@ -297,7 +286,7 @@ export default function ClubDetailPage() {
                 <Card
                   key={event.id}
                   className="overflow-hidden cursor-pointer"
-                  onClick={() => navigate(`/apps/campuscurrent/event/${event.id}`)}
+                  onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(event.id))}
                 >
                   <div className="aspect-[3/2] relative">
                     {event.media && event.media.length > 0 ? (

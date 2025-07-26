@@ -9,6 +9,7 @@ import { useUser } from "@/hooks/use-user";
 import { ReportButton } from "@/components/molecules/buttons/report-button";
 import { TelegramStatus } from "@/components/molecules/telegram-status";
 import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
+import { ROUTES } from "@/data/routes";
 // Define carousel items with your image for the homepage
 
 const homeCarouselItems = [
@@ -97,9 +98,14 @@ export default function HomePage() {
       </div>
 
       {/* Footer */}
-      <footer className="mt-16 text-center text-sm text-muted-foreground">
-        <p>© 2025 NU Space. All rights reserved.</p>
-        <Link to="/apps/about">About Us</Link>
+      <footer className="text-center text-sm text-muted-foreground mt-12 py-4 border-t">
+        <p>
+          Made with ❤️ by the NU Students for a better campus life. &copy; 2024
+          NU Space
+        </p>
+        <Link to={ROUTES.APPS.ABOUT} className="hover:underline">
+          About Us
+        </Link>
       </footer>
     </div>
   );

@@ -50,6 +50,7 @@ import { ProductCreateForm } from "@/components/molecules/form/product-create-fo
 import { useImage } from "@/modules/kupi-prodai/hooks/use-image";
 import { useProduct } from "@/components/molecules/form/use-product";
 import { getCategoryDisplay } from "@/utils/products-utils";
+import { ROUTES } from "@/data/routes";
 
 const displayConditions = ["All Conditions", "New", "Used"];
 
@@ -132,6 +133,10 @@ export default function KupiProdaiPage() {
       setKeyword,
       setPage,
     });
+
+  const handleProductClick = (productId: string) => {
+    navigate(ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(productId));
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -234,7 +239,7 @@ export default function KupiProdaiPage() {
                 products={activeListings || []}
                 emptyMessage="No active listings found."
                 onProductClick={(productId) =>
-                  navigate(`/apps/kupi-prodai/product/${productId}`)
+                  navigate(ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(productId))
                 }
                 onEditListing={handleEditListing}
                 onDeleteListing={handleDelete}
@@ -249,7 +254,7 @@ export default function KupiProdaiPage() {
                 products={inactiveListings || []}
                 emptyMessage="No inactive listings found."
                 onProductClick={(productId) =>
-                  navigate(`/apps/kupi-prodai/product/${productId}`)
+                  navigate(ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(productId))
                 }
                 onEditListing={handleEditListing}
                 onDeleteListing={handleDelete}
@@ -274,7 +279,7 @@ export default function KupiProdaiPage() {
                   key={product.id}
                   className="overflow-hidden h-full cursor-pointer hover:shadow-md transition-shadow"
                   onClick={() =>
-                    navigate(`/apps/kupi-prodai/product/${product.id}`)
+                    navigate(ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(product.id))
                   }
                 >
                   <div className="aspect-square relative">

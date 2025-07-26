@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { mockClubs } from "../../data/events/mock-events-data";
+import { EventCard } from "../../components/molecules/cards/event-card";
+import { mockClubs, mockEvents } from "../../data/events/mock-events-data";
 import { LoginModal } from "../../components/molecules/login-modal";
 import { useCommunities } from "@/modules/campuscurrent/clubs/api/hooks/use-communities";
 import { SliderContainer } from "@/components/molecules/slider-container";
@@ -9,6 +10,7 @@ import { BaseCard } from "@/components/molecules/cards/base-card";
 import { eventSections } from "@/data/events/event-sections";
 import { CommunityCard } from "@/components/molecules/cards/community-card";
 import { GeneralSection } from "@/components/molecules/general-section";
+import { ROUTES } from "@/data/routes";
 
 // Main component
 export default function NUEventsPage() {
@@ -30,15 +32,17 @@ export default function NUEventsPage() {
             title={section.title}
             link={section.link}
           >
-            {section.events.map((event) => (
+            {mockEvents.map((event) => (
               <BaseCard key={event.id} event={event} />
             ))}
           </SliderContainer>
         </div>
       ))}
-
       {/* Popular clubs section */}
-      <GeneralSection title="Popular Clubs" link="/apps/campuscurrent/clubs">
+      <GeneralSection
+        title="Popular Clubs"
+        link={ROUTES.APPS.CAMPUS_CURRENT.CLUBS}
+      >
         {mockClubs.slice(0, 4).map((club) => (
           <CommunityCard key={club.id} club={club} />
         ))}

@@ -3,11 +3,12 @@ import { ArrowLeft } from "lucide-react";
 import { ProductForm } from "@/components/molecules/form/product-form";
 import { useProductForm } from "@/modules/kupi-prodai/hooks/use-product-form";
 import { useNavigate, useParams } from "react-router-dom";
+import { ROUTES } from "@/data/routes";
 
 // Mock product data (would be fetched from API in a real application)
 
-const ProductDetailPage = () => {
-  const { id } = useParams();
+export default function ProductDetailPage() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const {
     handleDelete,
@@ -21,6 +22,17 @@ const ProductDetailPage = () => {
     setMainImage,
     removeImage,
   } = useProductForm();
+
+  if (isError) {
+    return (
+      <div className="text-center">
+        <p>Product not found.</p>
+        <Button onClick={() => navigate(ROUTES.ADMIN.PRODUCTS.path)} className="mt-4">
+          Back to Products
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -58,6 +70,4 @@ const ProductDetailPage = () => {
       />
     </div>
   );
-};
-
-export default ProductDetailPage;
+}

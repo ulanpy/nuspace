@@ -2,7 +2,10 @@ import { mockProductData } from "@/data/temporary";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/atoms/sonner";
-export const useProductForm = () => {
+import { useUpdateProduct } from "../api/update-product";
+import { ROUTES } from "@/data/routes";
+
+export const useProductForm = (product?: Types.Product) => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isNewProduct = id === "new";
@@ -48,13 +51,13 @@ export const useProductForm = () => {
         ? "Product created successfully"
         : "Product updated successfully",
     );
-    navigate("/admin/products");
+    navigate(ROUTES.ADMIN.PRODUCTS.path);
   };
 
   const handleDelete = () => {
     // In a real app, you would delete the product here
     toast.success("Product deleted successfully");
-    navigate("/admin/products");
+    navigate(ROUTES.ADMIN.PRODUCTS.path);
   };
 
   const handleImageUpload = () => {
@@ -91,6 +94,18 @@ export const useProductForm = () => {
     });
   };
 
+  const { mutate: update } = useUpdateProduct({
+    onSuccess: () => {
+      reset();
+      queryClient.invalidateQueries(["products"]);
+      navigate(ROUTES.ADMIN.PRODUCTS.path);
+    },
+  });
+
+  const onSubmit = (values: ProductFormValues) => {
+    // Handle form submission here
+  };
+
   return {
     isUploading,
     isNewProduct,
@@ -103,5 +118,7 @@ export const useProductForm = () => {
     setMainImage,
     removeImage,
     setProduct,
+    update,
+    onSubmit,
   };
 };

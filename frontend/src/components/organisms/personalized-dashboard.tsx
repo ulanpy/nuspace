@@ -16,6 +16,7 @@ import {
 import { Card, CardContent } from "../atoms/card";
 import { Badge } from "../atoms/badge";
 import { Button } from "../atoms/button";
+import { ROUTES } from "@/data/routes";
 
 // Types for our personalized data
 interface SalesAnalytics {
@@ -241,7 +242,7 @@ export function PersonalizedDashboard() {
 
               <div className="mt-3 pt-3 border-t border-border/40">
                 <Link
-                  to="/apps/kupi-prodai"
+                  to={ROUTES.APPS.KUPI_PRODAI.ROOT}
                   className="flex items-center justify-end text-xs text-muted-foreground hover:text-foreground"
                 >
                   <span>View all listings</span>
@@ -293,7 +294,7 @@ export function PersonalizedDashboard() {
 
               <div className="mt-3 pt-3 border-t border-border/40">
                 <Link
-                  to="/apps/campuscurrent"
+                  to={ROUTES.APPS.CAMPUS_CURRENT.ROOT}
                   className="flex items-center justify-end text-xs text-muted-foreground hover:text-foreground"
                 >
                   <span>Explore clubs</span>
@@ -340,7 +341,7 @@ export function PersonalizedDashboard() {
 
               <div className="mt-3 pt-3 border-t border-border/40">
                 <Link
-                  to="/apps/campuscurrent"
+                  to={ROUTES.APPS.CAMPUS_CURRENT.ROOT}
                   className="flex items-center justify-end text-xs text-muted-foreground hover:text-foreground"
                 >
                   <span>View all events</span>
@@ -392,7 +393,7 @@ export function PersonalizedDashboard() {
 
               <div className="mt-3 pt-3 border-t border-border/40">
                 <Link
-                  to="/apps/dorm-eats"
+                  to={ROUTES.APPS.DORM_EATS.ROOT}
                   className="flex items-center justify-end text-xs text-muted-foreground hover:text-foreground"
                 >
                   <span>View all menus</span>

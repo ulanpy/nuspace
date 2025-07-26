@@ -15,7 +15,7 @@ import { ROUTES } from "@/data/routes";
 
 const AdminLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const navItems = ROUTES.ADMIN;
+  const navItems = [ROUTES.ADMIN.DASHBOARD, ROUTES.ADMIN.PRODUCTS, ROUTES.ADMIN.USERS];
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
@@ -33,7 +33,7 @@ const AdminLayout: React.FC = () => {
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           {!sidebarCollapsed && (
             <Link
-              to={ROUTES.APPS.KP}
+              to={ROUTES.APPS.KUPI_PRODAI.ROOT}
               className="font-bold text-lg text-blue-600"
             >
               Kupi&Prodai
@@ -56,7 +56,7 @@ const AdminLayout: React.FC = () => {
         {/* Navigation Links */}
         <nav className="flex-1 py-4">
           <ul className="space-y-1 px-2">
-            {Object.values(navItems).map((item) => (
+            {navItems.map((item) => (
               <NavItem
                 key={item.path}
                 to={item.path}

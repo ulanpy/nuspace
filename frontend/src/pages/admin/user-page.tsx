@@ -14,6 +14,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/atoms/card";
+import { ROUTES } from "@/data/routes";
+import { useUser } from "@/hooks/use-user";
+
 const UserPage = () => {
   const { userId } = useParams();
   const [searchTerm, setSearchTerm] = useState("");
@@ -27,7 +30,7 @@ const UserPage = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" asChild>
-          <Link to="/admin/users">
+          <Link to={ROUTES.ADMIN.USERS.path}>
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>

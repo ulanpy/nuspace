@@ -24,6 +24,8 @@ import { Button } from "@/components/atoms/button";
 import { ImageIcon, Save, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Textarea } from "@/components/atoms/textarea";
+import { ROUTES } from "@/data/routes";
+
 interface ProductFormProps {
   product: {
     id?: number;
@@ -267,7 +269,7 @@ export const ProductForm = ({
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate("/admin/products")}
+            onClick={() => navigate(ROUTES.ADMIN.PRODUCTS.path)}
           >
             Cancel
           </Button>

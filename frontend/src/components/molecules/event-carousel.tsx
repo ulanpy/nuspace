@@ -6,6 +6,7 @@ import { Button } from "../../components/atoms/button";
 import { Card, CardContent } from "../../components/atoms/card";
 import { Badge } from "../../components/atoms/badge";
 import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/data/routes";
 
 interface Event {
   id: number;
@@ -105,7 +106,7 @@ export const EventCarousel = ({
             <Card
               key={event.id}
               className="min-w-[160px] max-w-[160px] sm:min-w-[180px] sm:max-w-[180px] flex-shrink-0 overflow-hidden cursor-pointer snap-start"
-              onClick={() => navigate(`/apps/campuscurrent/event/${event.id}`)}
+              onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(event.id))}
             >
               <div className="aspect-[1/1.414] relative">
                 {event.media && event.media.length > 0 ? (
