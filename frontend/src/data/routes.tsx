@@ -63,30 +63,30 @@ export const LazyRoutes = {
     EVENTS: [
       {
         path: "nu-events",
-        Component: withSuspense(lazy(() => import("@/pages/apps/nu-events"))),
+        Component: withSuspense(lazy(() => import("@/pages/apps/campuscurrent"))),
       },
       {
         path: "nu-events/events",
         Component: withSuspense(
-          lazy(() => import("@/pages/apps/nu-events/events")),
+          lazy(() => import("@/pages/apps/campuscurrent/events")),
         ),
       },
       {
         path: "nu-events/event/:id",
         Component: withSuspense(
-          lazy(() => import("@/pages/apps/nu-events/event/[id]")),
+          lazy(() => import("@/pages/apps/campuscurrent/event/[id]")),
         ),
       },
       {
         path: "nu-events/club/:id",
         Component: withSuspense(
-          lazy(() => import("@/pages/apps/nu-events/club/[id]")),
+          lazy(() => import("@/pages/apps/campuscurrent/club/[id]")),
         ),
       },
       {
         path: "nu-events/clubs",
         Component: withSuspense(
-          lazy(() => import("@/pages/apps/nu-events/clubs")),
+          lazy(() => import("@/pages/apps/campuscurrent/clubs")),
         ),
       },
     ],
