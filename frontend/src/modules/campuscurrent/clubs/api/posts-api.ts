@@ -5,6 +5,6 @@ import { ROUTES } from "@/data/routes";
 export const campusCurrentPostQueryOptions = queryOptions({
   queryKey: ["campusCurrentPost"],
   queryFn: () => {
-    return apiCall<Types.Post>(`${ROUTES.APPS.POSTS}/posts`);
+    return apiCall<Types.Post>(`${ROUTES.APPS.CAMPUS_CURRENT.POSTS}`);
   },
 });
