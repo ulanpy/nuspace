@@ -45,7 +45,7 @@ export default function ClubDetailPage() {
   const navTabs = [
     { name: "Home", path: ROUTES.APPS.CAMPUS_CURRENT.ROOT },
     { name: "Events", path: ROUTES.APPS.CAMPUS_CURRENT.EVENTS },
-    { name: "Clubs", path: ROUTES.APPS.CAMPUS_CURRENT.CLUBS },
+    { name: "Clubs", path: ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES },
   ];
 
   const { club, isLoading } = useCommunity();
@@ -288,7 +288,7 @@ export default function ClubDetailPage() {
                 <Card
                   key={event.id}
                   className="overflow-hidden cursor-pointer"
-                  onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(event.id))}
+                  onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(event.id.toString()))}
                 >
                   <div className="aspect-[3/2] relative">
                     {event.media && event.media.length > 0 ? (
