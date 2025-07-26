@@ -60,39 +60,7 @@ export const useProductForm = (product?: Types.Product) => {
     navigate(ROUTES.ADMIN.PRODUCTS.path);
   };
 
-  const handleImageUpload = () => {
-    setIsUploading(true);
-    setTimeout(() => {
-      setIsUploading(false);
-      const newImage = {
-        id: Math.random(),
-        url: "https://via.placeholder.com/300",
-        main: product.images.length === 0,
-      };
-      setProduct({
-        ...product,
-        images: [...product.images, newImage],
-      });
-      toast.success("Image uploaded successfully");
-    }, 1500);
-  };
 
-  const setMainImage = (imageId: number) => {
-    setProduct({
-      ...product,
-      images: product.images.map((img) => ({
-        ...img,
-        main: img.id === imageId,
-      })),
-    });
-  };
-
-  const removeImage = (imageId: number) => {
-    setProduct({
-      ...product,
-      images: product.images.filter((img) => img.id !== imageId),
-    });
-  };
 
   const { mutate: update } = useUpdateProduct({
     onSuccess: () => {
@@ -102,9 +70,7 @@ export const useProductForm = (product?: Types.Product) => {
     },
   });
 
-  const onSubmit = (values: ProductFormValues) => {
-    // Handle form submission here
-  };
+
 
   return {
     isUploading,
@@ -114,11 +80,7 @@ export const useProductForm = (product?: Types.Product) => {
     handleSelectChange,
     handleSave,
     handleDelete,
-    handleImageUpload,
-    setMainImage,
-    removeImage,
     setProduct,
     update,
-    onSubmit,
   };
 };
