@@ -295,7 +295,7 @@ export default function EventDetailPage() {
                 <div
                   className="text-primary hover:underline cursor-pointer mt-1"
                   onClick={() =>
-                    navigate(ROUTES.APPS.CAMPUS_CURRENT.CLUB.DETAIL_FN(event.club?.id))
+                    navigate(ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(event.club?.id))
                   }
                 >
                   {event.club.name}
@@ -375,7 +375,7 @@ export default function EventDetailPage() {
               </p>
             </div>
             <Button
-              onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.CLUB.DETAIL_FN(event.club?.id))}
+              onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(event.club?.id))}
               className="flex items-center gap-2"
             >
               <Users className="h-4 w-4" />
