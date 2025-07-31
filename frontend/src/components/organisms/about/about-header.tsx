@@ -1,4 +1,4 @@
-import { useTheme } from "@/context/theme-provider";
+import { useTheme } from "@/context/ThemeProviderContext";
 
 export const AboutHeader = () => {
   const { theme } = useTheme();

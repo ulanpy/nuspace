@@ -1,5 +1,5 @@
-import { useImageContext } from "@/context/image-context";
-import { useMediaContext } from "@/context/media-context";
+import { useMediaUploadContext } from "@/context/MediaUploadContext";
+import { useMediaEditContext } from "@/context/MediaEditContext";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
@@ -13,15 +13,15 @@ export const useImage = () => {
     setMediaToDelete,
     setReorderedMedia,
     setCurrentMediaIndex,
-  } = useMediaContext();
+  } = useMediaEditContext();
   const {
-    imageFiles,
-    setImageFiles,
-    previewImages,
-    setPreviewImages,
+    mediaFiles: imageFiles,
+    setMediaFiles: setImageFiles,
+    previewMedia: previewImages,
+    setPreviewMedia: setPreviewImages,
     isUploading,
     setIsUploading,
-  } = useImageContext();
+  } = useMediaUploadContext();
   const [isDragging, setIsDragging] = useState(false);
   const removeImage = (index: number) => {
     const newPreviewImages = [...previewImages];

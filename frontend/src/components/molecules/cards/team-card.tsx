@@ -4,7 +4,7 @@ import { FaUsers } from "react-icons/fa";
 
 import { teamMembers } from "@/data/about/team-members";
 import { Modal } from "@/components/atoms/modal";
-import { useTheme } from "@/context/theme-provider";
+import { useTheme } from "@/context/ThemeProviderContext";
 import { TeamMemberCard } from "./team-member-card";
 
 export function TeamCard() {

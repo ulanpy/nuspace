@@ -2,22 +2,25 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   kupiProdaiApi,
   NewProductRequest,
-} from "@/modules/kupi-prodai/api/kupi-prodai-api";
+} from "@/modules/kupi-prodai/api/kupiProdaiApi";
 import { useToast } from "@/hooks/use-toast";
-import { useListingState } from "@/context/listing-context";
-import { useImageContext } from "@/context/image-context";
+import { useListingState } from "@/context/ListingContext";
+import { useMediaUploadContext } from "@/context/MediaUploadContext";
 import { useEditModal } from "../../hooks/use-edit-modal";
 import { useUser } from "@/hooks/use-user";
-import { useProductImages } from "../../hooks/use-product-images";
+import { useMediaUpload } from "@/modules/media/hooks/useMediaUpload";
 import { pollForProductImages } from "@/utils/polling";
+import { EntityType } from "@/modules/media/types/media-format.enum";
+
+
 
 export function useCreateProduct() {
   const { user } = useUser();
   const { toast } = useToast();
-  const { setIsUploading } = useImageContext();
+  const { setIsUploading } = useMediaUploadContext();
   const { setActiveTab, setUploadProgress } = useListingState();
   const { resetEditListing } = useEditModal();
-  const { handleImageUpload, resetImageState } = useProductImages();
+  const { handleMediaUpload, resetMediaState } = useMediaUpload();
 
   const queryClient = useQueryClient();
 
@@ -78,8 +81,8 @@ export function useCreateProduct() {
 
       const newProduct = await createProductMutation.mutateAsync(productData);
 
-      await handleImageUpload({
-        entity_type: "products",
+      await handleMediaUpload({
+        entity_type: EntityType.products,
         entityId: newProduct.id,
         mediaFormat: "carousel",
       });
@@ -91,7 +94,7 @@ export function useCreateProduct() {
       );
 
       resetEditListing();
-      resetImageState();
+      resetMediaState();
 
       return newProduct;
     } catch (error) {

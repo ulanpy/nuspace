@@ -1,5 +1,5 @@
 import { queryClient } from "@/api/query-client";
-import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
+import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupiProdaiApi";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 

@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useTheme } from "../../context/theme-provider";
+import { useTheme } from "../../context/ThemeProviderContext";
 
 interface SliderButtonProps {
   direction: "left" | "right";

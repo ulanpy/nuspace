@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   defaultSize,
   kupiProdaiApi,
-} from "@/modules/kupi-prodai/api/kupi-prodai-api";
+} from "@/modules/kupi-prodai/api/kupiProdaiApi";
 import { useState } from "react";
 import { useUser } from "@/hooks/use-user";
 import {

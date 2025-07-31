@@ -5,16 +5,16 @@ import { Routes, Route } from "react-router-dom";
 import HomePage from "./pages/home";
 import AppsLayout from "./layouts/apps-layout";
 import { Toasts } from "./components/atoms/toast";
-import { ListingProvider } from "./context/listing-context";
-import { ImageProvider } from "./context/image-context";
-import { MediaProvider } from "./context/media-context";
+import { ListingProvider } from "./context/ListingContext";
+import { MediaUploadProvider } from "./context/MediaUploadContext";
+import { MediaEditProvider } from "./context/MediaEditContext";
 import { EventsLayout } from "./pages/apps/campuscurrent/layout";
 
 function App() {
   return (
     <ListingProvider>
-      <ImageProvider>
-        <MediaProvider>
+      <MediaUploadProvider>
+        <MediaEditProvider>
           <Routes>
             <Route path={ROUTES.HOME} element={<HomePage />} />
             <Route path={ROUTES.ADMIN.ROOT} element={<AdminLayout />}>
@@ -36,8 +36,8 @@ function App() {
             </Route>
           </Routes>
           <Toasts />
-        </MediaProvider>
-      </ImageProvider>
+        </MediaEditProvider>
+      </MediaUploadProvider>
     </ListingProvider>
   );
 }

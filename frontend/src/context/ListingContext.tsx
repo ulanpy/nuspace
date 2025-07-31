@@ -3,7 +3,7 @@
 import {
   defaultPage,
   defaultSize,
-} from "@/modules/kupi-prodai/api/kupi-prodai-api";
+} from "@/modules/kupi-prodai/api/kupiProdaiApi";
 import { getSeachPageFromURL } from "@/utils/search-params";
 import React, { createContext, useContext, useState } from "react";
 import { useLocation } from "react-router-dom";

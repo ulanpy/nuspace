@@ -1,10 +1,10 @@
-import { useListingState } from "@/context/listing-context";
-import { useImageContext } from "@/context/image-context";
-import { useMediaContext } from "@/context/media-context";
+import { useListingState } from "@/context/ListingContext";
+import { useMediaUploadContext } from "@/context/MediaUploadContext";
+import { useMediaEditContext } from "@/context/MediaEditContext";
 
 export const useEditModal = () => {
-  const { setOriginalMedia, setCurrentMediaIndex } = useMediaContext();
-  const { setImageFiles, setPreviewImages } = useImageContext();
+  const { setOriginalMedia, setCurrentMediaIndex } = useMediaEditContext();
+  const { setMediaFiles: setImageFiles, setPreviewMedia: setPreviewImages } = useMediaUploadContext();
 
   const { showEditModal, setShowEditModal, setEditingListing, setNewListing } =
     useListingState();

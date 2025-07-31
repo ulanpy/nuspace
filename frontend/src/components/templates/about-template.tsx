@@ -1,4 +1,4 @@
-import { useTheme } from "@/context/theme-provider";
+import { useTheme } from "@/context/ThemeProviderContext";
 import { AboutHeader } from "../organisms/about/about-header";
 import { MessionSection } from "../organisms/about/mession-section";
 import { FeatureSection } from "../organisms/about/feature-section";

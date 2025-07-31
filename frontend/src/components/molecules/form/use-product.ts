@@ -1,4 +1,4 @@
-import { useListingState } from "@/context/listing-context";
+import { useListingState } from "@/context/ListingContext";
 import { productCategories } from "@/data/kp/product";
 
 export const useProduct = () => {

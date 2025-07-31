@@ -1,7 +1,7 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useTheme } from "../../context/theme-provider";
+import { useTheme } from "../../context/ThemeProviderContext";
 import { Switch } from "../atoms/switch";
 
 export function ThemeToggle() {

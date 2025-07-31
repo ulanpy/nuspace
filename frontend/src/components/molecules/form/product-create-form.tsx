@@ -6,7 +6,7 @@ import { Button } from "@/components/atoms/button";
 import { useImage } from "@/modules/kupi-prodai/hooks/use-image";
 import { useProduct } from "./use-product";
 import { useRef } from "react";
-import { useListingState } from "@/context/listing-context";
+import { useListingState } from "@/context/ListingContext";
 interface ProductCreateFormProps {
   isTelegramLinked: boolean;
   uploadProgress: number;

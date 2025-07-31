@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/atoms/card";
-import { useTheme } from "@/context/theme-provider";
+import { useTheme } from "@/context/ThemeProviderContext";
 
 export function TeamMemberCard({ name, role, imgLink, contacts }: Types.Team) {
   const { theme } = useTheme();

@@ -1,6 +1,6 @@
 import { Bug } from "lucide-react";
 import { Button } from "@/components/atoms/button";
-import { useTheme } from "@/context/theme-provider";
+import { useTheme } from "@/context/ThemeProviderContext";
 
 export function ReportButton({
   className,

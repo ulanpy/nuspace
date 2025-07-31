@@ -1,12 +1,12 @@
 import { UploadMediaOptions } from "../types/upload.types";
-import { SignedUrlRequest } from "../types/signed-url.types";
-import { mediaApi } from "../api/media-api";
+import { SignedUrlRequest, SignedUrlResponse } from "../types/signed-url.types";
+import { mediaApi } from "../api/mediaApi";
 
 export const getSignedUrls = async (
     entityId: number,
     files: File[],
     options: Omit<UploadMediaOptions, "entityId">,
-  ) => {
+  ): Promise<SignedUrlResponse[]> => {
     const requests: SignedUrlRequest[] = files.map((file, idx) => ({
       entity_type: options.entity_type,
       entity_id: entityId,

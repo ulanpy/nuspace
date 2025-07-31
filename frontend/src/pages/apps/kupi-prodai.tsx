@@ -30,9 +30,9 @@ import { useDeleteProduct } from "@/modules/kupi-prodai/api/hooks/use-delete-pro
 import { useUpdateProduct } from "@/modules/kupi-prodai/api/hooks/use-update-product";
 import { useEditModal } from "@/modules/kupi-prodai/hooks/use-edit-modal";
 import { useToggleProduct } from "@/modules/kupi-prodai/api/hooks/use-toggle-product";
-import { useListingState } from "@/context/listing-context";
-import { useImageContext } from "@/context/image-context";
-import { useMediaContext } from "@/context/media-context";
+import { useListingState } from "@/context/ListingContext";
+import { useMediaUploadContext } from "@/context/MediaUploadContext";
+import { useMediaEditContext } from "@/context/MediaEditContext";
 import { SearchInput } from "@/components/molecules/search-input";
 import { useSearchLogic } from "@/hooks/use-search-logic";
 import { CategorySlider } from "@/components/organisms/category-slider";
@@ -79,11 +79,11 @@ export default function KupiProdaiPage() {
   const { handleCreate } = useCreateProduct();
   const {
     isUploading,
-    imageFiles,
-    previewImages,
-    setPreviewImages,
-    setImageFiles,
-  } = useImageContext();
+    mediaFiles: imageFiles,
+    previewMedia: previewImages,
+    setPreviewMedia: setPreviewImages,
+    setMediaFiles: setImageFiles,
+  } = useMediaUploadContext();
   const { getIsPendingDeleteMutation, handleDelete } = useDeleteProduct();
   const { handleUpdateListing } = useUpdateProduct();
   const { handleToggleProductStatus, getIsPendingToggleMutation } =
@@ -93,7 +93,7 @@ export default function KupiProdaiPage() {
   // Edit listing state [Form Hooks]
   const { handleEditListing, closeEditModal } = useEditModal();
   const { originalMedia, currentMediaIndex, setCurrentMediaIndex } =
-    useMediaContext();
+    useMediaEditContext();
   const { uploadProgress, newListing, showEditModal, activeTab, setActiveTab } =
     useListingState();
   // Handle image upload

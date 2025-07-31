@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { kupiProdaiApi } from "../kupi-prodai-api";
+import { kupiProdaiApi } from "../kupiProdaiApi";
 import { useParams } from "react-router-dom";
 
 export const useProduct = () => {

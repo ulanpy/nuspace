@@ -1,5 +1,5 @@
 import { useUser } from "@/hooks/use-user";
-import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
+import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupiProdaiApi";
 import { useQuery } from "@tanstack/react-query";
 
 export function useUserProducts() {

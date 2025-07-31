@@ -1,15 +1,18 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupi-prodai-api";
+import { kupiProdaiApi } from "@/modules/kupi-prodai/api/kupiProdaiApi";
 import { useToast } from "@/hooks/use-toast";
-import { useListingState } from "@/context/listing-context";
-import { useImageContext } from "@/context/image-context";
-import { useMediaContext } from "@/context/media-context";
-import { useProductImages } from "../../hooks/use-product-images";
+import { useListingState } from "@/context/ListingContext";
+import { useMediaUploadContext } from "@/context/MediaUploadContext";
+import { useMediaEditContext } from "@/context/MediaEditContext";
+import { useMediaUpload } from "@/modules/media/hooks/useMediaUpload";
 import { pollForProductImages } from "@/utils/polling";
+import { EntityType } from "@/modules/media/types/media-format.enum";
+import {useMediaEdit} from "@/modules/media/hooks/useMediaEdit"
+
 
 export function useUpdateProduct() {
   const { toast } = useToast();
-  const { setIsUploading } = useImageContext();
+  const { setIsUploading } = useMediaUploadContext();
   const {
     newListing,
     editingListing,
@@ -24,9 +27,11 @@ export function useUpdateProduct() {
     setMediaToDelete,
     setOriginalMedia,
     setReorderedMedia,
-  } = useMediaContext();
-  const { handleImageUpload, deleteMedia, resetImageState } =
-    useProductImages();
+  } = useMediaEditContext();
+  const { handleMediaUpload: handleMediaUpload, resetMediaState: resetMediaState } =
+  useMediaUpload();
+
+  const {deleteExistingMedia} = useMediaEdit();
 
   const queryClient = useQueryClient();
 
@@ -86,7 +91,7 @@ export function useUpdateProduct() {
     setMediaToDelete([]);
     setReorderedMedia([]);
     setShowEditModal(false);
-    resetImageState();
+    resetMediaState();
   };
 
   const handleUpdateListing = async (e: React.FormEvent) => {
@@ -110,13 +115,13 @@ export function useUpdateProduct() {
       setUploadProgress(30);
 
       if (mediaToDelete.length > 0) {
-        await deleteMedia(mediaToDelete);
+        await deleteExistingMedia(mediaToDelete);
         setUploadProgress(50);
       }
 
       const startOrder = calculateMediaOrder();
-      await handleImageUpload({
-        entity_type: "products",
+      await handleMediaUpload({
+        entity_type: EntityType.products,
         entityId: Number(editingListing.id),
         mediaFormat: "carousel",
         startOrder,

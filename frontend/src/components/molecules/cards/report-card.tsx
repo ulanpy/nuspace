@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/atoms/card";
-import { useTheme } from "@/context/theme-provider";
+import { useTheme } from "@/context/ThemeProviderContext";
 import { FaHeadset, FaTelegram } from "react-icons/fa";
 
 export function ReportCard() {

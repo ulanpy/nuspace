@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useTheme } from "../../context/theme-provider";
+import { useTheme } from "../../context/ThemeProviderContext";
 
 export function ConditionGroup({
   conditions,

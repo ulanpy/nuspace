@@ -1,33 +1,34 @@
-import { useImageContext } from "@/context/image-context";
-import { useListingState } from "@/context/listing-context";
+import { useMediaUploadContext } from "@/context/MediaUploadContext";
+import { useListingState } from "@/context/ListingContext";
 import { compressMedia } from "../utils/compress-media";
 import { UploadMediaOptions } from "../types/upload.types";
 import { getSignedUrls } from "../utils/get-signed-urls";
-import { deleteMedia } from "../utils/delete-media";
 import { uploadMedia } from "../utils/upload-media";
+import { SignedUrlResponse } from "../types/signed-url.types";
 
 
 export function useMediaUpload() {
-    const { imageFiles, setImageFiles, setPreviewImages, setIsUploading } =
-      useImageContext();
+    const { mediaFiles, setMediaFiles, setPreviewMedia, setIsUploading } =
+      useMediaUploadContext();
     const { setUploadProgress } = useListingState();
 
   
     const handleMediaUpload = async (options: UploadMediaOptions) => {
-      if (!imageFiles.length) return true;
+      if (!mediaFiles.length) return true;
   
       try {
         setIsUploading(true);
         setUploadProgress(30);
   
         // 1. Signed URLs алу
-        const signedUrls = await getSignedUrls(options.entityId, imageFiles, {
+        const signedUrls: SignedUrlResponse[] = await getSignedUrls(
+          options.entityId, mediaFiles, {
           entity_type: options.entity_type,
           mediaFormat: options.mediaFormat,
           startOrder: options.startOrder,
         });
   
-        const compressedMedia: File[] = await compressMedia(imageFiles);
+        const compressedMedia: File[] = await compressMedia(mediaFiles);
         setUploadProgress(50);
   
         await uploadMedia(compressedMedia, signedUrls);
@@ -43,15 +44,14 @@ export function useMediaUpload() {
   
     // Жүктеу күйін қалпына келтіру
     const resetMediaState = () => {
-      setImageFiles([]);
-      setPreviewImages?.([]);
+      setMediaFiles([]);
+      setPreviewMedia?.([]);
       setIsUploading(false);
       setUploadProgress(0);
     };
   
     return {
       handleMediaUpload,
-      deleteMedia,
       resetMediaState
     };
   }
