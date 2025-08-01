@@ -5,11 +5,11 @@ import { useSearchLogic } from "@/hooks/use-search-logic";
 import { SearchInput } from "@/components/molecules/search-input";
 import { ConditionGroup } from "@/components/molecules/condition-group";
 import { CategorySlider } from "@/components/organisms/category-slider";
-import { ProductLoadingState } from "@/components/molecules/state/product-loading-state";
-import { ProductErrorState } from "@/components/molecules/state/product-error-state";
-import { ProductEmptyState } from "@/components/molecules/state/product-empy-state";
+import { ProductLoadingState } from "@/components/organisms/kp/state/product-loading-state";
+import { ProductErrorState } from "@/components/organisms/kp/state/product-error-state";
+import { ProductEmptyState } from "@/components/organisms/kp/state/product-empy-state";
 import { ProductGrid } from "@/components/organisms/kp/common/ProductGrid";
-import { useProduct } from "@/components/molecules/form/use-product";
+import { useProduct } from "@/modules/kupi-prodai/api/hooks/useProduct";
 
 
 export function BuySection() {
