@@ -115,7 +115,7 @@ export function useUpdateProduct() {
       setUploadProgress(30);
 
       if (mediaToDelete.length > 0) {
-        await deleteExistingMedia(mediaToDelete);
+        await deleteExistingMedia(mediaToDelete[0]);
         setUploadProgress(50);
       }
 
