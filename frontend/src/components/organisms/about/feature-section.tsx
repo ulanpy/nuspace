@@ -1,4 +1,4 @@
-import { FeatureCard } from "@/components/molecules/cards/feature-card";
+import { FeatureCard } from "@/components/organisms/about/feature-card";
 import { features } from "@/data/features";
 import { Link } from "react-router-dom";
 export const FeatureSection = () => {

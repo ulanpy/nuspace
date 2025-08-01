@@ -1,5 +1,5 @@
-import { ReportCard } from "@/components/molecules/cards/report-card";
-import { TeamCard } from "@/components/molecules/cards/team-card";
+import { ReportCard } from "@/components/organisms/about/report-card";
+import { TeamCard } from "@/components/organisms/about/team-card";
 
 export function AboutUsSection() {
   return (

@@ -16,7 +16,7 @@ import {
 } from "@/components/atoms/select";
 import { Search } from "lucide-react";
 import { mockProducts } from "@/data/temporary";
-import { ProductsTable } from "@/components/molecules/tables/products-table";
+import { ProductsTable } from "@/components/organisms/kp/tables/products-table";
 
 const ProductsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
