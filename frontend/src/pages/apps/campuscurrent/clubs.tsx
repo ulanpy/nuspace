@@ -8,7 +8,7 @@ import { LoginModal } from "@/components/molecules/login-modal";
 import { ConditionGroup } from "@/components/molecules/condition-group";
 import { clubCategories } from "@/data/clubs/club-categories";
 import { SearchInput } from "@/components/molecules/search-input";
-import { CommunityCard } from "@/components/molecules/cards/community-card";
+import { CommunityCard } from "@/components/organisms/campuscurrent/CommunityCard";
 import { useCommunities } from "@/modules/campuscurrent/communities/hooks/use-communities";
 // Helper function to get club type display text
 const getClubCategoryDisplay = (type: string) => {

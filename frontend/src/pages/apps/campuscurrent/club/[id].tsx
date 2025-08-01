@@ -25,8 +25,8 @@ import { useToast } from "../../../../hooks/use-toast";
 import { useUser } from "../../../../hooks/use-user";
 import { LoginModal } from "../../../../components/molecules/login-modal";
 import { useCommunity } from "@/modules/campuscurrent/communities/hooks/use-community";
-import { EditCommunityModal } from "@/components/molecules/edit-community-modal";
-import { CreateEventModal } from "@/components/molecules/create-event-modal";
+import { EditCommunityModal } from "@/components/organisms/campuscurrent/EditCommunity";
+import { CreateEventModal } from "@/components/organisms/campuscurrent/CreateEvent";
 import { ROUTES } from "@/data/routes";
 
 

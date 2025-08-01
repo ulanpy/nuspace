@@ -1,4 +1,4 @@
-import { ProductCardActions } from "@/components/molecules/actions/product-card-actions";
+import { ProductCardActions } from "@/components/organisms/kp/product-card-actions";
 import { ProductCard } from "@/components/molecules/cards/product-card";
 import { UseMutateFunction } from "@tanstack/react-query";
 

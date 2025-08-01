@@ -7,7 +7,7 @@ import {
 import { EventCard } from "@/components/molecules/cards/event-card";
 import { FilterBar } from "@/components/molecules/filter-bar";
 import { Pagination } from "@/components/molecules/pagination";
-import { useEvents } from "@/modules/campuscurrent/events/hooks/use-events";
+import { useEvents } from "@/modules/campuscurrent/events/hooks/useEvents";
 
 
 export default function Events() {
