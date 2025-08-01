@@ -7,7 +7,7 @@ export const campuscurrentAPI = {
     queryKey: ["nuEvents", "events"],
     queryFn: () => {
       return apiCall<Types.PaginatedResponse<NuEvents.Event, "events">>(
-        `/` + Routes.EVENTS,
+        `/` + Routes.EVENTS + `?event_status=approved`,
       );
     },
   },

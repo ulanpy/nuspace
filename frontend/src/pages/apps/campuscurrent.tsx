@@ -6,9 +6,9 @@ import { mockClubs, mockEvents } from "../../data/events/mock-events-data";
 import { LoginModal } from "../../components/molecules/login-modal";
 import { useCommunities } from "@/modules/campuscurrent/communities/hooks/use-communities";
 import { SliderContainer } from "@/components/molecules/slider-container";
-import { BaseCard } from "@/components/molecules/cards/base-card";
+import { BaseCard } from "@/components/organisms/campuscurrent/BaseCard";
 import { eventSections } from "@/data/events/event-sections";
-import { CommunityCard } from "@/components/molecules/cards/community-card";
+import { CommunityCard } from "@/components/organisms/campuscurrent/CommunityCard";
 import { GeneralSection } from "@/components/molecules/general-section";
 import { ROUTES } from "@/data/routes";
 
@@ -25,6 +25,15 @@ export default function NUEventsPage() {
 
   return (
     <>
+      {/* Popular clubs section */}
+      <GeneralSection
+        title="Popular Clubs"
+        link={ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES}
+      >
+        {mockClubs.slice(0, 4).map((club) => (
+          <CommunityCard key={club.id} club={club} />
+        ))}
+      </GeneralSection>
       {eventSections.map((section) => (
         <div key={section.title} className="mt-4">
           <SliderContainer
@@ -38,15 +47,6 @@ export default function NUEventsPage() {
           </SliderContainer>
         </div>
       ))}
-      {/* Popular clubs section */}
-      <GeneralSection
-        title="Popular Clubs"
-        link={ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES}
-      >
-        {mockClubs.slice(0, 4).map((club) => (
-          <CommunityCard key={club.id} club={club} />
-        ))}
-      </GeneralSection>
 
       {/* Login Modal */}
       <LoginModal

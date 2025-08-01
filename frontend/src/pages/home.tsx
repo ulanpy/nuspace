@@ -99,10 +99,6 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="text-center text-sm text-muted-foreground mt-12 py-4 border-t">
-        <p>
-          Made with ❤️ by the NU Students for a better campus life. &copy; 2024
-          NU Space
-        </p>
         <Link to={ROUTES.APPS.ABOUT} className="hover:underline">
           About Us
         </Link>

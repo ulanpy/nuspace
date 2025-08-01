@@ -19,8 +19,8 @@ import { useUser } from "@/hooks/use-user";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { Card, CardContent } from "@/components/atoms/card";
 import { ROUTES } from "@/data/routes";
-import { useEvent } from "@/modules/campuscurrent/events/hooks/use-event";
-import { BaseCard } from "@/components/molecules/cards/base-card";
+import { useEvent } from "@/modules/campuscurrent/events/hooks/useEvent";
+import { BaseCard } from "@/components/organisms/campuscurrent/BaseCard";
 import {
   Carousel,
   CarouselApi,

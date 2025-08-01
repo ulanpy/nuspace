@@ -1,4 +1,4 @@
-import { RecentCard } from "@/components/molecules/cards/recent-card";
+import { RecentCard } from "@/components/organisms/admin/recent-card";
 import { StatCard } from "@/components/molecules/cards/stat-card";
 import { products, users } from "@/data/temporary";
 import { Package, Users, Image } from "lucide-react";
