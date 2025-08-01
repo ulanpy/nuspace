@@ -3,11 +3,11 @@ import { ProductDetailsForm } from "./ProductDetailsForm";
 import { ImageGalery } from "./image-galery";
 import { ImageIcon, RefreshCw } from "lucide-react";
 import { Button } from "@/components/atoms/button";
-import { useProduct } from "@/modules/kupi-prodai/api/hooks/useProduct";
 import { useRef } from "react";
 import { useListingState } from "@/context/ListingContext";
 import { useMediaUpload } from "@/modules/media/hooks/useMediaUpload";
 import { useMediaSelection } from "@/modules/media/hooks/useMediaSelection";
+import { useProductForm } from "@/modules/kupi-prodai/hooks/useProductForm";
 
 
 interface ProductCreateFormProps {
@@ -43,7 +43,7 @@ export const ProductCreateForm = ({
     handlePriceInputBlur,
     handlePriceInputFocus,
     handleSelectChange,
-  } = useProduct();
+  } = useProductForm();
   const { newListing } = useListingState();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);

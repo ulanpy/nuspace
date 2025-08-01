@@ -1,86 +1,50 @@
-import { mockProductData } from "@/data/temporary";
-import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "@/components/atoms/sonner";
-import { useUpdateProduct } from "../api/hooks/useUpdateProduct";
-import { ROUTES } from "@/data/routes";
+import { useListingState } from "@/context/ListingContext";
+import { productCategories } from "@/data/kp/product";
 
-export const useProductForm = (product?: Types.Product) => {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const isNewProduct = id === "new";
-  const [product, setProduct] = useState(
-    isNewProduct
-      ? {
-          name: "",
-          description: "",
-          price: 0,
-          category: "",
-          seller: "",
-          status: "Active",
-          quantity: 0,
-          images: [],
-        }
-      : mockProductData,
-  );
-
-  const [isUploading, setIsUploading] = useState(false);
-
+export const useProductForm = () => {
+  const { setNewListing } = useListingState();
+  const conditions = ["All Conditions", "new", "used"];
+  const categories = productCategories;
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
-    setProduct({
-      ...product,
-      [name]: value,
-    });
+
+    if (name === "price") {
+      // Handle price input specially to avoid leading zeros and negative values
+      const numValue =
+        value === "" ? 0 : Math.max(0, Number.parseInt(value, 10));
+      setNewListing((prev) => ({ ...prev, [name]: numValue }));
+    } else {
+      setNewListing((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setProduct({
-      ...product,
-      [name]: value,
-    });
+  const handlePriceInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Clear the input when it's focused and the value is 0
+    if (e.target.value === "0") {
+      e.target.value = "";
+    }
   };
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real app, you would save the product here
-    toast.success(
-      isNewProduct
-        ? "Product created successfully"
-        : "Product updated successfully",
-    );
-    navigate(ROUTES.ADMIN.PRODUCTS.path);
+  const handlePriceInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    // If the input is empty when blurred, set it back to 0
+    if (e.target.value === "") {
+      setNewListing((prev) => ({ ...prev, price: 0 }));
+    }
   };
 
-  const handleDelete = () => {
-    // In a real app, you would delete the product here
-    toast.success("Product deleted successfully");
-    navigate(ROUTES.ADMIN.PRODUCTS.path);
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewListing((prev) => ({ ...prev, [name]: value }));
   };
-
-
-
-  const { mutate: update } = useUpdateProduct({
-    onSuccess: () => {
-      reset();
-      queryClient.invalidateQueries(["products"]);
-      navigate(ROUTES.ADMIN.PRODUCTS.path);
-    },
-  });
-
-
 
   return {
-    isUploading,
-    isNewProduct,
-    product,
+    conditions,
+    categories,
     handleInputChange,
     handleSelectChange,
-    handleSave,
-    handleDelete,
-    setProduct,
-    update,
+    handlePriceInputBlur,
+    handlePriceInputFocus,
   };
 };

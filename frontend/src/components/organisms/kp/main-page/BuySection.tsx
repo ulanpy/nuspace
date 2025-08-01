@@ -9,7 +9,7 @@ import { ProductLoadingState } from "@/components/organisms/kp/state/product-loa
 import { ProductErrorState } from "@/components/organisms/kp/state/product-error-state";
 import { ProductEmptyState } from "@/components/organisms/kp/state/product-empy-state";
 import { ProductGrid } from "@/components/organisms/kp/common/ProductGrid";
-import { useProduct } from "@/modules/kupi-prodai/api/hooks/useProduct";
+import { useProductForm } from "@/modules/kupi-prodai/hooks/useProductForm";
 
 
 export function BuySection() {
@@ -29,7 +29,7 @@ export function BuySection() {
   const {
     categories,
     conditions,
-  } = useProduct();
+  } = useProductForm();
 
   const { inputValue, setInputValue, preSearchedProducts, handleSearch } =
     useSearchLogic({

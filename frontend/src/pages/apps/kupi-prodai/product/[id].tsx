@@ -5,7 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { useToast } from "@/hooks/use-toast";
-import { useProduct } from "@/modules/kupi-prodai/api/hooks/use-product";
+import { useProduct } from "@/modules/kupi-prodai/api/hooks/useProduct";
 import { Spinner } from "@/components/atoms/spinner";
 import { ROUTES } from "@/data/routes";
 
