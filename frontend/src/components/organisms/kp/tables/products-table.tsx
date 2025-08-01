@@ -100,7 +100,7 @@ export const ProductsTable = ({
                   className="h-8 w-8 p-0"
                   asChild
                 >
-                  <Link to={`${ROUTES.ADMIN.PRODUCTS.child}/${product.id}`}>
+                  <Link to={`${ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(product.id.toString())}`}>
                     <Edit className="h-4 w-4" />
                     <span className="sr-only">Edit</span>
                   </Link>
