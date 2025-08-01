@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Pagination } from "../../molecules/pagination";
+import { Pagination } from "../../../molecules/pagination";
 import { useNavigate } from "react-router-dom";
 import { MessageButton } from "@/components/molecules/buttons/message-button";
 import { ProductCard } from "@/components/organisms/kp/product-card";
