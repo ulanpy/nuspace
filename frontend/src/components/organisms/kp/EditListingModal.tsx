@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react";
+import React from "react";
 import { useUpdateProduct } from "@/modules/kupi-prodai/api/hooks/useUpdateProduct";
 import { useEditModal } from "@/modules/kupi-prodai/hooks/useEditModal";
 import { useListingState } from "@/context/ListingContext";
@@ -19,47 +19,16 @@ export function EditListingModal() {
     const { handleUpdateListing } = useUpdateProduct();
     const { closeEditModal } = useEditModal();
     const { newListing, showEditModal, uploadProgress } = useListingState();
-    const { isUploading, mediaFiles: imageFiles, previewMedia: previewImages, setMediaFiles: setImageFiles, setPreviewMedia: setPreviewImages } = useMediaUploadContext();
-    const { originalMedia, currentMediaIndex, setCurrentMediaIndex } = useMediaEditContext();
+    const { currentMediaIndex, setCurrentMediaIndex } = useMediaEditContext();
+    const { previewMedia: previewImages, isUploading } = useMediaUploadContext();
     const { isDragging, handleDragOver, handleDragLeave, handleDrop, handleFileSelect } = useMediaSelection();
-    const { deleteExistingMedia } = useMediaEdit();
+    const { handleImageDelete } = useMediaEdit();
     const { conditions, categories, handleInputChange, handlePriceInputBlur, handlePriceInputFocus, handleSelectChange } = useProduct();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const dropZoneRef = React.useRef<HTMLDivElement>(null);
     const displayConditions = ["All Conditions", "New", "Used"];
 
-    const handleImageDelete = () => {
-        const mediaToRemove = originalMedia.find(
-            (m) =>
-                m.url ===
-                previewImages[currentMediaIndex],
-        );
-        if (mediaToRemove) {
-            deleteExistingMedia(mediaToRemove.id);
-        } else {
-            const newImageFiles = [...imageFiles];
-            const newPreviewImages = [...previewImages];
-            newImageFiles.splice(
-                currentMediaIndex - originalMedia.length,
-                1,
-            );
-            newPreviewImages.splice(
-                currentMediaIndex,
-                1,
-            );
-            setImageFiles(newImageFiles);
-            setPreviewImages(newPreviewImages);
-            if (
-                currentMediaIndex >=
-                newPreviewImages.length &&
-                newPreviewImages.length > 0
-            ) {
-                setCurrentMediaIndex(
-                    newPreviewImages.length - 1,
-                );
-            }
-        }
-    };
+    
 
     if (!showEditModal) {
         return null;
