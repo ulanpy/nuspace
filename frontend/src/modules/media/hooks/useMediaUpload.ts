@@ -8,7 +8,7 @@ import { SignedUrlResponse } from "../types/signed-url.types";
 
 
 export function useMediaUpload() {
-    const { mediaFiles, setMediaFiles, setPreviewMedia, setIsUploading } =
+    const { mediaFiles, setMediaFiles, setPreviewMedia, setIsUploading, isUploading } =
       useMediaUploadContext();
     const { setUploadProgress } = useListingState();
 
@@ -52,7 +52,8 @@ export function useMediaUpload() {
   
     return {
       handleMediaUpload,
-      resetMediaState
+      resetMediaState,
+      isUploading
     };
   }
   
