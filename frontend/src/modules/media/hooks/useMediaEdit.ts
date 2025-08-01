@@ -1,4 +1,5 @@
 import { useMediaEditContext } from "@/context/MediaEditContext";
+import { useMediaUploadContext } from "@/context/MediaUploadContext";
 
 export const useMediaEdit = () => {
   const {
@@ -10,7 +11,15 @@ export const useMediaEdit = () => {
     setReorderedMedia,
     setCurrentMediaIndex,
   } = useMediaEditContext();
-
+  
+  const { 
+    mediaFiles: imageFiles, 
+    previewMedia: previewImages, 
+    setMediaFiles: setImageFiles, 
+    setPreviewMedia: setPreviewImages 
+  } = useMediaUploadContext();
+  
+  
   const deleteExistingMedia = (mediaId: number) => {
     setMediaToDelete([...mediaToDelete, mediaId]);
 
@@ -28,7 +37,40 @@ export const useMediaEdit = () => {
     }
   };
 
+  const handleImageDelete = () => {
+    const mediaToRemove = originalMedia.find(
+        (m) =>
+            m.url ===
+            previewImages[currentMediaIndex],
+    );
+    if (mediaToRemove) {
+        deleteExistingMedia(mediaToRemove.id);
+    } else {
+        const newImageFiles = [...imageFiles];
+        const newPreviewImages = [...previewImages];
+        newImageFiles.splice(
+            currentMediaIndex - originalMedia.length,
+            1,
+        );
+        newPreviewImages.splice(
+            currentMediaIndex,
+            1,
+        );
+        setImageFiles(newImageFiles);
+        setPreviewImages(newPreviewImages);
+        if (
+            currentMediaIndex >=
+            newPreviewImages.length &&
+            newPreviewImages.length > 0
+        ) {
+            setCurrentMediaIndex(
+                newPreviewImages.length - 1,
+            );
+        }
+    }
+};
   return {
     deleteExistingMedia,
+    handleImageDelete,
   };
 };

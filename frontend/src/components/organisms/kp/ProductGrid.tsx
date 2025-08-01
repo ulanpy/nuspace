@@ -13,7 +13,7 @@ const containerVariants = {
       staggerChildren: 0.1,
     },
   },
-};
+} as const;
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
@@ -26,14 +26,14 @@ const itemVariants = {
       damping: 15,
     },
   },
-};
+} as const;
 export function ProductGrid({
   products,
   page,
   setPage,
   className,
 }: {
-  products: Types.PaginatedResponse<Types.Product> | null;
+  products: Types.PaginatedResponse<Types.Product, any> | null;
   page: number;
   setPage: (page: number) => void;
   className?: string;
@@ -52,12 +52,14 @@ export function ProductGrid({
         initial="hidden"
         animate="visible"
       >
-        {products?.products.map((product) => (
+        {products?.products.map((product: Types.Product) => (
           <motion.div key={product.id} variants={itemVariants}>
             <ProductCard
               product={product}
               onClick={() =>
-                navigate(ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(product.id))
+                navigate(
+                  ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(product.id.toString()),
+                )
               }
               actions={<MessageButton />}
             />
