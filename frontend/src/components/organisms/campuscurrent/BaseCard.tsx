@@ -29,12 +29,12 @@ export const BaseCard = ({ event }: { event: typeof Types.Event }) => { // Chang
 
   return (
     <Card
-      className="overflow-hidden cursor-pointer flex flex-col" // Removed fixed height and adjusted flex
+      className="overflow-hidden cursor-pointer flex flex-col" 
       onClick={() =>
         navigate(ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(event.id))
       }
     >
-      <div className="aspect-square relative"> {/* Changed CardHeader to div with aspect-square */}
+      <div className="aspect-square">
         {event.media && event.media.length > 0 && event.media[0].url ? (
           <img
             src={event.media[0].url}

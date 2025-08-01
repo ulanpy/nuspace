@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { EventCard } from "../../components/molecules/cards/event-card";
+import { EventCard } from "../../components/organisms/campuscurrent/EventCard";
 import { mockClubs, mockEvents } from "../../data/events/mock-events-data";
 import { LoginModal } from "../../components/molecules/login-modal";
 import { useCommunities } from "@/modules/campuscurrent/communities/hooks/use-communities";
@@ -37,12 +37,11 @@ export default function NUEventsPage() {
       {eventSections.map((section) => (
         <div key={section.title} className="mt-4">
           <SliderContainer
-            itemWidth={180}
             title={section.title}
             link={section.link}
           >
             {mockEvents.map((event) => (
-              <BaseCard key={event.id} event={event} />
+              <EventCard key={event.id} {...event} />
             ))}
           </SliderContainer>
         </div>

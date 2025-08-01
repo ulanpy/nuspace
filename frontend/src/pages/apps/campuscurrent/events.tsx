@@ -4,7 +4,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/atoms/tabs";
-import { EventCard } from "@/components/molecules/cards/event-card";
+import { EventCard } from "@/components/organisms/campuscurrent/EventCard";
 import { FilterBar } from "@/components/molecules/filter-bar";
 import { Pagination } from "@/components/molecules/pagination";
 import { useEvents } from "@/modules/campuscurrent/events/hooks/useEvents";

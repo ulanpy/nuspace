@@ -5,7 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
 
 
-export function CommunityCard({ club }: { club: typeof Types.Club }) { // Changed type to `typeof Types.Club` for demonstration
+
+export function CommunityCard({ club }: { club: typeof Types.Club }) {
   const navigate = useNavigate();
 
   return (
@@ -27,7 +28,8 @@ export function CommunityCard({ club }: { club: typeof Types.Club }) { // Change
           </div>
         )}
       </div>
-      <h3 className="font-medium text-xs line-clamp-1 w-20">
+      {/* Increased line-clamp to 2 for longer names to prevent single-line truncation issues */}
+      <h3 className="font-medium text-xs line-clamp-2 w-20">
         {club.name}
       </h3>
     </div>
