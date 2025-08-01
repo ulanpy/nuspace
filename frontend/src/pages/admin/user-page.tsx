@@ -4,9 +4,9 @@ import { Button } from "@/components/atoms/button";
 
 import { Input } from "@/components/atoms/input";
 import { ArrowLeft, Search } from "lucide-react";
-import { ProductsTable } from "@/components/molecules/tables/products-table";
+import { ProductsTable } from "@/components/organisms/kp/tables/products-table";
 import { mockUser, mockUserProducts } from "@/data/temporary";
-import { UserCard } from "@/components/molecules/cards/user-card";
+import { UserCard } from "@/components/organisms/admin/user-card";
 import {
   Card,
   CardContent,

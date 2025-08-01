@@ -3,7 +3,7 @@ import { ProductDetailsForm } from "./ProductDetailsForm";
 import { ImageGalery } from "./image-galery";
 import { ImageIcon, RefreshCw } from "lucide-react";
 import { Button } from "@/components/atoms/button";
-import { useProduct } from "./use-product";
+import { useProduct } from "@/modules/kupi-prodai/api/hooks/useProduct";
 import { useRef } from "react";
 import { useListingState } from "@/context/ListingContext";
 import { useMediaUpload } from "@/modules/media/hooks/useMediaUpload";

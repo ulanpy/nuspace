@@ -10,7 +10,7 @@ import { useMediaEditContext } from "@/context/MediaEditContext";
 import { useMediaUploadContext } from "@/context/MediaUploadContext";
 import { useMediaEdit } from "@/modules/media/hooks/useMediaEdit";
 import { useMediaSelection } from "@/modules/media/hooks/useMediaSelection";
-import { useProduct } from "@/components/molecules/form/use-product";
+import { useProduct } from "@/modules/kupi-prodai/api/hooks/useProduct";
 import { Progress } from "@/components/atoms/progress";
 import { EditListingForm } from "./EditListingForm";
 import { EditListingImageManager } from "./EditListingImageManager";
