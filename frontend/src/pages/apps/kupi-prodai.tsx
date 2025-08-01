@@ -1,9 +1,9 @@
 "use client";
 import { useListingState } from "@/context/ListingContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/atoms/tabs";
-import { BuySection } from "@/components/organisms/kp/BuySection";
-import { SellSection } from "@/components/organisms/kp/SellSection";
-import { MyListingsSection } from "@/components/organisms/kp/MyListingsSection";
+import { BuySection } from "@/components/organisms/kp/main-page/BuySection";
+import { SellSection } from "@/components/organisms/kp/main-page/SellSection";
+import { MyListingsSection } from "@/components/organisms/kp/main-page/my-listings/MyListingsSection";
 
 export default function KupiProdaiPage() {
     const { activeTab, setActiveTab } = useListingState();

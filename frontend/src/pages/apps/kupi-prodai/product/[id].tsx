@@ -9,12 +9,12 @@ import { useProduct } from "@/modules/kupi-prodai/api/hooks/use-product";
 import { Spinner } from "@/components/atoms/spinner";
 import { ROUTES } from "@/data/routes";
 
-import { ProductImageCarousel } from "@/components/organisms/kp/ProductImageCarousel";
-import { ProductDetails } from "@/components/organisms/kp/ProductDetails";
-import { ProductPageActions } from "@/components/organisms/kp/ProductPageActions";
-import { ReportListingModal } from "@/components/organisms/kp/ReportListingModal";
-import { ContactSellerModal } from "@/components/organisms/kp/ContactSellerModal";
-import { ImageViewerModal } from "@/components/organisms/kp/ImageViewerModal";
+import { ProductImageCarousel } from "@/components/organisms/kp/product-detail-page/ProductImageCarousel";
+import { ProductDetails } from "@/components/organisms/kp/product-detail-page/ProductDetails";
+import { ProductPageActions } from "@/components/organisms/kp/product-detail-page/ProductPageActions";
+import { ReportListingModal } from "@/components/organisms/kp/product-detail-page/ReportListingModal";
+import { ContactSellerModal } from "@/components/organisms/kp/product-detail-page/ContactSellerModal";
+import { ImageViewerModal } from "@/components/organisms/kp/product-detail-page/ImageViewerModal";
 
 export default function ProductDetailPage() {
     const { id } = useParams<{ id: string }>();

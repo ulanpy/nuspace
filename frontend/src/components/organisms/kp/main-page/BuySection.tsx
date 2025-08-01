@@ -8,7 +8,7 @@ import { CategorySlider } from "@/components/organisms/category-slider";
 import { ProductLoadingState } from "@/components/molecules/state/product-loading-state";
 import { ProductErrorState } from "@/components/molecules/state/product-error-state";
 import { ProductEmptyState } from "@/components/molecules/state/product-empy-state";
-import { ProductGrid } from "@/components/organisms/kp/ProductGrid";
+import { ProductGrid } from "@/components/organisms/kp/common/ProductGrid";
 import { useProduct } from "@/components/molecules/form/use-product";
 
 
