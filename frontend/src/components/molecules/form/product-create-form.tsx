@@ -1,32 +1,41 @@
 import { Progress } from "@/components/atoms/progress";
-import { ProductInfo } from "./product-info";
+import { ProductDetailsForm } from "./ProductDetailsForm";
 import { ImageGalery } from "./image-galery";
 import { ImageIcon, RefreshCw } from "lucide-react";
 import { Button } from "@/components/atoms/button";
-import { useImage } from "@/modules/kupi-prodai/hooks/use-image";
 import { useProduct } from "./use-product";
 import { useRef } from "react";
 import { useListingState } from "@/context/ListingContext";
+import { useMediaUpload } from "@/modules/media/hooks/useMediaUpload";
+import { useMediaSelection } from "@/modules/media/hooks/useMediaSelection";
+
+
 interface ProductCreateFormProps {
   isTelegramLinked: boolean;
   uploadProgress: number;
   handleCreate: (e: React.FormEvent<HTMLFormElement>) => void;
 }
+
+
 export const ProductCreateForm = ({
   isTelegramLinked,
   uploadProgress,
   handleCreate,
 }: ProductCreateFormProps) => {
   const {
-    isDragging,
     isUploading,
-    previewImages,
-    handleDragLeave,
+  } = useMediaUpload();
+
+  const {
+    previewMedia,
+    isDragging,
     handleDragOver,
+    handleDragLeave,
     handleDrop,
-    handleImageUpload,
-    removeImage,
-  } = useImage();
+    handleFileSelect,
+    removeNewMedia,
+  } = useMediaSelection();
+
   const {
     categories,
     conditions,
@@ -41,7 +50,7 @@ export const ProductCreateForm = ({
   return (
     <form onSubmit={handleCreate} className="space-y-4">
       {/* Name */}
-      <ProductInfo
+      <ProductDetailsForm
         newListing={newListing}
         categories={categories}
         conditions={conditions}
@@ -75,20 +84,19 @@ export const ProductCreateForm = ({
               name="images"
               ref={fileInputRef}
               className="hidden"
-              required
               accept="image/*"
               multiple
-              onChange={handleImageUpload}
+              onChange={handleFileSelect}
             />
             <Button type="button" variant="outline" size="sm">
               Upload a file
             </Button>
           </div>
         </div>
-        {previewImages.length > 0 && (
+        {previewMedia.length > 0 && (
           <ImageGalery
-            previewImages={previewImages}
-            removeImage={removeImage}
+            previewImages={previewMedia}
+            removeImage={removeNewMedia}
           />
         )}
       </div>
