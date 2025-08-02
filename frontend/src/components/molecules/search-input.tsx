@@ -103,7 +103,7 @@ export function SearchInput({
       <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
       <Input
         ref={inputRef}
-        placeholder="Search..."
+        placeholder="Search"
         className="text-base pl-9 rounded-l-none border-l-0 resize-none"
         value={inputValue.trim()}
         onChange={handlers.input.change}

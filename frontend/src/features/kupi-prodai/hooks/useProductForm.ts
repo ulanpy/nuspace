@@ -3,7 +3,7 @@ import { productCategories } from "@/data/kp/product";
 
 export const useProductForm = () => {
   const { setNewListing } = useListingState();
-  const conditions = ["All Conditions", "new", "used"];
+  const conditions = ["All Conditions", "new", "like_new", "used"];
   const categories = productCategories;
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,

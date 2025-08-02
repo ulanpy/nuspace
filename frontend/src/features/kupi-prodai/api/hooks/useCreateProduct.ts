@@ -18,7 +18,7 @@ export function useCreateProduct() {
   const { user } = useUser();
   const { toast } = useToast();
   const { setIsUploading } = useMediaUploadContext();
-  const { setActiveTab, setUploadProgress } = useListingState();
+  const { setActiveTab, setUploadProgress, newListing } = useListingState();
   const { resetEditListing } = useEditModal();
   const { handleMediaUpload, resetMediaState } = useMediaUpload();
 
@@ -42,14 +42,12 @@ export function useCreateProduct() {
     },
   });
 
-  const extractProductData = (form: FormData): NewProductRequest => ({
-    name: String(form.get("name")),
-    description: String(form.get("description")),
-    price: Number(form.get("price")),
-    category: String(
-      form.get("category"),
-    ).toLowerCase() as ProductCategory,
-    condition: String(form.get("condition")) as ProductCondition,
+  const extractProductData = (form: FormData, currentListing: NewProductRequest): NewProductRequest => ({
+    name: String(form.get("name")) || currentListing.name,
+    description: String(form.get("description")) || currentListing.description,
+    price: Number(form.get("price")) || currentListing.price,
+    category: (String(form.get("category")) || currentListing.category).toLowerCase() as ProductCategory,
+    condition: String(form.get("condition")) || currentListing.condition,
     status: "active",
     user_sub: user?.user.sub || "",
   });
@@ -77,7 +75,7 @@ export function useCreateProduct() {
       setUploadProgress(10);
 
       const formData = new FormData(e.currentTarget);
-      const productData = extractProductData(formData);
+      const productData = extractProductData(formData, newListing);
 
       const newProduct = await createProductMutation.mutateAsync(productData);
 

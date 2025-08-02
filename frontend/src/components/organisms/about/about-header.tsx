@@ -13,7 +13,7 @@ export const AboutHeader = () => {
           isDark ? "text-gray-300" : "text-gray-600"
         }`}
       >
-        Unified platform for Nazarbayev University students
+        SuperApp for Nazarbayev University students
       </p>
     </div>
   );
