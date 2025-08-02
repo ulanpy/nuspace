@@ -11,7 +11,10 @@ export interface ProductMedia {
   url: string;
 }
 
-
+export interface PaginatedResponse<T> {
+  products: T[];
+  num_of_pages: number;
+}
 
 // Updated enums to match backend
 export type ProductCondition = "new" | "like_new" | "used";
@@ -129,7 +132,7 @@ export const kupiProdaiApi = {
         if (params.condition) endpoint += `&condition=${params.condition}`;
         if (params.keyword) endpoint += `&keyword=${params.keyword}`;
 
-        return apiCall<Types.PaginatedResponse<Product, "products">>(endpoint);
+        return apiCall<PaginatedResponse<Product>>(endpoint);
       },
     });
   },
@@ -139,7 +142,7 @@ export const kupiProdaiApi = {
     return queryOptions({
       queryKey: [kupiProdaiApi.baseKey, "userProducts"],
       queryFn: () => {
-        return apiCall<Types.PaginatedResponse<Product, "products">>(
+        return apiCall<PaginatedResponse<Product>>(
           `/products?size=${defaultSize}&page=${defaultPage}&owner_sub=me`,
         );
       },
