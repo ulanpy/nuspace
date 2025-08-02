@@ -29,14 +29,13 @@ export function ProductDetailsForm({
         <label htmlFor="name" className="block text-sm font-medium">
           Name
         </label>
-        <Input
-          type="text"
+        <textarea
           id="name"
           name="name"
           value={newListing.name}
           onChange={handleInputChange}
           required
-          className="bg-background text-foreground"
+          className="w-full p-2 border rounded-md bg-background text-foreground resize-none"
           placeholder="What are you selling?"
         />
       </div>
@@ -52,7 +51,7 @@ export function ProductDetailsForm({
           value={newListing.description}
           onChange={handleInputChange}
           rows={3}
-          className="w-full p-2 border rounded-md bg-background text-foreground"
+          className="w-full p-2 border rounded-md bg-background text-foreground resize-none"
           placeholder="Describe your item..."
         />
       </div>

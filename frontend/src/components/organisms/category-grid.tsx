@@ -3,7 +3,7 @@ import { CategoryCard } from "@/components/atoms/category-card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CategoryGridProps {
-  categories: { title: string; icon: JSX.Element; imageUrl?: string }[];
+  categories: { title: string; icon?: JSX.Element; imageUrl?: string }[];
   selectedCategory: string | "";
   setPage?: (page: number) => void;
   setSelectedCategory: (category: string) => void;
@@ -70,29 +70,12 @@ export function CategoryGrid({
         className="overflow-x-auto no-scrollbar"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        <div className="flex flex-col gap-2 sm:gap-3 w-full">
+        <div className="flex flex-col gap-1.5 sm:gap-2 w-full min-w-0">
           {/* Top Row */}
-          <div className="flex gap-3 sm:gap-4 md:gap-6 justify-start sm:justify-between md:justify-evenly lg:justify-between w-full">
+          <div className="flex gap-1.5 sm:gap-3 md:gap-4 lg:gap-6 justify-between w-full min-w-0 px-0.5 sm:px-1">
             {topRowCategories.map((cat) => (
-              <CategoryCard
-                key={`top-${cat.title}`}
-                title={cat.title}
-                icon={cat.icon}
-                imageUrl={cat.imageUrl}
-                isSelected={
-                  selectedCategory.toLowerCase() === cat.title.toLowerCase()
-                }
-                onClick={() => onCategorySelect(cat.title)}
-              />
-            ))}
-          </div>
-          
-          {/* Bottom Row */}
-          {bottomRowCategories.length > 0 && (
-            <div className="flex gap-3 sm:gap-4 md:gap-6 justify-start sm:justify-between md:justify-evenly lg:justify-between w-full">
-              {bottomRowCategories.map((cat) => (
+              <div key={`top-${cat.title}`} className="flex-1 flex justify-center min-w-0">
                 <CategoryCard
-                  key={`bottom-${cat.title}`}
                   title={cat.title}
                   icon={cat.icon}
                   imageUrl={cat.imageUrl}
@@ -101,6 +84,25 @@ export function CategoryGrid({
                   }
                   onClick={() => onCategorySelect(cat.title)}
                 />
+              </div>
+            ))}
+          </div>
+          
+          {/* Bottom Row */}
+          {bottomRowCategories.length > 0 && (
+            <div className="flex gap-1.5 sm:gap-3 md:gap-4 lg:gap-6 justify-between w-full min-w-0 px-0.5 sm:px-1">
+              {bottomRowCategories.map((cat) => (
+                <div key={`bottom-${cat.title}`} className="flex-1 flex justify-center min-w-0">
+                  <CategoryCard
+                    title={cat.title}
+                    icon={cat.icon}
+                    imageUrl={cat.imageUrl}
+                    isSelected={
+                      selectedCategory.toLowerCase() === cat.title.toLowerCase()
+                    }
+                    onClick={() => onCategorySelect(cat.title)}
+                  />
+                </div>
               ))}
             </div>
           )}

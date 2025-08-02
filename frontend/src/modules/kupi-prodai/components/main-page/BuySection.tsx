@@ -2,9 +2,9 @@
 import { Suspense } from "react";
 import { useProducts } from "@/modules/kupi-prodai/api/hooks/useProducts";
 import { useSearchLogic } from "@/hooks/use-search-logic";
-import { SearchInput } from "@/components/molecules/search-input";
-import { ConditionGroup } from "@/components/molecules/condition-group";
+import { CombinedSearch } from "@/components/molecules/combined-search";
 import { CategorySlider } from "@/components/organisms/category-slider";
+import { FilterContainer } from "@/components/organisms/filter-container";
 import { ProductLoadingState } from "@/modules/kupi-prodai/components/state/product-loading-state";
 import { ProductErrorState } from "@/modules/kupi-prodai/components/state/product-error-state";
 import { ProductEmptyState } from "@/modules/kupi-prodai/components/state/product-empy-state";
@@ -41,25 +41,23 @@ export function BuySection() {
     });
 
   return (
-    <div className="space-y-3 sm:space-y-4 flex flex-col gap-3">
-      {/* Categories section - separate row */}
-      <div className="flex flex-col gap-4">
-        <div className="relative flex-1">
-          <SearchInput
-            inputValue={inputValue}
-            setInputValue={setInputValue}
-            preSearchedProducts={preSearchedProducts}
-            handleSearch={handleSearch}
-            setKeyword={setKeyword}
-            setSelectedCondition={setSelectedCondition}
-          />
-        </div>
-
-        <ConditionGroup
+    <div className="space-y-3 sm:space-y-4">
+      {/* Combined Search and Filter Section */}
+      <FilterContainer>
+        <CombinedSearch
+          inputValue={inputValue}
+          setInputValue={setInputValue}
+          preSearchedProducts={preSearchedProducts}
+          handleSearch={handleSearch}
+          setKeyword={setKeyword}
           conditions={conditions}
           selectedCondition={selectedCondition}
           setSelectedCondition={setSelectedCondition}
         />
+      </FilterContainer>
+
+      {/* Compact Category Grid */}
+      <FilterContainer className="pb-2">
         <CategorySlider
           categories={categories}
           selectedCategory={selectedCategory}
@@ -68,7 +66,7 @@ export function BuySection() {
           setInputValue={setInputValue}
           setSelectedCondition={setSelectedCondition}
         />
-      </div>
+      </FilterContainer>
 
       <Suspense fallback={<ProductLoadingState count={8} />}>
         {isLoading ? (

@@ -104,7 +104,7 @@ export function SearchInput({
       <Input
         ref={inputRef}
         placeholder="Search..."
-        className="text-sm pl-9"
+        className="text-base pl-9 rounded-l-none border-l-0 resize-none"
         value={inputValue.trim()}
         onChange={handlers.input.change}
         onKeyDown={handlers.input.keyDown}
