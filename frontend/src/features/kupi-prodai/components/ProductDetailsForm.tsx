@@ -1,7 +1,7 @@
 import { Input } from "@/components/atoms/input";
 import { Textarea } from "@/components/atoms/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
-import { NewProductRequest } from "@/modules/kupi-prodai/types";
+import { NewProductRequest } from "@/features/kupi-prodai/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tag, DollarSign, Package, Zap, FileText } from "lucide-react";
 import { AnimatedFormField } from "@/components/animations/AnimatedFormField";

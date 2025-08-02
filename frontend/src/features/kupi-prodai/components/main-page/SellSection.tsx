@@ -1,7 +1,7 @@
 "use client";
 import { useUser } from "@/hooks/use-user";
-import { ProductCreateForm } from "@/modules/kupi-prodai/components/product-create-form";
-import { useCreateProduct } from "@/modules/kupi-prodai/api/hooks/useCreateProduct";
+import { ProductCreateForm } from "@/features/kupi-prodai/components/product-create-form";
+import { useCreateProduct } from "@/features/kupi-prodai/api/hooks/useCreateProduct";
 import { useListingState } from "@/context/ListingContext";
 import { motion } from "framer-motion";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/atoms/card";

@@ -7,9 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/car
 import { FormSkeleton } from "@/components/atoms/skeleton";
 import { useRef, useState, useEffect } from "react";
 import { useListingState } from "@/context/ListingContext";
-import { useMediaUpload } from "@/modules/media/hooks/useMediaUpload";
-import { useMediaSelection } from "@/modules/media/hooks/useMediaSelection";
-import { useProductForm } from "@/modules/kupi-prodai/hooks/useProductForm";
+import { useMediaUpload } from "@/features/media/hooks/useMediaUpload";
+import { useMediaSelection } from "@/features/media/hooks/useMediaSelection";
+import { useProductForm } from "@/features/kupi-prodai/hooks/useProductForm";
 import { motion } from "framer-motion";
 import { formVariants, sectionVariants } from "@/utils/animationVariants";
 
