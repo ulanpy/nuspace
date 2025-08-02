@@ -1,4 +1,4 @@
-import { defaultPage } from "@/modules/kupi-prodai/api/kupiProdaiApi";
+import { defaultPage } from "@/features/kupi-prodai/api/kupiProdaiApi";
 
 export const getSearchTextFromURL = (query: string) => {
   const params = new URLSearchParams(query);

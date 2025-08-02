@@ -1,4 +1,4 @@
-import { Product } from "@/modules/kupi-prodai/types";
+import { Product } from "@/features/kupi-prodai/types";
 
 export const getConditionColor = (condition: Product["condition"]) => {
   switch (condition) {

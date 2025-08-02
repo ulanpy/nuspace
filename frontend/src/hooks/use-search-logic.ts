@@ -1,6 +1,6 @@
 "use client";
 
-import { usePreSearchProducts } from "@/modules/kupi-prodai/api/hooks/usePreSearchProducts";
+import { usePreSearchProducts } from "@/features/kupi-prodai/api/hooks/usePreSearchProducts";
 import { getSearchTextFromURL } from "@/utils/search-params";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";

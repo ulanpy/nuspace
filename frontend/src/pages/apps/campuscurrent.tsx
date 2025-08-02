@@ -4,7 +4,7 @@ import { useState } from "react";
 import { EventCard } from "../../components/organisms/campuscurrent/EventCard";
 import { mockClubs, mockEvents } from "../../data/events/mock-events-data";
 import { LoginModal } from "../../components/molecules/login-modal";
-import { useCommunities } from "@/modules/campuscurrent/communities/hooks/use-communities";
+import { useCommunities } from "@/features/campuscurrent/communities/hooks/use-communities";
 import { SliderContainer } from "@/components/molecules/slider-container";
 import { BaseCard } from "@/components/organisms/campuscurrent/BaseCard";
 import { eventSections } from "@/data/events/event-sections";

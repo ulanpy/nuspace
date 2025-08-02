@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/popo
 import { clubTypes } from "@/data/clubs/club-types";
 import { clubCategories } from "@/data/clubs/club-categories";
 import { useImage } from "@/modules/kupi-prodai/hooks/use-image";
-import { useEditCommunity } from "@/modules/campuscurrent/communities/hooks/use-edit-community";
+import { useEditCommunity } from "@/features/campuscurrent/communities/hooks/use-edit-community";
 import { clubStatus } from "@/data/clubs/club-status";
 import { Calendar as CalendarComponent } from "../../atoms/calendar";
 import { Textarea } from "../../atoms/textarea";

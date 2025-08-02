@@ -1,7 +1,7 @@
 "use client";
 import { SearchInput } from "./search-input";
 import { ConditionDropdown } from "./condition-dropdown";
-import { PreSearchedProduct } from "@/modules/kupi-prodai/types";
+import { PreSearchedProduct } from "@/features/kupi-prodai/types";
 
 interface CombinedSearchProps {
   // Search props
