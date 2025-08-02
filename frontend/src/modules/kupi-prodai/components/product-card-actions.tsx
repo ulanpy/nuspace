@@ -1,10 +1,11 @@
 import { Button } from "@/components/atoms/button";
 import { UseMutateFunction } from "@tanstack/react-query";
+import { Product, Status } from "@/modules/kupi-prodai/types";
 interface ProductCardActionsProps {
-  product: Types.Product;
-  onEdit: (product: Types.Product) => void;
+  product: Product;
+  onEdit: (product: Product) => void;
   onDelete: UseMutateFunction<string, Error, number, unknown>;
-  onToggleProductStatus: (id: number, currentStatus: Types.Status) => void;
+  onToggleProductStatus: (id: number, currentStatus: Status) => void;
   getIsPendingDeleteMutation: (id: number) => boolean;
   getIsPendingToggleMutation: (id: number) => boolean;
 }

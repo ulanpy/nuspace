@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { MessageButton } from "@/components/molecules/buttons/message-button";
 import { ProductCard } from "@/modules/kupi-prodai/components/product-card";
 import { ROUTES } from "@/data/routes";
+import { Product } from "@/modules/kupi-prodai/types";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -33,7 +34,7 @@ export function ProductGrid({
   setPage,
   className,
 }: {
-  products: Types.PaginatedResponse<Types.Product, any> | null;
+  products: Types.PaginatedResponse<Product, any> | null;
   page: number;
   setPage: (page: number) => void;
   className?: string;
@@ -51,7 +52,7 @@ export function ProductGrid({
         initial="hidden"
         animate="visible"
       >
-        {products?.products.map((product: Types.Product) => (
+        {products?.products.map((product: Product) => (
           <motion.div key={product.id} variants={itemVariants}>
             <ProductCard
               product={product}

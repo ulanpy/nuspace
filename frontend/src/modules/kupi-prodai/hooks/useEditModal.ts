@@ -1,6 +1,7 @@
 import { useListingState } from "@/context/ListingContext";
 import { useMediaUploadContext } from "@/context/MediaUploadContext";
 import { useMediaEditContext } from "@/context/MediaEditContext";
+import { Product } from "@/modules/kupi-prodai/types";
 
 export const useEditModal = () => {
   const { setOriginalMedia, setCurrentMediaIndex } = useMediaEditContext();
@@ -9,7 +10,7 @@ export const useEditModal = () => {
   const { showEditModal, setShowEditModal, setEditingListing, setNewListing } =
     useListingState();
 
-  const handleEditListing = (product: Types.Product) => {
+  const handleEditListing = (product: Product) => {
     setEditingListing(product);
     setNewListing({
       name: product.name,
@@ -26,8 +27,8 @@ export const useEditModal = () => {
     // Store the original media for tracking changes
     setOriginalMedia(product.media.map((media) => ({
       id: media.id,
-      url: media.url,
-      order: media.order,
+      url: media.url,      order: media.order.toString(),
+
     })));
     setCurrentMediaIndex(0);
     setShowEditModal(true);

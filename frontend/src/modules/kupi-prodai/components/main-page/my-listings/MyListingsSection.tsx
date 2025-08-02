@@ -10,6 +10,7 @@ import { useUser } from "@/hooks/use-user";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
 import { EditListingModal } from "./EditListingModal";
+import { Product } from "@/modules/kupi-prodai/types";
 
 
 export function MyListingsSection() {
@@ -31,7 +32,7 @@ export function MyListingsSection() {
         <div className="space-y-6 pt-4">
             <ProductListingSection
                 title="Active Listings"
-                products={activeListings as Types.Product[] || []}
+                products={activeListings as Product[] || []}
                 emptyMessage="No active listings found."
                 onProductClick={(productId) =>
                     navigate(ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(productId.toString()))
@@ -45,7 +46,7 @@ export function MyListingsSection() {
 
             <ProductListingSection
                 title="Inactive Listings"
-                products={inactiveListings as Types.Product[] || []}
+                products={inactiveListings as Product[] || []}
                 emptyMessage="No inactive listings found."
                 onProductClick={(productId) =>
                     navigate(ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(productId.toString()))

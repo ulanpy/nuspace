@@ -1,7 +1,8 @@
 import { Input } from "@/components/atoms/input";
+import { NewProductRequest } from "@/modules/kupi-prodai/types";
 
 interface ProductDetailsFormProps {
-  newListing: Types.NewProductRequest;
+  newListing: NewProductRequest;
   categories: Types.DisplayCategory[];
   conditions: string[];
   handleInputChange: (

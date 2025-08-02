@@ -1,4 +1,6 @@
-export const getConditionColor = (condition: Types.Product["condition"]) => {
+import { Product } from "@/modules/kupi-prodai/types";
+
+export const getConditionColor = (condition: Product["condition"]) => {
   switch (condition) {
     case "new":
       return "bg-green-500";
@@ -20,7 +22,7 @@ export const getConditionDisplay = (condition: string) => {
       return condition;
   }
 };
-export const getPlaceholderImage = (product: Types.Product) => {
+export const getPlaceholderImage = (product: Product) => {
   return product.media[0]?.url || "https://placehold.co/200x200?text=No+Image";
 };
 export const getCategoryDisplay = (category: string) => {

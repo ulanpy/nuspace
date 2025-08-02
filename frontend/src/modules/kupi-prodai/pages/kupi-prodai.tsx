@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/at
 import { BuySection } from "@/modules/kupi-prodai/components/main-page/BuySection";
 import { SellSection } from "@/modules/kupi-prodai/components/main-page/SellSection";
 import { MyListingsSection } from "@/modules/kupi-prodai/components/main-page/my-listings/MyListingsSection";
+import { ActiveTab } from "@/modules/kupi-prodai/types";
 
 export default function KupiProdaiPage() {
     const { activeTab, setActiveTab } = useListingState();
@@ -20,7 +21,7 @@ export default function KupiProdaiPage() {
             <Tabs
                 defaultValue="buy"
                 className="w-full flex flex-col gap-4"
-                onValueChange={(value) => setActiveTab(value as Types.ActiveTab)}
+                onValueChange={(value) => setActiveTab(value as ActiveTab)}
                 value={activeTab}
             >
                 <TabsList className="grid w-full grid-cols-3">

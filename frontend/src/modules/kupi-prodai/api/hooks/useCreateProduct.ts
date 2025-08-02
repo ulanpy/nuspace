@@ -11,6 +11,7 @@ import { useUser } from "@/hooks/use-user";
 import { useMediaUpload } from "@/modules/media/hooks/useMediaUpload";
 import { pollForProductImages } from "@/utils/polling";
 import { EntityType } from "@/modules/media/types/media-format.enum";
+import { ProductCategory, ProductCondition } from "@/modules/kupi-prodai/types";
 
 
 
@@ -48,8 +49,8 @@ export function useCreateProduct() {
     price: Number(form.get("price")),
     category: String(
       form.get("category"),
-    ).toLowerCase() as Types.ProductCategory,
-    condition: String(form.get("condition")) as Types.ProductCondition,
+    ).toLowerCase() as ProductCategory,
+    condition: String(form.get("condition")) as ProductCondition,
     status: "active",
     user_sub: user?.user.sub || "",
   });

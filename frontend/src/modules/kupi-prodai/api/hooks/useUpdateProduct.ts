@@ -8,6 +8,7 @@ import { useMediaUpload } from "@/modules/media/hooks/useMediaUpload";
 import { pollForProductImages } from "@/utils/polling";
 import { EntityType } from "@/modules/media/types/media-format.enum";
 import {useMediaEdit} from "@/modules/media/hooks/useMediaEdit"
+import { ProductCategory, ProductCondition, Status } from "@/modules/kupi-prodai/types";
 
 
 export function useUpdateProduct() {
@@ -113,9 +114,9 @@ export function useUpdateProduct() {
         name: newListing.name,
         description: newListing.description,
         price: newListing.price,
-        category: newListing.category.toLowerCase() as Types.ProductCategory,
-        condition: newListing.condition as Types.ProductCondition,
-        status: newListing.status as Types.Status,
+        category: newListing.category.toLowerCase() as ProductCategory,
+        condition: newListing.condition as ProductCondition,
+        status: newListing.status as Status,
       });
 
       setUploadProgress(30);

@@ -4,6 +4,7 @@ import { Search, X } from "lucide-react";
 import { Input } from "../atoms/input";
 import { useState, useEffect, useRef, KeyboardEvent, ChangeEvent } from "react";
 import { useTheme } from "../../context/ThemeProviderContext";
+import { SearchInputProps } from "@/modules/kupi-prodai/types";
 
 export function SearchInput({
   inputValue,
@@ -12,7 +13,7 @@ export function SearchInput({
   handleSearch,
   setKeyword,
   setSelectedCondition,
-}: Types.SearchInputProps) {
+}: SearchInputProps) {
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
   const [selectedIndex, setSelectedIndex] = useState(-1);

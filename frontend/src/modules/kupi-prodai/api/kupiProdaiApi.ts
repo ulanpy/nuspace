@@ -1,5 +1,6 @@
 import { apiCall } from "@/api/api";
 import { queryOptions } from "@tanstack/react-query";
+import { PreSearchedProduct } from "../types";
 
 // Types for the API
 export const defaultSize = 5;
@@ -148,7 +149,7 @@ export const kupiProdaiApi = {
   getProductQueryOptions: (id: string) => {
     return queryOptions({
       queryKey: ["product", id],
-      queryFn: () => apiCall<Types.Product>(`/products/${id}`),
+      queryFn: () => apiCall<Product>(`/products/${id}`),
     });
   },
 
@@ -184,7 +185,7 @@ export const kupiProdaiApi = {
     return queryOptions({
       queryKey: ["pre-search-products", keyword],
       queryFn: ({ signal }) => {
-        return apiCall<Types.PreSearchedProduct[]>(
+        return apiCall<PreSearchedProduct[]>(
           `/search/?keyword=${keyword}&storage_name=products&page=1&size=10`,
           {
             signal,

@@ -1,15 +1,17 @@
 import { ProductCardActions } from "@/modules/kupi-prodai/components/product-card-actions";
 import { ProductCard } from "@/modules/kupi-prodai/components/product-card";
 import { UseMutateFunction } from "@tanstack/react-query";
+import { Status } from "@/modules/kupi-prodai/types";
+import { Product } from "@/modules/kupi-prodai/types";
 
 interface ProductListingSectionProps {
   title: string;
-  products: Types.Product[];
+  products: Product[];
   emptyMessage: string;
   onProductClick: (productId: number) => void;
-  onEditListing: (product: Types.Product) => void;
+  onEditListing: (product: Product) => void;
   onDeleteListing: UseMutateFunction<string, Error, number, unknown>;
-  onToggleListingStatus: (id: number, currentStatus: Types.Status) => void;
+  onToggleListingStatus: (id: number, currentStatus: Status) => void;
   getIsPendingDeleteMutation: (id: number) => boolean;
   getIsPendingToggleMutation: (id: number) => boolean;
 }

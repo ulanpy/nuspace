@@ -7,19 +7,22 @@ import {
 import { getSeachPageFromURL } from "@/utils/search-params";
 import React, { createContext, useContext, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { Product } from "@/modules/kupi-prodai/types";
+import { NewProductRequest } from "@/modules/kupi-prodai/types";
+import { ActiveTab } from "@/modules/kupi-prodai/types";
 
 type ListingContextType = {
-  newListing: Types.NewProductRequest;
-  setNewListing: React.Dispatch<React.SetStateAction<Types.NewProductRequest>>;
+  newListing: NewProductRequest;
+  setNewListing: React.Dispatch<React.SetStateAction<NewProductRequest>>;
   uploadProgress: number;
   setUploadProgress: React.Dispatch<React.SetStateAction<number>>;
-  editingListing: Types.Product | null;
-  setEditingListing: React.Dispatch<React.SetStateAction<Types.Product | null>>;
+  editingListing: Product | null;
+  setEditingListing: React.Dispatch<React.SetStateAction<Product | null>>;
   showEditModal: boolean;
   setShowEditModal: React.Dispatch<React.SetStateAction<boolean>>;
   itemsPerPage: number;
-  activeTab: Types.ActiveTab;
-  setActiveTab: React.Dispatch<React.SetStateAction<Types.ActiveTab>>;
+  activeTab: ActiveTab;
+  setActiveTab: React.Dispatch<React.SetStateAction<ActiveTab>>;
 };
 
 const ListingContext = createContext<ListingContextType | undefined>(undefined);
@@ -29,7 +32,7 @@ export const ListingProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [newListing, setNewListing] = useState<Types.NewProductRequest>({
+  const [newListing, setNewListing] = useState<NewProductRequest>({
     name: "",
     description: "",
     price: 0,
@@ -37,7 +40,7 @@ export const ListingProvider = ({
     condition: "new",
     status: "active",
   });
-  const [editingListing, setEditingListing] = useState<Types.Product | null>(
+  const [editingListing, setEditingListing] = useState<Product | null>(
     null,
   );
 
@@ -49,7 +52,7 @@ export const ListingProvider = ({
     getSeachPageFromURL(location.search),
   );
   const [itemsPerPage] = useState(defaultSize);
-  const [activeTab, setActiveTab] = useState<Types.ActiveTab>("buy");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("buy");
   return (
     <ListingContext.Provider
       value={{

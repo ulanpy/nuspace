@@ -2,66 +2,6 @@ export {};
 
 declare global {
   namespace Types {
-    type ProductCondition = "new" | "like_new" | "used";
-    type ProductCategory =
-      | "books"
-      | "electronics"
-      | "clothing"
-      | "furniture"
-      | "appliances"
-      | "sports"
-      | "stationery"
-      | "art_supplies"
-      | "beauty"
-      | "services"
-      | "food"
-      | "tickets"
-      | "transport"
-      | "others";
-    type Status = "inactive" | "active";
-    interface Seller {
-      sub: string;
-      name: string;
-      surname: string;
-      picture: string;
-    }
-    interface Permission {
-      can_edit: boolean;
-      can_delete: boolean;
-      editable_fields: string[];
-    }
-    interface Product {
-      id: number;
-      name: string;
-      description: string;
-      user_sub: string;
-      price: number;
-      category: ProductCategory;
-      condition: "new" | "like_new" | "used";
-      status: Status;
-      media: ProductMedia[];
-      created_at?: string;
-      updated_at?: string;
-      seller: Seller;
-      user_telegram_id: 0;
-      permissions: Permission;
-    }
-
-    type NewProductRequest = {
-      name: string;
-      description: string;
-      price: number;
-      category: ProductCategory;
-      condition: ProductCondition;
-      status: string;
-    };
-
-    interface ProductMedia {
-      id: number;
-      url: string;
-    }
-
-    type ActiveTab = "buy" | "sell" | "my-listings";
 
     interface User {
       user: {
@@ -100,21 +40,7 @@ declare global {
     } & {
       num_of_pages: number;
     };
-    // SearchInput
-    interface PreSearchedProduct {
-      id: number;
-      name: string;
-      condition: ProductCondition;
-      category: ProductCategory;
-    }
-    type SearchInputProps = {
-      inputValue: string;
-      setInputValue: (value: string) => void;
-      preSearchedProducts: PreSearchedProduct[] | null;
-      handleSearch: (inputValue: string) => void;
-      setKeyword: (keyword: string) => void;
-      setSelectedCondition?: (condition: string) => void;
-    };
+
     type KeyActions = Record<string, () => void>;
     type InputHandlers = {
       change: (e: React.ChangeEvent<HTMLInputElement>) => void;

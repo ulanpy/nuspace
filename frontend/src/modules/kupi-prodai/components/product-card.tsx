@@ -7,9 +7,10 @@ import {
   getConditionDisplay,
   getPlaceholderImage,
 } from "@/utils/products-utils";
+import { Product } from "@/modules/kupi-prodai/types";
 
 interface ProductCardProps {
-  product: Types.Product;
+  product: Product;
   onClick: () => void;
   actions?: React.ReactNode;
 }
