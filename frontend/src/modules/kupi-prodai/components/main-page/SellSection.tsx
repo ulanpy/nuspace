@@ -1,7 +1,7 @@
 "use client";
 import { useUser } from "@/hooks/use-user";
 import { AuthRequiredAlert, TelegramRequiredAlert } from "@/components/molecules/auth-required-alert";
-import { ProductCreateForm } from "@/components/organisms/kp/product-create-form";
+import { ProductCreateForm } from "@/modules/kupi-prodai/components/product-create-form";
 import { useCreateProduct } from "@/modules/kupi-prodai/api/hooks/useCreateProduct";
 import { useListingState } from "@/context/ListingContext";
 

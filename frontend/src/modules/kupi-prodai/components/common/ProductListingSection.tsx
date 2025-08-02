@@ -1,5 +1,5 @@
-import { ProductCardActions } from "@/components/organisms/kp/product-card-actions";
-import { ProductCard } from "@/components/organisms/kp/product-card";
+import { ProductCardActions } from "@/modules/kupi-prodai/components/product-card-actions";
+import { ProductCard } from "@/modules/kupi-prodai/components/product-card";
 import { UseMutateFunction } from "@tanstack/react-query";
 
 interface ProductListingSectionProps {

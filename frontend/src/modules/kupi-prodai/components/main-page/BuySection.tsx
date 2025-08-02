@@ -5,10 +5,10 @@ import { useSearchLogic } from "@/hooks/use-search-logic";
 import { SearchInput } from "@/components/molecules/search-input";
 import { ConditionGroup } from "@/components/molecules/condition-group";
 import { CategorySlider } from "@/components/organisms/category-slider";
-import { ProductLoadingState } from "@/components/organisms/kp/state/product-loading-state";
-import { ProductErrorState } from "@/components/organisms/kp/state/product-error-state";
-import { ProductEmptyState } from "@/components/organisms/kp/state/product-empy-state";
-import { ProductGrid } from "@/components/organisms/kp/common/ProductGrid";
+import { ProductLoadingState } from "@/modules/kupi-prodai/components/state/product-loading-state";
+import { ProductErrorState } from "@/modules/kupi-prodai/components/state/product-error-state";
+import { ProductEmptyState } from "@/modules/kupi-prodai/components/state/product-empy-state";
+import { ProductGrid } from "@/modules/kupi-prodai/components/common/ProductGrid";
 import { useProductForm } from "@/modules/kupi-prodai/hooks/useProductForm";
 
 
@@ -77,7 +77,7 @@ export function BuySection() {
           <ProductErrorState error={"Failed to load products."} />
         ) : (productItems?.products.length ?? 0) > 0 ? (
           <ProductGrid
-            products={productItems}
+            products={productItems as Types.PaginatedResponse<Product, "products">}
             page={page}
             setPage={setPage}
           />

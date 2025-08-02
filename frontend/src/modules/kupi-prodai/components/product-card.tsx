@@ -1,6 +1,6 @@
 "use client";
-import { Card, CardContent } from "../../atoms/card";
-import { Badge } from "../../atoms/badge";
+import { Card, CardContent } from "../../../components/atoms/card";
+import { Badge } from "../../../components/atoms/badge";
 import {
   getCategoryDisplay,
   getConditionColor,

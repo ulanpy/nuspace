@@ -4,7 +4,7 @@ import { Button } from "@/components/atoms/button";
 
 import { Input } from "@/components/atoms/input";
 import { ArrowLeft, Search } from "lucide-react";
-import { ProductsTable } from "@/components/organisms/kp/tables/products-table";
+import { ProductsTable } from "@/modules/kupi-prodai/components/tables/products-table";
 import { mockUser, mockUserProducts } from "@/data/temporary";
 import { UserCard } from "@/components/organisms/admin/user-card";
 import {

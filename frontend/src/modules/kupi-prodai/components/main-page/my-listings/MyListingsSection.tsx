@@ -4,7 +4,7 @@ import { useUserProducts } from "@/modules/kupi-prodai/api/hooks/useUserProducts
 import { useDeleteProduct } from "@/modules/kupi-prodai/api/hooks/useDeleteProduct";
 import { useToggleProduct } from "@/modules/kupi-prodai/api/hooks/useToggleProduct";
 import { useEditModal } from "@/modules/kupi-prodai/hooks/useEditModal";
-import { ProductListingSection } from "@/components/organisms/kp/common/ProductListingSection";
+import { ProductListingSection } from "@/modules/kupi-prodai/components/common/ProductListingSection";
 import { AuthRequiredAlert } from "@/components/molecules/auth-required-alert";
 import { useUser } from "@/hooks/use-user";
 import { useNavigate } from "react-router-dom";

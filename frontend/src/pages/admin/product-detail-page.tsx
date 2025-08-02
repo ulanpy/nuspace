@@ -1,6 +1,6 @@
 import { Button } from "@/components/atoms/button";
 import { ArrowLeft } from "lucide-react";
-import { ProductForm } from "@/components/organisms/kp/product-form";
+import { ProductForm } from "@/modules/kupi-prodai/components/product-form";
 import { useProductForm } from "@/modules/kupi-prodai/hooks/use-product-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
