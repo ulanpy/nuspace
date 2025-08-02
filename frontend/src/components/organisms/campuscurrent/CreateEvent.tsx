@@ -155,10 +155,8 @@ export function CreateEventModal( { isOpen, onClose, onSave }: CreateEventModalP
                 variant="default"
                 onClick={() => {
                   // Handle event creation here
-                  console.log("Creating event:", createForm);
                   onClose();  
-                  toast({
-                    title: "Event Created",
+                  toast.success("Event Created", {
                     description: "Your event has been created successfully!",
                   });
                 }}

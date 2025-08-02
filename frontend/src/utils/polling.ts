@@ -65,7 +65,6 @@ export const pollForProductImages = (
         queryKey: [apiBaseKey],
       });
 
-      console.log("Product images loaded successfully:", product.id);
     },
     onError: (error) => {
       console.error("Error checking product images:", error);

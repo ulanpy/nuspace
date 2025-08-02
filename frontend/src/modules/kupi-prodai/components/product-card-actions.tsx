@@ -42,14 +42,14 @@ export function ProductCardActions({
       </Button>
       <Button
         disabled={getIsPendingToggleMutation(product.id)}
-        variant="secondary"
+        variant={product.status === "active" ? "secondary" : "outline"}
         size="sm"
         onClick={(e) => {
           e.stopPropagation();
           onToggleProductStatus(product.id, product.status);
         }}
       >
-        Mark as Sold
+        {product.status === "active" ? "Mark as Sold" : "Mark as Available"}
       </Button>
     </>
   );

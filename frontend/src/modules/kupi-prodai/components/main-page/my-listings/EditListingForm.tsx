@@ -1,9 +1,10 @@
 "use client";
 
 import { Input } from "@/components/atoms/input";
+import { NewProductRequest } from "@/modules/kupi-prodai/types";
 
 interface EditListingFormProps {
-    newListing: Types.NewProductRequest;
+    newListing: NewProductRequest;
     categories: Types.DisplayCategory[];
     conditions: string[];
     handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;

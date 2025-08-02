@@ -10,18 +10,11 @@ import {
 import { ROUTES } from "@/data/routes";
 import { Edit, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
-interface filteredProducts {
-  id: number;
-  name: string;
-  price: number;
-  category: string;
-  seller?: string;
-  status: string;
-  images: number;
-  createdAt: string;
-}
+import { Product } from "@/modules/kupi-prodai/types";
+
+
 interface ProductsTableProps {
-  filteredProducts: filteredProducts[];
+  filteredProducts: Product[];
   hasSeller?: boolean;
 }
 export const ProductsTable = ({
@@ -60,13 +53,13 @@ export const ProductsTable = ({
             </TableCell>
             {hasSeller && (
               <TableCell className="hidden md:table-cell">
-                {product.seller}
+                {product.seller.name}
               </TableCell>
             )}
 
             <TableCell className="hidden md:table-cell">
               <div className="flex -space-x-2">
-                {Array(Math.min(3, product.images))
+                {Array(Math.min(3, product.media.length))
                   .fill(0)
                   .map((_, i) => (
                     <div
@@ -74,9 +67,9 @@ export const ProductsTable = ({
                       className="w-6 h-6 rounded-full border border-white bg-gray-200"
                     ></div>
                   ))}
-                {product.images > 3 && (
+                {product.media.length > 3 && (
                   <div className="w-6 h-6 rounded-full border border-white bg-gray-300 flex items-center justify-center text-xs text-gray-600">
-                    +{product.images - 3}
+                    +{product.media.length - 3}
                   </div>
                 )}
               </div>
@@ -84,7 +77,7 @@ export const ProductsTable = ({
             <TableCell>
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  product.status === "Active"
+                  product.status === "active"
                     ? "bg-green-100 text-green-800"
                     : "bg-yellow-100 text-yellow-800"
                 }`}

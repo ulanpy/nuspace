@@ -1,12 +1,9 @@
 // src/contexts/ListingContext.tsx
 
 import {
-  defaultPage,
   defaultSize,
 } from "@/modules/kupi-prodai/api/kupiProdaiApi";
-import { getSeachPageFromURL } from "@/utils/search-params";
 import React, { createContext, useContext, useState } from "react";
-import { useLocation } from "react-router-dom";
 import { Product } from "@/modules/kupi-prodai/types";
 import { NewProductRequest } from "@/modules/kupi-prodai/types";
 import { ActiveTab } from "@/modules/kupi-prodai/types";
@@ -39,18 +36,15 @@ export const ListingProvider = ({
     category: "books",
     condition: "new",
     status: "active",
+    user_sub: "",
   });
   const [editingListing, setEditingListing] = useState<Product | null>(
     null,
   );
 
-  const location = useLocation();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(
-    getSeachPageFromURL(location.search),
-  );
+
   const [itemsPerPage] = useState(defaultSize);
   const [activeTab, setActiveTab] = useState<ActiveTab>("buy");
   return (

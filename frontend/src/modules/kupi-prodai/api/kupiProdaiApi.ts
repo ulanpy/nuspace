@@ -1,8 +1,7 @@
 import { apiCall } from "@/api/api";
 import { queryOptions } from "@tanstack/react-query";
-import { PreSearchedProduct, Product} from "../types";
-import { SignedUrlRequest, SignedUrlResponse } from "@/modules/media/types/signed-url.types";
-import { QueryParams, NewProductRequest, UpdateProductRequest } from "../types";
+import { PreSearchedProduct, Product} from "@/modules/kupi-prodai/types";
+import { QueryParams, NewProductRequest, UpdateProductRequest } from "@/modules/kupi-prodai/types";
 
 // Types for the API
 export const defaultSize = 20;
@@ -113,44 +112,6 @@ export const kupiProdaiApi = {
         );
       },
     });
-  },
-
-  // Get signed URLs for uploading images
-  // AFTER (correct)
-  getSignedUrls: async (
-    requests: SignedUrlRequest[],
-  ): Promise<SignedUrlResponse[]> => {
-    return apiCall<SignedUrlResponse[]>(`/bucket/upload-url`, {
-      method: "POST",
-      json: requests,
-    });
-  },
-
-  // Upload an image to the bucket
-  uploadImage: async (
-    file: File,
-    filename: string,
-    entityId: number,
-    mediaOrder: number,
-  ): Promise<string> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("filename", filename);
-    formData.append("mime_type", file.type);
-    formData.append("entity_type", "products"); // products for Kupi&Prodai
-    formData.append("entity_id", entityId.toString());
-    formData.append("media_format", "carousel");
-    formData.append("media_order", mediaOrder.toString());
-
-    const response = await apiCall(`/bucket/upload-image/`, {
-      method: "POST",
-      credentials: "include",
-      body: formData,
-    });
-
-    console.log("response", response);
-
-    return response as string;
   },
 
   // Check Telegram binding status

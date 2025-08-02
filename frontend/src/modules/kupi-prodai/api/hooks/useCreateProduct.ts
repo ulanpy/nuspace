@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   kupiProdaiApi,
-  NewProductRequest,
 } from "@/modules/kupi-prodai/api/kupiProdaiApi";
 import { useToast } from "@/hooks/use-toast";
 import { useListingState } from "@/context/ListingContext";
@@ -11,7 +10,7 @@ import { useUser } from "@/hooks/use-user";
 import { useMediaUpload } from "@/modules/media/hooks/useMediaUpload";
 import { pollForProductImages } from "@/utils/polling";
 import { EntityType } from "@/modules/media/types/media-format.enum";
-import { ProductCategory, ProductCondition } from "@/modules/kupi-prodai/types";
+import { ProductCategory, ProductCondition, NewProductRequest } from "@/modules/kupi-prodai/types";
 
 
 

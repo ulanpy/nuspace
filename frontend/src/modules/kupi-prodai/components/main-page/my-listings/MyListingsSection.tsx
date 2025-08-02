@@ -11,6 +11,9 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
 import { EditListingModal } from "./EditListingModal";
 import { Product } from "@/modules/kupi-prodai/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/atoms/tabs";
+import { EmptyState } from "@/modules/kupi-prodai/components/main-page/my-listings/EmptyState";
+import { Archive, PlusCircle } from "lucide-react";
 
 
 export function MyListingsSection() {
@@ -30,35 +33,53 @@ export function MyListingsSection() {
 
     return (
         <div className="space-y-6 pt-4">
-            <ProductListingSection
-                title="Active Listings"
-                products={activeListings as Product[] || []}
-                emptyMessage="No active listings found."
-                onProductClick={(productId) =>
-                    navigate(ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(productId.toString()))
-                }
-                onEditListing={handleEditListing}
-                onDeleteListing={handleDelete}
-                onToggleListingStatus={handleToggleProductStatus}
-                getIsPendingToggleMutation={getIsPendingToggleMutation}
-                getIsPendingDeleteMutation={getIsPendingDeleteMutation}
-            />
+            <Tabs defaultValue="active-listings">
+                <TabsList>
+                    <TabsTrigger value="active-listings">Active Listings</TabsTrigger>
+                    <TabsTrigger value="inactive-listings">Inactive Listings</TabsTrigger>
+                </TabsList>
 
-            <ProductListingSection
-                title="Inactive Listings"
-                products={inactiveListings as Product[] || []}
-                emptyMessage="No inactive listings found."
-                onProductClick={(productId) =>
-                    navigate(ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(productId.toString()))
-                }
-                onEditListing={handleEditListing}
-                onDeleteListing={handleDelete}
-                onToggleListingStatus={handleToggleProductStatus}
-                getIsPendingToggleMutation={getIsPendingToggleMutation}
-                getIsPendingDeleteMutation={getIsPendingDeleteMutation}
-            />
+                <TabsContent value="active-listings">
+                    <ProductListingSection
+                        products={activeListings as Product[] || []}
+                        emptyMessage={<EmptyState 
+                            icon={<PlusCircle />}
+                            title="No active listings"
+                            description="Oops! You have no active listings at the moment. Create a new listing to get started."
+                            buttonText="Create a new listing"
+                            onButtonClick={() => navigate(ROUTES.APPS.KUPI_PRODAI.CREATE)}
+                        />}
+                        onProductClick={(productId) =>
+                            navigate(ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(productId.toString()))
+                        }
+                        onEditListing={handleEditListing}
+                        onDeleteListing={handleDelete}
+                        onToggleListingStatus={handleToggleProductStatus}
+                        getIsPendingToggleMutation={getIsPendingToggleMutation}
+                        getIsPendingDeleteMutation={getIsPendingDeleteMutation}
+                    />
+                </TabsContent>
 
+                <TabsContent value="inactive-listings">
+                    <ProductListingSection
+                        products={inactiveListings as Product[] || []}
+                        emptyMessage={<EmptyState 
+                            icon={<Archive />}
+                            title="No inactive listings"
+                            description="Inactive listings are not visible to other users."
+                        />}
+                        onProductClick={(productId) =>
+                            navigate(ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(productId.toString()))
+                        }
+                        onEditListing={handleEditListing}
+                        onDeleteListing={handleDelete}
+                        onToggleListingStatus={handleToggleProductStatus}
+                        getIsPendingToggleMutation={getIsPendingToggleMutation}
+                        getIsPendingDeleteMutation={getIsPendingDeleteMutation}
+                    />
+                </TabsContent>
+            </Tabs>
             <EditListingModal />
         </div>
     );
-} 
+}

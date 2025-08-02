@@ -3,11 +3,11 @@ import { ProductCard } from "@/modules/kupi-prodai/components/product-card";
 import { UseMutateFunction } from "@tanstack/react-query";
 import { Status } from "@/modules/kupi-prodai/types";
 import { Product } from "@/modules/kupi-prodai/types";
+import React from "react";
 
 interface ProductListingSectionProps {
-  title: string;
   products: Product[];
-  emptyMessage: string;
+  emptyMessage: React.ReactNode;
   onProductClick: (productId: number) => void;
   onEditListing: (product: Product) => void;
   onDeleteListing: UseMutateFunction<string, Error, number, unknown>;
@@ -17,7 +17,6 @@ interface ProductListingSectionProps {
 }
 
 export function ProductListingSection({
-  title,
   products,
   emptyMessage,
   onProductClick,
@@ -29,7 +28,6 @@ export function ProductListingSection({
 }: ProductListingSectionProps) {
   return (
     <div className="space-y-2">
-      <h2 className="text-lg font-semibold">{title}</h2>
       {(products?.length ?? 0) > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {products?.map((product) => (
@@ -51,7 +49,7 @@ export function ProductListingSection({
           ))}
         </div>
       ) : (
-        <p>{emptyMessage}</p>
+        <div>{emptyMessage}</div>
       )}
     </div>
   );

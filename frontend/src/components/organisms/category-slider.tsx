@@ -1,9 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { CategoryCard } from "@/components/atoms/category-card";
-import { SliderContainer } from "../molecules/slider-container";
+import { CategoryGrid } from "./category-grid";
 
 interface CategorySliderProps {
-  categories: { title: string; icon: JSX.Element }[];
+  categories: { title: string; icon: JSX.Element; imageUrl?: string }[];
   selectedCategory: string | "";
   setPage?: (page: number) => void;
   setSelectedCategory: (category: string) => void;
@@ -31,18 +30,18 @@ export function CategorySlider({
   };
 
   return (
-    <SliderContainer itemWidth={180}>
-      {categories.map((cat) => (
-        <CategoryCard
-          key={cat.title}
-          title={cat.title}
-          icon={cat.icon}
-          isSelected={
-            selectedCategory.toLowerCase() === cat.title.toLowerCase()
-          }
-          onClick={() => handleCategorySelect(cat.title)}
+    <>
+      {categories?.length > 0 && (
+        <CategoryGrid
+          categories={categories}
+          selectedCategory={selectedCategory}
+          setPage={setPage}
+          setSelectedCategory={setSelectedCategory}
+          setInputValue={setInputValue}
+          setSelectedCondition={setSelectedCondition}
+          onCategorySelect={handleCategorySelect}
         />
-      ))}
-    </SliderContainer>
+      )}
+    </>
   );
 }

@@ -74,7 +74,7 @@ declare global {
 
     interface DisplayCategory {
       title: string;
-      icon: JSX.Element;
+      imageUrl?: string;
     }
   }
   namespace NuEvents {

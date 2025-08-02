@@ -1,7 +1,6 @@
 export const compressMedia = async (files: File[]): Promise<File[]> => {
     return Promise.all(
         files.map(async (imageFile) => {
-        console.log('imageFile.size', imageFile.size);
         return new Promise<File>((resolve, reject) => {
             const img = new Image();
             img.onload = () => {
@@ -12,7 +11,6 @@ export const compressMedia = async (files: File[]): Promise<File[]> => {
             ctx?.drawImage(img, 0, 0);
             canvas.toBlob((blob) => {
                 if (blob) {
-                console.log(blob, blob.size);
                 const file = new File([blob], 'compressed.webp', { type: 'image/webp' });
                 resolve(file);
                 } else {

@@ -1,64 +1,43 @@
-import { BiSolidCategory } from "react-icons/bi";
-import { BsPencilFill } from "react-icons/bs";
-import { FaBook, FaLaptop, FaTshirt, FaCouch, FaBlender } from "react-icons/fa";
-import { GiKnifeFork } from "react-icons/gi";
-import { IoCarSport, IoTicket } from "react-icons/io5";
-import { MdBrush, MdLocalOffer, MdSports } from "react-icons/md";
+
 export const productCategories: Types.DisplayCategory[] = [
   {
     title: "All",
-    icon: <BiSolidCategory />,
+    imageUrl: "/images/categories/all.png",
   },
   {
     title: "Books",
-    icon: <FaBook />,
+    imageUrl: "/images/categories/books.png",
   },
   {
     title: "Electronics",
-    icon: <FaLaptop />,
+    imageUrl: "/images/categories/electronics.png",
   },
   {
     title: "Clothing",
-    icon: <FaTshirt />,
+    imageUrl: "/images/categories/clothing.png",
   },
   {
     title: "Furniture",
-    icon: <FaCouch />,
+    imageUrl: "/images/categories/furniture.png",
   },
   {
     title: "Appliances",
-    icon: <FaBlender />,
+    imageUrl: "/images/categories/appliances.png",
   },
   {
     title: "Sports",
-    icon: <MdSports />,
-  },
-  {
-    title: "Stationery",
-    icon: <BsPencilFill />,
-  },
-  {
-    title: "Art Supplies",
-    icon: <MdBrush />,
-  },
-  {
-    title: "Beauty",
-    icon: <MdLocalOffer />,
+    imageUrl: "/images/categories/sports.png",
   },
   {
     title: "Food",
-    icon: <GiKnifeFork />,
-  },
-  {
-    title: "Tickets",
-    icon: <IoTicket />,
+    imageUrl: "/images/categories/food.png",
   },
   {
     title: "Transport",
-    icon: <IoCarSport />,
+    imageUrl: "/images/categories/transport.png",
   },
   {
     title: "Others",
-    icon: <BiSolidCategory />,
+    imageUrl: "/images/categories/others.png",
   },
 ];

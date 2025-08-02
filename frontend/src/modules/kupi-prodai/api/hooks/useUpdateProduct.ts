@@ -93,6 +93,7 @@ export function useUpdateProduct() {
       category: "books",
       condition: "new",
       status: "active",
+      user_sub: "",
     });
     setOriginalMedia([]);
     setMediaToDelete([]);

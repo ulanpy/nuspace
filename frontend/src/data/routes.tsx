@@ -18,6 +18,7 @@ export const EVENTS = "events";
 export const EVENT = "event";
 export const COMMUNITY = "community";
 export const COMMUNITIES = "communities";
+export const CREATE = "create";
 
 // --- Helper to build paths ---
 const buildPath = (...args: string[]) => `/${args.filter(Boolean).join("/")}`;
@@ -51,6 +52,7 @@ export const ROUTES = {
     ABOUT: buildPath(APPS, ABOUT),
     KUPI_PRODAI: {
       ROOT: buildPath(APPS, KUPI_PRODAI),
+      CREATE: buildPath(APPS, KUPI_PRODAI, CREATE),
       PRODUCT: {
         DETAIL: buildPath(APPS, KUPI_PRODAI, PRODUCT, ":id"),
         DETAIL_FN: (id: string) =>
@@ -88,6 +90,7 @@ const LAZY_ROUTES_REL = {
   },
   APPS: {
     KUPI_PRODAI_ROOT: KUPI_PRODAI,
+    KUPI_PRODAI_CREATE: `${KUPI_PRODAI}/${CREATE}`,
     KUPI_PRODAI_PRODUCT_DETAIL: `${KUPI_PRODAI}/${PRODUCT}/:id`,
     ABOUT: ABOUT,
     DORM_EATS: DORM_EATS,
@@ -105,6 +108,7 @@ export const LazyRoutes = {
         path: LAZY_ROUTES_REL.APPS.KUPI_PRODAI_ROOT,
         Component: withSuspense(lazy(() => import("@/modules/kupi-prodai/pages/kupi-prodai"))),
       },
+
       {
         path: LAZY_ROUTES_REL.APPS.KUPI_PRODAI_PRODUCT_DETAIL,
         Component: withSuspense(

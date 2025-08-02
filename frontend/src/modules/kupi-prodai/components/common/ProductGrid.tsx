@@ -34,7 +34,7 @@ export function ProductGrid({
   setPage,
   className,
 }: {
-  products: Types.PaginatedResponse<Product, any> | null;
+  products: Types.PaginatedResponse<Product, "products"> | null;
   page: number;
   setPage: (page: number) => void;
   className?: string;

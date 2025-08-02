@@ -3,8 +3,9 @@
 import { Badge } from "@/components/atoms/badge";
 import { Clock } from "lucide-react";
 import { formatDateWithContext, formatRelativeTime } from "@/utils/date-formatter";
+import { Product } from "@/modules/kupi-prodai/types";
 
-export function ProductDetails({ product }: { product: any }) {
+export function ProductDetails({ product }: { product: Product }) {
 
     const getConditionDisplay = (condition: string) => {
         switch (condition) {

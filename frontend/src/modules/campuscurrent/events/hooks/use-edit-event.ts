@@ -4,7 +4,6 @@ import { useParams } from "react-router-dom";
 
 export const useEditCommunity = () => {
   const { id } = useParams<{ id: string }>();
-  console.log('id', id);
   const queryClient = useQueryClient();
 
   return useMutation({

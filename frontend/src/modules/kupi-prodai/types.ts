@@ -1,6 +1,5 @@
-
-
 export type ProductCondition = "new" | "like_new" | "used";
+
 export type ProductCategory =
     | "books"
     | "electronics"
@@ -16,7 +15,10 @@ export type ProductCategory =
     | "tickets"
     | "transport"
     | "others";
+    
 export type Status = "inactive" | "active";
+
+
 export interface Seller {
     sub: string;
     name: string;
@@ -35,13 +37,13 @@ export interface Product {
     user_sub: string;
     price: number;
     category: ProductCategory;
-    condition: "new" | "like_new" | "used";
+    condition: ProductCondition;
     status: Status;
     media: ProductMedia[];
     created_at?: string;
     updated_at?: string;
     seller: Seller;
-    user_telegram_id: 0;
+    user_telegram_id?: number;
     permissions: Permission;
 }
 
@@ -50,7 +52,7 @@ export interface Product {
 export interface ProductMedia {
     id: number;
     url: string;
-    order: number;
+    order: string;
 }
 
 export type ActiveTab = "buy" | "sell" | "my-listings";
@@ -77,10 +79,10 @@ export type NewProductRequest = {
     name: string;
     description: string;
     price: number;
+    user_sub: string;
     category: ProductCategory;
     condition: ProductCondition;
     status: Status;
-    user_sub: string;
 };
 
   export interface UpdateProductRequest {
@@ -89,13 +91,10 @@ export type NewProductRequest = {
     description?: string;
     price?: number;
     category?: ProductCategory;
-    condition?: "new" | "like_new" | "used";
+    condition?: ProductCondition;
     status?: "inactive" | "active";
   }
-  
-  
-  // API base URL
-  
+    
   export type QueryParams = {
     page: number;
     size: number;

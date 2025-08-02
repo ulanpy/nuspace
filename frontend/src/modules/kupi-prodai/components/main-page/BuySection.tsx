@@ -10,7 +10,7 @@ import { ProductErrorState } from "@/modules/kupi-prodai/components/state/produc
 import { ProductEmptyState } from "@/modules/kupi-prodai/components/state/product-empy-state";
 import { ProductGrid } from "@/modules/kupi-prodai/components/common/ProductGrid";
 import { useProductForm } from "@/modules/kupi-prodai/hooks/useProductForm";
-
+import { Product } from "@/modules/kupi-prodai/types";
 
 export function BuySection() {
   const {

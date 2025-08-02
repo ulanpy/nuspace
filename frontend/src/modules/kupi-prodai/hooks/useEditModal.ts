@@ -19,6 +19,7 @@ export const useEditModal = () => {
       category: product.category,
       condition: product.condition,
       status: product.status || "active",
+      user_sub: product.user_sub,
     });
     // Store the initial media state for comparison later
     setPreviewImages(product.media.map((m) => m.url));
@@ -27,8 +28,8 @@ export const useEditModal = () => {
     // Store the original media for tracking changes
     setOriginalMedia(product.media.map((media) => ({
       id: media.id,
-      url: media.url,      order: media.order.toString(),
-
+      url: media.url,      
+      order: media.order,
     })));
     setCurrentMediaIndex(0);
     setShowEditModal(true);
@@ -42,6 +43,7 @@ export const useEditModal = () => {
       category: "books",
       condition: "new",
       status: "active",
+      user_sub: "",
     });
   };
 

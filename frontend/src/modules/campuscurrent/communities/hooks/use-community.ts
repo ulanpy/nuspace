@@ -4,7 +4,6 @@ import { useParams } from "react-router-dom";
 
 export const useCommunity = () => {
   const { id } = useParams<{ id: string }>();
-  console.log("id", id);
   const {
     data: club,
     isPending,

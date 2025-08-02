@@ -10,10 +10,10 @@ import { useMediaEditContext } from "@/context/MediaEditContext";
 import { useMediaUploadContext } from "@/context/MediaUploadContext";
 import { useMediaEdit } from "@/modules/media/hooks/useMediaEdit";
 import { useMediaSelection } from "@/modules/media/hooks/useMediaSelection";
-import { useProduct } from "@/modules/kupi-prodai/api/hooks/useProduct";
 import { Progress } from "@/components/atoms/progress";
 import { EditListingForm } from "./EditListingForm";
 import { EditListingImageManager } from "./EditListingImageManager";
+import { useProductForm } from "@/modules/kupi-prodai/hooks/useProductForm";
 
 export function EditListingModal() {
     const { handleUpdateListing } = useUpdateProduct();
@@ -23,7 +23,7 @@ export function EditListingModal() {
     const { previewMedia: previewImages, isUploading } = useMediaUploadContext();
     const { isDragging, handleDragOver, handleDragLeave, handleDrop, handleFileSelect } = useMediaSelection();
     const { handleImageDelete } = useMediaEdit();
-    const { conditions, categories, handleInputChange, handlePriceInputBlur, handlePriceInputFocus, handleSelectChange } = useProduct();
+    const { conditions, categories, handleInputChange, handlePriceInputBlur, handlePriceInputFocus, handleSelectChange } = useProductForm();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const dropZoneRef = React.useRef<HTMLDivElement>(null);
     const displayConditions = ["All Conditions", "New", "Used"];
