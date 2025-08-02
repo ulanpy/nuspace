@@ -8,7 +8,7 @@ import { Toasts } from "../components/atoms/toast";
 import { ListingProvider } from "../context/ListingContext";
 import { MediaUploadProvider } from "../context/MediaUploadContext";
 import { MediaEditProvider } from "../context/MediaEditContext";
-import { EventsLayout } from "../pages/apps/campuscurrent/layout";
+import { EventsLayout } from "../features/campuscurrent/pages/layout";
 
 function App() {
   return (

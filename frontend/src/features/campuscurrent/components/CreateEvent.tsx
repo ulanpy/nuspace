@@ -14,9 +14,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/popo
 import { useImage } from "@/modules/kupi-prodai/hooks/use-image";
 import { useRef } from "react";
 import { eventCategories } from "@/data/events/event-categories";
-import { Textarea } from "../../atoms/textarea";
-import { Calendar as CalendarComponent } from "../../atoms/calendar";
-import { toast } from "../../atoms/sonner";
+import { Textarea } from "../../../components/atoms/textarea";
+import { Calendar as CalendarComponent } from "../../../components/atoms/calendar";
+import { toast } from "../../../components/atoms/sonner";
 
 const [createForm, setCreateForm] = useState({
   name: "",

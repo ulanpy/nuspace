@@ -117,7 +117,7 @@ export const LazyRoutes = {
       },
       {
         path: LAZY_ROUTES_REL.APPS.ABOUT,
-        Component: withSuspense(lazy(() => import("@/pages/apps/about"))),
+        Component: withSuspense(lazy(() => import("@/pages/about"))),
       },
       {
         path: LAZY_ROUTES_REL.APPS.DORM_EATS,
@@ -128,31 +128,31 @@ export const LazyRoutes = {
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_ROOT,
         Component: withSuspense(
-          lazy(() => import("@/pages/apps/campuscurrent")),
+          lazy(() => import("@/features/campuscurrent/pages/home")),
         ),
       },
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_EVENTS,
         Component: withSuspense(
-          lazy(() => import("@/pages/apps/campuscurrent/events")),
+          lazy(() => import("@/features/campuscurrent/pages/events/list")),
         ),
       },
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_EVENT_DETAIL,
         Component: withSuspense(
-          lazy(() => import("@/pages/apps/campuscurrent/event/[id]")),
+          lazy(() => import("@/features/campuscurrent/pages/events/single")),
         ),
       },
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_COMMUNITY_DETAIL,
         Component: withSuspense(
-          lazy(() => import("@/pages/apps/campuscurrent/club/[id]")),
+          lazy(() => import("@/features/campuscurrent/pages/communities/single")),
         ),
       },
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_COMMUNITIES,
         Component: withSuspense(
-          lazy(() => import("@/pages/apps/campuscurrent/clubs")),
+          lazy(() => import("@/features/campuscurrent/pages/communities/list")),
         ),
       },
     ],

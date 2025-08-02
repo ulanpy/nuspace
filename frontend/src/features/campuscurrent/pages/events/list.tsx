@@ -4,10 +4,10 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/atoms/tabs";
-import { EventCard } from "@/components/organisms/campuscurrent/EventCard";
+import { EventCard } from "@/features/campuscurrent/components/EventCard";
 import { FilterBar } from "@/components/molecules/filter-bar";
 import { Pagination } from "@/components/molecules/pagination";
-import { useEvents } from "@/features/campuscurrent/events/hooks/useEvents";
+import { useEvents } from "@/features/campuscurrent/hooks/events/useEvents";
 
 
 export default function Events() {

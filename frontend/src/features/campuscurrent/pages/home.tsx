@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { EventCard } from "../../components/organisms/campuscurrent/EventCard";
-import { mockClubs, mockEvents } from "../../data/events/mock-events-data";
-import { LoginModal } from "../../components/molecules/login-modal";
-import { useCommunities } from "@/features/campuscurrent/communities/hooks/use-communities";
+import { EventCard } from "../components/EventCard";
+import { mockClubs, mockEvents } from "../../../data/events/mock-events-data";
+import { LoginModal } from "../../../components/molecules/login-modal";
+import { useCommunities } from "@/features/campuscurrent/hooks/communities/use-communities";
 import { SliderContainer } from "@/components/molecules/slider-container";
-import { BaseCard } from "@/components/organisms/campuscurrent/BaseCard";
+import { BaseCard } from "@/features/campuscurrent/components/BaseCard";
 import { eventSections } from "@/data/events/event-sections";
-import { CommunityCard } from "@/components/organisms/campuscurrent/CommunityCard";
+import { CommunityCard } from "@/features/campuscurrent/components/CommunityCard";
 import { GeneralSection } from "@/components/molecules/general-section";
 import { ROUTES } from "@/data/routes";
 
