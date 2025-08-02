@@ -45,14 +45,7 @@ export interface Product {
     permissions: Permission;
 }
 
-export type NewProductRequest = {
-    name: string;
-    description: string;
-    price: number;
-    category: ProductCategory;
-    condition: ProductCondition;
-    status: string;
-};
+
 
 export interface ProductMedia {
     id: number;
@@ -78,3 +71,35 @@ export type SearchInputProps = {
     setKeyword: (keyword: string) => void;
     setSelectedCondition?: (condition: string) => void;
     };
+
+
+export type NewProductRequest = {
+    name: string;
+    description: string;
+    price: number;
+    category: ProductCategory;
+    condition: ProductCondition;
+    status: Status;
+    user_sub: string;
+};
+
+  export interface UpdateProductRequest {
+    product_id: number;
+    name?: string;
+    description?: string;
+    price?: number;
+    category?: ProductCategory;
+    condition?: "new" | "like_new" | "used";
+    status?: "inactive" | "active";
+  }
+  
+  
+  // API base URL
+  
+  export type QueryParams = {
+    page: number;
+    size: number;
+    category?: string;
+    condition?: string;
+    keyword?: string;
+  };

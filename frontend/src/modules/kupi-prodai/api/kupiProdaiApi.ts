@@ -1,103 +1,20 @@
 import { apiCall } from "@/api/api";
 import { queryOptions } from "@tanstack/react-query";
-import { PreSearchedProduct } from "../types";
+import { PreSearchedProduct, Product} from "../types";
+import { SignedUrlRequest, SignedUrlResponse } from "@/modules/media/types/signed-url.types";
+import { QueryParams, NewProductRequest, UpdateProductRequest } from "../types";
 
 // Types for the API
-export const defaultSize = 5;
+export const defaultSize = 20;
 export const defaultPage = 1;
 
-export interface ProductMedia {
-  id: number;
-  url: string;
-}
 
 export interface PaginatedResponse<T> {
   products: T[];
   num_of_pages: number;
 }
 
-// Updated enums to match backend
-export type ProductCondition = "new" | "like_new" | "used";
-export type ProductCategory =
-  | "books"
-  | "electronics"
-  | "clothing"
-  | "furniture"
-  | "appliances"
-  | "sports"
-  | "stationery"
-  | "art_supplies"
-  | "beauty"
-  | "services"
-  | "food"
-  | "tickets"
-  | "transport"
-  | "others";
-export type ProductStatus = "inactive" | "active" | "sold";
 
-export interface Product {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  category: ProductCategory;
-  condition: "new" | "like_new" | "used";
-  status: "inactive" | "active";
-  media: ProductMedia[];
-  user_name?: string;
-  user_surname?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface NewProductRequest {
-  name: string;
-  description: string;
-  price: number;
-  category: ProductCategory;
-  condition: ProductCondition;
-  status: "active";
-  user_sub: string;
-}
-
-export interface UpdateProductRequest {
-  product_id: number;
-  name?: string;
-  description?: string;
-  price?: number;
-  category?: ProductCategory;
-  condition?: "new" | "like_new" | "used";
-  status?: "inactive" | "active";
-}
-
-export interface SignedUrlRequest {
-  entity_type: string;
-  entity_id: number;
-  media_format: string;
-  media_order: number;
-  mime_type: string;
-  content_type: string;
-}
-
-export interface SignedUrlResponse {
-  filename: string;
-  upload_url: string;
-  entity_type: string;
-  entity_id: number;
-  media_format: string;
-  media_order: number;
-  mime_type: string;
-}
-
-// API base URL
-
-type QueryParams = {
-  page: number;
-  size: number;
-  category?: string;
-  condition?: string;
-  keyword?: string;
-};
 // API functions
 export const kupiProdaiApi = {
   // Get a paginated list of products
