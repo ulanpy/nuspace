@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { campuscurrentAPI } from "../../utils/events-api";
+import { campuscurrentAPI } from "../../api/eventsApi";
 import { useParams } from "react-router-dom";
 
 export const useEditCommunity = () => {

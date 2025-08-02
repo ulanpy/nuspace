@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { campuscurrentAPI } from "../../utils/events-api";
+import { campuscurrentAPI } from "../../api/eventsApi";
 import { useState } from "react";
 
 export const useEvents = () => {

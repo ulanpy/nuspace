@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { campuscurrentAPI } from "../../utils/communities-api";
+import { campuscurrentAPI } from "../../api/communitiesApi";
 import { useParams } from "react-router-dom";
 
 export const useCommunity = () => {

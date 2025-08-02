@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getPosts } from "../../utils/posts-api";
+import { getPosts } from "../../api/postsApi";
 
 interface UsePostsParams {
   community_id: number;
