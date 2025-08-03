@@ -37,14 +37,6 @@ const eventTypes = [
   { value: "art", label: "Art" },
 ];
 
-const eventTags = [
-  { value: "featured", label: "Featured"},
-  { value: "promotional", label: "Promotional"},
-  { value: "regular", label: "Regular"},
-  { value: "charity", label: "Charity"},
-
-
-];
 
 export function CreateEventModal({ isOpen, onClose, communityId }: CreateEventModalProps) {
   const { user } = useUser();

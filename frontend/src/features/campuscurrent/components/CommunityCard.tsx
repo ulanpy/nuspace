@@ -20,11 +20,11 @@ export function CommunityCard({ community }: { community: Community }) {
     >
       <CardHeader className="p-4 flex flex-row gap-4 items-center">
         <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
-          {/* <img
+          <img
             //  src={community.media[0].url}   ULAN TRY TO FIX THIS 
              alt={community.name}
              className="object-cover w-full h-full"
-             /> */}
+             />
         </div>
         <div>
           <h3 className="font-semibold">{community.name}</h3>
