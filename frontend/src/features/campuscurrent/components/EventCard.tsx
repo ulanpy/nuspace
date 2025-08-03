@@ -63,7 +63,7 @@ export function EventCard({
         <Button variant="outline" size="sm">
           Add to Calendar
         </Button>
-        <Button size="sm">I'm attending</Button>
+        {/* <Button size="sm">I'm attending</Button> */}
       </CardFooter>
     </Card>
   );
