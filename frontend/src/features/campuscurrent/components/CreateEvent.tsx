@@ -38,10 +38,10 @@ const eventTypes = [
 ];
 
 const eventTags = [
-  { value: "featured", lavel: "Featured"},
-  { value: "promotional", lavel: "Promotional"},
-  { value: "regular", lavel: "Regular"},
-  { value: "charity", lavel: "Charity"},
+  { value: "featured", label: "Featured"},
+  { value: "promotional", label: "Promotional"},
+  { value: "regular", label: "Regular"},
+  { value: "charity", label: "Charity"},
 
 
 ];
@@ -221,24 +221,6 @@ export function CreateEventModal({ isOpen, onClose, communityId }: CreateEventMo
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="tag">Event Tag</Label>
-            <Select 
-              value={createForm.tag} 
-              onValueChange={(value) => handleSelectChange("tag", value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select event tag" />
-              </SelectTrigger>
-              <SelectContent className="z-[150]">
-                {eventTags.map((tag) => (
-                  <SelectItem key={tag.value} value={tag.value}>
-                    {tag.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="duration">Duration (minutes)</Label>
