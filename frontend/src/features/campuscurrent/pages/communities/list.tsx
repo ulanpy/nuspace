@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Users, ChevronLeft, ChevronRight, Calendar, Plus, FileText } from "lucide-react";
+import { Users, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
 import { LoginModal } from "@/components/molecules/login-modal";
@@ -10,6 +10,7 @@ import { useCommunities } from "@/features/campuscurrent/hooks/communities/use-c
 import { Community, CommunityCategory } from "@/features/campuscurrent/types/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/atoms/tabs";
 import { useNavigate } from "react-router-dom";
+import MotionWrapper from "@/components/atoms/motion-wrapper";
 
 const CommuntiesGrid = ({
   isLoading,
@@ -51,12 +52,11 @@ const CommuntiesGrid = ({
 
 export default function CommunitiesPage() {
   const { communities, isLoading, isError } = useCommunities();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery] = useState("");
   const [currentPage] = useState(1);
   const [totalPages] = useState(1);
   const [selectedCommunityCategory, setSelectedCommunityCategory] = useState<string>("");
   const [showLoginModal] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   // Loading skeleton
   const CommunitySkeleton = () => (
     <Card className="overflow-hidden h-full">
@@ -71,6 +71,7 @@ export default function CommunitiesPage() {
   return (
     <>
           {/* Hero Section */}
+          <MotionWrapper>
           <section className="py-12 md:py-20 bg-orange-700 text-white">
         <div className="container px-4 md:px-6">
           <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
@@ -113,7 +114,9 @@ export default function CommunitiesPage() {
           </div>
         </div>
       </section>
+      </MotionWrapper>
 
+    <MotionWrapper>
     {/* Header with Create Community Button */}
     <div className="flex justify-between items-center mb-6">
     <h1 className="text-2xl font-bold">Communities</h1>
@@ -245,6 +248,7 @@ export default function CommunitiesPage() {
         title="Login Required"
         message="You need to be logged in to follow communities."
       />
+      </MotionWrapper>
     </>
   );
 }
