@@ -23,57 +23,13 @@ import { useEvent } from "@/features/campuscurrent/hooks/events/useEvent";
 import { BaseCard } from "@/features/campuscurrent/components/BaseCard";
 import {
   Carousel,
-  CarouselApi,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
 } from "@/components/atoms/carousel";
-
-interface Club {
-  id: number;
-  name: string;
-  type:
-    | "academic"
-    | "professional"
-    | "recreational"
-    | "cultural"
-    | "sports"
-    | "social"
-    | "art"
-    | "technology";
-  description: string;
-  president: string;
-  telegram_url: string;
-  instagram_url: string;
-  created_at: string;
-  updated_at: string;
-  media: Media[];
-  members: number;
-  followers: number;
-  isFollowing: boolean;
-}
-
-interface Event {
-  id: number;
-  club_id: number;
-  name: string;
-  place: string;
-  description: string;
-  duration: number;
-  event_datetime: string;
-  policy: "open" | "free_ticket" | "paid_ticket";
-  created_at: string;
-  updated_at: string;
-  media: Media[];
-  club?: Club;
-  rating?: number;
-}
-
-interface Media {
-  id: number;
-  url: string;
-}
+import { Event } from "@/features/campuscurrent/types";
+import { addToGoogleCalendar as addToGoogleCalendarUtil } from "@/features/campuscurrent/utils/calendar";
 
 // Helper function to format date for display
 const formatEventDate = (dateString: string) => {
@@ -119,32 +75,16 @@ export default function EventDetailPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
-  // Add to Google Calendar
-  const addToGoogleCalendar = () => {
+  const handleAddToCalendar = () => {
     if (!event) return;
 
     if (!user) {
-      setPendingAction(() => () => addToGoogleCalendar());
+      setPendingAction(() => () => handleAddToCalendar());
       setShowLoginModal(true);
       return;
     }
 
-    const eventDate = new Date(event.event_datetime);
-    const endDate = new Date(eventDate.getTime() + event.duration * 60000);
-
-    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-      event.name,
-    )}&dates=${eventDate
-      .toISOString()
-      .replace(/-|:|\.\d+/g, "")
-      .slice(0, -1)}/${endDate
-      .toISOString()
-      .replace(/-|:|\.\d+/g, "")
-      .slice(0, -1)}&details=${encodeURIComponent(
-      event.description,
-    )}&location=${encodeURIComponent(event.place)}`;
-
-    window.open(googleCalendarUrl, "_blank");
+    addToGoogleCalendarUtil(event);
 
     toast({
       title: "Success",
@@ -264,7 +204,11 @@ export default function EventDetailPage() {
                 <div
                   className="text-primary hover:underline cursor-pointer mt-1"
                   onClick={() =>
-                    navigate(ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(event.club?.id))
+                    navigate(
+                      ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
+                        event.club?.id.toString() ?? "",
+                      ),
+                    )
                   }
                 >
                   {event.club.name}
@@ -315,7 +259,7 @@ export default function EventDetailPage() {
             {!isPast && (
               <Button
                 className="flex items-center gap-1"
-                onClick={addToGoogleCalendar}
+                onClick={handleAddToCalendar}
               >
                 <CalendarPlus className="h-4 w-4" />
                 <span>Add to Calendar</span>
@@ -344,7 +288,13 @@ export default function EventDetailPage() {
               </p>
             </div>
             <Button
-              onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(event.club?.id))}
+              onClick={() =>
+                navigate(
+                  ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
+                    event.club?.id.toString() ?? "",
+                  ),
+                )
+              }
               className="flex items-center gap-2"
             >
               <Users className="h-4 w-4" />
@@ -361,7 +311,7 @@ export default function EventDetailPage() {
                   <Users className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium">{event.club.president}</p>
+                  <p className="font-medium">{event.club.president_name}</p>
                   <p className="text-sm text-muted-foreground">
                     Club President
                   </p>
