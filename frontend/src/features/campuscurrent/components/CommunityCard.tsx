@@ -27,8 +27,12 @@ export function CommunityCard({ community }: { community: Community }) {
              /> */}
         </div>
         <div>
-          <h3 className="font-semibold">{community.name}</h3>
+          <h1 className="font-semibold">{community.name}</h1>
+          <div className="flex mt-4 gap-1 flex-wrap">
           <Badge variant="outline">{community.category}</Badge>
+          <Badge variant="outline">{community.type}</Badge>
+        <Badge variant="secondary">Recruitment: {community.recruitment_status}</Badge>
+          </div>
         </div>
       </CardHeader>
 
@@ -36,7 +40,8 @@ export function CommunityCard({ community }: { community: Community }) {
         <p className="text-sm text-muted-foreground line-clamp-3">
           {community.description}
         </p>
-        <div className="flex justify-between mt-3 text-sm text-muted-foreground"></div>
+        {/* <div className="flex mt-3 gap-1 text-sm text-muted-foreground">
+        </div> */}
       </CardContent>
       <Link
         to={ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
