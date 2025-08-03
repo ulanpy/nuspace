@@ -1,5 +1,5 @@
 import { apiCall } from "@/utils/api";
-import { SignedUrlRequest, SignedUrlResponse } from "../types/signed-url.types";
+import { SignedUrlRequest, SignedUrlResponse } from "../types/types";
 
 
 export const mediaApi = {

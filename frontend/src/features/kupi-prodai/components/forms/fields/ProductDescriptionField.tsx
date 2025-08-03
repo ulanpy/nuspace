@@ -1,7 +1,7 @@
 import { Textarea } from "@/components/atoms/textarea";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileText } from "lucide-react";
-import { AnimatedFormField } from "@/components/animations/AnimatedFormField";
+import { AnimatedFormField } from "@/components/organisms/animations/AnimatedFormField";
 import { useFormAnimations } from "@/hooks/useFormAnimations";
 import { fieldVariants } from "@/utils/animationVariants";
 

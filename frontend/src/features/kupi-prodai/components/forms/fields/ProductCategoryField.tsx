@@ -1,7 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
 import { motion } from "framer-motion";
 import { Zap } from "lucide-react";
-import { AnimatedFormField } from "@/components/animations/AnimatedFormField";
+import { AnimatedFormField } from "@/components/organisms/animations/AnimatedFormField";
 import { useFormAnimations } from "@/hooks/useFormAnimations";
 
 interface ProductCategoryFieldProps {

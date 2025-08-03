@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
@@ -17,18 +17,9 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
 import { LoginModal } from "@/components/molecules/login-modal";
-import { Card, CardContent } from "@/components/atoms/card";
 import { ROUTES } from "@/data/routes";
 import { useEvent } from "@/features/campuscurrent/hooks/events/useEvent";
-import { BaseCard } from "@/features/campuscurrent/components/BaseCard";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/atoms/carousel";
-import { Event } from "@/features/campuscurrent/types";
+
 import { addToGoogleCalendar as addToGoogleCalendarUtil } from "@/features/campuscurrent/utils/calendar";
 
 // Helper function to format date for display
@@ -183,11 +174,7 @@ export default function EventDetailPage() {
               </div>
             )}
           </div>
-          <div className="absolute top-4 left-4">
-            <Badge className={`${getPolicyColor(event.policy)} text-white`}>
-              {getPolicyDisplay(event.policy)}
-            </Badge>
-          </div>
+
           {event.rating && (
             <div className="absolute top-4 right-4 bg-black/70 text-white text-sm font-bold px-3 py-1 rounded">
               {event.rating.toFixed(1)}
@@ -197,24 +184,13 @@ export default function EventDetailPage() {
 
         {/* Event Details */}
         <div className="space-y-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl font-bold">{event.name}</h1>
-              {event.club && (
-                <div
-                  className="text-primary hover:underline cursor-pointer mt-1"
-                  onClick={() =>
-                    navigate(
-                      ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
-                        event.club?.id.toString() ?? "",
-                      ),
-                    )
-                  }
-                >
-                  {event.club.name}
-                </div>
-              )}
-            </div>
+          <div className="flex flex-wrap gap-2 mb-3">
+            <Badge className={`${getPolicyColor(event.policy)} text-white`}>
+              {getPolicyDisplay(event.policy)}
+            </Badge>
+            <Badge className="bg-gray-500 text-white">{event.type}</Badge>
+            <Badge className="bg-blue-500 text-white">{event.tag}</Badge>
+            <Badge className="bg-yellow-500 text-white">{event.status}</Badge>
             {isPast && (
               <Badge
                 variant="outline"
@@ -223,6 +199,30 @@ export default function EventDetailPage() {
                 Event Ended
               </Badge>
             )}
+          </div>
+          
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-2xl font-bold">{event.name}</h1>
+              {event.scope === "community" ? (
+                <div
+                  className="text-primary hover:underline cursor-pointer mt-1"
+                  onClick={() =>
+                    navigate(
+                      ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
+                        event.community?.id.toString() ?? "",
+                      ),
+                    )
+                  }
+                >
+                  by {event.community?.name || 'Unknown Community'}
+                </div>
+              ) : (
+                <div className="text-muted-foreground mt-1">
+                  by {event.creator?.name} {event.creator?.surname}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2 text-sm text-muted-foreground">
@@ -238,10 +238,10 @@ export default function EventDetailPage() {
               <MapPin className="h-4 w-4" />
               <span>{event.place}</span>
             </div>
-            {event.club && (
+            {event.community && (
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                <span>Organized by {event.club.name}</span>
+                <span>Organized by {event.community.name}</span>
               </div>
             )}
           </div>
@@ -277,29 +277,34 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      {/* Club link and other events */}
-      {event.club && (
+      {/* Organizer details */}
+      {(event.scope === "community" && event.community) ||
+      (event.scope === "personal" && event.creator) ? (
         <div className="mt-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold">Organized by</h2>
               <p className="text-muted-foreground mt-1">
-                This event is hosted by {event.club.name}
+                {event.scope === "community"
+                  ? `This event is hosted by ${event.community?.name}`
+                  : `This event is hosted by ${event.creator?.name} ${event.creator?.surname}`}
               </p>
             </div>
-            <Button
-              onClick={() =>
-                navigate(
-                  ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
-                    event.club?.id.toString() ?? "",
-                  ),
-                )
-              }
-              className="flex items-center gap-2"
-            >
-              <Users className="h-4 w-4" />
-              <span>View Club</span>
-            </Button>
+            {event.scope === "community" && (
+              <Button
+                onClick={() =>
+                  navigate(
+                    ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
+                      event.community?.id.toString() ?? "",
+                    ),
+                  )
+                }
+                className="flex items-center gap-2"
+              >
+                <Users className="h-4 w-4" />
+                <span>View Community</span>
+              </Button>
+            )}
           </div>
 
           {/* Organizer information */}
@@ -311,41 +316,35 @@ export default function EventDetailPage() {
                   <Users className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium">{event.club.president_name}</p>
+                  <p className="font-medium">
+                    {event.scope === "community"
+                      ? event.community?.name
+                      : `${event.creator?.name} ${event.creator?.surname}`}
+                  </p>
                   <p className="text-sm text-muted-foreground">
-                    Club President
+                    {event.scope === "community"
+                      ? "Community"
+                      : "Event Organizer"}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Calendar className="h-5 w-5 text-primary" />
+              {event.scope === "community" && (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Calendar className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Event Coordinator</p>
+                    <p className="text-sm text-muted-foreground">
+                      Contact via community's social media
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium">Event Coordinator</p>
-                  <p className="text-sm text-muted-foreground">
-                    Contact via club's social media
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Other events from this club */}
-          <div>
-            <h2 className="text-xl font-bold mb-4">
-              Other events from this club
-            </h2>
-            <div className="text-center py-8 border rounded-md bg-muted/20">
-              <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-              <h3 className="text-lg font-medium mb-1">No other events</h3>
-              <p className="text-sm text-muted-foreground">
-                This feature is not available yet.
-              </p>
+              )}
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Login Modal */}
       <LoginModal

@@ -3,12 +3,12 @@
 import React from "react";
 import { Button } from "@/components/atoms/button";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
-import { ProductMedia } from "@/features/kupi-prodai/types";
+import { Media } from "@/features/media/types/types";
 
 interface ImageViewerModalProps {
     isOpen: boolean;
     onClose: () => void;
-    images: ProductMedia[];
+    images: Media[];
     currentImageIndex: number;
     prevImage: () => void;
     nextImage: () => void;

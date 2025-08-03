@@ -1,3 +1,5 @@
+import { Media } from "../media/types/types";
+
 export type ProductCondition = "new" | "like_new" | "used";
 
 export type ProductCategory =
@@ -39,7 +41,7 @@ export interface Product {
     category: ProductCategory;
     condition: ProductCondition;
     status: Status;
-    media: ProductMedia[];
+    media: Media[];
     created_at?: string;
     updated_at?: string;
     seller: Seller;
@@ -47,13 +49,6 @@ export interface Product {
     permissions: Permission;
 }
 
-
-
-export interface ProductMedia {
-    id: number;
-    url: string;
-    order: string;
-}
 
 export type ActiveTab = "buy" | "sell" | "my-listings";
 

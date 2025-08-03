@@ -1,7 +1,7 @@
 import { apiCall } from "@/utils/api";
 import { queryOptions } from "@tanstack/react-query";
 import * as Routes from "@/data/routes";
-
+import { CreateEventData, Event } from "@/features/campuscurrent/types/types";
 export const campuscurrentAPI = {
   getEventsQueryOptions: (params: { start_date?: string; end_date?: string }) => {
     const queryParams = new URLSearchParams({
@@ -18,7 +18,7 @@ export const campuscurrentAPI = {
     return {
       queryKey: ["campusCurrent", "events", params],
       queryFn: () => {
-        return apiCall<Types.PaginatedResponse<CampusCurrent.Event, "events">>(
+        return apiCall<Types.PaginatedResponse<Event, "events">>(
           `/` + Routes.EVENTS + `?` + queryParams.toString(),
         );
       },
@@ -28,12 +28,18 @@ export const campuscurrentAPI = {
     return queryOptions({
       queryKey: ["campusCurrent", "event", id],
       queryFn: () => {
-        return apiCall<CampusCurrent.Event>(`/` + Routes.EVENTS + `/${id}`);
+        return apiCall<Event>(`/` + Routes.EVENTS + `/${id}`);
       },
     });
   },
-  editEvent: (id: string, data: CampusCurrent.Event) => {
-    return apiCall<CampusCurrent.Event>(`/` + Routes.EVENTS + `/${id}`, {
+  addEvent: (data: CreateEventData) => {
+    return apiCall<Event>(`/` + Routes.EVENTS, {
+      method: "POST",
+      json: data,
+    });
+  },
+  editEvent: (id: string, data: Event) => {
+    return apiCall<Event>(`/` + Routes.EVENTS + `/${id}`, {
       method: "PUT",
       json: data,
     });

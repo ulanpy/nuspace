@@ -1,27 +1,13 @@
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/atoms/card";
 import { Badge, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
+import { Event } from "@/features/campuscurrent/types/types";
 
-interface Event {
-  id: number;
-  name: string;
-  media?: { url: string }[];
-  rating?: number;
-  club?: {
-    type: string;
-  };
-}
-
-
-export const BaseCard = ({ event }: { event: typeof Types.Event }) => { // Changed type to `typeof Types.Event` for demonstration
+export const BaseCard = ({ event }: { event: Event }) => { 
   const navigate = useNavigate();
   const getEventTypeDisplay = (type: string) => {
     return type.charAt(0).toUpperCase() + type.slice(1);
@@ -31,7 +17,7 @@ export const BaseCard = ({ event }: { event: typeof Types.Event }) => { // Chang
     <Card
       className="overflow-hidden cursor-pointer flex flex-col" 
       onClick={() =>
-        navigate(ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(event.id))
+        navigate(ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(event.id.toString()))
       }
     >
       <div className="aspect-square">
@@ -48,9 +34,9 @@ export const BaseCard = ({ event }: { event: typeof Types.Event }) => { // Chang
         )}
 
         <div className="absolute top-1 left-1 z-10">
-          {event.club?.type && (
+          {event.community?.type && (
             <Badge className={`bg-primary text-primary-foreground text-[10px] px-1 py-0`}>
-              {getEventTypeDisplay(event.club.type)}
+              {getEventTypeDisplay(event.community.type)}
             </Badge>
           )}
         </div>
@@ -62,7 +48,7 @@ export const BaseCard = ({ event }: { event: typeof Types.Event }) => { // Chang
       </div>
       <CardContent className="p-2 flex-grow"> {/* Added flex-grow to ensure content pushes to bottom if space is available */}
         <h3 className="font-medium text-xs line-clamp-1">{event.name}</h3>
-        {/* The club type display was moved to a badge for better consistency with CommunityCard's original look */}
+        {/* The Community type display was moved to a badge for better consistency with CommunityCard's original look */}
         {/* If you specifically want to keep the "members" equivalent text, you can add it back here, but it wasn't explicitly asked for the BaseCard update */}
       </CardContent>
     </Card>

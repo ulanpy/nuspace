@@ -22,7 +22,7 @@ export function EditListingModal() {
     const { currentMediaIndex, setCurrentMediaIndex } = useMediaEditContext();
     const { previewMedia: previewImages, isUploading } = useMediaUploadContext();
     const { isDragging, handleDragOver, handleDragLeave, handleDrop, handleFileSelect } = useMediaSelection();
-    const { handleImageDelete } = useMediaEdit();
+    const { handleMediaDelete } = useMediaEdit();
     const { conditions, categories, handleInputChange, handlePriceInputBlur, handlePriceInputFocus, handleSelectChange } = useProductForm();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const dropZoneRef = React.useRef<HTMLDivElement>(null);
@@ -75,7 +75,7 @@ export function EditListingModal() {
                                 previewImages={previewImages}
                                 currentMediaIndex={currentMediaIndex}
                                 setCurrentMediaIndex={setCurrentMediaIndex}
-                                handleImageDelete={handleImageDelete}
+                                handleImageDelete={handleMediaDelete}
                                 dropZoneRef={dropZoneRef}
                                 isDragging={isDragging}
                                 handleDragOver={handleDragOver}

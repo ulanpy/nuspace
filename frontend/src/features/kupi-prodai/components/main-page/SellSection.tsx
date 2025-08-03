@@ -3,7 +3,7 @@ import { ProductCreateForm } from "@/features/kupi-prodai/components/product-cre
 import { useCreateProduct } from "@/features/kupi-prodai/api/hooks/useCreateProduct";
 import { useListingState } from "@/context/ListingContext";
 import { motion } from "framer-motion";
-import { FloatingElements } from "@/components/animations/FloatingElements";
+import { FloatingElements } from "@/components/organisms/animations/FloatingElements";
 import { AuthenticationGuard } from "@/features/kupi-prodai/components/auth/AuthenticationGuard";
 import { containerVariants, itemVariants } from "@/utils/animationVariants";
 

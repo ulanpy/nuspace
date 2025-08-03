@@ -10,7 +10,7 @@ export const navTabs = [
     path: ROUTES.APPS.CAMPUS_CURRENT.EVENTS,
   },
   {
-    name: "Clubs",
+    name: "Communities",
     path: ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES,
   },
   {

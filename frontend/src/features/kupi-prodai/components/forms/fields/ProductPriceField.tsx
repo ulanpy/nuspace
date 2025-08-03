@@ -1,7 +1,7 @@
 import { Input } from "@/components/atoms/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { DollarSign } from "lucide-react";
-import { AnimatedFormField } from "@/components/animations/AnimatedFormField";
+import { AnimatedFormField } from "@/components/organisms/animations/AnimatedFormField";
 import { useFormAnimations } from "@/hooks/useFormAnimations";
 
 interface ProductPriceFieldProps {

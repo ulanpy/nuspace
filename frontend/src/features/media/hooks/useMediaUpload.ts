@@ -1,10 +1,10 @@
 import { useMediaUploadContext } from "@/context/MediaUploadContext";
 import { useListingState } from "@/context/ListingContext";
 import { compressMedia } from "../utils/compress-media";
-import { UploadMediaOptions } from "../types/upload.types";
+import { UploadMediaOptions } from "../types/types";
 import { getSignedUrls } from "../utils/get-signed-urls";
 import { uploadMedia } from "../utils/upload-media";
-import { SignedUrlResponse } from "../types/signed-url.types";
+import { SignedUrlResponse } from "../types/types";
 
 
 export function useMediaUpload() {

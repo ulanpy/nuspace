@@ -1,5 +1,5 @@
-import { UploadMediaOptions } from "../types/upload.types";
-import { SignedUrlRequest, SignedUrlResponse } from "../types/signed-url.types";
+import { UploadMediaOptions } from "../types/types";
+import { SignedUrlRequest, SignedUrlResponse } from "../types/types";
 import { mediaApi } from "../api/mediaApi";
 
 export const getSignedUrls = async (

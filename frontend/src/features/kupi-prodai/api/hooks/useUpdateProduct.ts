@@ -6,7 +6,7 @@ import { useMediaUploadContext } from "@/context/MediaUploadContext";
 import { useMediaEditContext } from "@/context/MediaEditContext";
 import { useMediaUpload } from "@/features/media/hooks/useMediaUpload";
 import { pollForProductImages } from "@/utils/polling";
-import { EntityType } from "@/features/media/types/media-format.enum";
+import { EntityType, MediaFormat } from "@/features/media/types/types";
 import {useMediaEdit} from "@/features/media/hooks/useMediaEdit"
 import { ProductCategory, ProductCondition, Status } from "@/features/kupi-prodai/types";
 
@@ -131,7 +131,7 @@ export function useUpdateProduct() {
       await handleMediaUpload({
         entity_type: EntityType.products,
         entityId: Number(editingListing.id),
-        mediaFormat: "carousel",
+        mediaFormat: MediaFormat.carousel,
         startOrder,
       });
       pollForProductImages(

@@ -1,39 +1,52 @@
-export {};
+import { Media } from "@/features/media/types/types";
 
-declare global {
-
-namespace CampusCurrent {
-    interface Media {
-      id: number;
-      url: string;
+    export enum CommunityType {
+      club = "club",
+      university = "university",
+      organization = "organization"
     }
-    type ClubType =
-      | "academic"
-      | "professional"
-      | "recreational"
-      | "cultural"
-      | "sports"
-      | "social"
-      | "art"
-      | "technology";
-    interface HeadUser {
+
+    export enum CommunityCategory {
+      academic = "academic",
+      professional = "professional",
+      recreational = "recreational",
+      cultural = "cultural",
+      sports = "sports",
+      social = "social",
+      art = "art",
+      technology = "technology"
+    }
+
+    export enum EventPolicy {
+      all = "all",
+      open = "open",
+      free_ticket = "free_ticket",
+      paid_ticket = "paid_ticket"
+    }
+
+    export enum RecruitmentStatus {
+      open = "open",
+      closed = "closed"
+    }
+
+    export interface HeadUser {
       sub: string;
       name: string;
       surname: string;
       picture: string;
     }
 
-    interface Permissions {
+    export interface Permissions {
       can_edit: boolean;
       can_delete: boolean;
       editable_fields: string[];
     }
-    interface Club {
+    export interface Community {
       id: number;
       name: string;
-      type: ClubType;
-      category: string;
-      recruitment_status: string;
+      type: CommunityType;
+      category: CommunityCategory;
+      recruitment_status: RecruitmentStatus;
       description: string;
       head: string;
       established: string;
@@ -44,12 +57,10 @@ namespace CampusCurrent {
       head_user: HeadUser;
       media: Media[];
       permissions: Permissions;
-      members: number;
-      followers: number;
-      isFollowing: boolean;
+
     }
 
-    interface Tag {
+    export interface Tag {
       id: number;
       community_id: number;
       name: string;
@@ -57,8 +68,12 @@ namespace CampusCurrent {
       updated_at: string;
     }
 
+    export enum Scope {
+      personal = "personal",
+      community = "community"
+    }
 
-    interface Post {
+    export interface Post {
       id: number;
       community_id: number;
       user_sub: string;
@@ -67,7 +82,7 @@ namespace CampusCurrent {
       tag_id?: number;
       created_at: string;
       updated_at: string;
-      from_community: boolean;
+      from_community: Scope;
       media?: Media[];
       user: HeadUser;
       total_comments: number;
@@ -76,14 +91,14 @@ namespace CampusCurrent {
     }
 
     // Post creation request and response types
-    interface CommunityPostRequest {
+    export interface CommunityPostRequest {
       community_id: number;
       title: string;
       description: string;
       tag_id?: number;
     }
 
-    interface CommunityPostResponse {
+    export interface CommunityPostResponse {
       id: number;
       community_id: number;
       user_sub: string;
@@ -100,26 +115,66 @@ namespace CampusCurrent {
       permissions: Permissions;
     }
 
-    interface ListCommunityPostResponse {
+    export interface ListCommunityPostResponse {
       posts: Post[];
       num_of_pages: number;
     }
     
-    type EventPolicy = "all" | "open" | "free_ticket" | "paid_ticket";
-    interface Event {
+
+    export enum EventStatus {
+      approved = "approved",
+      pending = "pending",
+      rejected = "rejected",
+      cancelled = "cancelled"
+    }
+    
+    export enum EventTag {
+      featured = "featured",
+      promotional = "promotional",
+      regular = "regular",
+      charity = "charity"
+    }
+    
+    export enum EventType {
+      academic = "academic",
+      professional = "professional",
+      recreational = "recreational",
+      cultural = "cultural",
+      sports = "sports",
+      social = "social",
+      art = "art"
+    }
+
+    export interface Event {
       id: number;
-      club_id: number;
+      community_id: number;
+      creator_sub: string;
+      policy: EventPolicy;
       name: string;
       place: string;
+      event_datetime: string;
       description: string;
       duration: number;
-      event_datetime: string;
-      policy: EventPolicy;
+      scope: Scope;
+      type: EventType;
+      status: EventStatus;
+      tag: EventTag;
       created_at: string;
       updated_at: string;
       media: Media[];
-      club?: Club;
-      rating?: number; // Mock rating for UI
+      community?: Community;
+      creator?: HeadUser;
+      permissions?: Permissions;
     }
-  }
-}
+
+    export interface CreateEventData {
+      community_id?: number;
+      creator_sub: string;
+      policy: EventPolicy;
+      name: string;
+      place: string;
+      event_datetime: string;
+      description: string;
+      duration: number;
+      type: EventType;
+    }

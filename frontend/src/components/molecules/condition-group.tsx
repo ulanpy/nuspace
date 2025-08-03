@@ -1,5 +1,24 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useTheme } from "../../context/ThemeProviderContext";
+import { useTheme } from "@/context/ThemeProviderContext";
+/**
+ * ConditionGroup Component
+ * 
+ * A reusable component that renders a horizontally scrollable group of condition/category filter buttons.
+ * Used for filtering items (e.g. communities, products) by their condition or category.
+ *
+ * @component
+ * @param {Object} props
+ * @param {string[]} props.conditions - Array of condition/category options to display as buttons
+ * @param {string} props.selectedCondition - Currently selected condition/category
+ * @param {function} props.setSelectedCondition - Callback function to update selected condition
+ *
+ * Features:
+ * - Responsive horizontal scrolling with hidden scrollbar
+ * - URL parameter syncing for condition filter
+ * - Theme-aware styling (light/dark mode)
+ * - Hover and active states with smooth transitions
+ * - Maintains filter state across navigation
+ */
 
 export function ConditionGroup({
   conditions,

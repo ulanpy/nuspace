@@ -7,8 +7,11 @@ import {
 import { EventCard } from "@/features/campuscurrent/components/EventCard";
 import { Pagination } from "@/components/molecules/pagination";
 import { useEvents } from "@/features/campuscurrent/hooks/events/useEvents";
+import { Event } from "@/features/campuscurrent/types/types";
 import { useState } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, Plus } from "lucide-react";
+import { Button } from "@/components/atoms/button";
+import { EventModalProvider } from "@/features/campuscurrent/components/EventModalProvider";
 
 const EventsGrid = ({
   isLoading,
@@ -17,7 +20,7 @@ const EventsGrid = ({
 }: {
   isLoading: boolean;
   isError: boolean;
-  events: Types.PaginatedResponse<CampusCurrent.Event, "events"> | null;
+  events: Types.PaginatedResponse<Event, "events"> | null;
 }) => {
   if (isLoading) {
     return <div>Loading...</div>;
@@ -54,6 +57,7 @@ export default function Events() {
     start_date?: string;
     end_date?: string;
   }>({});
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const { events, isLoading, isError } = useEvents(dateFilter);
 
@@ -94,6 +98,15 @@ export default function Events() {
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-grow">
+        {/* Header with Create Event Button */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Events</h1>
+          <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Create Event
+          </Button>
+        </div>
+
         <Tabs
           value={activeTab}
           className="mb-6"
@@ -143,6 +156,12 @@ export default function Events() {
           />
         )}
       </main>
+
+      {/* Create Event Modal */}
+      <EventModalProvider
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
     </div>
   );
 }

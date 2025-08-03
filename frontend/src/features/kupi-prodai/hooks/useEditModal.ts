@@ -29,7 +29,7 @@ export const useEditModal = () => {
     setOriginalMedia(product.media.map((media) => ({
       id: media.id,
       url: media.url,      
-      order: media.order,
+      order: media.media_order.toString(),
     })));
     setCurrentMediaIndex(0);
     setShowEditModal(true);

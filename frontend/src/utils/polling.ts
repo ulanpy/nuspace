@@ -71,3 +71,32 @@ export const pollForProductImages = (
     },
   });
 };
+
+export const pollForEventImages = (
+  eventId: number,
+  queryClient: QueryClient,
+  apiBaseKey: string,
+  getEventQueryOptions: (id: string) => any,
+) => {
+  return pollWithExponentialBackoff({
+    checkFn: async () => {
+      const eventQuery = getEventQueryOptions(eventId.toString());
+      const event = await eventQuery.queryFn();
+      if (event?.media?.length > 0) {
+        return event;
+      }
+      return null;
+    },
+    onSuccess: (event) => {
+      queryClient.invalidateQueries({
+        queryKey: [apiBaseKey, "events"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [apiBaseKey, "event", eventId.toString()],
+      });
+    },
+    onError: (error) => {
+      console.error("Error checking event images:", error);
+    },
+  });
+};

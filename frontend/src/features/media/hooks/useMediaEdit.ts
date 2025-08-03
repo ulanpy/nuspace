@@ -37,7 +37,7 @@ export const useMediaEdit = () => {
     }
   };
 
-  const handleImageDelete = () => {
+  const handleMediaDelete = () => {
     const mediaToRemove = originalMedia.find(
         (m) =>
             m.url ===
@@ -71,6 +71,6 @@ export const useMediaEdit = () => {
 };
   return {
     deleteExistingMedia,
-    handleImageDelete,
+    handleMediaDelete,
   };
 };

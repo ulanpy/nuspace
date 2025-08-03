@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { Label } from "../atoms/label";
+import { motion } from "framer-motion";
+import { Label } from "../../atoms/label";
 import { ReactNode } from "react";
 
 interface AnimatedFormFieldProps {
@@ -7,8 +7,6 @@ interface AnimatedFormFieldProps {
   icon: ReactNode;
   fieldName: string;
   isFocused: boolean;
-  onFocus: () => void;
-  onBlur: () => void;
   children: ReactNode;
   showFocusIndicator?: boolean;
   focusColor?: string;
@@ -20,8 +18,6 @@ export function AnimatedFormField({
   icon,
   fieldName,
   isFocused,
-  onFocus,
-  onBlur,
   children,
   showFocusIndicator = true,
   focusColor = "primary",

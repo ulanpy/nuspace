@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Users,
   Calendar,
@@ -12,46 +12,41 @@ import {
   Plus,
   InstagramIcon,
 } from "lucide-react";
-import { Button } from "../../../../components/atoms/button";
-import { Badge } from "../../../../components/atoms/badge";
-import { Card, CardContent } from "../../../../components/atoms/card";
+import { Button } from "@/components/atoms/button";
+import { Badge } from "@/components/atoms/badge";
+import { Card, CardContent } from "@/components/atoms/card";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "../../../../components/atoms/tabs";
-import { useToast } from "../../../../hooks/use-toast";
-import { useUser } from "../../../../hooks/use-user";
-import { LoginModal } from "../../../../components/molecules/login-modal";
+} from "@/components/atoms/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/hooks/use-user";
+import { LoginModal } from "@/components/molecules/login-modal";
 import { useCommunity } from "@/features/campuscurrent/hooks/communities/use-community";
 import { EditCommunityModal } from "@/features/campuscurrent/components/EditCommunity";
-import { CreateEventModal } from "@/features/campuscurrent/components/CreateEvent";
 import { ROUTES } from "@/data/routes";
+import { Event } from "@/features/campuscurrent/types/types";
+import { Community } from "@/features/campuscurrent/types/types";
 
 
-// Helper function to get club type display text
-const getClubTypeDisplay = (type: string) => {
+// Helper function to get community type display text
+const getCommunityTypeDisplay = (type: string) => {
   return type.charAt(0).toUpperCase() + type.slice(1);
 };
 
-export default function ClubDetailPage() {
-  const { id } = useParams<{ id: string }>();
+export default function CommunityDetailPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useUser();
 
-  // Navigation tabs
-  const navTabs = [
-    { name: "Home", path: ROUTES.APPS.CAMPUS_CURRENT.ROOT },
-    { name: "Events", path: ROUTES.APPS.CAMPUS_CURRENT.EVENTS },
-    { name: "Clubs", path: ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES },
-  ];
 
-  const { club, isLoading } = useCommunity();
+
+  const { community, isLoading } = useCommunity();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [clubEvents, setClubEvents] = useState<CampusCurrent.Event[]>([]);
+  const [communityEvents] = useState<Event[]>([]);
   const [activeTab, setActiveTab] = useState("about");
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
@@ -75,15 +70,15 @@ export default function ClubDetailPage() {
     toast({
       title: isFollowing ? "Unfollowed" : "Following",
       description: isFollowing
-        ? `You unfollowed ${club?.name}`
-        : `You are now following ${club?.name}`,
+        ? `You unfollowed ${community?.name}`
+        : `You are now following ${community?.name}`,
     });
 
     // In a real app, you would make an API call here
   };
 
-  // Handle join club
-  const handleJoinClub = () => {
+  // Handle join community
+  const handleJoinCommunity = () => {
     if (!user) {
       setPendingAction("join");
       setShowLoginModal(true);
@@ -93,7 +88,7 @@ export default function ClubDetailPage() {
     // Show toast
     toast({
       title: "Request Sent",
-      description: `Your request to join ${club?.name} has been sent.`,
+      description: `Your request to join ${community?.name} has been sent.`,
     });
 
     // In a real app, you would make an API call here
@@ -105,7 +100,7 @@ export default function ClubDetailPage() {
     if (pendingAction === "follow") {
       handleFollowToggle();
     } else if (pendingAction === "join") {
-      handleJoinClub();
+      handleJoinCommunity();
     }
     setPendingAction(null);
   };
@@ -122,12 +117,12 @@ export default function ClubDetailPage() {
     );
   }
 
-  if (!club) {
+  if (!community) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-xl font-bold">Club not found</h2>
+        <h2 className="text-xl font-bold">Community not found</h2>
         <p className="text-muted-foreground mt-2">
-          The club you're looking for doesn't exist or has been removed.
+          The community you're looking for doesn't exist or has been removed.
         </p>
       </div>
     );
@@ -135,14 +130,14 @@ export default function ClubDetailPage() {
   
   return (
     <>
-      {/* Club Header */}
+      {/* Community Header */}
       <div className="relative">
         {/* Banner */}
         <div className="h-40 bg-gradient-to-r from-primary/80 to-primary/30 rounded-md overflow-hidden">
-          {club.media && club.media.length > 1 && (
+          {community.media && community.media.length > 1 && (
             <img
-              src={club.media[1].url || "/placeholder.svg"}
-              alt={`${club.name} banner`}
+              src={community.media[1].url || "/placeholder.svg"}
+              alt={`${community.name} banner`}
               className="w-full h-full object-cover opacity-30"
             />
           )}
@@ -151,10 +146,10 @@ export default function ClubDetailPage() {
         {/* Profile picture */}
         <div className="absolute -bottom-10 left-4">
           <div className="h-20 w-20 rounded-full overflow-hidden border-4 border-background bg-muted">
-            {club.media && club.media.length > 0 ? (
+            {community.media && community.media.length > 0 ? (
               <img
-                src={club.media[0].url || "/placeholder.svg"}
-                alt={club.name}
+                src={community.media[0].url || "/placeholder.svg"}
+                alt={community.name}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -165,16 +160,16 @@ export default function ClubDetailPage() {
           </div>
         </div>
 
-        {/* Club type badge */}
+        {/* Community type badge */}
         <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground">
-          {getClubTypeDisplay(club.type)}
+          {getCommunityTypeDisplay(community.type)}
         </Badge>
       </div>
 
-      {/* Club Info */}
+      {/* Community Info */}
       <div className="pt-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{club.name}</h1>
+          <h1 className="text-2xl font-bold">{community.name}</h1>
           <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
             <div className="flex items-center">
               <Users className="h-3 w-3 mr-1" />
@@ -195,10 +190,10 @@ export default function ClubDetailPage() {
           </Button>
           {isEditModalOpen && (
             <EditCommunityModal
-              club={club}
-              onSave={(updatedClub: CampusCurrent.Club) => {
-                // need to refetch the club
-                console.log("Updated Club:", updatedClub);
+              community={community}
+              onSave={(updatedCommunity: Community) => {
+                // need to refetch the community
+                console.log("Updated Community:", updatedCommunity);
               }}
               onClose={() => setIsEditModalOpen(false)}
             />
@@ -214,16 +209,16 @@ export default function ClubDetailPage() {
           <Button
             variant="default"
             size="sm"
-            onClick={handleJoinClub}
+            onClick={handleJoinCommunity}
             className="text-xs h-8"
           >
-            Join Club
+            Join Community
           </Button>
         </div>
       </div>
           
 
-      {/* Club Content */}
+      {/* Community Content */}
       <Tabs
         defaultValue="about"
         value={activeTab}
@@ -232,7 +227,7 @@ export default function ClubDetailPage() {
       >
         <div>
             <h2 className="text-xl font-semibold mb-2">About Us</h2>
-            <p className="text-md text-muted-foreground">{club.description}</p>
+            <p className="text-md text-muted-foreground">{community.description}</p>
           </div>
 
           <div>
@@ -241,12 +236,12 @@ export default function ClubDetailPage() {
               <div className="flex items-center gap-2 text-sm">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <span>
-                  President: {club.head_user.name} {club.head_user.surname}
+                  President: {community.head_user.name} {community.head_user.surname}
                 </span>
               </div>
-              {club.instagram_url && (
+              {community.instagram_url && (
                 <a
-                  href={club.instagram_url}
+                  href={community.instagram_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm text-primary hover:underline"
@@ -256,9 +251,9 @@ export default function ClubDetailPage() {
                   <ExternalLink className="h-3 w-3" />
                 </a>
               )}
-              {club.telegram_url && (
+              {community.telegram_url && (
                 <a
-                  href={club.telegram_url}
+                  href={community.telegram_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm text-primary hover:underline"
@@ -282,9 +277,9 @@ export default function ClubDetailPage() {
         </TabsContent>
 
         <TabsContent value="events" className="pt-4">
-          {clubEvents.length > 0 ? (
+          {communityEvents.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {clubEvents.map((event) => (
+              {communityEvents.map((event) => (
                 <Card
                   key={event.id}
                   className="overflow-hidden cursor-pointer"
@@ -319,7 +314,7 @@ export default function ClubDetailPage() {
               <Calendar className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
               <h3 className="text-base font-medium">No upcoming events</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                This club doesn't have any scheduled events.
+                This community doesn't have any scheduled events.
               </p>
               <Button
                 variant="outline"
@@ -331,7 +326,7 @@ export default function ClubDetailPage() {
               <CreateEventModal
                 isOpen={isCreateModalOpen}
                 onSave={(newEvent: CampusCurrent.Event) => {
-                  setClubEvents([...clubEvents, newEvent]); // saving the new event to the club events
+                  setCommunityEvents([...communityEvents, newEvent]); // saving the new event to the community events
                 }}
                 onClose={() => setIsCreateModalOpen(false)}
               />
@@ -343,16 +338,16 @@ export default function ClubDetailPage() {
         </TabsContent>
 
         <TabsContent value="gallery" className="pt-4">
-          {club.media && club.media.length > 0 ? (
+          {community.media && community.media.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {club.media.map((media, index) => (
+              {community.media.map((media, index) => (
                 <div
                   key={index}
                   className="aspect-square rounded-md overflow-hidden"
                 >
                   <img
                     src={media.url || "/placeholder.svg"}
-                    alt={`${club.name} gallery ${index + 1}`}
+                    alt={`${community.name} gallery ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -362,7 +357,7 @@ export default function ClubDetailPage() {
             <div className="text-center py-8">
               <h3 className="text-base font-medium">No gallery images</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                This club hasn't uploaded any gallery images yet.
+                This community hasn't uploaded any gallery images yet.
               </p>
             </div>
           )}
@@ -377,8 +372,8 @@ export default function ClubDetailPage() {
         title="Login Required"
         message={
           pendingAction === "follow"
-            ? "You need to be logged in to follow clubs."
-            : "You need to be logged in to join clubs."
+            ? "You need to be logged in to follow communities."
+            : "You need to be logged in to join communities."
         }
       />
     </>

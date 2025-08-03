@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Card } from "../atoms/card";
+import { Card } from "../../atoms/card";
 import { ReactNode } from "react";
 
 interface AnimatedCardProps {

@@ -9,31 +9,25 @@ import {
 } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
 import { Button } from "@/components/atoms/button";
-import { Event } from "@/features/campuscurrent/types";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { addToGoogleCalendar } from "@/features/campuscurrent/utils/calendar";
+import { Event } from "@/features/campuscurrent/types/types";
 
 interface EventCardProps extends Event {}
 
 export function EventCard(props: EventCardProps) {
     const { 
     id,
-    community_id,
     name, 
     event_datetime, 
     place, 
     policy, 
     media,
-    club,
-    creator,
-    permissions,
     type,
     status,
     tag,
-    created_at,
-    updated_at,
  } = props;
 
   const { user } = useUser();
@@ -62,54 +56,111 @@ export function EventCard(props: EventCardProps) {
     }
   };
 
+  // Helper function to get policy display text
+  const getPolicyDisplay = (policy: string) => {
+    switch (policy) {
+      case "open":
+        return "Open Entry";
+      case "free_ticket":
+        return "Free Ticket";
+      case "paid_ticket":
+        return "Paid Ticket";
+      default:
+        return policy;
+    }
+  };
+
+  // Helper function to get policy badge color
+  const getPolicyColor = (policy: string) => {
+    switch (policy) {
+      case "open":
+        return "bg-green-500";
+      case "free_ticket":
+        return "bg-blue-500";
+      case "paid_ticket":
+        return "bg-amber-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
   return (
     <>
       <Card className="hover:shadow-md transition-shadow">
         <Link to={`/apps/campuscurrent/event/${id}`}>
-          <div className="aspect-video relative overflow-hidden">
+          <div className="aspect-video relative overflow-hidden rounded-t-lg">
             <img
               src={media[0]?.url || "/placeholder.svg"}
               alt={name}
               className="object-cover w-full h-full"
             />
-            <Badge className="absolute top-2 right-2 bg-nublue hover:bg-nublue-600">
-              {policy}
-            </Badge>
+            {/* Profile image overlay */}
+            <div className="absolute bottom-2 right-2">
+              {props.scope === "personal" && props.creator?.picture && (
+                <img
+                  src={props.creator.picture}
+                  alt={`${props.creator.name} ${props.creator.surname}`}
+                  className="w-8 h-8 rounded-full border-2 border-white shadow-md object-cover"
+                />
+              )}
+              {props.scope === "community" && props.community?.media && (
+                (() => {
+                  const profileMedia = props.community.media.find(
+                    (media) => 
+                      media.entity_type === "communities" && 
+                      media.media_format === "profile"
+                  );
+                  return profileMedia ? (
+                    <img
+                      src={profileMedia.url}
+                      alt={props.community.name}
+                      className="w-8 h-8 rounded-full border-2 border-white shadow-md object-cover"
+                    />
+                  ) : null;
+                })()
+              )}
+            </div>
           </div>
         </Link>
-        <CardHeader className="p-4 pb-0">
+        <CardHeader className="p-4 pb-2">
+          <div className="flex flex-wrap gap-1 mb-2">
+            <Badge className={`${getPolicyColor(policy)} text-white text-xs`}>
+              {getPolicyDisplay(policy)}
+            </Badge>
+            <Badge className="bg-gray-500 text-white text-xs">{type}</Badge>
+            <Badge className="bg-blue-500 text-white text-xs">{tag}</Badge>
+            <Badge className="bg-yellow-500 text-white text-xs">{status}</Badge>
+          </div>
           <Link
             to={`/apps/campuscurrent/event/${id}`}
             className="hover:underline"
           >
             <h3 className="text-lg font-semibold line-clamp-2">{name}</h3>
           </Link>
-          <Link
-            to={`/apps/campuscurrent/community/${club?.id}`}
-            className="text-sm text-muted-foreground hover:text-primary"
-          >
-            {props.scope === "community" ? `by ${club?.name}` : `by ${props.creator?.name} ${props.creator?.surname}`}
-          </Link>
+          <div className="text-sm text-muted-foreground">
+            {props.scope === "community" 
+              ? `by ${props.community?.name || 'Unknown Community'}` 
+              : `by ${props.creator?.name} ${props.creator?.surname}`}
+          </div>
         </CardHeader>
-        <CardContent className="p-4 pt-2 space-y-2">
+        <CardContent className="p-4 pt-0 space-y-2">
           <div className="flex items-center text-sm text-muted-foreground">
-            <Calendar className="mr-2 h-4 w-4" />
+            <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
             <span>{new Date(event_datetime).toLocaleDateString()}</span>
           </div>
           <div className="flex items-center text-sm text-muted-foreground">
-            <MapPin className="mr-2 h-4 w-4" />
+            <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
             <span className="truncate">{place}</span>
           </div>
           <div className="flex items-center text-sm text-muted-foreground">
-            <Users className="mr-2 h-4 w-4" />
+            <Users className="mr-2 h-4 w-4 flex-shrink-0" />
             <span>{props.duration} minutes</span>
           </div>
         </CardContent>
-        <CardFooter className="p-4 pt-0 flex justify-between">
-          <Button variant="outline" size="sm" onClick={handleAddToCalendar}>
+        <CardFooter className="p-4 pt-0">
+          <Button variant="outline" size="sm" onClick={handleAddToCalendar} className="w-full">
             Add to Calendar
           </Button>
-          {/* <Button size="sm">I'm attending</Button> */}
         </CardFooter>
       </Card>
       <LoginModal

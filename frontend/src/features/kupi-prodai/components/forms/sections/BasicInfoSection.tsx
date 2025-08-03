@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import { ProductNameField } from "../fields/ProductNameField";
-import { ProductDescriptionField } from "../fields/ProductDescriptionField";
-import { ProductPriceField } from "../fields/ProductPriceField";
-import { ProductCategoryField } from "../fields/ProductCategoryField";
-import { ProductConditionField } from "../fields/ProductConditionField";
+import { ProductNameField } from "@/features/kupi-prodai/components/forms/fields/ProductNameField";
+import { ProductDescriptionField } from "@/features/kupi-prodai/components/forms/fields/ProductDescriptionField";
+import { ProductPriceField } from "@/features/kupi-prodai/components/forms/fields/ProductPriceField";
+import { ProductCategoryField } from "@/features/kupi-prodai/components/forms/fields/ProductCategoryField";
+import { ProductConditionField } from "@/features/kupi-prodai/components/forms/fields/ProductConditionField";
 import { containerVariants, fieldVariants } from "@/utils/animationVariants";
 
 interface BasicInfoSectionProps {

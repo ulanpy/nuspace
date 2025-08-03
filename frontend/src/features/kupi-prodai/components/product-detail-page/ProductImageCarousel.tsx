@@ -2,11 +2,11 @@
 
 import { Button } from "@/components/atoms/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { ProductMedia } from "@/features/kupi-prodai/types";
+import { Media } from "@/features/media/types/types";
 
 interface ProductImageCarouselProps {
     productName: string;
-    media: ProductMedia[];
+    media: Media[];
     currentImageIndex: number;
     setCurrentImageIndex: (index: number) => void;
     openImageModal: () => void;

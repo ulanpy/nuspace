@@ -2,7 +2,7 @@
 import { motion } from "framer-motion";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/atoms/card";
 import { MessageCircle } from "lucide-react";
-import { AnimatedCard } from "@/components/animations/AnimatedCard";
+import { AnimatedCard } from "@/components/organisms/animations/AnimatedCard";
 import { itemVariants } from "@/utils/animationVariants";
 
 export function TelegramPromptCard() {

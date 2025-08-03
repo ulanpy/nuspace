@@ -2,15 +2,16 @@ import { Badge } from "@/components/atoms/badge";
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
 import { Dispatch, SetStateAction } from "react";
+import { EventPolicy } from "@/features/campuscurrent/types/types";
 
 export function FilterCard({
   eventPolicies,
   selectedPolicy,
   setSelectedPolicy,
 }: {
-  eventPolicies: CampusCurrent.EventPolicy[];
-  selectedPolicy: SetStateAction<CampusCurrent.EventPolicy | null>;
-  setSelectedPolicy: Dispatch<SetStateAction<CampusCurrent.EventPolicy | null>>;
+  eventPolicies: EventPolicy[];
+  selectedPolicy: SetStateAction<EventPolicy | null>;
+  setSelectedPolicy: Dispatch<SetStateAction<EventPolicy | null>>;
 }) {
   return (
     <Card className="p-3">

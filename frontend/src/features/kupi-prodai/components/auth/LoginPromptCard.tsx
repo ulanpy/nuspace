@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/atoms/card";
 import { Button } from "@/components/atoms/button";
 import { User, Sparkles } from "lucide-react";
-import { AnimatedCard } from "@/components/animations/AnimatedCard";
+import { AnimatedCard } from "@/components/organisms/animations/AnimatedCard";
 import { itemVariants } from "@/utils/animationVariants";
 
 interface LoginPromptCardProps {

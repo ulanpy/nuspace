@@ -1,35 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { ConditionGroup } from "@/components/molecules/condition-group";
-import { clubCategories } from "@/features/campuscurrent/types/clubs/club-categories";
 import { SearchInput } from "@/components/molecules/search-input";
 import { CommunityCard } from "@/features/campuscurrent/components/CommunityCard";
 import { useCommunities } from "@/features/campuscurrent/hooks/communities/use-communities";
-// Helper function to get club type display text
-const getClubCategoryDisplay = (type: string) => {
-  return type.charAt(0).toUpperCase() + type.slice(1);
-};
+import { CommunityCategory } from "@/features/campuscurrent/types/types";
 
-export default function ClubsPage() {
+export default function CommunitiesPage() {
   const { communities, isLoading } = useCommunities();
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [selectedClubCategory, setSelectedClubCategory] = useState<string>("");
-  const [showFilters, setShowFilters] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<{
-    clubId: number;
-    action: () => void;
-  } | null>(null);
+  const [currentPage] = useState(1);
+  const [totalPages] = useState(1);
+  const [selectedCommunityCategory, setSelectedCommunityCategory] = useState<string>("");
+  const [showLoginModal] = useState(false);
 
   // Loading skeleton
-  const ClubSkeleton = () => (
+  const CommunitySkeleton = () => (
     <Card className="overflow-hidden h-full">
       <div className="aspect-square bg-muted animate-pulse" />
       <div className="p-4">
@@ -49,40 +40,40 @@ export default function ClubsPage() {
             setInputValue={setSearchQuery}
             preSearchedProducts={[]}
             handleSearch={() => {}}
-            setSelectedCondition={setSelectedClubCategory}
+            setSelectedCondition={setSelectedCommunityCategory}
           />
         </div>
       </div>
 
       <ConditionGroup
-        conditions={clubCategories}
-        selectedCondition={selectedClubCategory}
-        setSelectedCondition={setSelectedClubCategory}
+        conditions={Object.values(CommunityCategory)}
+        selectedCondition={selectedCommunityCategory}
+        setSelectedCondition={setSelectedCommunityCategory}
       />
 
-      {/* Clubs Grid */}
+      {/* Communities Grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, index) => (
-            <ClubSkeleton key={index} />
+            <CommunitySkeleton key={index} />
           ))}
         </div>
       ) : communities?.communities.length || 0 > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {communities?.communities.map((club) => (
-            <CommunityCard key={club.id} club={club} />
+          {communities?.communities.map((community) => (
+            <CommunityCard key={community.id} community={community} />
           ))}
         </div>
       ) : (
         <div className="text-center py-12">
           <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No clubs found</h3>
+          <h3 className="text-lg font-medium mb-2">No communities found</h3>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
             {searchQuery
-              ? "No clubs match your search criteria. Try a different search term."
-              : selectedClubCategory
-              ? `No ${selectedClubCategory} clubs found. Try a different filter.`
-              : "There are no clubs available at the moment."}
+              ? "No communities match your search criteria. Try a different search term."
+              : selectedCommunityCategory
+              ? `No ${selectedCommunityCategory} communities found. Try a different filter.`
+              : "There are no communities available at the moment."}
           </p>
         </div>
       )}
@@ -118,7 +109,7 @@ export default function ClubsPage() {
         onClose={() => {}}
         onSuccess={() => {}}
         title="Login Required"
-        message="You need to be logged in to follow clubs."
+        message="You need to be logged in to follow communities."
       />
     </>
   );

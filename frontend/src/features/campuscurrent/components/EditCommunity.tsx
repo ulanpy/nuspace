@@ -14,32 +14,32 @@ import {Select,
         SelectTrigger, 
         SelectValue } from "@/components/atoms/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/popover";
-import { clubTypes } from "@/features/campuscurrent/types/clubs/club-types";
-import { clubCategories } from "@/features/campuscurrent/types/clubs/club-categories";
+import { CommunityCategory, CommunityType } from "@/features/campuscurrent/types/types";
+import { Community } from "@/features/campuscurrent/types/types";
 // import { useImage } from "@/modules/kupi-prodai/hooks/use-image";
 import { useEditCommunity } from "@/features/campuscurrent/hooks/communities/use-edit-community";
-import { clubStatus } from "@/features/campuscurrent/types/clubs/club-status";
+import { RecruitmentStatus } from "@/features/campuscurrent/types/types";
 import { Calendar as CalendarComponent } from "../../../components/atoms/calendar";
 import { Textarea } from "../../../components/atoms/textarea";
 import { toast } from "../../../components/atoms/sonner";
-
+import { useMediaEdit } from "@/features/media/hooks/useMediaEdit";
 interface EditCommunityModalProps {
   onClose: () => void;
-  club: CampusCurrent.Club;
-  onSave: (club: CampusCurrent.Club) => void;
+  community: Community;
+  onSave: (community: Community) => void;
 }
 
 {/* Edit Community Modal */}
 export function EditCommunityModal({
-  club, 
+  community, 
   onSave, 
   onClose
 }: EditCommunityModalProps) {
-  const [editForm, setEditForm] = useState(club);
+  const [editForm, setEditForm] = useState(community);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const fileInputRefProfile = useRef<HTMLInputElement>(null);
   const fileInputRefBanner = useRef<HTMLInputElement>(null);
-  // const {handleImageUpload, handleDeleteImage} = useImage();
+  const { handleMediaUpload, handleDeleteImage } = useMediaEdit();
   const { mutate: editCommunity, isPending } = useEditCommunity();
 
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -59,10 +59,10 @@ export function EditCommunityModal({
     {
       onSuccess: () => {
         onClose();
-        toast({ title: "Club updated!" });
+        toast.success("Community updated!");
       },
       onError: (error: any) => {
-        toast({ title: "Error", description: error });
+        toast.error(error);
       }
     });
   };
@@ -80,9 +80,9 @@ export function EditCommunityModal({
         <div className="flex items-center gap-4">
           <div className="h-20 w-20 rounded-full overflow-hidden 
                           border-4 border-background bg-muted flex items-center justify-center">
-            {club.media && club.media.length > 0 ? ( <img
-              src={club.media[0].url || "/placeholder.svg"}
-              alt={club.name}
+            {community.media && community.media.length > 0 ? ( <img
+              src={community.media[0].url || "/placeholder.svg"}
+              alt={community.name}
               className="w-full h-full object-cover"
             />) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -101,12 +101,12 @@ export function EditCommunityModal({
                 required
                 accept="image/*"
                 multiple
-                onChange={handleImageUpload}
+                onChange={handleMediaUpload}
               />
               <Button className="h-8 px-2 text-xs" 
                       onClick={() => fileInputRefProfile.current?.click()}>Change Image</Button>
               <Button variant="ghost" size="icon" className="h-8 w-8 bg-black hover:bg-black/80">
-                <Trash2 className="h-4 w-4 text-white" onClick={() => handleDeleteImage(club.media[0].id)}  />
+                <Trash2 className="h-4 w-4 text-white" onClick={() => handleDeleteImage(community.media[0].id)}  />
               </Button>
             </div>
           </div>
@@ -116,10 +116,10 @@ export function EditCommunityModal({
           <div className="h-20 bg-gradient-to-r from-primary/80 to-primary/30 w-20 
                           aspect-square rounded-lg overflow-hidden border-4 border-background  
                           bg-muted flex items-center justify-center">
-            {club.media && club.media.length > 1 && (
+            {community.media && community.media.length > 1 && (
             <img
-              src={club.media[1].url || "/placeholder.svg"}
-              alt={`${club.name} banner`}
+              src={community.media[1].url || "/placeholder.svg"}
+              alt={`${community.name} banner`}
               className="w-full h-full object-cover"
             />
           )}
@@ -135,19 +135,19 @@ export function EditCommunityModal({
                 required
                 accept="image/*"
                 multiple
-                onChange={handleImageUpload}
+                onChange={handleMediaUpload}
               />
               <Button className ="h-8 px-2 text-xs"
                       onClick={() => fileInputRefBanner.current?.click()}>Change Image</Button>
               <Button variant="ghost" size="icon" className="h-8 w-8 bg-black hover:bg-black/80">
-                <Trash2 className="h-4 w-4 text-white" onClick={() => handleDeleteImage(club.media[1].id)} />
+                <Trash2 className="h-4 w-4 text-white" onClick={() => handleDeleteImage(community.media[1].id)} />
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-        {/* Editing Club Info */}
+        {/* Editing Community Info */}
     <div className="grid grid-cols-2 gap-4">
     <div>
       <Label htmlFor="name">Name</Label>
@@ -160,7 +160,7 @@ export function EditCommunityModal({
           <SelectValue placeholder="Select Type" />
         </SelectTrigger>
         <SelectContent className="z-[150]">
-          {clubTypes.map((type) => (
+          {CommunityType.map((type) => (
         <SelectItem key={type} value={type.toLowerCase()}>
           {type}
         </SelectItem>
@@ -175,7 +175,7 @@ export function EditCommunityModal({
           <SelectValue placeholder="Select Category" />
         </SelectTrigger>
         <SelectContent className="z-[150]">
-            {clubCategories.map((category) => (
+            {Object.values(CommunityCategory).map((category) => (
               <SelectItem key={category} value={category.toLowerCase()}>
                 {category} 
               </SelectItem>
@@ -190,7 +190,7 @@ export function EditCommunityModal({
           <SelectValue placeholder="Select Status" />
         </SelectTrigger>
         <SelectContent className="z-[150]">
-            {clubStatus.map((recruitment_status: string) => (
+            {Object.values(RecruitmentStatus).map((recruitment_status: string) => (
               <SelectItem key={recruitment_status} value={recruitment_status.toLowerCase()}>
                 {recruitment_status} 
               </SelectItem>

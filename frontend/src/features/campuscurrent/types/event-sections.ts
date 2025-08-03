@@ -1,12 +1,4 @@
-import {
-  academicEvents,
-  culturalEvents,
-  featuredEvents,
-  socialEvents,
-  sportsEvents,
-  todayEvents,
-} from "./mock-events-data";
-import { ROUTES } from "../../../../data/routes";
+import { ROUTES } from "@/data/routes";
 
 export const eventSections = [
   {

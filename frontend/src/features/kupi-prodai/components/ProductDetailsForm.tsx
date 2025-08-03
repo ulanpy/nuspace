@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { NewProductRequest } from "@/features/kupi-prodai/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tag, DollarSign, Package, Zap, FileText } from "lucide-react";
-import { AnimatedFormField } from "@/components/animations/AnimatedFormField";
+import { AnimatedFormField } from "@/components/organisms/animations/AnimatedFormField";
 import { useFormAnimations } from "@/hooks/useFormAnimations";
 import { containerVariants, fieldVariants } from "@/utils/animationVariants";
 

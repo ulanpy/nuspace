@@ -1,6 +1,4 @@
-import { Event } from "@/features/campuscurrent/types";
-
-export const addToGoogleCalendar = (event: Event) => {
+export const addToGoogleCalendar = (event: CampusCurrent.Event) => {
   const eventDate = new Date(event.event_datetime);
   const endDate = new Date(eventDate.getTime() + event.duration * 60000);
 

@@ -3,35 +3,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { ROUTES } from "@/data/routes";
-
 import { LoginModal } from "@/components/molecules/login-modal";
-import { SliderContainer } from "@/components/molecules/slider-container";
-import { GeneralSection } from "@/components/molecules/general-section";
 import { Button } from "@/components/atoms/button";
 import Footer from "@/components/molecules/footer";
 
 
-import { EventCard } from "@/features/campuscurrent/components/EventCard";
-import {
-  mockClubs,
-  mockEvents,
-} from "@/features/campuscurrent/types/events/mock-events-data";
-import { useCommunities } from "@/features/campuscurrent/hooks/communities/use-communities";
-import { eventSections } from "@/features/campuscurrent/types/events/event-sections";
-import { CommunityCard } from "@/features/campuscurrent/components/CommunityCard";
-// import { BaseCard } from "@/features/campuscurrent/components/BaseCard";
 
 // Main component
 export default function NUEventsPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const navigate = useNavigate();
 
-  const [selectedCategory, setSelectedCategory] = useState<
-    CampusCurrent.ClubType | ""
-  >("");
-  const [selectedPolicy, setSelectedPolicy] = useState<string>("all");
-  const { setKeyword } = useCommunities();
+
 
   return (
     <>
@@ -44,7 +27,7 @@ export default function NUEventsPage() {
                 Discover NU Campus Life
               </h1>
               <p className="text-lg md:text-xl text-white/90">
-                Find events, join clubs, and connect with the Nazarbayev
+                Find events, join communities, and connect with the Nazarbayev
                 University community.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -63,7 +46,7 @@ export default function NUEventsPage() {
                   onClick={() => navigate("communities")}
                   className="border-whitebg-yellow-500 text-black hover:bg-white/10"
                 >
-                  <Button>Discover Clubs</Button>
+                  <Button>Discover Communities</Button>
                 </Button>
               </div>
             </div>
@@ -80,37 +63,19 @@ export default function NUEventsPage() {
         </div>
       </section>
 
-      {/* Popular clubs section */}
-      <GeneralSection
-        title="Popular Clubs"
-        link={ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES}
-      >
-        {mockClubs.slice(0, 4).map((club) => (
-          <CommunityCard key={club.id} club={club} />
-        ))}
-      </GeneralSection>
-      {eventSections.map((section) => (
-        <div key={section.title} className="mt-4">
-          <SliderContainer title={section.title} link={section.link}>
-            {mockEvents.map((event) => (
-              <EventCard key={event.id} {...event} />
-            ))}
-          </SliderContainer>
-        </div>
-      ))}
 
-      {/* Join as a Club Section */}
+      {/* Join as a Community Section */}
       <section className="py-12">
         <div className="container px-4 md:px-6">
           <div className="text-center max-w-3xl mx-auto space-y-4">
             <h2 className="text-2xl md:text-3xl font-bold">
-              Are you a student club?
+              Are you a student community?
             </h2>
             <p className="text-muted-foreground">
-              Sign up to create your club profile, post events, and connect with
+              Sign up to create your community profile, post events, and connect with
               students.
             </p>
-            <Button size="lg">Register Your Club</Button>
+            <Button size="lg">Register Your Community</Button>
           </div>
         </div>
       </section>

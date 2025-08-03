@@ -9,7 +9,7 @@ import { useEditModal } from "../../hooks/useEditModal";
 import { useUser } from "@/hooks/use-user";
 import { useMediaUpload } from "@/features/media/hooks/useMediaUpload";
 import { pollForProductImages } from "@/utils/polling";
-import { EntityType } from "@/features/media/types/media-format.enum";
+import { EntityType, MediaFormat } from "@/features/media/types/types";
 import { ProductCategory, ProductCondition, NewProductRequest } from "@/features/kupi-prodai/types";
 
 
@@ -47,7 +47,7 @@ export function useCreateProduct() {
     description: String(form.get("description")) || currentListing.description,
     price: Number(form.get("price")) || currentListing.price,
     category: (String(form.get("category")) || currentListing.category).toLowerCase() as ProductCategory,
-    condition: String(form.get("condition")) || currentListing.condition,
+    condition: (String(form.get("condition")) || currentListing.condition).toLowerCase() as ProductCondition,
     status: "active",
     user_sub: user?.user.sub || "",
   });
@@ -82,7 +82,7 @@ export function useCreateProduct() {
       await handleMediaUpload({
         entity_type: EntityType.products,
         entityId: newProduct.id,
-        mediaFormat: "carousel",
+        mediaFormat: MediaFormat.carousel,
       });
       pollForProductImages(
         newProduct.id,

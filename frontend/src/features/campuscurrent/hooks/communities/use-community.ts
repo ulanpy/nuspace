@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 export const useCommunity = () => {
   const { id } = useParams<{ id: string }>();
   const {
-    data: club,
+    data: community,
     isPending,
     isLoading,
     isError,
@@ -13,5 +13,5 @@ export const useCommunity = () => {
     ...campuscurrentAPI.getCommunityQueryOptions(id || ""),
     enabled: !!id,
   });
-  return { club: club || null, isPending, isLoading, isError };
+  return { community: community || null, isPending, isLoading, isError };
 };
