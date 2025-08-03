@@ -11,7 +11,6 @@ import { ROUTES } from "@/data/routes";
 
 import { ProductImageCarousel } from "@/features/kupi-prodai/components/product-detail-page/ProductImageCarousel";
 import { ProductDetails } from "@/features/kupi-prodai/components/product-detail-page/ProductDetails";
-import { ProductPageActions } from "@/features/kupi-prodai/components/product-detail-page/ProductPageActions";
 import { ReportListingModal } from "@/features/kupi-prodai/components/product-detail-page/ReportListingModal";
 import { ContactSellerModal } from "@/features/kupi-prodai/components/product-detail-page/ContactSellerModal";
 import { ImageViewerModal } from "@/features/kupi-prodai/components/product-detail-page/ImageViewerModal";
@@ -121,8 +120,7 @@ export default function ProductDetailPage() {
                     nextImage={nextImage}
                 />
                 <div>
-                    <ProductDetails product={product} />
-                    <ProductPageActions
+                    <ProductDetails product={product}
                         initiateContactWithSeller={initiateContactWithSeller}
                         isContactLoading={isContactLoading}
                         setShowReportModal={setShowReportModal}

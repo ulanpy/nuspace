@@ -5,6 +5,7 @@ import { BuySection } from "@/features/kupi-prodai/components/main-page/BuySecti
 import { SellSection } from "@/features/kupi-prodai/components/main-page/SellSection";
 import { MyListingsSection } from "@/features/kupi-prodai/components/main-page/my-listings/MyListingsSection";
 import { ActiveTab } from "@/features/kupi-prodai/types";
+import { AuthenticationGuard } from "../components/auth/AuthenticationGuard";
 
 export default function KupiProdaiPage() {
     const { activeTab, setActiveTab } = useListingState();
@@ -36,7 +37,9 @@ export default function KupiProdaiPage() {
                 </TabsContent>
 
                 <TabsContent value="my-listings">
-                    <MyListingsSection />
+                    <AuthenticationGuard>
+                        <MyListingsSection />
+                    </AuthenticationGuard>
                 </TabsContent>
             </Tabs>
         </div>

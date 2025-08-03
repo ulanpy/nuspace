@@ -1,9 +1,9 @@
-import { useTheme } from "../../context/ThemeProviderContext";
+import { cn } from "../../utils/utils";
 
 interface CategoryCardProps {
   title: string;
   icon?: JSX.Element;
-  imageUrl?: string; // Optional image path
+  imageUrl: string;
   isSelected: boolean;
   onClick: () => void;
 }
@@ -15,71 +15,64 @@ export const CategoryCard = ({
   isSelected,
   onClick,
 }: CategoryCardProps) => {
-  const { theme } = useTheme();
-  const isDarkTheme = theme === "dark";
-
   return (
-    <div
+    <button
       onClick={onClick}
-      className="flex flex-col items-center cursor-pointer flex-shrink-0 group"
+      className={cn(
+        "flex flex-col items-center gap-1 p-1.5 rounded-lg transition-all duration-200",
+        "hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "group cursor-pointer flex-shrink-0 w-full max-w-[80px]",
+        isSelected && "bg-accent"
+      )}
     >
-      {/* Image/Icon Tile */}
+      {/* Image/Icon Container */}
       <div
-        className={`
-          flex items-center justify-center
-          w-12 h-12 sm:w-14 sm:h-14 mb-1 sm:mb-1.5
-          rounded-xl
-          border border-border/40
-          transition-all duration-200 ease-out
-          overflow-hidden
-          ${
-            imageUrl
-              ? isSelected
-                ? "shadow-md border-slate-400 scale-[0.96]"
-                : "hover:shadow-sm hover:scale-[0.98] group-hover:border-slate-300"
-              : isSelected
-                ? isDarkTheme
-                  ? "bg-slate-900 text-white shadow-md border-slate-700 scale-[0.96]"
-                  : "bg-slate-100 text-slate-900 shadow-md border-slate-300 scale-[0.96]"
-                : isDarkTheme
-                  ? "bg-slate-800/50 text-slate-300 hover:bg-slate-800/80 hover:text-white group-hover:shadow-sm group-hover:scale-[0.98] group-hover:border-slate-600"
-                  : "bg-slate-50/80 text-slate-500 hover:bg-slate-100/90 hover:text-slate-900 group-hover:shadow-sm group-hover:scale-[0.98] group-hover:border-slate-300"
-          }
-        `}
+        className={cn(
+          "relative w-14 h-14 sm:w-16 sm:h-16 rounded-md overflow-hidden",
+          "border transition-all duration-200",
+          "bg-background shadow-sm",
+          isSelected 
+            ? "border-primary shadow-md" 
+            : "border-border hover:border-border/80 group-hover:shadow-md"
+        )}
       >
         {imageUrl ? (
           <img
             src={imageUrl}
             alt={title}
-            className="w-full h-full object-cover transition-all duration-200"
+            className="w-full h-full object-cover object-center"
+            style={{ minWidth: '100%', minHeight: '100%' }}
           />
         ) : icon ? (
-          <span className="text-lg sm:text-xl transition-all duration-200">{icon}</span>
-        ) : (
-          <div className="w-8 h-8 bg-gradient-to-br from-slate-400 to-slate-600 rounded-lg flex items-center justify-center">
-            <span className="text-white text-xs font-bold">{title.charAt(0)}</span>
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+            {icon}
           </div>
+        ) : (
+          <div className="w-full h-full bg-muted flex items-center justify-center">
+            <span className="text-muted-foreground text-xs font-medium">
+              {title.charAt(0).toUpperCase()}
+            </span>
+          </div>
+        )}
+        
+        {/* Selection indicator */}
+        {isSelected && (
+          <div className="absolute inset-0 bg-primary/10 border-2 border-primary rounded-lg" />
         )}
       </div>
       
-      {/* Text Below Tile */}
+      {/* Label */}
       <span 
-        className={`
-          text-xs font-medium text-center max-w-[60px] sm:max-w-[70px] leading-tight
-          transition-all duration-200
-          ${
-            isSelected
-              ? isDarkTheme
-                ? "text-white"
-                : "text-slate-900"
-              : isDarkTheme
-                ? "text-slate-400 group-hover:text-slate-300"
-                : "text-slate-600 group-hover:text-slate-800"
-          }
-        `}
+        className={cn(
+          "text-[10px] sm:text-xs font-medium text-center leading-tight",
+          "transition-colors duration-200 px-0.5",
+          isSelected 
+            ? "text-primary" 
+            : "text-muted-foreground group-hover:text-foreground"
+        )}
       >
         {title}
       </span>
-    </div>
+    </button>
   );
 };

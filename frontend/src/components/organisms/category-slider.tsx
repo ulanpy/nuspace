@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { CategoryGrid } from "./category-grid";
 
 interface CategorySliderProps {
-  categories: { title: string; icon?: JSX.Element; imageUrl?: string }[];
+  categories: { title: string; icon?: JSX.Element; imageUrl: string }[];
   selectedCategory: string | "";
   setPage?: (page: number) => void;
   setSelectedCategory: (category: string) => void;

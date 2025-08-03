@@ -5,8 +5,6 @@ import { useDeleteProduct } from "@/features/kupi-prodai/api/hooks/useDeleteProd
 import { useToggleProduct } from "@/features/kupi-prodai/api/hooks/useToggleProduct";
 import { useEditModal } from "@/features/kupi-prodai/hooks/useEditModal";
 import { ProductListingSection } from "@/features/kupi-prodai/components/common/ProductListingSection";
-import { AuthRequiredAlert } from "@/components/molecules/auth-required-alert";
-import { useUser } from "@/hooks/use-user";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
 import { EditListingModal } from "./EditListingModal";
@@ -18,7 +16,6 @@ import { Archive, PlusCircle } from "lucide-react";
 
 export function MyListingsSection() {
     const navigate = useNavigate();
-    const { user, login } = useUser();
     const { myProducts } = useUserProducts();
     const { getIsPendingDeleteMutation, handleDelete } = useDeleteProduct();
     const { handleToggleProductStatus, getIsPendingToggleMutation } = useToggleProduct();
@@ -27,9 +24,6 @@ export function MyListingsSection() {
     const activeListings = myProducts?.products?.filter((p) => p.status === "active");
     const inactiveListings = myProducts?.products?.filter((p) => p.status === "inactive");
 
-    if (!user) {
-        return <AuthRequiredAlert description="view your listings." onClick={() => login()} />;
-    }
 
     return (
         <div className="space-y-6 pt-4">

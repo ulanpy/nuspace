@@ -4,8 +4,9 @@ import { Badge } from "@/components/atoms/badge";
 import { Clock } from "lucide-react";
 import { formatDateWithContext, formatRelativeTime } from "@/utils/date-formatter";
 import { Product } from "@/features/kupi-prodai/types";
+import { ProductPageActions } from "./ProductPageActions";
 
-export function ProductDetails({ product }: { product: Product }) {
+export function ProductDetails({ product, initiateContactWithSeller, isContactLoading, setShowReportModal }: { product: Product, initiateContactWithSeller: () => void, isContactLoading: boolean, setShowReportModal: (show: boolean) => void }) {
 
     const getConditionDisplay = (condition: string) => {
         switch (condition) {
@@ -57,8 +58,8 @@ export function ProductDetails({ product }: { product: Product }) {
                 </Badge>
             </div>
 
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-0">
+                <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                         <img
                             src={product.seller.picture}
@@ -67,11 +68,15 @@ export function ProductDetails({ product }: { product: Product }) {
                         />
                     </div>
                     <div>
-                        <div className="flex items-center">
-                            <p className="font-medium">{`${product.seller.name} ${product.seller.surname}.`}</p>
-                        </div>
+                        <p className="font-medium">{`${product.seller.name} ${product.seller.surname}`}</p>
                     </div>
                 </div>
+
+                <ProductPageActions
+                    initiateContactWithSeller={initiateContactWithSeller}
+                    isContactLoading={isContactLoading}
+                    setShowReportModal={setShowReportModal}
+                />
             </div>
 
             {/* Listing Date Information */}

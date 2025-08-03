@@ -106,7 +106,7 @@ export const LazyRoutes = {
     BASIC: [
       {
         path: LAZY_ROUTES_REL.APPS.KUPI_PRODAI_ROOT,
-        Component: withSuspense(lazy(() => import("@/features/kupi-prodai/pages/kupi-prodai"))),
+        Component: withSuspense(lazy(() => import("@/features/kupi-prodai/pages/home"))),
       },
 
       {

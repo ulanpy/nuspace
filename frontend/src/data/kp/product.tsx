@@ -1,43 +1,42 @@
-
 export const productCategories: Types.DisplayCategory[] = [
   {
     title: "All",
-    imageUrl: "/images/categories/all.png",
+    imageUrl: new URL("../../assets/images/categories/all.png", import.meta.url).href,
   },
   {
     title: "Books",
-    imageUrl: "/images/categories/books.png",
+    imageUrl: new URL("../../assets/images/categories/books.png", import.meta.url).href,
   },
   {
     title: "Electronics",
-    imageUrl: "/images/categories/electronics.png",
+    imageUrl: new URL("../../assets/images/categories/electronics.png", import.meta.url).href,
   },
   {
     title: "Clothing",
-    imageUrl: "/images/categories/clothing.png",
+    imageUrl: new URL("../../assets/images/categories/clothing.png", import.meta.url).href,
   },
   {
     title: "Furniture",
-    imageUrl: "/images/categories/furniture.png",
+    imageUrl: new URL("../../assets/images/categories/furniture.png", import.meta.url).href,
   },
   {
     title: "Appliances",
-    imageUrl: "/images/categories/appliances.png",
+    imageUrl: new URL("../../assets/images/categories/appliances.png", import.meta.url).href,
   },
   {
     title: "Sports",
-    imageUrl: "/images/categories/sports.png",
+    imageUrl: new URL("../../assets/images/categories/sports.png", import.meta.url).href,
   },
   {
     title: "Food",
-    imageUrl: "/images/categories/food.png",
+    imageUrl: new URL("../../assets/images/categories/food.png", import.meta.url).href,
   },
   {
     title: "Transport",
-    imageUrl: "/images/categories/transport.png",
+    imageUrl: new URL("../../assets/images/categories/transport.png", import.meta.url).href,
   },
   {
     title: "Others",
-    imageUrl: "/images/categories/others.png",
+    imageUrl: new URL("../../assets/images/categories/others.png", import.meta.url).href,
   },
 ];

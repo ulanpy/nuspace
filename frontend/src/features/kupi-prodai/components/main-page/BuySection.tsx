@@ -11,6 +11,7 @@ import { ProductEmptyState } from "@/features/kupi-prodai/components/state/produ
 import { ProductGrid } from "@/features/kupi-prodai/components/common/ProductGrid";
 import { useProductForm } from "@/features/kupi-prodai/hooks/useProductForm";
 import { Product } from "@/features/kupi-prodai/types";
+import { getPlaceholderImage } from "@/utils/image-utils";
 
 export function BuySection() {
   const {
@@ -59,7 +60,10 @@ export function BuySection() {
       {/* Compact Category Grid */}
       <FilterContainer className="pb-2">
         <CategorySlider
-          categories={categories}
+          categories={categories.map(cat => ({
+            ...cat,
+            imageUrl: cat.imageUrl || getPlaceholderImage()
+          }))}
           selectedCategory={selectedCategory}
           setPage={setPage}
           setSelectedCategory={setSelectedCategory}

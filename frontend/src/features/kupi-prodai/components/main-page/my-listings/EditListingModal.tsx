@@ -5,12 +5,12 @@ import { useUpdateProduct } from "@/features/kupi-prodai/api/hooks/useUpdateProd
 import { useEditModal } from "@/features/kupi-prodai/hooks/useEditModal";
 import { useListingState } from "@/context/ListingContext";
 import { Button } from "@/components/atoms/button";
-import { X, RefreshCw } from "lucide-react";
+import { X } from "lucide-react";
 import { useMediaEditContext } from "@/context/MediaEditContext";
 import { useMediaUploadContext } from "@/context/MediaUploadContext";
 import { useMediaEdit } from "@/features/media/hooks/useMediaEdit";
 import { useMediaSelection } from "@/features/media/hooks/useMediaSelection";
-import { Progress } from "@/components/atoms/progress";
+import { UploadProgressIndicator } from "../../media/UploadProgressIndicator";
 import { EditListingForm } from "./EditListingForm";
 import { EditListingImageManager } from "./EditListingImageManager";
 import { useProductForm } from "@/features/kupi-prodai/hooks/useProductForm";
@@ -99,10 +99,15 @@ export function EditListingModal() {
                                 className="min-w-[120px]"
                             >
                                 {isUploading ? (
-                                    <div className="flex items-center gap-2">
-                                        <RefreshCw className="h-4 w-4 animate-spin" />
-                                        <span>{uploadProgress}%</span>
-                                    </div>
+                                    <UploadProgressIndicator
+                                        isUploading={isUploading}
+                                        progress={uploadProgress}
+                                        status="uploading"
+                                        message="Updating..."
+                                        variant="inline"
+                                        size="sm"
+                                        showPercentage={true}
+                                    />
                                 ) : (
                                     "Update Listing"
                                 )}
@@ -110,7 +115,15 @@ export function EditListingModal() {
                         </div>
 
                         {isUploading && (
-                            <Progress value={uploadProgress} className="mt-2" />
+                            <UploadProgressIndicator
+                                isUploading={isUploading}
+                                progress={uploadProgress}
+                                status="uploading"
+                                variant="standalone"
+                                size="sm"
+                                showIcon={false}
+                                className="mt-2"
+                            />
                         )}
                     </form>
                 </div>
