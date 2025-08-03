@@ -152,6 +152,7 @@ async def refresh_token(
 async def get_current_user(
     principals: Annotated[tuple[dict, dict], Depends(get_current_principals)],
     db_session: AsyncSession = Depends(get_db_session),
+    extended: bool = False,  # under development
 ):
     """Returns current user data based on validated Keycloak and App tokens."""
     kc_principal, app_principal = principals
@@ -176,6 +177,11 @@ async def get_current_user(
         "role": app_principal.get("role"),  # Example from your AppTokenManager
         "communities": app_principal.get("communities"),
     }
+
+    # under development
+    # if extended:
+    #     events = qb.blank().filter(Event.user_id == user.id).all()
+    #     user_data_for_response["events"] = events
 
     return CurrentUserResponse(user=user_data_for_response, tg_id=tg_id)
 

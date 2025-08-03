@@ -106,3 +106,18 @@ class Event(Base):
     collaborators = relationship(
         "EventCollaborator", back_populates="event", cascade="all, delete-orphan"
     )
+
+
+# class EventAttendee(Base):
+#     __tablename__ = "event_attendees"
+
+#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+#     event_id: Mapped[int] = mapped_column(
+#         ForeignKey("events.id", ondelete="CASCADE"), nullable=False
+#     )
+#     user_sub: Mapped[str] = mapped_column(
+#         ForeignKey("users.sub", ondelete="CASCADE"), nullable=False
+#     )
+#     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+#     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow,
+# nullable=False)
