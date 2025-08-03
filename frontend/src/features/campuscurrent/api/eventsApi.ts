@@ -3,13 +3,26 @@ import { queryOptions } from "@tanstack/react-query";
 import * as Routes from "@/data/routes";
 
 export const campuscurrentAPI = {
-  getEventsQueryOptions: {
-    queryKey: ["campusCurrent", "events"],
-    queryFn: () => {
-      return apiCall<Types.PaginatedResponse<CampusCurrent.Event, "events">>(
-        `/` + Routes.EVENTS + `?event_status=approved`,
-      );
-    },
+  getEventsQueryOptions: (params: { start_date?: string; end_date?: string }) => {
+    const queryParams = new URLSearchParams({
+      event_status: "approved",
+    });
+
+    if (params.start_date) {
+      queryParams.append("start_date", params.start_date);
+    }
+    if (params.end_date) {
+      queryParams.append("end_date", params.end_date);
+    }
+
+    return {
+      queryKey: ["campusCurrent", "events", params],
+      queryFn: () => {
+        return apiCall<Types.PaginatedResponse<CampusCurrent.Event, "events">>(
+          `/` + Routes.EVENTS + `?` + queryParams.toString(),
+        );
+      },
+    };
   },
   getEventQueryOptions: (id: string) => {
     return queryOptions({
