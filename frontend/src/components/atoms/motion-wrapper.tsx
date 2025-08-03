@@ -1,14 +1,18 @@
 "use client";
 import { motion, useAnimation } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { useEffect } from "react";
+import { useEffect, ReactNode } from "react";
 
 const boxVariant = {
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
   hidden: { opacity: 0, y: 20 }
 };
 
-const MotionWrapper = ({ children }) => {
+interface MotionWrapperProps {
+  children: ReactNode;
+}
+
+const MotionWrapper = ({ children }: MotionWrapperProps) => {
 
   const control = useAnimation();
   const [ref, inView] = useInView({
