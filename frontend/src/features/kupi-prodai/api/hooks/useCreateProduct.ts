@@ -47,7 +47,11 @@ export function useCreateProduct() {
     description: String(form.get("description")) || currentListing.description,
     price: Number(form.get("price")) || currentListing.price,
     category: (String(form.get("category")) || currentListing.category).toLowerCase() as ProductCategory,
+<<<<<<< Updated upstream:frontend/src/features/kupi-prodai/api/hooks/useCreateProduct.ts
     condition: (String(form.get("condition")) || currentListing.condition).toLowerCase() as ProductCondition,
+=======
+    condition: String(form.get("condition")) || currentListing.condition,
+>>>>>>> Stashed changes:frontend/src/modules/kupi-prodai/api/hooks/useCreateProduct.ts
     status: "active",
     user_sub: user?.user.sub || "",
   });

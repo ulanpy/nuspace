@@ -86,7 +86,7 @@ export default function CommunitiesPage() {
                   asChild
                   size="lg"
                   className="bg-yellow-500 text-black hover:bg-yellow-600"
-                  onClick={() => navigate("communities")}
+                  onClick={() => document.getElementById('communities-section')?.scrollIntoView({ behavior: 'smooth' })}
                 >
                   <Button>View Communities</Button>
                 </Button>
@@ -94,7 +94,7 @@ export default function CommunitiesPage() {
                   asChild
                   size="lg"
                   variant="outline"
-                  onClick={() => navigate("events")}
+                  onClick={() => navigate("create-community")}
                   className="border-whitebg-yellow-500 text-black hover:bg-white/10"
                 >
                   <Button>Or create your own</Button>
@@ -114,6 +114,7 @@ export default function CommunitiesPage() {
         </div>
       </section>
 
+    <div className="flex flex-col min-h-screen" id="communities-section"></div>
     {/* Header with Create Community Button */}
     <div className="flex justify-between items-center mb-6">
     <h1 className="text-2xl font-bold">Communities</h1>
