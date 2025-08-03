@@ -10,6 +10,7 @@ import {
   Users,
   CalendarPlus,
   Share2,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Badge } from "@/components/atoms/badge";
@@ -64,6 +65,7 @@ export default function EventDetailPage() {
   const { event, isLoading, isError } = useEvent();
 
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   const handleAddToCalendar = () => {
@@ -89,7 +91,7 @@ export default function EventDetailPage() {
     if (pendingAction) {
       pendingAction();
       setPendingAction(null);
-    }
+    } 
   };
 
   // Share event
@@ -175,11 +177,7 @@ export default function EventDetailPage() {
             )}
           </div>
 
-          {event.rating && (
-            <div className="absolute top-4 right-4 bg-black/70 text-white text-sm font-bold px-3 py-1 rounded">
-              {event.rating.toFixed(1)}
-            </div>
-          )}
+          
         </div>
 
         {/* Event Details */}
@@ -263,6 +261,16 @@ export default function EventDetailPage() {
               >
                 <CalendarPlus className="h-4 w-4" />
                 <span>Add to Calendar</span>
+              </Button>
+            )}
+            {event.permissions?.can_edit && (
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={() => setShowEditModal(true)}
+              >
+                <Pencil className="h-4 w-4" />
+                Edit Event
               </Button>
             )}
             <Button
