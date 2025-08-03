@@ -1,5 +1,5 @@
 import { NavTabs } from "@/components/molecules/nav-tabs";
-import { navTabs } from "@/data/events/nav-tabs";
+import { navTabs } from "@/features/campuscurrent/types/nav-tabs";
 import { Outlet } from "react-router-dom";
 
 export function EventsLayout() {

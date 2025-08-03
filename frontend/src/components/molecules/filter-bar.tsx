@@ -24,7 +24,10 @@ import {
 } from "@/components/atoms/sheet";
 import { Button } from "../atoms/button";
 import { Input } from "../atoms/input";
-import { eventCategories } from "@/data/events/event-categories";
+import { eventCategories } from "@/features/campuscurrent/types/events/event-categories";
+
+
+
 export function FilterBar() {
   const [date, setDate] = useState<Date | undefined>(undefined);
 

@@ -8,9 +8,9 @@ export function FilterCard({
   selectedPolicy,
   setSelectedPolicy,
 }: {
-  eventPolicies: NuEvents.EventPolicy[];
-  selectedPolicy: SetStateAction<NuEvents.EventPolicy | null>;
-  setSelectedPolicy: Dispatch<SetStateAction<NuEvents.EventPolicy | null>>;
+  eventPolicies: CampusCurrent.EventPolicy[];
+  selectedPolicy: SetStateAction<CampusCurrent.EventPolicy | null>;
+  setSelectedPolicy: Dispatch<SetStateAction<CampusCurrent.EventPolicy | null>>;
 }) {
   return (
     <Card className="p-3">

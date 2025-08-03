@@ -149,7 +149,7 @@ export const clubTypes = [
 ] as const;
 
 // Event policies
-export const eventPolicies: NuEvents.EventPolicy[] = [
+export const eventPolicies: CampusCurrent.EventPolicy[] = [
   "open",
   "free_ticket",
   "paid_ticket",
@@ -192,7 +192,7 @@ export const clubImages = [
 ];
 
 // Generate mock clubs
-export const mockClubs: NuEvents.Club[] = [
+export const mockClubs: CampusCurrent.Club[] = [
   {
     id: 1,
     name: "Debate Club",
@@ -385,7 +385,7 @@ const format = (date: Date, formatStr: string) => {
   return date.toISOString();
 };
 
-export const mockEvents: NuEvents.Event[] = [
+export const mockEvents: CampusCurrent.Event[] = [
   {
     id: 1,
     club_id: 1,
@@ -794,8 +794,8 @@ export const mockApi = {
   getEvents: (
     page = 1,
     size = 20,
-    clubType: NuEvents.ClubType | null,
-    policy?: NuEvents.EventPolicy | null,
+    clubType: CampusCurrent.ClubType | null,
+    policy?: CampusCurrent.EventPolicy | null,
   ) => {
     let filteredEvents = [...mockEvents];
 
@@ -822,7 +822,7 @@ export const mockApi = {
     };
   },
 
-  getClubs: (page = 1, size = 20, clubType?: NuEvents.ClubType) => {
+  getClubs: (page = 1, size = 20, clubType?: CampusCurrent.ClubType) => {
     let filteredClubs = [...mockClubs];
 
     if (clubType) {

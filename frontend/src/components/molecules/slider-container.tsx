@@ -15,7 +15,7 @@ export function SliderContainer({
   title,
   link,
   children,
-  itemWidth = 150, // Әдепкі мәні
+  itemWidth = 200, // Әдепкі мәні
   className = "",
 }: SliderContainerProps) {
   const navigate = useNavigate();

@@ -3,22 +3,22 @@ import { queryOptions } from "@tanstack/react-query";
 import * as Routes from "@/data/routes";
 export const campuscurrentAPI = {
   getCommunitiesQueryOptions: {
-    queryKey: ["nuEvents", "communities"],
+    queryKey: ["campusCurrent", "communities"],
     queryFn: () => {
-      return apiCall<Types.PaginatedResponse<NuEvents.Club, "communities">>(
+      return apiCall<Types.PaginatedResponse<CampusCurrent.Club, "communities">>(
         `/` + Routes.COMMUNITIES)
     },
   },
   getCommunityQueryOptions: (id: string) => {
     return queryOptions({
-      queryKey: ["nuEvents", "community", id],
+      queryKey: ["campusCurrent", "community", id],
       queryFn: () => {
-        return apiCall<NuEvents.Club>(`/` + Routes.COMMUNITIES+ `/${id}`)
+        return apiCall<CampusCurrent.Club>(`/` + Routes.COMMUNITIES+ `/${id}`)
       }
     })
   }, 
-  editCommunity: (id: string, data: NuEvents.Club) => {
-    return apiCall<NuEvents.Club>(`/` + Routes.COMMUNITIES+ `/${id}`, {
+  editCommunity: (id: string, data: CampusCurrent.Club) => {
+    return apiCall<CampusCurrent.Club>(`/` + Routes.COMMUNITIES+ `/${id}`, {
       method: 'PUT',
       json: data
     })

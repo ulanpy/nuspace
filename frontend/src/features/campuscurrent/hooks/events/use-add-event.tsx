@@ -5,13 +5,13 @@ export const useAddEvent = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: NuEvents.Event) =>
+    mutationFn: (data: CampusCurrent.Event) =>
       campuscurrentAPI.addEvent(data), 
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({
         queryKey: campuscurrentAPI.getEventQueryOptions(variables.id.toString()),
       });
-      queryClient.invalidateQueries({ queryKey: ['nuEvents', 'event'] });
+      queryClient.invalidateQueries({ queryKey: ['campusCurrent', 'event'] });
     },
   });
 };

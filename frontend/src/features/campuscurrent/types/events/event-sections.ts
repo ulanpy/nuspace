@@ -6,7 +6,7 @@ import {
   sportsEvents,
   todayEvents,
 } from "./mock-events-data";
-import { ROUTES } from "../routes";
+import { ROUTES } from "../../../../data/routes";
 
 export const eventSections = [
   {

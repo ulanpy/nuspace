@@ -14,19 +14,19 @@ import {Select,
         SelectTrigger, 
         SelectValue } from "@/components/atoms/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/popover";
-import { clubTypes } from "@/data/clubs/club-types";
-import { clubCategories } from "@/data/clubs/club-categories";
-import { useImage } from "@/modules/kupi-prodai/hooks/use-image";
+import { clubTypes } from "@/features/campuscurrent/types/clubs/club-types";
+import { clubCategories } from "@/features/campuscurrent/types/clubs/club-categories";
+// import { useImage } from "@/modules/kupi-prodai/hooks/use-image";
 import { useEditCommunity } from "@/features/campuscurrent/hooks/communities/use-edit-community";
-import { clubStatus } from "@/data/clubs/club-status";
+import { clubStatus } from "@/features/campuscurrent/types/clubs/club-status";
 import { Calendar as CalendarComponent } from "../../../components/atoms/calendar";
 import { Textarea } from "../../../components/atoms/textarea";
 import { toast } from "../../../components/atoms/sonner";
 
 interface EditCommunityModalProps {
   onClose: () => void;
-  club: NuEvents.Club;
-  onSave: (club: NuEvents.Club) => void;
+  club: CampusCurrent.Club;
+  onSave: (club: CampusCurrent.Club) => void;
 }
 
 {/* Edit Community Modal */}
@@ -39,7 +39,7 @@ export function EditCommunityModal({
   const [date, setDate] = useState<Date | undefined>(undefined);
   const fileInputRefProfile = useRef<HTMLInputElement>(null);
   const fileInputRefBanner = useRef<HTMLInputElement>(null);
-  const {handleImageUpload, handleDeleteImage} = useImage();
+  // const {handleImageUpload, handleDeleteImage} = useImage();
   const { mutate: editCommunity, isPending } = useEditCommunity();
 
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

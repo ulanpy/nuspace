@@ -2,7 +2,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
 
 export const addToGoogleCalendar = (
-  event: NuEvents.Event,
+  event: CampusCurrent.Event,
   setPendingAction: (action: () => void) => void,
   setShowLoginModal: (show: boolean) => void,
 ) => {

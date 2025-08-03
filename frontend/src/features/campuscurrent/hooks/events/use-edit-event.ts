@@ -13,7 +13,7 @@ export const useEditCommunity = () => {
       queryClient.invalidateQueries({
         queryKey: campuscurrentAPI.getEventQueryOptions(variables.id),
       });
-      queryClient.invalidateQueries({ queryKey: ['nuEvents', 'community', id] });
+      queryClient.invalidateQueries({ queryKey: ['campusCurrent', 'community', id] });
     },
   });
 };

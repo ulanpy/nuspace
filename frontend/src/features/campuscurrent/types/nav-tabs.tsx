@@ -1,4 +1,4 @@
-import { ROUTES } from "../routes";
+import { ROUTES } from "@/data/routes";
 
 export const navTabs = [
   {
@@ -12,5 +12,9 @@ export const navTabs = [
   {
     name: "Clubs",
     path: ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES,
+  },
+  {
+    name: "Profile",
+    path: "#",
   },
 ];

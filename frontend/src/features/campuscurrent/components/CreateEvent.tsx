@@ -11,9 +11,9 @@ import { Select,
         SelectValue } 
         from "@/components/atoms/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/popover";
-import { useImage } from "@/modules/kupi-prodai/hooks/use-image";
+// import { useImage } from "@/modules/kupi-prodai/hooks/use-image";
 import { useRef } from "react";
-import { eventCategories } from "@/data/events/event-categories";
+import { eventCategories } from "@/features/campuscurrent/types/events/event-categories";
 import { Textarea } from "../../../components/atoms/textarea";
 import { Calendar as CalendarComponent } from "../../../components/atoms/calendar";
 import { toast } from "../../../components/atoms/sonner";
@@ -29,7 +29,7 @@ const [createForm, setCreateForm] = useState({
 });
 const [date, setDate] = useState<Date | undefined>(undefined);
 const fileInputRefEvent = useRef<HTMLInputElement>(null);
-const {handleImageUpload, handleDeleteImage} = useImage();
+// const {handleImageUpload, handleDeleteImage} = useImage();
 
 
 const handleCreateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -42,7 +42,7 @@ const handleCreateSelectChange = (name: string, value: string) => {
 interface CreateEventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (event: NuEvents.Event) => void;
+  onSave: (event: CampusCurrent.Event) => void;
 }
 
 export function CreateEventModal( { isOpen, onClose, onSave }: CreateEventModalProps ) {

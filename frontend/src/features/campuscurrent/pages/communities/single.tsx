@@ -51,7 +51,7 @@ export default function ClubDetailPage() {
   const { club, isLoading } = useCommunity();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [clubEvents, setClubEvents] = useState<NuEvents.Event[]>([]);
+  const [clubEvents, setClubEvents] = useState<CampusCurrent.Event[]>([]);
   const [activeTab, setActiveTab] = useState("about");
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
@@ -196,7 +196,7 @@ export default function ClubDetailPage() {
           {isEditModalOpen && (
             <EditCommunityModal
               club={club}
-              onSave={(updatedClub: NuEvents.Club) => {
+              onSave={(updatedClub: CampusCurrent.Club) => {
                 // need to refetch the club
                 console.log("Updated Club:", updatedClub);
               }}
@@ -330,7 +330,7 @@ export default function ClubDetailPage() {
                 {/* {isCreateModalOpen && (
               <CreateEventModal
                 isOpen={isCreateModalOpen}
-                onSave={(newEvent: NuEvents.Event) => {
+                onSave={(newEvent: CampusCurrent.Event) => {
                   setClubEvents([...clubEvents, newEvent]); // saving the new event to the club events
                 }}
                 onClose={() => setIsCreateModalOpen(false)}

@@ -2,7 +2,7 @@ export {};
 
 declare global {
 
-namespace NuEvents {
+namespace CampusCurrent {
     interface Media {
       id: number;
       url: string;

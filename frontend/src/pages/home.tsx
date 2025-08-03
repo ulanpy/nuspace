@@ -9,6 +9,8 @@ import { useUser } from "@/hooks/use-user";
 import { ReportButton } from "@/components/molecules/buttons/report-button";
 import { TelegramStatus } from "@/components/molecules/telegram-status";
 import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
+import Footer from "@/components/molecules/footer";
+
 import { ROUTES } from "@/data/routes";
 // Define carousel items with your image for the homepage
 
@@ -96,12 +98,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="text-center text-sm text-muted-foreground mt-12 py-4 border-t">
-        <Link to={ROUTES.APPS.ABOUT} className="hover:underline">
-          About Us
-        </Link>
-      </footer>
+      <Footer />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { ConditionGroup } from "@/components/molecules/condition-group";
-import { clubCategories } from "@/data/clubs/club-categories";
+import { clubCategories } from "@/features/campuscurrent/types/clubs/club-categories";
 import { SearchInput } from "@/components/molecules/search-input";
 import { CommunityCard } from "@/features/campuscurrent/components/CommunityCard";
 import { useCommunities } from "@/features/campuscurrent/hooks/communities/use-communities";

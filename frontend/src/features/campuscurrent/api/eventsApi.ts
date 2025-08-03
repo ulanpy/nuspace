@@ -4,23 +4,23 @@ import * as Routes from "@/data/routes";
 
 export const campuscurrentAPI = {
   getEventsQueryOptions: {
-    queryKey: ["nuEvents", "events"],
+    queryKey: ["campusCurrent", "events"],
     queryFn: () => {
-      return apiCall<Types.PaginatedResponse<NuEvents.Event, "events">>(
+      return apiCall<Types.PaginatedResponse<CampusCurrent.Event, "events">>(
         `/` + Routes.EVENTS + `?event_status=approved`,
       );
     },
   },
   getEventQueryOptions: (id: string) => {
     return queryOptions({
-      queryKey: ["nuEvents", "event", id],
+      queryKey: ["campusCurrent", "event", id],
       queryFn: () => {
-        return apiCall<NuEvents.Event>(`/` + Routes.EVENTS + `/${id}`);
+        return apiCall<CampusCurrent.Event>(`/` + Routes.EVENTS + `/${id}`);
       },
     });
   },
-  editEvent: (id: string, data: NuEvents.Event) => {
-    return apiCall<NuEvents.Event>(`/` + Routes.EVENTS + `/${id}`, {
+  editEvent: (id: string, data: CampusCurrent.Event) => {
+    return apiCall<CampusCurrent.Event>(`/` + Routes.EVENTS + `/${id}`, {
       method: "PUT",
       json: data,
     });

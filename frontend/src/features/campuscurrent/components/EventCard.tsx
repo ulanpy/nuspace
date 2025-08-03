@@ -9,7 +9,7 @@ import {
 import { Badge } from "@/components/atoms/badge";
 import { Button } from "@/components/atoms/button";
 
-interface EventCardProps extends NuEvents.Event {}
+interface EventCardProps extends CampusCurrent.Event {}
 
 export function EventCard({
   id,
@@ -21,7 +21,7 @@ export function EventCard({
   media,
 }: EventCardProps) {
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow">
       <Link to={`/apps/campuscurrent/event/${id}`}>
         <div className="aspect-video relative overflow-hidden">
           <img

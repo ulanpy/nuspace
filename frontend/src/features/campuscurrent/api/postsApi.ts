@@ -5,13 +5,13 @@ import { ROUTES } from "@/data/routes";
 export const getPostsQueryOptions = queryOptions({
   queryKey: ["campusCurrentPost"],
   queryFn: () => {
-    return apiCall<Types.PaginatedResponse<NuEvents.Post, "posts">>(`${ROUTES.APPS.CAMPUS_CURRENT.POSTS}/posts`);
+    return apiCall<Types.PaginatedResponse<CampusCurrent.Post, "posts">>(`${ROUTES.APPS.CAMPUS_CURRENT.POSTS}/posts`);
   },
 });
 
 // Create new post API function
-export const createPost = async (postData: NuEvents.CommunityPostRequest): Promise<NuEvents.CommunityPostResponse> => {
-  return apiCall<NuEvents.CommunityPostResponse>(`${ROUTES.APPS.CAMPUS_CURRENT.POSTS}/posts`, {
+export const createPost = async (postData: CampusCurrent.CommunityPostRequest): Promise<CampusCurrent.CommunityPostResponse> => {
+  return apiCall<CampusCurrent.CommunityPostResponse>(`${ROUTES.APPS.CAMPUS_CURRENT.POSTS}/posts`, {
     method: "POST",
     json: postData,
   });
@@ -23,7 +23,7 @@ export const getPosts = async (params: {
   size?: number;
   page?: number;
   keyword?: string;
-}): Promise<NuEvents.ListCommunityPostResponse> => {
+}): Promise<CampusCurrent.ListCommunityPostResponse> => {
   const searchParams = new URLSearchParams();
   searchParams.append("community_id", params.community_id.toString());
   
@@ -31,5 +31,5 @@ export const getPosts = async (params: {
   if (params.page) searchParams.append("page", params.page.toString());
   if (params.keyword) searchParams.append("keyword", params.keyword);
 
-  return apiCall<NuEvents.ListCommunityPostResponse>(`${ROUTES.APPS.CAMPUS_CURRENT.POSTS}/posts?${searchParams.toString()}`);
+  return apiCall<CampusCurrent.ListCommunityPostResponse>(`${ROUTES.APPS.CAMPUS_CURRENT.POSTS}/posts?${searchParams.toString()}`);
 };
