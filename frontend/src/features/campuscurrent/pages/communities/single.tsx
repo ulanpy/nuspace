@@ -30,7 +30,6 @@ import { ROUTES } from "@/data/routes";
 import { Event } from "@/features/campuscurrent/types/types";
 import { Community } from "@/features/campuscurrent/types/types";
 
-
 // Helper function to get community type display text
 const getCommunityTypeDisplay = (type: string) => {
   return type.charAt(0).toUpperCase() + type.slice(1);
@@ -41,8 +40,6 @@ export default function CommunityDetailPage() {
   const { toast } = useToast();
   const { user } = useUser();
 
-
-
   const { community, isLoading } = useCommunity();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -52,7 +49,6 @@ export default function CommunityDetailPage() {
   const [followerCount, setFollowerCount] = useState(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
-
 
   // Handle follow/unfollow
   const handleFollowToggle = () => {
@@ -127,7 +123,7 @@ export default function CommunityDetailPage() {
       </div>
     );
   }
-  
+
   return (
     <>
       {/* Community Header */}
@@ -170,7 +166,7 @@ export default function CommunityDetailPage() {
       <div className="pt-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">{community.name}</h1>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+          {/* <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
             <div className="flex items-center">
               <Users className="h-3 w-3 mr-1" />
               {0} members
@@ -179,13 +175,15 @@ export default function CommunityDetailPage() {
               <Heart className="h-3 w-3 mr-1" />
               {followerCount} followers
             </div>
-          </div>
+          </div> */}
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" 
-                  size="icon" 
-                  className="h-8" 
-                  onClick={() => setIsEditModalOpen(true)}>
+        {/* <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8"
+            onClick={() => setIsEditModalOpen(true)}
+          >
             <Edit className="h-4 w-4" />
           </Button>
           {isEditModalOpen && (
@@ -214,11 +212,11 @@ export default function CommunityDetailPage() {
           >
             Join Community
           </Button>
-        </div>
+        </div> */}
       </div>
-          
 
-      {/* Community Content */}
+     
+      
       <Tabs
         defaultValue="about"
         value={activeTab}
@@ -231,7 +229,7 @@ export default function CommunityDetailPage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold mb-2">Contact & Info</h2>
+            <h2 className="text-lg font-semibold my-2 mt-6">Contact & Info</h2>
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
                 <Users className="h-4 w-4 text-muted-foreground" />
@@ -265,7 +263,7 @@ export default function CommunityDetailPage() {
               )}
             </div>
           </div>
-
+ {/* 
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="posts">Posts</TabsTrigger>
           <TabsTrigger value="events">Events</TabsTrigger>
@@ -330,7 +328,7 @@ export default function CommunityDetailPage() {
                 }}
                 onClose={() => setIsCreateModalOpen(false)}
               />
-            )} */}
+            )} 
                 <Plus className="h-4 w-4" /> 
               </Button>
             </div>
@@ -361,8 +359,8 @@ export default function CommunityDetailPage() {
               </p>
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+        </TabsContent>*/}
+      </Tabs> 
 
       {/* Login Modal */}
       <LoginModal
