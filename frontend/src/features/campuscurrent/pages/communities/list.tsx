@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Users, ChevronLeft, ChevronRight, Calendar, Plus } from "lucide-react";
+import { Users, ChevronLeft, ChevronRight, Calendar, Plus, FileText } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
 import { LoginModal } from "@/components/molecules/login-modal";
@@ -114,13 +114,15 @@ export default function CommunitiesPage() {
         </div>
       </section>
 
-    <div className="flex flex-col min-h-screen" id="communities-section"></div>
     {/* Header with Create Community Button */}
     <div className="flex justify-between items-center mb-6">
     <h1 className="text-2xl font-bold">Communities</h1>
-    <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
-      <Plus className="h-4 w-4" />
-      Create Community
+    <Button
+      onClick={() => window.open('https://forms.google.com/your-form-url', '_blank')}
+      className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+    >
+      <img src="/src/assets/images/google_form.png" alt="Google Forms" className="h-4 w-4 object-contain" />
+      Submit Community Form
     </Button>
   </div>
 
@@ -191,7 +193,7 @@ export default function CommunitiesPage() {
           ))}
         </div>
       ) : communities?.communities.length || 0 > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="communities-section">
           {communities?.communities.map((community) => (
             <CommunityCard key={community.id} community={community} />
           ))}
