@@ -1,34 +1,32 @@
 "use client";
-
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Users,
-  Calendar,
-  MessageCircle,
-  Heart,
-  ExternalLink,
-  Edit,
-  Plus,
-  InstagramIcon,
-} from "lucide-react";
+import { useParams } from "react-router-dom";
+// import { Navbar } from "@/components/Navbar";
+// import { Footer } from "@/components/Footer";
 import { Button } from "@/components/atoms/button";
-import { Badge } from "@/components/atoms/badge";
-import { Card, CardContent } from "@/components/atoms/card";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/atoms/tabs";
+import { Badge } from "@/components/atoms/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar";
+import { EventCard } from "@/features/campuscurrent/components/EventCard";
+import { Card, CardContent, CardHeader } from "@/components/atoms/card";
+
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Mail,
+  Calendar,
+  ExternalLink,
+} from "lucide-react";
+
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { useCommunity } from "@/features/campuscurrent/hooks/communities/use-community";
-import { EditCommunityModal } from "@/features/campuscurrent/components/EditCommunity";
-import { ROUTES } from "@/data/routes";
 import { Event } from "@/features/campuscurrent/types/types";
-import { Community } from "@/features/campuscurrent/types/types";
 
 // Helper function to get community type display text
 const getCommunityTypeDisplay = (type: string) => {
@@ -125,243 +123,267 @@ export default function CommunityDetailPage() {
   }
 
   return (
-    <>
-      {/* Community Header */}
-      <div className="relative">
-        {/* Banner */}
-        <div className="h-40 bg-gradient-to-r from-primary/80 to-primary/30 rounded-md overflow-hidden">
-          {community.media && community.media.length > 1 && (
-            <img
-              src={community.media[1].url || "/placeholder.svg"}
-              alt={`${community.name} banner`}
-              className="w-full h-full object-cover opacity-30"
-            />
-          )}
+    <div className="flex flex-col min-h-screen">
+      {/* <Navbar /> */}
+      <main className="flex-grow">
+        <div className="h-48 md:h-64 bg-muted relative">
+          <img
+            src={community.coverImageUrl || "/placeholder.svg"}
+            alt={community.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
         </div>
 
-        {/* Profile picture */}
-        <div className="absolute -bottom-10 left-4">
-          <div className="h-20 w-20 rounded-full overflow-hidden border-4 border-background bg-muted">
-            {community.media && community.media.length > 0 ? (
+        <div className="container px-4 md:px-6 relative">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-end -mt-16 md:-mt-20 mb-6 relative z-10">
+            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-background overflow-hidden bg-background">
               <img
-                src={community.media[0].url || "/placeholder.svg"}
+                src={community.logoUrl || "/placeholder.svg"}
                 alt={community.name}
                 className="w-full h-full object-cover"
               />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Users className="h-10 w-10 text-muted-foreground" />
+            </div>
+            <div className="flex-grow">
+              <Badge>{community.category}</Badge>
+              <Badge>Recruitment: {community.recruitment_status}</Badge>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                {community.name}
+              </h1>
+            </div>
+            <div className="flex gap-2 mt-4 md:mt-0">
+              <Button>Join community</Button>
+              <Button variant="outline">Follow</Button>
+            </div>
+          </div>
+
+          <Tabs defaultValue="about" className="mt-6">
+            <TabsList className="w-full max-w-3xl">
+              <TabsTrigger value="about" className="flex-1">
+                About
+              </TabsTrigger>
+              <TabsTrigger value="events" className="flex-1">
+                Events
+              </TabsTrigger>
+              <TabsTrigger value="community" className="flex-1">
+                Community
+              </TabsTrigger>
+              <TabsTrigger value="gallery" className="flex-1">
+                Gallery
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="about" className="mt-6">
+              <div className="grid gap-6 md:grid-cols-3">
+                <div className="md:col-span-2 space-y-6">
+                  <div className="prose max-w-none">
+                    <h2 className="text-xl font-semibold mb-4">About Us</h2>
+                    <p>{community.description}</p>
+                  </div>
+                  <Card>
+                    <CardHeader className="text-lg font-semibold">
+                      Recruitment
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Interested in joining NU Tech Club? We're always looking
+                        for passionate individuals!
+                      </p>
+                      <Button className="w-full">Apply to Join</Button>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader className="text-lg font-semibold">
+                      President
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div
+                          key={community.head_user}
+                          className="flex items-center gap-4"
+                        >
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={community.head_user.picture} />
+                            <AvatarFallback>
+                              {community.head_user.name.substring(0, 2)}{" "}
+                              {community.head_user.surname.substring(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">
+                              {community.head_user.name}{" "}
+                              {community.head_user.surname}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="text-lg font-semibold">
+                      Contact & Info
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="font-medium">Email</p>
+                          <a
+                            href={`mailto:${community.contactEmail}`}
+                            className="text-sm text-primary hover:underline"
+                          >
+                            {community.contactEmail}
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                        <div>
+                          <p className="font-medium">Founded</p>
+                          <p className="text-sm">{community.established}</p>
+                        </div>
+                      </div>
+
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="text-lg font-semibold">
+                      Social Media
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <a
+                        href={community.instagram_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-2 rounded-md hover:bg-muted"
+                      >
+                        <span>Instagram</span>
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                      <a
+                        href={community.telegram_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-2 rounded-md hover:bg-muted"
+                      >
+                        <span>Telegram</span>
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
+            </TabsContent>
 
-        {/* Community type badge */}
-        <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground">
-          {getCommunityTypeDisplay(community.type)}
-        </Badge>
-      </div>
+            <TabsContent value="events" className="mt-6">
+              <div className="space-y-8">
+                <div>
+                  <h2 className="text-2xl font-bold mb-6">Upcoming Events</h2>
+                  {communityEvents.length > 0 ? (
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                      {communityEvents.map((event) => (
+                        <EventCard key={event.id} {...event} />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">
+                      No upcoming events at the moment. Check back later!
+                    </p>
+                  )}
+                </div>
 
-      {/* Community Info */}
-      <div className="pt-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{community.name}</h1>
-          {/* <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-            <div className="flex items-center">
-              <Users className="h-3 w-3 mr-1" />
-              {0} members
-            </div>
-            <div className="flex items-center">
-              <Heart className="h-3 w-3 mr-1" />
-              {followerCount} followers
-            </div>
-          </div> */}
-        </div>
-        {/* <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8"
-            onClick={() => setIsEditModalOpen(true)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          {isEditModalOpen && (
-            <EditCommunityModal
-              community={community}
-              onSave={(updatedCommunity: Community) => {
-                // need to refetch the community
-                console.log("Updated Community:", updatedCommunity);
-              }}
-              onClose={() => setIsEditModalOpen(false)}
-            />
-          )}
-          <Button
-            variant={isFollowing ? "outline" : "default"}
-            size="sm"
-            onClick={handleFollowToggle}
-            className="text-xs h-8"
-          >
-            {isFollowing ? "Following" : "Follow"}
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            onClick={handleJoinCommunity}
-            className="text-xs h-8"
-          >
-            Join Community
-          </Button>
-        </div> */}
-      </div>
-
-     
-      
-      <Tabs
-        defaultValue="about"
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="w-full my-4"
-      >
-        <div>
-            <h2 className="text-xl font-semibold mb-2">About Us</h2>
-            <p className="text-md text-muted-foreground">{community.description}</p>
-          </div>
-
-          <div>
-            <h2 className="text-lg font-semibold my-2 mt-6">Contact & Info</h2>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span>
-                  President: {community.head_user.name} {community.head_user.surname}
-                </span>
+                <div>
+                  <h2 className="text-2xl font-bold mb-6">Past Events</h2>
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {communityEvents.map((event) => (
+                      <EventCard key={event.id} {...event} />
+                    ))}
+                  </div>
+                </div>
               </div>
-              {community.instagram_url && (
-                <a
-                  href={community.instagram_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-primary hover:underline"
-                >
-                  <InstagramIcon className="h-4 w-4" />
-                  <span>Instagram</span>
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
-              {community.telegram_url && (
-                <a
-                  href={community.telegram_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-primary hover:underline"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  <span>Telegram</span>
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
-            </div>
-          </div>
- {/* 
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="posts">Posts</TabsTrigger>
-          <TabsTrigger value="events">Events</TabsTrigger>
-          <TabsTrigger value="gallery">Gallery</TabsTrigger>
-        </TabsList>
 
-        <TabsContent value="posts" className="pt-4 space-y-4">
-          
-        </TabsContent>
+              <Card>
+                    <CardHeader className="text-lg font-semibold">
+                      Create event for this community
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Are you a club member? Create an event for this community!
+                      </p>
+                      <Button className="w-full">Create Event</Button>
+                    </CardContent>
+                  </Card>
+            </TabsContent>
 
-        <TabsContent value="events" className="pt-4">
-          {communityEvents.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {communityEvents.map((event) => (
-                <Card
-                  key={event.id}
-                  className="overflow-hidden cursor-pointer"
-                  onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(event.id.toString()))}
-                >
-                  <div className="aspect-[3/2] relative">
-                    {event.media && event.media.length > 0 ? (
+            <TabsContent value="community" className="mt-6">
+            <h1 className="text-center">  Coming Soon!</h1>
+
+              {/* <div className="grid gap-6 md:grid-cols-3">                
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader className="text-lg font-semibold">Join the Conversation</CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Share your thoughts, ask questions, and connect with club members.
+                      </p>
+                      <Button className="w-full">Post to Community</Button>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card>
+                    <CardHeader className="text-lg font-semibold">Community Guidelines</CardHeader>
+                    <CardContent>
+                      <ul className="text-sm space-y-2 list-disc pl-4">
+                        <li>Be respectful and considerate</li>
+                        <li>Stay on topic</li>
+                        <li>No spam or self-promotion</li>
+                        <li>Report inappropriate content</li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div> */}
+            </TabsContent>
+
+            <TabsContent value="gallery" className="mt-6">
+            <h1 className="text-center"> Coming Soon!</h1>
+
+              {/* <div className="space-y-6">
+                <h2 className="text-2xl font-bold">Club Gallery</h2>
+                <p className="text-muted-foreground">
+                  The gallery will display photos from club events and
+                  activities. Connect Google Photos to display album content.
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="aspect-square bg-muted rounded-md overflow-hidden"
+                    >
                       <img
-                        src={event.media[0].url || "/placeholder.svg"}
-                        alt={event.name}
+                        src="/placeholder.svg"
+                        alt="Gallery placeholder"
                         className="w-full h-full object-cover"
                       />
-                    ) : (
-                      <div className="w-full h-full bg-muted flex items-center justify-center">
-                        <Calendar className="h-8 w-8 text-muted-foreground opacity-50" />
-                      </div>
-                    )}
-                  </div>
-                  <CardContent className="p-2">
-                    <h3 className="font-medium text-xs line-clamp-1">
-                      {event.name}
-                    </h3>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {new Date(event.event_datetime).toLocaleDateString()}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Calendar className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
-              <h3 className="text-base font-medium">No upcoming events</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                This community doesn't have any scheduled events.
-              </p>
-              <Button
-                variant="outline"
-                size="icon"
-                className="mt-4"
-                onClick={() => setIsCreateModalOpen(true)}
-              >
-                {/* {isCreateModalOpen && (
-              <CreateEventModal
-                isOpen={isCreateModalOpen}
-                onSave={(newEvent: CampusCurrent.Event) => {
-                  setCommunityEvents([...communityEvents, newEvent]); // saving the new event to the community events
-                }}
-                onClose={() => setIsCreateModalOpen(false)}
-              />
-            )} 
-                <Plus className="h-4 w-4" /> 
-              </Button>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="gallery" className="pt-4">
-          {community.media && community.media.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {community.media.map((media, index) => (
-                <div
-                  key={index}
-                  className="aspect-square rounded-md overflow-hidden"
-                >
-                  <img
-                    src={media.url || "/placeholder.svg"}
-                    alt={`${community.name} gallery ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <h3 className="text-base font-medium">No gallery images</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                This community hasn't uploaded any gallery images yet.
-              </p>
-            </div>
-          )}
-        </TabsContent>*/}
-      </Tabs> 
 
+                <div className="text-center">
+                  <Button variant="outline" size="lg">
+                    Load More Photos
+                  </Button>
+                </div>
+              </div> */}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </main>
       {/* Login Modal */}
       <LoginModal
         isOpen={showLoginModal}
@@ -374,6 +396,6 @@ export default function CommunityDetailPage() {
             : "You need to be logged in to join communities."
         }
       />
-    </>
+    </div>
   );
 }

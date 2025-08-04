@@ -9,7 +9,7 @@ WORKDIR /nuros
 
 # Copy only package.json and package-lock.json for caching dependencies
 COPY frontend/package*.json ./
-COPY frontend/package-lock.json ./
+# COPY frontend/package-lock.json ./
 
 # Clean install dependencies (force rebuild for container architecture)
 RUN npm install
