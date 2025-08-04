@@ -13,7 +13,6 @@ import { useState } from "react";
 import { Calendar, Plus } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { EventModalProvider } from "@/features/campuscurrent/components/EventModalProvider";
-import { useNavigate } from "react-router-dom";
 
 const EventsGrid = ({
   isLoading,
@@ -60,7 +59,6 @@ export default function Events() {
     end_date?: string;
   }>({});
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const navigate = useNavigate();
   const { events, isLoading, isError } = useEvents(dateFilter);
 
   const setFilter = (value: string) => {
@@ -121,13 +119,12 @@ export default function Events() {
                 <Button>Explore Events</Button>
               </Button>
               <Button
-                asChild
                 size="lg"
                 variant="outline"
-                onClick={() => navigate("communities")}
-                className="border-whitebg-yellow-500 text-black hover:bg-white/10"
+                className="border-white bg-white text-black hover:bg-white/10"
+                onClick={() => setIsCreateModalOpen(true)}
               >
-                <Button>Or create your own</Button>
+                Or create your own
               </Button>
             </div>
           </div>
@@ -149,7 +146,7 @@ export default function Events() {
     <div className="flex flex-col min-h-screen" id="events-section">
       <main className="flex-grow">
         {/* Header with Create Event Button */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-6" id="create-event-button">
           <h1 className="text-2xl font-bold">Events</h1>
           <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />

@@ -18,7 +18,6 @@ import { Media } from "@/features/media/types/types";
     }
 
     export enum EventPolicy {
-      all = "all",
       open = "open",
       free_ticket = "free_ticket",
       paid_ticket = "paid_ticket"
@@ -36,10 +35,23 @@ import { Media } from "@/features/media/types/types";
       picture: string;
     }
 
+    export enum EditableFields {
+      name = "name",
+      place = "place",
+      event_datetime = "event_datetime",
+      description = "description",
+      duration = "duration",
+      policy = "policy",
+      status = "status",
+      type = "type",
+      tag = "tag"
+    }
+
+
     export interface Permissions {
       can_edit: boolean;
       can_delete: boolean;
-      editable_fields: string[];
+      editable_fields: EditableFields[];
     }
     export interface Community {
       id: number;
@@ -177,4 +189,17 @@ import { Media } from "@/features/media/types/types";
       description: string;
       duration: number;
       type: EventType;
+    }
+
+    //no id, community_id, creator_sub, permissions, media, community, creator
+    export interface EditEventData {
+      name: string;
+      place: string;
+      event_datetime: string;
+      description: string;
+      duration: number;
+      policy: EventPolicy;
+      status: EventStatus;
+      type: EventType;
+      tag: EventTag;
     }

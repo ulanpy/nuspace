@@ -1,15 +1,15 @@
 import { Progress } from "@/components/atoms/progress";
 import { ProductDetailsForm } from "./ProductDetailsForm";
-import { ImageGalery } from "./image-galery";
+import { MediaGallery } from "@/features/kupi-prodai/components/media/MediaGallery";
 import { ImageIcon, RefreshCw, Upload, Plus } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/card";
 import { FormSkeleton } from "@/components/atoms/skeleton";
 import { useRef, useState, useEffect } from "react";
 import { useListingState } from "@/context/ListingContext";
-import { useMediaUpload } from "@/modules/media/hooks/useMediaUpload";
-import { useMediaSelection } from "@/modules/media/hooks/useMediaSelection";
-import { useProductForm } from "@/modules/kupi-prodai/hooks/useProductForm";
+import { useMediaUpload } from "@/features/media/hooks/useMediaUpload";
+import { useMediaSelection } from "@/features/media/hooks/useMediaSelection";
+import { useProductForm } from "@/features/kupi-prodai/hooks/useProductForm";
 import { motion } from "framer-motion";
 import { formVariants, sectionVariants } from "@/utils/animationVariants";
 
@@ -220,9 +220,11 @@ export const ProductCreateForm = ({
                 animate={{ opacity: 1, height: "auto" }}
                 transition={{ duration: 0.3 }}
               >
-                <ImageGalery
-                  previewImages={previewMedia}
-                  removeImage={removeNewMedia}
+                <MediaGallery
+                  items={previewMedia}
+                  onRemove={removeNewMedia}
+                  showMainIndicator={false}
+                  animateEntrance={true}
                 />
               </motion.div>
             )}
