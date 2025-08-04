@@ -13,7 +13,6 @@ import { useState } from "react";
 import { Calendar, Plus } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { EventModalProvider } from "@/features/campuscurrent/components/EventModalProvider";
-import { useNavigate } from "react-router-dom";
 
 const EventsGrid = ({
   isLoading,
@@ -62,7 +61,6 @@ export default function Events() {
     start_date: new Date().toISOString().split("T")[0], // Default to show only upcoming events
   });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const navigate = useNavigate();
   const { events, isLoading, isError } = useEvents(dateFilter);
 
   const setFilter = (value: string) => {
@@ -106,70 +104,61 @@ export default function Events() {
   return (
     <>
       {/* Hero Section */}
-      <MotionWrapper>
-        <section className="py-12 md:py-20 bg-purple-600 text-white">
-          <div className="container px-4 md:px-6">
-            <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
-              <div className="space-y-4">
-                <h1 className="text-3xl md:text-5xl font-bold">
-                  Events you don't want to miss
-                </h1>
-                <p className="text-lg md:text-xl text-white/90">
-                  Discover exciting events happening around campus, from
-                  academic talks to cultural celebrations.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button
-                    asChild
-                    size="lg"
-                    className="bg-yellow-500 text-black hover:bg-yellow-600"
-                    onClick={() =>
-                      document
-                        .getElementById("events-section")
-                        ?.scrollIntoView({ behavior: "smooth" })
-                    }
-                  >
-                    <Button>Explore Events</Button>
-                  </Button>
-                  <Button
-                    asChild
-                    size="lg"
-                    variant="outline"
-                    onClick={() => navigate("communities")}
-                    className="border-whitebg-yellow-500 text-black hover:bg-white/10"
-                  >
-                    <Button>Or create your own</Button>
-                  </Button>
-                </div>
-              </div>
-              <div className="lg:flex hidden justify-end">
-                <div className="w-full max-w-md aspect-video bg-white/10 rounded-lg overflow-hidden">
-                  <img
-                    src="/placeholder.svg"
-                    alt="Campus events"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </MotionWrapper>
-
-      <MotionWrapper>
-        <div className="flex flex-col min-h-screen" id="events-section">
-          <main className="flex-grow">
-            {/* Header with Create Event Button */}
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold">Events</h1>
+    <MotionWrapper>
+    <section className="py-12 md:py-20 bg-purple-600 text-white">
+      <div className="container px-4 md:px-6">
+        <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
+          <div className="space-y-4">
+            <h1 className="text-3xl md:text-5xl font-bold">
+              Events you don't want to miss
+            </h1>
+            <p className="text-lg md:text-xl text-white/90">
+              Discover exciting events happening around campus, from academic talks to cultural celebrations.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="flex items-center gap-2"
+                asChild
+                size="lg"
+                className="bg-yellow-500 text-black hover:bg-yellow-600"
+                onClick={() => document.getElementById('events-section')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                <Plus className="h-4 w-4" />
-                Create Event
+                <Button>Explore Events</Button>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white bg-white text-black hover:bg-white/10"
+                onClick={() => setIsCreateModalOpen(true)}
+              >
+                Or create your own
               </Button>
             </div>
+          </div>
+          <div className="lg:flex hidden justify-end">
+            <div className="w-full max-w-md aspect-video bg-white/10 rounded-lg overflow-hidden">
+              <img
+                src="/placeholder.svg"
+                alt="Campus events"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    </MotionWrapper>
+
+    <MotionWrapper>
+    <div className="flex flex-col min-h-screen" id="events-section">
+      <main className="flex-grow">
+        {/* Header with Create Event Button */}
+        <div className="flex justify-between items-center mb-6" id="create-event-button">
+          <h1 className="text-2xl font-bold">Events</h1>
+          <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Create Event
+          </Button>
+        </div>
 
             <Tabs
               value={activeTab}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
   Calendar,
@@ -16,12 +16,11 @@ import { Button } from "@/components/atoms/button";
 import { Badge } from "@/components/atoms/badge";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/hooks/use-user";
-import { LoginModal } from "@/components/molecules/login-modal";
 import { ROUTES } from "@/data/routes";
 import { useEvent } from "@/features/campuscurrent/hooks/events/useEvent";
 
 import { addToGoogleCalendar as addToGoogleCalendarUtil } from "@/features/campuscurrent/utils/calendar";
+import { EventModalProvider } from "../../components/EventModalProvider";
 
 // Helper function to format date for display
 const formatEventDate = (dateString: string) => {
@@ -58,24 +57,16 @@ const getPolicyColor = (policy: string) => {
 };
 
 export default function EventDetailPage() {
-  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useUser();
   const { event, isLoading, isError } = useEvent();
 
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   const handleAddToCalendar = () => {
     if (!event) return;
 
-    if (!user) {
-      setPendingAction(() => () => handleAddToCalendar());
-      setShowLoginModal(true);
-      return;
-    }
+
 
     addToGoogleCalendarUtil(event);
 
@@ -85,14 +76,7 @@ export default function EventDetailPage() {
     });
   };
 
-  // Handle login success
-  const handleLoginSuccess = () => {
-    setShowLoginModal(false);
-    if (pendingAction) {
-      pendingAction();
-      setPendingAction(null);
-    } 
-  };
+
 
   // Share event
   const shareEvent = () => {
@@ -263,16 +247,16 @@ export default function EventDetailPage() {
                 <span>Add to Calendar</span>
               </Button>
             )}
-            {event.permissions?.can_edit && (
-              <Button
-                variant="outline"
-                className="flex items-center gap-2"
-                onClick={() => setShowEditModal(true)}
-              >
-                <Pencil className="h-4 w-4" />
-                Edit Event
-              </Button>
-            )}
+            {event.permissions?.can_edit === true && (
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  onClick={() => setShowEditModal(true)}
+                >
+                  <Pencil className="h-4 w-4" />
+                  Edit Event
+                </Button>
+              )}
             <Button
               variant="outline"
               className="flex items-center gap-1"
@@ -354,13 +338,12 @@ export default function EventDetailPage() {
         </div>
       ) : null}
 
-      {/* Login Modal */}
-      <LoginModal
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        onSuccess={handleLoginSuccess}
-        title="Login Required"
-        message="You need to be logged in to add events to your Google Calendar."
+      <EventModalProvider
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        communityId={event.community?.id}
+        permissions={event.permissions}
+        event={event}
       />
     </div>
   );

@@ -40,8 +40,13 @@ export const campuscurrentAPI = {
   },
   editEvent: (id: string, data: Event) => {
     return apiCall<Event>(`/` + Routes.EVENTS + `/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       json: data,
+    });
+  },
+  deleteEvent: (id: string) => {
+    return apiCall<void>(`/` + Routes.EVENTS + `/${id}`, {
+      method: "DELETE",
     });
   },
 };
