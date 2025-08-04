@@ -16,21 +16,58 @@ import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Mail,
-  Calendar,
-  ExternalLink,
-} from "lucide-react";
+import { Mail, Calendar, ExternalLink, Plus } from "lucide-react";
 
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { useCommunity } from "@/features/campuscurrent/hooks/communities/use-community";
+import { useEvents } from "@/features/campuscurrent/hooks/events/useEvents"; // Import useEvents
 import { Event } from "@/features/campuscurrent/types/types";
+import type * as Types from "@/types"; // Assuming a types file for PaginatedResponse
 
 // Helper function to get community type display text
 const getCommunityTypeDisplay = (type: string) => {
   return type.charAt(0).toUpperCase() + type.slice(1);
+};
+
+// Reusable EventsGrid component from your list.tsx
+const EventsGrid = ({
+  isLoading,
+  isError,
+  events,
+}: {
+  isLoading: boolean;
+  isError: boolean;
+  events: Types.PaginatedResponse<Event, "events"> | null;
+}) => {
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (isError) {
+    return <div>Error loading events.</div>;
+  }
+
+  if (!events || events.events.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <h3 className="text-lg font-medium mb-2">No events found</h3>
+        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+          There are no events scheduled for this period.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-6">
+      {(events?.events || []).map((event) => (
+        <EventCard key={event.id} {...event} />
+      ))}
+    </div>
+  );
 };
 
 export default function CommunityDetailPage() {
@@ -38,15 +75,38 @@ export default function CommunityDetailPage() {
   const { toast } = useToast();
   const { user } = useUser();
 
-  const { community, isLoading } = useCommunity();
+  const { community, isLoading: isCommunityLoading } = useCommunity();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [communityEvents] = useState<Event[]>([]);
   const [activeTab, setActiveTab] = useState("about");
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+
+  // Fetch events for this community
+  const communityId = community?.id;
+  const today = new Date().toISOString().split("T")[0];
+
+  // Fetch upcoming events
+  const {
+    events: upcomingEvents,
+    isLoading: isLoadingUpcoming,
+    isError: isErrorUpcoming,
+  } = useEvents({
+    community_id: communityId,
+    start_date: today,
+  });
+
+  // Fetch past events
+  const {
+    events: pastEvents,
+    isLoading: isLoadingPast,
+    isError: isErrorPast,
+  } = useEvents({
+    community_id: communityId,
+    end_date: today,
+  });
 
   // Handle follow/unfollow
   const handleFollowToggle = () => {
@@ -79,13 +139,10 @@ export default function CommunityDetailPage() {
       return;
     }
 
-    // Show toast
     toast({
       title: "Request Sent",
       description: `Your request to join ${community?.name} has been sent.`,
     });
-
-    // In a real app, you would make an API call here
   };
 
   // Handle login success
@@ -99,7 +156,7 @@ export default function CommunityDetailPage() {
     setPendingAction(null);
   };
 
-  if (isLoading) {
+  if (isCommunityLoading) {
     return (
       <div className="animate-pulse space-y-4">
         <div className="h-40 bg-muted rounded-md"></div>
@@ -247,7 +304,6 @@ export default function CommunityDetailPage() {
                           <p className="text-sm">{community.established}</p>
                         </div>
                       </div>
-
                     </CardContent>
                   </Card>
 
@@ -281,105 +337,45 @@ export default function CommunityDetailPage() {
             </TabsContent>
 
             <TabsContent value="events" className="mt-6">
-              <div className="space-y-8">
+              <div className="space-y-12">
                 <div>
-                  <h2 className="text-2xl font-bold mb-6">Upcoming Events</h2>
-                  {communityEvents.length > 0 ? (
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                      {communityEvents.map((event) => (
-                        <EventCard key={event.id} {...event} />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">
-                      No upcoming events at the moment. Check back later!
-                    </p>
-                  )}
+                  <h2 className="text-2xl font-bold mb-2">Upcoming Events</h2>
+                  <EventsGrid
+                    isLoading={isLoadingUpcoming}
+                    isError={isErrorUpcoming}
+                    events={upcomingEvents}
+                  />
                 </div>
 
                 <div>
-                  <h2 className="text-2xl font-bold mb-6">Past Events</h2>
-                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {communityEvents.map((event) => (
-                      <EventCard key={event.id} {...event} />
-                    ))}
-                  </div>
+                  <h2 className="text-2xl font-bold mb-2">Past Events</h2>
+                  <EventsGrid
+                    isLoading={isLoadingPast}
+                    isError={isErrorPast}
+                    events={pastEvents}
+                  />
                 </div>
               </div>
 
-              <Card>
-                    <CardHeader className="text-lg font-semibold">
-                      Create event for this community
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Are you a club member? Create an event for this community!
-                      </p>
-                      <Button className="w-full">Create Event</Button>
-                    </CardContent>
-                  </Card>
+              <Card className="mt-8">
+                <CardHeader className="text-lg font-semibold">
+                  Create event for this community
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Are you a club member? Create an event for this community!
+                  </p>
+                  <Button className="w-full">Create Event</Button>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="community" className="mt-6">
-            <h1 className="text-center">  Coming Soon!</h1>
-
-              {/* <div className="grid gap-6 md:grid-cols-3">                
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader className="text-lg font-semibold">Join the Conversation</CardHeader>
-                    <CardContent className="space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Share your thoughts, ask questions, and connect with club members.
-                      </p>
-                      <Button className="w-full">Post to Community</Button>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader className="text-lg font-semibold">Community Guidelines</CardHeader>
-                    <CardContent>
-                      <ul className="text-sm space-y-2 list-disc pl-4">
-                        <li>Be respectful and considerate</li>
-                        <li>Stay on topic</li>
-                        <li>No spam or self-promotion</li>
-                        <li>Report inappropriate content</li>
-                      </ul>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div> */}
+              <h1 className="text-center"> Coming Soon!</h1>
             </TabsContent>
 
             <TabsContent value="gallery" className="mt-6">
-            <h1 className="text-center"> Coming Soon!</h1>
-
-              {/* <div className="space-y-6">
-                <h2 className="text-2xl font-bold">Club Gallery</h2>
-                <p className="text-muted-foreground">
-                  The gallery will display photos from club events and
-                  activities. Connect Google Photos to display album content.
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {Array.from({ length: 8 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="aspect-square bg-muted rounded-md overflow-hidden"
-                    >
-                      <img
-                        src="/placeholder.svg"
-                        alt="Gallery placeholder"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="text-center">
-                  <Button variant="outline" size="lg">
-                    Load More Photos
-                  </Button>
-                </div>
-              </div> */}
+              <h1 className="text-center"> Coming Soon!</h1>
             </TabsContent>
           </Tabs>
         </div>
