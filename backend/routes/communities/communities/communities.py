@@ -102,6 +102,7 @@ async def add_community(
     )
 
 
+# add keyword search
 @router.get("/communities", response_model=schemas.ListCommunity)
 async def get_communities(
     request: Request,
@@ -116,6 +117,9 @@ async def get_communities(
         description=("if 'me' then current user's sub will be used"),
     ),
     db_session: AsyncSession = Depends(get_db_session),
+    keyword: str | None = Query(
+        default=None, description="Search keyword for community name or description"
+    ),
 ) -> schemas.ListCommunity:
     """
     Retrieves a paginated list of communities with flexible filtering.
@@ -130,6 +134,7 @@ async def get_communities(
     - `community_category`: Filter by community category (optional)
     - `recruitment_status`: Filter by recruitment status (optional)
     - `head_sub`: Filter by head sub (optional)
+    - `keyword`: Search keyword for community name or description (optional)
 
     **Returns:**
     - List of communities matching the criteria with pagination info
@@ -146,6 +151,20 @@ async def get_communities(
 
     head_sub = user[0].get("sub") if head_sub == "me" else head_sub
 
+    if keyword:
+        meili_result = await meilisearch.get(
+            request=request,
+            storage_name=EntityType.communities.value,
+            keyword=keyword,
+            page=page,
+            size=size,
+            filters=None,
+        )
+        community_ids = [item["id"] for item in meili_result["hits"]]
+
+        if not community_ids:
+            return schemas.ListCommunity(communities=[], total_pages=1)
+
     if community_type:
         conditions.append(Community.type == community_type)
     if community_category:
@@ -154,13 +173,15 @@ async def get_communities(
         conditions.append(Community.recruitment_status == recruitment_status)
     if head_sub:
         conditions.append(Community.head == head_sub)
+    if keyword:
+        conditions.append(Community.id.in_(community_ids))
 
     qb = QueryBuilder(session=db_session, model=Community)
     communities: List[Community] = (
         await qb.base()
         .filter(*conditions)
         .eager(Community.head_user)
-        .paginate(size=size, page=page)
+        .paginate(size if not keyword else None, page if not keyword else None)
         .order(Community.created_at.desc())
         .all()
     )
@@ -180,6 +201,11 @@ async def get_communities(
         request=request, media_objects=media_objs, resources=communities
     )
 
+    if keyword:
+        count = meili_result.get("estimatedTotalHits", 0)
+    else:
+        count: int = await qb.blank(model=Community).base(count=True).filter(*conditions).count()
+
     community_responses: List[schemas.CommunityResponse] = [
         response_builder.build_schema(
             schemas.CommunityResponse,
@@ -189,7 +215,7 @@ async def get_communities(
         )
         for community, media in zip(communities, media_results)
     ]
-    count: int = await qb.blank().base(count=True).filter(*conditions).count()
+
     total_pages: int = response_builder.calculate_pages(count=count, size=size)
     return schemas.ListCommunity(communities=community_responses, total_pages=total_pages)
 
