@@ -2,7 +2,7 @@ import React from 'react';
 import { Label } from '@/components/atoms/label';
 import { Input } from '@/components/atoms/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/atoms/select';
-import { useEventForm } from './EventFormProvider';
+import { useEventForm } from '../../../../context/EventFormContext';
 
 const eventTypes = [
   { value: "academic", label: "Academic" },
@@ -25,7 +25,12 @@ export function EventDetailsForm() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Event Name</Label>
+        <div className="flex justify-between">
+          <Label htmlFor="name">Event Name</Label>
+          <span className="text-xs text-gray-500">
+            {formData.name.length} / 75
+          </span>
+        </div>
         <Input 
           id="name" 
           name="name" 
@@ -34,11 +39,17 @@ export function EventDetailsForm() {
           onChange={handleInputChange} 
           placeholder="Enter event name" 
           required
+          maxLength={75}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="place">Location</Label>
+        <div className="flex justify-between">
+          <Label htmlFor="place">Location</Label>
+          <span className="text-xs text-gray-500">
+            {formData.place.length} / 100
+          </span>
+        </div>
         <Input 
           id="place" 
           name="place" 
@@ -47,6 +58,7 @@ export function EventDetailsForm() {
           onChange={handleInputChange} 
           placeholder="Enter event location" 
           required
+          maxLength={100}
         />
       </div>
 
@@ -62,8 +74,7 @@ export function EventDetailsForm() {
           </SelectTrigger>
           <SelectContent className="z-[150]">
             <SelectItem value="open">Open Entry</SelectItem>
-            <SelectItem value="free_ticket">Free Ticket</SelectItem>
-            <SelectItem value="paid_ticket">Paid Ticket</SelectItem>
+            <SelectItem value="registration">Registration</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -89,7 +100,12 @@ export function EventDetailsForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="duration">Duration (minutes)</Label>
+        <div className="flex justify-between">
+          <Label htmlFor="duration">Duration (minutes)</Label>
+          <span className="text-xs text-gray-500">
+            {formData.duration} / 1440
+          </span>
+        </div>
         <Input 
           id="duration" 
           name="duration" 
@@ -99,6 +115,7 @@ export function EventDetailsForm() {
           onChange={handleInputChange} 
           placeholder="60" 
           min="1"
+          max="1440"
         />
       </div>
     </div>

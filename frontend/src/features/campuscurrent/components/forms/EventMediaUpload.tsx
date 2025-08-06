@@ -1,47 +1,48 @@
-import { Label } from '@/components/atoms/label';
-import { MediaDropZone } from '@/features/kupi-prodai/components/media/MediaDropZone';
-import { MediaGallery } from '@/features/kupi-prodai/components/media/MediaGallery';
+// src/features/campuscurrent/components/forms/EventMediaUpload.tsx
+import { MediaUploadZone } from '@/components/organisms/media';
 import { useMediaSelection } from '@/features/media/hooks/useMediaSelection';
 import { useMediaUploadContext } from '@/context/MediaUploadContext';
 import { useMediaEdit } from '@/features/media/hooks/useMediaEdit';
-import { useEventForm } from './EventFormProvider';
+import { useEventForm } from '../../../../context/EventFormContext';
 
 export function EventMediaUpload() {
   const { isEditMode } = useEventForm();
   const { isUploading } = useMediaUploadContext();
   const { handleMediaDelete } = useMediaEdit();
-  
-  const {
-    previewMedia,
-    isDragging,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    removeNewMedia,
-    handleFileSelect,
-  } = useMediaSelection();
+  const mediaSelection = useMediaSelection();
 
   return (
-    <div className="space-y-4">
-      <Label className="text-base font-semibold">Event Images</Label>
-      <MediaDropZone
-        isDragging={isDragging}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onFileSelect={handleFileSelect}
-        disabled={isUploading}
-        maxSizeText="PNG, JPG, GIF up to 10MB"
-      />
+    <MediaUploadZone
+      // Core functionality
+      items={mediaSelection.previewMedia}
+      onItemsChange={() => {}} // Handled by mediaSelection hook
+      onRemove={isEditMode ? handleMediaDelete : mediaSelection.removeNewMedia}
+      title="Event main poster"
+      // Drag & drop
+      isDragging={mediaSelection.isDragging}
+      onDragOver={mediaSelection.handleDragOver}
+      onDragLeave={mediaSelection.handleDragLeave}
+      onDrop={mediaSelection.handleDrop}
+      onFileSelect={mediaSelection.handleFileSelect}
       
-      {previewMedia.length > 0 && (
-        <MediaGallery
-          items={previewMedia}
-          onRemove={isEditMode ? handleMediaDelete : removeNewMedia}
-          showMainIndicator={false}
-          animateEntrance={true}
-        />
-      )}
-    </div>
+      // Upload state
+      isUploading={isUploading}
+      
+      // Customization
+      label="Event Images"
+      showLabel={true}
+      enablePreview={true}
+      
+      // Component-specific props
+      dropZoneProps={{
+        maxSizeText: "PNG, JPG, GIF up to 10MB",
+        variant: "default"
+      }}
+      
+      galleryProps={{
+        animateEntrance: true,
+        columns: 3
+      }}
+    />
   );
 }

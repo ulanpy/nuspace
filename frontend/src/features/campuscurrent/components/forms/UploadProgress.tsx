@@ -1,5 +1,5 @@
 import React from 'react';
-import { useEventForm } from './EventFormProvider';
+import { useEventForm } from '../../../../context/EventFormContext';
 
 interface UploadProgressProps {
   isUploading: boolean;

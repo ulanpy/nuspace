@@ -1,10 +1,9 @@
-import React from 'react';
 import { Label } from '@/components/atoms/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/atoms/select';
-import { useEventForm } from './EventFormProvider';
+import { useEventForm } from '../../../../context/EventFormContext';
 import { EditableFields } from '@/features/campuscurrent/types/types';
 
-export function EventAdminFields() {
+export function EventElevatedFields() {
   const {
     formData,
     isEditMode,

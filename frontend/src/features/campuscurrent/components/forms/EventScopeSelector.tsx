@@ -2,7 +2,7 @@ import { Users } from 'lucide-react';
 import { Label } from '@/components/atoms/label';
 import { Switch } from '@/components/atoms/switch';
 import { Button } from '@/components/atoms/button';
-import { useEventForm } from './EventFormProvider';
+import { useEventForm } from '../../../../context/EventFormContext';
 
 interface EventScopeSelectorProps {
   onCommunityModalOpen: () => void;
@@ -16,7 +16,7 @@ export function EventScopeSelector({ onCommunityModalOpen }: EventScopeSelectorP
     handleCommunityToggle,
   } = useEventForm();
 
-  // Don't render in edit mode
+  // Don't render in edit mode. Available in create mode only.
   if (isEditMode) {
     return null;
   }

@@ -120,11 +120,44 @@ export function EventFormProvider({
   }, [isEditMode, event, communityId, user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     
     // Check permissions for edit mode
     if (isEditMode && permissions && !permissions.editable_fields.includes(name as EditableFields)) {
       return; // Field is not editable
+    }
+    
+    // Special validation for duration field
+    if (name === 'duration' && type === 'number') {
+      const numValue = parseInt(value);
+      const min = 1;
+      const max = 1000;
+      
+      // If empty, allow it (will be handled by required validation)
+      if (value === '') {
+        setFormData({ ...formData, [name]: 0 });
+        return;
+      }
+      
+      // If not a valid number, don't update
+      if (isNaN(numValue)) {
+        return;
+      }
+      
+      // Enforce min/max limits
+      if (numValue < min) {
+        setFormData({ ...formData, [name]: min });
+        return;
+      }
+      
+      if (numValue > max) {
+        setFormData({ ...formData, [name]: max });
+        return;
+      }
+      
+      // Valid value, update normally
+      setFormData({ ...formData, [name]: numValue });
+      return;
     }
     
     setFormData({ ...formData, [name]: value });

@@ -6,7 +6,7 @@ import { Input } from '@/components/atoms/input';
 import { Button } from '@/components/atoms/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/atoms/popover';
 import { Calendar as CalendarComponent } from '@/components/atoms/calendar';
-import { useEventForm } from './EventFormProvider';
+import { useEventForm } from '../../../../context/EventFormContext';
 
 export function EventDateTimeSelector() {
   const {
