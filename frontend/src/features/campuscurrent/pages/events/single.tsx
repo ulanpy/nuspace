@@ -20,7 +20,7 @@ import { ROUTES } from "@/data/routes";
 import { useEvent } from "@/features/campuscurrent/hooks/events/useEvent";
 
 import { addToGoogleCalendar as addToGoogleCalendarUtil } from "@/features/campuscurrent/utils/calendar";
-import { EventModalProvider } from "../../components/EventModalProvider";
+import { EventModal } from "@/features/campuscurrent/components/EventModal";
 
 // Helper function to format date for display
 const formatEventDate = (dateString: string) => {
@@ -338,12 +338,13 @@ export default function EventDetailPage() {
         </div>
       ) : null}
 
-      <EventModalProvider
+      <EventModal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
         communityId={event.community?.id}
         permissions={event.permissions}
         event={event}
+        isEditMode={true} 
       />
     </div>
   );

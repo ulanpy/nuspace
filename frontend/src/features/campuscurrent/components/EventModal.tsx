@@ -10,16 +10,16 @@ import { CreateEventData, EditEventData, EventType, Event, Permissions, Communit
 import { CommunitySelectionModal } from "./CommunitySelectionModal";
 
 // Import all the new modular components
-import { EventFormProvider, useEventForm } from "./forms/EventFormProvider";
 import { EventScopeSelector, CommunityDisplay } from "./forms/EventScopeSelector";
 import { EventMediaUpload } from "./forms/EventMediaUpload";
 import { EventDetailsForm } from "./forms/EventDetailsForm";
 import { EventDateTimeSelector } from "./forms/EventDateTimeSelector";
-import { EventAdminFields } from "./forms/EventAdminFields";
+import { EventElevatedFields } from "./forms/EventElevatedFields";
 import { EventDescription } from "./forms/EventDescription";
 import { UploadProgress } from "./forms/UploadProgress";
 import { DeleteConfirmation } from "./forms/DeleteConfirmation";
 import { EventActions } from "./forms/EventActions";
+import { useEventForm, EventFormProvider } from "@/context/EventFormContext";
 
 interface EventModalProps {
   isOpen: boolean;
@@ -156,8 +156,8 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, event, pe
     <EventFormProvider
       isEditMode={isEditMode}
       event={event}
-      permissions={permissions}
       communityId={communityId}
+      permissions={permissions}
     >
       <Modal
         isOpen={isOpen}
@@ -182,7 +182,7 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, event, pe
           <EventDateTimeSelector />
 
           {/* Admin Fields (Tag & Status) */}
-          <EventAdminFields />
+          <EventElevatedFields />
 
           {/* Description */}
           <EventDescription />

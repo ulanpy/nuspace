@@ -12,7 +12,7 @@ import { Event } from "@/features/campuscurrent/types/types";
 import { useState } from "react";
 import { Calendar, Plus } from "lucide-react";
 import { Button } from "@/components/atoms/button";
-import { EventModalProvider } from "@/features/campuscurrent/components/EventModalProvider";
+import { EventModal } from "@/features/campuscurrent/components/EventModal";
 
 const EventsGrid = ({
   isLoading,
@@ -211,9 +211,10 @@ export default function Events() {
           </main>
 
           {/* Create Event Modal */}
-          <EventModalProvider
+          <EventModal
             isOpen={isCreateModalOpen}
             onClose={() => setIsCreateModalOpen(false)}
+            isEditMode={false}
           />
         </div>
       </MotionWrapper>
