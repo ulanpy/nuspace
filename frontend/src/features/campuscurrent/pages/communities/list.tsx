@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Users, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/atoms/card";
@@ -11,6 +11,187 @@ import { Community, CommunityCategory } from "@/features/campuscurrent/types/typ
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/atoms/tabs";
 import { useNavigate } from "react-router-dom";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
+
+const CommunitiesCarousel = ({ 
+  communities, 
+  isLoading 
+}: { 
+  communities: Community[]; 
+  isLoading: boolean; 
+}) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  
+  // Auto-cycling effect
+  React.useEffect(() => {
+    if (communities && communities.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentIndex((prev) => (prev + 1) % Math.min(communities.length, 3));
+      }, 4000); // Change slide every 4 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [communities]);
+
+  // Helper function to get profile image
+  const getProfileImage = (community: Community) => {
+    const profileMedia = community.media?.find(
+      (media) => 
+        media.entity_type === "communities" && 
+        media.media_format === "profile"
+    );
+    return profileMedia?.url || "/placeholder.svg";
+  };
+
+  // Helper function to get banner image
+  const getBannerImage = (community: Community) => {
+    const bannerMedia = community.media?.find(
+      (media) => 
+        media.entity_type === "communities" && 
+        media.media_format === "banner"
+    );
+    return bannerMedia?.url || "/placeholder.svg";
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-md aspect-video bg-white/10 rounded-lg overflow-hidden animate-pulse">
+        <div className="w-full h-full bg-white/20"></div>
+      </div>
+    );
+  }
+
+  if (!communities || communities.length === 0) {
+    return (
+      <div className="w-full max-w-md aspect-video bg-white/10 rounded-lg overflow-hidden flex items-center justify-center">
+        <div className="text-center text-white/70">
+          <Users className="h-12 w-12 mx-auto mb-2" />
+          <p className="text-sm">No communities available</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Take first 3 communities
+  const displayCommunities = communities.slice(0, 3);
+  
+  const nextSlide = () => {
+    setCurrentIndex((prev) => (prev + 1) % displayCommunities.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentIndex((prev) => (prev - 1 + displayCommunities.length) % displayCommunities.length);
+  };
+
+  return (
+    <div className="relative w-full max-w-md aspect-video bg-white/10 rounded-lg overflow-hidden">
+      {/* Banner background - positioned behind and at upper side */}
+      <div className="absolute inset-0">
+        {displayCommunities.map((community, index) => (
+          <div
+            key={`banner-${community.id}`}
+            className={`absolute inset-0 transition-transform duration-700 ease-in-out ${
+              index === currentIndex 
+                ? 'translate-x-0' 
+                : index < currentIndex 
+                  ? '-translate-x-full' 
+                  : 'translate-x-full'
+            }`}
+          >
+            <div 
+              className="absolute inset-0 bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${getBannerImage(community)})`,
+              }}
+            />
+            {/* Subtle gradient overlay for banner */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" />
+          </div>
+        ))}
+      </div>
+
+      {/* Main carousel content with sliding transitions */}
+      <div className="relative w-full h-full">
+        {displayCommunities.map((community, index) => (
+          <div
+            key={community.id}
+            className={`absolute inset-0 transition-transform duration-700 ease-in-out ${
+              index === currentIndex 
+                ? 'translate-x-0' 
+                : index < currentIndex 
+                  ? '-translate-x-full' 
+                  : 'translate-x-full'
+            }`}
+          >
+            {/* Content card with LinkedIn-style design */}
+            <div className="relative z-10 w-full h-full p-6 flex flex-col justify-between">
+              {/* Header with profile image positioned over banner */}
+              <div className="flex items-start gap-4">
+                <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0 border-4 border-white shadow-lg">
+                  <img
+                    src={getProfileImage(community)}
+                    alt={`${community.name} profile`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = "/placeholder.svg";
+                    }}
+                  />
+                </div>
+                <div className="flex-1 pt-2">
+                  <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 drop-shadow-lg">
+                    {community.name}
+                  </h3>
+                  <p className="text-white/90 text-sm line-clamp-3 drop-shadow-md">
+                    {community.description}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Footer with badges and indicators */}
+              <div className="flex items-center justify-between">
+                <div className="flex gap-2">
+                  <span className="px-3 py-1 bg-white/25 backdrop-blur-sm text-white text-xs rounded-full capitalize font-medium">
+                    {community.category}
+                  </span>
+                  <span className="px-3 py-1 bg-white/25 backdrop-blur-sm text-white text-xs rounded-full capitalize font-medium">
+                    {community.type}
+                  </span>
+                </div>
+                <div className="flex gap-1">
+                  {displayCommunities.map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        i === currentIndex ? 'bg-white' : 'bg-white/40'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Navigation arrows */}
+      {displayCommunities.length > 1 && (
+        <>
+          <button
+            onClick={prevSlide}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/20 hover:bg-white/30 text-white rounded-full flex items-center justify-center transition-colors z-20 backdrop-blur-sm"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            onClick={nextSlide}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/20 hover:bg-white/30 text-white rounded-full flex items-center justify-center transition-colors z-20 backdrop-blur-sm"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </>
+      )}
+    </div>
+  );
+};
 
 const CommuntiesGrid = ({
   isLoading,
@@ -105,20 +286,19 @@ export default function CommunitiesPage() {
                     asChild
                     size="lg"
                     variant="outline"
-                    onClick={() => navigate("create-community")}
-                    className="border-whitebg-yellow-500 text-black hover:bg-white/10"
+                    onClick={() => window.open('https://forms.google.com/your-form-url', '_blank')}
+                    className="border-white text-black hover:bg-white/10 dark:text-white dark:border-white"
                   >
-                    <Button>Or create your own</Button>
+                    <Button className="flex items-center gap-2">
+                      <img src="/src/assets/images/google_form.png" alt="Google Forms" className="h-4 w-4 object-contain" />
+                      Community Registration Form
+                    </Button>
                   </Button>
                 </div>
               </div>
               <div className="lg:flex hidden justify-end">
-                <div className="w-full max-w-md aspect-video bg-white/10 rounded-lg overflow-hidden">
-                  <img
-                    src="/placeholder.svg"
-                    alt="Campus events"
-                    className="w-full h-full object-cover"
-                  />
+                <div className="w-full max-w-md">
+                  <CommunitiesCarousel communities={communities?.communities || []} isLoading={isLoading} />
                 </div>
               </div>
             </div>
@@ -127,17 +307,9 @@ export default function CommunitiesPage() {
       </MotionWrapper>
 
       <MotionWrapper>
-        {/* Header with Create Community Button */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        {/* Header */}
+        <div className="mb-6">
           <h1 className="text-2xl font-bold">Communities</h1>
-          <Button
-            onClick={() => window.open('https://forms.google.com/your-form-url', '_blank')}
-            className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400 text-sm px-3 py-2 w-full sm:w-auto"
-          >
-            <img src="/src/assets/images/google_form.png" alt="Google Forms" className="h-4 w-4 object-contain" />
-            <span className="hidden sm:inline">Submit Community Form</span>
-            <span className="sm:hidden">Submit Form</span>
-          </Button>
         </div>
 
         {/* Responsive Tabs */}
