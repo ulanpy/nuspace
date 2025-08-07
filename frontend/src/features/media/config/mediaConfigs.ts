@@ -6,7 +6,7 @@ export const MEDIA_CONFIGS = {
   campusCurrentEvents: {
     entityType: EntityType.community_events,
     mediaFormat: MediaFormat.carousel,
-    maxFiles: 10,
+    maxFiles: 5,
     maxFileSize: 10, // MB
     allowedTypes: ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'],
     enableMainSelection: true,
@@ -18,8 +18,8 @@ export const MEDIA_CONFIGS = {
   kupiProdaiProducts: {
     entityType: EntityType.products,
     mediaFormat: MediaFormat.carousel,
-    maxFiles: 8,
-    maxFileSize: 5, // MB
+    maxFiles: 5,
+    maxFileSize: 10, // MB
     allowedTypes: ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'],
     enableMainSelection: true,
     enablePreview: true,

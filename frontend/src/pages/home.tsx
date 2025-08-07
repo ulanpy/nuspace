@@ -4,15 +4,11 @@ import { ThemeToggle } from "../components/molecules/theme-toggle";
 import { AppGrid } from "../components/organisms/app-grid";
 import { LoginButton } from "../components/molecules/buttons/login-button";
 import { GlowCarouselWithImage } from "../components/organisms/glow-carousel-with-images";
-import { Link } from "react-router-dom";
 import { useUser } from "@/hooks/use-user";
 import { ReportButton } from "@/components/molecules/buttons/report-button";
 import { TelegramStatus } from "@/components/molecules/telegram-status";
 import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
 import Footer from "@/components/molecules/footer";
-
-import { ROUTES } from "@/data/routes";
-// Define carousel items with your image for the homepage
 
 const homeCarouselItems = [
   {
