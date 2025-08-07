@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useUser } from '@/hooks/use-user';
-import { CreateEventData, EditEventData, EventPolicy, EventType, Event, Permissions, EditableFields, Community } from '@/features/campuscurrent/types/types';
+import { CreateEventData, EditEventData, EventPolicy, EventType, Event, EventPermissions, EventEditableFields, Community } from '@/features/campuscurrent/types/types';
 
 interface EventFormContextType {
   // Form data
@@ -22,7 +22,7 @@ interface EventFormContextType {
   // Modal props
   isEditMode: boolean;
   event?: Event;
-  permissions?: Permissions;
+  permissions?: EventPermissions;
   communityId?: number;
   
   // Handlers
@@ -40,7 +40,7 @@ interface EventFormProviderProps {
   children: React.ReactNode;
   isEditMode: boolean;
   event?: Event;
-  permissions?: Permissions;
+  permissions?: EventPermissions;
   communityId?: number;
 }
 
@@ -123,7 +123,7 @@ export function EventFormProvider({
     const { name, value, type } = e.target;
     
     // Check permissions for edit mode
-    if (isEditMode && permissions && !permissions.editable_fields.includes(name as EditableFields)) {
+    if (isEditMode && permissions && !permissions.editable_fields.includes(name as EventEditableFields)) {
       return; // Field is not editable
     }
     
@@ -165,7 +165,7 @@ export function EventFormProvider({
 
   const handleSelectChange = (name: string, value: string) => {
     // Check permissions for edit mode
-    if (isEditMode && permissions && !permissions.editable_fields.includes(name as EditableFields)) {
+    if (isEditMode && permissions && !permissions.editable_fields.includes(name as EventEditableFields)) {
       return; // Field is not editable
     }
     
@@ -176,7 +176,7 @@ export function EventFormProvider({
   const isFieldEditable = (fieldName: string): boolean => {
     if (!isEditMode) return true; // All fields editable in create mode
     if (!permissions) return false; // No permissions means no editing
-    return permissions.editable_fields.includes(fieldName as EditableFields);
+    return permissions.editable_fields.includes(fieldName as EventEditableFields);
   };
 
   // Community selection handlers

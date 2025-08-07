@@ -31,7 +31,7 @@ export {
 } from './config/mediaConfigs';
 
 // Feature-specific components
-export { UnifiedEventMediaUpload } from '@/features/campuscurrent/components/forms/UnifiedEventMediaUpload';
+export { UnifiedEventMediaUpload } from '@/features/campuscurrent/events/components/UnifiedEventMediaUpload';
 export { UnifiedProductMediaUpload } from '@/features/kupi-prodai/components/forms/UnifiedProductMediaUpload';
 
 // Legacy exports for backward compatibility (deprecated)

@@ -64,7 +64,7 @@ export const MEDIA_CONFIGS = {
 
   // Profile Avatars (single image)
   profileAvatars: {
-    entityType: EntityType.communities, // Reusing communities for now
+    entityType: EntityType.communities,
     mediaFormat: MediaFormat.carousel,
     maxFiles: 1,
     maxFileSize: 1, // MB

@@ -35,7 +35,7 @@ import { Media } from "@/features/media/types/types";
       picture: string;
     }
 
-    export enum EditableFields {
+    export enum EventEditableFields {
       name = "name",
       place = "place",
       event_datetime = "event_datetime",
@@ -47,12 +47,31 @@ import { Media } from "@/features/media/types/types";
       tag = "tag"
     }
 
+    export enum CommunityEditableFields {
+      name = "name",
+      type = "type",
+      category = "category",
+      recruitment_status = "recruitment_status",
+      description = "description",
+      established = "established",
+      head = "head",
+      telegram_url = "telegram_url",
+      instagram_url = "instagram_url"
+    }
 
-    export interface Permissions {
+
+    export interface EventPermissions {
       can_edit: boolean;
       can_delete: boolean;
-      editable_fields: EditableFields[];
+      editable_fields: EventEditableFields[]
     }
+
+    export interface CommunityPermissions {
+      can_edit: boolean;
+      can_delete: boolean;
+      editable_fields: CommunityEditableFields[]
+    }
+
     export interface Community {
       id: number;
       name: string;
@@ -68,7 +87,7 @@ import { Media } from "@/features/media/types/types";
       updated_at: string;
       head_user: HeadUser;
       media: Media[];
-      permissions: Permissions;
+      permissions: CommunityPermissions;
 
     }
 
@@ -99,7 +118,7 @@ import { Media } from "@/features/media/types/types";
       user: HeadUser;
       total_comments: number;
       tag: Tag;
-      permissions: Permissions;
+      permissions: EventPermissions;
     }
 
     // Post creation request and response types
@@ -124,7 +143,7 @@ import { Media } from "@/features/media/types/types";
       user: HeadUser;
       total_comments: number;
       tag: Tag;
-      permissions: Permissions;
+      permissions: CommunityPermissions;
     }
 
     export interface ListCommunityPostResponse {
@@ -176,7 +195,7 @@ import { Media } from "@/features/media/types/types";
       media: Media[];
       community?: Community;
       creator?: HeadUser;
-      permissions?: Permissions;
+      permissions?: EventPermissions;
     }
 
     export interface CreateEventData {
@@ -193,13 +212,33 @@ import { Media } from "@/features/media/types/types";
 
     //no id, community_id, creator_sub, permissions, media, community, creator
     export interface EditEventData {
+      name?: string;
+      place?: string;
+      event_datetime?: string;
+      description?: string;
+      duration?: number;
+      policy?: EventPolicy;
+      status?: EventStatus;
+      type?: EventType;
+      tag?: EventTag;
+    }
+
+    export interface CreateCommunityData {
       name: string;
-      place: string;
-      event_datetime: string;
+      type: CommunityType;
+      category: CommunityCategory;
+      recruitment_status: RecruitmentStatus;
       description: string;
-      duration: number;
-      policy: EventPolicy;
-      status: EventStatus;
-      type: EventType;
-      tag: EventTag;
+      established: string;
+      head: string;
+      telegram_url?: string;
+      instagram_url?: string;
+    }
+
+    export interface EditCommunityData {
+      name?: string;
+      recruitment_status?: RecruitmentStatus;
+      description?: string;
+      telegram_url?: string;
+      instagram_url?: string;
     }

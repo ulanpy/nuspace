@@ -100,3 +100,34 @@ export const pollForEventImages = (
     },
   });
 };
+
+
+
+export const pollForCommunityImages = (
+  communityId: number,
+  queryClient: QueryClient,
+  apiBaseKey: string,
+  getCommunityQueryOptions: (id: string) => any,
+) => {
+  return pollWithExponentialBackoff({
+    checkFn: async () => {
+      const communityQuery = getCommunityQueryOptions(communityId.toString());
+      const community = await communityQuery.queryFn();
+      if (community?.media?.length > 0) {
+        return community;
+      }
+      return null;
+    },
+    onSuccess: (community) => {
+      queryClient.invalidateQueries({
+        queryKey: [apiBaseKey, "communities"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [apiBaseKey, "community", communityId.toString()],
+      });
+    },
+    onError: (error) => {
+      console.error("Error checking community images:", error);
+    },
+  });
+};

@@ -134,25 +134,25 @@ export const LazyRoutes = {
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_EVENTS,
         Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/pages/events/list")),
+          lazy(() => import("@/features/campuscurrent/events/pages/list")),
         ),
       },
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_EVENT_DETAIL,
         Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/pages/events/single")),
+          lazy(() => import("@/features/campuscurrent/events/pages/single")),
         ),
       },
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_COMMUNITY_DETAIL,
         Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/pages/communities/single")),
+          lazy(() => import("@/features/campuscurrent/communities/pages/single")),
         ),
       },
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_COMMUNITIES,
         Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/pages/communities/list")),
+          lazy(() => import("@/features/campuscurrent/communities/pages/list")),
         ),
       },
     ],
