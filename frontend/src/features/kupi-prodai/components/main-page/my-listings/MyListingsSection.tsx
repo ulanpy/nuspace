@@ -7,7 +7,7 @@ import { useEditModal } from "@/features/kupi-prodai/hooks/useEditModal";
 import { ProductListingSection } from "@/features/kupi-prodai/components/common/ProductListingSection";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
-import { EditListingModal } from "./EditListingModal";
+import { UnifiedEditListingModal } from "./UnifiedEditListingModal";
 import { Product } from "@/features/kupi-prodai/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/atoms/tabs";
 import { EmptyState } from "@/features/kupi-prodai/components/main-page/my-listings/EmptyState";
@@ -73,7 +73,7 @@ export function MyListingsSection() {
                     />
                 </TabsContent>
             </Tabs>
-            <EditListingModal />
+            <UnifiedEditListingModal />
         </div>
     );
 }

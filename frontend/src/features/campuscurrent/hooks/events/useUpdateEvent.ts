@@ -4,19 +4,19 @@ import { useToast } from "@/hooks/use-toast";
 import { useMediaUpload } from "@/features/media/hooks/useMediaUpload";
 import { useMediaUploadContext } from "@/context/MediaUploadContext";
 import { useMediaEditContext } from "@/context/MediaEditContext";
-import { useMediaEdit } from "@/features/media/hooks/useMediaEdit";
+
 import { EditEventData, Event } from "@/features/campuscurrent/types/types";
 import { pollForEventImages } from "@/utils/polling";
 import { EntityType, MediaFormat, UploadMediaOptions } from "@/features/media/types/types";
+import { mediaApi } from "@/features/media/api/mediaApi";
 import { useState } from "react";
 
 export function useUpdateEvent() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { handleMediaUpload, resetMediaState } = useMediaUpload();
-  const { setIsUploading } = useMediaUploadContext();
+  const { setIsUploading, mediaFiles } = useMediaUploadContext();
   const { mediaToDelete, setMediaToDelete, setOriginalMedia } = useMediaEditContext();
-  const { deleteExistingMedia } = useMediaEdit();
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const updateEventMutation = useMutation({
@@ -43,9 +43,9 @@ export function useUpdateEvent() {
     try {
       // First, delete any media that was marked for deletion
       if (mediaToDelete.length > 0) {
-        await Promise.all(
-          mediaToDelete.map(mediaId => deleteExistingMedia(mediaId))
-        );
+        setUploadProgress(10);
+        await mediaApi.deleteMedia(mediaToDelete);
+        setUploadProgress(15);
       }
 
       // Create the updated event first
@@ -64,7 +64,6 @@ export function useUpdateEvent() {
       });
 
       // Handle media upload if there are new media files
-      const mediaFiles = (window as any).eventMediaFiles || [];
       if (mediaFiles.length > 0) {
         setUploadProgress(20);
         

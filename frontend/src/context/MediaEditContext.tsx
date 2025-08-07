@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 interface MediaItem {
   id: number;
   url: string;
-  order: string; // check is it a really string or number
+  order: string; 
 }
 
 interface MediaEditContextType {

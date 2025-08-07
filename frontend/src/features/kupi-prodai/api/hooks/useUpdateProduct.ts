@@ -7,7 +7,7 @@ import { useMediaEditContext } from "@/context/MediaEditContext";
 import { useMediaUpload } from "@/features/media/hooks/useMediaUpload";
 import { pollForProductImages } from "@/utils/polling";
 import { EntityType, MediaFormat } from "@/features/media/types/types";
-import {useMediaEdit} from "@/features/media/hooks/useMediaEdit"
+import { mediaApi } from "@/features/media/api/mediaApi";
 import { ProductCategory, ProductCondition, Status } from "@/features/kupi-prodai/types";
 
 
@@ -38,7 +38,7 @@ export function useUpdateProduct() {
     resetMediaState: resetMediaState 
   } = useMediaUpload();
 
-  const {deleteExistingMedia} = useMediaEdit();
+
 
   const queryClient = useQueryClient();
 
@@ -123,7 +123,7 @@ export function useUpdateProduct() {
       setUploadProgress(30);
 
       if (mediaToDelete.length > 0) {
-        await deleteExistingMedia(mediaToDelete[0]);
+        await mediaApi.deleteMedia(mediaToDelete);
         setUploadProgress(50);
       }
 

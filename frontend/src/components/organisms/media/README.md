@@ -162,7 +162,7 @@ export function EventMediaUpload() {
       onRemove={isEditMode ? handleMediaDelete : mediaSelection.removeNewMedia}
       showMainIndicator={false}
       dropZoneProps={{
-        maxSizeText: "PNG, JPG, GIF up to 10MB",
+        maxSizeText: "PNG or JPG up to 10MB",
         variant: "default"
       }}
       galleryProps={{

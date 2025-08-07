@@ -6,33 +6,96 @@ import { useEditModal } from "@/features/kupi-prodai/hooks/useEditModal";
 import { useListingState } from "@/context/ListingContext";
 import { Button } from "@/components/atoms/button";
 import { X } from "lucide-react";
+import { UnifiedMediaProvider } from "@/features/media/context/UnifiedMediaContext";
+import { UnifiedMediaUploadZone } from "@/components/organisms/media/UnifiedMediaUploadZone";
+import { useUnifiedMedia } from "@/features/media/hooks/useUnifiedMedia";
+import { getMediaConfig } from "@/features/media/config/mediaConfigs";
 import { useMediaEditContext } from "@/context/MediaEditContext";
 import { useMediaUploadContext } from "@/context/MediaUploadContext";
-import { useMediaEdit } from "@/features/media/hooks/useMediaEdit";
-import { useMediaSelection } from "@/features/media/hooks/useMediaSelection";
-import { UploadProgressIndicator } from "../../media/UploadProgressIndicator";
 import { EditListingForm } from "./EditListingForm";
-import { EditListingImageManager } from "./EditListingImageManager";
 import { useProductForm } from "@/features/kupi-prodai/hooks/useProductForm";
+import { Progress } from "@/components/atoms/progress";
 
-export function EditListingModal() {
+// Bridge component to connect unified system with legacy contexts
+function EditListingMediaBridge() {
+  const { setPreviewMedia, setMediaFiles, setIsUploading } = useMediaUploadContext();
+  const { originalMedia, setMediaToDelete } = useMediaEditContext();
+  const { uploadProgress } = useListingState();
+  
+  const {
+    previewMedia,
+    mediaFiles,
+    isUploading,
+    initializeExistingMedia,
+    mediaToDelete,
+  } = useUnifiedMedia();
+
+  // Sync with legacy contexts
+  React.useEffect(() => {
+    setPreviewMedia(previewMedia);
+  }, [previewMedia, setPreviewMedia]);
+
+  React.useEffect(() => {
+    setMediaFiles(mediaFiles);
+  }, [mediaFiles, setMediaFiles]);
+
+  React.useEffect(() => {
+    setIsUploading(isUploading);
+  }, [isUploading, setIsUploading]);
+
+  React.useEffect(() => {
+    setMediaToDelete(mediaToDelete);
+  }, [mediaToDelete, setMediaToDelete]);
+
+  // Initialize existing media
+  React.useEffect(() => {
+    if (originalMedia.length > 0) {
+      initializeExistingMedia(originalMedia);
+    }
+  }, [originalMedia, initializeExistingMedia]);
+
+  return (
+    <div className="space-y-4">
+      <UnifiedMediaUploadZone
+        label="Product Images"
+        title="Upload product images"
+        description="Add high-quality images of your product"
+        layout="vertical"
+        columns={4}
+        showMainIndicator={true}
+        enablePreview={true}
+        enableReordering={false}
+        showDropZoneWhenHasItems={true}
+        dropZoneVariant="compact"
+        progressVariant="standalone"
+      />
+      
+      {/* Legacy progress display */}
+      {uploadProgress > 0 && (
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Updating listing...</span>
+            <span>{uploadProgress}%</span>
+          </div>
+          <Progress value={uploadProgress} className="h-2" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function UnifiedEditListingModal() {
     const { handleUpdateListing } = useUpdateProduct();
     const { closeEditModal } = useEditModal();
     const { newListing, showEditModal, uploadProgress } = useListingState();
-    const { currentMediaIndex, setCurrentMediaIndex } = useMediaEditContext();
-    const { previewMedia: previewImages, isUploading } = useMediaUploadContext();
-    const { isDragging, handleDragOver, handleDragLeave, handleDrop, handleFileSelect } = useMediaSelection();
-    const { handleMediaDelete } = useMediaEdit();
     const { conditions, categories, handleInputChange, handlePriceInputBlur, handlePriceInputFocus, handleSelectChange } = useProductForm();
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
-    const dropZoneRef = React.useRef<HTMLDivElement>(null);
     const displayConditions = ["All Conditions", "New", "Used"];
-
-    
 
     if (!showEditModal) {
         return null;
     }
+
+    const config = getMediaConfig('kupiProdaiProducts');
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -71,20 +134,12 @@ export function EditListingModal() {
                                 handleSelectChange={handleSelectChange}
                                 displayConditions={displayConditions}
                             />
-                            <EditListingImageManager
-                                previewImages={previewImages}
-                                currentMediaIndex={currentMediaIndex}
-                                setCurrentMediaIndex={setCurrentMediaIndex}
-                                handleImageDelete={handleMediaDelete}
-                                dropZoneRef={dropZoneRef}
-                                isDragging={isDragging}
-                                handleDragOver={handleDragOver}
-                                handleDragLeave={handleDragLeave}
-                                handleDrop={handleDrop}
-                                fileInputRef={fileInputRef}
-                                handleFileSelect={handleFileSelect}
-                            />
+                            
+                            <UnifiedMediaProvider config={config}>
+                                <EditListingMediaBridge />
+                            </UnifiedMediaProvider>
                         </div>
+                        
                         <div className="flex justify-end gap-2 pt-4 border-t">
                             <Button
                                 type="button"
@@ -95,39 +150,22 @@ export function EditListingModal() {
                             </Button>
                             <Button
                                 type="submit"
-                                disabled={isUploading}
+                                disabled={uploadProgress > 0}
                                 className="min-w-[120px]"
                             >
-                                {isUploading ? (
-                                    <UploadProgressIndicator
-                                        isUploading={isUploading}
-                                        progress={uploadProgress}
-                                        status="uploading"
-                                        message="Updating..."
-                                        variant="inline"
-                                        size="sm"
-                                        showPercentage={true}
-                                    />
+                                {uploadProgress > 0 ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        Updating...
+                                    </div>
                                 ) : (
                                     "Update Listing"
                                 )}
                             </Button>
                         </div>
-
-                        {isUploading && (
-                            <UploadProgressIndicator
-                                isUploading={isUploading}
-                                progress={uploadProgress}
-                                status="uploading"
-                                variant="standalone"
-                                size="sm"
-                                showIcon={false}
-                                className="mt-2"
-                            />
-                        )}
                     </form>
                 </div>
             </div>
         </div>
     );
-} 
+}

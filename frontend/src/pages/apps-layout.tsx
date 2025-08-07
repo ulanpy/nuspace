@@ -8,8 +8,6 @@ import { LoginButton } from "../components/molecules/buttons/login-button";
 import { LoginRequirementModal } from "../components/molecules/login-requirement-modal";
 import { useUser } from "@/hooks/use-user";
 import { ROUTES } from "@/data/routes";
-import { Header } from "@/components/organisms/header";
-import { cn } from "@/utils/utils";
 
 export default function AppsLayout() {
   const { user, login, isLoading } = useUser();

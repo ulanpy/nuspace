@@ -1,7 +1,7 @@
 import { Button } from "@/components/atoms/button";
+import { Progress } from "@/components/atoms/progress";
 import { motion } from "framer-motion";
-import { Plus, Save, Trash2 } from "lucide-react";
-import { UploadProgressIndicator } from "../../media/UploadProgressIndicator";
+import { Plus, Save, Trash2, RefreshCw } from "lucide-react";
 import { sectionVariants } from "@/utils/animationVariants";
 
 interface FormActionsSectionProps {
@@ -36,15 +36,11 @@ export function FormActionsSection({
         size="lg"
       >
         {isSubmitting ? (
-          <UploadProgressIndicator
-            isUploading={isSubmitting}
-            progress={uploadProgress}
-            status="uploading"
-            message={mode === 'create' ? 'Publishing...' : 'Saving...'}
-            variant="inline"
-            size="md"
-            showPercentage={mode === 'create'}
-          />
+          <div className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            <span>{mode === 'create' ? 'Publishing...' : 'Saving...'}</span>
+            {mode === 'create' && <span className="text-sm">{uploadProgress}%</span>}
+          </div>
         ) : (
           <div className="flex items-center justify-center gap-2">
             {mode === 'create' ? (
@@ -59,16 +55,13 @@ export function FormActionsSection({
 
       {/* Progress Bar for Create Mode */}
       {mode === 'create' && isSubmitting && (
-        <UploadProgressIndicator
-          isUploading={isSubmitting}
-          progress={uploadProgress}
-          status="uploading"
-          variant="standalone"
-          size="sm"
-          showIcon={false}
-          showPercentage={false}
-          className="mt-3"
-        />
+        <div className="mt-3 space-y-2">
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>Publishing product...</span>
+            <span>{uploadProgress}%</span>
+          </div>
+          <Progress value={uploadProgress} className="h-2" />
+        </div>
       )}
 
       {/* Action Buttons for Edit Mode */}

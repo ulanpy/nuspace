@@ -37,38 +37,52 @@ export const useMediaEdit = () => {
     }
   };
 
-  const handleMediaDelete = () => {
-    const mediaToRemove = originalMedia.find(
-        (m) =>
-            m.url ===
-            previewImages[currentMediaIndex],
-    );
-    if (mediaToRemove) {
+  const handleMediaDelete = (index: number, item?: any) => {
+    // If index is less than originalMedia.length, it's an existing media item
+    if (index < originalMedia.length) {
+      const mediaToRemove = originalMedia[index];
+      
+      if (mediaToRemove) {
+        // Mark for deletion on server
         deleteExistingMedia(mediaToRemove.id);
-    } else {
-        const newImageFiles = [...imageFiles];
+        
+        // Remove from preview immediately for visual feedback
         const newPreviewImages = [...previewImages];
-        newImageFiles.splice(
-            currentMediaIndex - originalMedia.length,
-            1,
-        );
-        newPreviewImages.splice(
-            currentMediaIndex,
-            1,
-        );
-        setImageFiles(newImageFiles);
+        newPreviewImages.splice(index, 1);
         setPreviewImages(newPreviewImages);
+        
+        // Update current media index if needed
         if (
-            currentMediaIndex >=
-            newPreviewImages.length &&
-            newPreviewImages.length > 0
+          currentMediaIndex >= newPreviewImages.length &&
+          newPreviewImages.length > 0
         ) {
-            setCurrentMediaIndex(
-                newPreviewImages.length - 1,
-            );
+          setCurrentMediaIndex(newPreviewImages.length - 1);
+        } else if (currentMediaIndex >= newPreviewImages.length) {
+          setCurrentMediaIndex(0);
         }
+      }
+    } else {
+      // It's a new media item (index >= originalMedia.length)
+      const newMediaIndex = index - originalMedia.length;
+      const newImageFiles = [...imageFiles];
+      const newPreviewImages = [...previewImages];
+      
+      newImageFiles.splice(newMediaIndex, 1);
+      newPreviewImages.splice(index, 1);
+      
+      setImageFiles(newImageFiles);
+      setPreviewImages(newPreviewImages);
+      
+      if (
+        currentMediaIndex >= newPreviewImages.length &&
+        newPreviewImages.length > 0
+      ) {
+        setCurrentMediaIndex(newPreviewImages.length - 1);
+      } else if (currentMediaIndex >= newPreviewImages.length) {
+        setCurrentMediaIndex(0);
+      }
     }
-};
+  };
   return {
     deleteExistingMedia,
     handleMediaDelete,

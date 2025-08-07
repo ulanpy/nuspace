@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/card";
 import { FormSkeleton } from "@/components/atoms/skeleton";
 import { BasicInfoSection } from "./sections/BasicInfoSection";
-import { MediaUploadSection } from "./sections/MediaUploadSection";
+import { UnifiedProductMediaUpload } from "./UnifiedProductMediaUpload";
 import { FormActionsSection } from "./sections/FormActionsSection";
 import { formVariants, sectionVariants } from "@/utils/animationVariants";
 
@@ -34,20 +34,6 @@ interface UnifiedProductFormProps {
   // State management
   isSubmitting?: boolean;
   uploadProgress?: number;
-  
-  // Create mode specific props
-  previewMedia?: any[];
-  isDragging?: boolean;
-  onDragOver?: (e: React.DragEvent<HTMLDivElement>) => void;
-  onDragLeave?: (e: React.DragEvent<HTMLDivElement>) => void;
-  onDrop?: (e: React.DragEvent<HTMLDivElement>) => void;
-  onFileSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onRemoveNewMedia?: (index: number) => void;
-  
-  // Edit mode specific props
-  onSetMainImage?: (imageId: number) => void;
-  onRemoveImage?: (imageId: number) => void;
-  onUploadNewImage?: () => void;
   
   // Price handling
   onPriceFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
@@ -81,16 +67,6 @@ export function UnifiedProductForm({
   conditions,
   isSubmitting = false,
   uploadProgress = 0,
-  previewMedia = [],
-  isDragging = false,
-  onDragOver,
-  onDragLeave,
-  onDrop,
-  onFileSelect,
-  onRemoveNewMedia,
-  onSetMainImage,
-  onRemoveImage,
-  onUploadNewImage,
   onPriceFocus,
   onPriceBlur,
   showLoadingSkeleton = false,
@@ -218,21 +194,7 @@ export function UnifiedProductForm({
             </motion.div>
 
             {/* Media Upload Section */}
-            <MediaUploadSection
-              mode={mode}
-              previewMedia={previewMedia}
-              isDragging={isDragging}
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              onFileSelect={onFileSelect}
-              onRemoveNewMedia={onRemoveNewMedia}
-              existingImages={formData.images || []}
-              onSetMainImage={onSetMainImage}
-              onRemoveImage={onRemoveImage}
-              onUploadNewImage={onUploadNewImage}
-              isUploading={isSubmitting}
-            />
+            <UnifiedProductMediaUpload />
 
             {/* Form Actions */}
             <FormActionsSection

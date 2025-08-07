@@ -134,7 +134,7 @@ export default function EventDetailPage() {
   const isPast = eventDate < new Date();
 
   return (
-    <div className="pb-20">
+    <div className="pb-20 px-4 max-w-full overflow-hidden">
       <Button
         variant="ghost"
         className="mb-4 flex items-center gap-1"
@@ -184,11 +184,11 @@ export default function EventDetailPage() {
           </div>
           
           <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-2xl font-bold">{event.name}</h1>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-bold break-words">{event.name}</h1>
               {event.scope === "community" ? (
                 <div
-                  className="text-primary hover:underline cursor-pointer mt-1"
+                  className="text-primary hover:underline cursor-pointer mt-1 break-words"
                   onClick={() =>
                     navigate(
                       ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
@@ -200,7 +200,7 @@ export default function EventDetailPage() {
                   by {event.community?.name || 'Unknown Community'}
                 </div>
               ) : (
-                <div className="text-muted-foreground mt-1">
+                <div className="text-muted-foreground mt-1 break-words">
                   by {event.creator?.name} {event.creator?.surname}
                 </div>
               )}
@@ -209,33 +209,28 @@ export default function EventDetailPage() {
 
           <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              <span>{formatEventDate(event.event_datetime)}</span>
+              <Calendar className="h-4 w-4 flex-shrink-0" />
+              <span className="break-words">{formatEventDate(event.event_datetime)}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              <span>{event.duration} minutes</span>
+              <Clock className="h-4 w-4 flex-shrink-0" />
+              <span className="break-words">{event.duration} minutes</span>
             </div>
             <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              <span>{event.place}</span>
+              <MapPin className="h-4 w-4 flex-shrink-0" />
+              <span className="break-words">{event.place}</span>
             </div>
             {event.community && (
               <div className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <span>Organized by {event.community.name}</span>
+                <Users className="h-4 w-4 flex-shrink-0" />
+                <span className="break-words">Organized by {event.community.name}</span>
               </div>
             )}
           </div>
 
           <div className="h-px w-full bg-border my-4" />
 
-          <div>
-            <h2 className="font-medium mb-2">About this event</h2>
-            <p className="text-muted-foreground whitespace-pre-line">
-              {event.description}
-            </p>
-          </div>
+
 
           <div className="flex flex-wrap gap-2 mt-6">
             {!isPast && (
@@ -269,19 +264,17 @@ export default function EventDetailPage() {
         </div>
       </div>
 
+      <div className="mt-8 space-y-6">
+            <h2 className="font-medium mb-2">About this event</h2>
+            <p className="text-muted-foreground whitespace-pre-line break-words">
+              {event.description}
+            </p>
+          </div>
       {/* Organizer details */}
       {(event.scope === "community" && event.community) ||
       (event.scope === "personal" && event.creator) ? (
         <div className="mt-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-bold">Organized by</h2>
-              <p className="text-muted-foreground mt-1">
-                {event.scope === "community"
-                  ? `This event is hosted by ${event.community?.name}`
-                  : `This event is hosted by ${event.creator?.name} ${event.creator?.surname}`}
-              </p>
-            </div>
             {event.scope === "community" && (
               <Button
                 onClick={() =>
@@ -305,15 +298,23 @@ export default function EventDetailPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Users className="h-5 w-5 text-primary" />
+                  {event.scope === "community" ? (
+                    <Users className="h-5 w-5 text-primary" />
+                  ) : (
+                    <img 
+                      src={event.creator?.picture} 
+                      alt={`${event.creator?.name}'s profile`}
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  )}
                 </div>
-                <div>
-                  <p className="font-medium">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium break-words">
                     {event.scope === "community"
                       ? event.community?.name
                       : `${event.creator?.name} ${event.creator?.surname}`}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground break-words">
                     {event.scope === "community"
                       ? "Community"
                       : "Event Organizer"}
@@ -325,12 +326,12 @@ export default function EventDetailPage() {
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Calendar className="h-5 w-5 text-primary" />
                   </div>
-                  <div>
-                    <p className="font-medium">Event Coordinator</p>
-                    <p className="text-sm text-muted-foreground">
-                      Contact via community's social media
-                    </p>
-                  </div>
+                                  <div className="min-w-0 flex-1">
+                  <p className="font-medium break-words">Event Coordinator</p>
+                  <p className="text-sm text-muted-foreground break-words">
+                    Contact via community's social media
+                  </p>
+                </div>
                 </div>
               )}
             </div>

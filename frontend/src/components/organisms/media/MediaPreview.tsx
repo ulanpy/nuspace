@@ -12,7 +12,7 @@ import {
   Maximize,
   Minimize
 } from "lucide-react";
-import { MediaItem } from "./MediaGallery";
+import { MediaItem } from "@/features/media/types/media";
 
 export interface MediaPreviewProps {
   items: MediaItem[] | string[];

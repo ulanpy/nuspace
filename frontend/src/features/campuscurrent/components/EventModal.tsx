@@ -11,12 +11,12 @@ import { CommunitySelectionModal } from "./CommunitySelectionModal";
 
 // Import all the new modular components
 import { EventScopeSelector, CommunityDisplay } from "./forms/EventScopeSelector";
-import { EventMediaUpload } from "./forms/EventMediaUpload";
+import { UnifiedEventMediaUpload } from "./forms/UnifiedEventMediaUpload";
 import { EventDetailsForm } from "./forms/EventDetailsForm";
 import { EventDateTimeSelector } from "./forms/EventDateTimeSelector";
 import { EventElevatedFields } from "./forms/EventElevatedFields";
 import { EventDescription } from "./forms/EventDescription";
-import { UploadProgress } from "./forms/UploadProgress";
+
 import { DeleteConfirmation } from "./forms/DeleteConfirmation";
 import { EventActions } from "./forms/EventActions";
 import { useEventForm, EventFormProvider } from "@/context/EventFormContext";
@@ -32,13 +32,12 @@ interface EventModalProps {
 
 export function EventModal({ isOpen, onClose, isEditMode, communityId, event, permissions }: EventModalProps) {
   const { user } = useUser();
-  const { handleCreate, isCreating, uploadProgress: createProgress } = useCreateEvent();
-  const { handleUpdate, isUpdating, uploadProgress: updateProgress } = useUpdateEvent();
+  const { handleCreate, isCreating } = useCreateEvent();
+  const { handleUpdate, isUpdating } = useUpdateEvent();
   const { handleDelete, isDeleting } = useDeleteEvent();
   const { isUploading, setPreviewMedia, setMediaFiles } = useMediaUploadContext();
   const { setOriginalMedia, setMediaToDelete, setCurrentMediaIndex } = useMediaEditContext();
 
-  const uploadProgress = isEditMode ? updateProgress : createProgress;
   const isProcessing = isCreating || isUpdating || isDeleting;
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -173,7 +172,7 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, event, pe
           <CommunityDisplay />
 
           {/* Media Upload Section */}
-          <EventMediaUpload />
+                              <UnifiedEventMediaUpload />
 
           {/* Event Details */}
           <EventDetailsForm />
@@ -187,8 +186,7 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, event, pe
           {/* Description */}
           <EventDescription />
 
-          {/* Upload Progress */}
-          <UploadProgress isUploading={isUploading} uploadProgress={uploadProgress} />
+
 
           {/* Delete Confirmation */}
           <DeleteConfirmation

@@ -40,7 +40,7 @@ export function EventMediaUpload() {
         onDrop={handleDrop}
         onFileSelect={handleFileSelect}
         disabled={isUploading}
-        maxSizeText="PNG, JPG, GIF up to 10MB"
+        maxSizeText="PNG or JPG up to 10MB"
       />
       
       {previewMedia.length > 0 && (
@@ -95,7 +95,7 @@ export function EventMediaUpload() {
       
       // Component-specific props
       dropZoneProps={{
-        maxSizeText: "PNG, JPG, GIF up to 10MB",
+        maxSizeText: "PNG or JPG up to 10MB",
         variant: "default"
       }}
       
