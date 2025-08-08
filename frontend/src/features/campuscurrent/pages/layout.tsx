@@ -8,7 +8,25 @@ import { useEvents } from "@/features/campuscurrent/events/hooks/useEvents";
 import { useCommunities } from "@/features/campuscurrent/communities/hooks/use-communities";
 import { Community } from "@/features/campuscurrent/types/types";
 import { Media, MediaFormat } from "@/features/media/types/types";
-const eventsHeroImg = new URL("../../../assets/images/hero_assets/events.jpg", import.meta.url).href;
+
+// Dynamic import of all jpg files in the hero_assets directory
+const heroImageModules = import.meta.glob('../../../assets/images/hero_assets/*.jpg', { eager: true });
+
+// Process the imported modules to get the URLs
+const heroImages = Object.entries(heroImageModules)
+  .sort(([a], [b]) => {
+    // Sort by filename to ensure consistent order (1.jpg, 2.jpg, etc.)
+    const aNum = parseInt(a.match(/(\d+)\.jpg$/)?.[1] || '0');
+    const bNum = parseInt(b.match(/(\d+)\.jpg$/)?.[1] || '0');
+    return aNum - bNum;
+  })
+  .map(([path, module], index) => {
+    const url = (module as any).default;
+    return {
+      src: url,
+      alt: `Campus Hero Image ${index + 1}`,
+    };
+  });
 
 type Slide = {
   key: string | number;
@@ -174,9 +192,17 @@ export function EventsLayout() {
   }, [communities]);
 
   const homeSlides: Slide[] = useMemo(() => {
-    return [1, 2, 3].map((i) => ({
+    // Fallback to a single default image if no hero images are found
+    if (heroImages.length === 0) {
+      return [{
+        key: 'default',
+        render: () => <HeroImage src="src/assets/images/welcome-nu-space.jpg" alt="Campus Current" />,
+      }];
+    }
+
+    return heroImages.map((heroImage, i) => ({
       key: `home-${i}`,
-      render: () => <HeroImage src={eventsHeroImg} alt="Campus Current" />,
+      render: () => <HeroImage src={heroImage.src} alt={heroImage.alt} />,
     }));
   }, []);
 
