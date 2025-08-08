@@ -264,7 +264,7 @@ export default function CommunityDetailPage() {
                 </div>
 
                 <div className="space-y-6">
-                  <Card className="max-w-xs w-full mx-auto">
+                  <Card>
                     <CardHeader className="text-lg font-semibold">
                       President
                     </CardHeader>
