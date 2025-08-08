@@ -22,7 +22,7 @@ export function CommunityCard({ community }: { community: Community }) {
       key={community.id}
       className="overflow-hidden hover:shadow-md transition-shadow h-80 flex flex-col"
     >
-      <CardHeader className="p-4 flex flex-col sm:flex-row gap-4 items-center sm:items-start flex-shrink-0 text-center sm:text-left">
+      <CardHeader className="p-4 flex flex-row gap-4 items-center flex-shrink-0">
         <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
           <img
             src={profile?.url}
@@ -32,7 +32,7 @@ export function CommunityCard({ community }: { community: Community }) {
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="font-semibold truncate">{community.name}</h1>
-          <div className="flex mt-2 gap-1 flex-wrap justify-center sm:justify-start">
+          <div className="flex mt-2 gap-1 flex-wrap">
             <Badge variant="outline" className="text-xs">
               {community.category}
             </Badge>
@@ -45,6 +45,7 @@ export function CommunityCard({ community }: { community: Community }) {
           </div>
         </div>
       </CardHeader>
+
       <CardContent className="p-4 pt-0 flex-1 overflow-hidden">
         <p className="text-sm text-muted-foreground line-clamp-4">
           {community.description}
