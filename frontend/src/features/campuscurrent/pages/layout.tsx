@@ -2,6 +2,7 @@ import { navTabs } from "@/features/campuscurrent/types/nav-tabs";
 import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
 import { Button } from "@/components/atoms/button";
+import { Calendar, MapPin } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/atoms/tabs";
 import { useEffect, useMemo, useState } from "react";
 import { useEvents } from "@/features/campuscurrent/events/hooks/useEvents";
@@ -174,15 +175,17 @@ export function EventsLayout() {
                 <div className="w-1/2 relative">
                   <HeroImage src={poster} alt={e.name} />
                 </div>
-                <div className="w-1/2 p-4 md:p-6 flex flex-col justify-center text-white bg-black/20">
+                <div className="w-1/2 p-4 md:p-6 flex flex-col justify-center text-white bg-black/20 gap-2">
                   <h3 className="text-lg md:text-xl font-semibold line-clamp-2">
                     {e.name}
                   </h3>
-                  <div className="mt-2 text-sm md:text-base opacity-90">
-                    {dateStr}
+                  <div className="flex items-center text-sm">
+                    <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
+                    <span>{dateStr}</span>
                   </div>
-                  <div className="text-sm md:text-base opacity-90">
-                    {e.place}
+                  <div className="flex items-center text-sm">
+                    <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{e.place}</span>
                   </div>
                   {hostName && (
                     <div className="mt-1 text-xs md:text-sm opacity-80">
