@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 
 import { useMemo, useState } from "react";
 
-import { Mail, Calendar, ExternalLink, Settings } from "lucide-react";
+import { Mail, Calendar, ExternalLink, Settings, UserRoundPlus } from "lucide-react";
 
 
 import { Media } from "@/features/media/types/types";
@@ -177,46 +177,69 @@ export default function CommunityDetailPage() {
     <div className="flex flex-col min-h-screen">
       {/* <Navbar /> */}
       <main className="flex-grow">
-        <div className="h-48 md:h-64 bg-muted relative">
-          <img
-            src={banner?.url || "/placeholder.svg"}
-            alt={community.name}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-        </div>
-
-        <div className="container px-4 md:px-6 relative">
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-end -mt-16 md:-mt-20 mb-6 relative z-10">
+        <div className="container px-4 md:px-6">
+          <div className="h-48 md:h-64 bg-muted relative rounded-lg">
+            {banner?.url ? (
+              <img
+                src={banner.url}
+                alt={community.name}
+                className="w-full h-full object-cover rounded-lg"
+              />
+            ) : (
+              <div
+                className="w-full h-full rounded-lg"
+                style={{
+                  background: "linear-gradient(90deg, #414757 0%, #B5B6BB 100%)",
+                  width: "100%",
+                  height: "100%",
+                }}
+              />
+            )}
+          </div>
+          
+          <div className="relative">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-end -mt-16 md:-mt-20 mb-6 relative">
             <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-background overflow-hidden bg-background">
               <img
-                src={profile?.url || "/placeholder.svg"}
+                src={profile?.url || "@/assets/svg/profile-placeholder.svg"}
                 alt={community.name}
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="flex-grow">
+            <div className="flex-grow ">
               <Badge>{community.category}</Badge>
               <Badge>Recruitment: {community.recruitment_status}</Badge>
               <h1 className="text-2xl md:text-3xl font-bold text-foreground">
                 {community.name}
               </h1>
             </div>
-            <div className="flex gap-2 mt-4 md:mt-0">
-              {permissions?.can_edit && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsEditCommunityModalOpen(true)}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Edit Community
-                </Button>
-              )}
-            </div>
+              <div className="flex gap-2 mt-4 md:mt-0">
+                {permissions?.can_edit ? (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsEditCommunityModalOpen(true)}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Edit Community
+                  </Button>
+                ) : (
+                  community.recruitment_status === "closed" ? (
+                    <span className="text-muted-foreground">Currently not recruiting</span>
+                  ) : (
+                    <Button 
+                      variant="default" 
+                      onClick={() => window.open("https://forms.google.com/your-form-url", "_blank")}
+                    >
+                      <UserRoundPlus className="h-4 w-4 mr-2" />
+                      Join Community
+                    </Button>
+                  )
+                )}
+              </div>
           </div>
 
-          <Tabs defaultValue="about" className="mt-6">
-            <TabsList className="w-full max-w-3xl">
+          <Tabs defaultValue="about" className="mt-6 w-full">
+            <TabsList className="w-full flex">
               <TabsTrigger value="about" className="flex-1">
                 About
               </TabsTrigger>
@@ -238,21 +261,10 @@ export default function CommunityDetailPage() {
                     <h2 className="text-xl font-semibold mb-4">About Us</h2>
                     <p>{community.description}</p>
                   </div>
-                  <Card>
-                    <CardHeader className="text-lg font-semibold">
-                      Recruitment
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Interested in joining {community.name}? Click the button below to apply to join.
-                      </p>
-                      <Button className="w-full">Apply to Join</Button>
-                    </CardContent>
-                  </Card>
                 </div>
 
                 <div className="space-y-6">
-                  <Card>
+                  <Card className="max-w-xs w-full mx-auto">
                     <CardHeader className="text-lg font-semibold">
                       President
                     </CardHeader>
@@ -372,6 +384,7 @@ export default function CommunityDetailPage() {
               <h1 className="text-center"> Coming Soon!</h1>
             </TabsContent>
           </Tabs>
+          </div>
         </div>
       </main>
 
