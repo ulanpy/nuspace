@@ -28,7 +28,7 @@ function App() {
               {LazyRoutes.APPS.BASIC.map(({ path, Component }) => (
                 <Route key={path} path={path} element={<Component />} />
               ))}
-              <Route path="" element={<EventsLayout />}>
+              <Route element={<EventsLayout />}>
                 {LazyRoutes.APPS.EVENTS.map(({ path, Component }) => (
                   <Route key={path} path={path} element={<Component />} />
                 ))}
