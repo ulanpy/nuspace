@@ -29,7 +29,7 @@ export default function CommunitiesPage() {
   );
   const categoryOptions = useMemo(
     () => ["All", ...Object.values(CommunityCategory)],
-    [],
+    []
   );
 
   useEffect(() => {
@@ -41,7 +41,8 @@ export default function CommunitiesPage() {
     }
 
     const filtered = communities.communities.filter(
-      (community) => community.category === (selectedCommunityCategory as CommunityCategory)
+      (community) =>
+        community.category === (selectedCommunityCategory as CommunityCategory)
     );
     setFilteredCommunities(filtered);
   }, [selectedCommunityCategory, communities]);
@@ -51,26 +52,27 @@ export default function CommunitiesPage() {
   };
 
   return (
-    <>
-      {/* Hero moved to layout */}
+    <MotionWrapper>
+      <div className="w-full overflow-x-hidden" id="communities-section">
+        <div className="w-full max-w-none">
+          {/* Centered Filter Dropdown */}
+          <div className="mb-6 flex justify-center">
+            <ConditionDropdown
+              conditions={categoryOptions}
+              selectedCondition={selectedCommunityCategory}
+              setSelectedCondition={handleCategoryChange}
+              disableNavigation={true}
+            />
+          </div>
 
-      <MotionWrapper>
-        {/* Header */}
-
-        {/* Responsive Tabs */}
-        <div className="mb-6" id="communities-section">
-          <ConditionDropdown
-            conditions={categoryOptions}
-            selectedCondition={selectedCommunityCategory}
-            setSelectedCondition={handleCategoryChange}
-            disableNavigation={true}
-          />
-
-          <div className="mt-6">
+          {/* Communities Grid */}
+          <div className="w-full">
             {isLoading ? (
-              <div>Loading...</div>
+              <div className="text-center py-12">Loading...</div>
             ) : isError ? (
-              <div>Error loading communities.</div>
+              <div className="text-center py-12">
+                Error loading communities.
+              </div>
             ) : filteredCommunities.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -85,39 +87,39 @@ export default function CommunitiesPage() {
                 </p>
               </div>
             ) : (
-              <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                 {filteredCommunities.map((community) => (
                   <CommunityCard key={community.id} community={community} />
                 ))}
               </div>
             )}
           </div>
-        </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center mt-6 gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {}}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="flex items-center text-sm">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {}}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-6 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {}}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="flex items-center text-sm">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {}}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
 
         {/* Login Modal */}
         <LoginModal
@@ -127,7 +129,7 @@ export default function CommunitiesPage() {
           title="Login Required"
           message="You need to be logged in to follow communities."
         />
-      </MotionWrapper>
-    </>
+      </div>
+    </MotionWrapper>
   );
 }
