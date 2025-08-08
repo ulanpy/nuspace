@@ -206,9 +206,9 @@ export default function CommunityDetailPage() {
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="flex-grow ">
-              <Badge>{community.category}</Badge>
-              <Badge>Recruitment: {community.recruitment_status}</Badge>
+            <div className="flex-grow">
+              <Badge className="mr-1">{community.category}</Badge>
+              <Badge  >Recruitment: {community.recruitment_status}</Badge>
               <h1 className="text-2xl md:text-3xl font-bold text-foreground">
                 {community.name}
               </h1>
@@ -246,11 +246,11 @@ export default function CommunityDetailPage() {
               <TabsTrigger value="events" className="flex-1">
                 Events
               </TabsTrigger>
-              <TabsTrigger value="community" className="flex-1 opacity-50 cursor-not-allowed" disabled>
-                Subspace (Soon)
+              <TabsTrigger value="community" className="flex-1" >
+                Subspace
               </TabsTrigger>
-              <TabsTrigger value="gallery" className="flex-1 opacity-50 cursor-not-allowed" disabled>
-                Gallery (Soon)
+              <TabsTrigger value="gallery" className="flex-1" >
+                Gallery
               </TabsTrigger>
             </TabsList>
 
@@ -258,7 +258,7 @@ export default function CommunityDetailPage() {
               <div className="grid gap-6 md:grid-cols-3">
                 <div className="md:col-span-2 space-y-6">
                   <div className="prose max-w-none">
-                    <h2 className="text-xl font-semibold mb-4">About Us</h2>
+                  <h2 className="text-2xl font-bold mb-2">About Us</h2>
                     <p>{community.description}</p>
                   </div>
                 </div>
@@ -369,7 +369,7 @@ export default function CommunityDetailPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    Are you a club member? Create an event for this community!
+                    Are you a club member? Create an event for this community! Then wait for it to get approved by the club's President.
                   </p>
                   <Button className="w-full">Create Event</Button>
                 </CardContent>

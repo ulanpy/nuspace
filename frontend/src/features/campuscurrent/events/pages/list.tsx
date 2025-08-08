@@ -85,7 +85,7 @@ export default function Events() {
         const lastDayOfMonth = new Date(
           now.getFullYear(),
           now.getMonth() + 1,
-          0,
+          0
         );
         start_date = firstDayOfMonth.toISOString().split("T")[0];
         end_date = lastDayOfMonth.toISOString().split("T")[0];
@@ -106,7 +106,9 @@ export default function Events() {
 
   useEffect(() => {
     if (location.hash === "#events-section") {
-      document.getElementById("events-section")?.scrollIntoView({ behavior: "smooth" });
+      document
+        .getElementById("events-section")
+        ?.scrollIntoView({ behavior: "smooth" });
     }
     if (location.hash === "#create-event") {
       setIsCreateModalOpen(true);
@@ -139,20 +141,25 @@ export default function Events() {
     <>
       {/* Hero moved to layout */}
 
-    <MotionWrapper>
-    <div className="flex flex-col min-h-screen w-full overflow-x-hidden" id="events-section">
-      <main className="flex-grow w-full max-w-screen-lg mx-auto px-4 sm:px-6 md:px-8">
+      <MotionWrapper>
+        <div
+          className="flex flex-col min-h-screen w-full overflow-x-hidden"
+          id="events-section"
+        >
+          <main className="flex-grow w-full max-w-screen-lg mx-auto px-4 sm:px-6 md:px-8">
             <Tabs
               value={activeTab}
               className="mb-6 w-full"
               onValueChange={(value) => setFilter(value)}
             >
-              <TabsList className="w-full overflow-x-auto">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="today">Today</TabsTrigger>
-                <TabsTrigger value="thisWeek">Week</TabsTrigger>
-                <TabsTrigger value="thisMonth">Month</TabsTrigger>
-              </TabsList>
+              <div className="w-full overflow-x-auto">
+                <TabsList className="w-full min-w-max grid grid-cols-4">
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="today">Today</TabsTrigger>
+                  <TabsTrigger value="thisWeek">Week</TabsTrigger>
+                  <TabsTrigger value="thisMonth">Month</TabsTrigger>
+                </TabsList>
+              </div>
               <TabsContent value="all" className="mt-4">
                 <EventsGrid
                   isLoading={isLoading}

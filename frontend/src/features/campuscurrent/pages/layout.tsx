@@ -101,6 +101,13 @@ export function EventsLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Scroll to top on route change unless there's a hash
+  useEffect(() => {
+    if (!location.hash) {
+      window.scrollTo(0, 0);
+    }
+  }, [location.pathname]);
+
   const currentPath = location.pathname;
   // Choose the most specific matching tab (longest path that prefixes currentPath)
   const activeTabPath =
@@ -142,7 +149,6 @@ export function EventsLayout() {
                   <HeroImage src={poster} alt={e.name} />
                 </div>
                 <div className="w-1/2 p-4 md:p-6 flex flex-col justify-center text-white bg-black/20">
-                  <div className="text-xs md:text-sm opacity-80 mb-1">Featured Event</div>
                   <h3 className="text-lg md:text-xl font-semibold line-clamp-2">{e.name}</h3>
                   <div className="mt-2 text-sm md:text-base opacity-90">{dateStr}</div>
                   <div className="text-sm md:text-base opacity-90">{e.place}</div>
@@ -259,20 +265,20 @@ export function EventsLayout() {
           },
         },
         secondary: {
-          label: "Community Registration Form",
+          label: "Create a Community",
           onClick: () => window.open("https://forms.google.com/your-form-url", "_blank"),
         },
         slides: communitySlides,
       };
 
   return (
-    <div className="space-y-6 pb-20">
-      {!isDetailPage && (
-        <>
-          {/* Route-aware full-width hero */}
-          <div className="-mx-3 sm:-mx-4">
-            <section className={`w-screen relative left-1/2 right-1/2 -mx-[50vw] -mt-4 sm:-mt-6 py-12 md:py-20 text-white ${hero.bg}`}>
-              <div className="container px-4 md:px-6">
+    <div className="w-full overflow-x-hidden">
+      <div className="space-y-6 pb-20">
+        {!isDetailPage && (
+          <>
+            {/* Route-aware hero */}
+            <section className={`w-full py-12 md:py-20 text-white ${hero.bg} -mt-4 sm:-mt-6`}>
+              <div className="container mx-auto px-4 md:px-6 max-w-7xl">
                 <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
                   {/* Mobile: carousel on top */}
                   <div className="lg:hidden -mt-2 mb-2">
@@ -284,21 +290,19 @@ export function EventsLayout() {
                     <p className="text-lg md:text-xl text-white/90">{hero.description}</p>
                     <div className="flex flex-col sm:flex-row gap-3">
                       <Button
-                        asChild
                         size="lg"
                         className="bg-yellow-500 text-black hover:bg-yellow-600"
                         onClick={hero.primary.onClick}
                       >
-                        <Button>{hero.primary.label}</Button>
+                        {hero.primary.label}
                       </Button>
                       <Button
-                        asChild
                         size="lg"
                         variant="outline"
                         className="border-white text-black hover:bg-white/10 dark:text-white dark:border-white"
                         onClick={hero.secondary.onClick}
                       >
-                        <Button>{hero.secondary.label}</Button>
+                        {hero.secondary.label}
                       </Button>
                     </div>
                   </div>
@@ -308,29 +312,32 @@ export function EventsLayout() {
                 </div>
               </div>
             </section>
-          </div>
 
-          {/* Navigation Tabs */}
-          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-3 sm:-mx-4">
-            <div className="px-3 sm:px-4 py-2">
-              <Tabs
-                value={activeTabPath}
-                onValueChange={(value) => navigate(value)}
-                className="w-full"
-              >
-                <TabsList className="grid w-full grid-cols-3">
-                  {navTabs.map((tab) => (
-                    <TabsTrigger key={tab.path} value={tab.path}>
-                      {tab.name}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
+            {/* Navigation Tabs */}
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
+              <div className="container mx-auto px-4 md:px-6 max-w-7xl py-2">
+                <Tabs
+                  value={activeTabPath}
+                  onValueChange={(value) => navigate(value)}
+                  className="w-full"
+                >
+                  <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto">
+                    {navTabs.map((tab) => (
+                      <TabsTrigger key={tab.path} value={tab.path} className="text-sm">
+                        {tab.name}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
+              </div>
             </div>
-          </div>
-        </>
-      )}
-      <Outlet />
+          </>
+        )}
+        
+        <div className="container mx-auto px-4 md:px-6 max-w-7xl">
+          <Outlet />
+        </div>
+      </div>
     </div>
   );
 }
