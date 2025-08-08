@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { useToast } from "@/hooks/use-toast";
 import { useProduct } from "@/features/kupi-prodai/api/hooks/useProduct";
@@ -77,14 +76,6 @@ export default function ProductDetailPage() {
     if (isError || !product) {
         return (
             <div className="container mx-auto px-4 py-6">
-                <Button
-                    variant="ghost"
-                    className="mb-4 flex items-center gap-1"
-                    onClick={() => navigate(ROUTES.APPS.KUPI_PRODAI.ROOT)}
-                >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span>Back to Marketplace</span>
-                </Button>
 
                 <div className="text-center py-12">
                     <h2 className="text-xl font-bold text-destructive mb-4">
@@ -99,15 +90,7 @@ export default function ProductDetailPage() {
     }
 
     return (
-        <div className="container mx-auto px-4 py-6">
-            <Button
-                variant="ghost"
-                className="mb-4 flex items-center gap-1"
-                onClick={() => navigate(ROUTES.APPS.KUPI_PRODAI.ROOT)}
-            >
-                <ChevronLeft className="h-4 w-4" />
-                <span>Back to Marketplace</span>
-            </Button>
+            <div className="container mx-auto px-4 py-6">
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <ProductImageCarousel

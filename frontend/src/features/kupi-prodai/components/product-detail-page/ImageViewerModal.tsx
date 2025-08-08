@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/atoms/button";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Media } from "@/features/media/types/types";
+import { useMaybeBackNavigation } from "@/context/BackNavigationContext";
 
 interface ImageViewerModalProps {
     isOpen: boolean;
@@ -17,6 +18,13 @@ interface ImageViewerModalProps {
 
 export function ImageViewerModal({ isOpen, onClose, images, currentImageIndex, prevImage, nextImage, productName }: ImageViewerModalProps) {
     const [zoomLevel, setZoomLevel] = React.useState(1);
+    const backNav = useMaybeBackNavigation();
+
+    useEffect(() => {
+        if (!isOpen || !backNav) return;
+        const unregister = backNav.register(onClose);
+        return unregister;
+    }, [isOpen, backNav, onClose]);
 
     const handleZoom = (factor: number) => {
         setZoomLevel((prev) => {

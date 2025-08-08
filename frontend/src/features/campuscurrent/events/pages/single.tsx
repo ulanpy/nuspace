@@ -2,16 +2,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ChevronLeft,
-  Calendar,
-  Clock,
-  MapPin,
-  Users,
-  CalendarPlus,
-  Share2,
-  Pencil,
-} from "lucide-react";
+import { Calendar, Clock, MapPin, Users, CalendarPlus, Share2, Pencil } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Badge } from "@/components/atoms/badge";
 import { format } from "date-fns";
@@ -124,14 +115,7 @@ export default function EventDetailPage() {
   if (isError || !event) {
     return (
       <div className="container mx-auto px-4 py-6">
-        <Button
-          variant="ghost"
-          className="mb-4 flex items-center gap-1"
-          onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.ROOT)}
-        >
-          <ChevronLeft className="h-4 w-4" />
-          <span>Back to Events</span>
-        </Button>
+        
 
         <div className="text-center py-12">
           <h2 className="text-xl font-bold text-destructive mb-4">
@@ -150,14 +134,6 @@ export default function EventDetailPage() {
 
   return (
     <div className="pb-20 px-4 max-w-full overflow-hidden">
-      <Button
-        variant="ghost"
-        className="mb-4 flex items-center gap-1"
-        onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.ROOT)}
-      >
-        <ChevronLeft className="h-4 w-4" />
-        <span>Back to Events</span>
-      </Button>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Event Image */}

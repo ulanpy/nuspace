@@ -1,5 +1,5 @@
 import { navTabs } from "@/features/campuscurrent/types/nav-tabs";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
 import { Button } from "@/components/atoms/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/atoms/tabs";
@@ -117,22 +117,24 @@ export function EventsLayout() {
         const dateStr = new Date(e.event_datetime).toLocaleDateString();
         const hostName = e.scope === "community" ? (e.community?.name || "") : `${e.creator?.name || ""} ${e.creator?.surname || ""}`;
         return (
-          <div className="relative w-full h-full bg-black/10">
-            <div className="flex h-full">
-              <div className="w-1/2 relative">
-                <HeroImage src={poster} alt={e.name} />
-              </div>
-              <div className="w-1/2 p-4 md:p-6 flex flex-col justify-center text-white bg-black/20">
-                <div className="text-xs md:text-sm opacity-80 mb-1">Featured Event</div>
-                <h3 className="text-lg md:text-xl font-semibold line-clamp-2">{e.name}</h3>
-                <div className="mt-2 text-sm md:text-base opacity-90">{dateStr}</div>
-                <div className="text-sm md:text-base opacity-90">{e.place}</div>
-                {hostName && (
-                  <div className="mt-1 text-xs md:text-sm opacity-80">by {hostName}</div>
-                )}
+          <Link to={ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(String(e.id))} className="block w-full h-full">
+            <div className="relative w-full h-full bg-black/10">
+              <div className="flex h-full">
+                <div className="w-1/2 relative">
+                  <HeroImage src={poster} alt={e.name} />
+                </div>
+                <div className="w-1/2 p-4 md:p-6 flex flex-col justify-center text-white bg-black/20">
+                  <div className="text-xs md:text-sm opacity-80 mb-1">Featured Event</div>
+                  <h3 className="text-lg md:text-xl font-semibold line-clamp-2">{e.name}</h3>
+                  <div className="mt-2 text-sm md:text-base opacity-90">{dateStr}</div>
+                  <div className="text-sm md:text-base opacity-90">{e.place}</div>
+                  {hostName && (
+                    <div className="mt-1 text-xs md:text-sm opacity-80">by {hostName}</div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          </Link>
         );
       },
     }));
@@ -146,24 +148,26 @@ export function EventsLayout() {
       return {
         key: c.id,
         render: () => (
-          <div className="relative w-full h-full">
-            <HeroImage src={banner} alt={c.name} />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-            <div className="absolute bottom-3 left-3 flex items-center gap-3">
-              <img
-                src={profile}
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "src/assets/images/welcome-nu-space.jpg";
-                }}
-                alt={c.name}
-                className="w-12 h-12 rounded-full border-2 border-white object-cover bg-background"
-              />
-              <div className="text-white drop-shadow-sm max-w-[60%]">
-                <div className="text-sm opacity-90">Community</div>
-                <div className="text-base font-semibold line-clamp-1">{c.name}</div>
+          <Link to={ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(String(c.id))} className="block w-full h-full">
+            <div className="relative w-full h-full">
+              <HeroImage src={banner} alt={c.name} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+              <div className="absolute bottom-3 left-3 flex items-center gap-3">
+                <img
+                  src={profile}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = "src/assets/images/welcome-nu-space.jpg";
+                  }}
+                  alt={c.name}
+                  className="w-12 h-12 rounded-full border-2 border-white object-cover bg-background"
+                />
+                <div className="text-white drop-shadow-sm max-w-[60%]">
+                  <div className="text-sm opacity-90">Community</div>
+                  <div className="text-base font-semibold line-clamp-1">{c.name}</div>
+                </div>
               </div>
             </div>
-          </div>
+          </Link>
         ),
       };
     });
@@ -244,6 +248,11 @@ export function EventsLayout() {
             <section className={`w-screen relative left-1/2 right-1/2 -mx-[50vw] -mt-4 sm:-mt-6 py-12 md:py-20 text-white ${hero.bg}`}>
               <div className="container px-4 md:px-6">
                 <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
+                  {/* Mobile: carousel on top */}
+                  <div className="lg:hidden -mt-2 mb-2">
+                    <AutoCarousel slides={hero.slides} />
+                  </div>
+
                   <div className="space-y-4">
                     <h1 className="text-3xl md:text-5xl font-bold">{hero.title}</h1>
                     <p className="text-lg md:text-xl text-white/90">{hero.description}</p>
@@ -265,9 +274,6 @@ export function EventsLayout() {
                       >
                         <Button>{hero.secondary.label}</Button>
                       </Button>
-                    </div>
-                    <div className="lg:hidden mt-4">
-                      <AutoCarousel slides={hero.slides} />
                     </div>
                   </div>
                   <div className="hidden lg:block">
