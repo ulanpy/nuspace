@@ -19,8 +19,7 @@ import { Media } from "@/features/media/types/types";
 
     export enum EventPolicy {
       open = "open",
-      free_ticket = "free_ticket",
-      paid_ticket = "paid_ticket"
+      registration = "registration"
     }
 
     export enum RecruitmentStatus {
