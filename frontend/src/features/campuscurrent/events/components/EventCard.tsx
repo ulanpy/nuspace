@@ -42,13 +42,13 @@ export function EventCard(props: EventCardProps) {
   const getPolicyColor = (policy: string) => {
     switch (policy) {
       case "open":
-        return "bg-green-500";
+        return "bg-green-100";
       case "free_ticket":
-        return "bg-blue-500";
+        return "bg-blue-100";
       case "paid_ticket":
-        return "bg-amber-500";
+        return "bg-amber-100";
       default:
-        return "bg-gray-500";
+        return "bg-gray-100";
     }
   };
 
@@ -56,7 +56,7 @@ export function EventCard(props: EventCardProps) {
     <>
       <Card className="hover:shadow-md transition-shadow">
         <Link to={`/apps/campuscurrent/event/${id}`}>
-          <div className="aspect-video relative overflow-hidden rounded-t-lg">
+          <div className="aspect-[3/4] relative overflow-hidden rounded-t-lg">
             <img
               src={media[0]?.url || "/placeholder.svg"}
               alt={name}
@@ -92,12 +92,12 @@ export function EventCard(props: EventCardProps) {
         </Link>
         <CardHeader className="p-4 pb-2">
           <div className="flex flex-wrap gap-1 mb-2">
-            <Badge className={`${getPolicyColor(policy)} text-white text-xs`}>
+            <Badge variant="outline" className="">{type[0].toUpperCase()}{type.slice(1)}</Badge>
+            <Badge variant="outline" className={`${getPolicyColor(policy)}`}>
               {getPolicyDisplay(policy)}
             </Badge>
-            <Badge className="bg-gray-500 text-white text-xs">{type}</Badge>
-            <Badge className="bg-blue-500 text-white text-xs">{tag}</Badge>
-            <Badge className="bg-yellow-500 text-white text-xs">{status}</Badge>
+            {/* <Badge className="bg-blue-500 text-white text-xs">{tag}</Badge> */}
+            {/* <Badge className="bg-yellow-500 text-white text-xs">{status}</Badge> */}
           </div>
           <Link
             to={`/apps/campuscurrent/event/${id}`}

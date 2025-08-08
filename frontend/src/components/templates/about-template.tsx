@@ -1,6 +1,6 @@
 import { useTheme } from "@/context/ThemeProviderContext";
 import { AboutHeader } from "../organisms/about/about-header";
-import { MessionSection } from "../organisms/about/mession-section";
+import { MessionSection } from "../organisms/about/mission-section";
 import { AboutUsSection } from "../organisms/about/about-us-section";
 
 export function AboutTemplate() {

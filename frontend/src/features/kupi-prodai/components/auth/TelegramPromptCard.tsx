@@ -51,17 +51,20 @@ export function TelegramPromptCard() {
           animate={{ scale: [1, 1.02, 1] }}
           transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
         >
-          <CardTitle className="text-xl font-bold text-white-800 dark:text-white-200">
+          <CardTitle className="text-xl text-white-800 dark:text-white-200">
             Connect Telegram
           </CardTitle>
         </motion.div>
         
-        <CardDescription className="text-white-700 dark:text-white-300 text-base">
-          Link your Telegram account to enable secure communication with buyers
-        </CardDescription>
+        <div className="max-w-sm mx-auto">
+          <CardDescription className="text-white-600 dark:text-white-400 text-sm opacity-70">
+            Link your Telegram account to enable secure communication with buyers. 
+            This helps buyers contact you directly and securely about your listings
+          </CardDescription>
+        </div>
       </CardHeader>
       
-      <CardContent className="text-center">
+      {/* <CardContent className="text-center">
         <motion.p 
           className="text-sm text-white-600 dark:text-white-400 mb-4"
           animate={{ opacity: [0.7, 1, 0.7] }}
@@ -70,7 +73,7 @@ export function TelegramPromptCard() {
           This helps buyers contact you directly and securely about your listings
         </motion.p>
 
-      </CardContent>
+      </CardContent> */}
     </AnimatedCard>
   );
 }
