@@ -3,6 +3,7 @@ import { Label } from '@/components/atoms/label';
 import { Input } from '@/components/atoms/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/atoms/select';
 import { useEventForm } from '../../../../../context/EventFormContext';
+import { EventPolicy} from '@/features/campuscurrent/types/types'
 
 const eventTypes = [
   { value: "academic", label: "Academic" },
@@ -64,17 +65,20 @@ export function EventDetailsForm() {
 
       <div className="space-y-2">
         <Label htmlFor="policy">Entry Policy</Label>
-        <Select 
+        <Select
           value={formData.policy || ""}
-          disabled={!isFieldEditable('policy')} 
+          disabled={!isFieldEditable("policy")}
           onValueChange={(value) => handleSelectChange("policy", value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select entry policy" />
           </SelectTrigger>
           <SelectContent className="z-[150]">
-            <SelectItem value="open">Open Entry</SelectItem>
-            <SelectItem value="registration">Registration</SelectItem>
+            {Object.values(EventPolicy).map((policy) => (
+              <SelectItem value={policy}>
+                {policy}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

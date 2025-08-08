@@ -28,27 +28,11 @@ export function EventCard(props: EventCardProps) {
   const getPolicyDisplay = (policy: string) => {
     switch (policy) {
       case "open":
-        return "Open Entry";
-      case "free_ticket":
-        return "Free Ticket";
-      case "paid_ticket":
-        return "Paid Ticket";
+        return "Open";
+      case "registration":
+        return "Registration";
       default:
         return policy;
-    }
-  };
-
-  // Helper function to get policy badge color
-  const getPolicyColor = (policy: string) => {
-    switch (policy) {
-      case "open":
-        return "bg-green-100";
-      case "free_ticket":
-        return "bg-blue-100";
-      case "paid_ticket":
-        return "bg-amber-100";
-      default:
-        return "bg-gray-100";
     }
   };
 
@@ -93,7 +77,7 @@ export function EventCard(props: EventCardProps) {
         <CardHeader className="p-4 pb-2">
           <div className="flex flex-wrap gap-1 mb-2">
             <Badge variant="outline" className="">{type[0].toUpperCase()}{type.slice(1)}</Badge>
-            <Badge variant="outline" className={`${getPolicyColor(policy)}`}>
+            <Badge variant="outline" >
               {getPolicyDisplay(policy)}
             </Badge>
             {/* <Badge className="bg-blue-500 text-white text-xs">{tag}</Badge> */}

@@ -142,8 +142,6 @@ export default function Events() {
     <MotionWrapper>
     <div className="flex flex-col min-h-screen w-full overflow-x-hidden" id="events-section">
       <main className="flex-grow w-full max-w-screen-lg mx-auto px-4 sm:px-6 md:px-8">
-        
-
             <Tabs
               value={activeTab}
               className="mb-6 w-full"
