@@ -3,7 +3,6 @@ import { cn } from "../../utils/utils";
 interface CategoryCardProps {
   title: string;
   icon?: JSX.Element;
-  imageUrl: string;
   isSelected: boolean;
   onClick: () => void;
 }
@@ -11,7 +10,6 @@ interface CategoryCardProps {
 export const CategoryCard = ({
   title,
   icon,
-  imageUrl,
   isSelected,
   onClick,
 }: CategoryCardProps) => {
@@ -21,29 +19,22 @@ export const CategoryCard = ({
       className={cn(
         "flex flex-col items-center gap-1 p-1.5 rounded-lg transition-all duration-200",
         "hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        "group cursor-pointer flex-shrink-0 w-full max-w-[80px]",
-        isSelected && "bg-accent"
+        "group cursor-pointer flex-shrink-0 w-full max-w-[60px] sm:max-w-[70px] md:max-w-[80px]",
+        ""
       )}
     >
       {/* Image/Icon Container */}
       <div
         className={cn(
-          "relative w-14 h-14 sm:w-16 sm:h-16 rounded-md overflow-hidden",
+          "relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-md overflow-hidden",
           "border transition-all duration-200",
           "bg-background shadow-sm",
           isSelected 
-            ? "border-primary shadow-md" 
+            ? "border-primary/40 shadow-sm" 
             : "border-border hover:border-border/80 group-hover:shadow-md"
         )}
       >
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={title}
-            className="w-full h-full object-cover object-center"
-            style={{ minWidth: '100%', minHeight: '100%' }}
-          />
-        ) : icon ? (
+        {icon ? (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
             {icon}
           </div>
@@ -57,7 +48,7 @@ export const CategoryCard = ({
         
         {/* Selection indicator */}
         {isSelected && (
-          <div className="absolute inset-0 bg-primary/10 border-2 border-primary rounded-lg" />
+          <div className="absolute -inset-[1px] bg-primary/5 border border-primary/40 rounded-md" />
         )}
       </div>
       
@@ -67,7 +58,7 @@ export const CategoryCard = ({
           "text-[10px] sm:text-xs font-medium text-center leading-tight",
           "transition-colors duration-200 px-0.5",
           isSelected 
-            ? "text-primary" 
+            ? "text-muted-foreground" 
             : "text-muted-foreground group-hover:text-foreground"
         )}
       >

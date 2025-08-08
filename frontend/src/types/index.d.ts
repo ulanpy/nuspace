@@ -74,7 +74,7 @@ declare global {
 
     interface DisplayCategory {
       title: string;
-      imageUrl?: string;
+      icon: React.ComponentType<{ className?: string }>;
     }
   }
   

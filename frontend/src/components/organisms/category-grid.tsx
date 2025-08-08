@@ -1,7 +1,7 @@
 import { CategoryCard } from "@/components/atoms/category-card";
 
 interface CategoryGridProps {
-  categories: { title: string; icon?: JSX.Element; imageUrl: string }[];
+  categories: { title: string; icon?: JSX.Element }[];
   selectedCategory: string | "";
   setPage?: (page: number) => void;
   setSelectedCategory: (category: string) => void;
@@ -24,7 +24,6 @@ export function CategoryGrid({
             key={cat.title}
             title={cat.title}
             icon={cat.icon}
-            imageUrl={cat.imageUrl}
             isSelected={
               selectedCategory.toLowerCase() === cat.title.toLowerCase()
             }
