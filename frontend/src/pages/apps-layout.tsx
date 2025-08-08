@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ThemeToggle } from "../components/molecules/theme-toggle";
 import { LoginButton } from "../components/molecules/buttons/login-button";
 import { LoginRequirementModal } from "../components/molecules/login-requirement-modal";
 import { useUser } from "@/hooks/use-user";
 import { ROUTES } from "@/data/routes";
+import { BackNavigationProvider } from "@/context/BackNavigationContext";
+import { BackButton } from "@/components/molecules/BackButton";
 
 export default function AppsLayout() {
   const { user, login, isLoading } = useUser();
@@ -43,35 +44,31 @@ export default function AppsLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-lg">
-        <div className="container flex h-12 sm:h-14 items-center justify-between px-3 sm:px-4">
-          <Link
-            to="/"
-            className="flex items-center gap-1 sm:gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="text-sm sm:text-base">Back to Home</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <LoginButton />
+    <BackNavigationProvider>
+      <div className="min-h-screen bg-background flex flex-col">
+        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-lg">
+          <div className="container flex h-12 sm:h-14 items-center justify-between px-3 sm:px-4">
+            <BackButton label="Back" />
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+              <LoginButton />
+            </div>
           </div>
-        </div>
-      </header>
-      <main className="flex-1 container py-4 sm:py-6 px-3 sm:px-4">
-        <Outlet />
+        </header>
+        <main className="flex-1 container py-4 sm:py-6 px-3 sm:px-4">
+          <Outlet />
 
-        {/* Login Requirement Modal */}
-        {showLoginModal && (
-          <LoginRequirementModal
-            title="Login Required"
-            description="You need to login to create or manage listings in the Kupi&Prodai marketplace. Browsing is available to everyone."
-            onLogin={handleLogin}
-            onDismiss={handleDismiss}
-          />
-        )}
-      </main>
-    </div>
+          {/* Login Requirement Modal */}
+          {showLoginModal && (
+            <LoginRequirementModal
+              title="Login Required"
+              description="You need to login to create or manage listings in the Kupi&Prodai marketplace. Browsing is available to everyone."
+              onLogin={handleLogin}
+              onDismiss={handleDismiss}
+            />
+          )}
+        </main>
+      </div>
+    </BackNavigationProvider>
   );
 }

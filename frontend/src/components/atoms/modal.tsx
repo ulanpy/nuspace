@@ -5,6 +5,8 @@ import { X } from "lucide-react";
 import { Button } from "./button";
 import { cn } from "../../utils/utils";
 import { createPortal } from "react-dom";
+import { useEffect } from "react";
+import { useMaybeBackNavigation } from "@/context/BackNavigationContext";
 
 interface ModalProps {
   isOpen: boolean;
@@ -23,6 +25,13 @@ export function Modal({
   children,
   className = "max-w-md",
 }: ModalProps) {
+  const backNav = useMaybeBackNavigation();
+  useEffect(() => {
+    if (!isOpen || !backNav) return;
+    // Register modal close to back stack
+    const unregister = backNav.register(onClose);
+    return unregister;
+  }, [isOpen, backNav, onClose]);
   // Close on escape key press
   React.useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {

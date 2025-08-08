@@ -1,7 +1,7 @@
 import { LazyRoutes, ROUTES } from "../data/routes";
 import AdminLayout from "../pages/admin/admin-layout";
 import AdminPage from "../pages/admin/admin-page";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import HomePage from "../pages/home";
 import AppsLayout from "../pages/apps-layout";
 import { Toasts } from "../components/atoms/toast";
@@ -25,6 +25,7 @@ function App() {
             </Route>
 
             <Route path={ROUTES.APPS.ROOT} element={<AppsLayout />}>
+              <Route index element={<Navigate to={ROUTES.HOME} replace />} />
               {LazyRoutes.APPS.BASIC.map(({ path, Component }) => (
                 <Route key={path} path={path} element={<Component />} />
               ))}

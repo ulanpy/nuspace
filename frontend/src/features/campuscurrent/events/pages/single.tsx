@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ChevronLeft,
   Calendar,
   Clock,
   MapPin,
@@ -48,13 +47,13 @@ const getPolicyDisplay = (policy: string) => {
 const getPolicyColor = (policy: string) => {
   switch (policy) {
     case "open":
-      return "bg-green-500";
+      return "bg-green-100";
     case "free_ticket":
-      return "bg-blue-500";
+      return "bg-blue-100";
     case "paid_ticket":
-      return "bg-amber-500";
+      return "bg-amber-100";
     default:
-      return "bg-gray-500";
+      return "bg-gray-100";
   }
 };
 
@@ -67,6 +66,8 @@ export default function EventDetailPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const handleAddToCalendar = () => {
     if (!event) return;
@@ -90,8 +91,6 @@ export default function EventDetailPage() {
       action();
     }
   };
-
-
 
   // Share event
   const shareEvent = () => {
@@ -124,15 +123,6 @@ export default function EventDetailPage() {
   if (isError || !event) {
     return (
       <div className="container mx-auto px-4 py-6">
-        <Button
-          variant="ghost"
-          className="mb-4 flex items-center gap-1"
-          onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.ROOT)}
-        >
-          <ChevronLeft className="h-4 w-4" />
-          <span>Back to Events</span>
-        </Button>
-
         <div className="text-center py-12">
           <h2 className="text-xl font-bold text-destructive mb-4">
             {isError ? "Failed to fetch event details" : "Event not found"}
@@ -150,44 +140,58 @@ export default function EventDetailPage() {
 
   return (
     <div className="pb-20 px-4 max-w-full overflow-hidden">
-      <Button
-        variant="ghost"
-        className="mb-4 flex items-center gap-1"
-        onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.ROOT)}
-      >
-        <ChevronLeft className="h-4 w-4" />
-        <span>Back to Events</span>
-      </Button>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Event Image */}
         <div className="relative">
-          <div className="aspect-video md:aspect-square rounded-lg overflow-hidden">
-            {event.media && event.media.length > 0 ? (
-              <img
-                src={event.media[0].url || "/placeholder.svg"}
-                alt={event.name}
-                className="w-full h-full object-cover"
-              />
+          <div className="relative h-80 sm:h-96 md:h-[500px] w-full rounded-lg overflow-hidden bg-muted">
+            {event.media && event.media.length > 0 && !imageError ? (
+              <>
+                {/* Loading skeleton */}
+                {!imageLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="animate-pulse flex items-center justify-center w-full h-full bg-muted">
+                      <Calendar className="h-16 w-16 text-muted-foreground opacity-50" />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Actual image */}
+                <img
+                  src={event.media[0].url || "/placeholder.svg"}
+                  alt={event.name}
+                  className={`
+                    w-full h-full object-contain object-center transition-opacity duration-300
+                    ${imageLoaded ? 'opacity-100' : 'opacity-0'}
+                  `}
+                  onLoad={() => setImageLoaded(true)}
+                  onError={() => {
+                    setImageError(true);
+                    setImageLoaded(false);
+                  }}
+                  loading="lazy"
+                />
+              </>
             ) : (
+              // Fallback when no image or image failed to load
               <div className="w-full h-full bg-muted flex items-center justify-center">
-                <Calendar className="h-16 w-16 text-muted-foreground opacity-50" />
+                <div className="text-center">
+                  <Calendar className="h-16 w-16 text-muted-foreground opacity-50 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No image available</p>
+                </div>
               </div>
             )}
           </div>
-
-          
         </div>
 
         {/* Event Details */}
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2 mb-3">
-            <Badge className={`${getPolicyColor(event.policy)} text-white`}>
+            <Badge variant="outline" className="">
+              {event.type[0].toUpperCase()}{event.type.slice(1)}
+            </Badge>
+            <Badge variant="outline" className={`${getPolicyColor(event.policy)}`}>
               {getPolicyDisplay(event.policy)}
             </Badge>
-            <Badge className="bg-gray-500 text-white">{event.type}</Badge>
-            <Badge className="bg-blue-500 text-white">{event.tag}</Badge>
-            <Badge className="bg-yellow-500 text-white">{event.status}</Badge>
             {isPast && (
               <Badge
                 variant="outline"
@@ -197,7 +201,7 @@ export default function EventDetailPage() {
               </Badge>
             )}
           </div>
-          
+
           <div className="flex justify-between items-start">
             <div className="min-w-0 flex-1">
               <h1 className="text-2xl font-bold break-words">{event.name}</h1>
@@ -207,12 +211,12 @@ export default function EventDetailPage() {
                   onClick={() =>
                     navigate(
                       ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
-                        event.community?.id.toString() ?? "",
-                      ),
+                        event.community?.id.toString() ?? ""
+                      )
                     )
                   }
                 >
-                  by {event.community?.name || 'Unknown Community'}
+                  by {event.community?.name || "Unknown Community"}
                 </div>
               ) : (
                 <div className="text-muted-foreground mt-1 break-words">
@@ -225,7 +229,9 @@ export default function EventDetailPage() {
           <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 flex-shrink-0" />
-              <span className="break-words">{formatEventDate(event.event_datetime)}</span>
+              <span className="break-words">
+                {formatEventDate(event.event_datetime)}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 flex-shrink-0" />
@@ -238,14 +244,14 @@ export default function EventDetailPage() {
             {event.community && (
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 flex-shrink-0" />
-                <span className="break-words">Organized by {event.community.name}</span>
+                <span className="break-words">
+                  Organized by {event.community.name}
+                </span>
               </div>
             )}
           </div>
 
           <div className="h-px w-full bg-border my-4" />
-
-
 
           <div className="flex flex-wrap gap-2 mt-6">
             {!isPast && (
@@ -258,15 +264,15 @@ export default function EventDetailPage() {
               </Button>
             )}
             {event.permissions?.can_edit === true && (
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-2"
-                  onClick={() => setShowEditModal(true)}
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edit Event
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={() => setShowEditModal(true)}
+              >
+                <Pencil className="h-4 w-4" />
+                Edit Event
+              </Button>
+            )}
             <Button
               variant="outline"
               className="flex items-center gap-1"
@@ -280,11 +286,12 @@ export default function EventDetailPage() {
       </div>
 
       <div className="mt-8 space-y-6">
-            <h2 className="font-medium mb-2">About this event</h2>
-            <p className="text-muted-foreground whitespace-pre-line break-words">
-              {event.description}
-            </p>
-          </div>
+        <h2 className="font-medium mb-2">About this event</h2>
+        <p className="text-muted-foreground whitespace-pre-line break-words">
+          {event.description}
+        </p>
+      </div>
+
       {/* Organizer details */}
       {(event.scope === "community" && event.community) ||
       (event.scope === "personal" && event.creator) ? (
@@ -295,8 +302,8 @@ export default function EventDetailPage() {
                 onClick={() =>
                   navigate(
                     ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
-                      event.community?.id.toString() ?? "",
-                    ),
+                      event.community?.id.toString() ?? ""
+                    )
                   )
                 }
                 className="flex items-center gap-2"
@@ -316,8 +323,8 @@ export default function EventDetailPage() {
                   {event.scope === "community" ? (
                     <Users className="h-5 w-5 text-primary" />
                   ) : (
-                    <img 
-                      src={event.creator?.picture} 
+                    <img
+                      src={event.creator?.picture}
                       alt={`${event.creator?.name}'s profile`}
                       className="w-full h-full rounded-full object-cover"
                     />
@@ -341,12 +348,12 @@ export default function EventDetailPage() {
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Calendar className="h-5 w-5 text-primary" />
                   </div>
-                                  <div className="min-w-0 flex-1">
-                  <p className="font-medium break-words">Event Coordinator</p>
-                  <p className="text-sm text-muted-foreground break-words">
-                    Contact via community's social media
-                  </p>
-                </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium break-words">Event Coordinator</p>
+                    <p className="text-sm text-muted-foreground break-words">
+                      Contact via community's social media
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
@@ -360,7 +367,7 @@ export default function EventDetailPage() {
         communityId={event.community?.id}
         permissions={event.permissions}
         event={event}
-        isEditMode={true} 
+        isEditMode={true}
       />
       <LoginModal
         isOpen={showLoginModal}
