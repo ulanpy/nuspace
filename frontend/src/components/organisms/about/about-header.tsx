@@ -5,7 +5,7 @@ export const AboutHeader = () => {
   const isDark = theme === "dark";
   return (
     <div className="text-center mb-16">
-      <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+      <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
         About <span className="text-indigo-500">NU Space</span>
       </h1>
       <p
