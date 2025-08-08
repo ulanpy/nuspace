@@ -1,10 +1,12 @@
 // MediaEditContext.tsx
 import React, { createContext, useContext, useState, ReactNode } from "react";
+import { MediaFormat } from "@/features/media/types/types";
 
 interface MediaItem {
   id: number;
   url: string;
-  order: string; 
+  order: string;
+  media_format?: MediaFormat;
 }
 
 interface MediaEditContextType {

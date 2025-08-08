@@ -38,6 +38,20 @@ export const MEDIA_CONFIGS = {
     enableReordering: false,
   } as MediaConfig,
 
+  // Community Banner Images
+
+  // Community Banner Images
+  communityBanners: {
+    entityType: EntityType.communities,
+    mediaFormat: MediaFormat.banner,
+    maxFiles: 1,
+    maxFileSize: 10, // MB
+    allowedTypes: ['image/png', 'image/jpg', 'image/jpeg'],
+    enableMainSelection: false,
+    enablePreview: true,
+    enableReordering: false,
+  } as MediaConfig,
+
   // Community Posts
   communityPosts: {
     entityType: EntityType.community_posts,

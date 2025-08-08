@@ -12,6 +12,13 @@ import { Button } from "@/components/atoms/button";
 import { Badge } from "@/components/atoms/badge";
 
 export function CommunityCard({ community }: { community: Community }) {
+    const profile = community.media.find(
+      (media) =>
+        media.entity_type === "communities" &&
+        media.media_format === "profile"
+    );
+
+
   return (
     <Card
       key={community.id}
@@ -20,7 +27,7 @@ export function CommunityCard({ community }: { community: Community }) {
       <CardHeader className="p-4 flex flex-row gap-4 items-center">
         <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
           <img
-            //  src={community.media[0].url}   ULAN TRY TO FIX THIS 
+             src={profile?.url}
              alt={community.name}
              className="object-cover w-full h-full"
              />

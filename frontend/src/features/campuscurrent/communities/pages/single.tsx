@@ -19,11 +19,13 @@ import { useState } from "react";
 import { Mail, Calendar, ExternalLink, Settings } from "lucide-react";
 
 
+import { Media } from "@/features/media/types/types";
 import { useCommunity } from "@/features/campuscurrent/communities/hooks/use-community";
 import { useEvents } from "@/features/campuscurrent/events/hooks/useEvents"; // Import useEvents
 import { Event } from "@/features/campuscurrent/types/types";
 
 import { CommunityModal } from "@/features/campuscurrent/communities/components/CommunityModal";
+import { MediaFormat } from "@/features/media/types/types";
 
 // Helpers
 const getUserInitials = (name?: string, surname?: string) => {
@@ -129,13 +131,23 @@ export default function CommunityDetailPage() {
     );
   }
 
+  const banner = community.media?.find(
+    (media: Media) =>
+      media.entity_type === "communities" && media.media_format === MediaFormat.banner
+  );
+  const profile = community.media?.find(
+    (media: Media) =>
+      media.entity_type === "communities" &&
+      media.media_format === MediaFormat.profile
+  );
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* <Navbar /> */}
       <main className="flex-grow">
         <div className="h-48 md:h-64 bg-muted relative">
           <img
-            src={community.media?.[0]?.url || "/placeholder.svg"}
+            src={banner?.url || "/placeholder.svg"}
             alt={community.name}
             className="w-full h-full object-cover"
           />
@@ -146,7 +158,7 @@ export default function CommunityDetailPage() {
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-end -mt-16 md:-mt-20 mb-6 relative z-10">
             <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-background overflow-hidden bg-background">
               <img
-                src={community.media?.[1]?.url || "/placeholder.svg"}
+                src={profile?.url || "/placeholder.svg"}
                 alt={community.name}
                 className="w-full h-full object-cover"
               />

@@ -1,18 +1,10 @@
-import { useState } from "react";
+// No local state needed on list card
+ 
+// Note: Keeping imports minimal for performance and clarity
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, Users } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/atoms/card";
+import { Calendar, MapPin } from "lucide-react";
+import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
-import { Button } from "@/components/atoms/button";
-import { useUser } from "@/hooks/use-user";
-import { useToast } from "@/hooks/use-toast";
-import { LoginModal } from "@/components/molecules/login-modal";
-import { addToGoogleCalendar } from "@/features/campuscurrent/events/utils/calendar";
 import { Event } from "@/features/campuscurrent/types/types";
 
 interface EventCardProps extends Event {}
@@ -30,31 +22,7 @@ export function EventCard(props: EventCardProps) {
     tag,
  } = props;
 
-  const { user } = useUser();
-  const { toast } = useToast();
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-
-  const handleAddToCalendar = () => {
-    if (!user) {
-      setPendingAction(() => handleAddToCalendar);
-      setShowLoginModal(true);
-      return;
-    }
-    addToGoogleCalendar(props);
-    toast({
-      title: "Success",
-      description: "Event added to your Google Calendar",
-    });
-  };
-
-  const handleLoginSuccess = () => {
-    setShowLoginModal(false);
-    if (pendingAction) {
-      pendingAction();
-      setPendingAction(null);
-    }
-  };
+  // Removed calendar action and related state from list card
 
   // Helper function to get policy display text
   const getPolicyDisplay = (policy: string) => {
@@ -152,24 +120,11 @@ export function EventCard(props: EventCardProps) {
             <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
             <span className="truncate">{place}</span>
           </div>
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Users className="mr-2 h-4 w-4 flex-shrink-0" />
-            <span>{props.duration} minutes</span>
-          </div>
+          {/* Duration removed per list card simplification */}
         </CardContent>
-        <CardFooter className="p-4 pt-0">
-          <Button variant="outline" size="sm" onClick={handleAddToCalendar} className="w-full">
-            Add to Calendar
-          </Button>
-        </CardFooter>
+        {/* Removed Add to Calendar button from card to keep action on single page */}
       </Card>
-      <LoginModal
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        onSuccess={handleLoginSuccess}
-        title="Login Required"
-        message="You need to be logged in to add this event to your calendar."
-      />
+      {/* Removed login modal since calendar action no longer lives here */}
     </>
   );
 }

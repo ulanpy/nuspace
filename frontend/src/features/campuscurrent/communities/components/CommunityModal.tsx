@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Modal } from "@/components/atoms/modal";
 import { useCreateCommunity } from "@/features/campuscurrent/communities/hooks/useCreateCommunity";
 import { useUpdateCommunity } from "@/features/campuscurrent/communities/hooks/useUpdateCommunity";
@@ -18,6 +18,7 @@ import {
 
 // Import all the new modular components
 import { UnifiedCommunityMediaUpload } from "@/features/campuscurrent/communities/components/UnifiedCommunityMediaUpload";
+import type { CommunityUploadHandle } from "@/features/campuscurrent/communities/components/UnifiedCommunityMediaUpload";
 import { CommunityDetailsForm } from "@/features/campuscurrent/communities/components/forms/CommunityDetailsForm";
 import { CommunityDescription } from "@/features/campuscurrent/communities/components/forms/CommunityDescription";
 import { DeleteConfirmation } from "@/components/molecules/DeleteConfirmation";
@@ -26,6 +27,9 @@ import {
   useCommunityForm,
   CommunityFormProvider,
 } from "@/context/CommunityFormContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { pollForCommunityImages } from "@/utils/polling";
+import { campuscurrentAPI } from "@/features/campuscurrent/communities/api/communitiesApi";
 
 interface CommunityModalProps {
   isOpen: boolean;
@@ -52,6 +56,10 @@ export function CommunityModal({
 
   const isProcessing = isCreating || isUpdating || isDeleting;
 
+  const queryClient = useQueryClient();
+  const profilesRef = useRef<CommunityUploadHandle>(null);
+  const bannersRef = useRef<CommunityUploadHandle>(null);
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Initialize media for edit mode
@@ -67,6 +75,7 @@ export function CommunityModal({
           id: media.id,
           url: media.url,
           order: media.media_order.toString(),
+          media_format: media.media_format,
         }))
       );
 
@@ -112,7 +121,23 @@ export function CommunityModal({
           instagram_url: formData.instagram_url,
         };
 
-        await handleUpdate(community.id.toString(), editData);
+        const updated = await handleUpdate(community.id.toString(), editData);
+
+        // First delete marked media for both zones
+        await profilesRef.current?.deleteMarked();
+        await bannersRef.current?.deleteMarked();
+
+        // Then upload new media for both zones
+        await profilesRef.current?.upload(updated.id);
+        await bannersRef.current?.upload(updated.id);
+
+        // Refresh queries once media is processed
+        await pollForCommunityImages(
+          updated.id,
+          queryClient,
+          "campusCurrent",
+          campuscurrentAPI.getCommunityQueryOptions
+        );
       } else {
         // Create new community
         const createData: CreateCommunityData = {
@@ -127,7 +152,18 @@ export function CommunityModal({
           instagram_url: "",
         };
 
-        await handleCreate(createData);
+        const created = await handleCreate(createData);
+
+        // Upload media for both zones after creation
+        await profilesRef.current?.upload(created.id);
+        await bannersRef.current?.upload(created.id);
+
+        await pollForCommunityImages(
+          created.id,
+          queryClient,
+          "campusCurrent",
+          campuscurrentAPI.getCommunityQueryOptions
+        );
       }
 
       // Reset form and close modal
@@ -171,7 +207,10 @@ export function CommunityModal({
       >
         <div className="space-y-6">
           {/* Media Upload Section */}
-          <UnifiedCommunityMediaUpload />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <UnifiedCommunityMediaUpload ref={profilesRef} type="communityProfiles" />
+            <UnifiedCommunityMediaUpload ref={bannersRef} type="communityBanners" />
+          </div>
 
           {/* Community Details */}
           <CommunityDetailsForm />
