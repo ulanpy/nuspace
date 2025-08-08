@@ -4,7 +4,6 @@ import {
   kupiProdaiApi,
 } from "@/features/kupi-prodai/api/kupiProdaiApi";
 import { useState } from "react";
-import { useUser } from "@/hooks/use-user";
 import {
   getSearchCategoryFromURL,
   getSearchConditionFromURL,
@@ -13,7 +12,6 @@ import { useLocation } from "react-router-dom";
 
 export function useProducts() {
   const location = useLocation();
-  const { user } = useUser();
   const [keyword, setKeyword] = useState<string>("");
   const [page, setPage] = useState<number>(1);
   const [selectedCategory, setSelectedCategory] = useState(
@@ -41,7 +39,6 @@ export function useProducts() {
       condition,
       keyword,
     }),
-    enabled: !!user,
     staleTime: Infinity,
     gcTime: 1000 * 60 * 60 * 24,
   });

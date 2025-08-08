@@ -20,14 +20,15 @@ export default function AppsLayout() {
     ROUTES.APPS.KUPI_PRODAI.ROOT,
   );
 
-  // Show login modal for unauthenticated users trying to access Kupi&Prodai
+  // Show login modal ONLY when trying to create/sell (not for browsing or viewing)
   useEffect(() => {
     if (!user && !isLoading && isKupiProdaiPath) {
-      setShowLoginModal(true);
+      const isCreatePath = location.pathname.includes("/create");
+      setShowLoginModal(isCreatePath);
     } else {
       setShowLoginModal(false);
     }
-  }, [user, isKupiProdaiPath]);
+  }, [user, isKupiProdaiPath, isLoading, location.pathname]);
 
   // Handle login from the modal
   const handleLogin = () => {
@@ -65,7 +66,7 @@ export default function AppsLayout() {
         {showLoginModal && (
           <LoginRequirementModal
             title="Login Required"
-            description="You need to login to access the Kupi&Prodai marketplace. Login to browse and sell items within the university community."
+            description="You need to login to create or manage listings in the Kupi&Prodai marketplace. Browsing is available to everyone."
             onLogin={handleLogin}
             onDismiss={handleDismiss}
           />

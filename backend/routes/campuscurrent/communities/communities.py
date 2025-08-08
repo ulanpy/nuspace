@@ -5,7 +5,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_current_principals, get_db_session
+from backend.common.dependencies import (
+    get_current_principals,
+    get_db_session,
+    get_optional_principals,
+)
 from backend.common.schemas import MediaResponse, ShortUserResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
@@ -106,7 +110,7 @@ async def add_community(
 @router.get("/communities", response_model=schemas.ListCommunity)
 async def get_communities(
     request: Request,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     community_type: CommunityType | None = None,
@@ -144,6 +148,7 @@ async def get_communities(
     - Results are ordered by creation date (newest first)
     - Each community includes its associated media in profile format
     """
+    # unregistered users can read communities
     policy = CommunityPolicy(user=user)
     await policy.check_permission(action=ResourceAction.READ)
     # Build conditions list
@@ -224,7 +229,7 @@ async def get_communities(
 async def get_community(
     request: Request,
     community_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
     db_session: AsyncSession = Depends(get_db_session),
     community: Community = Depends(deps.community_exists_or_404),
 ) -> schemas.CommunityResponse:

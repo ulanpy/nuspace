@@ -5,7 +5,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_tg, get_current_principals, get_db_session
+from backend.common.dependencies import (
+    check_tg,
+    get_current_principals,
+    get_db_session,
+    get_optional_principals,
+)
 from backend.common.schemas import MediaResponse, ShortUserResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.common.utils.enums import ResourceAction
@@ -107,7 +112,7 @@ async def add_product(
 @router.get("/products", response_model=schemas.ListProductResponse)
 async def get_products(
     request: Request,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     category: ProductCategory | None = Query(default=None),
@@ -143,6 +148,9 @@ async def get_products(
     )
 
     conditions = []
+
+    # Determine guest status
+    is_guest: bool = bool(user[1].get("is_guest"))
 
     if owner_sub == "me":
         owner_sub = user[0].get("sub")
@@ -207,17 +215,19 @@ async def get_products(
     else:
         count: int = await qb.blank(model=Product).base(count=True).filter(*conditions).count()
 
-    product_responses: List[schemas.ProductResponse] = [
-        response_builder.build_schema(
-            schemas.ProductResponse,
-            schemas.ProductResponse.model_validate(product),
-            media=media,
-            seller=ShortUserResponse.model_validate(product.user),
-            user_telegram_id=product.user.telegram_id,
-            permissions=utils.get_product_permissions(product, user),
+    product_responses: List[schemas.ProductResponse] = []
+    for product, media in zip(products, media_results):
+        hide_seller = is_guest and product.status == ProductStatus.active
+        product_responses.append(
+            response_builder.build_schema(
+                schemas.ProductResponse,
+                schemas.ProductResponse.model_validate(product),
+                media=media,
+                seller=None if hide_seller else ShortUserResponse.model_validate(product.user),
+                user_telegram_id=None if hide_seller else product.user.telegram_id,
+                permissions=utils.get_product_permissions(product, user),
+            )
         )
-        for product, media in zip(products, media_results)
-    ]
 
     total_pages: int = response_builder.calculate_pages(count=count, size=size)
     return schemas.ListProductResponse(products=product_responses, total_pages=total_pages)
@@ -297,7 +307,7 @@ async def update_product(
 @router.get("/products/{product_id}", response_model=schemas.ProductResponse)
 async def get_product_by_id(
     request: Request,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
     product_id: int,
     db_session: AsyncSession = Depends(get_db_session),
     product: Product = Depends(deps.product_exists_or_404),
@@ -339,11 +349,15 @@ async def get_product_by_id(
         request=request, media_objects=media_objs, resources=[product]
     )
 
+    is_guest: bool = bool(user[1].get("is_guest"))
+    hide_seller = is_guest and product.status == ProductStatus.active
+
     return response_builder.build_schema(
         schemas.ProductResponse,
         schemas.ProductResponse.model_validate(product),
         media=media_results[0],
-        seller=ShortUserResponse.model_validate(product.user),
+        seller=None if hide_seller else ShortUserResponse.model_validate(product.user),
+        user_telegram_id=None if hide_seller else product.user.telegram_id,
         permissions=utils.get_product_permissions(product, user),
     )
 

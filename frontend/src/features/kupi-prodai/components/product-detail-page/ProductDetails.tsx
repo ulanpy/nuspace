@@ -5,8 +5,11 @@ import { Clock } from "lucide-react";
 import { formatDateWithContext, formatRelativeTime } from "@/utils/date-formatter";
 import { Product } from "@/features/kupi-prodai/types";
 import { ProductPageActions } from "./ProductPageActions";
+import { useUser } from "@/hooks/use-user";
+import { Button } from "@/components/atoms/button";
 
 export function ProductDetails({ product, initiateContactWithSeller, isContactLoading, setShowReportModal }: { product: Product, initiateContactWithSeller: () => void, isContactLoading: boolean, setShowReportModal: (show: boolean) => void }) {
+    const { user, login } = useUser();
 
     const getConditionDisplay = (condition: string) => {
         switch (condition) {
@@ -59,24 +62,43 @@ export function ProductDetails({ product, initiateContactWithSeller, isContactLo
             </div>
 
             <div className="flex flex-col gap-0">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                        <img
-                            src={product.seller.picture}
-                            alt=""
-                            className="w-8 h-8 rounded-full"
-                        />
+                {user ? (
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                            <img
+                                src={product.seller.picture}
+                                alt=""
+                                className="w-8 h-8 rounded-full"
+                            />
+                        </div>
+                        <div>
+                            <p className="font-medium">{`${product.seller.name} ${product.seller.surname}`}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="font-medium">{`${product.seller.name} ${product.seller.surname}`}</p>
+                ) : (
+                    <div className="flex flex-col gap-2">
+                        <p className="text-sm text-muted-foreground">Login to see the seller and contact details.</p>
+                        <Button size="sm" onClick={login}>Login to view seller</Button>
                     </div>
-                </div>
+                )}
 
-                <ProductPageActions
-                    initiateContactWithSeller={initiateContactWithSeller}
-                    isContactLoading={isContactLoading}
-                    setShowReportModal={setShowReportModal}
-                />
+                {user && (
+                    <ProductPageActions
+                        initiateContactWithSeller={initiateContactWithSeller}
+                        isContactLoading={isContactLoading}
+                        setShowReportModal={setShowReportModal}
+                        isContactAllowed={true}
+                    />
+                )}
+                {!user && (
+                    <ProductPageActions
+                        initiateContactWithSeller={initiateContactWithSeller}
+                        isContactLoading={isContactLoading}
+                        setShowReportModal={setShowReportModal}
+                        isContactAllowed={false}
+                        onRequireLogin={login}
+                    />
+                )}
             </div>
 
             {/* Listing Date Information */}

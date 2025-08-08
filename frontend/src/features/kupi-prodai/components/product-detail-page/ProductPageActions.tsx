@@ -7,25 +7,37 @@ interface ProductPageActionsProps {
     initiateContactWithSeller: () => void;
     isContactLoading: boolean;
     setShowReportModal: (show: boolean) => void;
+    isContactAllowed?: boolean;
+    onRequireLogin?: () => void;
 }
 
 export function ProductPageActions({
     initiateContactWithSeller,
     isContactLoading,
-    setShowReportModal
+    setShowReportModal,
+    isContactAllowed = true,
+    onRequireLogin,
 }: ProductPageActionsProps) {
     return (
         <div className="flex flex-wrap gap-2 mt-6">
             <Button
                 variant="outline"
                 className="flex items-center gap-1"
-                onClick={initiateContactWithSeller}
-                disabled={isContactLoading}
+                onClick={() => {
+                    if (isContactAllowed) {
+                        initiateContactWithSeller();
+                    } else if (onRequireLogin) {
+                        onRequireLogin();
+                    }
+                }}
+                disabled={isContactAllowed ? isContactLoading : false}
             >
                 <ExternalLink className="h-4 w-4" />
-                <span>
-                    {isContactLoading ? "Loading..." : "Contact on Telegram"}
-                </span>
+                <span>{
+                    isContactAllowed
+                        ? (isContactLoading ? "Loading..." : "Contact on Telegram")
+                        : "Login to contact"
+                }</span>
             </Button>
 
             <Button

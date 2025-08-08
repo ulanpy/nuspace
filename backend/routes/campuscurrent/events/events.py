@@ -6,7 +6,11 @@ from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_current_principals, get_db_session
+from backend.common.dependencies import (
+    get_current_principals,
+    get_db_session,
+    get_optional_principals,
+)
 from backend.common.schemas import MediaResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models import (
@@ -30,7 +34,7 @@ router = APIRouter(tags=["Events Routes"])
 @router.get("/events", response_model=schemas.ListEventResponse)
 async def get_events(
     request: Request,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
     db_session: AsyncSession = Depends(get_db_session),
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
@@ -57,17 +61,17 @@ async def get_events(
     Retrieves a paginated list of events with flexible filtering.
 
     **Access Policy:**
-    - Admin can view all events without restrictions
-    - Users can view their own events without restrictions
-    - Community heads can view all events in their communities without restrictions
-    - For other users viewing events they don't own:
-      - Must explicitly specify status=approved
+    - Anyone (including guests) can view: Approved, Cancelled
+    - Event creator, community head, admin can view: Approved, Pending, Rejected, Cancelled
+    - For users viewing events they don't own:
+      - Must explicitly specify status in {approved, cancelled}
       - Cannot view events with other statuses
 
     **Examples:**
     - GET /events (own events) → All statuses allowed
-    - GET /events (others' events) → Must specify status=approved
+    - GET /events (others' events) → Must specify status=approved or status=cancelled
     - GET /events?status=approved → Allowed
+    - GET /events?status=cancelled → Allowed
     - GET /events?status=pending → Not allowed (if don't own event)
 
     **Parameters:**
@@ -448,7 +452,7 @@ async def delete_event(
 async def get_event(
     event_id: int,
     request: Request,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
     db_session: AsyncSession = Depends(get_db_session),
     event: Event = Depends(deps.event_exists_or_404),
 ) -> schemas.EventResponse:
@@ -456,7 +460,8 @@ async def get_event(
     Retrieves a single event by its unique ID.
 
     **Access Policy:**
-    - All authenticated users can access this endpoint
+    - Anyone can view approved or cancelled events
+    - Only event creator, community head, or admin can view pending or rejected events
 
     **Parameters:**
     - `event_id`: The unique identifier of the event to retrieve
@@ -469,7 +474,7 @@ async def get_event(
     - Returns 404 if event is not found
     - Returns 500 on internal error
     """
-    # Create policy and check permissions
+    # Check permissions for single event read
     await EventPolicy(user=user).check_permission(action=ResourceAction.READ, event=event)
 
     # Get event with its community relationship

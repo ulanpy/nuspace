@@ -1,10 +1,5 @@
 from typing import Annotated, AsyncGenerator
 
-from fastapi import Cookie, Depends, HTTPException, Request, Response, status
-from jose import JWTError, jwt
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.core.configs.config import config
 from backend.core.database.manager import AsyncDatabaseManager
 from backend.core.database.models import User, UserRole
@@ -12,6 +7,10 @@ from backend.routes.auth.app_token import AppTokenManager
 from backend.routes.auth.keycloak_manager import KeyCloakManager
 from backend.routes.auth.utils import set_kc_auth_cookies
 from backend.routes.notification import tasks
+from fastapi import Cookie, Depends, HTTPException, Request, Response, status
+from jose import JWTError, jwt
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
@@ -148,6 +147,41 @@ async def get_current_principals(
         )
 
     return kc_principal, app_principal
+
+
+async def get_optional_principals(
+    request: Request,
+    response: Response,
+    db_session: AsyncSession = Depends(get_db_session),
+    access_token: Annotated[str | None, Cookie(alias=config.COOKIE_ACCESS_NAME)] = None,
+    refresh_token: Annotated[str | None, Cookie(alias=config.COOKIE_REFRESH_NAME)] = None,
+    app_token_cookie: Annotated[str | None, Cookie(alias=config.COOKIE_APP_NAME)] = None,
+) -> tuple[dict, dict]:
+    """
+    Like get_current_principals, but returns a safe "guest" principal when unauthenticated
+    or when token validation fails, instead of raising.
+
+    Returns a tuple (kc_principal, app_principal).
+    """
+    guest_kc = {"sub": "guest"}
+    guest_app = {"role": UserRole.default.value, "communities": [], "is_guest": True}
+
+    # No auth cookies present → guest
+    if not access_token or not refresh_token:
+        return guest_kc, guest_app
+
+    # Try to resolve authenticated principals; on any failure, fall back to guest
+    try:
+        return await get_current_principals(
+            request=request,
+            response=response,
+            db_session=db_session,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            app_token_cookie=app_token_cookie,
+        )
+    except Exception:
+        return guest_kc, guest_app
 
 
 async def check_tg(

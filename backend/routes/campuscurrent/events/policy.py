@@ -76,7 +76,7 @@ class EventPolicy:
         - Users can always access their created events
         - Community heads can access all events in their communities
         - For other users:
-          - Can only access approved events for others' personal/community events
+          - Can only access approved or cancelled events for others' personal/community events
         """
         user_sub = self.user[0]["sub"]
         user_communities = self.user[1]["communities"]
@@ -89,11 +89,11 @@ class EventPolicy:
         if event.scope == EventScope.community and event.community_id in user_communities:
             return True
 
-        # For all other cases, only show approved events
-        if event.status != EventStatus.approved:
+        # For all other cases, only show approved or cancelled events
+        if event.status not in {EventStatus.approved, EventStatus.cancelled}:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can only view approved events",
+                detail="You can only view approved or cancelled events",
             )
 
         return True
@@ -113,13 +113,14 @@ class EventPolicy:
         - Users can always request their own events without restrictions
         - Community heads can request all events in their communities without restrictions
         - For other users viewing events they don't own:
-          - Must explicitly specify status=approved
+          - Must explicitly specify status in {approved, cancelled}
           - Cannot view events with other statuses
 
         Examples:
         - GET /events (own events) → All statuses allowed
-        - GET /events (others' events) → Must specify status=approved
+        - GET /events (others' events) → Must specify status=approved or status=cancelled
         - GET /events?status=approved → Allowed
+        - GET /events?status=cancelled → Allowed
         - GET /events?status=pending → Not allowed
 
         Note:
@@ -138,11 +139,11 @@ class EventPolicy:
         if event_scope == EventScope.community and community_id in user_communities:
             return True
 
-        # For all other cases, only allow approved events
-        if event_status != EventStatus.approved:
+        # For all other cases, only allow approved or cancelled events
+        if event_status not in {EventStatus.approved, EventStatus.cancelled}:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can only view approved events",
+                detail="You can only view approved or cancelled events",
             )
 
         return True

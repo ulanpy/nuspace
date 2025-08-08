@@ -1,5 +1,5 @@
-from backend.core.database.models import Community
 from backend.common.schemas import ResourcePermissions
+from backend.core.database.models import Community
 from backend.core.database.models.user import UserRole
 
 
@@ -17,6 +17,7 @@ def get_community_permissions(
     Returns:
         ResourcePermissions object containing can_edit, can_delete flags and list of editable fields
     """
+
     user_role = user[1]["role"]
     user_sub = user[0]["sub"]
 
@@ -59,4 +60,3 @@ def get_community_permissions(
         ]
 
     return permissions
-    
