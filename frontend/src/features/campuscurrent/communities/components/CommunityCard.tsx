@@ -34,10 +34,12 @@ export function CommunityCard({ community }: { community: Community }) {
           <h1 className="font-semibold truncate">{community.name}</h1>
           <div className="flex mt-2 gap-1 flex-wrap">
             <Badge variant="outline" className="text-xs">
-              {community.category}
+              {community.category[0].toUpperCase()}
+              {community.category.slice(1)}
             </Badge>
             <Badge variant="outline" className="text-xs">
-              {community.type}
+              {community.type[0].toUpperCase()}
+              {community.type.slice(1)}
             </Badge>
             <Badge variant="secondary" className="text-xs">
               Recruitment: {community.recruitment_status}

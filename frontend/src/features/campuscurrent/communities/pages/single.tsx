@@ -16,8 +16,13 @@ import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 
 import { useMemo, useState } from "react";
 
-import { Mail, Calendar, ExternalLink, Settings, UserRoundPlus } from "lucide-react";
-
+import {
+  Mail,
+  Calendar,
+  ExternalLink,
+  Settings,
+  UserRoundPlus,
+} from "lucide-react";
 
 import { Media } from "@/features/media/types/types";
 import { useCommunity } from "@/features/campuscurrent/communities/hooks/use-community";
@@ -34,8 +39,6 @@ const getUserInitials = (name?: string, surname?: string) => {
   const initials = `${first}${last}`;
   return initials || "?";
 };
-
-
 
 // Reusable EventsGrid component rendered as a horizontal carousel
 const EventsGrid = ({
@@ -71,7 +74,10 @@ const EventsGrid = ({
     <div className="mt-6 overflow-x-auto">
       <div className="flex gap-4 pb-2 snap-x snap-mandatory">
         {(events || []).map((event) => (
-          <div key={event.id} className="snap-start min-w-[240px] sm:min-w-[280px] md:min-w-[300px]">
+          <div
+            key={event.id}
+            className="snap-start min-w-[240px] sm:min-w-[280px] md:min-w-[300px]"
+          >
             <EventCard {...event} />
           </div>
         ))}
@@ -81,12 +87,13 @@ const EventsGrid = ({
 };
 
 export default function CommunityDetailPage() {
-
-
-  const { community, permissions, isLoading: isCommunityLoading } = useCommunity();
-  const [isEditCommunityModalOpen, setIsEditCommunityModalOpen] = useState(false);
-
-
+  const {
+    community,
+    permissions,
+    isLoading: isCommunityLoading,
+  } = useCommunity();
+  const [isEditCommunityModalOpen, setIsEditCommunityModalOpen] =
+    useState(false);
 
   // Fetch events for this community
   const today = new Date().toISOString().split("T")[0];
@@ -128,7 +135,10 @@ export default function CommunityDetailPage() {
     size: 50,
   });
 
-  const upcomingList = useMemo(() => upcomingEvents?.events ?? [], [upcomingEvents]);
+  const upcomingList = useMemo(
+    () => upcomingEvents?.events ?? [],
+    [upcomingEvents]
+  );
   const pastList = useMemo(() => {
     const serverPast = pastEvents?.events ?? [];
     if (serverPast.length > 0) return serverPast;
@@ -136,9 +146,6 @@ export default function CommunityDetailPage() {
     const todayDate = new Date(today);
     return all.filter((e) => new Date(e.event_datetime) < todayDate);
   }, [pastEvents, recentCommunityEvents, today]);
-
-
-
 
   if (isCommunityLoading) {
     return (
@@ -165,7 +172,8 @@ export default function CommunityDetailPage() {
 
   const banner = community.media?.find(
     (media: Media) =>
-      media.entity_type === "communities" && media.media_format === MediaFormat.banner
+      media.entity_type === "communities" &&
+      media.media_format === MediaFormat.banner
   );
   const profile = community.media?.find(
     (media: Media) =>
@@ -189,205 +197,233 @@ export default function CommunityDetailPage() {
               <div
                 className="w-full h-full rounded-lg"
                 style={{
-                  background: "linear-gradient(90deg, #414757 0%, #B5B6BB 100%)",
+                  background:
+                    "linear-gradient(90deg, #414757 0%, #B5B6BB 100%)",
                   width: "100%",
                   height: "100%",
                 }}
               />
             )}
           </div>
-          
+
           <div className="relative">
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-end -mt-16 md:-mt-20 mb-6 relative">
-            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-background overflow-hidden bg-background">
-              <img
-                src={profile?.url || "@/assets/svg/profile-placeholder.svg"}
-                alt={community.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="flex-grow">
-              <Badge className="mr-1">{community.category}</Badge>
-              <Badge  >Recruitment: {community.recruitment_status}</Badge>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-                {community.name}
-              </h1>
-            </div>
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-end -mt-16 md:-mt-20 mb-6 relative">
+              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-background overflow-hidden bg-background">
+                <img
+                  src={profile?.url || "@/assets/svg/profile-placeholder.svg"}
+                  alt={community.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-grow">
+                <Badge className="mr-1">
+                  {community.category[0].toUpperCase()}
+                  {community.category.slice(1)}
+                </Badge>
+                <Badge className="mr-1">
+                  {community.type[0].toUpperCase()}
+                  {community.type.slice(1)}
+                </Badge>
+                <Badge>Recruitment {community.recruitment_status}</Badge>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                  {community.name}
+                </h1>
+              </div>
               <div className="flex gap-2 mt-4 md:mt-0">
                 {permissions?.can_edit ? (
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => setIsEditCommunityModalOpen(true)}
                   >
                     <Settings className="h-4 w-4 mr-2" />
                     Edit Community
                   </Button>
+                ) : community.recruitment_status === "closed" ? (
+                  <span className="text-muted-foreground">
+                    Currently not recruiting
+                  </span>
                 ) : (
-                  community.recruitment_status === "closed" ? (
-                    <span className="text-muted-foreground">Currently not recruiting</span>
-                  ) : (
-                    <Button 
-                      variant="default" 
-                      onClick={() => window.open("https://forms.google.com/your-form-url", "_blank")}
-                    >
-                      <UserRoundPlus className="h-4 w-4 mr-2" />
-                      Join Community
-                    </Button>
-                  )
+                  <Button
+                    variant="default"
+                    onClick={() =>
+                      window.open(
+                        "https://forms.google.com/your-form-url",
+                        "_blank"
+                      )
+                    }
+                  >
+                    <UserRoundPlus className="h-4 w-4 mr-2" />
+                    Join Community
+                  </Button>
                 )}
               </div>
-          </div>
+            </div>
 
-          <Tabs defaultValue="about" className="mt-6 w-full">
-            <TabsList className="w-full flex">
-              <TabsTrigger value="about" className="flex-1">
-                About
-              </TabsTrigger>
-              <TabsTrigger value="events" className="flex-1">
-                Events
-              </TabsTrigger>
-              <TabsTrigger value="community" className="flex-1" >
-                Subspace
-              </TabsTrigger>
-              <TabsTrigger value="gallery" className="flex-1" >
-                Gallery
-              </TabsTrigger>
-            </TabsList>
+            <Tabs defaultValue="about" className="mt-6 w-full">
+              <TabsList className="w-full flex">
+                <TabsTrigger value="about" className="flex-1">
+                  About
+                </TabsTrigger>
+                <TabsTrigger value="events" className="flex-1">
+                  Events
+                </TabsTrigger>
+                <TabsTrigger value="community" className="flex-1">
+                  Subspace
+                </TabsTrigger>
+                <TabsTrigger value="gallery" className="flex-1">
+                  Gallery
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="about" className="mt-6">
-              <div className="grid gap-6 md:grid-cols-3">
-                <div className="md:col-span-2 space-y-6">
-                  <div className="prose max-w-none">
-                  <h2 className="text-2xl font-bold mb-2">About Us</h2>
-                    <p>{community.description}</p>
+              <TabsContent value="about" className="mt-6">
+                <div className="grid gap-6 md:grid-cols-3">
+                  <div className="md:col-span-2 space-y-6">
+                    <div className="prose max-w-none">
+                      <h2 className="text-2xl font-bold mb-2">About Us</h2>
+                      <p>{community.description}</p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader className="text-lg font-semibold">
-                      President
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage src={community.head_user?.picture || ""} />
-                            <AvatarFallback>
-                              {getUserInitials(
-                                community.head_user?.name,
-                                community.head_user?.surname,
-                              )}
-                            </AvatarFallback>
-                          </Avatar>
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader className="text-lg font-semibold">
+                        President
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage
+                                src={community.head_user?.picture || ""}
+                              />
+                              <AvatarFallback>
+                                {getUserInitials(
+                                  community.head_user?.name,
+                                  community.head_user?.surname
+                                )}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">
+                                {(community.head_user?.name || "").trim()}{" "}
+                                {(community.head_user?.surname || "").trim()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="text-lg font-semibold">
+                        Contact & Info
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-start gap-3">
+                          <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
                           <div>
-                            <p className="font-medium">
-                              {(community.head_user?.name || "").trim()} {(community.head_user?.surname || "").trim()}
+                            <p className="font-medium">Email</p>
+                            {community.head_user?.name ? (
+                              <a
+                                href={`mailto:${community.head_user.name}@example.com`}
+                                className="text-sm text-primary hover:underline"
+                              >
+                                {community.head_user.name}@example.com
+                              </a>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">
+                                Not provided
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                          <div>
+                            <p className="font-medium">Founded</p>
+                            <p className="text-sm">
+                              {community.established || "-"}
                             </p>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader className="text-lg font-semibold">
-                      Contact & Info
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-start gap-3">
-                        <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="font-medium">Email</p>
-                          {community.head_user?.name ? (
-                            <a
-                              href={`mailto:${community.head_user.name}@example.com`}
-                              className="text-sm text-primary hover:underline"
-                            >
-                              {community.head_user.name}@example.com
-                            </a>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">Not provided</span>
-                          )}
-                        </div>
-                      </div>
+                      </CardContent>
+                    </Card>
 
-                      <div className="flex items-start gap-3">
-                        <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <div>
-                          <p className="font-medium">Founded</p>
-                          <p className="text-sm">{community.established || "-"}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="text-lg font-semibold">
-                      Social Media
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <a
-                        href={community.instagram_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between p-2 rounded-md hover:bg-muted"
-                      >
-                        <span>Instagram</span>
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                      <a
-                        href={community.telegram_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between p-2 rounded-md hover:bg-muted"
-                      >
-                        <span>Telegram</span>
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    </CardContent>
-                  </Card>
+                    <Card>
+                      <CardHeader className="text-lg font-semibold">
+                        Social Media
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <a
+                          href={community.instagram_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between p-2 rounded-md hover:bg-muted"
+                        >
+                          <span>Instagram</span>
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                        <a
+                          href={community.telegram_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between p-2 rounded-md hover:bg-muted"
+                        >
+                          <span>Telegram</span>
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
-              </div>
-            </TabsContent>
+              </TabsContent>
 
-            <TabsContent value="events" className="mt-6">
-              <div className="space-y-12">
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">Upcoming Events</h2>
-                  <EventsGrid isLoading={isLoadingUpcoming} isError={isErrorUpcoming} events={upcomingList} />
+              <TabsContent value="events" className="mt-6">
+                <div className="space-y-12">
+                  <div>
+                    <h2 className="text-2xl font-bold mb-2">Upcoming Events</h2>
+                    <EventsGrid
+                      isLoading={isLoadingUpcoming}
+                      isError={isErrorUpcoming}
+                      events={upcomingList}
+                    />
+                  </div>
+
+                  <div>
+                    <h2 className="text-2xl font-bold mb-2">Past Events</h2>
+                    <EventsGrid
+                      isLoading={isLoadingPast}
+                      isError={isErrorPast}
+                      events={pastList}
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">Past Events</h2>
-                  <EventsGrid isLoading={isLoadingPast} isError={isErrorPast} events={pastList} />
-                </div>
-              </div>
+                <Card className="mt-8">
+                  <CardHeader className="text-lg font-semibold">
+                    Create event for this community
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Are you a club member? Create an event for this community!
+                      Then wait for it to get approved by the club's President.
+                    </p>
+                    <Button className="w-full">Create Event</Button>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-              <Card className="mt-8">
-                <CardHeader className="text-lg font-semibold">
-                  Create event for this community
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Are you a club member? Create an event for this community! Then wait for it to get approved by the club's President.
-                  </p>
-                  <Button className="w-full">Create Event</Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
+              <TabsContent value="community" className="mt-6">
+                <h1 className="text-center"> Coming Soon!</h1>
+              </TabsContent>
 
-            <TabsContent value="community" className="mt-6">
-              <h1 className="text-center"> Coming Soon!</h1>
-            </TabsContent>
-
-            <TabsContent value="gallery" className="mt-6">
-              <h1 className="text-center"> Coming Soon!</h1>
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="gallery" className="mt-6">
+                <h1 className="text-center"> Coming Soon!</h1>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </main>
-
 
       {/* Community Edit Modal */}
       <CommunityModal

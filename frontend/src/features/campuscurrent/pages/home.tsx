@@ -21,10 +21,17 @@ export default function NUEventsPage() {
                 Are you a student community?
               </h2>
               <p className="text-muted-foreground">
-                Sign up to create your community profile, post events, and
-                connect with students.
+                Log in to the platform with your NU account, and fill in the
+                form to create your community's profile.
               </p>
-              <Button size="lg">Register Your Community</Button>
+              <Button
+                onClick={() =>
+                  window.open("https://forms.gle/rsrAWGMCsYEeBg1y9", "_blank")
+                }
+                size="lg"
+              >
+                Register Your Community
+              </Button>
             </div>
           </div>
         </section>

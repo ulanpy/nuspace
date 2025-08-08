@@ -10,14 +10,17 @@ import { Community } from "@/features/campuscurrent/types/types";
 import { Media, MediaFormat } from "@/features/media/types/types";
 
 // Dynamic import of all jpg files in the hero_assets directory
-const heroImageModules = import.meta.glob('../../../assets/images/hero_assets/*.jpg', { eager: true });
+const heroImageModules = import.meta.glob(
+  "../../../assets/images/hero_assets/*.jpg",
+  { eager: true }
+);
 
 // Process the imported modules to get the URLs
 const heroImages = Object.entries(heroImageModules)
   .sort(([a], [b]) => {
     // Sort by filename to ensure consistent order (1.jpg, 2.jpg, etc.)
-    const aNum = parseInt(a.match(/(\d+)\.jpg$/)?.[1] || '0');
-    const bNum = parseInt(b.match(/(\d+)\.jpg$/)?.[1] || '0');
+    const aNum = parseInt(a.match(/(\d+)\.jpg$/)?.[1] || "0");
+    const bNum = parseInt(b.match(/(\d+)\.jpg$/)?.[1] || "0");
     return aNum - bNum;
   })
   .map(([path, module], index) => {
@@ -37,7 +40,15 @@ function getMediaByFormat(mediaList: Media[] | undefined, format: MediaFormat) {
   return (mediaList || []).find((m) => m.media_format === format);
 }
 
-function HeroImage({ src, alt, className = "" }: { src: string; alt: string; className?: string }) {
+function HeroImage({
+  src,
+  alt,
+  className = "",
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+}) {
   const [imgSrc, setImgSrc] = useState(src);
   const fallback = "src/assets/images/welcome-nu-space.jpg";
   return (
@@ -50,7 +61,13 @@ function HeroImage({ src, alt, className = "" }: { src: string; alt: string; cla
   );
 }
 
-function AutoCarousel({ slides, intervalMs = 2500 }: { slides: Slide[]; intervalMs?: number }) {
+function AutoCarousel({
+  slides,
+  intervalMs = 2500,
+}: {
+  slides: Slide[];
+  intervalMs?: number;
+}) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
@@ -70,10 +87,7 @@ function AutoCarousel({ slides, intervalMs = 2500 }: { slides: Slide[]; interval
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div
-        className="absolute inset-0"
-        aria-roledescription="carousel"
-      >
+      <div className="absolute inset-0" aria-roledescription="carousel">
         <div
           className="flex w-full h-full transition-transform duration-500 ease-out"
           style={{ transform: `translateX(-${index * 100}%)` }}
@@ -89,7 +103,9 @@ function AutoCarousel({ slides, intervalMs = 2500 }: { slides: Slide[]; interval
         {slides.map((_, i) => (
           <span
             key={i}
-            className={`h-1.5 w-1.5 rounded-full ${i === index ? "bg-white" : "bg-white/40"}`}
+            className={`h-1.5 w-1.5 rounded-full ${
+              i === index ? "bg-white" : "bg-white/40"
+            }`}
           />
         ))}
       </div>
@@ -112,19 +128,23 @@ export function EventsLayout() {
   // Choose the most specific matching tab (longest path that prefixes currentPath)
   const activeTabPath =
     navTabs
-      .filter((tab) => currentPath === tab.path || currentPath.startsWith(tab.path))
-      .sort((a, b) => b.path.length - a.path.length)[0]?.path || navTabs[0].path;
+      .filter(
+        (tab) => currentPath === tab.path || currentPath.startsWith(tab.path)
+      )
+      .sort((a, b) => b.path.length - a.path.length)[0]?.path ||
+    navTabs[0].path;
 
   const isHome = activeTabPath === ROUTES.APPS.CAMPUS_CURRENT.ROOT;
   const isEvents = activeTabPath === ROUTES.APPS.CAMPUS_CURRENT.EVENTS;
-  const isCommunities = activeTabPath === ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES;
+  const isCommunities =
+    activeTabPath === ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES;
 
   // Hide hero and tabs on single/detail pages
   const isEventDetail = currentPath.startsWith(
-    ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL.replace(":id", ""),
+    ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL.replace(":id", "")
   );
   const isCommunityDetail = currentPath.startsWith(
-    ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL.replace(":id", ""),
+    ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL.replace(":id", "")
   );
   const isDetailPage = isEventDetail || isCommunityDetail;
 
@@ -140,20 +160,34 @@ export function EventsLayout() {
       render: () => {
         const poster = e.media?.[0]?.url || "/placeholder.svg";
         const dateStr = new Date(e.event_datetime).toLocaleDateString();
-        const hostName = e.scope === "community" ? (e.community?.name || "") : `${e.creator?.name || ""} ${e.creator?.surname || ""}`;
+        const hostName =
+          e.scope === "community"
+            ? e.community?.name || ""
+            : `${e.creator?.name || ""} ${e.creator?.surname || ""}`;
         return (
-          <Link to={ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(String(e.id))} className="block w-full h-full">
+          <Link
+            to={ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(String(e.id))}
+            className="block w-full h-full"
+          >
             <div className="relative w-full h-full bg-black/10">
               <div className="flex h-full">
                 <div className="w-1/2 relative">
                   <HeroImage src={poster} alt={e.name} />
                 </div>
                 <div className="w-1/2 p-4 md:p-6 flex flex-col justify-center text-white bg-black/20">
-                  <h3 className="text-lg md:text-xl font-semibold line-clamp-2">{e.name}</h3>
-                  <div className="mt-2 text-sm md:text-base opacity-90">{dateStr}</div>
-                  <div className="text-sm md:text-base opacity-90">{e.place}</div>
+                  <h3 className="text-lg md:text-xl font-semibold line-clamp-2">
+                    {e.name}
+                  </h3>
+                  <div className="mt-2 text-sm md:text-base opacity-90">
+                    {dateStr}
+                  </div>
+                  <div className="text-sm md:text-base opacity-90">
+                    {e.place}
+                  </div>
                   {hostName && (
-                    <div className="mt-1 text-xs md:text-sm opacity-80">by {hostName}</div>
+                    <div className="mt-1 text-xs md:text-sm opacity-80">
+                      by {hostName}
+                    </div>
                   )}
                 </div>
               </div>
@@ -167,12 +201,19 @@ export function EventsLayout() {
   const communitySlides: Slide[] = useMemo(() => {
     const items: Community[] = communities?.communities?.slice(0, 3) || [];
     return items.map((c) => {
-      const banner = getMediaByFormat(c.media, MediaFormat.banner)?.url || "/placeholder.svg";
-      const profile = getMediaByFormat(c.media, MediaFormat.profile)?.url || "/placeholder.svg";
+      const banner =
+        getMediaByFormat(c.media, MediaFormat.banner)?.url ||
+        "/placeholder.svg";
+      const profile =
+        getMediaByFormat(c.media, MediaFormat.profile)?.url ||
+        "/placeholder.svg";
       return {
         key: c.id,
         render: () => (
-          <Link to={ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(String(c.id))} className="block w-full h-full">
+          <Link
+            to={ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(String(c.id))}
+            className="block w-full h-full"
+          >
             <div className="relative w-full h-full">
               <HeroImage src={banner} alt={c.name} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
@@ -180,14 +221,20 @@ export function EventsLayout() {
                 <img
                   src={profile}
                   onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = "src/assets/images/welcome-nu-space.jpg";
+                    (e.currentTarget as HTMLImageElement).src =
+                      "src/assets/images/welcome-nu-space.jpg";
                   }}
                   alt={c.name}
                   className="w-12 h-12 rounded-full border-2 border-white object-cover bg-background"
                 />
-                <div className="text-white drop-shadow-sm max-w-[60%]">
-                  <div className="text-sm opacity-90">Community</div>
-                  <div className="text-base font-semibold line-clamp-1">{c.name}</div>
+                <div className="text-white drop-shadow-sm max-w-[100%]">
+                  <div className="text-sm opacity-90">
+                    {c.category[0].toUpperCase()}
+                    {c.category.slice(1)} {c.type}
+                  </div>
+                  <div className="text-base font-semibold line-clamp-1">
+                    {c.name}
+                  </div>
                 </div>
               </div>
             </div>
@@ -200,10 +247,17 @@ export function EventsLayout() {
   const homeSlides: Slide[] = useMemo(() => {
     // Fallback to a single default image if no hero images are found
     if (heroImages.length === 0) {
-      return [{
-        key: 'default',
-        render: () => <HeroImage src="src/assets/images/welcome-nu-space.jpg" alt="Campus Current" />,
-      }];
+      return [
+        {
+          key: "default",
+          render: () => (
+            <HeroImage
+              src="src/assets/images/welcome-nu-space.jpg"
+              alt="Campus Current"
+            />
+          ),
+        },
+      ];
     }
 
     return heroImages.map((heroImage, i) => ({
@@ -214,9 +268,9 @@ export function EventsLayout() {
 
   const hero = isHome
     ? {
-        title: "Discover NU Campus Life",
+        title: "Campus ⚡️ Current",
         description:
-          "Find events, join communities, and connect with the Nazarbayev University community.",
+          " Discover NU Campus Life. Find events, join communities, and connect with the Nazarbayev University community.",
         bg: "bg-blue-700",
         primary: {
           label: "Explore Events",
@@ -237,7 +291,9 @@ export function EventsLayout() {
           label: "Explore Events",
           onClick: () => {
             if (isEvents) {
-              document.getElementById("events-section")?.scrollIntoView({ behavior: "smooth" });
+              document
+                .getElementById("events-section")
+                ?.scrollIntoView({ behavior: "smooth" });
             } else {
               navigate(`${ROUTES.APPS.CAMPUS_CURRENT.EVENTS}#events-section`);
             }
@@ -245,7 +301,8 @@ export function EventsLayout() {
         },
         secondary: {
           label: "Create Event",
-          onClick: () => navigate(`${ROUTES.APPS.CAMPUS_CURRENT.EVENTS}#create-event`),
+          onClick: () =>
+            navigate(`${ROUTES.APPS.CAMPUS_CURRENT.EVENTS}#create-event`),
         },
         slides: eventSlides,
       }
@@ -258,27 +315,34 @@ export function EventsLayout() {
           label: "View Communities",
           onClick: () => {
             if (isCommunities) {
-              document.getElementById("communities-section")?.scrollIntoView({ behavior: "smooth" });
+              document
+                .getElementById("communities-section")
+                ?.scrollIntoView({ behavior: "smooth" });
             } else {
-              navigate(`${ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES}#communities-section`);
+              navigate(
+                `${ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES}#communities-section`
+              );
             }
           },
         },
         secondary: {
           label: "Create a Community",
-          onClick: () => window.open("https://forms.google.com/your-form-url", "_blank"),
+          onClick: () =>
+            window.open("https://forms.gle/rsrAWGMCsYEeBg1y9", "_blank"),
         },
         slides: communitySlides,
       };
 
   return (
-    <div className="w-full overflow-x-hidden">
-      <div className="space-y-6 pb-20">
-        {!isDetailPage && (
-          <>
-            {/* Route-aware hero */}
-            <section className={`w-full py-12 md:py-20 text-white ${hero.bg} -mt-4 sm:-mt-6`}>
-              <div className="container mx-auto px-4 md:px-6 max-w-7xl">
+    <div className="space-y-6 pb-20">
+      {!isDetailPage && (
+        <>
+          {/* Route-aware full-width hero */}
+          <div className="-mx-3 sm:-mx-4">
+            <section
+              className={`w-screen relative left-1/2 right-1/2 -mx-[50vw] -mt-4 sm:-mt-6 py-12 md:py-20 text-white ${hero.bg}`}
+            >
+              <div className="container px-4 md:px-6">
                 <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
                   {/* Mobile: carousel on top */}
                   <div className="lg:hidden -mt-2 mb-2">
@@ -286,8 +350,12 @@ export function EventsLayout() {
                   </div>
 
                   <div className="space-y-4">
-                    <h1 className="text-3xl md:text-5xl font-bold">{hero.title}</h1>
-                    <p className="text-lg md:text-xl text-white/90">{hero.description}</p>
+                    <h1 className="text-3xl md:text-5xl font-bold">
+                      {hero.title}
+                    </h1>
+                    <p className="text-lg md:text-xl text-white/90">
+                      {hero.description}
+                    </p>
                     <div className="flex flex-col sm:flex-row gap-3">
                       <Button
                         size="lg"
@@ -312,32 +380,30 @@ export function EventsLayout() {
                 </div>
               </div>
             </section>
+          </div>
 
-            {/* Navigation Tabs */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
-              <div className="container mx-auto px-4 md:px-6 max-w-7xl py-2">
-                <Tabs
-                  value={activeTabPath}
-                  onValueChange={(value) => navigate(value)}
-                  className="w-full"
-                >
-                  <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto">
-                    {navTabs.map((tab) => (
-                      <TabsTrigger key={tab.path} value={tab.path} className="text-sm">
-                        {tab.name}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </Tabs>
-              </div>
+          {/* Navigation Tabs */}
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-3 sm:-mx-4">
+            <div className="px-3 sm:px-4 py-2">
+              <Tabs
+                value={activeTabPath}
+                onValueChange={(value) => navigate(value)}
+                className="w-full"
+              >
+                <TabsList className="grid w-full grid-cols-3">
+                  {navTabs.map((tab) => (
+                    <TabsTrigger key={tab.path} value={tab.path}>
+                      {tab.name}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
             </div>
-          </>
-        )}
-        
-        <div className="container mx-auto px-4 md:px-6 max-w-7xl">
-          <Outlet />
-        </div>
-      </div>
+          </div>
+        </>
+      )}
+
+      <Outlet />
     </div>
   );
 }
