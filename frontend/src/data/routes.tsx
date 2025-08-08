@@ -13,6 +13,7 @@ export const KUPI_PRODAI = "kupi-prodai";
 export const CAMPUS_CURRENT = "campuscurrent";
 export const DORM_EATS = "dorm-eats";
 export const POSTS = "posts";
+export const PROFILE = "profile";
 export const ABOUT = "about";
 export const EVENTS = "events";
 export const EVENT = "event";
@@ -73,6 +74,7 @@ export const ROUTES = {
         DETAIL_FN: (id: string) => buildPath(APPS, CAMPUS_CURRENT, COMMUNITY, id),
       },
       POSTS: buildPath(APPS, CAMPUS_CURRENT, POSTS),
+      PROFILE: buildPath(APPS, CAMPUS_CURRENT, PROFILE),
     },
     DORM_EATS: {
       ROOT: buildPath(APPS, DORM_EATS),
@@ -99,6 +101,7 @@ const LAZY_ROUTES_REL = {
     CAMPUS_CURRENT_EVENT_DETAIL: `${CAMPUS_CURRENT}/${EVENT}/:id`,
     CAMPUS_CURRENT_COMMUNITY_DETAIL: `${CAMPUS_CURRENT}/${COMMUNITY}/:id`,
     CAMPUS_CURRENT_COMMUNITIES: `${CAMPUS_CURRENT}/${COMMUNITIES}`,
+    CAMPUS_CURRENT_PROFILE: `${CAMPUS_CURRENT}/${PROFILE}`,
   },
 };
 export const LazyRoutes = {
@@ -153,6 +156,12 @@ export const LazyRoutes = {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_COMMUNITIES,
         Component: withSuspense(
           lazy(() => import("@/features/campuscurrent/pages/communities/list")),
+        ),
+      },
+      {
+        path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_PROFILE,
+        Component: withSuspense(
+          lazy(() => import("@/features/campuscurrent/pages/profile")),
         ),
       },
     ],
