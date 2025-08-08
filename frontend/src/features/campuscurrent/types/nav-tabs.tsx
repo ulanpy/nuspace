@@ -13,8 +13,4 @@ export const navTabs = [
     name: "Communities",
     path: ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES,
   },
-  {
-    name: "Profile",
-    path: ROUTES.APPS.CAMPUS_CURRENT.PROFILE
-  },
 ];

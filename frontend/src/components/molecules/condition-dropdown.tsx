@@ -7,12 +7,14 @@ interface ConditionDropdownProps {
   conditions: string[];
   selectedCondition: string;
   setSelectedCondition: (condition: string) => void;
+  disableNavigation?: boolean;
 }
 
 export function ConditionDropdown({
   conditions,
   selectedCondition,
   setSelectedCondition,
+  disableNavigation,
 }: ConditionDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
@@ -22,11 +24,13 @@ export function ConditionDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleClick = (item: string) => {
-    const params = new URLSearchParams(location.search);
-    params.delete("page");
-    params.set("condition", item);
+    if (!disableNavigation) {
+      const params = new URLSearchParams(location.search);
+      params.delete("page");
+      params.set("condition", item);
+      navigate(`${location.pathname}?${params.toString()}`);
+    }
     setSelectedCondition(item);
-    navigate(`${location.pathname}?${params.toString()}`);
     setIsOpen(false);
   };
 

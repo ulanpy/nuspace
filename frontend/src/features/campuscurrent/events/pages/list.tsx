@@ -9,9 +9,9 @@ import { EventCard } from "@/features/campuscurrent/events/components/EventCard"
 import { Pagination } from "@/components/molecules/pagination";
 import { useEvents } from "@/features/campuscurrent/events/hooks/useEvents";
 import { Event } from "@/features/campuscurrent/types/types";
-import { useState } from "react";
-import { Calendar, Plus } from "lucide-react";
-import { Button } from "@/components/atoms/button";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { Calendar } from "lucide-react";
 import { EventModal } from "@/features/campuscurrent/events/components/EventModal";
 
 const EventsGrid = ({
@@ -44,7 +44,7 @@ const EventsGrid = ({
   }
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-6">
+    <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
       {(events?.events || []).map((event) => (
         <EventCard key={event.id} {...event} />
       ))}
@@ -101,64 +101,36 @@ export default function Events() {
     }
     setDateFilter({ start_date, end_date });
   };
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash === "#events-section") {
+      document.getElementById("events-section")?.scrollIntoView({ behavior: "smooth" });
+    }
+    if (location.hash === "#create-event") {
+      setIsCreateModalOpen(true);
+    }
+    const params = new URLSearchParams(location.search);
+    if (params.get("create") === "1") {
+      setIsCreateModalOpen(true);
+    }
+  }, [location]);
+
   return (
     <>
-      {/* Hero Section */}
-    <MotionWrapper>
-    <section className="py-12 md:py-20 bg-purple-600 text-white">
-      <div className="container px-4 md:px-6">
-        <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
-          <div className="space-y-4">
-            <h1 className="text-3xl md:text-5xl font-bold">
-              Events you don't want to miss
-            </h1>
-            <p className="text-lg md:text-xl text-white/90">
-              Discover exciting events happening around campus, from academic talks to cultural celebrations.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                asChild
-                size="lg"
-                className="bg-yellow-500 text-black hover:bg-yellow-600"
-                onClick={() => document.getElementById('events-section')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                <Button>Explore Events</Button>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white bg-white text-black hover:bg-white/10"
-                onClick={() => setIsCreateModalOpen(true)}
-              >
-                Or create your own
-              </Button>
-            </div>
-          </div>
-          <div className="lg:flex hidden justify-end">
-            <div className="w-full max-w-md aspect-video bg-white/10 rounded-lg overflow-hidden">
-              <img
-                src="/placeholder.svg"
-                alt="Campus events"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    </MotionWrapper>
+      {/* Hero moved to layout */}
 
     <MotionWrapper>
-    <div className="flex flex-col min-h-screen" id="events-section">
-      <main className="flex-grow">
+    <div className="flex flex-col min-h-screen w-full overflow-x-hidden" id="events-section">
+      <main className="flex-grow w-full max-w-screen-lg mx-auto px-4 sm:px-6 md:px-8">
         
 
             <Tabs
               value={activeTab}
-              className="mb-6"
+              className="mb-6 w-full"
               onValueChange={(value) => setFilter(value)}
             >
-              <TabsList>
+              <TabsList className="w-full overflow-x-auto">
                 <TabsTrigger value="all">All Events</TabsTrigger>
                 <TabsTrigger value="today">Today</TabsTrigger>
                 <TabsTrigger value="thisWeek">This Week</TabsTrigger>
