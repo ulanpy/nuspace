@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Users, ChevronLeft, ChevronRight, Calendar, Plus } from "lucide-react";
+import { Users, ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 
 import { LoginModal } from "@/components/molecules/login-modal";
@@ -11,7 +11,6 @@ import { Community, CommunityCategory } from "@/features/campuscurrent/types/typ
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/atoms/tabs";
 
 import MotionWrapper from "@/components/atoms/motion-wrapper";
-import { CommunityModal } from "@/features/campuscurrent/communities/components/CommunityModal";
 import { useUser } from "@/hooks/use-user";
 
 const CommunitiesCarousel = ({ 
@@ -248,7 +247,6 @@ export default function CommunitiesPage() {
   const [totalPages] = useState(1);
   const [selectedCommunityCategory, setSelectedCommunityCategory] = useState<CommunityCategory>(CommunityCategory.academic);
   const [showLoginModal] = useState(false);
-  const [isCreateCommunityModalOpen, setIsCreateCommunityModalOpen] = useState(false);
   
 
   
@@ -303,18 +301,7 @@ export default function CommunitiesPage() {
 
       <MotionWrapper>
         {/* Header */}
-        <div className="mb-6 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Communities</h1>
-          {user && (
-            <Button 
-              onClick={() => setIsCreateCommunityModalOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Create Community
-            </Button>
-          )}
-        </div>
+        
 
         {/* Responsive Tabs */}
         <div className="mb-6" id="communities-section">
@@ -447,12 +434,6 @@ export default function CommunitiesPage() {
           message="You need to be logged in to follow communities."
         />
 
-        {/* Create Community Modal */}
-        <CommunityModal
-          isOpen={isCreateCommunityModalOpen}
-          onClose={() => setIsCreateCommunityModalOpen(false)}
-          isEditMode={false}
-        />
       </MotionWrapper>
     </>
   );

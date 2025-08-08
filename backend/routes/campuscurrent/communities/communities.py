@@ -84,7 +84,7 @@ async def add_community(
         .filter(
             Media.entity_id == community.id,
             Media.entity_type == EntityType.communities,
-            Media.media_format == MediaFormat.profile,
+            Media.media_format.in_([MediaFormat.profile, MediaFormat.banner]),
         )
         .all()
     )
@@ -192,7 +192,7 @@ async def get_communities(
         .filter(
             Media.entity_id.in_([community.id for community in communities]),
             Media.entity_type == EntityType.communities,
-            Media.media_format == MediaFormat.carousel,
+            Media.media_format.in_([MediaFormat.profile, MediaFormat.banner]),
         )
         .all()
     )
@@ -258,11 +258,10 @@ async def get_community(
         .filter(
             Media.entity_id == community.id,
             Media.entity_type == EntityType.communities,
-            Media.media_format == MediaFormat.profile,
+            Media.media_format.in_([MediaFormat.profile, MediaFormat.banner]),
         )
         .all()
     )
-
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
         request=request, media_objects=media_objs, resources=[community]
     )
@@ -328,7 +327,7 @@ async def update_community(
         .filter(
             Media.entity_id == community.id,
             Media.entity_type == EntityType.communities,
-            Media.media_format == MediaFormat.profile,
+            Media.media_format.in_([MediaFormat.profile, MediaFormat.banner]),
         )
         .all()
     )

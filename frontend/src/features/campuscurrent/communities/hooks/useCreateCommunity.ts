@@ -43,7 +43,7 @@ export function useCreateCommunity() {
       await handleMediaUpload({
         entity_type: EntityType.communities,
         entityId: newCommunity.id,
-        mediaFormat: MediaFormat.carousel,
+        mediaFormat: MediaFormat.profile,
       });
 
       setUploadProgress(70);

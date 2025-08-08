@@ -1,19 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { campuscurrentAPI } from "@/features/campuscurrent/communities/api/communitiesApi";
 import { useToast } from "@/hooks/use-toast";
-import { useMediaUpload } from "@/features/media/hooks/useMediaUpload";
-import { useMediaEditContext } from "@/context/MediaEditContext";
-import { EntityType, MediaFormat } from "@/features/media/types/types";
 import { EditCommunityData } from "@/features/campuscurrent/types/types";
-import { pollForCommunityImages } from "@/utils/polling";
 import { useState } from "react";
 
 export function useUpdateCommunity() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { handleMediaUpload, resetMediaState } = useMediaUpload();
-  const { mediaToDelete, setMediaToDelete } = useMediaEditContext();
-  
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const updateCommunityMutation = useMutation({
@@ -44,31 +37,11 @@ export function useUpdateCommunity() {
         id,
         data: communityData,
       });
-      setUploadProgress(40);
-
-      // Upload new media if any
-      await handleMediaUpload({
-        entity_type: EntityType.communities,
-        entityId: updatedCommunity.id,
-        mediaFormat: MediaFormat.carousel,
-      });
-
-      setUploadProgress(70);
-
-      // Poll for community images to be processed
-      await pollForCommunityImages(
-        updatedCommunity.id,
-        queryClient,
-        "campusCurrent",
-        campuscurrentAPI.getCommunityQueryOptions
-      );
-
       setUploadProgress(100);
-      resetMediaState();
 
       toast({
         title: "Success",
-        description: "Community updated successfully!",
+        description: "Community details updated successfully!",
       });
 
       return updatedCommunity;
