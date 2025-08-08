@@ -94,7 +94,6 @@ export default function NUEventsPage() {
         title="Login Required"
         message="You need to be logged in to add events to your Google Calendar."
       />
-      <Footer />
     </>
   );
 }
