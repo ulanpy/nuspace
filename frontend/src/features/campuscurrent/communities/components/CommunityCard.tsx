@@ -12,53 +12,56 @@ import { Button } from "@/components/atoms/button";
 import { Badge } from "@/components/atoms/badge";
 
 export function CommunityCard({ community }: { community: Community }) {
-    const profile = community.media.find(
-      (media) =>
-        media.entity_type === "communities" &&
-        media.media_format === "profile"
-    );
-
+  const profile = community.media.find(
+    (media) =>
+      media.entity_type === "communities" && media.media_format === "profile"
+  );
 
   return (
     <Card
       key={community.id}
-      className="overflow-hidden hover:shadow-md transition-shadow"
+      className="overflow-hidden hover:shadow-md transition-shadow h-80 flex flex-col"
     >
-      <CardHeader className="p-4 flex flex-row gap-4 items-center">
+      <CardHeader className="p-4 flex flex-row gap-4 items-center flex-shrink-0">
         <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
           <img
-             src={profile?.url}
-             alt={community.name}
-             className="object-cover w-full h-full"
-             />
+            src={profile?.url}
+            alt={community.name}
+            className="object-cover w-full h-full"
+          />
         </div>
-        <div>
-          <h1 className="font-semibold">{community.name}</h1>
-          <div className="flex mt-4 gap-1 flex-wrap">
-          <Badge variant="outline">{community.category}</Badge>
-          <Badge variant="outline">{community.type}</Badge>
-        <Badge variant="secondary">Recruitment: {community.recruitment_status}</Badge>
+        <div className="min-w-0 flex-1">
+          <h1 className="font-semibold truncate">{community.name}</h1>
+          <div className="flex mt-2 gap-1 flex-wrap">
+            <Badge variant="outline" className="text-xs">
+              {community.category}
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              {community.type}
+            </Badge>
+            <Badge variant="secondary" className="text-xs">
+              Recruitment: {community.recruitment_status}
+            </Badge>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="p-4 pt-0">
-        <p className="text-sm text-muted-foreground line-clamp-3">
+      <CardContent className="p-4 pt-0 flex-1 overflow-hidden">
+        <p className="text-sm text-muted-foreground line-clamp-4">
           {community.description}
         </p>
-        {/* <div className="flex mt-3 gap-1 text-sm text-muted-foreground">
-        </div> */}
       </CardContent>
+
       <Link
         to={ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
           community.id.toString()
         )}
+        className="mt-auto"
       >
-        <CardFooter className="p-4 pt-0">
+        <CardFooter className="p-4 pt-0 flex-shrink-0">
           <Button className="w-full">View Club</Button>
         </CardFooter>
       </Link>
     </Card>
-    // </>
   );
 }

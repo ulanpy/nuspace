@@ -7,28 +7,26 @@ import { Button } from "@/components/atoms/button";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { CommunityCard } from "@/features/campuscurrent/communities/components/CommunityCard";
 import { useCommunities } from "@/features/campuscurrent/communities/hooks/use-communities";
-import { Community, CommunityCategory } from "@/features/campuscurrent/types/types";
+import {
+  Community,
+  CommunityCategory,
+} from "@/features/campuscurrent/types/types";
 import { ConditionDropdown } from "@/components/molecules/condition-dropdown";
 
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 
-
-
-
 export default function CommunitiesPage() {
   const { communities, isLoading, isError } = useCommunities();
-  
 
   const [currentPage] = useState(1);
   const [totalPages] = useState(1);
-  const [selectedCommunityCategory, setSelectedCommunityCategory] = useState<CommunityCategory>(CommunityCategory.academic);
+  const [selectedCommunityCategory, setSelectedCommunityCategory] =
+    useState<CommunityCategory>(CommunityCategory.academic);
   const [showLoginModal] = useState(false);
-  
 
-  
-
-  
-  const [filteredCommunities, setFilteredCommunities] = useState<Community[]>([]);
+  const [filteredCommunities, setFilteredCommunities] = useState<Community[]>(
+    []
+  );
   const communityCategories = Object.values(CommunityCategory);
 
   useEffect(() => {
@@ -43,19 +41,17 @@ export default function CommunitiesPage() {
   const handleCategoryChange = (category: string) => {
     setSelectedCommunityCategory(category as CommunityCategory);
   };
-  
-  
+
   return (
     <>
       {/* Hero moved to layout */}
 
       <MotionWrapper>
         {/* Header */}
-        
 
         {/* Responsive Tabs */}
         <div className="mb-6" id="communities-section">
-        <ConditionDropdown
+          <ConditionDropdown
             conditions={communityCategories}
             selectedCondition={selectedCommunityCategory}
             setSelectedCondition={handleCategoryChange}
@@ -70,13 +66,16 @@ export default function CommunitiesPage() {
             ) : filteredCommunities.length === 0 ? (
               <div className="text-center py-12">
                 <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No {selectedCommunityCategory} communities found</h3>
+                <h3 className="text-lg font-medium mb-2">
+                  No {selectedCommunityCategory} communities found
+                </h3>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  There are no {selectedCommunityCategory} communities available at the moment.
+                  There are no {selectedCommunityCategory} communities available
+                  at the moment.
                 </p>
               </div>
             ) : (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-6">
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
                 {filteredCommunities.map((community) => (
                   <CommunityCard key={community.id} community={community} />
                 ))}
@@ -118,7 +117,6 @@ export default function CommunitiesPage() {
           title="Login Required"
           message="You need to be logged in to follow communities."
         />
-
       </MotionWrapper>
     </>
   );
