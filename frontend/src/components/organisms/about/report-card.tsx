@@ -19,7 +19,7 @@ export function ReportCard() {
         <p
           className={`text-sm mb-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}
         >
-          Found a bug or having issues? We're here to help. Reach out directly
+          Found a bug or having issues? Reach out directly
           for quick assistance.
         </p>
         <a

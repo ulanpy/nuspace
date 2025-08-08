@@ -52,13 +52,7 @@ export function LoginPromptCard({ onLogin }: LoginPromptCardProps) {
             }}
           />
         </motion.div>
-        
-        <motion.div
-          animate={{ y: [0, -2, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        >
           <CardTitle className="text-xl font-bold">Ready to Sell?</CardTitle>
-        </motion.div>
         
         <CardDescription className="text-base">
           Join our marketplace and start selling your items today
@@ -75,24 +69,12 @@ export function LoginPromptCard({ onLogin }: LoginPromptCardProps) {
             size="lg"
             className="relative w-full sm:w-auto px-8 py-3 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-300 group/button overflow-hidden"
           >
-            {/* Button ripple effect */}
-            <motion.div
-              className="absolute inset-0 bg-white/20 rounded-md opacity-0 group-hover/button:opacity-100"
-              animate={{
-                scale: [0, 1],
-                opacity: [1, 0]
-              }}
-              transition={{
-                duration: 0.6,
-                repeat: Infinity,
-                ease: "easeOut"
-              }}
-            />
+                         
             
             <motion.div
               className="flex items-center gap-2"
               whileHover={{ x: 2 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+              transition={{ type: "spring", stiffness: 50, damping: 50 }}
             >
               <motion.div
                 animate={{ rotate: [0, 15, -15, 0] }}

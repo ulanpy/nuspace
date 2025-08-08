@@ -7,7 +7,7 @@ export const MessionSection = () => {
     <div
       className={`rounded-2xl p-8 mb-16 ${
         isDark ? "bg-gray-800" : "bg-white"
-      } shadow-xl`}
+      } shadow-md`}
     >
       <h2 className="text-2xl font-bold mb-6">Mission</h2>
       <p className={`mb-4 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
