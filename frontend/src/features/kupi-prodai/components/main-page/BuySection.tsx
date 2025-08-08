@@ -1,5 +1,5 @@
 "use client";
-import { Suspense } from "react";
+import React, { Suspense } from "react";
 import { useProducts } from "@/features/kupi-prodai/api/hooks/useProducts";
 import { useSearchLogic } from "@/hooks/use-search-logic";
 import { CombinedSearch } from "@/components/molecules/combined-search";
@@ -62,7 +62,7 @@ export function BuySection() {
         <CategorySlider
           categories={categories.map(cat => ({
             ...cat,
-            imageUrl: cat.imageUrl || getPlaceholderImage()
+            icon: cat.icon ? React.createElement(cat.icon, { className: "h-5 w-5" }) : React.createElement('div', { className: "h-5 w-5 bg-gray-300 rounded" })
           }))}
           selectedCategory={selectedCategory}
           setPage={setPage}

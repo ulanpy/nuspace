@@ -1,42 +1,43 @@
+import { Blocks, Book, Cable, Shirt, Armchair, WashingMachine, Volleyball, Apple, Bike, Archive} from "lucide-react";
 export const productCategories: Types.DisplayCategory[] = [
   {
     title: "All",
-    imageUrl: new URL("../../assets/images/categories/all.png", import.meta.url).href,
+    icon: Blocks,
   },
   {
     title: "Books",
-    imageUrl: new URL("../../assets/images/categories/books.png", import.meta.url).href,
+    icon: Book,
   },
   {
     title: "Electronics",
-    imageUrl: new URL("../../assets/images/categories/electronics.png", import.meta.url).href,
+    icon: Cable,
   },
   {
     title: "Clothing",
-    imageUrl: new URL("../../assets/images/categories/clothing.png", import.meta.url).href,
+    icon: Shirt, 
   },
   {
     title: "Furniture",
-    imageUrl: new URL("../../assets/images/categories/furniture.png", import.meta.url).href,
+    icon: Armchair
   },
   {
     title: "Appliances",
-    imageUrl: new URL("../../assets/images/categories/appliances.png", import.meta.url).href,
+    icon: WashingMachine
   },
   {
     title: "Sports",
-    imageUrl: new URL("../../assets/images/categories/sports.png", import.meta.url).href,
+    icon: Volleyball,
   },
   {
     title: "Food",
-    imageUrl: new URL("../../assets/images/categories/food.png", import.meta.url).href,
+    icon: Apple,
   },
   {
     title: "Transport",
-    imageUrl: new URL("../../assets/images/categories/transport.png", import.meta.url).href,
+    icon: Bike,
   },
   {
     title: "Others",
-    imageUrl: new URL("../../assets/images/categories/others.png", import.meta.url).href,
+    icon: Archive,
   },
 ];
