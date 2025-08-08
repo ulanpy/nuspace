@@ -10,7 +10,7 @@ export const defaultPage = 1;
 
 export interface PaginatedResponse<T> {
   products: T[];
-  num_of_pages: number;
+  total_pages: number;
 }
 
 
@@ -41,14 +41,22 @@ export const kupiProdaiApi = {
         "list",
         { page, size, category, condition, keyword },
       ],
-      queryFn: ({ queryKey }) => {
+      queryFn: async ({ queryKey }) => {
         const [, , params] = queryKey as [string, string, QueryParams];
         let endpoint = `/products?size=${params.size}&page=${params.page}&status=active`;
         if (params.category) endpoint += `&category=${params.category}`;
         if (params.condition) endpoint += `&condition=${params.condition}`;
         if (params.keyword) endpoint += `&keyword=${params.keyword}`;
 
-        return apiCall<PaginatedResponse<Product>>(endpoint);
+        const res = await apiCall<any>(endpoint);
+        if (
+          res &&
+          typeof res.total_pages !== "number" &&
+          typeof res.num_of_pages === "number"
+        ) {
+          res.total_pages = res.num_of_pages;
+        }
+        return res as PaginatedResponse<Product>;
       },
     });
   },
@@ -57,10 +65,18 @@ export const kupiProdaiApi = {
   getUserProductsQueryOptions: () => {
     return queryOptions({
       queryKey: [kupiProdaiApi.baseKey, "userProducts"],
-      queryFn: () => {
-        return apiCall<PaginatedResponse<Product>>(
+      queryFn: async () => {
+        const res = await apiCall<any>(
           `/products?size=${defaultSize}&page=${defaultPage}&owner_sub=me`,
         );
+        if (
+          res &&
+          typeof res.total_pages !== "number" &&
+          typeof res.num_of_pages === "number"
+        ) {
+          res.total_pages = res.num_of_pages;
+        }
+        return res as PaginatedResponse<Product>;
       },
     });
   },

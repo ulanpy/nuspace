@@ -10,7 +10,7 @@ import { Pagination } from "@/components/molecules/pagination";
 import { useEvents } from "@/features/campuscurrent/events/hooks/useEvents";
 import { Event } from "@/features/campuscurrent/types/types";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Calendar } from "lucide-react";
 import { EventModal } from "@/features/campuscurrent/events/components/EventModal";
 
@@ -61,7 +61,7 @@ export default function Events() {
     start_date: new Date().toISOString().split("T")[0], // Default to show only upcoming events
   });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const { events, isLoading, isError } = useEvents(dateFilter);
+  const { events, isLoading, isError, page, setPage } = useEvents(dateFilter);
 
   const setFilter = (value: string) => {
     setActiveTab(value);
@@ -102,6 +102,7 @@ export default function Events() {
     setDateFilter({ start_date, end_date });
   };
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (location.hash === "#events-section") {
@@ -115,6 +116,24 @@ export default function Events() {
       setIsCreateModalOpen(true);
     }
   }, [location]);
+
+  // Sync page param from URL on mount and when it changes externally
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const pageParam = Number(params.get("page") || "1");
+    if (!Number.isNaN(pageParam) && pageParam !== page) {
+      setPage(pageParam);
+    }
+  }, [location.search]);
+
+  // Whenever page changes locally, reflect it in URL (keeps back/forward working)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (Number(params.get("page") || "1") !== page) {
+      params.set("page", String(page));
+      navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+    }
+  }, [page]);
 
   return (
     <>
@@ -131,10 +150,10 @@ export default function Events() {
               onValueChange={(value) => setFilter(value)}
             >
               <TabsList className="w-full overflow-x-auto">
-                <TabsTrigger value="all">All Events</TabsTrigger>
+                <TabsTrigger value="all">All</TabsTrigger>
                 <TabsTrigger value="today">Today</TabsTrigger>
-                <TabsTrigger value="thisWeek">This Week</TabsTrigger>
-                <TabsTrigger value="thisMonth">This Month</TabsTrigger>
+                <TabsTrigger value="thisWeek">Week</TabsTrigger>
+                <TabsTrigger value="thisMonth">Month</TabsTrigger>
               </TabsList>
               <TabsContent value="all" className="mt-4">
                 <EventsGrid
@@ -168,9 +187,9 @@ export default function Events() {
 
             {events && events.events.length > 0 && (
               <Pagination
-                length={events?.num_of_pages || 1}
-                currentPage={1}
-                onChange={() => {}}
+                length={events?.total_pages || 1}
+                currentPage={page}
+                onChange={setPage}
               />
             )}
           </main>

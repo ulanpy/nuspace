@@ -67,7 +67,7 @@ export function ProductGrid({
         ))}
       </motion.div>
       <Pagination
-        length={products?.num_of_pages ?? 0}
+        length={products?.total_pages ?? 0}
         currentPage={page}
         onChange={(page) => setPage(page)}
       />

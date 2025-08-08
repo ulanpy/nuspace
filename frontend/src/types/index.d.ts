@@ -38,7 +38,7 @@ declare global {
     type PaginatedResponse<T, TKey extends string> = {
       [K in TKey]: T[];
     } & {
-      num_of_pages: number;
+      total_pages: number;
     };
 
     type KeyActions = Record<string, () => void>;

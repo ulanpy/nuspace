@@ -148,7 +148,7 @@ import { Media } from "@/features/media/types/types";
 
     export interface ListCommunityPostResponse {
       posts: Post[];
-      num_of_pages: number;
+      total_pages: number;
     }
     
 
