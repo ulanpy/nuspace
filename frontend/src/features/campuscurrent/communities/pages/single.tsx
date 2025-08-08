@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar";
 import { EventCard } from "@/features/campuscurrent/events/components/EventCard";
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Mail, Calendar, ExternalLink, Settings } from "lucide-react";
 
@@ -37,7 +37,7 @@ const getUserInitials = (name?: string, surname?: string) => {
 
 
 
-// Reusable EventsGrid component from your list.tsx
+// Reusable EventsGrid component rendered as a horizontal carousel
 const EventsGrid = ({
   isLoading,
   isError,
@@ -45,7 +45,7 @@ const EventsGrid = ({
 }: {
   isLoading: boolean;
   isError: boolean;
-  events: Types.PaginatedResponse<Event, "events"> | null;
+  events: Event[] | null;
 }) => {
   if (isLoading) {
     return <div>Loading...</div>;
@@ -55,7 +55,7 @@ const EventsGrid = ({
     return <div>Error loading events.</div>;
   }
 
-  if (!events || events.events.length === 0) {
+  if (!events || events.length === 0) {
     return (
       <div className="text-center py-12">
         <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -68,10 +68,14 @@ const EventsGrid = ({
   }
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-6">
-      {(events?.events || []).map((event) => (
-        <EventCard key={event.id} {...event} />
-      ))}
+    <div className="mt-6 overflow-x-auto">
+      <div className="flex gap-4 pb-2 snap-x snap-mandatory">
+        {(events || []).map((event) => (
+          <div key={event.id} className="snap-start min-w-[240px] sm:min-w-[280px] md:min-w-[300px]">
+            <EventCard {...event} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -86,6 +90,11 @@ export default function CommunityDetailPage() {
 
   // Fetch events for this community
   const today = new Date().toISOString().split("T")[0];
+  const yesterday = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split("T")[0];
+  })();
 
   // Fetch upcoming events
   const {
@@ -94,6 +103,9 @@ export default function CommunityDetailPage() {
     isError: isErrorUpcoming,
   } = useEvents({
     start_date: today,
+    community_id: community?.id ?? null,
+    event_scope: "community",
+    size: 20,
   });
 
   // Fetch past events
@@ -102,8 +114,28 @@ export default function CommunityDetailPage() {
     isLoading: isLoadingPast,
     isError: isErrorPast,
   } = useEvents({
-    end_date: today,
+    start_date: "2000-01-01",
+    end_date: yesterday,
+    community_id: community?.id ?? null,
+    event_scope: "community",
+    size: 20,
   });
+
+  // Fallback: fetch recent community events without date filter, then split client-side
+  const { events: recentCommunityEvents } = useEvents({
+    community_id: community?.id ?? null,
+    event_scope: "community",
+    size: 50,
+  });
+
+  const upcomingList = useMemo(() => upcomingEvents?.events ?? [], [upcomingEvents]);
+  const pastList = useMemo(() => {
+    const serverPast = pastEvents?.events ?? [];
+    if (serverPast.length > 0) return serverPast;
+    const all = recentCommunityEvents?.events ?? [];
+    const todayDate = new Date(today);
+    return all.filter((e) => new Date(e.event_datetime) < todayDate);
+  }, [pastEvents, recentCommunityEvents, today]);
 
 
 
@@ -310,20 +342,12 @@ export default function CommunityDetailPage() {
               <div className="space-y-12">
                 <div>
                   <h2 className="text-2xl font-bold mb-2">Upcoming Events</h2>
-                  <EventsGrid
-                    isLoading={isLoadingUpcoming}
-                    isError={isErrorUpcoming}
-                    events={upcomingEvents}
-                  />
+                  <EventsGrid isLoading={isLoadingUpcoming} isError={isErrorUpcoming} events={upcomingList} />
                 </div>
 
                 <div>
                   <h2 className="text-2xl font-bold mb-2">Past Events</h2>
-                  <EventsGrid
-                    isLoading={isLoadingPast}
-                    isError={isErrorPast}
-                    events={pastEvents}
-                  />
+                  <EventsGrid isLoading={isLoadingPast} isError={isErrorPast} events={pastList} />
                 </div>
               </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 
@@ -21,25 +21,33 @@ export default function CommunitiesPage() {
   const [currentPage] = useState(1);
   const [totalPages] = useState(1);
   const [selectedCommunityCategory, setSelectedCommunityCategory] =
-    useState<CommunityCategory>(CommunityCategory.academic);
+    useState<string>("All");
   const [showLoginModal] = useState(false);
 
   const [filteredCommunities, setFilteredCommunities] = useState<Community[]>(
     []
   );
-  const communityCategories = Object.values(CommunityCategory);
+  const categoryOptions = useMemo(
+    () => ["All", ...Object.values(CommunityCategory)],
+    [],
+  );
 
   useEffect(() => {
-    if (communities?.communities) {
-      const filtered = communities.communities.filter(
-        (community) => community.category === selectedCommunityCategory
-      );
-      setFilteredCommunities(filtered);
+    if (!communities?.communities) return;
+
+    if (selectedCommunityCategory === "All") {
+      setFilteredCommunities(communities.communities);
+      return;
     }
+
+    const filtered = communities.communities.filter(
+      (community) => community.category === (selectedCommunityCategory as CommunityCategory)
+    );
+    setFilteredCommunities(filtered);
   }, [selectedCommunityCategory, communities]);
 
   const handleCategoryChange = (category: string) => {
-    setSelectedCommunityCategory(category as CommunityCategory);
+    setSelectedCommunityCategory(category);
   };
 
   return (
@@ -52,7 +60,7 @@ export default function CommunitiesPage() {
         {/* Responsive Tabs */}
         <div className="mb-6" id="communities-section">
           <ConditionDropdown
-            conditions={communityCategories}
+            conditions={categoryOptions}
             selectedCondition={selectedCommunityCategory}
             setSelectedCondition={handleCategoryChange}
             disableNavigation={true}
@@ -67,7 +75,9 @@ export default function CommunitiesPage() {
               <div className="text-center py-12">
                 <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">
-                  No {selectedCommunityCategory} communities found
+                  {selectedCommunityCategory === "All"
+                    ? "No communities found"
+                    : `No ${selectedCommunityCategory} communities found`}
                 </h3>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
                   There are no {selectedCommunityCategory} communities available
