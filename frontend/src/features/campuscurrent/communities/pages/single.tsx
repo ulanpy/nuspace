@@ -18,9 +18,7 @@ import { useState } from "react";
 
 import { Mail, Calendar, ExternalLink, Settings } from "lucide-react";
 
-import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/hooks/use-user";
-import { LoginModal } from "@/components/molecules/login-modal";
+
 import { useCommunity } from "@/features/campuscurrent/communities/hooks/use-community";
 import { useEvents } from "@/features/campuscurrent/events/hooks/useEvents"; // Import useEvents
 import { Event } from "@/features/campuscurrent/types/types";
@@ -77,16 +75,12 @@ const EventsGrid = ({
 };
 
 export default function CommunityDetailPage() {
-  const { toast } = useToast();
-  const { user } = useUser();
+
 
   const { community, permissions, isLoading: isCommunityLoading } = useCommunity();
   const [isEditCommunityModalOpen, setIsEditCommunityModalOpen] = useState(false);
 
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followerCount, setFollowerCount] = useState(0);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
+
 
   // Fetch events for this community
   const today = new Date().toISOString().split("T")[0];
@@ -109,53 +103,8 @@ export default function CommunityDetailPage() {
     end_date: today,
   });
 
-  // Handle follow/unfollow
-  const handleFollowToggle = () => {
-    if (!user) {
-      setPendingAction("follow");
-      setShowLoginModal(true);
-      return;
-    }
 
-    // Toggle following state
-    setIsFollowing(!isFollowing);
-    setFollowerCount(isFollowing ? followerCount - 1 : followerCount + 1);
 
-    // Show toast
-    toast({
-      title: isFollowing ? "Unfollowed" : "Following",
-      description: isFollowing
-        ? `You unfollowed ${community?.name}`
-        : `You are now following ${community?.name}`,
-    });
-
-    // In a real app, you would make an API call here
-  };
-
-  // Handle join community
-  const handleJoinCommunity = () => {
-    if (!user) {
-      setPendingAction("join");
-      setShowLoginModal(true);
-      return;
-    }
-
-    toast({
-      title: "Request Sent",
-      description: `Your request to join ${community?.name} has been sent.`,
-    });
-  };
-
-  // Handle login success
-  const handleLoginSuccess = () => {
-    setShowLoginModal(false);
-    if (pendingAction === "follow") {
-      handleFollowToggle();
-    } else if (pendingAction === "join") {
-      handleJoinCommunity();
-    }
-    setPendingAction(null);
-  };
 
   if (isCommunityLoading) {
     return (
@@ -210,8 +159,6 @@ export default function CommunityDetailPage() {
               </h1>
             </div>
             <div className="flex gap-2 mt-4 md:mt-0">
-              <Button onClick={handleJoinCommunity}>Join community</Button>
-              <Button variant="outline" onClick={handleFollowToggle}>Follow</Button>
               {permissions?.can_edit && (
                 <Button 
                   variant="outline" 
@@ -232,11 +179,11 @@ export default function CommunityDetailPage() {
               <TabsTrigger value="events" className="flex-1">
                 Events
               </TabsTrigger>
-              <TabsTrigger value="community" className="flex-1">
-                Community
+              <TabsTrigger value="community" className="flex-1 opacity-50 cursor-not-allowed" disabled>
+                Subspace (Soon)
               </TabsTrigger>
-              <TabsTrigger value="gallery" className="flex-1">
-                Gallery
+              <TabsTrigger value="gallery" className="flex-1 opacity-50 cursor-not-allowed" disabled>
+                Gallery (Soon)
               </TabsTrigger>
             </TabsList>
 
@@ -253,8 +200,7 @@ export default function CommunityDetailPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <p className="text-sm text-muted-foreground">
-                        Interested in joining NU Tech Club? We're always looking
-                        for passionate individuals!
+                        Interested in joining {community.name}? Click the button below to apply to join.
                       </p>
                       <Button className="w-full">Apply to Join</Button>
                     </CardContent>
@@ -392,18 +338,7 @@ export default function CommunityDetailPage() {
           </Tabs>
         </div>
       </main>
-      {/* Login Modal */}
-      <LoginModal
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        onSuccess={handleLoginSuccess}
-        title="Login Required"
-        message={
-          pendingAction === "follow"
-            ? "You need to be logged in to follow communities."
-            : "You need to be logged in to join communities."
-        }
-      />
+
 
       {/* Community Edit Modal */}
       <CommunityModal

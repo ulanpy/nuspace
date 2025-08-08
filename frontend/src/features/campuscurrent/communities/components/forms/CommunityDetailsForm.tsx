@@ -91,46 +91,6 @@ export function CommunityDetailsForm() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <Label htmlFor="category">Category</Label>
-          <Select
-            name="category"
-            value={formData.category}
-            onValueChange={(value) => handleSelectChange("category", value)}
-            disabled={!isFieldEditable("category")}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a category" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.values(CommunityCategory).map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="type">Type</Label>
-          <Select
-            name="type"
-            value={formData.type}
-            onValueChange={(value) => handleSelectChange("type", value)}
-            disabled={!isFieldEditable("type")}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a type" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.values(CommunityType).map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
           <Label htmlFor="recruitment_status">Recruitment Status</Label>
           <Select
             name="recruitment_status"
@@ -154,22 +114,6 @@ export function CommunityDetailsForm() {
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="head">Head</Label>
-          <Select
-            name="head"
-            value={formData.head}
-            onValueChange={(value) => handleSelectChange("head", value)}
-            disabled={!isFieldEditable("head")}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a head" />
-            </SelectTrigger>
-            <SelectContent>
-              {/* TODO: Add users */}
-            </SelectContent>
-          </Select>
-        </div>
         {!isEditMode && (
           <div>
             <Label htmlFor="established">Established</Label>

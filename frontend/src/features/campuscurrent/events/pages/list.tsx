@@ -151,14 +151,7 @@ export default function Events() {
     <MotionWrapper>
     <div className="flex flex-col min-h-screen" id="events-section">
       <main className="flex-grow">
-        {/* Header with Create Event Button */}
-        <div className="flex justify-between items-center mb-6" id="create-event-button">
-          <h1 className="text-2xl font-bold">Events</h1>
-          <Button onClick={() => setIsCreateModalOpen(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Create Event
-          </Button>
-        </div>
+        
 
             <Tabs
               value={activeTab}

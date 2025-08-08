@@ -29,9 +29,9 @@ export const MEDIA_CONFIGS = {
   // Community Profile Images
   communityProfiles: {
     entityType: EntityType.communities,
-    mediaFormat: MediaFormat.carousel,
+    mediaFormat: MediaFormat.profile,
     maxFiles: 1,
-    maxFileSize: 2, // MB
+    maxFileSize: 10, // MB
     allowedTypes: ['image/png', 'image/jpg', 'image/jpeg'],
     enableMainSelection: false,
     enablePreview: true,
