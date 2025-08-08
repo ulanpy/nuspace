@@ -19,9 +19,9 @@ from backend.core.database.models import (
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
 from backend.core.database.models.user import User
-from backend.routes.communities.events import dependencies as deps
-from backend.routes.communities.events import schemas, utils
-from backend.routes.communities.events.policy import EventPolicy, ResourceAction
+from backend.routes.campuscurrent.events import dependencies as deps
+from backend.routes.campuscurrent.events import schemas, utils
+from backend.routes.campuscurrent.events.policy import EventPolicy, ResourceAction
 from backend.routes.google_bucket.utils import batch_delete_blobs
 
 router = APIRouter(tags=["Events Routes"])

@@ -8,10 +8,10 @@ from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_current_principals, get_db_session
 from backend.common.utils import response_builder
 from backend.core.database.models import Community, CommunityPostTag
-from backend.routes.communities.tags import dependencies as deps
-from backend.routes.communities.tags.dependencies import tag_exists_or_404
-from backend.routes.communities.tags.policy import ResourceAction, TagPolicy
-from backend.routes.communities.tags.schemas import (
+from backend.routes.campuscurrent.tags import dependencies as deps
+from backend.routes.campuscurrent.tags.dependencies import tag_exists_or_404
+from backend.routes.campuscurrent.tags.policy import ResourceAction, TagPolicy
+from backend.routes.campuscurrent.tags.schemas import (
     CommunityTagRequest,
     CommunityTagResponse,
     ListCommunityTagResponse,

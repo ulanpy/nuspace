@@ -5,11 +5,12 @@ from fastapi import APIRouter
 from backend.routes.bot.bot import web_router
 
 from .auth import auth
-from .communities.comments import comments
-from .communities.communities import communities
-from .communities.events import events
-from .communities.posts import posts
-from .communities.tags import tags
+from .campuscurrent.comments import comments
+from .campuscurrent.communities import communities
+from .campuscurrent.events import events
+from .campuscurrent.posts import posts
+from .campuscurrent.tags import tags
+from .campuscurrent.profile import profile
 from .google_bucket import google_bucket
 from .kupiprodai import product
 from .notification import notification
@@ -24,6 +25,7 @@ routers: List[APIRouter] = [
     posts.router,
     tags.router,
     comments.router,
+    profile.router,
     product.router,
     search.router,
     google_bucket.router,

@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_db_session
 from backend.core.database.models import Community, CommunityPostTag
-from backend.routes.communities.tags.schemas import CommunityTagRequest
+from backend.routes.campuscurrent.tags.schemas import CommunityTagRequest
 
 
 async def tag_exists_or_404(

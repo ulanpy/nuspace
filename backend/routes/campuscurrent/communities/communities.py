@@ -19,10 +19,10 @@ from backend.core.database.models.community import (
 )
 from backend.core.database.models.media import Media, MediaFormat
 from backend.core.database.models.user import User
-from backend.routes.communities.communities import dependencies as deps
-from backend.routes.communities.communities import schemas
-from backend.routes.communities.communities.policy import CommunityPolicy, ResourceAction
-from backend.routes.communities.communities.utils import get_community_permissions
+from backend.routes.campuscurrent.communities import dependencies as deps
+from backend.routes.campuscurrent.communities import schemas
+from backend.routes.campuscurrent.communities.policy import CommunityPolicy, ResourceAction
+from backend.routes.campuscurrent.communities.utils import get_community_permissions
 from backend.routes.google_bucket.utils import batch_delete_blobs
 
 router = APIRouter(tags=["Community Routes"])

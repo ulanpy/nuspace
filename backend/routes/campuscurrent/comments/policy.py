@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.models.community import CommunityComment
 from backend.core.database.models.user import UserRole
-from backend.routes.communities.comments.schemas import RequestCommunityCommentSchema
+from backend.routes.campuscurrent.comments.schemas import RequestCommunityCommentSchema
 
 
 class CommentPolicy:

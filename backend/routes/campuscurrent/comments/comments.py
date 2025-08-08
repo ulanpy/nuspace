@@ -16,9 +16,9 @@ from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import CommunityComment, CommunityPost
 from backend.core.database.models.media import Media
 from backend.core.database.models.user import User
-from backend.routes.communities.comments import cruds, schemas, utils
-from backend.routes.communities.comments import dependencies as deps
-from backend.routes.communities.comments.policy import CommentPolicy
+from backend.routes.campuscurrent.comments import cruds, schemas, utils
+from backend.routes.campuscurrent.comments import dependencies as deps
+from backend.routes.campuscurrent.comments.policy import CommentPolicy
 
 router = APIRouter(tags=["Community Posts Comments Routes"])
 

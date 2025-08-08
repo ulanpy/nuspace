@@ -3,7 +3,7 @@ from typing import Tuple
 from backend.common.schemas import ResourcePermissions
 from backend.core.database.models import Event, EventScope, EventStatus, EventTag
 from backend.core.database.models.user import UserRole
-from backend.routes.communities.events import schemas
+from backend.routes.campuscurrent.events import schemas
 
 
 def get_event_permissions(
