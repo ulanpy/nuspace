@@ -15,6 +15,6 @@ export const navTabs = [
   },
   {
     name: "Profile",
-    path: "#",
+    path: ROUTES.APPS.CAMPUS_CURRENT.PROFILE
   },
 ];

@@ -7,7 +7,7 @@ from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_current_principals, get_db_session
 from backend.core.database.models import Community, CommunityPost, CommunityPostTag
 from backend.core.database.models.user import User
-from backend.routes.communities.posts import schemas
+from backend.routes.campuscurrent.posts import schemas
 
 
 async def post_exists_or_404(

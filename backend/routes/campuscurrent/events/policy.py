@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.models import Event, EventScope, EventStatus
 from backend.core.database.models.user import UserRole
-from backend.routes.communities.events.schemas import EventCreateRequest, EventUpdateRequest
+from backend.routes.campuscurrent.events.schemas import EventCreateRequest, EventUpdateRequest
 
 
 class EventPolicy:

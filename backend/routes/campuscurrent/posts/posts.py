@@ -14,17 +14,17 @@ from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import CommunityComment
 from backend.core.database.models.media import MediaFormat
 from backend.core.database.models.user import User
-from backend.routes.communities.posts import cruds
-from backend.routes.communities.posts import dependencies as deps
-from backend.routes.communities.posts.policy import PostPolicy, ResourceAction
-from backend.routes.communities.posts.schemas import (
+from backend.routes.campuscurrent.posts import cruds
+from backend.routes.campuscurrent.posts import dependencies as deps
+from backend.routes.campuscurrent.posts.policy import PostPolicy, ResourceAction
+from backend.routes.campuscurrent.posts.schemas import (
     CommunityPostRequest,
     CommunityPostResponse,
     CommunityPostUpdate,
     ListCommunityPostResponse,
 )
-from backend.routes.communities.posts.utils import get_post_permissions
-from backend.routes.communities.tags.schemas import ShortCommunityTag
+from backend.routes.campuscurrent.posts.utils import get_post_permissions
+from backend.routes.campuscurrent.tags.schemas import ShortCommunityTag
 from backend.routes.google_bucket.utils import batch_delete_blobs
 
 router = APIRouter(tags=["Community Posts"])

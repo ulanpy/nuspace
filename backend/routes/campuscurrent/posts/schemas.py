@@ -5,7 +5,7 @@ from fastapi import Query
 from pydantic import BaseModel
 
 from backend.common.schemas import MediaResponse, ShortUserResponse
-from backend.routes.communities.tags.schemas import ShortCommunityTag
+from backend.routes.campuscurrent.tags.schemas import ShortCommunityTag
 from backend.common.schemas import ResourcePermissions
 
 

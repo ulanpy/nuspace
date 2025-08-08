@@ -12,7 +12,7 @@ from backend.core.database.models import (
     EventType,
     RegistrationPolicy,
 )
-from backend.routes.communities.communities.schemas import ShortCommunityResponse
+from backend.routes.campuscurrent.communities.schemas import ShortCommunityResponse
 
 
 class EventCreateRequest(BaseModel):

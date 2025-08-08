@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.models import CommunityPostTag
 from backend.core.database.models.user import UserRole
-from backend.routes.communities.tags.schemas import CommunityTagRequest
+from backend.routes.campuscurrent.tags.schemas import CommunityTagRequest
 
 
 class TagPolicy:

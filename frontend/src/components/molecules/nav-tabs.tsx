@@ -22,7 +22,7 @@ export const NavTabs = ({ tabs }: NavTabsProps) => {
 
   return (
     <nav className="border-b">
-      <ul className="flex gap-4 px-4">
+      <ul className="flex px-4">
         {tabs.map((tab) => {
           const isActive =
             (tab.path === ROUTES.APPS.CAMPUS_CURRENT.ROOT &&
