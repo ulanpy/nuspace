@@ -1,6 +1,6 @@
 import { LazyRoutes, ROUTES } from "../data/routes";
-import AdminLayout from "../pages/admin/admin-layout";
-import AdminPage from "../pages/admin/admin-page";
+// import AdminLayout from "../pages/admin/admin-layout";
+// import AdminPage from "../pages/admin/admin-page";
 import { Routes, Route, Navigate } from "react-router-dom";
 import HomePage from "../pages/home";
 import AppsLayout from "../pages/apps-layout";
@@ -17,12 +17,12 @@ function App() {
         <MediaEditProvider>
           <Routes>
             <Route path={ROUTES.HOME} element={<HomePage />} />
-            <Route path={ROUTES.ADMIN.ROOT} element={<AdminLayout />}>
+            {/* <Route path={ROUTES.ADMIN.ROOT} element={<AdminLayout />}>
               <Route index element={<AdminPage />} />
               {LazyRoutes.ADMINS.map(({ path, Component }) => (
                 <Route key={path} path={path} element={<Component />} />
-              ))}
-            </Route>
+              ))} */}
+            {/* </Route> */}
 
             <Route path={ROUTES.APPS.ROOT} element={<AppsLayout />}>
               <Route index element={<Navigate to={ROUTES.HOME} replace />} />
