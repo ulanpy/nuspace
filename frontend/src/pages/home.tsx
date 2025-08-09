@@ -31,7 +31,7 @@ const homeCarouselItems = [
     content: (
       <div className="w-full h-full flex items-center justify-center">
         <img
-          src="src/assets/images/welcome-nu-space.jpg"
+          src="../assets/images/welcome-nu-space.jpg"
           alt="Featured image"
           className="w-full h-full object-cover rounded-xl"
         />
