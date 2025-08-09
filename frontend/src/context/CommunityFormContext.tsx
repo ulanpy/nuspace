@@ -114,7 +114,16 @@ export function CommunityFormProvider({
     ) {
       return;
     }
-    setFormData({ ...formData, [name]: value });
+    const updatedData: CreateCommunityData | EditCommunityData = {
+      ...formData,
+      [name]: value,
+    } as CreateCommunityData | EditCommunityData;
+
+    if (name === "recruitment_status" && value === RecruitmentStatus.closed) {
+      (updatedData as any).recruitment_link = "";
+    }
+
+    setFormData(updatedData);
   };
 
   const isFieldEditable = (fieldName: string): boolean => {

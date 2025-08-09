@@ -236,7 +236,7 @@ export default function CommunityDetailPage() {
                 </h1>
               </div>
               <div className="flex gap-2 mt-4 md:mt-0">
-                {permissions?.can_edit ? (
+                {permissions?.can_edit && (
                   <Button
                     variant="outline"
                     onClick={() => setIsEditCommunityModalOpen(true)}
@@ -244,57 +244,33 @@ export default function CommunityDetailPage() {
                     <Settings className="h-4 w-4 mr-2" />
                     Edit Community
                   </Button>
-                ) : (
-                  (() => {
-                    const isOpen = community.recruitment_status === "open";
-                    const link = community.recruitment_link || "";
-                    if (isOpen && link) {
-                      return (
-                        <Button
-                          asChild
-                          variant="default"
-                          className="cursor-pointer"
-                        >
-                          <a href={link} target="_blank" rel="noopener noreferrer">
-                            <UserRoundPlus className="h-4 w-4 mr-2" />
-                            Join Community
-                          </a>
-                        </Button>
-                      );
-                    }
-                    if (!isOpen) {
-                      return (
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={() =>
-                            toast({
-                              title: "Not recruiting",
-                              description: "This club is not currently recruiting",
-                            })
-                          }
-                          className="inline-block"
-                        >
-                          <Button
-                            variant="secondary"
-                            disabled
-                            title="This club is not currently recruiting"
-                          >
-                            <UserRoundPlus className="h-4 w-4 mr-2" />
-                            Not Recruiting
-                          </Button>
-                        </div>
-                      );
-                    }
-                    // Open but no link provided
+                )}
+                {(() => {
+                  const isOpen = community.recruitment_status === "open";
+                  const link = community.recruitment_link || "";
+                  if (isOpen && link) {
+                    return (
+                      <Button
+                        asChild
+                        variant="default"
+                        className="cursor-pointer"
+                      >
+                        <a href={link} target="_blank" rel="noopener noreferrer">
+                          <UserRoundPlus className="h-4 w-4 mr-2" />
+                          Join Community
+                        </a>
+                      </Button>
+                    );
+                  }
+                  if (!isOpen) {
                     return (
                       <div
                         role="button"
                         tabIndex={0}
                         onClick={() =>
                           toast({
-                            title: "Link unavailable",
-                            description: "Recruitment link was not provided",
+                            title: "Not recruiting",
+                            description: "This club is not currently recruiting",
                           })
                         }
                         className="inline-block"
@@ -302,15 +278,38 @@ export default function CommunityDetailPage() {
                         <Button
                           variant="secondary"
                           disabled
-                          title="Recruitment link was not provided"
+                          title="This club is not currently recruiting"
                         >
                           <UserRoundPlus className="h-4 w-4 mr-2" />
-                          Join (link unavailable)
+                          Not Recruiting
                         </Button>
                       </div>
                     );
-                  })()
-                )}
+                  }
+                  // Open but no link provided
+                  return (
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() =>
+                        toast({
+                          title: "Link unavailable",
+                          description: "Recruitment link was not provided",
+                        })
+                      }
+                      className="inline-block"
+                    >
+                      <Button
+                        variant="secondary"
+                        disabled
+                        title="Recruitment link was not provided"
+                      >
+                        <UserRoundPlus className="h-4 w-4 mr-2" />
+                        Join (link unavailable)
+                      </Button>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

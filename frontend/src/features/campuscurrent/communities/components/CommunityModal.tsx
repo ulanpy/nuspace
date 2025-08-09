@@ -29,6 +29,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { pollForCommunityImages } from "@/utils/polling";
 import { useInitializeMedia } from "@/features/media/hooks/useInitializeMedia";
 import { campuscurrentAPI } from "@/features/campuscurrent/communities/api/communitiesApi";
+import { useToast } from "@/hooks/use-toast";
 
 interface CommunityModalProps {
   isOpen: boolean;
@@ -49,6 +50,7 @@ export function CommunityModal({
   const { handleCreate, isCreating } = useCreateCommunity();
   const { handleUpdate, isUpdating } = useUpdateCommunity();
   const { handleDelete, isDeleting } = useDeleteCommunity();
+  const { toast } = useToast();
   
 
   const isProcessing = isCreating || isUpdating || isDeleting;
@@ -62,6 +64,15 @@ export function CommunityModal({
   // Initialize media for edit/create flows via shared hook
   useInitializeMedia({ isEditMode, mediaItems: community?.media });
 
+  const isValidUrl = (value: string): boolean => {
+    try {
+      const url = new URL(value);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+
   const handleSubmit = async (
     formData: CreateCommunityData | EditCommunityData,
     resetForm: () => void
@@ -69,6 +80,27 @@ export function CommunityModal({
     if (!user) return;
 
     try {
+      const isOpen = (formData as EditCommunityData).recruitment_status === RecruitmentStatus.open;
+      const link = (formData as EditCommunityData).recruitment_link?.trim();
+
+      if (isOpen && !link) {
+        toast({
+          title: "Recruitment link required",
+          description: "Please provide a recruitment link when recruitment status is open",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (isOpen && link && !isValidUrl(link)) {
+        toast({
+          title: "Invalid recruitment URL",
+          description: "Please enter a valid URL starting with https:// or http://",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (isEditMode && community) {
         // Update existing community
         const editData: EditCommunityData = {
@@ -76,10 +108,14 @@ export function CommunityModal({
           description: formData.description,
           email: (formData as EditCommunityData).email,
           recruitment_status: (formData as EditCommunityData).recruitment_status,
-          recruitment_link: (formData as EditCommunityData).recruitment_link,
           telegram_url: formData.telegram_url,
           instagram_url: formData.instagram_url,
         };
+
+        // Only include recruitment_link when status is open and link is non-empty
+        if (isOpen && link) {
+          editData.recruitment_link = link;
+        }
 
         const updated = await handleUpdate(community.id.toString(), editData);
 
@@ -105,14 +141,18 @@ export function CommunityModal({
           type: CommunityType.club,
           category: CommunityCategory.academic,
           email: (formData as CreateCommunityData).email || "",
-          recruitment_status: RecruitmentStatus.open,
-          recruitment_link: (formData as CreateCommunityData).recruitment_link || "",
+          recruitment_status: (formData as CreateCommunityData).recruitment_status,
           head: user.user.sub,
           established: "",
           description: "",
           telegram_url: "",
           instagram_url: "",
         };
+
+        // Only include recruitment_link when status is open and link is non-empty
+        if (isOpen && link) {
+          createData.recruitment_link = link;
+        }
 
         const created = await handleCreate(createData);
 

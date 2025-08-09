@@ -19,12 +19,19 @@ export function CommunityCard({ community }: { community: Community }) {
   );
 
   return (
+    <Link
+    to={ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
+      community.id.toString()
+    )}
+    className="mt-auto"
+  >
     <Card
       key={community.id}
-      className="overflow-hidden hover:shadow-md transition-shadow h-80 flex flex-col"
+      className="overflow-hidden hover:shadow-lg hover:bg-secondary transition-shadow h-60 flex flex-col"
     >
-      <CardHeader className="p-4 flex flex-row gap-4 items-center flex-shrink-0">
-        <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+      <CardHeader className="p-4 flex flex-col items-center flex-shrink-0">
+        {/* Image - Centered */}
+        <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0 mb-3">
           <img
             src={profile?.url || profilePlaceholder}
             onError={(e) => {
@@ -34,40 +41,37 @@ export function CommunityCard({ community }: { community: Community }) {
             className="object-cover w-full h-full"
           />
         </div>
-        <div className="min-w-0 flex-1">
-          <h1 className="font-semibold truncate">{community.name}</h1>
-          <div className="flex mt-2 gap-1 flex-wrap">
-            <Badge variant="outline" className="text-xs">
-              {community.category[0].toUpperCase()}
-              {community.category.slice(1)}
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              {community.type[0].toUpperCase()}
-              {community.type.slice(1)}
-            </Badge>
-            <Badge variant="secondary" className="text-xs">
-              Recruitment: {community.recruitment_status}
-            </Badge>
-          </div>
+
+        {/* Name - Centered */}
+        <div className="min-w-0 flex-1 text-center mb-2">
+          <h1 className="font-semibold truncate text-base">{community.name}</h1>
+        </div>
+
+        {/* Badges - Centered below name */}
+        <div className="flex mt-2 gap-1 flex-wrap justify-center">
+          <Badge variant="outline" className="text-xs">
+            {community.category[0].toUpperCase()}
+            {community.category.slice(1)}
+          </Badge>
+          <Badge variant="outline" className="text-xs">
+            {community.type[0].toUpperCase()}
+            {community.type.slice(1)}
+          </Badge>
+          <Badge variant="secondary" className="text-xs">
+            Recruitment: {community.recruitment_status}
+          </Badge>
         </div>
       </CardHeader>
 
       <CardContent className="p-4 pt-0 flex-1 overflow-hidden">
-        <p className="text-sm text-muted-foreground line-clamp-4">
+        <p className="text-sm text-muted-foreground line-clamp-3 text-center">
           {community.description}
         </p>
       </CardContent>
 
-      <Link
-        to={ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
-          community.id.toString()
-        )}
-        className="mt-auto"
-      >
         <CardFooter className="p-4 pt-0 flex-shrink-0">
-          <Button className="w-full">View Club</Button>
         </CardFooter>
-      </Link>
     </Card>
+      </Link>
   );
 }

@@ -19,6 +19,7 @@ import { CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/atoms/calendar";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export function CommunityDetailsForm() {
   const {
@@ -28,6 +29,7 @@ export function CommunityDetailsForm() {
     isFieldEditable,
     isEditMode,
   } = useCommunityForm();
+  const { toast } = useToast();
 
   // State for the date picker
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -47,6 +49,19 @@ export function CommunityDetailsForm() {
     setDate(selectedDate);
     if (selectedDate && !isEditMode && 'established' in formData) {
       handleSelectChange("established", selectedDate.toISOString());
+    }
+  };
+
+  const showRecruitmentLink =
+    formData.recruitment_status === RecruitmentStatus.open;
+
+  const isValidUrl = (value: string): boolean => {
+    if (!value) return true;
+    try {
+      const url = new URL(value);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
     }
   };
 
@@ -111,7 +126,7 @@ export function CommunityDetailsForm() {
             <SelectTrigger>
               <SelectValue placeholder="Select a status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[150]">
               {Object.values(RecruitmentStatus).map((status) => (
                 <SelectItem key={status} value={status}>
                   {status}
@@ -121,46 +136,63 @@ export function CommunityDetailsForm() {
           </Select>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="recruitment_link">Recruitment Link</Label>
-          <Input
-            id="recruitment_link"
-            name="recruitment_link"
-            value={(formData as any).recruitment_link || ""}
-            onChange={handleInputChange}
-            placeholder="https://..."
-            disabled={!isFieldEditable("recruitment_link")}
-          />
+      {(showRecruitmentLink || !isEditMode) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {showRecruitmentLink && (
+            <div>
+              <Label htmlFor="recruitment_link">
+                Recruitment Link {showRecruitmentLink && <span className="text-red-500">*</span>}
+              </Label>
+              <Input
+                id="recruitment_link"
+                name="recruitment_link"
+                value={(formData as any).recruitment_link || ""}
+                onChange={handleInputChange}
+                placeholder="https://..."
+                disabled={!isFieldEditable("recruitment_link")}
+                required={showRecruitmentLink}
+                onBlur={(e) => {
+                  const value = e.target.value.trim();
+                  if (value && !isValidUrl(value)) {
+                    toast({
+                      title: "Invalid recruitment URL",
+                      description: "Enter a valid URL starting with https:// or http://",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              />
+            </div>
+          )}
+          {!isEditMode && (
+            <div>
+              <Label htmlFor="established">Established</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={`w-full justify-start text-left font-normal ${
+                      !date && "text-muted-foreground"
+                    }`}
+                    disabled={!isFieldEditable("established")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={handleDateSelect}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
         </div>
-        {!isEditMode && (
-          <div>
-            <Label htmlFor="established">Established</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={`w-full justify-start text-left font-normal ${
-                    !date && "text-muted-foreground"
-                  }`}
-                  disabled={!isFieldEditable("established")}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={handleDateSelect}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
