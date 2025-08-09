@@ -17,6 +17,10 @@ export interface UnifiedMediaHookReturn {
   uploadProgress: number;
   isDragging: boolean;
   currentIndex: number;
+  maxFiles?: number;
+  recommendedAspectRatio?: string;
+  recommendedDimensions?: string;
+  recommendedNote?: string;
   
   // File operations
   handleFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -300,6 +304,10 @@ export function useUnifiedMedia(): UnifiedMediaHookReturn {
     uploadProgress,
     isDragging,
     currentIndex,
+    maxFiles: config.maxFiles,
+    recommendedAspectRatio: config.recommendedAspectRatio,
+    recommendedDimensions: config.recommendedDimensions,
+    recommendedNote: config.recommendedNote,
     
     // File operations
     handleFileSelect,

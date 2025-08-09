@@ -11,6 +11,10 @@ export interface MediaConfig {
   enableMainSelection?: boolean;
   enablePreview?: boolean;
   enableReordering?: boolean;
+  // UX hints for best results
+  recommendedAspectRatio?: string; // e.g. "1:1", "3:4", "16:9"
+  recommendedDimensions?: string; // e.g. "min 1080x1080"
+  recommendedNote?: string; // free-text tip shown to users
 }
 
 export interface MediaState {

@@ -10,6 +10,7 @@ import {
 } from "@/components/atoms/card";
 import { Button } from "@/components/atoms/button";
 import { Badge } from "@/components/atoms/badge";
+import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 
 export function CommunityCard({ community }: { community: Community }) {
   const profile = community.media.find(
@@ -25,7 +26,10 @@ export function CommunityCard({ community }: { community: Community }) {
       <CardHeader className="p-4 flex flex-row gap-4 items-center flex-shrink-0">
         <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
           <img
-            src={profile?.url}
+            src={profile?.url || profilePlaceholder}
+            onError={(e) => {
+              e.currentTarget.src = profilePlaceholder;
+            }}
             alt={community.name}
             className="object-cover w-full h-full"
           />

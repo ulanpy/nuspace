@@ -6,12 +6,15 @@ export const MEDIA_CONFIGS = {
   campusCurrentEvents: {
     entityType: EntityType.community_events,
     mediaFormat: MediaFormat.carousel,
-    maxFiles: 5,
+    maxFiles: 1,
     maxFileSize: 10, // MB
     allowedTypes: ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'],
     enableMainSelection: true,
     enablePreview: true,
     enableReordering: true,
+    recommendedAspectRatio: "3:4",
+    recommendedDimensions: "min 1080x1440",
+    recommendedNote: "Portrait poster fits best on event cards.",
   } as MediaConfig,
 
   // Kupi-Prodai Products
@@ -24,6 +27,9 @@ export const MEDIA_CONFIGS = {
     enableMainSelection: true,
     enablePreview: true,
     enableReordering: true,
+    recommendedAspectRatio: "1:1",
+    recommendedDimensions: "min 1080x1080",
+    recommendedNote: "Square images look best in product grid and detail.",
   } as MediaConfig,
 
   // Community Profile Images
@@ -32,10 +38,13 @@ export const MEDIA_CONFIGS = {
     mediaFormat: MediaFormat.profile,
     maxFiles: 1,
     maxFileSize: 10, // MB
-    allowedTypes: ['image/png', 'image/jpg', 'image/jpeg'],
+    allowedTypes: ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'],
     enableMainSelection: false,
     enablePreview: true,
     enableReordering: false,
+    recommendedAspectRatio: "1:1",
+    recommendedDimensions: "min 512x512",
+    recommendedNote: "Center face/logo; used as a round avatar.",
   } as MediaConfig,
 
   // Community Banner Images
@@ -46,10 +55,13 @@ export const MEDIA_CONFIGS = {
     mediaFormat: MediaFormat.banner,
     maxFiles: 1,
     maxFileSize: 10, // MB
-    allowedTypes: ['image/png', 'image/jpg', 'image/jpeg'],
+    allowedTypes: ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'],
     enableMainSelection: false,
     enablePreview: true,
     enableReordering: false,
+    recommendedAspectRatio: "16:9",
+    recommendedDimensions: "min 1920x1080",
+    recommendedNote: "Wide banner used as cover; avoid important text near edges.",
   } as MediaConfig,
 
   // Community Posts
@@ -62,6 +74,8 @@ export const MEDIA_CONFIGS = {
     enableMainSelection: false,
     enablePreview: true,
     enableReordering: false,
+    recommendedAspectRatio: "1:1",
+    recommendedDimensions: "min 1080x1080",
   } as MediaConfig,
 
   // Reviews
@@ -70,22 +84,24 @@ export const MEDIA_CONFIGS = {
     mediaFormat: MediaFormat.carousel,
     maxFiles: 3,
     maxFileSize: 3, // MB
-    allowedTypes: ['image/png', 'image/jpg', 'image/jpeg'],
+    allowedTypes: ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'],
     enableMainSelection: false,
     enablePreview: true,
     enableReordering: false,
   } as MediaConfig,
 
-  // Profile Avatars (single image)
+  // Profile Avatars (single image)Config
   profileAvatars: {
     entityType: EntityType.communities,
     mediaFormat: MediaFormat.carousel,
     maxFiles: 1,
     maxFileSize: 1, // MB
-    allowedTypes: ['image/png', 'image/jpg', 'image/jpeg'],
+    allowedTypes: ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'],
     enableMainSelection: false,
     enablePreview: false,
     enableReordering: false,
+    recommendedAspectRatio: "1:1",
+    recommendedDimensions: "min 256x256",
   } as MediaConfig,
 } as const;
 

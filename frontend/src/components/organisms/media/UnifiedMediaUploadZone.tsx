@@ -12,7 +12,6 @@ import {
   MoreHorizontal,
   RefreshCw,
   CheckCircle,
-  XCircle
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -81,14 +80,14 @@ export function UnifiedMediaUploadZone({
   aspectRatio = 'square',
   showMainIndicator = true,
   enablePreview = true,
-  enableReordering = false,
+  // enableReordering = false,
   dropZoneVariant = 'default',
   showDropZoneWhenHasItems = true,
   showProgress = true,
   progressVariant = 'standalone',
   onPreview,
   onSetMain,
-  onReorder,
+  // onReorder,
   customActions = [],
   className = "",
   dropZoneClassName = "",
@@ -110,6 +109,11 @@ export function UnifiedMediaUploadZone({
     removeMedia,
     canAddMoreFiles,
     setCurrentMediaIndex,
+    getTotalMediaCount,
+    maxFiles,
+    recommendedAspectRatio,
+    recommendedDimensions,
+    recommendedNote,
   } = useUnifiedMedia();
 
   // Normalize items for consistent handling
@@ -240,7 +244,7 @@ export function UnifiedMediaUploadZone({
         <input
           ref={fileInputRef}
           type="file"
-          multiple
+          multiple={maxFiles !== 1}
           accept="image/*"
           onChange={handleFileSelect}
           className="hidden"
@@ -271,8 +275,13 @@ export function UnifiedMediaUploadZone({
           )}
 
           <p className="text-xs text-muted-foreground">
-            Drag & drop files here or click to browse
+            Drag & drop files here or click to browse{typeof maxFiles === 'number' ? ` (max ${maxFiles} ${maxFiles === 1 ? 'image' : 'files'})` : ''}
           </p>
+          {(recommendedAspectRatio || recommendedDimensions || recommendedNote) && (
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Recommended{recommendedAspectRatio ? `: ${recommendedAspectRatio}` : ''}{recommendedDimensions ? `${recommendedAspectRatio ? ' · ' : ': '} ${recommendedDimensions}` : ''}{recommendedNote ? `${recommendedAspectRatio || recommendedDimensions ? ' · ' : ': '} ${recommendedNote}` : ''}
+            </p>
+          )}
         </div>
 
         {isDragging && (
@@ -427,11 +436,19 @@ export function UnifiedMediaUploadZone({
 
   return (
     <div className={`${getLayoutClass()} ${className}`}>
-      {/* Label */}
-      {label && (
-        <Label className="text-base font-semibold">
-          {label}
-        </Label>
+      {(label || typeof maxFiles === 'number') && (
+        <div className="flex items-center justify-between mb-2">
+          {label && (
+            <Label className="text-base font-semibold">
+              {label}
+            </Label>
+          )}
+          {typeof maxFiles === 'number' && (
+            <span className="text-xs text-muted-foreground">
+              {getTotalMediaCount()} of {maxFiles}
+            </span>
+          )}
+        </div>
       )}
       
       {/* Main content based on layout */}
@@ -451,6 +468,11 @@ export function UnifiedMediaUploadZone({
           {renderDropZone()}
           {renderGallery()}
         </>
+      )}
+      {maxFiles === 1 && getTotalMediaCount() >= 1 && (
+        <p className="text-xs text-muted-foreground mt-2">
+          Only one image is allowed. Remove the current image to upload another.
+        </p>
       )}
       
       {/* Standalone progress */}

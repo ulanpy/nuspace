@@ -13,6 +13,7 @@ import { Badge } from "@/components/atoms/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar";
 import { EventCard } from "@/features/campuscurrent/events/components/EventCard";
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
+import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 
 import { useMemo, useState } from "react";
 
@@ -210,7 +211,10 @@ export default function CommunityDetailPage() {
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-end -mt-16 md:-mt-20 mb-6 relative">
               <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-background overflow-hidden bg-background">
                 <img
-                  src={profile?.url || "@/assets/svg/profile-placeholder.svg"}
+                  src={profile?.url || profilePlaceholder}
+                  onError={(e) => {
+                    e.currentTarget.src = profilePlaceholder;
+                  }}
                   alt={community.name}
                   className="w-full h-full object-cover"
                 />
