@@ -8,4 +8,4 @@ COPY frontend/package*.json ./
 RUN npm install
 
 # Copy source code (build is done in the container command)
-COPY frontend/ .
+COPY frontend .
