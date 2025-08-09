@@ -6,12 +6,14 @@ export interface PaginationProps {
   currentPage: number;
   onChange: (page: number) => void;
   className?: string;
+  manageUrl?: boolean; // if true, this component updates URL and scrolls
 }
 
 export const Pagination = ({
   length,
   currentPage,
   onChange,
+  manageUrl = true,
 }: PaginationProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,11 +52,15 @@ export const Pagination = ({
 
   const handleChange = (page: number) => {
     if (page !== currentPage) {
-      const currentParams = new URLSearchParams(location.search);
-      currentParams.set("page", page.toString());
-      onChange(page);
-      navigate(`${location.pathname}?${currentParams.toString()}`);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (manageUrl) {
+        const currentParams = new URLSearchParams(location.search);
+        currentParams.set("page", page.toString());
+        onChange(page);
+        navigate(`${location.pathname}?${currentParams.toString()}`);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        onChange(page);
+      }
     }
   };
   return (

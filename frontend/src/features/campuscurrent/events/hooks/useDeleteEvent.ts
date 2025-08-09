@@ -1,10 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { campuscurrentAPI } from "@/features/campuscurrent/events/api/eventsApi";
 import { useToast } from "@/hooks/use-toast";
+import { ROUTES } from "@/data/routes";
 
 export function useDeleteEvent() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const deleteEventMutation = useMutation({
     mutationFn: (eventId: string) => campuscurrentAPI.deleteEvent(eventId),
@@ -15,6 +18,9 @@ export function useDeleteEvent() {
         title: "Success",
         description: "Event deleted successfully",
       });
+
+      // Redirect to events list page after successful deletion
+      navigate(ROUTES.APPS.CAMPUS_CURRENT.EVENTS, { replace: true });
     },
     onError: (error) => {
       console.error("Event deletion failed:", error);

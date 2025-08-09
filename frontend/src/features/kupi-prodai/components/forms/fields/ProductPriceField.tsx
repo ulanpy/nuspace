@@ -36,7 +36,7 @@ export function ProductPriceField({
   };
 
   return (
-    <div className="relative">
+    <div className="relative z-[2]">
       <AnimatedFormField
         label={`Price (${currency === "KZT" ? "₸" : currency})`}
         icon={<DollarSign className="h-4 w-4 text-green-500" />}

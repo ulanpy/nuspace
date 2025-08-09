@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { campuscurrentAPI } from "@/features/campuscurrent/events/api/eventsApi";
 import { useState } from "react";
+import { usePageParam } from "@/hooks/usePageParam";
 
 export type UseEventsParams = {
   start_date?: string;
@@ -16,7 +17,7 @@ export type UseEventsParams = {
 };
 
 export const useEvents = (params: UseEventsParams) => {
-  const [page, setPage] = useState(1);
+  const [page, setPage] = usePageParam();
   const [size, setSize] = useState(params.size ?? 12);
   const [keyword, setKeyword] = useState("");
 

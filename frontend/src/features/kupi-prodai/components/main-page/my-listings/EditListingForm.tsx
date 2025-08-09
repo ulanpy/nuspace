@@ -29,9 +29,12 @@ export function EditListingForm({
             <div className="space-y-2">
                 <label
                     htmlFor="edit-name"
-                    className="block text-sm font-medium"
+                    className="block text-sm font-medium flex justify-between"
                 >
                     Name
+                    <span className="text-xs text-gray-500">
+                        {newListing.name.length} / 75
+                    </span>
                 </label>
                 <Input
                     type="text"
@@ -40,20 +43,26 @@ export function EditListingForm({
                     value={newListing.name}
                     onChange={handleInputChange}
                     required
+                    maxLength={75}
                     className="bg-background text-foreground"
                 />
             </div>
             <div className="space-y-2">
                 <label
                     htmlFor="edit-description"
-                    className="block text-sm font-medium"
+                    className="block text-sm font-medium flex justify-between"
                 >
                     Description
+                    <span className="text-xs text-gray-500">
+                        {newListing.description.length} / 1000
+                    </span>
                 </label>
+                
                 <textarea
                     id="edit-description"
                     name="description"
                     value={newListing.description}
+                    maxLength={1000}
                     onChange={handleInputChange}
                     rows={4}
                     className="w-full p-2 border rounded-md bg-background text-foreground"
@@ -63,9 +72,14 @@ export function EditListingForm({
                 <div className="space-y-2">
                     <label
                         htmlFor="edit-price"
-                        className="block text-sm font-medium"
+                        className="block text-sm font-medium flex justify-between"
                     >
                         Price (₸)
+                        {newListing.price > 10000000000 && (
+                            <span className="text-xs text-red-500">
+                                Maximum price is 10M ₸
+                            </span>
+                        )}
                     </label>
                     <Input
                         type="number"
@@ -77,6 +91,7 @@ export function EditListingForm({
                         onBlur={handlePriceInputBlur}
                         min="0"
                         step="1"
+                        max="1000000000"
                         required
                         className="bg-background text-foreground"
                     />

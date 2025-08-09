@@ -44,7 +44,7 @@ export function BuySection() {
   return (
     <div className="space-y-3 sm:space-y-4">
       {/* Combined Search and Filter Section */}
-      <FilterContainer>
+      <FilterContainer className="z-[5]">
         <CombinedSearch
           inputValue={inputValue}
           setInputValue={setInputValue}

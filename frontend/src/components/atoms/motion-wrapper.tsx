@@ -17,7 +17,9 @@ const MotionWrapper = ({ children }: MotionWrapperProps) => {
   const control = useAnimation();
   const [ref, inView] = useInView({
     triggerOnce: true,
-    threshold: 0.1,
+    threshold: 0,
+    // Encourage early trigger even when sticky headers overlap a bit
+    rootMargin: "0px 0px -10% 0px",
   });
 
   useEffect(() => {
@@ -25,6 +27,20 @@ const MotionWrapper = ({ children }: MotionWrapperProps) => {
       control.start("visible");
     }
   }, [control, inView]);
+
+  // Fallback for mobile back/forward cache restoring pages without re-triggering IO
+  useEffect(() => {
+    const onPageShow = (event: Event) => {
+      // Some browsers (iOS Safari) restore from bfcache and skip intersection updates
+      // Ensure content is visible in that case
+      const pt = event as unknown as { persisted?: boolean };
+      if (pt && pt.persisted) {
+        control.start("visible");
+      }
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, [control]);
 
   return (
     <motion.div

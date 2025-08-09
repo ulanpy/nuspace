@@ -107,8 +107,8 @@ export function UnifiedProductForm({
   };
 
   const cardClassName = mode === 'create' 
-    ? "relative shadow-lg border-0 bg-gradient-to-br from-background to-background/50 overflow-hidden"
-    : "relative shadow-lg border overflow-hidden";
+    ? "relative z-[1] shadow-lg border-0 bg-gradient-to-br from-background to-background/50 overflow-hidden"
+    : "relative z-[1] shadow-lg border overflow-hidden";
 
   return (
     <Card className={cardClassName}>

@@ -38,7 +38,7 @@ export function ProductCard({ product, onClick, actions }: ProductCardProps) {
       <CardContent className="p-2 sm:p-3">
         <div className="flex justify-between items-start mb-1">
           <div>
-            <h3 className="font-medium text-xs sm:text-sm line-clamp-1">
+            <h3 className="font-medium text-xs sm:text-sm line-clamp-2 break-all break-words hyphens-auto">
               {product.name}
             </h3>
             <p className="text-sm sm:text-base font-bold">{product.price} ₸</p>

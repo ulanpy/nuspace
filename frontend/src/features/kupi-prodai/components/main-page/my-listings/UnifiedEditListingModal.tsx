@@ -14,13 +14,13 @@ import { useMediaEditContext } from "@/context/MediaEditContext";
 import { useMediaUploadContext } from "@/context/MediaUploadContext";
 import { EditListingForm } from "./EditListingForm";
 import { useProductForm } from "@/features/kupi-prodai/hooks/useProductForm";
-import { Progress } from "@/components/atoms/progress";
+// import { Progress } from "@/components/atoms/progress";
 
 // Bridge component to connect unified system with legacy contexts
 function EditListingMediaBridge() {
   const { setPreviewMedia, setMediaFiles, setIsUploading } = useMediaUploadContext();
   const { originalMedia, setMediaToDelete } = useMediaEditContext();
-  const { uploadProgress } = useListingState();
+  // const { uploadProgress } = useListingState();
   
   const {
     previewMedia,
@@ -70,16 +70,7 @@ function EditListingMediaBridge() {
         progressVariant="standalone"
       />
       
-      {/* Legacy progress display */}
-      {uploadProgress > 0 && (
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>Updating listing...</span>
-            <span>{uploadProgress}%</span>
-          </div>
-          <Progress value={uploadProgress} className="h-2" />
-        </div>
-      )}
+      {/* Unified zone now renders progress consistently; remove duplicate legacy bar */}
     </div>
   );
 }

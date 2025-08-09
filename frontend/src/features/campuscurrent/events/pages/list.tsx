@@ -10,7 +10,8 @@ import { Pagination } from "@/components/molecules/pagination";
 import { useEvents } from "@/features/campuscurrent/events/hooks/useEvents";
 import { Event } from "@/features/campuscurrent/types/types";
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { usePageParam } from "@/hooks/usePageParam";
 import { Calendar } from "lucide-react";
 import { EventModal } from "@/features/campuscurrent/events/components/EventModal";
 
@@ -44,7 +45,7 @@ const EventsGrid = ({
   }
 
   return (
-    <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+    <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3 sm:gap-4 md:gap-6">
       {(events?.events || []).map((event) => (
         <EventCard key={event.id} {...event} />
       ))}
@@ -61,7 +62,8 @@ export default function Events() {
     start_date: new Date().toISOString().split("T")[0], // Default to show only upcoming events
   });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const { events, isLoading, isError, page, setPage } = useEvents(dateFilter);
+  const { events, isLoading, isError } = useEvents(dateFilter);
+  const [page, setPage] = usePageParam();
 
   const setFilter = (value: string) => {
     setActiveTab(value);
@@ -102,7 +104,6 @@ export default function Events() {
     setDateFilter({ start_date, end_date });
   };
   const location = useLocation();
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (location.hash === "#events-section") {
@@ -119,23 +120,7 @@ export default function Events() {
     }
   }, [location]);
 
-  // Sync page param from URL on mount and when it changes externally
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const pageParam = Number(params.get("page") || "1");
-    if (!Number.isNaN(pageParam) && pageParam !== page) {
-      setPage(pageParam);
-    }
-  }, [location.search]);
-
-  // Whenever page changes locally, reflect it in URL (keeps back/forward working)
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (Number(params.get("page") || "1") !== page) {
-      params.set("page", String(page));
-      navigate(`${location.pathname}?${params.toString()}`, { replace: true });
-    }
-  }, [page]);
+  // page is now handled by usePageParam
 
   return (
     <>
@@ -146,15 +131,15 @@ export default function Events() {
           className="flex flex-col min-h-screen w-full overflow-x-hidden"
           id="events-section"
         >
-          <main className="flex-grow w-full max-w-screen-lg mx-auto px-4 sm:px-6 md:px-8">
+          <main className="flex-grow w-full max-w-screen-2xl mx-auto px-4 sm:px-6 md:px-8">
             <Tabs
               value={activeTab}
               className="mb-6 w-full"
               onValueChange={(value) => setFilter(value)}
             >
               <div className="w-full overflow-x-auto">
-                <TabsList className="w-full min-w-max grid grid-cols-4">
-                  <TabsTrigger value="all">All</TabsTrigger>
+                <TabsList className="min-w-max grid grid-flow-col auto-cols-max gap-2">
+                  <TabsTrigger value="all">All Upcoming</TabsTrigger>
                   <TabsTrigger value="today">Today</TabsTrigger>
                   <TabsTrigger value="thisWeek">Week</TabsTrigger>
                   <TabsTrigger value="thisMonth">Month</TabsTrigger>

@@ -11,6 +11,7 @@ interface ProductDescriptionFieldProps {
   rows?: number;
   placeholder?: string;
   showCharacterCount?: boolean;
+  maxLength?: number;
 }
 
 export function ProductDescriptionField({ 
@@ -18,12 +19,13 @@ export function ProductDescriptionField({
   onChange, 
   rows = 4,
   placeholder = "Describe your item in detail...",
-  showCharacterCount = true
+  showCharacterCount = true,
+  maxLength = 1000
 }: ProductDescriptionFieldProps) {
   const { handleFieldFocus, handleFieldBlur, isFieldFocused } = useFormAnimations();
 
   return (
-    <motion.div className="relative" variants={fieldVariants}>
+    <motion.div className="relative z-[2]" variants={fieldVariants}>
       <AnimatedFormField
         label="Description"
         icon={<FileText className="h-4 w-4 text-primary" />}
@@ -40,7 +42,8 @@ export function ProductDescriptionField({
           onFocus={() => handleFieldFocus('description')}
           onBlur={handleFieldBlur}
           rows={rows}
-          className="resize-none transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          maxLength={maxLength}
+          className="resize-none transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary break-all [overflow-wrap:anywhere] break-words w-full"
           placeholder={placeholder}
         />
       </AnimatedFormField>
@@ -53,9 +56,11 @@ export function ProductDescriptionField({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="absolute -bottom-6 right-0 text-xs text-muted-foreground"
+              className="absolute -bottom-6 right-0"
             >
-              {value.length} characters
+              <span className={`text-xs ${value.length > maxLength * 0.9 ? 'text-orange-500' : value.length === maxLength ? 'text-red-500' : 'text-gray-500'}`}>
+                {value.length} / {maxLength}
+              </span>
             </motion.div>
           )}
         </AnimatePresence>

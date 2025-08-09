@@ -3,7 +3,8 @@ import {
   defaultSize,
   kupiProdaiApi,
 } from "@/features/kupi-prodai/api/kupiProdaiApi";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePageParam } from "@/hooks/usePageParam";
 import {
   getSearchCategoryFromURL,
   getSearchConditionFromURL,
@@ -13,7 +14,7 @@ import { useLocation } from "react-router-dom";
 export function useProducts() {
   const location = useLocation();
   const [keyword, setKeyword] = useState<string>("");
-  const [page, setPage] = useState<number>(1);
+  const [page, setPage] = usePageParam();
   const [selectedCategory, setSelectedCategory] = useState(
     getSearchCategoryFromURL(location.search),
   );
@@ -42,6 +43,15 @@ export function useProducts() {
     staleTime: Infinity,
     gcTime: 1000 * 60 * 60 * 24,
   });
+
+  // Keep category/condition in sync if URL changes externally
+  useEffect(() => {
+    const urlCategory = getSearchCategoryFromURL(location.search);
+    const urlCondition = getSearchConditionFromURL(location.search);
+    if (urlCategory !== selectedCategory) setSelectedCategory(urlCategory);
+    if (urlCondition !== selectedCondition) setSelectedCondition(urlCondition);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
   return {
     productItems: productItems ?? null,
     isError,

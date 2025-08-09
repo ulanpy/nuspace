@@ -5,6 +5,8 @@ import { useUnifiedMedia } from "@/features/media/hooks/useUnifiedMedia";
 import { getMediaConfig } from "@/features/media/config/mediaConfigs";
 import { useCommunityForm } from "@/context/CommunityFormContext";
 import { EntityType } from "@/features/media/types/types";
+import { useCreateCommunity } from "@/features/campuscurrent/communities/hooks/useCreateCommunity";
+import { useUpdateCommunity } from "@/features/campuscurrent/communities/hooks/useUpdateCommunity";
 
 export type CommunityUploadHandle = {
   upload: (entityId: number) => Promise<boolean>;
@@ -16,8 +18,12 @@ export type CommunityUploadHandle = {
 const CommunityMediaUploadBridge = forwardRef<CommunityUploadHandle, { type: 'communityProfiles' | 'communityBanners' }>(
   function CommunityMediaUploadBridge({ type }, ref) {
     const { isEditMode, community } = useCommunityForm();
-    const { uploadFiles, deleteMarkedMedia, initializeExistingMedia, mediaFiles, mediaToDelete } = useUnifiedMedia();
+    const { uploadFiles, deleteMarkedMedia, initializeExistingMedia, mediaFiles, mediaToDelete, isUploading } = useUnifiedMedia();
     const { config } = useUnifiedMediaContext();
+    const { uploadProgress: createProgress } = useCreateCommunity();
+    const { uploadProgress: updateProgress } = useUpdateCommunity();
+
+    const { setProgress } = useUnifiedMediaContext();
 
     // Initialize existing media in edit mode from the community, filtered by the format this zone manages
     useEffect(() => {
@@ -45,6 +51,14 @@ const CommunityMediaUploadBridge = forwardRef<CommunityUploadHandle, { type: 'co
         return mediaFiles.length > 0 || mediaToDelete.length > 0;
       },
     }));
+
+    // Mirror flow progress into unified context for consistent UI
+    useEffect(() => {
+      const progress = isEditMode ? updateProgress : createProgress;
+      if (!isUploading) {
+        setProgress(progress || 0);
+      }
+    }, [createProgress, updateProgress, isEditMode, setProgress, isUploading]);
 
     return (
       <UnifiedMediaUploadZone

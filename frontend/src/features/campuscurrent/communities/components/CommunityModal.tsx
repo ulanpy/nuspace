@@ -1,10 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { Modal } from "@/components/atoms/modal";
 import { useCreateCommunity } from "@/features/campuscurrent/communities/hooks/useCreateCommunity";
 import { useUpdateCommunity } from "@/features/campuscurrent/communities/hooks/useUpdateCommunity";
 import { useDeleteCommunity } from "@/features/campuscurrent/communities/hooks/useDeleteCommunity";
-import { useMediaUploadContext } from "@/context/MediaUploadContext";
-import { useMediaEditContext } from "@/context/MediaEditContext";
 import { useUser } from "@/hooks/use-user";
 import {
   CreateCommunityData,
@@ -29,6 +27,7 @@ import {
 } from "@/context/CommunityFormContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { pollForCommunityImages } from "@/utils/polling";
+import { useInitializeMedia } from "@/features/media/hooks/useInitializeMedia";
 import { campuscurrentAPI } from "@/features/campuscurrent/communities/api/communitiesApi";
 
 interface CommunityModalProps {
@@ -50,9 +49,7 @@ export function CommunityModal({
   const { handleCreate, isCreating } = useCreateCommunity();
   const { handleUpdate, isUpdating } = useUpdateCommunity();
   const { handleDelete, isDeleting } = useDeleteCommunity();
-  const { setPreviewMedia, setMediaFiles } = useMediaUploadContext();
-  const { setOriginalMedia, setMediaToDelete, setCurrentMediaIndex } =
-    useMediaEditContext();
+  
 
   const isProcessing = isCreating || isUpdating || isDeleting;
 
@@ -62,48 +59,8 @@ export function CommunityModal({
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Initialize media for edit mode
-  useEffect(() => {
-    if (isEditMode && community && community.media) {
-      // Set existing media for preview
-      const existingMediaUrls = community.media.map((media) => media.url);
-      setPreviewMedia(existingMediaUrls);
-
-      // Set original media for tracking changes
-      setOriginalMedia(
-        community.media.map((media) => ({
-          id: media.id,
-          url: media.url,
-          order: media.media_order.toString(),
-          media_format: media.media_format,
-        }))
-      );
-
-      // Reset media files for new uploads
-      setMediaFiles([]);
-
-      // Reset media to delete
-      setMediaToDelete([]);
-
-      // Set current media index
-      setCurrentMediaIndex(0);
-    } else if (!isEditMode) {
-      // Reset all media states for create mode
-      setPreviewMedia([]);
-      setMediaFiles([]);
-      setOriginalMedia([]);
-      setMediaToDelete([]);
-      setCurrentMediaIndex(0);
-    }
-  }, [
-    isEditMode,
-    community,
-    setPreviewMedia,
-    setMediaFiles,
-    setOriginalMedia,
-    setMediaToDelete,
-    setCurrentMediaIndex,
-  ]);
+  // Initialize media for edit/create flows via shared hook
+  useInitializeMedia({ isEditMode, mediaItems: community?.media });
 
   const handleSubmit = async (
     formData: CreateCommunityData | EditCommunityData,

@@ -42,9 +42,11 @@ export const ProductsTable = ({
           <TableRow key={product.id}>
             <TableCell className="font-medium">{product.id}</TableCell>
             <TableCell>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded bg-gray-100"></div>
-                <div>{product.name}</div>
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded bg-gray-100 shrink-0"></div>
+                <div className="min-w-0 break-all break-words hyphens-auto">
+                  {product.name}
+                </div>
               </div>
             </TableCell>
             <TableCell>${product.price.toFixed(2)}</TableCell>

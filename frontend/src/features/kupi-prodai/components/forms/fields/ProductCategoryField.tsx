@@ -24,15 +24,16 @@ export function ProductCategoryField({
   };
 
   return (
-    <AnimatedFormField
-      label="Category"
-      icon={<Zap className="h-4 w-4 text-blue-500" />}
-      fieldName="category"
-      isFocused={isFieldFocused('category')}
-      onFocus={() => handleFieldFocus('category')}
-      onBlur={handleFieldBlur}
-      showFocusIndicator={false}
-    >
+    <div className="relative z-[2]">
+      <AnimatedFormField
+        label="Category"
+        icon={<Zap className="h-4 w-4 text-blue-500" />}
+        fieldName="category"
+        isFocused={isFieldFocused('category')}
+        onFocus={() => handleFieldFocus('category')}
+        onBlur={handleFieldBlur}
+        showFocusIndicator={false}
+      >
       <motion.div whileHover={{ scale: 1.01 }}>
         <Select 
           value={value} 
@@ -45,7 +46,7 @@ export function ProductCategoryField({
           >
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[50]">
             {categories.slice(1).map((category, index) => (
               <SelectItem key={category.title} value={category.title}>
                 {categories[index + 1].title}
@@ -57,5 +58,6 @@ export function ProductCategoryField({
         <input type="hidden" name="category" value={value} />
       </motion.div>
     </AnimatedFormField>
+    </div>
   );
 }

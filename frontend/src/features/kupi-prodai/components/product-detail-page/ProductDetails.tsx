@@ -51,7 +51,7 @@ export function ProductDetails({ product, initiateContactWithSeller, isContactLo
         <div className="space-y-4">
             <div className="flex justify-between items-start">
                 <div>
-                    <h1 className="text-2xl font-bold">{product.name}</h1>
+                    <h1 className="text-2xl font-bold break-all break-words hyphens-auto w-full overflow-x-hidden">{product.name}</h1>
                     <p className="text-3xl font-bold mt-2">{product.price} ₸</p>
                 </div>
                 <Badge
@@ -117,7 +117,7 @@ export function ProductDetails({ product, initiateContactWithSeller, isContactLo
 
             <div>
                 <h2 className="font-medium mb-2">Description</h2>
-                <p className="text-muted-foreground">{product.description}</p>
+                <p className="text-muted-foreground break-words whitespace-pre-wrap overflow-wrap-anywhere">{product.description}</p>
             </div>
 
             <div>

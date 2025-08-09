@@ -2,7 +2,7 @@ import { navTabs } from "@/features/campuscurrent/types/nav-tabs";
 import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
 import { Button } from "@/components/atoms/button";
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, MapPin, Plus } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/atoms/tabs";
 import { useEffect, useMemo, useState } from "react";
 import { useEvents } from "@/features/campuscurrent/events/hooks/useEvents";
@@ -287,7 +287,7 @@ export function EventsLayout() {
       }
     : isEvents
     ? {
-        title: "Find and Attend Events",
+        title: "Events you don't want to miss",
         description: "Browse and track upcoming events across NU campus.",
         bg: "bg-purple-700",
         primary: {
@@ -303,7 +303,12 @@ export function EventsLayout() {
           },
         },
         secondary: {
-          label: "Create Event",
+          label: (
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Create Event
+            </div>
+          ),
           onClick: () =>
             navigate(`${ROUTES.APPS.CAMPUS_CURRENT.EVENTS}#create-event`),
         },
@@ -329,7 +334,12 @@ export function EventsLayout() {
           },
         },
         secondary: {
-          label: "Create a Community",
+          label: (
+            <div className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Create Community
+            </div>
+          ),
           onClick: () =>
             window.open("https://forms.gle/rsrAWGMCsYEeBg1y9", "_blank"),
         },

@@ -1,26 +1,30 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { UnifiedMediaProvider } from "@/features/media/context/UnifiedMediaContext";
 import { UnifiedMediaUploadZone } from "@/components/organisms/media/UnifiedMediaUploadZone";
 import { useUnifiedMedia } from "@/features/media/hooks/useUnifiedMedia";
+import { useUnifiedMediaContext } from "@/features/media/context/UnifiedMediaContext";
 import { getMediaConfig } from "@/features/media/config/mediaConfigs";
 import { useMediaUploadContext } from "@/context/MediaUploadContext";
 import { useMediaEditContext } from "@/context/MediaEditContext";
+import { useListingState } from "@/context/ListingContext";
 import { Zap, Download } from "lucide-react";
 
 // Bridge component to connect unified system with legacy contexts
 function ProductMediaUploadBridge() {
-  const { setPreviewMedia, setMediaFiles, setIsUploading } = useMediaUploadContext();
+  const { setPreviewMedia, setMediaFiles, setIsUploading, isUploading: legacyIsUploading } = useMediaUploadContext();
   const { originalMedia } = useMediaEditContext();
+  const { uploadProgress } = useListingState();
   
   const {
     previewMedia,
     mediaFiles,
     isUploading,
     initializeExistingMedia,
-    uploadFiles,
-    deleteMarkedMedia,
     setMainMedia,
   } = useUnifiedMedia();
+
+  // Access unified media context setters to mirror legacy progress into unified UI
+  const { setUploading, setProgress } = useUnifiedMediaContext();
 
   // Sync with legacy contexts
   useEffect(() => {
@@ -34,6 +38,15 @@ function ProductMediaUploadBridge() {
   useEffect(() => {
     setIsUploading(isUploading);
   }, [isUploading, setIsUploading]);
+
+  // Mirror legacy upload state into unified context so the zone shows consistent progress
+  useEffect(() => {
+    setUploading(legacyIsUploading);
+  }, [legacyIsUploading, setUploading]);
+
+  useEffect(() => {
+    setProgress(uploadProgress || 0);
+  }, [uploadProgress, setProgress]);
 
   // Initialize existing media
   useEffect(() => {

@@ -2,26 +2,31 @@ import { useEffect } from "react";
 import { UnifiedMediaProvider } from "@/features/media/context/UnifiedMediaContext";
 import { UnifiedMediaUploadZone } from "@/components/organisms/media/UnifiedMediaUploadZone";
 import { useUnifiedMedia } from "@/features/media/hooks/useUnifiedMedia";
+import { useUnifiedMediaContext } from "@/features/media/context/UnifiedMediaContext";
 import { getMediaConfig } from "@/features/media/config/mediaConfigs";
 import { useEventForm } from "@/context/EventFormContext";
 import { useMediaUploadContext } from "@/context/MediaUploadContext";
 import { useMediaEditContext } from "@/context/MediaEditContext";
+import { useCreateEvent } from "@/features/campuscurrent/events/hooks/useCreateEvent";
+import { useUpdateEvent } from "@/features/campuscurrent/events/hooks/useUpdateEvent";
 
 // Bridge component to connect unified system with legacy contexts
 function EventMediaUploadBridge() {
   const { isEditMode } = useEventForm();
-  const { setPreviewMedia, setMediaFiles, setIsUploading } = useMediaUploadContext();
-  const { originalMedia, setOriginalMedia, setMediaToDelete } = useMediaEditContext();
+  const { setPreviewMedia, setMediaFiles, setIsUploading, isUploading: legacyIsUploading } = useMediaUploadContext();
+  const { originalMedia, setMediaToDelete } = useMediaEditContext();
+  const { uploadProgress: createProgress } = useCreateEvent();
+  const { uploadProgress: updateProgress } = useUpdateEvent();
   
   const {
     previewMedia,
     mediaFiles,
     isUploading,
     initializeExistingMedia,
-    uploadFiles,
-    deleteMarkedMedia,
     mediaToDelete,
   } = useUnifiedMedia();
+
+  const { setUploading, setProgress } = useUnifiedMediaContext();
 
   // Sync with legacy contexts
   useEffect(() => {
@@ -39,6 +44,18 @@ function EventMediaUploadBridge() {
   useEffect(() => {
     setMediaToDelete(mediaToDelete);
   }, [mediaToDelete, setMediaToDelete]);
+
+  // Mirror legacy/flow progress into unified context
+  useEffect(() => {
+    setUploading(legacyIsUploading);
+  }, [legacyIsUploading, setUploading]);
+
+  useEffect(() => {
+    const progress = isEditMode ? updateProgress : createProgress;
+    if (!isUploading) {
+      setProgress(progress || 0);
+    }
+  }, [createProgress, updateProgress, isEditMode, setProgress, isUploading]);
 
   // Initialize existing media in edit mode
   useEffect(() => {

@@ -1,6 +1,7 @@
-// No local state needed on list card
+// Handles image fallback on list card
  
 // Note: Keeping imports minimal for performance and clarity
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Calendar, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
@@ -18,11 +19,10 @@ export function EventCard(props: EventCardProps) {
     policy, 
     media,
     type,
-    status,
-    tag,
  } = props;
 
   // Removed calendar action and related state from list card
+  const [imageError, setImageError] = useState(false);
 
   // Helper function to get policy display text
   const getPolicyDisplay = (policy: string) => {
@@ -40,12 +40,23 @@ export function EventCard(props: EventCardProps) {
     <>
       <Card className="hover:shadow-md transition-shadow">
         <Link to={`/apps/campuscurrent/event/${id}`}>
-          <div className="aspect-[3/4] relative overflow-hidden rounded-t-lg">
-            <img
-              src={media[0]?.url || "/placeholder.svg"}
-              alt={name}
-              className="object-cover w-full h-full"
-            />
+          <div className="aspect-[3/4] relative overflow-hidden rounded-t-lg bg-muted">
+            {media && media.length > 0 && media[0]?.url && !imageError ? (
+              <img
+                src={media[0].url}
+                alt={name}
+                className="object-cover w-full h-full"
+                onError={() => setImageError(true)}
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-center">
+                  <Calendar className="h-12 w-12 text-muted-foreground opacity-50 mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">No poster available</p>
+                </div>
+              </div>
+            )}
             {/* Profile image overlay */}
             <div className="absolute bottom-2 right-2">
               {props.scope === "personal" && props.creator?.picture && (

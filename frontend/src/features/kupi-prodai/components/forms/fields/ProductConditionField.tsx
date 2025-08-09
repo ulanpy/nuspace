@@ -25,15 +25,16 @@ export function ProductConditionField({
   };
 
   return (
-    <AnimatedFormField
-      label="Condition"
-      icon={<Package className="h-4 w-4 text-purple-500" />}
-      fieldName="condition"
-      isFocused={isFieldFocused('condition')}
-      onFocus={() => handleFieldFocus('condition')}
-      onBlur={handleFieldBlur}
-      showFocusIndicator={false}
-    >
+    <div className="relative z-[2]">
+      <AnimatedFormField
+        label="Condition"
+        icon={<Package className="h-4 w-4 text-purple-500" />}
+        fieldName="condition"
+        isFocused={isFieldFocused('condition')}
+        onFocus={() => handleFieldFocus('condition')}
+        onBlur={handleFieldBlur}
+        showFocusIndicator={false}
+      >
       <motion.div whileHover={{ scale: 1.01 }}>
         <Select 
           value={value} 
@@ -46,7 +47,7 @@ export function ProductConditionField({
           >
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-[50]">
             {conditions.slice(1).map((condition, index) => (
               <SelectItem key={condition} value={condition}>
                 {displayConditions[index + 1]}
@@ -58,5 +59,6 @@ export function ProductConditionField({
         <input type="hidden" name="condition" value={value} />
       </motion.div>
     </AnimatedFormField>
+    </div>
   );
 }

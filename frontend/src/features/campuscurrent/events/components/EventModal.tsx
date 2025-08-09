@@ -1,13 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Modal } from "@/components/atoms/modal";
 import { useCreateEvent } from "@/features/campuscurrent/events/hooks/useCreateEvent";
 import { useUpdateEvent } from "@/features/campuscurrent/events/hooks/useUpdateEvent";
 import { useDeleteEvent } from "@/features/campuscurrent/events/hooks/useDeleteEvent";
-import { useMediaUploadContext } from "@/context/MediaUploadContext";
-import { useMediaEditContext } from "@/context/MediaEditContext";
+// import { useMediaUploadContext } from "@/context/MediaUploadContext";
 import { useUser } from "@/hooks/use-user";
 import { CreateEventData, EditEventData, EventType, Event, EventPermissions, Community } from "@/features/campuscurrent/types/types";
-import { CommunitySelectionModal } from "../../communities/components/CommunitySelectionModal";
+import { CommunitySelectionModal } from "@/features/campuscurrent/communities/components/CommunitySelectionModal";
 
 // Import all the new modular components
 import { EventScopeSelector, CommunityDisplay } from "./forms/EventScopeSelector";
@@ -17,9 +16,10 @@ import { EventDateTimeSelector } from "./forms/EventDateTimeSelector";
 import { EventElevatedFields } from "./forms/EventElevatedFields";
 import { EventDescription } from "./forms/EventDescription";
 import { EventPolicy } from "@/features/campuscurrent/types/types";
-import { DeleteConfirmation } from "../../../../components/molecules/DeleteConfirmation";
+import { DeleteConfirmation } from "@/components/molecules/DeleteConfirmation";
 import { EventActions } from "./forms/EventActions";
 import { useEventForm, EventFormProvider } from "@/context/EventFormContext";
+import { useInitializeMedia } from "@/features/media/hooks/useInitializeMedia";
 
 interface EventModalProps {
   isOpen: boolean;
@@ -35,45 +35,15 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, event, pe
   const { handleCreate, isCreating } = useCreateEvent();
   const { handleUpdate, isUpdating } = useUpdateEvent();
   const { handleDelete, isDeleting } = useDeleteEvent();
-  const { isUploading, setPreviewMedia, setMediaFiles } = useMediaUploadContext();
-  const { setOriginalMedia, setMediaToDelete, setCurrentMediaIndex } = useMediaEditContext();
+  // const { isUploading } = useMediaUploadContext();
 
   const isProcessing = isCreating || isUpdating || isDeleting;
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCommunityModal, setShowCommunityModal] = useState(false);
 
-  // Initialize media for edit mode
-  useEffect(() => {
-    if (isEditMode && event && event.media) {
-      // Set existing media for preview
-      const existingMediaUrls = event.media.map(media => media.url);
-      setPreviewMedia(existingMediaUrls);
-      
-      // Set original media for tracking changes
-      setOriginalMedia(event.media.map(media => ({
-        id: media.id,
-        url: media.url,
-        order: media.media_order.toString()
-      })));
-      
-      // Reset media files for new uploads
-      setMediaFiles([]);
-      
-      // Reset media to delete
-      setMediaToDelete([]);
-      
-      // Set current media index
-      setCurrentMediaIndex(0);
-    } else if (!isEditMode) {
-      // Reset all media states for create mode
-      setPreviewMedia([]);
-      setMediaFiles([]);
-      setOriginalMedia([]);
-      setMediaToDelete([]);
-      setCurrentMediaIndex(0);
-    }
-  }, [isEditMode, event, setPreviewMedia, setMediaFiles, setOriginalMedia, setMediaToDelete, setCurrentMediaIndex]);
+  // Initialize media for edit/create flows via shared hook
+  useInitializeMedia({ isEditMode, mediaItems: event?.media });
 
   const handleSubmit = async (
     formData: CreateEventData | EditEventData,

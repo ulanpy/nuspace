@@ -176,7 +176,7 @@ export default function EventDetailPage() {
               <div className="w-full h-full bg-muted flex items-center justify-center">
                 <div className="text-center">
                   <Calendar className="h-16 w-16 text-muted-foreground opacity-50 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No image available</p>
+                  <p className="text-sm text-muted-foreground">No poster available</p>
                 </div>
               </div>
             )}

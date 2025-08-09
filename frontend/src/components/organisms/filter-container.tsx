@@ -14,6 +14,7 @@ export function FilterContainer({ children, className = "", title }: FilterConta
       rounded-xl 
       p-2.5 sm:p-3 
       shadow-sm
+      relative z-[1]
       ${className}
     `}>
       {title && (
