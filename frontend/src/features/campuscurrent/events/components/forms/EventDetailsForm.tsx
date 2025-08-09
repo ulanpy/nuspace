@@ -75,7 +75,7 @@ export function EventDetailsForm() {
           </SelectTrigger>
           <SelectContent className="z-[150]">
             {Object.values(EventPolicy).map((policy) => (
-              <SelectItem value={policy}>
+              <SelectItem key={policy} value={policy}>
                 {policy}
               </SelectItem>
             ))}

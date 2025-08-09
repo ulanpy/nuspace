@@ -20,6 +20,7 @@ import { DeleteConfirmation } from "@/components/molecules/DeleteConfirmation";
 import { EventActions } from "./forms/EventActions";
 import { useEventForm, EventFormProvider } from "@/context/EventFormContext";
 import { useInitializeMedia } from "@/features/media/hooks/useInitializeMedia";
+import { LoginModal } from "@/components/molecules/login-modal";
 
 interface EventModalProps {
   isOpen: boolean;
@@ -120,6 +121,19 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, event, pe
       console.error('Failed to delete event:', error);
     }
   };
+
+  // Require authentication to use the modal
+  if (!user) {
+    return (
+      <LoginModal
+        isOpen={isOpen}
+        onClose={onClose}
+        onSuccess={onClose}
+        title="Login Required"
+        message={isEditMode ? "You need to be logged in to edit events." : "You need to be logged in to create events."}
+      />
+    );
+  }
 
   return (
     <EventFormProvider
