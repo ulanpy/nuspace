@@ -40,11 +40,13 @@ class Community(Base):
     category: Mapped[CommunityCategory] = mapped_column(
         SQLEnum(CommunityCategory, name="community_category"), nullable=False
     )
+    email: Mapped[str] = mapped_column(nullable=True, unique=False)
     recruitment_status: Mapped[CommunityRecruitmentStatus] = mapped_column(
         SQLEnum(CommunityRecruitmentStatus, name="community_recruitment_status"),
         nullable=False,
         default=CommunityRecruitmentStatus.closed,
     )
+    recruitment_link: Mapped[str] = mapped_column(nullable=True, unique=False)
     description: Mapped[str] = mapped_column(nullable=False)
     established: Mapped[date] = mapped_column(Date, nullable=False)
     head: Mapped[str] = mapped_column(ForeignKey("users.sub", ondelete="SET NULL"), nullable=True)
@@ -54,7 +56,9 @@ class Community(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     head_user = relationship("User", back_populates="communities_led")
-    tags = relationship("CommunityPostTag", back_populates="community", cascade="all, delete-orphan")
+    tags = relationship(
+        "CommunityPostTag", back_populates="community", cascade="all, delete-orphan"
+    )
     events = relationship("Event", back_populates="community", cascade="all, delete-orphan")
 
 

@@ -74,6 +74,9 @@ export function CommunityModal({
         const editData: EditCommunityData = {
           name: formData.name,
           description: formData.description,
+          email: (formData as EditCommunityData).email,
+          recruitment_status: (formData as EditCommunityData).recruitment_status,
+          recruitment_link: (formData as EditCommunityData).recruitment_link,
           telegram_url: formData.telegram_url,
           instagram_url: formData.instagram_url,
         };
@@ -101,7 +104,9 @@ export function CommunityModal({
           name: formData.name || "",
           type: CommunityType.club,
           category: CommunityCategory.academic,
+          email: (formData as CreateCommunityData).email || "",
           recruitment_status: RecruitmentStatus.open,
+          recruitment_link: (formData as CreateCommunityData).recruitment_link || "",
           head: user.user.sub,
           established: "",
           description: "",

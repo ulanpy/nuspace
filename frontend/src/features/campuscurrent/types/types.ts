@@ -50,7 +50,9 @@ import { Media } from "@/features/media/types/types";
       name = "name",
       type = "type",
       category = "category",
+      email = "email",
       recruitment_status = "recruitment_status",
+      recruitment_link = "recruitment_link",
       description = "description",
       established = "established",
       head = "head",
@@ -76,7 +78,9 @@ import { Media } from "@/features/media/types/types";
       name: string;
       type: CommunityType;
       category: CommunityCategory;
+      email?: string;
       recruitment_status: RecruitmentStatus;
+      recruitment_link: string;
       description: string;
       head: string;
       established: string;
@@ -226,7 +230,9 @@ import { Media } from "@/features/media/types/types";
       name: string;
       type: CommunityType;
       category: CommunityCategory;
+      email?: string;
       recruitment_status: RecruitmentStatus;
+      recruitment_link?: string;
       description: string;
       established: string;
       head: string;
@@ -236,7 +242,9 @@ import { Media } from "@/features/media/types/types";
 
     export interface EditCommunityData {
       name?: string;
+      email?: string;
       recruitment_status?: RecruitmentStatus;
+      recruitment_link?: string;
       description?: string;
       telegram_url?: string;
       instagram_url?: string;

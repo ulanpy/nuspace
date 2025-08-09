@@ -2,7 +2,7 @@ from datetime import date, datetime
 from typing import List
 
 from fastapi import Query
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, HttpUrl, field_serializer, field_validator
 
 from backend.common.schemas import MediaResponse, ResourcePermissions, ShortUserResponse
 from backend.core.database.models.community import (
@@ -26,10 +26,20 @@ class CommunityCreateRequest(BaseModel):
     category: CommunityCategory = Field(
         ..., description="The category of the community", example=CommunityCategory.academic
     )
+    email: EmailStr = Field(
+        ...,
+        description="The email of the community",
+        example="nufencingclub@gmail.com",
+    )
     recruitment_status: CommunityRecruitmentStatus = Field(
         ...,
         description="The recruitment status of the community",
         example=CommunityRecruitmentStatus.open,
+    )
+    recruitment_link: HttpUrl | None = Field(
+        ...,
+        description="The link to the recruitment page",
+        example="https://www.google.com",
     )
     description: str = Field(
         ...,
@@ -58,13 +68,19 @@ class CommunityCreateRequest(BaseModel):
             raise ValueError("Invalid URL format")
         return value
 
+    @field_serializer("recruitment_link")
+    def serialize_recruitment_link(self, value: HttpUrl | None) -> str | None:
+        return str(value) if value else None
+
 
 class BaseCommunity(BaseModel):
     id: int
     name: str
     type: CommunityType
     category: CommunityCategory
+    email: EmailStr | None = None
     recruitment_status: CommunityRecruitmentStatus
+    recruitment_link: HttpUrl | None = None
     description: str
     established: date
     head: str
@@ -97,10 +113,20 @@ class CommunityUpdateRequest(BaseModel):
     name: str | None = Field(
         default=None, description="The name of the community", example="NU Fencing Club"
     )
+    email: EmailStr | None = Field(
+        default=None,
+        description="The email of the community",
+        example="nufencingclub@gmail.com",
+    )
     recruitment_status: CommunityRecruitmentStatus | None = Field(
         default=None,
         description="The recruitment status of the community",
         example=CommunityRecruitmentStatus.open,
+    )
+    recruitment_link: HttpUrl | None = Field(
+        default=None,
+        description="The link to the recruitment page",
+        example="https://www.nuspace.kz/recruitment",
     )
     description: str | None = Field(
         default=None,
@@ -123,6 +149,10 @@ class CommunityUpdateRequest(BaseModel):
         if not value or value.strip() == "":
             return None
         return value
+
+    @field_serializer("recruitment_link")
+    def serialize_recruitment_link(self, value: HttpUrl | None) -> str | None:
+        return str(value) if value else None
 
     class Config:
         from_attributes = True  # Make sure it can be used with SQLAlchemy models

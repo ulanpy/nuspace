@@ -8,11 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/atoms/select";
-import {
-  CommunityCategory,
-  CommunityType,
-  RecruitmentStatus,
-} from "@/features/campuscurrent/types/types";
+import { RecruitmentStatus } from "@/features/campuscurrent/types/types";
 import {
   Popover,
   PopoverContent,
@@ -67,6 +63,18 @@ export function CommunityDetailsForm() {
           required
         />
       </div>
+      <div>
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          value={(formData as any).email || ""}
+          onChange={handleInputChange}
+          placeholder="nuspace@nu.edu.kz"
+          disabled={!isFieldEditable("email")}
+        />
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="telegram_url">Telegram URL</Label>
@@ -114,6 +122,17 @@ export function CommunityDetailsForm() {
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="recruitment_link">Recruitment Link</Label>
+          <Input
+            id="recruitment_link"
+            name="recruitment_link"
+            value={(formData as any).recruitment_link || ""}
+            onChange={handleInputChange}
+            placeholder="https://..."
+            disabled={!isFieldEditable("recruitment_link")}
+          />
+        </div>
         {!isEditMode && (
           <div>
             <Label htmlFor="established">Established</Label>

@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 
 import { useMemo, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 import {
   Mail,
@@ -95,6 +96,7 @@ export default function CommunityDetailPage() {
   } = useCommunity();
   const [isEditCommunityModalOpen, setIsEditCommunityModalOpen] =
     useState(false);
+  const { toast } = useToast();
 
   // Fetch events for this community
   const today = new Date().toISOString().split("T")[0];
@@ -242,23 +244,72 @@ export default function CommunityDetailPage() {
                     <Settings className="h-4 w-4 mr-2" />
                     Edit Community
                   </Button>
-                ) : community.recruitment_status === "closed" ? (
-                  <span className="text-muted-foreground">
-                    Currently not recruiting
-                  </span>
                 ) : (
-                  <Button
-                    variant="default"
-                    onClick={() =>
-                      window.open(
-                        "https://forms.google.com/your-form-url",
-                        "_blank"
-                      )
+                  (() => {
+                    const isOpen = community.recruitment_status === "open";
+                    const link = community.recruitment_link || "";
+                    if (isOpen && link) {
+                      return (
+                        <Button
+                          asChild
+                          variant="default"
+                          className="cursor-pointer"
+                        >
+                          <a href={link} target="_blank" rel="noopener noreferrer">
+                            <UserRoundPlus className="h-4 w-4 mr-2" />
+                            Join Community
+                          </a>
+                        </Button>
+                      );
                     }
-                  >
-                    <UserRoundPlus className="h-4 w-4 mr-2" />
-                    Join Community
-                  </Button>
+                    if (!isOpen) {
+                      return (
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() =>
+                            toast({
+                              title: "Not recruiting",
+                              description: "This club is not currently recruiting",
+                            })
+                          }
+                          className="inline-block"
+                        >
+                          <Button
+                            variant="secondary"
+                            disabled
+                            title="This club is not currently recruiting"
+                          >
+                            <UserRoundPlus className="h-4 w-4 mr-2" />
+                            Not Recruiting
+                          </Button>
+                        </div>
+                      );
+                    }
+                    // Open but no link provided
+                    return (
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() =>
+                          toast({
+                            title: "Link unavailable",
+                            description: "Recruitment link was not provided",
+                          })
+                        }
+                        className="inline-block"
+                      >
+                        <Button
+                          variant="secondary"
+                          disabled
+                          title="Recruitment link was not provided"
+                        >
+                          <UserRoundPlus className="h-4 w-4 mr-2" />
+                          Join (link unavailable)
+                        </Button>
+                      </div>
+                    );
+                  })()
                 )}
               </div>
             </div>
@@ -326,12 +377,12 @@ export default function CommunityDetailPage() {
                           <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
                           <div>
                             <p className="font-medium">Email</p>
-                            {community.head_user?.name ? (
+                            {community.email ? (
                               <a
-                                href={`mailto:${community.head_user.name}@example.com`}
+                                href={`mailto:${community.email}`}
                                 className="text-sm text-primary hover:underline"
                               >
-                                {community.head_user.name}@example.com
+                                {community.email}
                               </a>
                             ) : (
                               <span className="text-sm text-muted-foreground">
