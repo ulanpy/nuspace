@@ -53,7 +53,6 @@ export default function CommunitiesPage() {
 
   return (
     <MotionWrapper>
-      <div className="w-full overflow-x-hidden" id="communities-section">
         <div className="w-full max-w-none">
           {/* Centered Filter Dropdown */}
           <div className="mb-6 flex justify-center">
@@ -64,7 +63,7 @@ export default function CommunitiesPage() {
               disableNavigation={true}
             />
           </div>
-
+      <div className="w-full overflow-x-hidden" id="communities-section">
           {/* Communities Grid */}
           <div className="w-full">
             {isLoading ? (

@@ -1,17 +1,15 @@
-// Handles image fallback on list card
- 
-// Note: Keeping imports minimal for performance and clarity
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Calendar, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
 import { Event } from "@/features/campuscurrent/types/types";
+import profilePlaceholder from "@/assets/svg/profile-placeholder.svg"; // ADDED THIS IMPORT
 
 interface EventCardProps extends Event {}
 
 export function EventCard(props: EventCardProps) {
-    const { 
+  const { 
     id,
     name, 
     event_datetime, 
@@ -75,11 +73,18 @@ export function EventCard(props: EventCardProps) {
                   );
                   return profileMedia ? (
                     <img
-                      src={profileMedia.url}
+                      src={profileMedia.url} // Correctly using profileMedia.url
                       alt={props.community.name}
                       className="w-8 h-8 rounded-full border-2 border-white shadow-md object-cover"
                     />
-                  ) : null;
+                  ) : (
+                    // Fallback to profilePlaceholder if profileMedia is not found
+                    <img
+                      src={profilePlaceholder}
+                      alt={props.community.name || "Community Profile"}
+                      className="w-8 h-8 rounded-full border-2 border-white shadow-md object-cover"
+                    />
+                  );
                 })()
               )}
             </div>

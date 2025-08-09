@@ -68,9 +68,6 @@ export function CommunityCard({ community }: { community: Community }) {
           {community.description}
         </p>
       </CardContent>
-
-        <CardFooter className="p-4 pt-0 flex-shrink-0">
-        </CardFooter>
     </Card>
       </Link>
   );

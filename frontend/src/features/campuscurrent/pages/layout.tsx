@@ -9,6 +9,8 @@ import { useEvents } from "@/features/campuscurrent/events/hooks/useEvents";
 import { useCommunities } from "@/features/campuscurrent/communities/hooks/use-communities";
 import { Community } from "@/features/campuscurrent/types/types";
 import { Media, MediaFormat } from "@/features/media/types/types";
+import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
+
 
 // Dynamic import of all jpg files in the hero_assets directory
 const heroImageModules = import.meta.glob(
@@ -206,10 +208,10 @@ export function EventsLayout() {
     return items.map((c) => {
       const banner =
         getMediaByFormat(c.media, MediaFormat.banner)?.url ||
-        "/placeholder.svg";
+        profilePlaceholder;
       const profile =
         getMediaByFormat(c.media, MediaFormat.profile)?.url ||
-        "/placeholder.svg";
+        profilePlaceholder;
       return {
         key: c.id,
         render: () => (
