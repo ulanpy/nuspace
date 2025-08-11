@@ -1,0 +1,21 @@
+# Use official Node.js image with Alpine Linux
+FROM node:20-alpine
+
+# Install bash and other essential tools for development
+RUN apk add --no-cache bash curl git
+
+# Set working directory in container
+WORKDIR /nuros
+
+# Copy only package.json and package-lock.json for caching dependencies
+COPY frontend/package*.json ./
+# COPY frontend/package-lock.json ./
+
+# Clean install dependencies (force rebuild for container architecture)
+RUN npm install
+
+# Copy the rest of the project files
+COPY frontend .
+
+# Start the Vite development server
+CMD ["npm", "run", "dev", "--", "--host"]
