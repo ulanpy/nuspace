@@ -8,7 +8,7 @@ export function CommunityDescription() {
   return (
     <div className="space-y-2">
       <div className="flex justify-between">
-        <Label htmlFor="description">Description</Label>
+        <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
         <span className="text-xs text-gray-500">
           {(formData.description || "").length} / 1000
         </span>
@@ -19,6 +19,7 @@ export function CommunityDescription() {
         value={formData.description}
         onChange={handleInputChange}
         disabled={!isFieldEditable("description")}
+        required
         rows={4}
         maxLength={1000}
         placeholder="Enter community description"

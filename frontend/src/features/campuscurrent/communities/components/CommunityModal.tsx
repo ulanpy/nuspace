@@ -11,7 +11,7 @@ import {
   CommunityPermissions,
   CommunityType,
   CommunityCategory,
-  RecruitmentStatus,
+  CommunityRecruitmentStatus,
 } from "@/features/campuscurrent/types/types";
 
 // Import all the new modular components
@@ -30,6 +30,7 @@ import { pollForCommunityImages } from "@/utils/polling";
 import { useInitializeMedia } from "@/features/media/hooks/useInitializeMedia";
 import { campuscurrentAPI } from "@/features/campuscurrent/communities/api/communitiesApi";
 import { useToast } from "@/hooks/use-toast";
+import { LoginModal } from "@/components/molecules/login-modal";
 
 interface CommunityModalProps {
   isOpen: boolean;
@@ -64,6 +65,19 @@ export function CommunityModal({
   // Initialize media for edit/create flows via shared hook
   useInitializeMedia({ isEditMode, mediaItems: community?.media });
 
+  // Require authentication to use the modal
+  if (!user) {
+    return (
+      <LoginModal
+        isOpen={isOpen}
+        onClose={onClose}
+        onSuccess={onClose}
+        title="Login Required"
+        message={isEditMode ? "You need to be logged in to edit communities." : "You need to be logged in to create communities."}
+      />
+    );
+  }
+
   const isValidUrl = (value: string): boolean => {
     try {
       const url = new URL(value);
@@ -79,11 +93,12 @@ export function CommunityModal({
   ) => {
     if (!user) return;
 
+    let operationSucceeded = false;
     try {
-      const isOpen = (formData as EditCommunityData).recruitment_status === RecruitmentStatus.open;
+      const isRecruitmentOpen = (formData as EditCommunityData).recruitment_status === CommunityRecruitmentStatus.open;
       const link = (formData as EditCommunityData).recruitment_link?.trim();
 
-      if (isOpen && !link) {
+      if (isRecruitmentOpen && !link) {
         toast({
           title: "Recruitment link required",
           description: "Please provide a recruitment link when recruitment status is open",
@@ -92,7 +107,7 @@ export function CommunityModal({
         return;
       }
 
-      if (isOpen && link && !isValidUrl(link)) {
+      if (isRecruitmentOpen && link && !isValidUrl(link)) {
         toast({
           title: "Invalid recruitment URL",
           description: "Please enter a valid URL starting with https:// or http://",
@@ -106,7 +121,7 @@ export function CommunityModal({
         const editData: EditCommunityData = {
           name: formData.name,
           description: formData.description,
-          email: (formData as EditCommunityData).email,
+          email: ((formData as EditCommunityData).email || "").trim() || undefined,
           recruitment_status: (formData as EditCommunityData).recruitment_status,
           established: (formData as EditCommunityData).established,
           telegram_url: formData.telegram_url,
@@ -114,19 +129,35 @@ export function CommunityModal({
         };
 
         // Only include recruitment_link when status is open and link is non-empty
-        if (isOpen && link) {
+        if (isRecruitmentOpen && link) {
           editData.recruitment_link = link;
         }
 
         const updated = await handleUpdate(community.id.toString(), editData);
+        operationSucceeded = Boolean(updated);
+        if (operationSucceeded) {
+          resetForm();
+          onClose();
+        }
+ 
+        // Run media operations in background; do not block modal close
+        void (async () => {
+          try {
+            await profilesRef.current?.deleteMarked();
+            await profilesRef.current?.upload(updated.id);
+          } catch (mediaError) {
+            console.warn("Profile media ops failed:", mediaError);
+          }
+        })();
 
-        // First delete marked media for both zones
-        await profilesRef.current?.deleteMarked();
-        await bannersRef.current?.deleteMarked();
-
-        // Then upload new media for both zones
-        await profilesRef.current?.upload(updated.id);
-        await bannersRef.current?.upload(updated.id);
+        void (async () => {
+          try {
+            await bannersRef.current?.deleteMarked();
+            await bannersRef.current?.upload(updated.id);
+          } catch (mediaError) {
+            console.warn("Banner media ops failed:", mediaError);
+          }
+        })();
 
         // Refresh queries immediately and poll in background (do not block modal close)
         queryClient.invalidateQueries({
@@ -145,27 +176,36 @@ export function CommunityModal({
         // Create new community
         const createData: CreateCommunityData = {
           name: formData.name || "",
-          type: CommunityType.club,
-          category: CommunityCategory.academic,
-          email: (formData as CreateCommunityData).email || "",
+          type: (formData as CreateCommunityData).type || CommunityType.club,
+          category: (formData as CreateCommunityData).category || CommunityCategory.academic,
+          email: (((formData as CreateCommunityData).email || "").trim()) || undefined,
           recruitment_status: (formData as CreateCommunityData).recruitment_status,
           head: user.user.sub,
-          established: formData.established || "",
+          established: (formData as CreateCommunityData).established || new Date().toISOString().split('T')[0],
           description: formData.description || "",
-          telegram_url: formData.telegram_url || "",
-          instagram_url: formData.instagram_url || "",
+          telegram_url: formData.telegram_url || undefined,
+          instagram_url: formData.instagram_url || undefined,
         };
 
         // Only include recruitment_link when status is open and link is non-empty
-        if (isOpen && link) {
+        if (isRecruitmentOpen && link) {
           createData.recruitment_link = link;
         }
 
         const created = await handleCreate(createData);
+        operationSucceeded = Boolean(created);
+        if (operationSucceeded) {
+          resetForm();
+          onClose();
+        }
 
-        // Upload media for both zones after creation
-        await profilesRef.current?.upload(created.id);
-        await bannersRef.current?.upload(created.id);
+        // Upload media for both zones after creation in background (non-blocking)
+        void profilesRef.current?.upload(created.id).catch((mediaError) => {
+          console.warn("Failed to upload profile media:", mediaError);
+        });
+        void bannersRef.current?.upload(created.id).catch((mediaError) => {
+          console.warn("Failed to upload banner media:", mediaError);
+        });
 
         // Refresh queries immediately and poll in background (do not block modal close)
         queryClient.invalidateQueries({
@@ -181,15 +221,17 @@ export function CommunityModal({
           campuscurrentAPI.getCommunityQueryOptions
         );
       }
-
-      // Reset form and close modal
-      resetForm();
-      onClose();
+ 
+      // Closing is handled immediately on success above; keep finally fallback
     } catch (error) {
       console.error(
         `Failed to ${isEditMode ? "update" : "create"} community:`,
         error
       );
+    } finally {
+      if (operationSucceeded) {
+        // No-op since we already closed; keep as safety net
+      }
     }
   };
 
@@ -222,6 +264,13 @@ export function CommunityModal({
         className="max-w-4xl max-h-[90vh] overflow-y-auto"
       >
         <div className="space-y-6">
+          {!isEditMode && (
+            <div className="rounded-lg border border-amber-200/60 dark:border-amber-700/30 bg-gradient-to-r from-amber-50 to-pink-50 dark:from-amber-900/20 dark:to-pink-900/10 p-4">
+              <div className="text-sm md:text-base">
+                <span className="font-semibold">Anyone can create a community.</span> Rally people around your passion — game design, robotics, film nights, creative writing, you name it. Not just registered clubs.
+              </div>
+            </div>
+          )}
           {/* Media Upload Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UnifiedCommunityMediaUpload ref={profilesRef} type="communityProfiles" />
@@ -275,9 +324,19 @@ function CommunityActionsWrapper({
   onDelete: () => void;
 }) {
   const formContext = useCommunityForm();
-  const { formData, resetForm } = formContext;
+  const { formData, resetForm, validateForm } = formContext;
+  const { toast } = useToast();
 
   const handleSubmit = () => {
+    const validation = validateForm();
+    if (!validation.isValid) {
+      toast({
+        title: "Form validation failed",
+        description: validation.errors.join(". "),
+        variant: "destructive",
+      });
+      return;
+    }
     onSubmit(formData, resetForm);
   };
 

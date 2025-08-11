@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/atoms/select";
-import { RecruitmentStatus } from "@/features/campuscurrent/types/types";
+import { CommunityRecruitmentStatus, CommunityType, CommunityCategory } from "@/features/campuscurrent/types/types";
 import {
   Popover,
   PopoverContent,
@@ -27,6 +27,7 @@ export function CommunityDetailsForm() {
     handleInputChange,
     handleSelectChange,
     isFieldEditable,
+    isEditMode,
   } = useCommunityForm();
   const { toast } = useToast();
 
@@ -51,19 +52,19 @@ export function CommunityDetailsForm() {
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
     if (selectedDate) {
-      // Normalize to UTC midnight (00:00:00.000Z)
+      // Format as YYYY-MM-DD string for backend date field
       const year = selectedDate.getFullYear();
-      const month = selectedDate.getMonth();
-      const day = selectedDate.getDate();
-      const dateOnlyUtc = new Date(Date.UTC(year, month, day));
-      handleSelectChange("established", dateOnlyUtc.toISOString());
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
+      handleSelectChange("established", dateString);
     } else {
       handleSelectChange("established", "");
     }
   };
 
   const showRecruitmentLink =
-    formData.recruitment_status === RecruitmentStatus.open;
+    formData.recruitment_status === CommunityRecruitmentStatus.open;
 
   const isValidUrl = (value: string): boolean => {
     if (!value) return true;
@@ -79,7 +80,7 @@ export function CommunityDetailsForm() {
     <div className="space-y-4">
       <div className="space-y-1">
         <div className="flex justify-between">
-          <Label htmlFor="name">Community Name</Label>
+          <Label htmlFor="name">Community Name <span className="text-red-500">*</span></Label>
           <span className="text-xs text-gray-500">
             {(formData.name || "").length} / 100
           </span>
@@ -91,9 +92,54 @@ export function CommunityDetailsForm() {
           onChange={handleInputChange}
           disabled={!isFieldEditable("name")}
           required
+          minLength={3}
           maxLength={100}
-          placeholder="Enter community name"
+          placeholder="Enter community name (3-100 characters)"
         />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="type">Community Type <span className="text-red-500">*</span></Label>
+          <Select
+            name="type"
+            value={(formData as any).type || ""}
+            onValueChange={(value) => handleSelectChange("type", value)}
+            disabled={!isFieldEditable("type")}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select community type" />
+            </SelectTrigger>
+            <SelectContent className="z-[150]">
+              {Object.values(CommunityType).map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="category">Community Category <span className="text-red-500">*</span></Label>
+          <Select
+            name="category"
+            value={(formData as any).category || ""}
+            onValueChange={(value) => handleSelectChange("category", value)}
+            disabled={!isFieldEditable("category")}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select community category" />
+            </SelectTrigger>
+            <SelectContent className="z-[150]">
+              {Object.values(CommunityCategory).map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <div>
         <Label htmlFor="email">Email</Label>
@@ -131,7 +177,7 @@ export function CommunityDetailsForm() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <Label htmlFor="recruitment_status">Recruitment Status</Label>
+          <Label htmlFor="recruitment_status">Recruitment Status <span className="text-red-500">*</span></Label>
           <Select
             name="recruitment_status"
             value={formData.recruitment_status}
@@ -139,12 +185,13 @@ export function CommunityDetailsForm() {
               handleSelectChange("recruitment_status", value)
             }
             disabled={!isFieldEditable("recruitment_status")}
+            required
           >
             <SelectTrigger>
               <SelectValue placeholder="Select a status" />
             </SelectTrigger>
             <SelectContent className="z-[150]">
-              {Object.values(RecruitmentStatus).map((status) => (
+              {Object.values(CommunityRecruitmentStatus).map((status) => (
                 <SelectItem key={status} value={status}>
                   {status}
                 </SelectItem>
@@ -182,7 +229,7 @@ export function CommunityDetailsForm() {
         )}
         {isFieldEditable("established") && (
           <div>
-            <Label htmlFor="established">Established</Label>
+            <Label htmlFor="established">Established <span className="text-red-500">*</span></Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button

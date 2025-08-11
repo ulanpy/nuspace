@@ -22,7 +22,7 @@ import { Media } from "@/features/media/types/types";
       registration = "registration"
     }
 
-    export enum RecruitmentStatus {
+    export enum CommunityRecruitmentStatus {
       open = "open",
       closed = "closed"
     }
@@ -79,7 +79,7 @@ import { Media } from "@/features/media/types/types";
       type: CommunityType;
       category: CommunityCategory;
       email?: string;
-      recruitment_status: RecruitmentStatus;
+      recruitment_status: CommunityRecruitmentStatus;
       recruitment_link: string;
       description: string;
       head: string;
@@ -231,7 +231,7 @@ import { Media } from "@/features/media/types/types";
       type: CommunityType;
       category: CommunityCategory;
       email?: string;
-      recruitment_status: RecruitmentStatus;
+      recruitment_status: CommunityRecruitmentStatus;
       recruitment_link?: string;
       description: string;
       established: string;
@@ -244,7 +244,7 @@ import { Media } from "@/features/media/types/types";
       name?: string;
       email?: string;
       established?: string;
-      recruitment_status?: RecruitmentStatus;
+      recruitment_status?: CommunityRecruitmentStatus;
       recruitment_link?: string;
       description?: string;
       telegram_url?: string;

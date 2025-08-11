@@ -41,10 +41,11 @@ async def add_community(
     community_head: User = Depends(deps.user_exists_or_404),
 ) -> schemas.CommunityResponse:
     """
-    Create a new community. Requires admin privileges.
+    Create a new community. Any registered user can create communities.
 
     **Access Policy:**
-    - The user must have admin privileges
+    - Any registered user can create communities
+    - Users can only create communities for themselves (head must be "me" or their own sub)
 
     **Parameters:**
     - `community_data` (schemas.CommunityRequest): Data for the new community.
@@ -53,8 +54,8 @@ async def add_community(
     - `schemas.CommunityResponse`: Created community with media.
 
     **Notes:**
-    - If admin privileges are not present, the request will fail with 403.
-    - The club is indexed in Meilisearch after creation.
+    - The community is indexed in Meilisearch after creation.
+    - Users can only set themselves as the head of the community.
     """
     await CommunityPolicy(user=user).check_permission(
         action=ResourceAction.CREATE, community_data=community_data

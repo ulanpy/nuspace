@@ -9,6 +9,7 @@ import { useEvents } from "@/features/campuscurrent/events/hooks/useEvents";
 import { useCommunities } from "@/features/campuscurrent/communities/hooks/use-communities";
 import { Community } from "@/features/campuscurrent/types/types";
 import { Media, MediaFormat } from "@/features/media/types/types";
+import { CommunityModal } from "@/features/campuscurrent/communities/components/CommunityModal";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 
 // Dynamic import of all webp files in the hero_assets directory
@@ -118,6 +119,7 @@ function AutoCarousel({
 export function EventsLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isCreateCommunityModalOpen, setIsCreateCommunityModalOpen] = useState(false);
 
   // Scroll to top on route change unless there's a hash
   useEffect(() => {
@@ -341,8 +343,7 @@ export function EventsLayout() {
               Create Community
             </div>
           ),
-          onClick: () =>
-            window.open("https://forms.gle/rsrAWGMCsYEeBg1y9", "_blank"),
+          onClick: () => setIsCreateCommunityModalOpen(true),
         },
         slides: communitySlides,
       };
@@ -417,7 +418,15 @@ export function EventsLayout() {
         </>
       )}
 
+      {/* Main Content */}
       <Outlet />
+
+      {/* Create Community Modal */}
+      <CommunityModal
+        isOpen={isCreateCommunityModalOpen}
+        onClose={() => setIsCreateCommunityModalOpen(false)}
+        isEditMode={false}
+      />
     </div>
   );
 }

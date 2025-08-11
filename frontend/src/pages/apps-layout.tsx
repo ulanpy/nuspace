@@ -9,6 +9,7 @@ import { useUser } from "@/hooks/use-user";
 import { ROUTES } from "@/data/routes";
 import { BackNavigationProvider } from "@/context/BackNavigationContext";
 import { BackButton } from "@/components/molecules/BackButton";
+import { Badge } from "@/components/atoms/badge";
 
 export default function AppsLayout() {
   const { user, login, isLoading } = useUser();
@@ -49,7 +50,15 @@ export default function AppsLayout() {
         <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-lg">
           <div className="container flex h-12 sm:h-14 items-center justify-between px-3 sm:px-4">
             <BackButton label="Back" />
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Badge
+                variant="outline"
+                className="px-2.5 py-0.5 text-[10px] sm:text-xs rounded-full border-blue-200 bg-blue-50 text-blue-900 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800"
+                aria-label="Service status: Beta"
+                title="This service is in Beta"
+              >
+                Beta
+              </Badge>
               <ThemeToggle />
               <LoginButton />
             </div>

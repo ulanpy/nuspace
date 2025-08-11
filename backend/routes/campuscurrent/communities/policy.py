@@ -43,10 +43,12 @@ class CommunityPolicy:
             return True
 
         if action == ResourceAction.CREATE:
-            if self.user_role != UserRole.admin.value:
+            # Any registered user can create communities
+            # Validate that users can only create communities for themselves
+            if community_data and community_data.head != "me" and community_data.head != self.user_sub:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Only admins can create communities",
+                    detail="You can only create communities for yourself",
                 )
             return True
 

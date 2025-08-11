@@ -26,8 +26,8 @@ class CommunityCreateRequest(BaseModel):
     category: CommunityCategory = Field(
         ..., description="The category of the community", example=CommunityCategory.academic
     )
-    email: EmailStr = Field(
-        ...,
+    email: EmailStr | None = Field(
+        default=None,
         description="The email of the community",
         example="nufencingclub@gmail.com",
     )
@@ -37,7 +37,7 @@ class CommunityCreateRequest(BaseModel):
         example=CommunityRecruitmentStatus.open,
     )
     recruitment_link: HttpUrl | None = Field(
-        ...,
+        default=None,
         description="The link to the recruitment page",
         example="https://www.google.com",
     )

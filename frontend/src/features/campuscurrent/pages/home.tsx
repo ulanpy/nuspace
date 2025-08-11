@@ -4,11 +4,15 @@ import { useState } from "react";
 
 import { LoginModal } from "@/components/molecules/login-modal";
 import { Button } from "@/components/atoms/button";
+import { CommunityModal } from "@/features/campuscurrent/communities/components/CommunityModal";
+import { useUser } from "@/hooks/use-user";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 
 // Main component
 export default function NUEventsPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isCreateCommunityModalOpen, setIsCreateCommunityModalOpen] = useState(false);
+  const { user } = useUser();
 
   return (
     <MotionWrapper>
@@ -21,13 +25,16 @@ export default function NUEventsPage() {
                 Are you a student community?
               </h2>
               <p className="text-muted-foreground">
-                Log in to the platform with your NU account, and fill in the
-                form to create your community's profile.
+                Log in to the platform with your NU account, and create your community's profile.
               </p>
               <Button
-                onClick={() =>
-                  window.open("https://forms.gle/rsrAWGMCsYEeBg1y9", "_blank")
-                }
+                onClick={() => {
+                  if (user) {
+                    setIsCreateCommunityModalOpen(true);
+                  } else {
+                    setShowLoginModal(true);
+                  }
+                }}
                 size="lg"
               >
                 Register Your Community
@@ -42,7 +49,14 @@ export default function NUEventsPage() {
           onClose={() => setShowLoginModal(false)}
           onSuccess={() => {}}
           title="Login Required"
-          message="You need to be logged in to add events to your Google Calendar."
+          message="You need to be logged in to create a community."
+        />
+
+        {/* Create Community Modal */}
+        <CommunityModal
+          isOpen={isCreateCommunityModalOpen}
+          onClose={() => setIsCreateCommunityModalOpen(false)}
+          isEditMode={false}
         />
       </div>
     </MotionWrapper>

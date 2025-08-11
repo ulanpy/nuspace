@@ -6,25 +6,30 @@ import { Calendar } from "lucide-react";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { CommunityCard } from "@/features/campuscurrent/communities/components/CommunityCard";
 import { useCommunities } from "@/features/campuscurrent/communities/hooks/use-communities";
-import {
-  Community,
-  CommunityCategory,
-} from "@/features/campuscurrent/types/types";
+import { Community, CommunityCategory } from "@/features/campuscurrent/types/types";
 import { ConditionDropdown } from "@/components/molecules/condition-dropdown";
 import { SearchInput } from "@/components/molecules/search-input";
 import { useSearchLogic } from "@/hooks/use-search-logic";
 import { usePreSearchCommunities } from "@/features/campuscurrent/communities/api/hooks/usePreSearchCommunities";
 import { ROUTES } from "@/data/routes";
-import { useLocation } from "react-router-dom";
+// import { useLocation } from "react-router-dom";
+// import { Button } from "@/components/atoms/button";
+// import { useUser } from "@/hooks/use-user";
 
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { Pagination } from "@/components/molecules/pagination";
 import { FilterContainer } from "@/components/organisms/filter-container";
+import { Badge } from "@/components/atoms/badge";
 
 export default function CommunitiesPage() {
-  const location = useLocation();
+  // const location = useLocation();
+  // const { user } = useUser();
   const [selectedCommunityCategory, setSelectedCommunityCategory] =
     useState<string>("All");
+  // const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // Open-only filter toggle
+  const [isWifiFilterActive, setIsWifiFilterActive] = useState<boolean>(false);
 
   const normalize = (value: unknown) =>
     String(value ?? "").trim().toLowerCase();
@@ -78,22 +83,35 @@ export default function CommunitiesPage() {
   useEffect(() => {
     if (!communities || !Array.isArray(communities.communities)) return;
 
-    if (selectedCommunityCategory === "All") {
-      setFilteredCommunities(communities.communities);
-      return;
+    let next = communities.communities as Community[];
+
+    if (selectedCommunityCategory !== "All") {
+      const normalizedSelected = alias(normalize(selectedCommunityCategory));
+      next = next.filter((community: Community) => {
+        const normalizedCommunityCategory = alias(normalize(community.category));
+        return normalizedCommunityCategory === normalizedSelected;
+      });
     }
 
-    const normalizedSelected = alias(normalize(selectedCommunityCategory));
-    const filtered = communities.communities.filter((community: Community) => {
-      const normalizedCommunityCategory = alias(normalize(community.category));
-      return normalizedCommunityCategory === normalizedSelected;
-    });
-    setFilteredCommunities(filtered);
-  }, [selectedCommunityCategory, communities]);
+    if (isWifiFilterActive) {
+      next = next.filter(
+        (community: Community) => normalize(community.recruitment_status) === "open"
+      );
+    }
+
+    setFilteredCommunities(next);
+  }, [selectedCommunityCategory, isWifiFilterActive, communities]);
 
   const handleCategoryChange = (category: string) => {
     setSelectedCommunityCategory(category);
     // Reset to first page on filter change to avoid empty results on later pages
+    setPage(1);
+  };
+
+  // removed dropdown handler
+
+  const handleWifiButtonClick = () => {
+    setIsWifiFilterActive((prev) => !prev);
     setPage(1);
   };
 
@@ -104,35 +122,101 @@ export default function CommunitiesPage() {
     }
   }, [communities?.total_pages, page, setPage]);
 
-  // Ensure list is focused after navigation (e.g., pressing Enter or selecting a suggestion)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      document
-        .getElementById("communities-section")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [location.search]);
+  // Removed auto-scroll on navigation to prevent jumping down to communities list by default
 
   return (
     <MotionWrapper>
         <div className="w-full max-w-none">
           {/* Search + Category Filter in one row */}
           <FilterContainer className="z-[5] mb-6">
-            <div className="flex w-full">
-              <ConditionDropdown
-                conditions={categoryOptions}
-                selectedCondition={selectedCommunityCategory}
-                setSelectedCondition={handleCategoryChange}
-                disableNavigation={true}
-              />
-              <SearchInput
-                inputValue={inputValue}
-                setInputValue={setInputValue}
-                preSearchedItems={preSearchedItems}
-                handleSearch={handleSearch}
-                setKeyword={setKeyword}
-              />
+            <style>
+              {`
+              @keyframes wifiPulse {
+                0%, 100% { stroke-opacity: 0.4; }
+                50% { stroke-opacity: 1; }
+              }
+            `}
+            </style>
+            <div className="flex w-full gap-4 items-center">
+              <div className="flex flex-1 gap-2">
+                <ConditionDropdown
+                  conditions={categoryOptions}
+                  selectedCondition={selectedCommunityCategory}
+                  setSelectedCondition={handleCategoryChange}
+                  disableNavigation={true}
+                />
+                <SearchInput
+                  inputValue={inputValue}
+                  setInputValue={setInputValue}
+                  preSearchedItems={preSearchedItems}
+                  handleSearch={handleSearch}
+                  setKeyword={setKeyword}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleWifiButtonClick}
+                  className={`relative inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${
+                    isWifiFilterActive
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+                      : "border-muted bg-background"
+                  }`}
+                  aria-pressed={isWifiFilterActive}
+                  aria-label="Toggle open-only communities"
+                  title={isWifiFilterActive ? "Showing open-only" : "Show open-only"}
+                >
+                  {/* WiFi arcs icon */}
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path
+                      d="M1.42 9a16 16 0 0 1 21.16 0"
+                      style={{
+                        animation: isWifiFilterActive
+                          ? "wifiPulse 1.2s ease-in-out infinite"
+                          : undefined,
+                        animationDelay: isWifiFilterActive ? "0.3s" : undefined,
+                      }}
+                    />
+                    <path
+                      d="M5 12.55a11 11 0 0 1 14 0"
+                      style={{
+                        animation: isWifiFilterActive
+                          ? "wifiPulse 1.2s ease-in-out infinite"
+                          : undefined,
+                        animationDelay: isWifiFilterActive ? "0.15s" : undefined,
+                      }}
+                    />
+                    <path
+                      d="M8.53 16.11a6 6 0 0 1 6.95 0"
+                      style={{
+                        animation: isWifiFilterActive
+                          ? "wifiPulse 1.2s ease-in-out infinite"
+                          : undefined,
+                        animationDelay: isWifiFilterActive ? "0s" : undefined,
+                      }}
+                    />
+                    <circle cx="12" cy="20" r="1.5" fill="currentColor" />
+                  </svg>
+                  <span
+                    className={`${
+                      isWifiFilterActive
+                        ? "absolute inset-0 rounded-full ring-2 ring-blue-400/60"
+                        : ""
+                    }`}
+                    aria-hidden
+                  />
+                </button>
+              </div>
             </div>
           </FilterContainer>
       <div className="w-full overflow-x-hidden" id="communities-section">

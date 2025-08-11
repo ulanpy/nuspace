@@ -58,7 +58,14 @@ export function CommunityCard({ community }: { community: Community }) {
             {community.type[0].toUpperCase()}
             {community.type.slice(1)}
           </Badge>
-          <Badge variant="secondary" className="text-xs">
+          <Badge
+            variant={community.recruitment_status === "open" ? "outline" : "secondary"}
+            className={`text-xs ${
+              community.recruitment_status === "open"
+                ? "bg-blue-50 text-blue-900 border-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800"
+                : ""
+            }`}
+          >
             Recruitment: {community.recruitment_status}
           </Badge>
         </div>
