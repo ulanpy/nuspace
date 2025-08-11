@@ -1,0 +1,83 @@
+/* ####################################### */
+/* ######## Metrics Configuration ######## */
+/* ####################################### */
+
+/* -------- EXPORTERS -------- */
+
+//Cadvisor exporter component for exposing Docker container metrics
+prometheus.exporter.cadvisor "docker" {
+	docker_host = "unix:///var/run/docker.sock"
+}
+
+// Node Exporter exporter component for exposing Docker container metrics
+prometheus.exporter.unix "host" { }
+
+/* -------- SCRAPERS -------- */
+
+// Cadvisor Scraper Job
+prometheus.scrape "docker_scrape" {
+	targets    = prometheus.exporter.cadvisor.docker.targets
+	forward_to = [prometheus.remote_write.prometheus_write.receiver]
+	job_name   = "cadvisor"
+}
+
+// Node Exporter Scraper Job
+prometheus.scrape "host_scrape" {
+	targets    = prometheus.exporter.unix.host.targets
+	forward_to = [prometheus.remote_write.prometheus_write.receiver]
+	job_name   = "node_exporter"
+}
+
+// FastAPI Scraper Job
+prometheus.scrape "application_scrape" {
+	targets = [{
+		__address__      = "fastapi:8000",
+		__metrics_path__ = "/api/metrics",
+	}]
+	forward_to = [prometheus.remote_write.prometheus_write.receiver]
+	job_name   = "application"
+}
+
+/* -------- REMOTE WRITE -------- */
+
+// Configure a prometheus.remote_write component to send metrics to a Prometheus server.
+prometheus.remote_write "prometheus_write" {
+	endpoint {
+		url = "http://prometheus:9090/prometheus/api/v1/write"
+	}
+}
+
+/* ####################################### */
+/* ######## Logging Configuration ######## */
+/* ####################################### */
+
+// Discover Docker containers and extract metadata
+discovery.docker "linux" {
+	host = "unix:///var/run/docker.sock"
+}
+
+// Define a relabeling rule to create a service name from the container name.
+discovery.relabel "logs_integrations_docker" {
+	targets = []
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.*)"
+		target_label  = "service_name"
+	}
+}
+
+// Configure a loki.source.docker component to collect logs from Docker containers.
+loki.source.docker "loki_default" {
+	host          = "unix:///var/run/docker.sock"
+	targets       = discovery.docker.linux.targets
+	labels        = {"platform" = "docker"}
+	relabel_rules = discovery.relabel.logs_integrations_docker.rules
+	forward_to    = [loki.write.loki_write.receiver]
+}
+
+loki.write "loki_write" {
+	endpoint {
+		url = "http://loki:3100/loki/api/v1/push"
+	}
+}
