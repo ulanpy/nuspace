@@ -21,6 +21,14 @@ function App() {
     <ListingProvider>
       <MediaUploadProvider>
         <MediaEditProvider>
+          <Header
+            right={
+              <>
+                <ThemeToggle />
+                <LoginButton />
+              </>
+            }
+          ></Header>
           <Routes>
             <Route path={ROUTES.HOME} element={<HomePage />} />
             {/* <Route path={ROUTES.ADMIN.ROOT} element={<AdminLayout />}>
