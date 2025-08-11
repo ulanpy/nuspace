@@ -8,6 +8,7 @@ import { useUser } from "@/hooks/use-user";
 import { ReportButton } from "@/components/molecules/buttons/report-button";
 import { TelegramStatus } from "@/components/molecules/telegram-status";
 import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
+import Footer from "@/components/ui/footer";
 import nuSpacePresentation from "@/assets/images/nu-space-presentation.jpg";
 import welcomeNuSpace from "@/assets/images/welcome-nu-space.jpg";
 import { FlaskConical } from "lucide-react";
