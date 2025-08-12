@@ -44,6 +44,7 @@ services:
     volumes:
       - ../backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
       - .env:/nuros/.env:ro
+    working_dir: /nuros/backend
     command: alembic upgrade head
 
   nginx:
