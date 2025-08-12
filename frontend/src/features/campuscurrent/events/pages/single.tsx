@@ -114,7 +114,7 @@ export default function EventDetailPage() {
       </div>
     );
   }
-
+``
   if (isError || !event) {
     return (
       <div className="container mx-auto px-4 py-6">
@@ -132,15 +132,63 @@ export default function EventDetailPage() {
 
   const eventDate = new Date(event.event_datetime);
   const isPast = eventDate < new Date();
-  // const isUpcoming = !isPast;
-  const communityProfileImg = event.community?.media?.find((m) => m.media_format === "profile")?.url || event.community?.media?.[0]?.url;
+  const communityProfileImg =
+    event.community?.media?.find((m) => m.media_format === "profile")?.url ||
+    event.community?.media?.[0]?.url;
+
+  // Determine which action buttons to show
+  const actionButtons = [];
+
+  if (!isPast) {
+    actionButtons.push(
+      <Button
+        key="calendar"
+        className="flex items-center gap-2 flex-1 sm:flex-none"
+        onClick={handleAddToCalendar}
+      >
+        <CalendarPlus className="h-4 w-4" />
+        <span>Add to Calendar</span>
+      </Button>
+    );
+  }
+
+  if (!isPast && event.policy === "registration" && event.registration_link) {
+    actionButtons.push(
+      <a
+        key="register"
+        href={event.registration_link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-1 sm:flex-none"
+      >
+        <Button className="flex items-center gap-2 w-full">
+          <ExternalLink className="h-4 w-4" />
+          <span>Register</span>
+        </Button>
+      </a>
+    );
+  }
+
+  if (event.permissions?.can_edit === true) {
+    actionButtons.push(
+      <Button
+        key="edit"
+        variant="outline"
+        className="flex items-center gap-2 flex-1 sm:flex-none"
+        onClick={() => setShowEditModal(true)}
+      >
+        <Pencil className="h-4 w-4" />
+        <span>Edit Event</span>
+      </Button>
+    );
+  }
 
   return (
-    <div className="pb-20 px-4 max-w-full overflow-hidden">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Event Image */}
-        <div className="relative">
-          <div className="relative h-80 sm:h-96 md:h-[500px] w-full rounded-lg overflow-hidden bg-muted">
+    <div className="container mx-auto pb-20 px-4 max-w-7xl">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+        {/* Event Image - Left Column on Large Screens */}
+        <div className="lg:sticky lg:top-6 lg:self-start">
+          <div className="relative h-80 sm:h-96 lg:h-[600px] w-full rounded-xl overflow-hidden bg-muted shadow-sm">
             {event.media && event.media.length > 0 && !imageError ? (
               <>
                 {!imageLoaded && (
@@ -177,10 +225,11 @@ export default function EventDetailPage() {
           </div>
         </div>
 
-        {/* Event Details */}
-        <div className="space-y-4">
-          <div className="flex flex-wrap gap-2 mb-3">
-            <Badge variant="outline">
+        {/* Event Details - Right Column on Large Screens */}
+        <div className="space-y-6">
+          {/* Badges */}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="font-medium">
               {event.type[0].toUpperCase()}
               {event.type.slice(1)}
             </Badge>
@@ -193,182 +242,178 @@ export default function EventDetailPage() {
             />
           </div>
 
-          <div className="flex justify-between items-start">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-bold break-words">{event.name}</h1>
-              {event.scope === "community" ? (
-                <div
-                  className="text-primary hover:underline cursor-pointer mt-1 break-words"
-                  onClick={() =>
-                    navigate(
-                      ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
-                        event.community?.id.toString() ?? ""
-                      )
+          {/* Title and Organizer */}
+          <div className="space-y-2">
+            <h1 className="text-3xl lg:text-4xl font-bold leading-tight break-words">
+              {event.name}
+            </h1>
+            {event.scope === "community" ? (
+              <div
+                className="text-primary hover:underline cursor-pointer text-lg font-medium break-words"
+                onClick={() =>
+                  navigate(
+                    ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
+                      event.community?.id.toString() ?? ""
                     )
-                  }
-                >
-                  by {event.community?.name || "Unknown Community"}
-                </div>
-              ) : (
-                <div className="text-muted-foreground mt-1 break-words">
-                  by {event.creator?.name} {event.creator?.surname}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 flex-shrink-0" />
-              <span>{formatEventDate(event.event_datetime)}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 flex-shrink-0" />
-              <span>{event.duration} minutes</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 flex-shrink-0" />
-              <span>{event.place}</span>
-            </div>
-            {event.community && (
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 flex-shrink-0" />
-                <span>Organized by {event.community.name}</span>
+                  )
+                }
+              >
+                by {event.community?.name || "Unknown Community"}
+              </div>
+            ) : (
+              <div className="text-muted-foreground text-lg break-words">
+                by {event.creator?.name} {event.creator?.surname}
               </div>
             )}
           </div>
 
-          <div className="h-px w-full bg-border my-4" />
+          {/* Event Info */}
+          <div className="space-y-3 text-muted-foreground">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-5 w-5 flex-shrink-0" />
+              <span className="text-base">
+                {formatEventDate(event.event_datetime)}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5 flex-shrink-0" />
+              <span className="text-base">{event.duration} minutes</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <MapPin className="h-5 w-5 flex-shrink-0" />
+              <span className="text-base">{event.place}</span>
+            </div>
+            {event.community && (
+              <div className="flex items-center gap-3">
+                <Users className="h-5 w-5 flex-shrink-0" />
+                <span className="text-base">
+                  Organized by {event.community.name}
+                </span>
+              </div>
+            )}
+          </div>
 
-          <div className="flex flex-wrap gap-2 mt-6">
-            {!isPast && (
-              <Button
-                className="flex items-center gap-1"
-                onClick={handleAddToCalendar}
-              >
-                <CalendarPlus className="h-4 w-4" />
-                <span>Add to Calendar</span>
-              </Button>
+          {/* Description */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">About this event</h2>
+            <p className="text-muted-foreground text-base leading-relaxed whitespace-pre-line break-words">
+              {event.description}
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-3 pt-4">
+            {/* Primary action buttons row */}
+            {actionButtons.length > 0 && (
+              <div className="flex flex-col sm:flex-row gap-3">
+                {actionButtons}
+              </div>
             )}
-            {!isPast && event.policy === 'registration' && event.registration_link && (
-              <a href={event.registration_link} target="_blank" rel="noopener noreferrer">
-                <Button className="flex items-center gap-1">
-                  <ExternalLink className="h-4 w-4" />
-                  <span>Register</span>
-                </Button>
-              </a>
-            )}
-            {event.permissions?.can_edit === true && (
+
+            {/* Share button row */}
+            <div className="flex">
               <Button
                 variant="outline"
-                className="flex items-center gap-2"
-                onClick={() => setShowEditModal(true)}
+                className="flex items-center gap-2 w-full sm:w-auto"
+                onClick={shareEvent}
               >
-                <Pencil className="h-4 w-4" />
-                Edit Event
+                <Share2 className="h-4 w-4" />
+                <span>Share Event</span>
               </Button>
-            )}
-            <Button
-              variant="outline"
-              className="flex items-center gap-1"
-              onClick={shareEvent}
-            >
-              <Share2 className="h-4 w-4" />
-              <span>Share</span>
-            </Button>
+            </div>
           </div>
+
+          {/* Event Organizers */}
+          {((event.scope === "community" && event.community) ||
+            (event.scope === "personal" && event.creator)) && (
+            <div className="mt-8">
+              <div className="rounded-xl border bg-card p-6 shadow-sm">
+                <h3 className="text-lg font-semibold mb-4">Event Organizers</h3>
+                <div className="space-y-4">
+                  {event.scope === "community" ? (
+                    <div
+                      className="flex items-center gap-4 cursor-pointer hover:bg-muted/50 p-3 rounded-lg transition-colors"
+                      onClick={() =>
+                        navigate(
+                          ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
+                            event.community?.id.toString() ?? ""
+                          )
+                        )
+                      }
+                    >
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                        {communityProfileImg ? (
+                          <img
+                            src={communityProfileImg}
+                            alt={`${event.community?.name} profile`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Users className="h-6 w-6 text-primary" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-base break-words">
+                          {event.community?.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground break-words">
+                          Community
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4 p-3">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                        <img
+                          src={event.creator?.picture}
+                          alt={`${event.creator?.name}'s profile`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-base break-words">
+                          {`${event.creator?.name} ${event.creator?.surname}`}
+                        </p>
+                        <p className="text-sm text-muted-foreground break-words">
+                          Event Organizer
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {event.scope === "community" && event.creator && (
+                    <div className="flex items-center gap-4 p-3">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                        {event.creator?.picture ? (
+                          <img
+                            src={event.creator.picture}
+                            alt={`${event.creator?.name} ${event.creator?.surname}`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Users className="h-6 w-6 text-primary" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-base break-words">
+                          {`${event.creator?.name ?? ""} ${
+                            event.creator?.surname ?? ""
+                          }`.trim() || "Event Coordinator"}
+                        </p>
+                        <p className="text-sm text-muted-foreground break-words">
+                          Event Coordinator
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Organizer details */}
-      {(event.scope === "community" && event.community) ||
-      (event.scope === "personal" && event.creator) ? (
-        <div className="mt-8 space-y-6">
-          {/* Organizer information */}
-          <div className="rounded-lg border p-4">
-            <h3 className="font-medium mb-3">Event Organizers</h3>
-            <div className="space-y-3">
-              {event.scope === "community" ? (
-                <div
-                  className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition"
-                  onClick={() =>
-                    navigate(
-                      ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
-                        event.community?.id.toString() ?? ""
-                      )
-                    )
-                  }
-                >
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                    {communityProfileImg ? (
-                      <img
-                        src={communityProfileImg}
-                        alt={`${event.community?.name} profile`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Users className="h-5 w-5 text-primary" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium break-words">
-                      {event.community?.name}
-                    </p>
-                    <p className="text-sm text-muted-foreground break-words">
-                      Community
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                    <img
-                      src={event.creator?.picture}
-                      alt={`${event.creator?.name}'s profile`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium break-words">
-                      {`${event.creator?.name} ${event.creator?.surname}`}
-                    </p>
-                    <p className="text-sm text-muted-foreground break-words">
-                      Event Organizer
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {event.scope === "community" && (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                    {event.creator?.picture ? (
-                      <img
-                        src={event.creator.picture}
-                        alt={`${event.creator?.name} ${event.creator?.surname}`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Users className="h-5 w-5 text-primary" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium break-words">
-                      {`${event.creator?.name ?? ""} ${
-                        event.creator?.surname ?? ""
-                      }`.trim() || "Event Coordinator"}
-                    </p>
-                    <p className="text-sm text-muted-foreground break-words">
-                      Event Coordinator
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : null}
-
+      {/* Modals */}
       <EventModal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
