@@ -280,92 +280,94 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-              {/* Organizer information */}
-              <div className="rounded-lg border p-4">
-                <h3 className="font-medium mb-3">Event Organizers</h3>
-                <div className="space-y-3">
-                  {event.scope === "community" ? (
-                    <div
-                      className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition"
-                      onClick={() =>
-                        navigate(
-                          ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
-                            event.community?.id.toString() ?? ""
-                          )
-                        )
-                      }
-                    >
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                        {communityProfileImg ? (
-                          <img
-                            src={communityProfileImg}
-                            alt={`${event.community?.name} profile`}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Users className="h-5 w-5 text-primary" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium break-words">
-                          {event.community?.name}
-                        </p>
-                        <p className="text-sm text-muted-foreground break-words">
-                          Community
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                        <img
-                          src={event.creator?.picture}
-                          alt={`${event.creator?.name}'s profile`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium break-words">
-                          {`${event.creator?.name} ${event.creator?.surname}`}
-                        </p>
-                        <p className="text-sm text-muted-foreground break-words">
-                          Event Organizer
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {event.scope === "community" && (
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                        {event.creator?.picture ? (
-                          <img
-                            src={event.creator.picture}
-                            alt={`${event.creator?.name} ${event.creator?.surname}`}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Users className="h-5 w-5 text-primary" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium break-words">
-                          {`${event.creator?.name ?? ""} ${
-                            event.creator?.surname ?? ""
-                          }`.trim() || "Event Coordinator"}
-                        </p>
-                        <p className="text-sm text-muted-foreground break-words">
-                          Event Coordinator
-                        </p>
-                      </div>
-                    </div>
-                  )}
+      {/* Organizer details */}
+      {(event.scope === "community" && event.community) ||
+      (event.scope === "personal" && event.creator) ? (
+        <div className="mt-8 space-y-6">
+          {/* Organizer information */}
+          <div className="rounded-lg border p-4">
+            <h3 className="font-medium mb-3">Event Organizers</h3>
+            <div className="space-y-3">
+              {event.scope === "community" ? (
+                <div
+                  className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition"
+                  onClick={() =>
+                    navigate(
+                      ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
+                        event.community?.id.toString() ?? ""
+                      )
+                    )
+                  }
+                >
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                    {communityProfileImg ? (
+                      <img
+                        src={communityProfileImg}
+                        alt={`${event.community?.name} profile`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Users className="h-5 w-5 text-primary" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium break-words">
+                      {event.community?.name}
+                    </p>
+                    <p className="text-sm text-muted-foreground break-words">
+                      Community
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                    <img
+                      src={event.creator?.picture}
+                      alt={`${event.creator?.name}'s profile`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium break-words">
+                      {`${event.creator?.name} ${event.creator?.surname}`}
+                    </p>
+                    <p className="text-sm text-muted-foreground break-words">
+                      Event Organizer
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {event.scope === "community" && (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                    {event.creator?.picture ? (
+                      <img
+                        src={event.creator.picture}
+                        alt={`${event.creator?.name} ${event.creator?.surname}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Users className="h-5 w-5 text-primary" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium break-words">
+                      {`${event.creator?.name ?? ""} ${
+                        event.creator?.surname ?? ""
+                      }`.trim() || "Event Coordinator"}
+                    </p>
+                    <p className="text-sm text-muted-foreground break-words">
+                      Event Coordinator
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-          ) : null}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <EventModal
         isOpen={showEditModal}
