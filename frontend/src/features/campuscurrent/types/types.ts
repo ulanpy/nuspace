@@ -79,6 +79,8 @@ import { Media } from "@/features/media/types/types";
       name: string;
       type: CommunityType;
       category: CommunityCategory;
+      /** Whether the community is verified */
+      verified?: boolean;
       email?: string;
       recruitment_status: CommunityRecruitmentStatus;
       recruitment_link: string;

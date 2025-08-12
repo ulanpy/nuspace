@@ -1,4 +1,6 @@
+import json
 import random
+import secrets
 from typing import Annotated
 
 from aiogram import Bot
@@ -27,60 +29,115 @@ from .utils import (
 router = APIRouter(tags=["Auth Routes"])
 
 
+# /login: always pass a state
 @router.get("/login")
-async def login(request: Request):
-    """
-    Redirect user to Google login via Keycloak.
-    """
+async def login(request: Request, state: str | None = None, return_to: str | None = None):
     kc: KeyCloakManager = request.app.state.kc_manager
-    print(kc.KEYCLOAK_REDIRECT_URI)
+    redis = request.app.state.redis
+
+    # If no state provided (normal web), create CSRF state
+    if not state:
+        state = secrets.token_urlsafe(32)
+        csrf_key = f"csrf:{state}"
+        # Optionally: await redis.set(csrf_key, return_to or "/", ex=600, nx=True)
+        await redis.setex(csrf_key, 600, return_to or "/")
+
     return await getattr(kc.oauth, kc.__class__.__name__.lower()).authorize_redirect(
-        request, kc.KEYCLOAK_REDIRECT_URI
+        request,
+        kc.KEYCLOAK_REDIRECT_URI,
+        state=state,
     )
 
 
-@router.get("/auth/callback", response_description="Redirect  user")
+# /auth/callback: require and validate state
+@router.get("/auth/callback")
 async def auth_callback(
     request: Request,
     db_session: AsyncSession = Depends(get_db_session),
     creds: dict = Depends(exchange_code_for_credentials),
+    state: str | None = None,
 ):
-    print(request.app.state.kc_manager.KEYCLOAK_REDIRECT_URI)
-    """
-    Handle the OAuth2 callback to exchange authorization code for tokens, issue JWT, and app token.
-    """
+    if not state:
+        raise HTTPException(status_code=400, detail="Missing state")
+
     kc_manager: KeyCloakManager = request.app.state.kc_manager
     app_token_manager: AppTokenManager = request.app.state.app_token_manager
+    redis = request.app.state.redis
 
+    # Validate Keycloak token from the fresh exchange
     try:
-        # Validate the freshly obtained Keycloak access token
-        # No refresh logic needed here as tokens are new
         await kc_manager.validate_keycloak_token(creds["access_token"])
     except JWTError as e:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid Keycloak token after code exchange: {str(e)}",
+            status_code=401, detail=f"Invalid Keycloak token after code exchange: {str(e)}"
         )
 
-    user_schema: UserSchema = await create_user_schema(creds)  # creds contain userinfo
+    # Upsert user and mint app token
+    user_schema: UserSchema = await create_user_schema(creds)
     user: User = await upsert_user(db_session, user_schema)
+    app_token_str, _claims = await app_token_manager.create_app_token(user.sub, db_session)
 
-    # Always create a new app token during initial login/callback
-    app_token_str, app_claims = await app_token_manager.create_app_token(
-        user.sub, db_session  # or kc_principal["sub"]
-    )
-
+    # Prepare base redirect and cookies
     redirect_response = RedirectResponse(url=config.HOME_URL, status_code=303)
-    set_kc_auth_cookies(redirect_response, creds)  # Set Keycloak cookies
-    redirect_response.set_cookie(  # Set App token cookie
+    set_kc_auth_cookies(redirect_response, creds)
+    redirect_response.set_cookie(
         key=config.COOKIE_APP_NAME,
         value=app_token_str,
         httponly=True,
         secure=not config.IS_DEBUG,
         samesite="Lax",
-        max_age=app_token_manager.token_expiry.total_seconds(),  # Optional: align with token expiry
+        max_age=app_token_manager.token_expiry.total_seconds(),
     )
-    return redirect_response
+
+    # 1) MiniApp flow: state must exist in MiniApp space
+    miniapp_state_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}{state}"
+    creds_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}creds:{state}"
+    miniapp_exists = await redis.get(miniapp_state_key)
+
+    if miniapp_exists:
+        try:
+            # Store minimal creds needed; TTL prevents long exposure
+            await redis.setex(
+                creds_key,
+                300,
+                json.dumps(
+                    {
+                        "access_token": creds.get("access_token"),
+                        "refresh_token": creds.get("refresh_token"),
+                        "id_token": creds.get("id_token"),
+                    }
+                ),
+            )
+        finally:
+            await redis.delete(miniapp_state_key)
+
+        ua = (request.headers.get("user-agent") or "").lower()
+        is_mobile = any(
+            s in ua for s in ["iphone", "ipad", "ipod", "android", "mobile", "windows phone"]
+        )
+        if is_mobile:
+            if (
+                not getattr(config, "TG_APP_PATH", None)
+                or str(config.TG_APP_PATH).lower() == "startapp"
+            ):
+                tme_url = f"https://t.me/{config.BOT_USERNAME}?startapp={state}"
+            else:
+                tme_url = (
+                    f"https://t.me/{config.BOT_USERNAME}/{config.TG_APP_PATH}?startapp={state}"
+                )
+            return RedirectResponse(url=tme_url, status_code=303)
+        return redirect_response
+
+    # 2) Web flow: validate CSRF state and consume it
+    csrf_key = f"csrf:{state}"
+    csrf_return_to = await redis.get(csrf_key)
+    if csrf_return_to is not None:
+        await redis.delete(csrf_key)
+        # Optional: validate return_to against a whitelist to prevent open redirects
+        return redirect_response
+
+    # 3) Neither MiniApp nor CSRF state is valid → reject
+    raise HTTPException(status_code=400, detail="Invalid or expired state")
 
 
 @router.post("/connect-tg")
@@ -90,6 +147,98 @@ async def bind_tg(request: Request, sub_param: Sub):
     correct_number = random.randrange(1, 10)
     link = await create_start_link(bot, f"{sub_value}&{correct_number}", encode=True)
     return {"link": link, "correct_number": correct_number, "sub": sub_value}
+
+
+@router.get("/miniapp/login/init")
+async def miniapp_login_init(request: Request, return_to: str | None = None):
+    """
+    Initialize a Mini App login by generating a one-time state code and returning
+    the external login URL that must be opened in a system browser.
+    """
+    code = secrets.token_urlsafe(24)
+    redis = request.app.state.redis
+    state_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}{code}"
+    try:
+        await redis.setex(state_key, 300, return_to or "/")
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not initialize miniapp login",
+        )
+
+    login_url = f"{config.HOME_URL}/api/login?state={code}"
+    return {"code": code, "login_url": login_url}
+
+
+@router.post("/miniapp/login/exchange")
+async def miniapp_login_exchange(
+    request: Request,
+    response: Response,
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    """
+    Exchange a Mini App one-time code for cookies. Sets Keycloak cookies and issues
+    a fresh app token. Intended to be called from the Mini App webview with credentials included.
+    Returns 200 when cookies are set.
+    """
+    redis = request.app.state.redis
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid JSON body")
+
+    code = (payload or {}).get("code")
+    if not code:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing code")
+
+    creds_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}creds:{code}"
+    raw_creds = await redis.get(creds_key)
+    if not raw_creds:
+        # Not ready yet
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not ready")
+
+    try:
+        creds = json.loads(raw_creds)
+    except Exception:
+        await redis.delete(creds_key)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Corrupted credentials"
+        )
+
+    kc_manager: KeyCloakManager = request.app.state.kc_manager
+    app_token_manager: AppTokenManager = request.app.state.app_token_manager
+
+    # Validate KC token
+    try:
+        await kc_manager.validate_keycloak_token(creds["access_token"])
+    except JWTError as e:
+        await redis.delete(creds_key)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Keycloak token: {str(e)}"
+        )
+
+    # Upsert user and set cookies
+    user_schema: UserSchema = await create_user_schema(creds)
+    user: User = await upsert_user(db_session, user_schema)
+
+    # Set KC cookies
+    set_kc_auth_cookies(response, creds)
+
+    # Issue app token
+    new_app_token_str, _claims = await app_token_manager.create_app_token(user.sub, db_session)
+    response.set_cookie(
+        key=config.COOKIE_APP_NAME,
+        value=new_app_token_str,
+        httponly=True,
+        secure=not config.IS_DEBUG,
+        samesite="Lax",
+        max_age=app_token_manager.token_expiry.total_seconds(),
+    )
+
+    # Invalidate the one-time creds
+    await redis.delete(creds_key)
+
+    return {"ok": True}
 
 
 @router.post("/refresh-token", response_description="Refresh token")

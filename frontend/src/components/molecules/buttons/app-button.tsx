@@ -86,7 +86,7 @@ export const AppButton = ({
                 },
               }}
             />
-            <span className={`text-xl sm:text-2xl ${iconColor}`}>{icon}</span>
+            <span className={`text-2xl sm:text-3xl ${iconColor}`}>{icon}</span>
           </motion.div>
         </Link>
         {comingSoon && (

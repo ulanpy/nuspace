@@ -9,14 +9,15 @@ import { useUser } from "@/hooks/use-user";
 import { ROUTES } from "@/data/routes";
 import { BackNavigationProvider } from "@/context/BackNavigationContext";
 import { BackButton } from "@/components/molecules/BackButton";
-import { Badge } from "@/components/atoms/badge";
 import { Header } from "@/components/atoms/header";
+import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 
 export default function AppsLayout() {
   const { user, login, isLoading } = useUser();
   const location = useLocation();
   const navigate = useNavigate();
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const { isMiniApp } = useTelegramMiniApp();
 
   // Check if the current path is for Kupi&Prodai
   const isKupiProdaiPath = location.pathname.includes(
@@ -47,26 +48,16 @@ export default function AppsLayout() {
 
   return (
     <BackNavigationProvider>
-      <div className="min-h-screen bg-background flex flex-col">
-        <Header 
-          left={
-            <BackButton label="Back" />
-          }
-          right={
+      <div className="min-h-screen bg-background flex flex-col pb-[calc(56px+env(safe-area-inset-bottom))]">
+        <Header
+          left={!isMiniApp ? <BackButton label={location.pathname === ROUTES.HOME ? "Close" : "Back"} /> : undefined}
+          right={!isMiniApp ? (
             <div className="flex gap-4">
-              <Badge
-                variant="outline"
-                className="px-2.5 py-0.25 text-[10px] sm:text-xs rounded-full border-blue-200 bg-blue-50 text-blue-900 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800"
-                aria-label="Service status: Beta"
-                title="This service is in Beta"
-              >
-                Beta
-              </Badge>
               <ThemeToggle />
               <LoginButton />
             </div>
-          }
-          ></Header>
+          ) : undefined}
+        ></Header>
         <main className="flex-1 container py-4 sm:py-6 px-3 sm:px-4">
           <Outlet />
 

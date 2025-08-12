@@ -10,6 +10,7 @@ import {
 } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
+import { VerificationBadge } from "@/components/molecules/verification-badge";
 
 export function CommunityCard({ community }: { community: Community }) {
   const profile = community.media.find(
@@ -41,11 +42,19 @@ export function CommunityCard({ community }: { community: Community }) {
           />
         </div>
 
-        {/* Name - Centered */}
-        <div className="min-w-0 w-full text-center mb-2 px-4">
-          <h1 className="block w-full max-w-full font-semibold text-base md:text-lg truncate" title={community.name}>
-            {community.name}
-          </h1>
+        {/* Name - Centered with verification */}
+        <div className="min-w-0 w-full mb-2 px-4">
+          <div className="flex items-center justify-center gap-1">
+            <h1
+              className="block max-w-full font-semibold text-base md:text-lg truncate"
+              title={community.name}
+            >
+              {community.name}
+            </h1>
+            {community.verified && (
+              <VerificationBadge className="ml-1" size={14} />
+            )}
+          </div>
         </div>
 
         {/* Badges - Centered below name */}

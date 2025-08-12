@@ -74,12 +74,28 @@
   }
   body {
     @apply bg-background text-foreground;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
 @layer utilities {
   .backface-hidden {
     backface-visibility: hidden;
+  }
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  /* Prevent iOS/Android webview zoom on input focus by enforcing >=16px font-size */
+  @media (max-width: 768px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+      line-height: 1.4;
+    }
   }
 }
 
