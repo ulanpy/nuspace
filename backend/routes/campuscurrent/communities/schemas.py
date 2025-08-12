@@ -80,6 +80,7 @@ class BaseCommunity(BaseModel):
     category: CommunityCategory
     email: EmailStr | None = None
     recruitment_status: CommunityRecruitmentStatus
+    verified: bool
     recruitment_link: HttpUrl | None = None
     description: str
     established: date

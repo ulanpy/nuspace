@@ -22,6 +22,7 @@ import { addToGoogleCalendar as addToGoogleCalendarUtil } from "@/features/campu
 import { EventModal } from "@/features/campuscurrent/events/components/EventModal";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { CountdownBadge } from "@/features/campuscurrent/events/components/CountdownBadge";
+import { VerificationBadge } from "@/components/molecules/verification-badge";
 
 // Helper function to format date for display
 const formatEventDate = (dateString: string) => {
@@ -248,17 +249,21 @@ export default function EventDetailPage() {
               {event.name}
             </h1>
             {event.scope === "community" ? (
-              <div
-                className="text-primary hover:underline cursor-pointer text-lg font-medium break-words"
-                onClick={() =>
-                  navigate(
-                    ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
-                      event.community?.id.toString() ?? ""
+              <div className="text-primary text-lg font-medium break-words">
+                <button
+                  type="button"
+                  className="hover:underline inline-flex items-center gap-1"
+                  onClick={() =>
+                    navigate(
+                      ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
+                        event.community?.id.toString() ?? ""
+                      )
                     )
-                  )
-                }
-              >
-                by {event.community?.name || "Unknown Community"}
+                  }
+                >
+                  <span>by {event.community?.name || "Unknown Community"}</span>
+                  <VerificationBadge className="ml-1" size={14} />
+                </button>
               </div>
             ) : (
               <div className="text-muted-foreground text-lg break-words">
@@ -286,8 +291,11 @@ export default function EventDetailPage() {
             {event.community && (
               <div className="flex items-center gap-3">
                 <Users className="h-5 w-5 flex-shrink-0" />
-                <span className="text-base">
+                <span className="text-base inline-flex items-center gap-1">
                   Organized by {event.community.name}
+                  {event.community.verified && (
+                    <VerificationBadge className="ml-1" size={12} />
+                  )}
                 </span>
               </div>
             )}
@@ -353,8 +361,11 @@ export default function EventDetailPage() {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-base break-words">
-                          {event.community?.name}
+                        <p className="font-medium text-base break-words inline-flex items-center gap-1">
+                          <span className="truncate">{event.community?.name}</span>
+                          {event.community?.verified && (
+                            <VerificationBadge className="ml-1" size={12} />
+                          )}
                         </p>
                         <p className="text-sm text-muted-foreground break-words">
                           Community
