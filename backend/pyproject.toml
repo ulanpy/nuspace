@@ -1,0 +1,66 @@
+[tool.poetry]
+name = "nuros"
+version = "0.1.0"
+description = ""
+authors = ["Ulan <ulan.sharipov@nu.edu.kz>"]
+readme = "README.md"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["D", "ANN101", "ANN102"]  # <-- можешь включить при желании
+
+[tool.poetry.dependencies]
+python = "^3.12"
+sqlalchemy = "^2.0.37"
+fastapi = "^0.115.6"
+uvicorn = "^0.34.0"
+python-dotenv = "^1.0.1"
+requests = "^2.32.3"
+authlib = "^1.4.0"
+pydantic-settings = "^2.7.1"
+httpx = "^0.28.1"
+itsdangerous = "^2.2.0"
+google-auth = "^2.37.0"
+pydantic = {extras = ["email"], version = "^2.10.5"}
+asyncpg = "^0.30.0"
+fernet = "^1.0.1"
+redis = "^5.2.1"
+python-jose = "^3.3.0"
+sqladmin = "^0.20.1"
+google-cloud-storage = "^3.0.0"
+pyjwt = "^2.10.1"
+gunicorn = "^23.0.0"
+aiogram = "^3.18.0"
+psycopg2 = "^2.9.10"
+apscheduler = "^3.11.0"
+celery = "^5.4.0"
+polib = "^1.2.0"
+pytz = "^2025.2"
+google-cloud-pubsub = "^2.29.0"
+pre-commit = "^4.2.0"
+aio-pika = "^9.5.5"
+faststream = "^0.5.42"
+pytest-asyncio = "^1.0.0"
+aiosqlite = "^0.21.0"
+pytest = "^8.4.1"
+prometheus-client = "^0.22.1"
+alembic = "^1.16.4"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11.5"
+black = "^25.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.python]
+dont-write-bytecode = true

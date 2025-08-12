@@ -1,0 +1,27 @@
+services:
+  fastapi:
+    image: kamikadze24/fastapi:${TAG}
+
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+      args:
+        IS_DEBUG: ${IS_DEBUG:-true} # Default to 'true' if not set
+
+  celeryworker:
+    image: kamikadze24/celeryworker:${TAG}
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile_celery
+    command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
+    environment:
+      - CELERY_WORKER_CONCURRENCY=4
+      - CELERY_WORKER_PREFETCH_MULTIPLIER=1
+
+  frontend-builder:
+    image: kamikadze24/frontendbuilder:${TAG}
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile_static_builder
+    command: sh -c "npm run build" # Run build command on container start
+    restart: "no"

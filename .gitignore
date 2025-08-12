@@ -1,0 +1,44 @@
+# Python cache files (ignore __pycache__ in any directory)
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# Virtual environment
+venv/
+
+**/nuspace.json
+
+# PyCharm IDE files
+.idea/
+
+# Node.js dependencies
+node_modules/
+
+# Build output (Vite/React)
+dist/
+ssl/
+# Static folder pycache
+static/**/__pycache__/
+
+# Configs folder pycache
+configs/**/__pycache__/
+
+# Environmental files
+.env
+
+
+
+# Log files
+*.log
+
+# OS-specific files
+.DS_Store
+**/.DS_Store
+Thumbs.db
+
+
+**/.vscode/
+
+# Loki bucket service account 
+**/nuspace_bucket.json

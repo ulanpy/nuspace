@@ -1,0 +1,97 @@
+## Migrations (Alembic)
+
+This project uses Alembic for schema migrations. The Alembic environment is wired to the app config via `migrations/env.py`, so the database URL comes from your `.env` (through `backend.core.configs.config`).
+
+### Local development workflow
+
+1) Make model changes in SQLAlchemy models (e.g., add a column, edit enums).
+2) Create a migration:
+   - Using helper: `python migrate.py create "Describe change"`
+   - Or raw Alembic: `alembic revision --autogenerate -m "Describe change"`
+3) Review the generated file under `migrations/versions/` and adjust as needed (especially for Postgres enums).
+4) Apply locally: `alembic upgrade head`
+5) If needed, rollback: `alembic downgrade -1`
+6) Commit the migration file(s) to git.
+
+### Production workflow
+
+CI/CD runs migrations automatically before rolling services:
+- Ansible executes: `docker compose -f /opt/nuspace/infra/prod.docker-compose.yml run --rm migrate`
+- The `migrate` service uses the backend image and your prod `.env` to run `alembic upgrade head`.
+- This is idempotent: if no new revisions exist, it does nothing.
+
+Rollback one revision (manual):
+```
+docker compose -f /opt/nuspace/infra/prod.docker-compose.yml run --rm migrate alembic downgrade -1
+```
+
+### Common migration recipes (PostgreSQL)
+
+- Add a nullable column (simple):
+```python
+from alembic import op
+import sqlalchemy as sa
+
+op.add_column('my_table', sa.Column('new_col', sa.String(), nullable=True))
+```
+
+- Add a NOT NULL column safely (without locking writes):
+```python
+# 1) Add column nullable with a server default
+op.add_column('my_table', sa.Column('new_col', sa.String(), server_default='', nullable=True))
+
+# 2) Backfill if needed (UPDATE ...), then drop the server default
+op.alter_column('my_table', 'new_col', server_default=None)
+
+# 3) Enforce NOT NULL
+op.alter_column('my_table', 'new_col', nullable=False)
+```
+
+- Rename a column:
+```python
+op.alter_column('my_table', 'old_name', new_column_name='new_name')
+```
+
+- Drop a column (consider doing it as a follow-up migration for safety):
+```python
+op.drop_column('my_table', 'col_to_remove')
+```
+
+- Create an index / unique constraint:
+```python
+op.create_index('ix_my_table_col', 'my_table', ['col'])
+op.create_unique_constraint('uq_my_table_col', 'my_table', ['col'])
+```
+
+- Add a foreign key:
+```python
+op.create_foreign_key(None, 'child', 'parent', ['parent_id'], ['id'], ondelete='CASCADE')
+```
+
+#### Postgres ENUM changes
+
+Autogenerate may not fully cover ENUM alterations. Use explicit SQL where needed.
+
+- Add enum value (safe, forward-only):
+```python
+op.execute("ALTER TYPE event_type ADD VALUE IF NOT EXISTS 'new_value'")
+```
+
+- Rename enum value (Postgres ≥ 10):
+```python
+op.execute("ALTER TYPE event_type RENAME VALUE 'old' TO 'new'")
+```
+
+- Remove or reshape enum values (rebuild type):
+```python
+op.execute("CREATE TYPE event_type_new AS ENUM ('a','b','c')")
+op.execute("ALTER TABLE events ALTER COLUMN type TYPE event_type_new USING type::text::event_type_new")
+op.execute("DROP TYPE event_type")
+op.execute("ALTER TYPE event_type_new RENAME TO event_type")
+```
+
+### Notes
+
+- Do not run `Base.metadata.create_all()` in production. The app guards this behind `IS_DEBUG`; production relies on Alembic migrations only.
+- Always commit the `migrations/versions/*.py` files. They are the canonical schema history.
+- For large/locking migrations, schedule during low-traffic windows or use expand-and-contract patterns.
