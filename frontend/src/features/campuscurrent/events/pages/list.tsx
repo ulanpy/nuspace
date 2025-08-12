@@ -209,7 +209,7 @@ export default function Events() {
           className="flex flex-col min-h-screen w-full overflow-x-hidden"
           id="events-section"
         >
-          <main className="flex-grow w-full max-w-screen-2xl mx-auto px-4 sm:px-6 md:px-8">
+          <main className="flex-grow max-w-screen-2xl mx-auto px-4 sm:px-6 md:px-8">
             <Tabs
               value={activeTab}
               className="mb-6 w-full"
