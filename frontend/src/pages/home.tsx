@@ -8,7 +8,6 @@ import { useUser } from "@/hooks/use-user";
 import { ReportButton } from "@/components/molecules/buttons/report-button";
 import { TelegramStatus } from "@/components/molecules/telegram-status";
 import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
-import { Header } from "@/components/atoms/header";
 import nuSpacePresentation from "@/assets/images/nu-space-presentation.jpg";
 import welcomeNuSpace from "@/assets/images/welcome-nu-space.jpg";
 import { FlaskConical } from "lucide-react";
@@ -56,20 +55,14 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4">
       {/* Header with login button */}
-      {/* <Header 
-        right={ 
-          <>
-          <ThemeToggle />
-          <LoginButton />
-          </>
-        }></Header> */}
-      {/* <header className="w-full flex justify-between items-center mb-8">
-        <div className="flex items-center gap-6">
-          <ThemeToggle />
-        </div>
-        <LoginButton />
-      </header> */}
-
+      <Header
+            right={
+              <div className="flex gap-4">
+                <ThemeToggle />
+                <LoginButton />
+              </div>
+            }
+          ></Header>
       {/* Beta banner - visible on all viewports */}
       <div className="w-full mb-6">
         <div className="w-full rounded-lg border border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-100 px-3 py-2 sm:px-4 sm:py-3">
