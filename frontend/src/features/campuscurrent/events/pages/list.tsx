@@ -19,51 +19,58 @@ import { EventModal } from "@/features/campuscurrent/events/components/EventModa
 const isEventRelevant = (event: Event, filterType: string): boolean => {
   const now = new Date();
   const eventStart = new Date(event.event_datetime);
-  const eventEnd = new Date(eventStart.getTime() + (event.duration * 60 * 1000));
-  
+  const eventEnd = new Date(eventStart.getTime() + event.duration * 60 * 1000);
+
   // Event is finished if end time has passed
   const isFinished = eventEnd.getTime() < now.getTime();
-  
+
   // For "all" filter, exclude finished events
   if (filterType === "all") {
     return !isFinished;
   }
-  
+
   // For date-specific filters, check if event intersects with the date range AND is not finished
   if (filterType === "today") {
     const today = new Date();
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayStart = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
     const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
-    
+
     // Event is relevant if it intersects with today AND is not finished
-    const intersectsToday = (eventStart >= todayStart && eventStart < todayEnd) || 
-                           (eventStart < todayEnd && eventEnd > todayStart);
+    const intersectsToday =
+      (eventStart >= todayStart && eventStart < todayEnd) ||
+      (eventStart < todayEnd && eventEnd > todayStart);
     return intersectsToday && !isFinished;
   }
-  
+
   if (filterType === "thisWeek") {
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 7);
-    
+
     // Event is relevant if it intersects with this week AND is not finished
-    const intersectsWeek = (eventStart >= startOfWeek && eventStart < endOfWeek) || 
-                          (eventStart < endOfWeek && eventEnd > startOfWeek);
+    const intersectsWeek =
+      (eventStart >= startOfWeek && eventStart < endOfWeek) ||
+      (eventStart < endOfWeek && eventEnd > startOfWeek);
     return intersectsWeek && !isFinished;
   }
-  
+
   if (filterType === "thisMonth") {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    
+
     // Event is relevant if it intersects with this month AND is not finished
-    const intersectsMonth = (eventStart >= startOfMonth && eventStart < endOfMonth) || 
-                           (eventStart < endOfMonth && eventEnd > startOfMonth);
+    const intersectsMonth =
+      (eventStart >= startOfMonth && eventStart < endOfMonth) ||
+      (eventStart < endOfMonth && eventEnd > startOfMonth);
     return intersectsMonth && !isFinished;
   }
-  
+
   return !isFinished;
 };
 
@@ -87,7 +94,8 @@ const EventsGrid = ({
   }
 
   // Filter events to show only relevant ones (upcoming/ongoing)
-  const filteredEvents = events?.events?.filter(event => isEventRelevant(event, filterType)) || [];
+  const filteredEvents =
+    events?.events?.filter((event) => isEventRelevant(event, filterType)) || [];
 
   if (filteredEvents.length === 0) {
     return (
@@ -95,7 +103,13 @@ const EventsGrid = ({
         <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
         <h3 className="text-lg font-medium mb-2">No events found</h3>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          There are no {filterType === "all" ? "upcoming or ongoing" : filterType === "today" ? "events for today" : "events in this"} events.
+          There are no{" "}
+          {filterType === "all"
+            ? "upcoming or ongoing"
+            : filterType === "today"
+            ? "events for today"
+            : "events in this"}{" "}
+          events.
         </p>
       </div>
     );
@@ -143,13 +157,17 @@ export default function Events() {
         startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6); // Saturday
-        
+
         start_date = startOfWeek.toISOString().split("T")[0];
         end_date = endOfWeek.toISOString().split("T")[0];
         break;
       case "thisMonth":
         const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const lastDayOfMonth = new Date(
+          now.getFullYear(),
+          now.getMonth() + 1,
+          0
+        );
         start_date = firstDayOfMonth.toISOString().split("T")[0];
         end_date = lastDayOfMonth.toISOString().split("T")[0];
         break;
@@ -163,11 +181,11 @@ export default function Events() {
         start_date = now.toISOString().split("T")[0];
         end_date = undefined;
     }
-    
-    setDateFilter({ 
-      start_date, 
+
+    setDateFilter({
+      start_date,
       end_date,
-      event_status: "approved" // Always filter for approved events in public view
+      event_status: "approved", // Always filter for approved events in public view
     });
   };
   const location = useLocation();
@@ -209,7 +227,7 @@ export default function Events() {
           className="flex flex-col min-h-screen w-full overflow-x-hidden"
           id="events-section"
         >
-          <main className="flex-grow max-w-screen-2xl mx-auto px-4 sm:px-6 md:px-8">
+          <main className="flex-grow w-full max-w-screen-2xl mx-auto px-4 sm:px-6 md:px-8">
             <Tabs
               value={activeTab}
               className="mb-6 w-full"
