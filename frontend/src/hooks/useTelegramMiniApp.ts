@@ -41,41 +41,57 @@ export function useTelegramMiniApp() {
   useEffect(() => {
     const tg = window?.Telegram?.WebApp;
     if (tg) {
+      // Detect true Mini App context (not just Telegram in-app browser)
+      // Mini App provides initData/initDataUnsafe with a valid hash
+      const anyTg: any = tg as any;
+      const initData: string = typeof anyTg?.initData === "string" ? anyTg.initData : "";
+      const unsafe: any = anyTg?.initDataUnsafe || {};
+      const hasHash: boolean = typeof unsafe?.hash === "string" && unsafe.hash.length > 0;
+      const urlStartParam = new URLSearchParams(window.location.search).get("tgWebAppStartParam");
+      const isRealMiniApp = Boolean(initData.length > 0 || hasHash || urlStartParam);
+
       try {
-        tg.ready?.();
-        tg.expand?.();
-        (tg as any).disableVerticalSwipes?.();
-        setIsMiniApp(true);
-        // Ensure fullscreen if supported (Bot API 8.0+), fallback to expand()
-        const ensureFullscreen = () => {
-          try {
-            const anyTg: any = tg as any;
-            if (typeof anyTg?.requestFullscreen === "function") {
-              if (anyTg?.isFullscreen === false) {
-                anyTg.requestFullscreen();
+        if (isRealMiniApp) {
+          tg.ready?.();
+          tg.expand?.();
+          (tg as any).disableVerticalSwipes?.();
+          setIsMiniApp(true);
+          // Ensure fullscreen if supported (Bot API 8.0+), fallback to expand()
+          const ensureFullscreen = () => {
+            try {
+              const anyTgInner: any = tg as any;
+              if (typeof anyTgInner?.requestFullscreen === "function") {
+                if (anyTgInner?.isFullscreen === false) {
+                  anyTgInner.requestFullscreen();
+                }
+              } else if (tg.isExpanded === false) {
+                tg.expand?.();
               }
-            } else if (tg.isExpanded === false) {
-              tg.expand?.();
-            }
-            anyTg?.disableVerticalSwipes?.();
-          } catch {}
-        };
-        ensureFullscreen();
-        // Retry a few times since Telegram may ignore the first call until user interaction
-        let fsTries = 0;
-        const fsTimer = window.setInterval(() => {
+              anyTgInner?.disableVerticalSwipes?.();
+            } catch {}
+          };
           ensureFullscreen();
-          fsTries += 1;
-          if (fsTries >= 6) window.clearInterval(fsTimer);
-                }, 500);
-        // Apply a root class for CSS rules that depend on mini app
-        document.documentElement.classList.add("tg-miniapp");
-        // Provide a default bottom nav height variable for layout padding
-        document.documentElement.style.setProperty("--bottom-nav-height", "64px");
-        // Provide a header offset to avoid Telegram overlay (close/nav) overlapping header content
-        const platform = tg.platform ?? "web";
-        const headerOffsetPx = platform === "ios" ? 28 : 20; // tuned defaults; adjust as needed
-        document.documentElement.style.setProperty("--tg-header-offset", `${headerOffsetPx}px`);
+          // Retry a few times since Telegram may ignore the first call until user interaction
+          let fsTries = 0;
+          const fsTimer = window.setInterval(() => {
+            ensureFullscreen();
+            fsTries += 1;
+            if (fsTries >= 6) window.clearInterval(fsTimer);
+          }, 500);
+          // Apply a root class for CSS rules that depend on mini app
+          document.documentElement.classList.add("tg-miniapp");
+          // Provide a default bottom nav height variable for layout padding
+          document.documentElement.style.setProperty("--bottom-nav-height", "64px");
+          // Provide a header offset to avoid Telegram overlay (close/nav) overlapping header content
+          const platform = tg.platform ?? "web";
+          const headerOffsetPx = platform === "ios" ? 28 : 20; // tuned defaults; adjust as needed
+          document.documentElement.style.setProperty("--tg-header-offset", `${headerOffsetPx}px`);
+        } else {
+          // Not a real Mini App environment; treat as regular browser (possibly Telegram in-app browser)
+          setIsMiniApp(false);
+          document.documentElement.classList.remove("tg-miniapp");
+          document.documentElement.style.removeProperty("--tg-header-offset");
+        }
       } catch {
         // no-op
       }

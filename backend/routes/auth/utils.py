@@ -1,4 +1,5 @@
 from fastapi import Request, Response
+from jose import jwt as jose_jwt
 
 from backend.core.configs.config import config
 from backend.routes.auth.schemas import UserRole, UserSchema, UserScope
@@ -11,20 +12,52 @@ async def exchange_code_for_credentials(request: Request):
     )
 
     kc: KeyCloakManager = request.app.state.kc_manager
-    token = await getattr(kc.oauth, kc.__class__.__name__.lower()).authorize_access_token(request)
+    provider = getattr(kc.oauth, kc.__class__.__name__.lower())
+    token = await provider.authorize_access_token(request)
+    # Ensure userinfo is present for downstream user creation
+    try:
+        userinfo = await provider.userinfo(token=token)
+        token["userinfo"] = userinfo
+    except Exception:
+        # Fallback to ID token claims if userinfo endpoint is unavailable
+        try:
+            userinfo = await provider.parse_id_token(request, token)
+            token["userinfo"] = userinfo
+        except Exception:
+            pass
     return token
 
 
 # Helper for user object creation
 async def create_user_schema(creds: dict) -> UserSchema:
-    userinfo = creds["userinfo"]
+    userinfo = creds.get("userinfo")
+    if not userinfo:
+        id_token = creds.get("id_token")
+        if id_token:
+            try:
+                claims = jose_jwt.get_unverified_claims(id_token)
+                name = claims.get("name") or ""
+                parts = name.split(" ") if name else []
+                given_name = claims.get("given_name") or (parts[0] if parts else "")
+                family_name = claims.get("family_name") or (parts[1] if len(parts) > 1 else "")
+                userinfo = {
+                    "email": claims.get("email"),
+                    "given_name": given_name,
+                    "family_name": family_name,
+                    "picture": claims.get("picture"),
+                    "sub": claims.get("sub"),
+                }
+            except Exception:
+                userinfo = None
+    if not userinfo:
+        raise KeyError("userinfo")
     return UserSchema(
         email=userinfo["email"],
         role=UserRole.default,
         scope=UserScope.allowed,
         name=userinfo["given_name"],
         surname=userinfo["family_name"],
-        picture=userinfo["picture"],
+        picture=userinfo.get("picture"),
         sub=userinfo["sub"],
     )
 

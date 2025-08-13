@@ -6,6 +6,7 @@ import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 
 export const useUser = () => {
   const { isMiniApp, startParam } = useTelegramMiniApp();
+  // diagnostics removed
   const {
     data: user,
     isLoading,
@@ -33,14 +34,15 @@ export const useUser = () => {
         credentials: "include",
       });
       if (!initRes.ok) throw new Error("Failed to init mini app login");
-      const { code, login_url } = await initRes.json();
+      const { login_url } = await initRes.json();
 
-      // Try opening link via Telegram API, then fallback to window.open, then hard redirect
+      // Try opening link via Telegram API (Mini App only), otherwise fallback
       try {
-        // @ts-expect-error Telegram may not exist in TS types
-        if (window?.Telegram?.WebApp?.openLink) {
-          // @ts-expect-error Telegram types
-          window.Telegram.WebApp.openLink(login_url);
+        const tgOpenLink = (window as any)?.Telegram?.WebApp?.openLink as
+          | ((url: string, options?: any) => void)
+          | undefined;
+        if (typeof tgOpenLink === "function") {
+          tgOpenLink(login_url, { try_instant_view: false });
         } else {
           const newWin = window.open(login_url, "_blank", "noopener,noreferrer");
           if (!newWin) {
@@ -96,9 +98,7 @@ export const useUser = () => {
     // Auto-exchange if the Mini App was re-opened with start_param
     if (isMiniApp && startParam) {
       const doneKey = `miniapp_login_done:${startParam}`;
-      if (sessionStorage.getItem(doneKey)) {
-        return;
-      }
+      if (sessionStorage.getItem(doneKey)) return;
       let cancelled = false;
       (async () => {
         const start = Date.now();
@@ -127,9 +127,20 @@ export const useUser = () => {
         cancelled = true;
       };
     }
-    const refreshInterval = setInterval(refreshToken, 1000 * 60 * 4);
+    const w: any = typeof window !== "undefined" ? (window as any) : {};
+    const REFRESH_TIMER_KEY = "__auth_refresh_timer__";
+    let refreshInterval: number | null = null;
+    if (!w[REFRESH_TIMER_KEY]) {
+      refreshInterval = window.setInterval(refreshToken, 1000 * 60 * 4);
+      w[REFRESH_TIMER_KEY] = refreshInterval;
+    } else {
+      // interval exists; skip
+    }
     return () => {
-      clearInterval(refreshInterval);
+      if (refreshInterval != null && w[REFRESH_TIMER_KEY] === refreshInterval) {
+        clearInterval(refreshInterval);
+        delete w[REFRESH_TIMER_KEY];
+      }
     };
   }, [isMiniApp, startParam]);
 
