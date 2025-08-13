@@ -55,7 +55,7 @@ class Config(BaseSettings):
     APP_TOKEN_EXPIRY_MINUTES: int = 5
     # Telegram Mini App integration
     BOT_USERNAME: str  # without @
-    TG_APP_PATH: str  # Mini App short name path; default to 'app' if single app 
+    TG_APP_PATH: str  # Mini App short name path; default to 'app' if single app
     TG_APP_LOGIN_STATE_REDIS_PREFIX: str = "miniapp:login:state:"
 
     class Config:

@@ -1,8 +1,8 @@
-import random
-from typing import Annotated
 import json
-import secrets
 import logging
+import random
+import secrets
+from typing import Annotated
 
 from aiogram import Bot
 from aiogram.utils.deep_linking import create_start_link
@@ -112,18 +112,20 @@ async def auth_callback(
                 logger.info("auth.callback: creds stored for state=%s and state key deleted", state)
                 # Desktop vs Mobile: if desktop, keep normal site redirect; if mobile, deep-link back to Mini App
                 ua = (request.headers.get("user-agent") or "").lower()
-                is_mobile = any(s in ua for s in [
-                    "iphone", "ipad", "ipod", "android", "mobile", "windows phone"
-                ])
+                is_mobile = any(
+                    s in ua
+                    for s in ["iphone", "ipad", "ipod", "android", "mobile", "windows phone"]
+                )
                 if is_mobile:
                     # Redirect user back to Telegram Mini App. If TG_APP_PATH is empty or incorrectly set
                     # to 'startapp', use the default Mini App link variant without a path.
-                    if not getattr(config, "TG_APP_PATH", None) or str(config.TG_APP_PATH).lower() == "startapp":
+                    if (
+                        not getattr(config, "TG_APP_PATH", None)
+                        or str(config.TG_APP_PATH).lower() == "startapp"
+                    ):
                         tme_url = f"https://t.me/{config.BOT_USERNAME}?startapp={state}"
                     else:
-                        tme_url = (
-                            f"https://t.me/{config.BOT_USERNAME}/{config.TG_APP_PATH}?startapp={state}"
-                        )
+                        tme_url = f"https://t.me/{config.BOT_USERNAME}/{config.TG_APP_PATH}?startapp={state}"
                     return RedirectResponse(url=tme_url, status_code=303)
                 # else: fall through to normal HOME_URL redirect (desktop)
         except Exception:
@@ -142,7 +144,9 @@ async def bind_tg(request: Request, sub_param: Sub):
 
 
 @router.get("/miniapp/login/init")
-async def miniapp_login_init(request: Request, return_to: str | None = None, code: str | None = None):
+async def miniapp_login_init(
+    request: Request, return_to: str | None = None, code: str | None = None
+):
     """
     Initialize a Mini App login by generating a one-time state code and returning
     the external login URL that must be opened in a system browser.
@@ -153,7 +157,10 @@ async def miniapp_login_init(request: Request, return_to: str | None = None, cod
     try:
         await redis.setex(state_key, 300, return_to or "/")
     except Exception:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not initialize miniapp login")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Could not initialize miniapp login",
+        )
 
     login_url = f"{config.HOME_URL}/api/login?state={code}"
     return {"code": code, "login_url": login_url}
@@ -191,7 +198,9 @@ async def miniapp_login_exchange(
         creds = json.loads(raw_creds)
     except Exception:
         await redis.delete(creds_key)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Corrupted credentials")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Corrupted credentials"
+        )
 
     kc_manager: KeyCloakManager = request.app.state.kc_manager
     app_token_manager: AppTokenManager = request.app.state.app_token_manager
@@ -201,7 +210,9 @@ async def miniapp_login_exchange(
         await kc_manager.validate_keycloak_token(creds["access_token"])
     except JWTError as e:
         await redis.delete(creds_key)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Keycloak token: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Keycloak token: {str(e)}"
+        )
 
     # Upsert user and set cookies
     user_schema: UserSchema = await create_user_schema(creds)
