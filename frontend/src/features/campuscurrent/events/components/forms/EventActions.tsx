@@ -1,5 +1,6 @@
 import { Button } from '@/components/atoms/button';
 import { useEventForm } from '../../../../../context/EventFormContext';
+import { useTelegramBottomButtons } from '@/hooks/useTelegramBottomButtons';
 
 interface EventActionsProps {
   isProcessing: boolean;
@@ -37,6 +38,16 @@ export function EventActions({
     (requiresRegistrationLink && !hasRegistrationLink) ||
     (isEditMode && !permissions?.can_edit) || 
     (!isEditMode && isCommunityEvent && !selectedCommunity);
+
+  // Telegram Mini App bottom button integration
+  useTelegramBottomButtons({
+    enabled: false,
+    text: isProcessing ? (isEditMode ? 'Updating…' : 'Creating…') : (isEditMode ? 'Update Event' : 'Create Event'),
+    disabled: true,
+    show: false,
+    showProgress: true,
+    onClick: onSubmit,
+  });
 
   return (
     <div className="flex justify-between pt-4 border-t">

@@ -53,7 +53,31 @@ prometheus.remote_write "prometheus_write" {
 
 // Discover Docker containers and extract metadata
 discovery.docker "linux" {
-	host = "unix:///var/run/docker.sock"
+    host = "unix:///var/run/docker.sock"
+}
+
+// Filter to only the 'fastapi' service/container targets
+discovery.relabel "logs_filter" {
+    targets = discovery.docker.linux.targets
+
+    // Keep if compose service is 'fastapi'
+    rule {
+        source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+        regex         = "fastapi"
+        action        = "keep"
+    }
+
+    // Or keep if container name ends with 'fastapi'
+    rule {
+        source_labels = ["__meta_docker_container_name"]
+        regex         = "/?fastapi$"
+        action        = "keep"
+    }
+
+    // Drop everything else
+    rule {
+        action = "drop"
+    }
 }
 
 // Define a relabeling rule to create a service name from the container name.
@@ -69,11 +93,11 @@ discovery.relabel "logs_integrations_docker" {
 
 // Configure a loki.source.docker component to collect logs from Docker containers.
 loki.source.docker "loki_default" {
-	host          = "unix:///var/run/docker.sock"
-	targets       = discovery.docker.linux.targets
-	labels        = {"platform" = "docker"}
-	relabel_rules = discovery.relabel.logs_integrations_docker.rules
-	forward_to    = [loki.write.loki_write.receiver]
+    host          = "unix:///var/run/docker.sock"
+    targets       = discovery.relabel.logs_filter.targets
+    labels        = {"platform" = "docker"}
+    relabel_rules = discovery.relabel.logs_integrations_docker.rules
+    forward_to    = [loki.write.loki_write.receiver]
 }
 
 loki.write "loki_write" {

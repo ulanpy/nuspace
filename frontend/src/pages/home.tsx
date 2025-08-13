@@ -13,6 +13,7 @@ import welcomeNuSpace from "@/assets/images/welcome-nu-space.jpg";
 import { FlaskConical } from "lucide-react";
 import { Header } from "@/components/atoms/header";
 import { LastCommitInline } from "@/components/molecules/last-commit";
+import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 
 const homeCarouselItems = [
   {
@@ -53,17 +54,20 @@ const homeCarouselItems = [
 
 export default function HomePage() {
   const { user, isLoading, isSuccess } = useUser();
+  const { isMiniApp } = useTelegramMiniApp();
   return (
-    <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4">
+    <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4 pb-[calc(56px+env(safe-area-inset-bottom))]">
       {/* Header with login button */}
       <Header
-            right={
-              <div className="flex gap-4">
-                <ThemeToggle />
-                <LoginButton />
-              </div>
-            }
-          ></Header>
+        right={
+          !isMiniApp ? (
+            <div className="flex gap-4">
+              <ThemeToggle />
+              <LoginButton />
+            </div>
+          ) : undefined
+        }
+      ></Header>
       {/* Beta banner - visible on all viewports with last commit inline */}
       <div className="w-full mb-6">
         <div className="w-full rounded-lg border border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-100 px-3 py-2 sm:px-4 sm:py-3">

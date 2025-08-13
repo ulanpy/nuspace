@@ -14,6 +14,18 @@ limits_config:
   retention_period: 168h
   allow_structured_metadata: true
   volume_enabled: true
+  # Ingestion and stream/cardinality safeguards
+  ingestion_rate_mb: 4
+  ingestion_burst_size_mb: 8
+  per_stream_rate_limit: 1MB
+  per_stream_rate_limit_burst: 2MB
+  max_streams_per_user: 500
+  max_label_name_length: 100
+  max_label_value_length: 2048
+  max_label_names_per_series: 15
+  max_line_size: 256kb
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
 
 common:
   # The path_prefix is used by Loki for internal operational files,
@@ -48,16 +60,22 @@ storage_config:
 
 ingester:
   chunk_target_size: 1536 # Value in KB.
+  # Reduce small-chunk churn by allowing longer idle time before flushing
+  chunk_idle_period: 5m
+  # Upper bound on chunk age to avoid overly long-lived chunks
+  max_chunk_age: 1h
 
 compactor:
   # The working_directory is for local temporary files *before* compaction results are uploaded to GCS.
   working_directory: /loki/compactor_work # Must be writable by Loki user in container
-  compaction_interval: 10m
+  # Compaction less frequently to reduce object churn in the bucket
+  compaction_interval: 1h
   retention_enabled: true
   # When using GCS object store, delete requests should also use GCS.
   delete_request_store: gcs # Changed from 'filesystem' to 'gcs'
   retention_delete_delay: 2h
-  retention_delete_worker_count: 50
+  # Fewer workers to throttle background delete/write pressure on the bucket
+  retention_delete_worker_count: 5
 
 # Pattern ingester is optional, you can leave it if you find it useful for unstructured logs.
 pattern_ingester:

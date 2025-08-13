@@ -15,8 +15,11 @@ import { LoginButton } from "../components/molecules/buttons/login-button";
 import { ThemeToggle } from "../components/molecules/theme-toggle";
 import { Header } from "@/components/atoms/header";
 import { Footer } from "@/components/ui/footer";
+import { MobileBottomNav } from "@/components/molecules/MobileBottomNav";
+import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 
 function App() {
+  const { isMiniApp } = useTelegramMiniApp();
   return (
     <ListingProvider>
       <MediaUploadProvider>
@@ -41,7 +44,8 @@ function App() {
               </Route>
             </Route>
           </Routes>
-          <Footer note="About Nuspace" />
+          {!isMiniApp && <Footer note="About Nuspace" />}
+          <MobileBottomNav />
           <Toasts />
         </MediaEditProvider>
       </MediaUploadProvider>

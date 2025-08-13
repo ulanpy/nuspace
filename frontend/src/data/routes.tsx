@@ -51,6 +51,7 @@ export const ROUTES = {
   APPS: {
     ROOT: buildPath(APPS),
     ABOUT: buildPath(APPS, ABOUT),
+    PROFILE: buildPath(APPS, PROFILE),
     KUPI_PRODAI: {
       ROOT: buildPath(APPS, KUPI_PRODAI),
       CREATE: buildPath(APPS, KUPI_PRODAI, CREATE),
@@ -74,7 +75,6 @@ export const ROUTES = {
         DETAIL_FN: (id: string) => buildPath(APPS, CAMPUS_CURRENT, COMMUNITY, id),
       },
       POSTS: buildPath(APPS, CAMPUS_CURRENT, POSTS),
-      PROFILE: buildPath(APPS, CAMPUS_CURRENT, PROFILE),
     },
     DORM_EATS: {
       ROOT: buildPath(APPS, DORM_EATS),
@@ -91,6 +91,7 @@ const LAZY_ROUTES_REL = {
     USER_DETAIL: `${USER}/:id`,
   },
   APPS: {
+    PROFILE: PROFILE,
     KUPI_PRODAI_ROOT: KUPI_PRODAI,
     KUPI_PRODAI_CREATE: `${KUPI_PRODAI}/${CREATE}`,
     KUPI_PRODAI_PRODUCT_DETAIL: `${KUPI_PRODAI}/${PRODUCT}/:id`,
@@ -101,7 +102,6 @@ const LAZY_ROUTES_REL = {
     CAMPUS_CURRENT_EVENT_DETAIL: `${CAMPUS_CURRENT}/${EVENT}/:id`,
     CAMPUS_CURRENT_COMMUNITY_DETAIL: `${CAMPUS_CURRENT}/${COMMUNITY}/:id`,
     CAMPUS_CURRENT_COMMUNITIES: `${CAMPUS_CURRENT}/${COMMUNITIES}`,
-    CAMPUS_CURRENT_PROFILE: `${CAMPUS_CURRENT}/${PROFILE}`,
   },
 };
 export const LazyRoutes = {
@@ -121,6 +121,10 @@ export const LazyRoutes = {
       {
         path: LAZY_ROUTES_REL.APPS.ABOUT,
         Component: withSuspense(lazy(() => import("@/pages/about"))),
+      },
+      {
+        path: LAZY_ROUTES_REL.APPS.PROFILE,
+        Component: withSuspense(lazy(() => import("@/pages/profile"))),
       },
       {
         path: LAZY_ROUTES_REL.APPS.DORM_EATS,
@@ -156,12 +160,6 @@ export const LazyRoutes = {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_COMMUNITIES,
         Component: withSuspense(
           lazy(() => import("@/features/campuscurrent/communities/pages/list")),
-        ),
-      },
-      {
-        path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_PROFILE,
-        Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/pages/profile")),
         ),
       },
     ],

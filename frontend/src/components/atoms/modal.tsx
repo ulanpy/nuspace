@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { X } from "lucide-react";
+import { Keyboard, X } from "lucide-react";
 import { Button } from "./button";
 import { cn } from "../../utils/utils";
 import { createPortal } from "react-dom";
-import { useEffect } from "react";
+import { useEffect, MouseEvent } from "react";
 import { useMaybeBackNavigation } from "@/context/BackNavigationContext";
+import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 
 interface ModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export function Modal({
   className = "max-w-md",
 }: ModalProps) {
   const backNav = useMaybeBackNavigation();
+  const { isMiniApp, hideKeyboard } = useTelegramMiniApp();
   useEffect(() => {
     if (!isOpen || !backNav) return;
     // Register modal close to back stack
@@ -71,28 +73,63 @@ export function Modal({
     };
   }, [isOpen, onClose]);
 
+  // Hide Telegram MainButton/BottomButton while any modal is open
+  React.useEffect(() => {
+    if (!isOpen) return;
+    try {
+      const w: any = window as any;
+      w.__modalOpenCount = (w.__modalOpenCount || 0) + 1;
+      const tg: any = w?.Telegram?.WebApp;
+      const main: any = tg?.MainButton ?? tg?.BottomButton;
+      if (main) {
+        if (typeof main.hide === "function") main.hide();
+        if (typeof main.setParams === "function") main.setParams({ is_visible: false });
+      }
+      return () => {
+        w.__modalOpenCount = Math.max(0, (w.__modalOpenCount || 1) - 1);
+      };
+    } catch {
+      // ignore
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   // Use portal to render modal at the document root level
   return createPortal(
-    <div className="fixed inset-0 z-[100] grid place-items-center p-4 bg-black/50 backdrop-blur-sm" onWheel={(e) => e.stopPropagation()} onTouchMove={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-[100] grid place-items-center px-4 bg-black/50 backdrop-blur-sm"
+      style={{
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + var(--tg-header-offset, 0px) + 2rem)",
+        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
+      }}
+      onWheel={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
+      >
       <div
         className={cn(
           "bg-background rounded-lg shadow-lg w-full overflow-hidden",
           className,
         )}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e: MouseEvent) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-4 border-b">
-          <div>
+        <div className="sticky top-0 z-10 flex justify-between items-center p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <div className="flex items-center gap-2">
             {title && <h2 className="text-lg font-semibold">{title}</h2>}
             {description && (
               <p className="text-sm text-muted-foreground">{description}</p>
             )}
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            {isMiniApp && (
+              <Button variant="ghost" size="icon" onClick={hideKeyboard} aria-label="Hide keyboard">
+                <Keyboard className="h-4 w-4" />
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         <div className="p-4">{children}</div>
       </div>

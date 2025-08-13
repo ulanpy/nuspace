@@ -1,5 +1,6 @@
 import { Button } from "@/components/atoms/button";
 import { useCommunityForm } from "@/context/CommunityFormContext";
+import { useTelegramBottomButtons } from "@/hooks/useTelegramBottomButtons";
 
 interface CommunityActionsProps {
   isProcessing: boolean;
@@ -17,6 +18,16 @@ export function CommunityActions({
   onDelete,
 }: CommunityActionsProps) {
   const { isEditMode } = useCommunityForm();
+
+  // Telegram Mini App bottom button integration
+  useTelegramBottomButtons({
+    enabled: false,
+    text: isProcessing ? (isEditMode ? 'Saving…' : 'Creating…') : (isEditMode ? 'Save Changes' : 'Create'),
+    disabled: true,
+    show: false,
+    showProgress: true,
+    onClick: onSubmit,
+  });
 
   return (
     <div className="flex justify-end space-x-4">
