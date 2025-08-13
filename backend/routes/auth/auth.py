@@ -1,5 +1,4 @@
 import json
-import logging
 import random
 import secrets
 from typing import Annotated
@@ -28,6 +27,7 @@ from .utils import (
 )
 
 router = APIRouter(tags=["Auth Routes"])
+
 
 # /login: always pass a state
 @router.get("/login")
@@ -68,7 +68,9 @@ async def auth_callback(
     try:
         await kc_manager.validate_keycloak_token(creds["access_token"])
     except JWTError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid Keycloak token after code exchange: {str(e)}")
+        raise HTTPException(
+            status_code=401, detail=f"Invalid Keycloak token after code exchange: {str(e)}"
+        )
 
     # Upsert user and mint app token
     user_schema: UserSchema = await create_user_schema(creds)
@@ -95,21 +97,34 @@ async def auth_callback(
     if miniapp_exists:
         try:
             # Store minimal creds needed; TTL prevents long exposure
-            await redis.setex(creds_key, 300, json.dumps({
-                "access_token": creds.get("access_token"),
-                "refresh_token": creds.get("refresh_token"),
-                "id_token": creds.get("id_token"),
-            }))
+            await redis.setex(
+                creds_key,
+                300,
+                json.dumps(
+                    {
+                        "access_token": creds.get("access_token"),
+                        "refresh_token": creds.get("refresh_token"),
+                        "id_token": creds.get("id_token"),
+                    }
+                ),
+            )
         finally:
             await redis.delete(miniapp_state_key)
 
         ua = (request.headers.get("user-agent") or "").lower()
-        is_mobile = any(s in ua for s in ["iphone", "ipad", "ipod", "android", "mobile", "windows phone"])
+        is_mobile = any(
+            s in ua for s in ["iphone", "ipad", "ipod", "android", "mobile", "windows phone"]
+        )
         if is_mobile:
-            if not getattr(config, "TG_APP_PATH", None) or str(config.TG_APP_PATH).lower() == "startapp":
+            if (
+                not getattr(config, "TG_APP_PATH", None)
+                or str(config.TG_APP_PATH).lower() == "startapp"
+            ):
                 tme_url = f"https://t.me/{config.BOT_USERNAME}?startapp={state}"
             else:
-                tme_url = f"https://t.me/{config.BOT_USERNAME}/{config.TG_APP_PATH}?startapp={state}"
+                tme_url = (
+                    f"https://t.me/{config.BOT_USERNAME}/{config.TG_APP_PATH}?startapp={state}"
+                )
             return RedirectResponse(url=tme_url, status_code=303)
         return redirect_response
 
@@ -135,9 +150,7 @@ async def bind_tg(request: Request, sub_param: Sub):
 
 
 @router.get("/miniapp/login/init")
-async def miniapp_login_init(
-    request: Request, return_to: str | None = None
-):
+async def miniapp_login_init(request: Request, return_to: str | None = None):
     """
     Initialize a Mini App login by generating a one-time state code and returning
     the external login URL that must be opened in a system browser.
