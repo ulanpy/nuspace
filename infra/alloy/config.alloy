@@ -60,23 +60,35 @@ discovery.docker "linux" {
 discovery.relabel "logs_filter" {
     targets = discovery.docker.linux.targets
 
-    // Keep if compose service is 'fastapi'
+    // Flag if compose service is 'fastapi'
     rule {
         source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
         regex         = "fastapi"
-        action        = "keep"
+        target_label  = "__tmp_keep"
+        replacement   = "true"
+        action        = "replace"
     }
 
-    // Or keep if container name ends with 'fastapi'
+    // Flag if container name ends with 'fastapi' (fixed regex)
     rule {
         source_labels = ["__meta_docker_container_name"]
-        regex         = "/?fastapi$"
+        regex         = ".*fastapi$"  // Matches e.g., "/my-fastapi" or "/app-fastapi"
+        target_label  = "__tmp_keep"
+        replacement   = "true"
+        action        = "replace"
+    }
+
+    // Keep if flagged (i.e., either condition matched)
+    rule {
+        source_labels = ["__tmp_keep"]
+        regex         = "true"
         action        = "keep"
     }
 
-    // Drop everything else
+    // Optional: Drop the temp label
     rule {
-        action = "drop"
+        action = "labeldrop"
+        regex  = "__tmp_keep"  // Drops the label named "__tmp_keep"
     }
 }
 
