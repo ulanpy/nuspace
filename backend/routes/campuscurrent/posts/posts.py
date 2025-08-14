@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app_state.meilisearch import meilisearch
+from backend.common import schemas
 from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_current_principals, get_db_session
 from backend.common.schemas import MediaResponse, ShortUserResponse
@@ -14,6 +15,7 @@ from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import CommunityComment
 from backend.core.database.models.media import MediaFormat
 from backend.core.database.models.user import User
+from backend.routes.campuscurrent.communities.schemas import ShortCommunityResponse
 from backend.routes.campuscurrent.posts import cruds
 from backend.routes.campuscurrent.posts import dependencies as deps
 from backend.routes.campuscurrent.posts.policy import PostPolicy, ResourceAction
@@ -48,7 +50,7 @@ async def create_post(
     try:
         qb = QueryBuilder(session=db_session, model=CommunityPost)
         post: CommunityPost = await qb.add(
-            data=post_data, preload=[CommunityPost.user, CommunityPost.tag]
+            data=post_data, preload=[CommunityPost.user, CommunityPost.tag, CommunityPost.community]
         )
     except IntegrityError as e:
         raise HTTPException(
@@ -77,6 +79,23 @@ async def create_post(
         request=request, media_objects=media_objs, resources=[post]
     )  # one to one mapping
 
+    community_media_objs: List[Media] = (
+        await qb.blank(model=Media)
+        .base()
+        .filter(
+            Media.entity_id == post.community_id,
+            Media.entity_type == EntityType.communities,
+            Media.media_format.in_([MediaFormat.profile, MediaFormat.banner]),
+        )
+        .all()
+    )
+
+    community_media_results: List[List[MediaResponse]] = (
+        await response_builder.map_media_to_resources(
+            request=request, media_objects=community_media_objs, resources=[post.community]
+        )
+    )
+
     total_comments: int = await (
         qb.blank(CommunityComment)
         .base(count=True)
@@ -89,17 +108,26 @@ async def create_post(
         CommunityPostResponse.model_validate(post),
         user=ShortUserResponse.model_validate(post.user),
         media=media_results[0],
+        community=(
+            response_builder.build_schema(
+                ShortCommunityResponse,
+                ShortCommunityResponse.model_validate(post.community),
+                media=community_media_results[0] if community_media_results else [],
+            )
+            if post.community
+            else None
+        ),
         total_comments=total_comments,
         tag=ShortCommunityTag.model_validate(post.tag) if post.tag else None,
         permissions=get_post_permissions(post, user),
     )
 
-
+# TODO: refactor based on communities router where keyword search ranking is preserved
 @router.get("/posts", response_model=ListCommunityPostResponse)
 async def get_posts(
     request: Request,
     user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
-    community_id: int,
+    community_id: int | None = None,
     size: int = Query(20, ge=1, le=100),
     page: int = Query(1, ge=1),
     db_session: AsyncSession = Depends(get_db_session),
@@ -107,7 +135,9 @@ async def get_posts(
 ) -> ListCommunityPostResponse:
     await PostPolicy(user=user).check_permission(action=ResourceAction.READ)
 
-    conditions = [CommunityPost.community_id == community_id]
+    conditions = []
+    if community_id:
+        conditions.append(CommunityPost.community_id == community_id)
 
     if keyword:
         meili_result = await meilisearch.get(
@@ -126,14 +156,34 @@ async def get_posts(
         conditions.append(CommunityPost.id.in_(post_ids))
 
     qb = QueryBuilder(session=db_session, model=CommunityPost)
-    posts: List[CommunityPost] = (
-        await qb.base()
-        .filter(*conditions)
-        .eager(CommunityPost.user, CommunityPost.tag)  # Eager load user
-        .paginate(size if not keyword else None, page if not keyword else None)
-        .order(CommunityPost.created_at.desc())
-        .all()
-    )
+    if keyword:
+        # Preserve Meilisearch ranking order by using a custom order
+        from sqlalchemy import case
+
+        order_clause = case(
+            *[
+                (CommunityPost.id == post_id, index)
+                for index, post_id in enumerate(post_ids)
+            ],
+            else_=len(post_ids),
+        )
+        posts: List[CommunityPost] = (
+            await qb.base()
+            .filter(*conditions)
+            .order(order_clause)
+            .eager(CommunityPost.user, CommunityPost.tag, CommunityPost.community)
+            .all()
+        )
+    else:
+        # Alphabetical order when no keyword
+        posts: List[CommunityPost] = (
+            await qb.base()
+            .filter(*conditions)
+            .paginate(size, page)
+            .eager(CommunityPost.user, CommunityPost.tag, CommunityPost.community)
+            .order(CommunityPost.created_at.desc())
+            .all()
+        )
 
     media_objs: List[Media] = (
         await qb.blank(model=Media)
@@ -150,22 +200,57 @@ async def get_posts(
         request=request, media_objects=media_objs, resources=posts
     )
 
-    # Get comment counts for each post using a dictionary
-
-    comments_count: dict = await cruds.get_comment_counts(db_session, posts)
-
-    post_responses: List[CommunityPostResponse] = [
-        response_builder.build_schema(
-            CommunityPostResponse,
-            CommunityPostResponse.model_validate(post),
-            user=ShortUserResponse.model_validate(post.user),
-            media=media,
-            total_comments=comments_count.get(post.id, 0),
-            tag=ShortCommunityTag.model_validate(post.tag) if post.tag else None,
-            permissions=get_post_permissions(post, user),
+    # Get community media for all posts
+    community_ids = [post.community_id for post in posts if post.community_id]
+    community_media_objs: List[Media] = []
+    if community_ids:
+        community_media_objs = (
+            await qb.blank(model=Media)
+            .base()
+            .filter(
+                Media.entity_id.in_(community_ids),
+                Media.entity_type == EntityType.communities,
+                Media.media_format.in_([MediaFormat.profile, MediaFormat.banner]),
+            )
+            .all()
         )
-        for post, media in zip(posts, media_results)
-    ]
+
+    # Get comment counts for each post using a dictionary
+    post_responses: List[CommunityPostResponse] = []
+    for post, media in zip(posts, media_results):
+        # Get community media for this specific event
+        community_media = (
+            [m for m in community_media_objs if m.entity_id == post.community_id]
+            if post.community_id
+            else []
+        )
+
+        community_media_responses = await response_builder.build_media_responses(
+            request=request, media_objects=community_media
+        )
+
+        comments_count: dict = await cruds.get_comment_counts(db_session, posts)
+
+        post_responses.append(
+            response_builder.build_schema(
+                CommunityPostResponse,
+                CommunityPostResponse.model_validate(post),
+                media=media,
+                community=(
+                    response_builder.build_schema(
+                        ShortCommunityResponse,
+                        ShortCommunityResponse.model_validate(post.community),
+                        media=community_media_responses,
+                    )
+                    if post.community
+                    else None
+                ),
+                user=ShortUserResponse.model_validate(post.user),
+                total_comments=comments_count.get(post.id, 0),
+                tag=ShortCommunityTag.model_validate(post.tag) if post.tag else None,
+                permissions=get_post_permissions(post, user),
+            )
+        )
 
     if keyword:
         count = meili_result.get("estimatedTotalHits", 0)
@@ -204,6 +289,24 @@ async def get_post(
         request=request, media_objects=media_objs, resources=[post]
     )
 
+    community_media_objs: List[Media] = (
+        await qb.blank(model=Media)
+        .base()
+        .filter(
+            Media.entity_id == post.community_id,
+            Media.entity_type == EntityType.communities,
+            Media.media_format.in_([MediaFormat.profile, MediaFormat.banner]),
+        )
+        .all()
+    )
+
+    community_media_results: List[List[MediaResponse]] = (
+        await response_builder.map_media_to_resources(
+            request=request, media_objects=community_media_objs, resources=[post.community]
+        )
+    )
+
+
     total_comments: int = await (
         qb.blank(CommunityComment)
         .base(count=True)
@@ -215,6 +318,15 @@ async def get_post(
         CommunityPostResponse,
         CommunityPostResponse.model_validate(post),
         user=ShortUserResponse.model_validate(post.user),
+        community=(
+            response_builder.build_schema(
+                ShortCommunityResponse,
+                ShortCommunityResponse.model_validate(post.community),
+                media=community_media_results[0] if community_media_results else [],
+            )
+            if post.community
+            else None
+        ),
         media=media_results[0] if media_results else [],
         total_comments=total_comments,
         tag=ShortCommunityTag.model_validate(post.tag) if post.tag else None,
@@ -267,6 +379,22 @@ async def update_post(
         request=request, media_objects=media_objs, resources=[updated_post]
     )
 
+    community_media_objs: List[Media] = (
+            await qb.blank(model=Media)
+            .base()
+            .filter(
+                Media.entity_id == updated_post.community_id,
+                Media.entity_type == EntityType.communities,
+                Media.media_format.in_([MediaFormat.profile, MediaFormat.banner]),
+            )
+            .all()
+        )
+
+    community_media_results: List[List[MediaResponse]] = (
+        await response_builder.map_media_to_resources(
+            request=request, media_objects=community_media_objs, resources=[updated_post.community]
+        )
+    )
     total_comments: int = await (
         qb.blank(CommunityComment)
         .base(count=True)
@@ -279,6 +407,15 @@ async def update_post(
         CommunityPostResponse.model_validate(updated_post),
         user=ShortUserResponse.model_validate(updated_post.user),
         media=media_results[0] if media_results else [],
+        community=(
+            response_builder.build_schema(
+                ShortCommunityResponse,
+                ShortCommunityResponse.model_validate(updated_post.community),
+                media=community_media_results[0] if community_media_results else [],
+            )
+            if updated_post.community
+            else None
+        ),
         total_comments=total_comments,
         tag=ShortCommunityTag.model_validate(updated_post.tag) if updated_post.tag else None,
         permissions=get_post_permissions(updated_post, user),
