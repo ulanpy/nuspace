@@ -118,22 +118,17 @@ async def auth_callback(
         finally:
             await redis.delete(miniapp_state_key)
 
-        ua = (request.headers.get("user-agent") or "").lower()
-        is_mobile = any(
-            s in ua for s in ["iphone", "ipad", "ipod", "android", "mobile", "windows phone"]
-        )
-        if is_mobile:
-            if (
-                not getattr(config, "TG_APP_PATH", None)
-                or str(config.TG_APP_PATH).lower() == "startapp"
-            ):
-                tme_url = f"https://t.me/{config.BOT_USERNAME}?startapp={state}"
-            else:
-                tme_url = (
-                    f"https://t.me/{config.BOT_USERNAME}/{config.TG_APP_PATH}?startapp={state}"
-                )
-            return RedirectResponse(url=tme_url, status_code=303)
-        return redirect_response
+        # Always deep-link back to Telegram so the Mini App re-opens with start_param
+        if (
+            not getattr(config, "TG_APP_PATH", None)
+            or str(config.TG_APP_PATH).lower() == "startapp"
+        ):
+            tme_url = f"https://t.me/{config.BOT_USERNAME}?startapp={state}"
+        else:
+            tme_url = (
+                f"https://t.me/{config.BOT_USERNAME}/{config.TG_APP_PATH}?startapp={state}"
+            )
+        return RedirectResponse(url=tme_url, status_code=303)
 
     # 2) Web flow: validate CSRF state and consume it
     csrf_key = f"csrf:{state}"
