@@ -153,6 +153,15 @@ export function CommunityFormProvider({
 
   const validateForm = (): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
+    const ensureHttp = (val: string | undefined | null): string | undefined => {
+      if (!val) return undefined;
+      const trimmed = val.trim();
+      if (!trimmed) return undefined;
+      if (!/^https?:\/\//i.test(trimmed)) {
+        return `https://${trimmed}`;
+      }
+      return trimmed;
+    };
     
     // Name validation (required, 3-100 characters)
     if (!formData.name || formData.name.trim().length < 3) {
@@ -196,7 +205,9 @@ export function CommunityFormProvider({
     
     // Recruitment link validation (required when status is open)
     if (formData.recruitment_status === CommunityRecruitmentStatus.open) {
-      const link = (formData as any).recruitment_link?.trim();
+      const normalizedLink = ensureHttp((formData as any).recruitment_link as string);
+      (formData as any).recruitment_link = normalizedLink || "";
+      const link = normalizedLink;
       if (!link) {
         errors.push("Recruitment link is required when recruitment status is open");
       } else {
@@ -218,9 +229,10 @@ export function CommunityFormProvider({
     
     // URL validation for social media links
     const validateOptionalUrl = (url: string | undefined, fieldName: string) => {
-      if (url && url.trim()) {
+      const normalized = ensureHttp(url);
+      if (normalized) {
         try {
-          const validUrl = new URL(url.trim());
+          const validUrl = new URL(normalized);
           if (validUrl.protocol !== "http:" && validUrl.protocol !== "https:") {
             errors.push(`${fieldName} must be a valid HTTP or HTTPS URL`);
           }
@@ -228,10 +240,16 @@ export function CommunityFormProvider({
           errors.push(`${fieldName} must be a valid URL`);
         }
       }
+      // write back normalization so the submit uses it
+      if (fieldName === "Telegram URL") {
+        (formData as any).telegram_url = normalized as any;
+      } else if (fieldName === "Instagram URL") {
+        (formData as any).instagram_url = normalized as any;
+      }
     };
     
-    validateOptionalUrl(formData.telegram_url, "Telegram URL");
-    validateOptionalUrl(formData.instagram_url, "Instagram URL");
+    validateOptionalUrl(formData.telegram_url as any, "Telegram URL");
+    validateOptionalUrl(formData.instagram_url as any, "Instagram URL");
     
     return {
       isValid: errors.length === 0,

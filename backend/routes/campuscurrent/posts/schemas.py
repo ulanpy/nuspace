@@ -5,6 +5,7 @@ from fastapi import Query
 from pydantic import BaseModel
 
 from backend.common.schemas import MediaResponse, ResourcePermissions, ShortUserResponse
+from backend.routes.campuscurrent.communities.schemas import ShortCommunityResponse
 from backend.routes.campuscurrent.tags.schemas import ShortCommunityTag
 
 
@@ -40,6 +41,7 @@ class BaseCommunityPost(BaseModel):
 class CommunityPostResponse(BaseCommunityPost):
     media: List[MediaResponse] = []
     user: ShortUserResponse
+    community: ShortCommunityResponse = None  # required for posts
     total_comments: int = Query(default=0, ge=0)
     tag: ShortCommunityTag | None = None
     permissions: ResourcePermissions = ResourcePermissions()

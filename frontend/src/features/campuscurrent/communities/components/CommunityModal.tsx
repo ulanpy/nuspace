@@ -87,6 +87,16 @@ export function CommunityModal({
     }
   };
 
+  const ensureHttp = (val: string | undefined | null): string | undefined => {
+    if (!val) return undefined;
+    const trimmed = val.trim();
+    if (!trimmed) return undefined;
+    if (!/^https?:\/\//i.test(trimmed)) {
+      return `https://${trimmed}`;
+    }
+    return trimmed;
+  };
+
   const handleSubmit = async (
     formData: CreateCommunityData | EditCommunityData,
     resetForm: () => void
@@ -96,7 +106,7 @@ export function CommunityModal({
     let operationSucceeded = false;
     try {
       const isRecruitmentOpen = (formData as EditCommunityData).recruitment_status === CommunityRecruitmentStatus.open;
-      const link = (formData as EditCommunityData).recruitment_link?.trim();
+      const link = ensureHttp((formData as EditCommunityData).recruitment_link || "");
 
       if (isRecruitmentOpen && !link) {
         toast({
