@@ -41,7 +41,7 @@ class BaseCommunityPost(BaseModel):
 class CommunityPostResponse(BaseCommunityPost):
     media: List[MediaResponse] = []
     user: ShortUserResponse
-    community: ShortCommunityResponse = None # required for posts 
+    community: ShortCommunityResponse = None  # required for posts
     total_comments: int = Query(default=0, ge=0)
     tag: ShortCommunityTag | None = None
     permissions: ResourcePermissions = ResourcePermissions()

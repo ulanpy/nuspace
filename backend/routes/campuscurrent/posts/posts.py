@@ -5,7 +5,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app_state.meilisearch import meilisearch
-from backend.common import schemas
 from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_current_principals, get_db_session
 from backend.common.schemas import MediaResponse, ShortUserResponse
@@ -122,6 +121,7 @@ async def create_post(
         permissions=get_post_permissions(post, user),
     )
 
+
 # TODO: refactor based on communities router where keyword search ranking is preserved
 @router.get("/posts", response_model=ListCommunityPostResponse)
 async def get_posts(
@@ -161,10 +161,7 @@ async def get_posts(
         from sqlalchemy import case
 
         order_clause = case(
-            *[
-                (CommunityPost.id == post_id, index)
-                for index, post_id in enumerate(post_ids)
-            ],
+            *[(CommunityPost.id == post_id, index) for index, post_id in enumerate(post_ids)],
             else_=len(post_ids),
         )
         posts: List[CommunityPost] = (
@@ -306,7 +303,6 @@ async def get_post(
         )
     )
 
-
     total_comments: int = await (
         qb.blank(CommunityComment)
         .base(count=True)
@@ -380,15 +376,15 @@ async def update_post(
     )
 
     community_media_objs: List[Media] = (
-            await qb.blank(model=Media)
-            .base()
-            .filter(
-                Media.entity_id == updated_post.community_id,
-                Media.entity_type == EntityType.communities,
-                Media.media_format.in_([MediaFormat.profile, MediaFormat.banner]),
-            )
-            .all()
+        await qb.blank(model=Media)
+        .base()
+        .filter(
+            Media.entity_id == updated_post.community_id,
+            Media.entity_type == EntityType.communities,
+            Media.media_format.in_([MediaFormat.profile, MediaFormat.banner]),
         )
+        .all()
+    )
 
     community_media_results: List[List[MediaResponse]] = (
         await response_builder.map_media_to_resources(
