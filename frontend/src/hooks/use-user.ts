@@ -23,13 +23,15 @@ export const useUser = () => {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
+      const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
       if (!isMiniApp) {
-        window.location.href = "/api/login";
+        const url = `/api/login?return_to=${encodeURIComponent(returnTo)}`;
+        window.location.href = url;
         return null;
       }
 
       // Mini App flow: init login and open system browser; polling is handled by useEffect via startParam
-      const initRes = await fetch(`/api/miniapp/login/init`, {
+      const initRes = await fetch(`/api/miniapp/login/init?return_to=${encodeURIComponent(returnTo)}`, {
         method: "GET",
         credentials: "include",
       });
