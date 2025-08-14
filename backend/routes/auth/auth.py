@@ -2,6 +2,7 @@ import json
 import random
 import secrets
 from typing import Annotated
+import logging
 
 from aiogram import Bot
 from aiogram.utils.deep_linking import create_start_link
@@ -27,6 +28,7 @@ from .utils import (
 )
 
 router = APIRouter(tags=["Auth Routes"])
+logger = logging.getLogger(__name__)
 
 
 # /login: always pass a state
@@ -95,6 +97,11 @@ async def auth_callback(
     miniapp_exists = await redis.get(miniapp_state_key)
 
     if miniapp_exists:
+        # Trace when we persist creds for Mini App flow for correlation with exchange polling
+        try:
+            logger.info("auth_callback: storing creds for miniapp state=%s", state)
+        except Exception:
+            pass
         try:
             # Store minimal creds needed; TTL prevents long exposure
             await redis.setex(
@@ -185,24 +192,49 @@ async def miniapp_login_exchange(
     try:
         payload = await request.json()
     except Exception:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid JSON body")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid JSON body",
+            headers={"X-MiniApp-Exchange": "invalid-json"},
+        )
 
     code = (payload or {}).get("code")
     if not code:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing code")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing code",
+            headers={"X-MiniApp-Exchange": "missing-code"},
+        )
 
     creds_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}creds:{code}"
     raw_creds = await redis.get(creds_key)
     if not raw_creds:
-        # Not ready yet
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not ready")
+        # Not ready yet — add explicit trace and header so 404s can be attributed
+        try:
+            client_ip = request.client.host if getattr(request, "client", None) else "unknown"
+            ua = request.headers.get("user-agent", "")
+            logger.info(
+                "miniapp_login_exchange: not ready yet (code=%s, ip=%s, ua=%s)",
+                code,
+                client_ip,
+                ua,
+            )
+        except Exception:
+            pass
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not ready",
+            headers={"X-MiniApp-Exchange": "not-ready"},
+        )
 
     try:
         creds = json.loads(raw_creds)
     except Exception:
         await redis.delete(creds_key)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Corrupted credentials"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Corrupted credentials",
+            headers={"X-MiniApp-Exchange": "corrupted-creds"},
         )
 
     kc_manager: KeyCloakManager = request.app.state.kc_manager
@@ -214,7 +246,9 @@ async def miniapp_login_exchange(
     except JWTError as e:
         await redis.delete(creds_key)
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Keycloak token: {str(e)}"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid Keycloak token: {str(e)}",
+            headers={"X-MiniApp-Exchange": "invalid-kc-token"},
         )
 
     # Upsert user and set cookies
@@ -238,6 +272,10 @@ async def miniapp_login_exchange(
     # Invalidate the one-time creds
     await redis.delete(creds_key)
 
+    try:
+        response.headers["X-MiniApp-Exchange"] = "ok"
+    except Exception:
+        pass
     return {"ok": True}
 
 
