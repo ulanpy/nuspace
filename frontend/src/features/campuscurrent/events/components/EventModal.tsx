@@ -51,13 +51,15 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
 
   const handleSubmit = async (
     formData: CreateEventData | EditEventData,
-    date: Date | undefined,
-    time: string,
+    startDate: Date | undefined,
+    startTime: string,
+    endDate: Date | undefined,
+    endTime: string,
     isCommunityEvent: boolean,
     selectedCommunity: Community | null,
     resetForm: () => void
   ) => {
-    if (!user || !date) return;
+    if (!user || !startDate || !endDate) return;
 
     // Validate registration link requirement
     if (
@@ -72,16 +74,37 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
       return;
     }
 
-    // Combine date and time for event_datetime in UTC to avoid timezone shifts
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const day = date.getDate();
-    const [hoursStr, minutesStr] = time ? time.split(":") : ["0", "0"];
-    const hoursNum = parseInt(hoursStr, 10) || 0;
-    const minutesNum = parseInt(minutesStr, 10) || 0;
-    const eventDateTime = new Date(
-      Date.UTC(year, month, day, hoursNum, minutesNum, 0, 0)
+    // Combine start date and time for start_datetime in UTC
+    const startYear = startDate.getFullYear();
+    const startMonth = startDate.getMonth();
+    const startDay = startDate.getDate();
+    const [startHoursStr, startMinutesStr] = startTime ? startTime.split(":") : ["0", "0"];
+    const startHoursNum = parseInt(startHoursStr, 10) || 0;
+    const startMinutesNum = parseInt(startMinutesStr, 10) || 0;
+    const startDateTime = new Date(
+      Date.UTC(startYear, startMonth, startDay, startHoursNum, startMinutesNum, 0, 0)
     ).toISOString();
+
+    // Combine end date and time for end_datetime in UTC
+    const endYear = endDate.getFullYear();
+    const endMonth = endDate.getMonth();
+    const endDay = endDate.getDate();
+    const [endHoursStr, endMinutesStr] = endTime ? endTime.split(":") : ["0", "0"];
+    const endHoursNum = parseInt(endHoursStr, 10) || 0;
+    const endMinutesNum = parseInt(endMinutesStr, 10) || 0;
+    const endDateTime = new Date(
+      Date.UTC(endYear, endMonth, endDay, endHoursNum, endMinutesNum, 0, 0)
+    ).toISOString();
+
+    // Validate that end datetime is after start datetime
+    if (new Date(endDateTime) <= new Date(startDateTime)) {
+      toast({
+        title: "Invalid time range",
+        description: "End time must be after start time.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       if (isEditMode && event) {
@@ -89,9 +112,9 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
          const editData: EditEventData = {
           name: formData.name,
           place: formData.place,
-          event_datetime: eventDateTime,
+          start_datetime: startDateTime,
+          end_datetime: endDateTime,
           description: formData.description,
-          duration: Number(formData.duration),
           policy: formData.policy,
            registration_link: (formData as any).registration_link,
           status: 'status' in formData ? formData.status : event.status,
@@ -113,9 +136,9 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
           registration_link: (formData as any).registration_link,
           name: formData.name || "",
           place: formData.place || "",
-          event_datetime: eventDateTime,
+          start_datetime: startDateTime,
+          end_datetime: endDateTime,
           description: formData.description || "",
-          duration: Number(formData.duration),
           type: formData.type as EventType,
         };
 
@@ -267,8 +290,10 @@ function EventActionsWrapper({
   onClose: () => void;
   onSubmit: (
     formData: CreateEventData | EditEventData,
-    date: Date | undefined,
-    time: string,
+    startDate: Date | undefined,
+    startTime: string,
+    endDate: Date | undefined,
+    endTime: string,
     isCommunityEvent: boolean,
     selectedCommunity: Community | null,
     resetForm: () => void
@@ -278,15 +303,17 @@ function EventActionsWrapper({
   const formContext = useEventForm();
   const {
     formData,
-    date,
-    time,
+    startDate,
+    startTime,
+    endDate,
+    endTime,
     isCommunityEvent,
     selectedCommunity,
     resetForm,
   } = formContext;
 
   const handleSubmit = () => {
-    onSubmit(formData, date, time, isCommunityEvent, selectedCommunity, resetForm);
+    onSubmit(formData, startDate, startTime, endDate, endTime, isCommunityEvent, selectedCommunity, resetForm);
   };
 
   return (

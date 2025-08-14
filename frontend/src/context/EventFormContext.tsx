@@ -8,10 +8,14 @@ interface EventFormContextType {
   setFormData: (data: CreateEventData | EditEventData) => void;
   
   // Date/time state
-  date: Date | undefined;
-  setDate: (date: Date | undefined) => void;
-  time: string;
-  setTime: (time: string) => void;
+  startDate: Date | undefined;
+  setStartDate: (date: Date | undefined) => void;
+  startTime: string;
+  setStartTime: (time: string) => void;
+  endDate: Date | undefined;
+  setEndDate: (date: Date | undefined) => void;
+  endTime: string;
+  setEndTime: (time: string) => void;
   
   // Community state
   isCommunityEvent: boolean;
@@ -60,17 +64,19 @@ export function EventFormProvider({
     name: "",
     place: "",
     description: "",
-    duration: 60,
+    start_datetime: "",
+    end_datetime: "",
     policy: "open" as EventPolicy,
     registration_link: "",
     type: "academic" as EventType,
     community_id: communityId || undefined,
     creator_sub: user?.user.sub || "",
-    event_datetime: "",
   });
   
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [time, setTime] = useState("");
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [startTime, setStartTime] = useState("");
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [endTime, setEndTime] = useState("");
   
   // Community selection state
   const [isCommunityEvent, setIsCommunityEvent] = useState(!!communityId);
@@ -82,22 +88,29 @@ export function EventFormProvider({
       setFormData({
         name: event.name,
         place: event.place,
-        event_datetime: event.event_datetime,
+        start_datetime: event.start_datetime,
+        end_datetime: event.end_datetime,
         description: event.description,
-        duration: event.duration,
         policy: event.policy,
         registration_link: event.registration_link,
         type: event.type,
         tag: event.tag,
         status: event.status,
       });
-      // Initialize date and time using LOCAL components for editing UX
-      // Display the event at the user's local time while storing in UTC on save
-      const d = new Date(event.event_datetime);
-      setDate(new Date(d.getFullYear(), d.getMonth(), d.getDate()));
-      const hh = String(d.getHours()).padStart(2, '0');
-      const mm = String(d.getMinutes()).padStart(2, '0');
-      setTime(`${hh}:${mm}`);
+      
+      // Initialize start date and time
+      const startD = new Date(event.start_datetime);
+      setStartDate(new Date(startD.getFullYear(), startD.getMonth(), startD.getDate()));
+      const startHh = String(startD.getHours()).padStart(2, '0');
+      const startMm = String(startD.getMinutes()).padStart(2, '0');
+      setStartTime(`${startHh}:${startMm}`);
+      
+      // Initialize end date and time
+      const endD = new Date(event.end_datetime);
+      setEndDate(new Date(endD.getFullYear(), endD.getMonth(), endD.getDate()));
+      const endHh = String(endD.getHours()).padStart(2, '0');
+      const endMm = String(endD.getMinutes()).padStart(2, '0');
+      setEndTime(`${endHh}:${endMm}`);
       
       // Set community state for edit mode
       if (event.community) {
@@ -112,16 +125,18 @@ export function EventFormProvider({
         name: "",
         place: "",
         description: "",
-        duration: 60,
+        start_datetime: "",
+        end_datetime: "",
         policy: "open" as EventPolicy,
         registration_link: "",
         type: "academic" as EventType,
         community_id: undefined,
         creator_sub: user?.user.sub || "",
-        event_datetime: "",
       });
-      setDate(undefined);
-      setTime("");
+      setStartDate(undefined);
+      setStartTime("");
+      setEndDate(undefined);
+      setEndTime("");
       
       // Reset community state for create mode
       setIsCommunityEvent(!!communityId);
@@ -142,39 +157,6 @@ export function EventFormProvider({
     // Check permissions for edit mode
     if (isEditMode && permissions && !permissions.editable_fields.includes(name as EventEditableFields)) {
       return; // Field is not editable
-    }
-    
-    // Special validation for duration field
-    if (name === 'duration' && type === 'number') {
-      const numValue = parseInt(value);
-      const min = 0;
-      const max = 100800;
-      
-      // If empty, allow it and set to undefined to show placeholder
-      if (value === '') {
-        setFormData({ ...formData, [name]: undefined });
-        return;
-      }
-      
-      // If not a valid number, don't update
-      if (isNaN(numValue)) {
-        return;
-      }
-      
-      // Enforce min/max limits
-      if (numValue < min) {
-        setFormData({ ...formData, [name]: min });
-        return;
-      }
-      
-      if (numValue > max) {
-        setFormData({ ...formData, [name]: max });
-        return;
-      }
-      
-      // Valid value, update normally
-      setFormData({ ...formData, [name]: numValue });
-      return;
     }
     
     setFormData({ ...formData, [name]: value });
@@ -227,26 +209,32 @@ export function EventFormProvider({
         name: "",
         place: "",
         description: "",
-        duration: 60,
+        start_datetime: "",
+        end_datetime: "",
         policy: "open" as EventPolicy,
         registration_link: "",
         type: "academic" as EventType,
         community_id: communityId || undefined,
         creator_sub: user?.user.sub || "",
-        event_datetime: "",
       } as CreateEventData);
-      setDate(undefined);
-      setTime("");
+      setStartDate(undefined);
+      setStartTime("");
+      setEndDate(undefined);
+      setEndTime("");
     }
   };
 
   const contextValue: EventFormContextType = {
     formData,
     setFormData,
-    date,
-    setDate,
-    time,
-    setTime,
+    startDate,
+    setStartDate,
+    startTime,
+    setStartTime,
+    endDate,
+    setEndDate,
+    endTime,
+    setEndTime,
     isCommunityEvent,
     setIsCommunityEvent,
     selectedCommunity,

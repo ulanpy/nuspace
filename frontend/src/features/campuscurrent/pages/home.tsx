@@ -1,63 +1,40 @@
 "use client";
 
 import { useState } from "react";
-
-import { LoginModal } from "@/components/molecules/login-modal";
+import { SubspacePosts } from "@/features/campuscurrent/subspace/components/SubspacePosts";
 import { Button } from "@/components/atoms/button";
-import { CommunityModal } from "@/features/campuscurrent/communities/components/CommunityModal";
-import { useUser } from "@/hooks/use-user";
+import { SubspacePostModal } from "@/features/campuscurrent/subspace/components/SubspacePostModal";
+import { Plus } from "lucide-react";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 
 // Main component
 export default function NUEventsPage() {
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [isCreateCommunityModalOpen, setIsCreateCommunityModalOpen] = useState(false);
-  const { user } = useUser();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   return (
     <MotionWrapper>
       <div className="w-full overflow-x-hidden">
-        {/* Join as a Community Section */}
-        <section className="py-12">
-          <div className="w-full max-w-none px-4 md:px-6">
-            <div className="text-center max-w-3xl mx-auto space-y-4">
-              <h2 className="text-2xl md:text-3xl font-bold">
-                Are you a student community?
-              </h2>
-              <p className="text-muted-foreground">
-                Log in to the platform with your NU account, and create your community's profile.
-              </p>
-              <Button
-                onClick={() => {
-                  if (user) {
-                    setIsCreateCommunityModalOpen(true);
-                  } else {
-                    setShowLoginModal(true);
-                  }
-                }}
-                size="lg"
-              >
-                Register Your Community
-              </Button>
-            </div>
+        {/* Subspace Section */}
+        <section className="py-6">
+          <div className="w-full max-w-4xl mx-auto px-4 md:px-6 space-y-6">
+            {/* Posts Feed */}
+            <SubspacePosts />
           </div>
         </section>
 
-        {/* Login Modal */}
-        <LoginModal
-          isOpen={showLoginModal}
-          onClose={() => setShowLoginModal(false)}
-          onSuccess={() => {}}
-          title="Login Required"
-          message="You need to be logged in to create a community."
+        {/* Create Post Modal */}
+        <SubspacePostModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
         />
 
-        {/* Create Community Modal */}
-        <CommunityModal
-          isOpen={isCreateCommunityModalOpen}
-          onClose={() => setIsCreateCommunityModalOpen(false)}
-          isEditMode={false}
-        />
+        {/* Floating Action Button - Above Bottom Navigation */}
+        <Button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="fixed bottom-24 right-6 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-shadow z-[9999] p-0 flex items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
       </div>
     </MotionWrapper>
   );

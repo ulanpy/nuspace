@@ -40,6 +40,7 @@ class EventType(PyEnum):
     sports = "sports"
     social = "social"
     art = "art"
+    recruitment = "recruitment"
 
 
 class CollaboratorType(PyEnum):
@@ -85,9 +86,11 @@ class Event(Base):
     registration_link: Mapped[str] = mapped_column(nullable=True, unique=False)
     name: Mapped[str] = mapped_column(nullable=False, unique=False)
     place: Mapped[str] = mapped_column(nullable=False, unique=False)
-    event_datetime: Mapped[DateTime] = mapped_column(DateTime, nullable=False)  # DateTime column
+    start_datetime: Mapped[DateTime] = mapped_column(
+        DateTime, nullable=False
+    )  # Renamed from event_datetime
+    end_datetime: Mapped[DateTime] = mapped_column(DateTime, nullable=False)  # New field
     description: Mapped[str] = mapped_column(nullable=False, unique=False)
-    duration: Mapped[int] = mapped_column(nullable=True, unique=False)
     scope: Mapped[EventScope] = mapped_column(
         SQLEnum(EventScope, name="event_scope"), nullable=False
     )

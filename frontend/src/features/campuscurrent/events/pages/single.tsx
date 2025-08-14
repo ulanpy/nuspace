@@ -27,7 +27,7 @@ import { VerificationBadge } from "@/components/molecules/verification-badge";
 // Helper function to format date for display
 const formatEventDate = (dateString: string) => {
   const date = new Date(dateString);
-  return format(date, "d MMMM, HH:mm");
+  return format(date, "d MMMM");
 };
 
 // Helper function to get policy display text
@@ -115,7 +115,7 @@ export default function EventDetailPage() {
       </div>
     );
   }
-``
+
   if (isError || !event) {
     return (
       <div className="container mx-auto px-4 py-6">
@@ -131,7 +131,7 @@ export default function EventDetailPage() {
     );
   }
 
-  const eventDate = new Date(event.event_datetime);
+  const eventDate = new Date(event.start_datetime);
   const isPast = eventDate < new Date();
   const communityProfileImg =
     event.community?.media?.find((m) => m.media_format === "profile")?.url ||
@@ -238,8 +238,8 @@ export default function EventDetailPage() {
               {getPolicyDisplay(event.policy)}
             </Badge>
             <CountdownBadge
-              eventDateIso={event.event_datetime}
-              durationMinutes={event.duration}
+              eventDateIso={event.start_datetime}
+              durationMinutes={Math.round((new Date(event.end_datetime).getTime() - new Date(event.start_datetime).getTime()) / (1000 * 60))}
             />
           </div>
 
@@ -277,12 +277,26 @@ export default function EventDetailPage() {
             <div className="flex items-center gap-3">
               <Calendar className="h-5 w-5 flex-shrink-0" />
               <span className="text-base">
-                {formatEventDate(event.event_datetime)}
+                {formatEventDate(event.start_datetime)}
               </span>
             </div>
             <div className="flex items-center gap-3">
               <Clock className="h-5 w-5 flex-shrink-0" />
-              <span className="text-base">{event.duration} minutes</span>
+              <span className="text-base">
+                {(() => {
+                  const startTime = new Date(event.start_datetime);
+                  const endTime = new Date(event.end_datetime);
+                  const durationMs = endTime.getTime() - startTime.getTime();
+                  const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
+                  const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+                  
+                  if (durationHours > 0) {
+                    return `${durationHours}h ${durationMinutes > 0 ? `${durationMinutes}m` : ''}`;
+                  } else {
+                    return `${durationMinutes}m`;
+                  }
+                })()}
+              </span>
             </div>
             <div className="flex items-center gap-3">
               <MapPin className="h-5 w-5 flex-shrink-0" />

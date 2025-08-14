@@ -28,7 +28,6 @@ export interface PostPermissions {
     editable_fields: PostEditableFields[]
   }
 
-  
 export type SubspacePost = {
   id: number;
   community_id: number;
@@ -47,8 +46,6 @@ export type SubspacePost = {
   permissions: PostPermissions;
 };
 
-
-
 export type CreatePostData = {
   community_id: number;
   user_sub?: string; // backend accepts "me"
@@ -63,5 +60,3 @@ export type UpdatePostData = {
   description?: string;
   tag_id?: number | null;
 };
-
-

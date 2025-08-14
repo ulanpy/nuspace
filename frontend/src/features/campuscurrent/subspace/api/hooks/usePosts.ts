@@ -6,12 +6,15 @@ import { subspaceApi } from "@/features/campuscurrent/subspace/api/subspaceApi";
 export type UsePostsParams = {
   community_id?: number | null;
   size?: number;
+  keyword?: string;
 };
 
 export function usePosts(params: UsePostsParams = {}) {
   const [page, setPage] = usePageParam();
   const [size, setSize] = useState(params.size ?? 12);
-  const [keyword, setKeyword] = useState<string>("");
+  const [internalKeyword, setInternalKeyword] = useState<string>("");
+  
+  const keyword = params.keyword ?? internalKeyword;
 
   const { data, isLoading, isError } = useQuery(
     subspaceApi.getPostsQueryOptions({
@@ -31,7 +34,7 @@ export function usePosts(params: UsePostsParams = {}) {
     size,
     setSize,
     keyword,
-    setKeyword,
+    setKeyword: setInternalKeyword,
   };
 }
 

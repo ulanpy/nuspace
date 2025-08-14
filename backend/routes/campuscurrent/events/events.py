@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -43,6 +43,9 @@ async def get_events(
     event_type: EventType | None = None,
     event_status: EventStatus | None = None,
     community_id: int | None = None,
+    time_filter: schemas.TimeFilter | None = Query(
+        default=None, description="Predefined time filter: upcoming, today, week, month"
+    ),
     start_date: date | None = Query(
         default=None, title="Start date", description="Дата начала диапазона (формат: YYYY-MM-DD)"
     ),
@@ -82,8 +85,9 @@ async def get_events(
     - `event_type`: Filter by event type (optional)
     - `event_status`: Filter by event status (optional)
     - `community_id`: Filter by specific community (optional)
-    - `start_date`: Start date for filtering events (optional)
-    - `end_date`: End date for filtering events (optional)
+    - `time_filter`: Predefined time filter (upcoming, today, week, month) - takes precedence over start_date/end_date
+    - `start_date`: Start date for filtering events (optional, ignored if time_filter is provided)
+    - `end_date`: End date for filtering events (optional, ignored if time_filter is provided)
     - `creator_sub`: Filter by event creator (optional)
         - If set to "me", returns the current user's events
         - If set to a specific user_sub, returns that user's approved events (if authorized)
@@ -96,7 +100,7 @@ async def get_events(
     - When status is not specified, it means user wants to see all statuses
     - Regular users must explicitly request approved events when viewing others' events
     - No silent filtering is applied - user must be explicit about their intent
-    - Results are ordered by event datetime by default
+    - Results are ordered by start_datetime by default
     - Returns 404 if specified community_id doesn't exist
     """
     # Create policy and check permissions
@@ -143,11 +147,64 @@ async def get_events(
     if creator_sub:
         filters.append(Event.creator_sub == creator_sub)
 
-    # Add date range filtering
-    if start_date:
-        filters.append(func.date(Event.event_datetime) >= start_date)
-    if end_date:
-        filters.append(func.date(Event.event_datetime) <= end_date)
+    # Handle time filtering with improved logic
+    now = datetime.utcnow()
+
+    if time_filter:
+        # Use predefined time filters that properly handle ongoing events
+        if time_filter == schemas.TimeFilter.UPCOMING:
+            # Show events that haven't ended yet (upcoming + ongoing)
+            filters.append(Event.end_datetime > now)
+        elif time_filter == schemas.TimeFilter.TODAY:
+            # Show events that intersect with today AND haven't ended yet
+            today_start = datetime.combine(now.date(), datetime.min.time())
+            today_end = datetime.combine(now.date(), datetime.max.time())
+            filters.append(
+                (
+                    (Event.start_datetime >= today_start) & (Event.start_datetime <= today_end)
+                    | (Event.start_datetime < today_start) & (Event.end_datetime > today_start)
+                )
+                & (Event.end_datetime > now)  # Exclude events that have ended
+            )
+        elif time_filter == schemas.TimeFilter.WEEK:
+            # Show events that intersect with this week AND haven't ended yet
+            from datetime import timedelta
+
+            start_of_week = now - timedelta(days=now.weekday())
+            start_of_week = datetime.combine(start_of_week.date(), datetime.min.time())
+            end_of_week = start_of_week + timedelta(days=7)
+            filters.append(
+                (
+                    (Event.start_datetime >= start_of_week) & (Event.start_datetime < end_of_week)
+                    | (Event.start_datetime < start_of_week) & (Event.end_datetime > start_of_week)
+                )
+                & (Event.end_datetime > now)  # Exclude events that have ended
+            )
+        elif time_filter == schemas.TimeFilter.MONTH:
+            # Show events that intersect with this month AND haven't ended yet
+            start_of_month = datetime.combine(now.replace(day=1).date(), datetime.min.time())
+            if now.month == 12:
+                end_of_month = datetime.combine(
+                    now.replace(year=now.year + 1, month=1, day=1).date(), datetime.min.time()
+                )
+            else:
+                end_of_month = datetime.combine(
+                    now.replace(month=now.month + 1, day=1).date(), datetime.min.time()
+                )
+            filters.append(
+                (
+                    (Event.start_datetime >= start_of_month) & (Event.start_datetime < end_of_month)
+                    | (Event.start_datetime < start_of_month)
+                    & (Event.end_datetime > start_of_month)
+                )
+                & (Event.end_datetime > now)  # Exclude events that have ended
+            )
+    else:
+        # Legacy date range filtering (for backward compatibility)
+        if start_date:
+            filters.append(func.date(Event.start_datetime) >= start_date)
+        if end_date:
+            filters.append(func.date(Event.start_datetime) <= end_date)
 
     qb = QueryBuilder(session=db_session, model=Event)
     events: List[Event] = (
@@ -155,7 +212,7 @@ async def get_events(
         .filter(*filters)
         .eager(Event.creator, Event.community, Event.collaborators)
         .paginate(size if not keyword else None, page if not keyword else None)
-        .order(Event.event_datetime.asc())
+        .order(Event.start_datetime.asc())
         .all()
     )
 
