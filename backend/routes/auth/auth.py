@@ -125,9 +125,7 @@ async def auth_callback(
         ):
             tme_url = f"https://t.me/{config.BOT_USERNAME}?startapp={state}"
         else:
-            tme_url = (
-                f"https://t.me/{config.BOT_USERNAME}/{config.TG_APP_PATH}?startapp={state}"
-            )
+            tme_url = f"https://t.me/{config.BOT_USERNAME}/{config.TG_APP_PATH}?startapp={state}"
         return RedirectResponse(url=tme_url, status_code=303)
 
     # 2) Web flow: validate CSRF state and consume it
