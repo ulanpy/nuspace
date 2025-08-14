@@ -33,6 +33,7 @@ import { useUser } from "@/hooks/use-user";
 import { CommunityModal } from "@/features/campuscurrent/communities/components/CommunityModal";
 import { EventModal } from "@/features/campuscurrent/events/components/EventModal";
 import { MediaFormat } from "@/features/media/types/types";
+import { SubspacePosts } from "../../subspace/components/SubspacePosts";
 
 // Helpers
 const getUserInitials = (name?: string, surname?: string) => {
@@ -643,8 +644,7 @@ export default function CommunityDetailPage() {
                   <div className="p-6 text-center">
                     <div className="py-12">
                       <div className="text-6xl mb-4">🚧</div>
-                      <h3 className="text-xl font-semibold mb-2">Coming Soon!</h3>
-                      <p className="text-muted-foreground">We're working on something amazing for the community space.</p>
+                      {/* <SubspacePosts/> */}
                     </div>
                   </div>
                 </Card>

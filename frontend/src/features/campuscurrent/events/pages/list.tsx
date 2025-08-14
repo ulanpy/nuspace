@@ -116,7 +116,7 @@ const EventsGrid = ({
   }
 
   return (
-    <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(260px,320px))] justify-center gap-3 sm:gap-4 md:gap-6">
+    <div className="mt-4 grid grid-cols-2 justify-center gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
       {filteredEvents.map((event) => (
         <EventCard key={event.id} {...event} />
       ))}

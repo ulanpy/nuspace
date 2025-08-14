@@ -5,7 +5,6 @@ import type {
   CreatePostData,
   UpdatePostData,
   SubspacePost,
-  SubspacePostDetail,
 } from "@/features/campuscurrent/subspace/types";
 
 export const subspaceApi = {
@@ -46,12 +45,12 @@ export const subspaceApi = {
   getPostQueryOptions: (id: string | number) => {
     return queryOptions({
       queryKey: [...subspaceApi.baseKey, "detail", String(id)] as const,
-      queryFn: () => apiCall<SubspacePostDetail>(`/${Routes.POSTS}/${id}`),
+      queryFn: () => apiCall<SubspacePost>(`/${Routes.POSTS}/${id}`),
     });
   },
 
   createPost: (data: CreatePostData) => {
-    return apiCall<SubspacePostDetail>(`/${Routes.POSTS}`, {
+    return apiCall<SubspacePost>(`/${Routes.POSTS}`, {
       method: "POST",
       json: {
         user_sub: data.user_sub ?? "me",
@@ -61,7 +60,7 @@ export const subspaceApi = {
   },
 
   updatePost: (id: string | number, data: UpdatePostData) => {
-    return apiCall<SubspacePostDetail>(`/${Routes.POSTS}/${id}`, {
+    return apiCall<SubspacePost>(`/${Routes.POSTS}/${id}`, {
       method: "PATCH",
       json: data,
     });
