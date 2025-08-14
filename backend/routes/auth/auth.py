@@ -1,8 +1,8 @@
 import json
+import logging
 import random
 import secrets
 from typing import Annotated
-import logging
 
 from aiogram import Bot
 from aiogram.utils.deep_linking import create_start_link
