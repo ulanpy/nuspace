@@ -98,7 +98,7 @@ export function Modal({
   // Use portal to render modal at the document root level
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] grid place-items-center px-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-[10000] grid place-items-center px-4 bg-black/50 backdrop-blur-sm"
       style={{
         paddingTop: "calc(env(safe-area-inset-top, 0px) + var(--tg-header-offset, 0px) + 2rem)",
         paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
