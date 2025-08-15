@@ -10,6 +10,7 @@ import { useCommunities } from "@/features/campuscurrent/communities/hooks/use-c
 import { Community } from "@/features/campuscurrent/types/types";
 import { Media, MediaFormat } from "@/features/media/types/types";
 import { CommunityModal } from "@/features/campuscurrent/communities/components/CommunityModal";
+import { EventModal } from "@/features/campuscurrent/events/components/EventModal";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 
 // Dynamic import of all webp files in the hero_assets directory
@@ -120,6 +121,7 @@ export function EventsLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isCreateCommunityModalOpen, setIsCreateCommunityModalOpen] = useState(false);
+  const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false);
 
   // Scroll to top on route change unless there's a hash
   useEffect(() => {
@@ -163,7 +165,7 @@ export function EventsLayout() {
       key: e.id,
       render: () => {
         const poster = e.media?.[0]?.url || "/placeholder.svg";
-        const dateStr = new Date(e.event_datetime).toLocaleDateString();
+        const dateStr = new Date(e.start_datetime).toLocaleDateString();
         const hostName =
           e.scope === "community"
             ? e.community?.name || ""
@@ -312,8 +314,7 @@ export function EventsLayout() {
               Create Event
             </div>
           ),
-          onClick: () =>
-            navigate(`${ROUTES.APPS.CAMPUS_CURRENT.EVENTS}#create-event`),
+          onClick: () => setIsCreateEventModalOpen(true),
         },
         slides: eventSlides,
       }
@@ -425,6 +426,13 @@ export function EventsLayout() {
       <CommunityModal
         isOpen={isCreateCommunityModalOpen}
         onClose={() => setIsCreateCommunityModalOpen(false)}
+        isEditMode={false}
+      />
+
+      {/* Create Event Modal */}
+      <EventModal
+        isOpen={isCreateEventModalOpen}
+        onClose={() => setIsCreateEventModalOpen(false)}
         isEditMode={false}
       />
     </div>

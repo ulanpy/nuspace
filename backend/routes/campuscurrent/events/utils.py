@@ -34,9 +34,9 @@ def get_event_permissions(
         permissions.editable_fields = [
             "name",
             "place",
-            "event_datetime",
+            "start_datetime",
+            "end_datetime",
             "description",
-            "duration",
             "policy",
             "registration_link",
             "status",
@@ -62,9 +62,9 @@ def get_event_permissions(
         permissions.editable_fields = [
             "name",
             "place",
-            "event_datetime",
+            "start_datetime",
+            "end_datetime",
             "description",
-            "duration",
             "policy",
             "type",
             "registration_link",
