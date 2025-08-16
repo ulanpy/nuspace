@@ -25,7 +25,7 @@ export function SubspacePostModal({ isOpen, onClose }: SubspacePostModalProps) {
   const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const canPost = selectedCommunity && description.trim().length > 0;
 
   const handleSubmit = () => {
@@ -37,12 +37,14 @@ export function SubspacePostModal({ isOpen, onClose }: SubspacePostModalProps) {
         community_id: selectedCommunity.id,
         title: finalTitle,
         description: description.trim(),
+        media: mediaFiles,
       },
       {
         onSuccess: () => {
           setTitle("");
           setDescription("");
           setSelectedCommunity(null);
+          setMediaFiles([]);
           onClose();
           toast({
             title: "Post created successfully",
@@ -60,10 +62,15 @@ export function SubspacePostModal({ isOpen, onClose }: SubspacePostModalProps) {
     );
   };
 
+  const handleMediaChange = (files: File[]) => {
+    setMediaFiles(files);
+  };
+
   const handleClose = () => {
     setTitle("");
     setDescription("");
     setSelectedCommunity(null);
+    setMediaFiles([]);
     onClose();
   };
 
@@ -91,26 +98,27 @@ export function SubspacePostModal({ isOpen, onClose }: SubspacePostModalProps) {
       
       {/* Modal Content */}
       <div 
-        className={`fixed inset-0 z-[9999] transition-transform duration-300 ease-out ${
-          isOpen ? 'translate-y-0' : 'translate-y-full'
+        className={`fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >
-        <div className="h-full bg-background">
-        {/* Header */}
-        <div className="sticky top-0 z-10 flex justify-between items-center p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-          <Button variant="ghost" onClick={handleClose} className="text-muted-foreground">
-            <X className="h-4 w-4" />
-          </Button>
-          <div className="w-10"></div>
-        </div>
-        
-        {/* Content */}
-        <div className="h-full overflow-y-auto p-4">
-          <div className="max-w-2xl mx-auto space-y-6">
-            {/* Title moved below header */}
-            <div className="pt-8">
-              <h2 className="text-xl font-semibold">Create Post</h2>
-            </div>
+        <div className="bg-background rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] sm:max-h-[85vh] flex flex-col animate-in fade-in-50 zoom-in-95">
+          {/* Header */}
+          <div className="flex justify-between items-center p-6 border-b border-border flex-shrink-0">
+            <h2 className="text-xl font-semibold">Create Post</h2>
+            <Button variant="ghost" size="icon" onClick={handleClose} className="h-8 w-8">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* Content */}
+          <div className="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1">
+            {/* Media Upload */}
+            {/* <div className="space-y-2">
+              <label className="text-base font-medium text-foreground">Images (optional)</label>
+              <SubspaceMediaUpload onMediaChange={handleMediaChange} />
+            </div> */}
+
             {/* User → Community Relationship Display */}
             {selectedCommunity && user && (
               <div className="p-4 bg-muted/30 rounded-lg">
@@ -213,34 +221,34 @@ export function SubspacePostModal({ isOpen, onClose }: SubspacePostModalProps) {
               />
             </div>
 
-                         {/* Actions */}
-             <div className="flex justify-end gap-3 pt-4">
-               <Button variant="outline" onClick={handleClose}>
-                 Cancel
-               </Button>
-               <Button 
-                 disabled={!canPost || isPending} 
-                 onClick={handleSubmit}
-                 size="lg"
-               >
-                 {isPending ? "Creating..." : "Post"}
-               </Button>
-             </div>
-           </div>
-         </div>
-       </div>
-     </div>
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 pb-2 sm:pb-0">
+              <Button variant="outline" onClick={handleClose} className="order-2 sm:order-1">
+                Cancel
+              </Button>
+              <Button 
+                disabled={!canPost || isPending} 
+                onClick={handleSubmit}
+                size="lg"
+                className="order-1 sm:order-2"
+              >
+                {isPending ? "Creating..." : "Post"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-     {/* Community Selection Modal */}
-     <CommunitySelectionModal
-       isOpen={showCommunityModal}
-       onClose={() => setShowCommunityModal(false)}
-       onSelect={(community) => {
-         setSelectedCommunity(community);
-         setShowCommunityModal(false);
-       }}
-       selectedCommunityId={selectedCommunity?.id}
-     />
-   </>
- );
+      {/* Community Selection Modal */}
+      <CommunitySelectionModal
+        isOpen={showCommunityModal}
+        onClose={() => setShowCommunityModal(false)}
+        onSelect={(community) => {
+          setSelectedCommunity(community);
+          setShowCommunityModal(false);
+        }}
+        selectedCommunityId={selectedCommunity?.id}
+      />
+    </>
+  );
 }

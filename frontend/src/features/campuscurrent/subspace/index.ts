@@ -5,5 +5,8 @@ export * from "./hooks/usePost";
 export * from "./hooks/useCreatePost";
 export * from "./hooks/useUpdatePost";
 export * from "./hooks/useDeletePost";
+export * from "./api/hooks/useCreatePost";
+export * from "./api/hooks/useUpdatePost";
+export * from "./api/hooks/useDeletePost";
 
 
