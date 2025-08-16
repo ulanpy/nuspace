@@ -116,7 +116,7 @@ function AutoCarousel({
   );
 }
 
-export function EventsLayout() {
+export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isCreateCommunityModalOpen, setIsCreateCommunityModalOpen] = useState(false);
