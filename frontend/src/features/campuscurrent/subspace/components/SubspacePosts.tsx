@@ -29,7 +29,6 @@ export const SubspacePosts = () => {
   };
 
   const handleSaveEdit = () => {
-  const handleSaveEdit = () => {
     if (editPostId !== null) {
       const updatedData: UpdatePostData = {
         title: editTitle,
@@ -177,4 +176,3 @@ export const SubspacePosts = () => {
     </div>
   );
 };
-
