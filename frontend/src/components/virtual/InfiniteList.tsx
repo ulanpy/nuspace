@@ -1,5 +1,7 @@
 import React, { ReactNode } from 'react';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { Input } from '../atoms/input';
+import { Search } from 'lucide-react';
 
 // Error Boundary Component
 class ListErrorBoundary extends React.Component<
@@ -52,6 +54,7 @@ export interface InfiniteListProps<T> {
   // Search props
   showSearch?: boolean;
   searchPlaceholder?: string;
+  itemCountPlaceholder?: string;
   onSearchChange?: (keyword: string) => void;
   
   // Header props
@@ -82,6 +85,7 @@ export function InfiniteList<T>({
   onSearchChange,
   title,
   gridLayout,
+  itemCountPlaceholder = "Items",
 }: InfiniteListProps<T>) {
   const [searchKeyword, setSearchKeyword] = React.useState(keyword);
 
@@ -155,7 +159,7 @@ export function InfiniteList<T>({
             <h2 className="text-xl font-semibold">{title}</h2>
             {/* Debug info */}
             <div className="text-xs text-muted-foreground mt-1">
-              Items: {items.length}
+              {itemCountPlaceholder}: {items.length}
             </div>
           </div>
         )}
@@ -163,13 +167,16 @@ export function InfiniteList<T>({
         {/* Search Input */}
         {showSearch && (
           <div className="mb-6">
-            <input
+            <span className="flex items-center gap-2 border border-input bg-background rounded-md">
+              <Search className="w-4 h-4 ml-2" />
+              <input
               type="text"
               value={searchKeyword}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full h-10 px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="w-full h-10 px-3 py-2 bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
+            </span>
           </div>
         )}
 

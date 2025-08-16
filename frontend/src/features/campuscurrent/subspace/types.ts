@@ -53,6 +53,7 @@ export type CreatePostData = {
   description: string;
   tag_id?: number | null;
   from_community?: boolean | null;
+  media?: File[];
 };
 
 export type UpdatePostData = {
