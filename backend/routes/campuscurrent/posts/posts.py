@@ -6,7 +6,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app_state.meilisearch import meilisearch
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_current_principals, get_db_session, get_optional_principals
+from backend.common.dependencies import (
+    get_current_principals,
+    get_db_session,
+    get_optional_principals,
+)
 from backend.common.schemas import MediaResponse, ShortUserResponse
 from backend.common.utils import response_builder
 from backend.core.database.models import Community, CommunityPost, CommunityPostTag, Media
