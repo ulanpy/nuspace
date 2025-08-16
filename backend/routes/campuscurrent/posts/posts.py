@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app_state.meilisearch import meilisearch
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_current_principals, get_db_session
+from backend.common.dependencies import get_current_principals, get_db_session, get_optional_principals
 from backend.common.schemas import MediaResponse, ShortUserResponse
 from backend.common.utils import response_builder
 from backend.core.database.models import Community, CommunityPost, CommunityPostTag, Media
@@ -126,7 +126,7 @@ async def create_post(
 @router.get("/posts", response_model=ListCommunityPostResponse)
 async def get_posts(
     request: Request,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
     community_id: int | None = None,
     size: int = Query(20, ge=1, le=100),
     page: int = Query(1, ge=1),
@@ -265,7 +265,7 @@ async def get_posts(
 async def get_post(
     request: Request,
     post_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
     db_session: AsyncSession = Depends(get_db_session),
     post: CommunityPost = Depends(deps.post_exists_or_404),
 ) -> CommunityPostResponse:
