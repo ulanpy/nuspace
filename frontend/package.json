@@ -63,7 +63,6 @@
     "react-query": "^3.39.3",
     "react-resizable-panels": "^2.1.7",
     "react-router-dom": "latest",
-    "react-virtual": "^2.10.4",
     "react-window": "^1.8.11",
     "recharts": "2.15.0",
     "sass": "latest",

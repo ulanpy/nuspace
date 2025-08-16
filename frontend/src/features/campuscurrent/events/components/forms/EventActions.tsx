@@ -19,7 +19,10 @@ export function EventActions({
 }: EventActionsProps) {
   const {
     formData,
-    date,
+    startDate,
+    startTime,
+    endDate,
+    endTime,
     isEditMode,
     permissions,
     isCommunityEvent,
@@ -34,7 +37,10 @@ export function EventActions({
     !formData.name || 
     !formData.place || 
     !formData.description || 
-    !date || 
+    !startDate || 
+    !startTime ||
+    !endDate ||
+    !endTime ||
     (requiresRegistrationLink && !hasRegistrationLink) ||
     (isEditMode && !permissions?.can_edit) || 
     (!isEditMode && isCommunityEvent && !selectedCommunity);

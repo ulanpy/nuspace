@@ -4,7 +4,7 @@ import { Calendar, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
 import { Event } from "@/features/campuscurrent/types/types";
-import profilePlaceholder from "@/assets/svg/profile-placeholder.svg"; // ADDED THIS IMPORT
+import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 import { CountdownHeaderBar } from "./CountdownHeaderBar";
 
 interface EventCardProps extends Event {
@@ -15,16 +15,51 @@ export function EventCard(props: EventCardProps) {
   const { 
     id,
     name, 
-    event_datetime, 
-    place, 
+    start_datetime, 
+    end_datetime,
     policy, 
     media,
     type,
  } = props;
   const compact = props.compact === true;
 
-  // Removed calendar action and related state from list card
   const [imageError, setImageError] = useState(false);
+
+  // Helper function to format event date in a human-readable way
+  const formatEventDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const eventDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    // Format time
+    const time = date.toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
+    
+    // Check if it's today, tomorrow, or another date
+    if (eventDate.getTime() === today.getTime()) {
+      return `Today at ${time}`;
+    } else if (eventDate.getTime() === tomorrow.getTime()) {
+      return `Tomorrow at ${time}`;
+    } else {
+      // For other dates, show "11 Aug at 2:30 PM" format
+      const day = date.getDate();
+      const month = date.toLocaleDateString([], { month: 'short' });
+      const year = date.getFullYear();
+      const currentYear = now.getFullYear();
+      
+      if (year === currentYear) {
+        return `${day} ${month} at ${time}`;
+      } else {
+        return `${day} ${month} ${year} at ${time}`;
+      }
+    }
+  };
 
   // Helper function to get policy display text
   const getPolicyDisplay = (policy: string) => {
@@ -38,107 +73,107 @@ export function EventCard(props: EventCardProps) {
     }
   };
 
-  const isUpcoming = new Date(event_datetime).getTime() > Date.now();
+  const isUpcoming = new Date(start_datetime).getTime() > Date.now();
+
+  // Calculate duration in minutes for the countdown component
+  const durationMinutes = Math.round((new Date(end_datetime).getTime() - new Date(start_datetime).getTime()) / (1000 * 60));
 
   return (
-    <>
-      <Card className="hover:shadow-md transition-shadow">
-        <CountdownHeaderBar eventDateIso={event_datetime} durationMinutes={props.duration} />
-        <Link to={`/apps/campuscurrent/event/${id}`}>
-          <div className="aspect-[3/4] relative overflow-hidden bg-muted">
-            {media && media.length > 0 && media[0]?.url && !imageError ? (
-              <img
-                src={media[0].url}
-                alt={name}
-                className="object-cover w-full h-full"
-                onError={() => setImageError(true)}
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center">
-                  <Calendar className="h-12 w-12 text-muted-foreground opacity-50 mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">No poster available</p>
-                </div>
+    <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
+      <CountdownHeaderBar eventDateIso={start_datetime} durationMinutes={durationMinutes} />
+      <Link to={`/apps/campuscurrent/event/${id}`}>
+        <div className="aspect-[3/4] relative overflow-hidden bg-muted">
+          {media && media.length > 0 && media[0]?.url && !imageError ? (
+            <img
+              src={media[0].url}
+              alt={name}
+              className="object-cover w-full h-full"
+              onError={() => setImageError(true)}
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="text-center">
+                <Calendar className="h-12 w-12 text-muted-foreground opacity-50 mx-auto mb-1" />
+                <p className="text-xs text-muted-foreground">No poster available</p>
               </div>
-            )}
-            {/* Profile image overlay */}
-            <div className="absolute bottom-2 right-2">
-              {props.scope === "personal" && props.creator?.picture && (
-                <img
-                  src={props.creator.picture}
-                  alt={`${props.creator.name} ${props.creator.surname}`}
-                  className="w-8 h-8 rounded-full border-2 border-white shadow-md object-cover"
-                />
-              )}
-              {props.scope === "community" && props.community?.media && (
-                (() => {
-                  const profileMedia = props.community.media.find(
-                    (media) => 
-                      media.entity_type === "communities" && 
-                      media.media_format === "profile"
-                  );
-                  return profileMedia ? (
-                    <img
-                      src={profileMedia.url} // Correctly using profileMedia.url
-                      alt={props.community.name}
-                      className="w-8 h-8 rounded-full border-2 border-white shadow-md object-cover"
-                    />
-                  ) : (
-                    // Fallback to profilePlaceholder if profileMedia is not found
-                    <img
-                      src={profilePlaceholder}
-                      alt={props.community.name || "Community Profile"}
-                      className="w-8 h-8 rounded-full border-2 border-white shadow-md object-cover"
-                    />
-                  );
-                })()
-              )}
             </div>
-          </div>
-        </Link>
-        <CardHeader className="p-4 pb-2">
-          <div className="flex flex-wrap gap-1 mb-2 items-center">
-            <Badge variant="outline" className="">{type[0].toUpperCase()}{type.slice(1)}</Badge>
+          )}
+          
+          {/* Policy badge overlay - bottom left */}
+          <div className="absolute bottom-2 left-2">
             <Badge
               variant="outline"
-              className={`${
+              className={`text-xs bg-white/90 backdrop-blur-sm ${
                 policy === 'open'
-                  ? 'bg-green-100 text-green-900 border-green-200 dark:bg-green-900/30 dark:text-green-200 dark:border-green-800'
-                  : 'bg-blue-100 text-blue-900 border-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800'
+                  ? 'bg-green-100/90 text-green-900 border-green-200 dark:bg-green-900/50 dark:text-green-200 dark:border-green-800'
+                  : 'bg-blue-100/90 text-blue-900 border-blue-200 dark:bg-blue-900/50 dark:text-blue-200 dark:border-blue-800'
               }`}
             >
               {getPolicyDisplay(policy)}
             </Badge>
           </div>
-          <div className={compact ? "space-y-1 min-h-[72px]" : undefined}>
-            <Link
-              to={`/apps/campuscurrent/event/${id}`}
-              className="hover:underline"
-            >
-              <h3 className={`text-lg font-semibold ${compact ? 'line-clamp-1' : 'line-clamp-2'}`}>{name}</h3>
-            </Link>
-            <div className={`text-sm text-muted-foreground ${compact ? 'line-clamp-1' : 'line-clamp-2'}`}>
-              {props.scope === "community" 
-                ? `by ${props.community?.name || 'Unknown Community'}` 
-                : `by ${props.creator?.name} ${props.creator?.surname}`}
-            </div>
+          
+          {/* Profile image overlay - bottom right */}
+          <div className="absolute bottom-2 right-2">
+            {props.scope === "personal" && props.creator?.picture && (
+              <img
+                src={props.creator.picture}
+                alt={`${props.creator.name} ${props.creator.surname}`}
+                className="w-8 h-8 rounded-full border-2 border-white shadow-md object-cover"
+              />
+            )}
+            {props.scope === "community" && props.community?.media && (
+              (() => {
+                const profileMedia = props.community.media.find(
+                  (media) => 
+                    media.entity_type === "communities" && 
+                    media.media_format === "profile"
+                );
+                return profileMedia ? (
+                  <img
+                    src={profileMedia.url}
+                    alt={props.community.name}
+                    className="w-8 h-8 rounded-full border-2 border-white shadow-md object-cover"
+                  />
+                ) : (
+                  <img
+                    src={profilePlaceholder}
+                    alt={props.community.name || "Community Profile"}
+                    className="w-8 h-8 rounded-full border-2 border-white shadow-md object-cover"
+                  />
+                );
+              })()
+            )}
           </div>
-        </CardHeader>
-        <CardContent className="p-4 pt-0 space-y-2">
+        </div>
+      </Link>
+      <CardHeader className="p-3 pb-2 flex-shrink-0">
+        <div className="space-y-1">
+          <Link
+            to={`/apps/campuscurrent/event/${id}`}
+            className="hover:underline"
+          >
+            <h3 className="text-base font-semibold line-clamp-2 leading-tight">{name}</h3>
+          </Link>
+          <div className="text-sm text-muted-foreground line-clamp-1">
+            {props.scope === "community" 
+              ? `by ${props.community?.name || 'Unknown Community'}` 
+              : `by ${props.creator?.name} ${props.creator?.surname}`}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-3 pt-0 mt-auto">
+        <div className="space-y-2">
           <div className="flex items-center text-sm text-muted-foreground">
             <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
-            <span>{new Date(event_datetime).toLocaleDateString()} at {new Date(event_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            <span className="line-clamp-1">
+              {formatEventDate(start_datetime)}
+            </span>
           </div>
-          <div className="flex items-center text-sm text-muted-foreground">
-            <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
-            <span className="truncate">{place}</span>
-          </div>
-          {/* Duration removed per list card simplification */}
-        </CardContent>
-        {/* Removed Add to Calendar button from card to keep action on single page */}
-      </Card>
-      {/* Removed login modal since calendar action no longer lives here */}
-    </>
+
+        </div>
+      </CardContent>
+    </Card>
   );
 }
