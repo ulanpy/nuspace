@@ -8,7 +8,7 @@ import { Toasts } from "../components/atoms/toast";
 import { ListingProvider } from "../context/ListingContext";
 import { MediaUploadProvider } from "../context/MediaUploadContext";
 import { MediaEditProvider } from "../context/MediaEditContext";
-import { EventsLayout } from "../features/campuscurrent/pages/layout";
+import { Layout } from "../features/campuscurrent/pages/layout";
 
 
 import { LoginButton } from "../components/molecules/buttons/login-button";
@@ -37,7 +37,7 @@ function App() {
               {LazyRoutes.APPS.BASIC.map(({ path, Component }) => (
                 <Route key={path} path={path} element={<Component />} />
               ))}
-              <Route element={<EventsLayout />}>
+              <Route element={<Layout />}>
                 {LazyRoutes.APPS.EVENTS.map(({ path, Component }) => (
                   <Route key={path} path={path} element={<Component />} />
                 ))}

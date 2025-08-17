@@ -11,6 +11,10 @@ import MotionWrapper from "@/components/atoms/motion-wrapper";
 export default function NUEventsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
+  const handleCreatePost = () => {
+    setIsCreateModalOpen(true);
+  };
+
   return (
     <MotionWrapper>
       <div className="w-full overflow-x-hidden">
@@ -18,15 +22,15 @@ export default function NUEventsPage() {
         <section className="py-6">
           <div className="w-full max-w-4xl mx-auto px-4 md:px-6 space-y-6">
             {/* Posts Feed */}
-            <SubspacePosts />
+            <SubspacePosts onCreatePost={handleCreatePost} />
           </div>
         </section>
 
         {/* Create Post Modal */}
-        <SubspacePostModal
+        {isCreateModalOpen && (<SubspacePostModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
-        />
+        />)}
 
         {/* Floating Action Button - Above Bottom Navigation */}
         <Button
