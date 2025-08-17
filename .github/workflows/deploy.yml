@@ -82,10 +82,22 @@ jobs:
           echo "${{ secrets.ANSIBLE_HOST_KEY }}" >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
+      - name: Create inventory file
+        run: |
+          cat > ansible/inventory.yml << EOF
+          ---
+          all:
+            children:
+              webservers:
+                hosts:
+                  ${{ secrets.ANSIBLE_HOST }}:
+                    ansible_user: ${{ secrets.ANSIBLE_USER }}
+          EOF
+
       - name: Run Ansible Playbook
         run: |
           ansible-playbook ansible/playbook.yml \
-            --inventory "${{ secrets.ANSIBLE_HOST }}," \
+            --inventory ansible/inventory.yml \
             --user "${{ secrets.ANSIBLE_USER }}" \
             --private-key ~/.ssh/id_rsa \
             --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ secrets.ANSIBLE_USER }} docker_user=${{ secrets.DOCKER_USERNAME }} docker_pass=${{ secrets.DOCKER_PASSWORD }}"
