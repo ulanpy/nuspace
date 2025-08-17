@@ -13,6 +13,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Detect changed paths
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          token: ${{ github.token }}
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            nginx:
+              - 'infra/nginx/**'
+            redis:
+              - 'infra/redis/**'
+            rabbitmq:
+              - 'infra/rabbitmq/**'
+            prometheus:
+              - 'infra/prometheus/**'
+            grafana:
+              - 'infra/grafana/**'
+            loki:
+              - 'infra/loki/**'
+            alloy:
+              - 'infra/alloy/**'
+            alertmanager:
+              - 'infra/alertmanager/**'
+            wireguard:
+              - 'infra/wireguard/**'
+            compose:
+              - 'infra/prod.docker-compose.yml'
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -32,6 +63,7 @@ jobs:
 
       # --- Build FastAPI Image ---
       - name: Build and Push FastAPI Image
+        if: steps.changes.outputs.backend == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -44,6 +76,7 @@ jobs:
 
       # --- Build Celery Worker Image ---
       - name: Build and Push Celery Worker Image
+        if: steps.changes.outputs.backend == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -56,6 +89,7 @@ jobs:
 
       # --- Build Frontend Builder Image ---
       - name: Build and Push Frontend Builder Image
+        if: steps.changes.outputs.frontend == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -95,9 +129,22 @@ jobs:
           EOF
 
       - name: Run Ansible Playbook
+        if: |
+          steps.changes.outputs.backend == 'true' ||
+          steps.changes.outputs.frontend == 'true' ||
+          steps.changes.outputs.nginx == 'true' ||
+          steps.changes.outputs.redis == 'true' ||
+          steps.changes.outputs.rabbitmq == 'true' ||
+          steps.changes.outputs.prometheus == 'true' ||
+          steps.changes.outputs.grafana == 'true' ||
+          steps.changes.outputs.loki == 'true' ||
+          steps.changes.outputs.alloy == 'true' ||
+          steps.changes.outputs.alertmanager == 'true' ||
+          steps.changes.outputs.wireguard == 'true' ||
+          steps.changes.outputs.compose == 'true'
         run: |
           ansible-playbook ansible/playbook.yml \
             --inventory ansible/inventory.yml \
             --user "${{ secrets.ANSIBLE_USER }}" \
             --private-key ~/.ssh/id_rsa \
-            --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ secrets.ANSIBLE_USER }} docker_user=${{ secrets.DOCKER_USERNAME }} docker_pass=${{ secrets.DOCKER_PASSWORD }}"
+            --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ secrets.ANSIBLE_USER }} docker_user=${{ secrets.DOCKER_USERNAME }} docker_pass=${{ secrets.DOCKER_PASSWORD }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} compose_changed=${{ steps.changes.outputs.compose }}"
