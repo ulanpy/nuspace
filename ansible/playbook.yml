@@ -27,6 +27,7 @@
         pull fastapi
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (backend_changed | default(false)) | bool
 
     - name: Run DB migrations (alembic upgrade head)
       ansible.builtin.command: >
@@ -34,6 +35,119 @@
         run --rm migrate
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (backend_changed | default(false)) | bool
+
+    - name: Pull celery worker image
+      ansible.builtin.command: >
+        docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
+        pull celery-worker
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (backend_changed | default(false)) | bool
+
+    - name: Recreate backend services (fastapi, celery-worker)
+      ansible.builtin.command: >
+        docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
+        up -d fastapi celery-worker
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (backend_changed | default(false)) | bool
+
+    - name: Pull frontend builder image
+      ansible.builtin.command: >
+        docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
+        pull frontend-builder
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (frontend_changed | default(false)) | bool
+
+    - name: Run frontend build (frontend-builder)
+      ansible.builtin.command: >
+        docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
+        up --no-deps frontend-builder
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (frontend_changed | default(false)) | bool
+
+    - name: Recreate nginx service
+      ansible.builtin.command: >
+        docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
+        up -d nginx
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (nginx_changed | default(false)) | bool
+
+    - name: Recreate redis service
+      ansible.builtin.command: >
+        docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
+        up -d redis
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (redis_changed | default(false)) | bool
+
+    - name: Recreate rabbitmq service
+      ansible.builtin.command: >
+        docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
+        up -d rabbitmq
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (rabbitmq_changed | default(false)) | bool
+
+    - name: Recreate prometheus service
+      ansible.builtin.command: >
+        docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
+        up -d prometheus
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (prometheus_changed | default(false)) | bool
+
+    - name: Recreate grafana service
+      ansible.builtin.command: >
+        docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
+        up -d grafana
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (grafana_changed | default(false)) | bool
+
+    - name: Recreate loki service
+      ansible.builtin.command: >
+        docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
+        up -d loki
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (loki_changed | default(false)) | bool
+
+    - name: Recreate alloy service
+      ansible.builtin.command: >
+        docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
+        up -d alloy
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (alloy_changed | default(false)) | bool
+
+    - name: Recreate alertmanager service
+      ansible.builtin.command: >
+        docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
+        up -d alertmanager
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (alertmanager_changed | default(false)) | bool
+
+    - name: Recreate wireguard service
+      ansible.builtin.command: >
+        docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
+        up -d wireguard
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (wireguard_changed | default(false)) | bool
+
+    - name: Reconcile docker compose changes (definitions only)
+      ansible.builtin.command: >
+        docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
+        up -d --remove-orphans
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (compose_changed | default(false)) | bool
 
     - name: Ensure deployment user is in the docker group
       ansible.builtin.user:
@@ -46,17 +160,6 @@
         name: "{{ ansible_user }}"
         groups: devs
         append: yes
-
-    - name: Pull new images & recreate services with Docker Compose
-      community.docker.docker_compose_v2:
-        project_src: /opt/nuspace/infra
-        files:
-          - prod.docker-compose.yml
-        pull: always
-        recreate: always
-        state: present
-      environment:
-        DOCKER_IMAGE_TAG: "{{ image_tag }}"
 
     - name: Prune all unused Docker assets
       ansible.builtin.command: docker system prune -a -f

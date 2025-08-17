@@ -8,6 +8,11 @@
 venv/
 
 **/nuspace.json
+# Terraform credentials and state files
+**/terraform.json
+*.tfstate
+*.tfstate.*
+.terraform/
 
 # PyCharm IDE files
 .idea/
@@ -27,7 +32,10 @@ configs/**/__pycache__/
 # Environmental files
 .env
 
+# Cloudflared local dev credentials
+infra/cloudflared/
 
+.ansible/
 
 # Log files
 *.log

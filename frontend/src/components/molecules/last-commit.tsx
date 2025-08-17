@@ -9,10 +9,12 @@ type GitHubCommit = {
   sha: string;
   html_url?: string;
   commit: {
-    author?: { date?: string };
-    committer?: { date?: string };
+    author?: { date?: string; name?: string; email?: string };
+    committer?: { date?: string; name?: string; email?: string };
     message?: string;
   };
+  author?: { login?: string; html_url?: string; avatar_url?: string };
+  committer?: { login?: string; html_url?: string; avatar_url?: string };
 };
 
 async function fetchLastCommit(): Promise<GitHubCommit | null> {
@@ -42,6 +44,13 @@ export function LastCommitBadge() {
   const lastUpdated = dateIso
     ? formatDistanceToNow(new Date(dateIso), { addSuffix: true })
     : null;
+  const actorLogin = data?.committer?.login || data?.author?.login || null;
+  const actorNameFallback =
+    data?.commit?.committer?.name || data?.commit?.author?.name || null;
+  const actorName = actorLogin || actorNameFallback;
+  const actorUrl = data?.committer?.html_url || data?.author?.html_url || undefined;
+  const actorAvatar = data?.committer?.avatar_url || data?.author?.avatar_url || undefined;
+  const commitMessage = data?.commit?.message || undefined;
 
   return (
     <div className="w-full mb-4">
@@ -64,7 +73,40 @@ export function LastCommitBadge() {
           ) : isError || !lastUpdated ? (
             <span className="text-muted-foreground">Last update unknown</span>
           ) : (
-            <span className="truncate">Updated {lastUpdated}</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="truncate">
+                Updated {lastUpdated}
+                {actorName ? (
+                  <>
+                    {" "}by {actorUrl ? (
+                      <a
+                        href={actorUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline underline-offset-4 hover:no-underline"
+                      >
+                        {actorName}
+                      </a>
+                    ) : (
+                      <span>{actorName}</span>
+                    )}
+                  </>
+                ) : null}
+              </span>
+              {actorAvatar && (
+                <img
+                  src={actorAvatar}
+                  alt={`${actorName || 'User'} avatar`}
+                  className="h-4 w-4 rounded-full"
+                  loading="lazy"
+                />
+              )}
+              {commitMessage && (
+                <span className="text-muted-foreground text-xs truncate max-w-32" title={commitMessage}>
+                  • {commitMessage.split('\n')[0]}
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -72,7 +114,7 @@ export function LastCommitBadge() {
   );
 }
 
-export function LastCommitInline() {
+export function LastCommitInline({ rightElement }: { rightElement?: React.ReactNode }) {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["github", "lastCommit", "ulanpy", "nuspace", "main", "inline"],
     queryFn: fetchLastCommit,
@@ -84,24 +126,75 @@ export function LastCommitInline() {
   const lastUpdated = dateIso
     ? formatDistanceToNow(new Date(dateIso), { addSuffix: true })
     : null;
+  const actorLogin = data?.committer?.login || data?.author?.login || null;
+  const actorNameFallback =
+    data?.commit?.committer?.name || data?.commit?.author?.name || null;
+  const actorName = actorLogin || actorNameFallback;
+  const actorUrl = data?.committer?.html_url || data?.author?.html_url || undefined;
+  const actorAvatar = data?.committer?.avatar_url || data?.author?.avatar_url || undefined;
+  const commitMessage = data?.commit?.message || undefined;
 
   return (
-    <a
-      href="https://github.com/ulanpy/nuspace"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-2 text-xs sm:text-sm text-blue-700 dark:text-blue-300 hover:underline"
-      aria-label="Open repository"
-    >
-      <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-      {isLoading ? (
-        <span className="text-inherit">Checking updates…</span>
-      ) : isError || !lastUpdated ? (
-        <span className="text-inherit">Last update unknown</span>
-      ) : (
-        <span className="text-inherit">Updated {lastUpdated}</span>
+    <div className="flex items-start justify-between gap-2">
+      <a
+        href="https://github.com/ulanpy/nuspace"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-start gap-1.5 text-xs sm:text-sm text-blue-700 dark:text-blue-300 hover:underline"
+        aria-label="Open repository"
+      >
+        <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 mt-0.5" />
+        {isLoading ? (
+          <span className="text-inherit">Checking updates…</span>
+        ) : isError || !lastUpdated ? (
+          <span className="text-inherit">Last update unknown</span>
+        ) : (
+          <div className="flex flex-wrap items-center gap-1 min-w-0">
+            <span className="text-inherit whitespace-nowrap">Updated {lastUpdated}</span>
+            <div className="flex items-center gap-1 min-w-0">
+              {actorAvatar && (
+                <img
+                  src={actorAvatar}
+                  alt={`${actorName || 'User'} avatar`}
+                  className="h-3 w-3 rounded-full flex-shrink-0"
+                  loading="lazy"
+                />
+              )}
+              {actorName && (
+                <>
+                  {actorUrl ? (
+                    <a
+                      href={actorUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline text-inherit flex-shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {actorName}
+                    </a>
+                  ) : (
+                    <span className="text-inherit flex-shrink-0">{actorName}</span>
+                  )}
+                </>
+              )}
+              {commitMessage && (
+                <span
+                  className="text-inherit text-xs sm:text-[0.95em] truncate min-w-0 flex-1"
+                  title={commitMessage}
+                >
+                  — {commitMessage.split('\n')[0]}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </a>
+      {rightElement && (
+        <div className="flex-shrink-0">
+          {rightElement}
+        </div>
       )}
-    </a>
+    </div>
   );
 }
 
