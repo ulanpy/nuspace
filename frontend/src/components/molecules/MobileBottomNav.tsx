@@ -1,21 +1,21 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { PiHouse, PiHouseFill, PiUserCircle, PiUserCircleFill, PiInfo, PiInfoFill } from "react-icons/pi";
+import { PiHouse, PiHouseFill, PiUserCircle, PiUserCircleFill, PiChatCircle, PiChatCircleFill } from "react-icons/pi";
 import { ROUTES } from "@/data/routes";
 import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 
 interface BottomNavItem {
   to: string;
   label: string;
-  icon: "home" | "profile" | "about";
+  icon: "home" | "profile" | "subspace";
 }
 
 function buildNavItems(): BottomNavItem[] {
   return [
     { to: ROUTES.HOME, label: "Home", icon: "home" },
+    { to: ROUTES.APPS.CAMPUS_CURRENT.POSTS, label: "SubSpace", icon: "subspace" },
     { to: ROUTES.APPS.PROFILE, label: "Profile", icon: "profile" },
-    { to: ROUTES.APPS.ABOUT, label: "About", icon: "about" },
   ];
 }
 
@@ -86,8 +86,8 @@ export function MobileBottomNav() {
                           return isActive ? <PiHouseFill size={iconSize} /> : <PiHouse size={iconSize} />;
                         case "profile":
                           return isActive ? <PiUserCircleFill size={iconSize} /> : <PiUserCircle size={iconSize} />;
-                        case "about":
-                          return isActive ? <PiInfoFill size={iconSize} /> : <PiInfo size={iconSize} />;
+                        case "subspace":
+                          return isActive ? <PiChatCircleFill size={iconSize} /> : <PiChatCircle size={iconSize} />;
                         default:
                           return null;
                       }

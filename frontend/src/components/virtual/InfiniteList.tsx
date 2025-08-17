@@ -1,6 +1,5 @@
 import React, { ReactNode } from 'react';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { Input } from '../atoms/input';
 import { Search } from 'lucide-react';
 
 // Error Boundary Component
@@ -101,7 +100,7 @@ export function InfiniteList<T>({
     queryKey,
     apiEndpoint,
     size,
-    keyword: searchKeyword,
+    keyword: keyword, // Use the keyword prop directly
     additionalParams,
     transformResponse,
   });
@@ -158,9 +157,11 @@ export function InfiniteList<T>({
           <div className="mb-4">
             <h2 className="text-xl font-semibold">{title}</h2>
             {/* Debug info */}
-            <div className="text-xs text-muted-foreground mt-1">
-              {itemCountPlaceholder}: {items.length}
-            </div>
+            {itemCountPlaceholder && (
+              <div className="text-xs text-muted-foreground mt-1">
+                {itemCountPlaceholder}: {items.length}
+              </div>
+            )}
           </div>
         )}
 

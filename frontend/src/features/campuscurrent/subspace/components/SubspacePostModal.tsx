@@ -119,82 +119,86 @@ export function SubspacePostModal({ isOpen, onClose }: SubspacePostModalProps) {
               <SubspaceMediaUpload onMediaChange={handleMediaChange} />
             </div> */}
 
-            {/* User → Community Relationship Display */}
-            {selectedCommunity && user && (
-              <div className="p-4 bg-muted/30 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                      {user.user.picture ? (
-                        <img
-                          src={user.user.picture}
-                          alt={`${user.user.name} ${user.user.family_name}`}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User className="h-4 w-4 text-primary" />
-                      )}
-                    </div>
-                    <span className="font-medium text-sm">
-                      {user.user.name} {user.user.family_name}
-                    </span>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                      {(() => {
-                        const profile = (selectedCommunity.media || []).find(
-                          (m) => m.media_format === MediaFormat.profile,
-                        )?.url;
-                        return profile ? (
-                          <img
-                            src={profile}
-                            alt={selectedCommunity.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Users className="h-4 w-4 text-primary" />
-                        );
-                      })()}
-                    </div>
-                    <span className="font-medium text-sm">
-                      {selectedCommunity.name}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Community Selection */}
+            {/* Unified User → Community Selection */}
             <div className="space-y-2">
-              <label className="text-base font-medium text-foreground">Community</label>
+              <label className="text-base font-medium text-foreground">Posting to</label>
               <Button
                 variant="outline"
                 onClick={() => setShowCommunityModal(true)}
-                className="w-full justify-start h-10"
+                className="w-full justify-start h-12 p-3"
               >
                 {selectedCommunity ? (
-                  <span className="inline-flex items-center gap-2">
-                    {(() => {
-                      const profile = (selectedCommunity.media || []).find(
-                        (m) => m.media_format === MediaFormat.profile,
-                      )?.url;
-                      return profile ? (
-                        <img
-                          src={profile}
-                          alt={selectedCommunity.name}
-                          className="w-5 h-5 rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
-                          <Users className="w-3 h-3" />
-                        </span>
-                      );
-                    })()}
-                    <span className="font-medium">{selectedCommunity.name}</span>
-                  </span>
+                  <div className="flex items-center gap-3 w-full">
+                    {/* User Info */}
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                        {user.user.picture ? (
+                          <img
+                            src={user.user.picture}
+                            alt={`${user.user.name} ${user.user.family_name}`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-4 w-4 text-primary" />
+                        )}
+                      </div>
+                      <span className="font-medium text-sm">
+                        {user.user.given_name || user.user.name} {user.user.family_name || user.user.surname}
+                      </span>
+                    </div>
+                    
+                    {/* Arrow */}
+                    <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    
+                    {/* Community Info */}
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                        {(() => {
+                          const profile = (selectedCommunity.media || []).find(
+                            (m) => m.media_format === MediaFormat.profile,
+                          )?.url;
+                          return profile ? (
+                            <img
+                              src={profile}
+                              alt={selectedCommunity.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Users className="h-4 w-4 text-primary" />
+                          );
+                        })()}
+                      </div>
+                      <span className="font-medium text-sm truncate">
+                        {selectedCommunity.name}
+                      </span>
+                    </div>
+                  </div>
                 ) : (
-                  <span className="text-muted-foreground">Select a community</span>
+                  <div className="flex items-center gap-3 w-full">
+                    {/* User Info */}
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                        {user.user.picture ? (
+                          <img
+                            src={user.user.picture}
+                            alt={`${user.user.name} ${user.user.family_name}`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-4 w-4 text-primary" />
+                        )}
+                      </div>
+                      <span className="font-medium text-sm">
+                        {user.user.given_name || user.user.name} {user.user.family_name || user.user.surname}
+                      </span>
+                    </div>
+                    
+                    {/* Arrow */}
+                    <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    
+                    {/* Placeholder */}
+                    <span className="text-muted-foreground text-sm">Select a community</span>
+                  </div>
                 )}
               </Button>
             </div>

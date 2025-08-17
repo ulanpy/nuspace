@@ -3,13 +3,14 @@
   hosts: webservers
   become: true
   vars:
-    docker_username: "{{ lookup('env', 'DOCKER_USERNAME') }}"
-    docker_password: "{{ lookup('env', 'DOCKER_PASSWORD') }}"
-    docker_image_tag: "{{ lookup('env', 'DOCKER_IMAGE_TAG') }}"
+    docker_username: "{{ docker_user }}"
+    docker_password: "{{ docker_pass }}"
+    ansible_user: "{{ ansible_user_var }}"
+    image_tag: "{{ docker_image_tag }}"
 
   tasks:
-    - name: Pull latest changes from origin/main
-      git:
+    - name: Pull latest changes from git repository
+      ansible.builtin.git:
         repo: "https://github.com/ulanpy/nuspace.git"
         dest: /opt/nuspace
         version: main
@@ -21,38 +22,32 @@
         password: "{{ docker_password }}"
 
     - name: Pull backend image for migrations
-      command: >
+      ansible.builtin.command: >
         docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
         pull fastapi
       environment:
-        DOCKER_IMAGE_TAG: "{{ docker_image_tag }}"
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
 
     - name: Run DB migrations (alembic upgrade head)
-      command: >
+      ansible.builtin.command: >
         docker compose -f /opt/nuspace/infra/prod.docker-compose.yml
         run --rm migrate
       environment:
-        DOCKER_IMAGE_TAG: "{{ docker_image_tag }}"
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
 
-    - name: Check if user sa_107337867689943056764 has sudo privileges
-      command: sudo -l -U sa_107337867689943056764
-      register: sudo_check
-      failed_when: false
-      changed_when: false
-
-    - name: Ensure user sa_107337867689943056764 is in docker group
-      user:
-        name: sa_107337867689943056764
+    - name: Ensure deployment user is in the docker group
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
         groups: docker
         append: yes
 
-    - name: Ensure user sa_107337867689943056764 is in devs group
-      user:
-        name: sa_107337867689943056764
+    - name: Ensure deployment user is in the devs group
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
         groups: devs
         append: yes
 
-    - name: Pull new images & recreate services
+    - name: Pull new images & recreate services with Docker Compose
       community.docker.docker_compose_v2:
         project_src: /opt/nuspace/infra
         files:
@@ -61,14 +56,15 @@
         recreate: always
         state: present
       environment:
-        DOCKER_IMAGE_TAG: "{{ docker_image_tag }}"
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
 
-    - name: Prune all unused Docker images
-      command: docker system prune -a -f
+    - name: Prune all unused Docker assets
+      ansible.builtin.command: docker system prune -a -f
+      changed_when: false
 
-    - name: Ensure DOCKER_IMAGE_TAG is set correctly in .bashrc
-      lineinfile:
-        path: ~/.bashrc
+    - name: Ensure DOCKER_IMAGE_TAG is set correctly in user's .bashrc
+      ansible.builtin.lineinfile:
+        path: "/home/{{ ansible_user }}/.bashrc"
         regexp: "^export DOCKER_IMAGE_TAG="
-        line: "export DOCKER_IMAGE_TAG={{ docker_image_tag }}"
+        line: "export DOCKER_IMAGE_TAG={{ image_tag }}"
         create: yes

@@ -102,6 +102,7 @@ const LAZY_ROUTES_REL = {
     CAMPUS_CURRENT_EVENT_DETAIL: `${CAMPUS_CURRENT}/${EVENT}/:id`,
     CAMPUS_CURRENT_COMMUNITY_DETAIL: `${CAMPUS_CURRENT}/${COMMUNITY}/:id`,
     CAMPUS_CURRENT_COMMUNITIES: `${CAMPUS_CURRENT}/${COMMUNITIES}`,
+    CAMPUS_CURRENT_POSTS: `${CAMPUS_CURRENT}/${POSTS}`,
   },
 };
 export const LazyRoutes = {
@@ -130,6 +131,12 @@ export const LazyRoutes = {
         path: LAZY_ROUTES_REL.APPS.DORM_EATS,
         Component: withSuspense(lazy(() => import("@/pages/apps/dorm-eats"))),
       },
+      {
+        path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_POSTS,
+        Component: withSuspense(
+          lazy(() => import("@/features/campuscurrent/subspace/pages/list")),
+        ),
+      },
     ],
     EVENTS: [
       {
@@ -154,6 +161,12 @@ export const LazyRoutes = {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_COMMUNITY_DETAIL,
         Component: withSuspense(
           lazy(() => import("@/features/campuscurrent/communities/pages/single")),
+        ),
+      },
+      {
+        path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_COMMUNITIES,
+        Component: withSuspense(
+          lazy(() => import("@/features/campuscurrent/communities/pages/list")),
         ),
       },
       {
