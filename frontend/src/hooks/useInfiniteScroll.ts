@@ -32,6 +32,11 @@ export function useInfiniteScroll<T>({
 }: InfiniteScrollParams<T>): UseInfiniteScrollReturn<T> {
   const [internalKeyword, setInternalKeyword] = useState<string>(keyword);
 
+  // Sync internal keyword with prop changes
+  useEffect(() => {
+    setInternalKeyword(keyword);
+  }, [keyword]);
+
   const {
     data,
     isLoading,

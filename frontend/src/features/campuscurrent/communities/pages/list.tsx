@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Calendar } from "lucide-react";
 
 import { LoginModal } from "@/components/molecules/login-modal";
 import { CommunityCard } from "@/features/campuscurrent/communities/components/CommunityCard";
-import { InfiniteList } from "@/components/virtual/InfiniteList";
+import { SearchableInfiniteList } from "@/components/virtual/SearchableInfiniteList";
 import { Community, CommunityCategory } from "@/features/campuscurrent/types/types";
 import { ConditionDropdown } from "@/components/molecules/condition-dropdown";
-import { ROUTES } from "@/data/routes";
+import { usePreSearchCommunities } from "@/features/campuscurrent/communities/api/hooks/usePreSearchCommunities";
+
 // import { useLocation } from "react-router-dom";
 // import { Button } from "@/components/atoms/button";
 // import { useUser } from "@/hooks/use-user";
@@ -74,10 +75,10 @@ export default function CommunitiesPage() {
 
   // Removed auto-scroll on navigation to prevent jumping down to communities list by default
 
-  return (
+     return (
     <MotionWrapper>
         <div className="w-full max-w-none">
-          {/* Search + Category Filter in one row */}
+          {/* Filters Container - Above Search and Results */}
           <FilterContainer className="z-[5] mb-6">
             <style>
               {`
@@ -87,17 +88,16 @@ export default function CommunitiesPage() {
               }
             `}
             </style>
-            <div className="flex w-full gap-4 items-center">
-              <div className="flex flex-1 gap-2">
+            <div className="flex w-full gap-2 items-center">
+              <div className="flex-1">
                 <ConditionDropdown
                   conditions={categoryOptions}
                   selectedCondition={selectedCommunityCategory}
                   setSelectedCondition={handleCategoryChange}
                   disableNavigation={true}
                 />
-
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center">
                 <button
                   type="button"
                   onClick={handleWifiButtonClick}
@@ -163,39 +163,43 @@ export default function CommunitiesPage() {
               </div>
             </div>
           </FilterContainer>
-      <div className="w-full overflow-x-hidden" id="communities-section">
-        {/* Infinite List for Communities */}
-        <InfiniteList
-          queryKey={["campusCurrent", "communities"]}
-          apiEndpoint="/communities"
-          size={12}
-          additionalParams={{
-            category: selectedCategoryParam,
-            recruitment_status: isWifiFilterActive ? 'open' : null,
-          }}
-          renderItem={(community: Community, index: number) => (
-            <div key={community.id} className="h-full">
-              <CommunityCard community={community} />
-            </div>
-          )}
-          renderEmpty={() => (
-            <div className="text-center py-12">
-              <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">
-                {selectedCommunityCategory === "All"
-                  ? "No communities found"
-                  : `No ${selectedCommunityCategory} communities found`}
-              </h3>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                There are no {selectedCommunityCategory} communities available
-                at the moment.
-              </p>
-            </div>
-          )}
-          showSearch={true}
-          searchPlaceholder="Search communities..."
-        />
-      </div>
+
+          {/* Communities List with Search */}
+          <div className="w-full overflow-x-hidden" id="communities-section">
+            <SearchableInfiniteList
+              queryKey={["campusCurrent", "communities"]}
+              apiEndpoint="/communities"
+              size={12}
+              additionalParams={{
+                community_category: selectedCategoryParam,
+                recruitment_status: isWifiFilterActive ? 'open' : null,
+              }}
+              renderItem={(community: Community) => (
+                <div key={community.id} className="h-full">
+                  <CommunityCard community={community} />
+                </div>
+              )}
+              renderEmpty={() => (
+                <div className="text-center py-12">
+                  <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">
+                    {selectedCommunityCategory === "All"
+                      ? "No communities found"
+                      : `No ${selectedCommunityCategory} communities found`}
+                  </h3>
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                    There are no {selectedCommunityCategory} communities available
+                    at the moment.
+                  </p>
+                </div>
+              )}
+              searchPlaceholder="Search communities..."
+              usePreSearch={usePreSearchCommunities}
+              setSelectedCondition={handleCategoryChange}
+              title="Communities"
+              itemCountPlaceholder="" // Remove the items counter
+            />
+          </div>
 
         {/* Login Modal */}
         <LoginModal

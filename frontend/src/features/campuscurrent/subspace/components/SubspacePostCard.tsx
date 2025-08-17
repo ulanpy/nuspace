@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/atoms/button";
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/atoms/dropdown-menu";
-import { Users, MoreVertical, Edit, Trash2 } from "lucide-react";
+import { Users, MoreVertical, Edit, Trash2, ArrowRight, Edit3, ChevronDown, ChevronUp } from "lucide-react";
 import { MediaFormat } from "@/features/media/types/types";
 import { SubspacePost } from "@/features/campuscurrent/subspace/types";
+import { Link } from "react-router-dom";
+import { ROUTES } from "@/data/routes";
 
 interface SubspacePostCardProps {
   post: SubspacePost;
@@ -12,14 +14,82 @@ interface SubspacePostCardProps {
   onDelete: (postId: number) => void;
 }
 
+// Utility function to format relative time
+function formatRelativeTime(dateString: string): string {
+  const now = new Date();
+  // Parse UTC timestamp and convert to local time
+  const date = new Date(dateString + 'Z'); // Add 'Z' to indicate UTC
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) {
+    return "just now";
+  }
+
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes}m ago`;
+  }
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return `${diffInHours}h ago`;
+  }
+
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 30) {
+    return `${diffInDays}d ago`;
+  }
+
+  const diffInMonths = Math.floor(diffInDays / 30);
+  if (diffInMonths < 12) {
+    return `${diffInMonths}mo ago`;
+  }
+
+  const diffInYears = Math.floor(diffInMonths / 12);
+  return `${diffInYears}y ago`;
+}
+
+// Check if post was edited (updated timestamp differs from created by more than 2 seconds)
+function isPostEdited(post: SubspacePost): boolean {
+  const createdTime = new Date(post.created_at + 'Z').getTime(); // Parse as UTC
+  const updatedTime = new Date(post.updated_at + 'Z').getTime(); // Parse as UTC
+  const diffInSeconds = Math.abs(updatedTime - createdTime) / 1000;
+  return diffInSeconds > 2;
+}
+
+// Utility function to format datetime for display
+function formatDateTime(dateString: string): string {
+  // Parse UTC timestamp and convert to local time
+  const date = new Date(dateString + 'Z'); // Add 'Z' to indicate UTC
+  
+  const dateStr = date.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  });
+  
+  const timeStr = date.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true 
+  });
+  
+  return `${dateStr} • ${timeStr}`;
+}
+
 export function SubspacePostCard({ post, onEdit, onDelete }: SubspacePostCardProps) {
+  const wasEdited = isPostEdited(post);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const shouldTruncate = post.description.length > 300;
+  const displayText = isExpanded ? post.description : post.description.slice(0, 300);
+
   return (
     <Card className="w-full">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          {/* Post Creator Info */}
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+          {/* User Info */}
+          <div className="flex items-center gap-3 flex-1">
+            <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
               {post.user?.picture ? (
                 <img
                   src={post.user.picture}
@@ -27,7 +97,7 @@ export function SubspacePostCard({ post, onEdit, onDelete }: SubspacePostCardPro
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Users className="h-6 w-6 text-muted-foreground" />
+                <Users className="h-5 w-5 text-muted-foreground" />
               )}
             </div>
             <div className="min-w-0 flex-1">
@@ -35,7 +105,7 @@ export function SubspacePostCard({ post, onEdit, onDelete }: SubspacePostCardPro
                 {post.user?.name} {post.user?.surname}
               </div>
               <div className="text-sm text-muted-foreground">
-                {new Date(post.created_at).toLocaleString()}
+                {formatRelativeTime(post.created_at)}
               </div>
             </div>
           </div>
@@ -69,6 +139,38 @@ export function SubspacePostCard({ post, onEdit, onDelete }: SubspacePostCardPro
             </DropdownMenu>
           )}
         </div>
+
+        {/* Unified User → Community Relationship */}
+        <div className="flex items-center gap-3 mt-3 pt-3 border-t">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">posted to</span>
+          </div>
+          <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <Link 
+            to={ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(String(post.community?.id))}
+            className="flex items-center gap-2 min-w-0 flex-1 hover:opacity-80 transition-opacity"
+          >
+            <div className="w-6 h-6 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+              {(() => {
+                const profile = (post.community?.media || []).find(
+                  (m: any) => m.media_format === MediaFormat.profile,
+                )?.url;
+                return profile ? (
+                  <img
+                    src={profile}
+                    alt={post.community?.name || "Community"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Users className="h-3 w-3 text-muted-foreground" />
+                );
+              })()}
+            </div>
+            <span className="text-sm font-medium text-foreground truncate hover:text-primary transition-colors">
+              {post.community?.name || "Community"}
+            </span>
+          </Link>
+        </div>
       </CardHeader>
 
       <CardContent className="pt-0">
@@ -79,38 +181,46 @@ export function SubspacePostCard({ post, onEdit, onDelete }: SubspacePostCardPro
               {post.title}
             </h3>
           )}
-          <p className="text-muted-foreground text-base leading-relaxed whitespace-pre-wrap break-words">
-            {post.description}
-          </p>
+          <div className="space-y-2">
+            <p className="text-muted-foreground text-base leading-relaxed whitespace-pre-wrap break-words">
+              {displayText}
+              {shouldTruncate && !isExpanded && (
+                <span className="text-muted-foreground/70">...</span>
+              )}
+            </p>
+            {shouldTruncate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="h-auto p-0 text-sm text-primary hover:text-primary/80"
+              >
+                {isExpanded ? (
+                  <>
+                    Show less <ChevronUp className="ml-1 h-3 w-3" />
+                  </>
+                ) : (
+                  <>
+                    Show more <ChevronDown className="ml-1 h-3 w-3" />
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
 
-
-        {/* Community Badge */}
-        {post.community?.name && (
-          <div className="flex items-center gap-2 mt-4">
-            <div className="flex items-center gap-2 px-3 py-1 bg-muted/50 rounded-full">
-              {(() => {
-                const profile = (post.community?.media || []).find(
-                  (m: any) => m.media_format === MediaFormat.profile,
-                )?.url;
-                return profile ? (
-                  <img
-                    src={profile}
-                    alt={post.community?.name || "Community"}
-                    className="w-4 h-4 rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="w-4 h-4 rounded-full bg-background flex items-center justify-center">
-                    <Users className="w-3 h-3" />
-                  </span>
-                );
-              })()}
-              <span className="text-sm text-muted-foreground font-medium">
-                {post.community.name}
-              </span>
+        {/* Exact datetime indicator */}
+        <div className="flex justify-end items-center gap-3 mt-4 pt-3 border-t">
+          <span className="text-xs text-muted-foreground/70 font-medium" title={new Date(post.created_at).toLocaleString()}>
+            {formatDateTime(post.created_at)}
+          </span>
+          {wasEdited && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground/70">
+              <Edit3 className="h-3 w-3" />
+              <span>edited</span>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </CardContent>
     </Card>
   );

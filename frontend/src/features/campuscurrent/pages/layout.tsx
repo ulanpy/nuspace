@@ -123,12 +123,44 @@ export function Layout() {
   const [isCreateCommunityModalOpen, setIsCreateCommunityModalOpen] = useState(false);
   const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false);
 
-  // Scroll to top on route change unless there's a hash
+  // Store scroll position and previous path for tab navigation
+  const [savedScrollPosition, setSavedScrollPosition] = useState(0);
+  const [previousPath, setPreviousPath] = useState(location.pathname);
+
+  // Scroll to top on route change unless there's a hash or it's a tab navigation
   useEffect(() => {
     if (!location.hash) {
-      window.scrollTo(0, 0);
+      // Check if both current and previous paths are tab routes
+      const isCurrentTabRoute = navTabs.some(tab => 
+        location.pathname === tab.path || location.pathname.startsWith(tab.path)
+      );
+      
+      const isPreviousTabRoute = navTabs.some(tab => 
+        previousPath === tab.path || previousPath.startsWith(tab.path)
+      );
+      
+      // Only restore scroll position if we're navigating between tabs
+      if (isCurrentTabRoute && isPreviousTabRoute && location.pathname !== previousPath) {
+        // For tab-to-tab navigation, restore saved scroll position
+        setTimeout(() => {
+          window.scrollTo(0, savedScrollPosition);
+        }, 0);
+      } else {
+        // For other route changes, scroll to top
+        window.scrollTo(0, 0);
+      }
     }
-  }, [location.pathname]);
+    
+    // Update previous path
+    setPreviousPath(location.pathname);
+  }, [location.pathname, previousPath, savedScrollPosition]);
+
+  // Save scroll position before navigation
+  const handleTabChange = (value: string) => {
+    // Save current scroll position before navigating
+    setSavedScrollPosition(window.scrollY);
+    navigate(value);
+  };
 
   const currentPath = location.pathname;
   // Choose the most specific matching tab (longest path that prefixes currentPath)
@@ -403,7 +435,7 @@ export function Layout() {
             <div className="px-3 sm:px-4 py-2">
               <Tabs
                 value={activeTabPath}
-                onValueChange={(value) => navigate(value)}
+                onValueChange={handleTabChange}
                 className="w-full"
               >
                 <TabsList className="grid w-full grid-cols-3">
