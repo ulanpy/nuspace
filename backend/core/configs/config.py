@@ -4,10 +4,10 @@ import re
 from functools import cached_property
 from typing import List
 
+import requests
 from dotenv import load_dotenv
 from google.oauth2 import service_account
 from pydantic_settings import BaseSettings
-import requests
 
 ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 load_dotenv(os.path.join(ENV_DIR, ".env"))
@@ -19,6 +19,7 @@ class Config(BaseSettings):
     """
     without type hints: required in all: dev/staging/prod
     """
+
     SESSION_MIDDLEWARE_KEY: str
     DB_NAME: str
     DB_USER: str
@@ -43,7 +44,7 @@ class Config(BaseSettings):
     ORIGINS: List[str] = ["*"]
     MOCK_KEYCLOAK: bool  # always set True in local dev
     USE_GCS_EMULATOR: bool  # keep True for local dev; For staging/prod .env will have it False
-    GCS_EMULATOR_HOST: str 
+    GCS_EMULATOR_HOST: str
 
     # Header mapping for easy reference when setting values
     GCS_METADATA_HEADERS: dict = {
@@ -67,7 +68,6 @@ class Config(BaseSettings):
         env_file = os.path.join(ENV_DIR, ".env")
         env_file_encoding = "utf-8"
         extra = "allow"
-
 
     @cached_property
     def COOKIE_ACCESS_NAME(self) -> str:
@@ -115,7 +115,7 @@ class Config(BaseSettings):
         raw_url = self.NUSPACE if not self.IS_DEBUG else self.DISCOVERED_TUNNEL_URL
         # Support either https or http while tunnel is undiscovered
         if "://" in raw_url:
-            return raw_url.split("://", 1)[1] #e.g. https://nuspace.kz -> nuspace.kz 
+            return raw_url.split("://", 1)[1]  # e.g. https://nuspace.kz -> nuspace.kz
         else:
             # raise error if not a valid url
             raise ValueError(f"Invalid URL: {raw_url}")

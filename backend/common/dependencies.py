@@ -5,8 +5,10 @@ from backend.core.database.manager import AsyncDatabaseManager
 from backend.core.database.models import User, UserRole
 from backend.routes.auth.app_token import AppTokenManager
 from backend.routes.auth.keycloak_manager import KeyCloakManager
-from backend.routes.auth.utils import set_kc_auth_cookies
-from backend.routes.auth.utils import get_mock_user_by_sub  # dev-only helper
+from backend.routes.auth.utils import (
+    get_mock_user_by_sub,  # dev-only helper
+    set_kc_auth_cookies,
+)
 from backend.routes.notification import tasks
 from fastapi import Cookie, Depends, HTTPException, Request, Response, status
 from jose import JWTError, jwt

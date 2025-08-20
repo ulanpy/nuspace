@@ -2,8 +2,8 @@ from fastapi import HTTPException, Request, Response
 from jose import jwt as jose_jwt
 
 from backend.core.configs.config import config
-from backend.routes.auth.schemas import UserRole, UserSchema, UserScope
 from backend.routes.auth.keycloak_manager import KeyCloakManager
+from backend.routes.auth.schemas import UserRole, UserSchema, UserScope
 
 # --- Mock Keycloak support (dev only) ---
 # Three predefined mock users for local development
@@ -68,6 +68,7 @@ def build_mock_creds(userinfo: dict) -> dict:
         "userinfo": userinfo,
     }
 
+
 async def exchange_code_for_credentials(request: Request):
     # In dev mode, bypass Keycloak and return mock creds
     if config.MOCK_KEYCLOAK:
@@ -103,7 +104,6 @@ async def exchange_code_for_credentials(request: Request):
             pass
 
     return token
-
 
 
 async def create_user_schema(creds: dict) -> UserSchema:

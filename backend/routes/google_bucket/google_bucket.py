@@ -65,7 +65,6 @@ async def generate_upload_url(
     config: Config = request.app.state.config
     bucket: Bucket = request.app.state.storage_client.bucket(request.app.state.config.BUCKET_NAME)
 
-
     for item in signed_url_request:
         filename = f"{config.ROUTING_PREFIX}/{user[0].get('sub')}_{timestamp}_{uuid.uuid4().hex}"
         blob = bucket.blob(filename)
@@ -84,7 +83,9 @@ async def generate_upload_url(
 
         if config.USE_GCS_EMULATOR:
             # Route uploads via backend proxy to emulator to avoid CORS/method issues
-            signed_url = f"{config.HOME_URL}/api/bucket/local-upload/{config.BUCKET_NAME}/{filename}"
+            signed_url = (
+                f"{config.HOME_URL}/api/bucket/local-upload/{config.BUCKET_NAME}/{filename}"
+            )
             # In local dev, write the media record immediately (no Pub/Sub push)
             media_metadata = schemas.MediaMetadata(
                 name=filename,

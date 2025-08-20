@@ -21,12 +21,12 @@ from backend.routes.auth.schemas import CurrentUserResponse, Sub
 from .cruds import User, upsert_user
 from .schemas import UserSchema
 from .utils import (
+    _select_mock_user,
+    build_mock_creds,
     create_user_schema,
     exchange_code_for_credentials,
     set_kc_auth_cookies,
     unset_kc_auth_cookies,
-    build_mock_creds,
-    _select_mock_user,
 )
 
 router = APIRouter(tags=["Auth Routes"])
@@ -82,7 +82,6 @@ async def auth_callback(
     app_token_manager: AppTokenManager = request.app.state.app_token_manager
     redis = request.app.state.redis
 
-
     # Validate Keycloak token from the fresh exchange (skip in mock mode)
     if not config.MOCK_KEYCLOAK:
         try:
@@ -131,7 +130,7 @@ async def auth_callback(
             )
         finally:
             await redis.delete(miniapp_state_key)
-    
+
         bot_username = request.app.state.bot_username
         tme_url = f"https://t.me/{bot_username}?startapp={state}"
         return RedirectResponse(url=tme_url, status_code=303)
@@ -146,6 +145,7 @@ async def auth_callback(
 
     # 3) Neither MiniApp nor CSRF state is valid → reject
     raise HTTPException(status_code=400, detail="Invalid or expired state")
+
 
 @router.post("/connect-tg")
 async def bind_tg(request: Request, sub_param: Sub):
@@ -306,6 +306,7 @@ async def miniapp_login_exchange(
         pass
     return {"ok": True}
 
+
 @router.post("/refresh-token", response_description="Refresh token")
 async def refresh_token(
     request: Request,
@@ -333,10 +334,15 @@ async def refresh_token(
         if config.MOCK_KEYCLOAK:
             # Parse mock refresh token: mock_refresh_<sub>
             if not kc_refresh_token.startswith("mock_refresh_"):
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid mock refresh token")
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid mock refresh token"
+                )
             sub = kc_refresh_token.removeprefix("mock_refresh_")
             # Build new mock creds
-            from .utils import get_mock_user_by_sub, build_mock_creds  # local import to avoid cycles
+            from .utils import (  # local import to avoid cycles
+                build_mock_creds,
+                get_mock_user_by_sub,
+            )
 
             userinfo = get_mock_user_by_sub(sub)
             new_kc_creds = build_mock_creds(userinfo)

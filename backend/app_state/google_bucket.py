@@ -1,7 +1,8 @@
+import os
+
 from fastapi import FastAPI
 from google.api_core.exceptions import AlreadyExists
 from google.cloud import pubsub_v1, storage
-import os
 
 from backend.core.configs.config import Config
 
@@ -29,7 +30,9 @@ def setup_google_cloud(app: FastAPI) -> None:
         os.environ["STORAGE_EMULATOR_HOST"] = config.GCS_EMULATOR_HOST
         # Use a non-anonymous client with a dummy project for bucket creation support
         app.state.storage_client = storage.Client(project="dev")
-        print(f"✅ Using GCS emulator at {config.GCS_EMULATOR_HOST} for bucket {config.BUCKET_NAME}")
+        print(
+            f"✅ Using GCS emulator at {config.GCS_EMULATOR_HOST} for bucket {config.BUCKET_NAME}"
+        )
 
         # Ensure bucket exists in emulator
         try:

@@ -1,10 +1,8 @@
-import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types.bot_command import BotCommand
 from aiogram.types.bot_command_scope_all_private_chats import BotCommandScopeAllPrivateChats
 from aiogram.types.menu_button_web_app import MenuButtonWebApp
-
 from aiogram.types.web_app_info import WebAppInfo
 from fastapi import FastAPI
 
@@ -40,7 +38,6 @@ async def setup_bot(
         storage_client=app.state.storage_client,
     )
 
-
     # Routers
     include_routers(app.state.dp)
 
@@ -63,7 +60,7 @@ async def setup_bot(
     except Exception as e:
         print(f"Failed to set bot commands: {e}", flush=True)
 
-    # set webhook   
+    # set webhook
     try:
         print(f"Setting webhook to {config.HOME_URL}/api/webhook", flush=True)
         await app.state.bot.set_webhook(
@@ -76,7 +73,6 @@ async def setup_bot(
         return
     except Exception as e:
         print(f"Failed to set webhook {config.HOME_URL}/api/webhook: {e}", flush=True)
-
 
 
 async def cleanup_bot(app: FastAPI):
