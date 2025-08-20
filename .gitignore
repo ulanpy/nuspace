@@ -27,7 +27,10 @@ configs/**/__pycache__/
 # Environmental files
 .env
 
+# Cloudflared local dev credentials
+infra/cloudflared/
 
+.ansible/
 
 # Log files
 *.log

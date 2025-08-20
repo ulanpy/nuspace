@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.celery_app.tasks import schedule_kick
 from backend.routes.bot.cruds import check_user_by_telegram_id
 from backend.routes.bot.keyboards.kb import kb_url
-from backend.routes.bot.utils import no_permissions
+from backend.routes.bot.utils.permissions import no_permissions
 
 
 async def handle_new_member(

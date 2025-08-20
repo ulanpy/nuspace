@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.celery_app.celery_config import celery_app
 from backend.routes.bot.cruds import set_telegram_id
 from backend.routes.bot.keyboards.callback_factory import ConfirmTelegramUser
-from backend.routes.bot.utils import all_permissions
+from backend.routes.bot.utils.permissions import all_permissions
 
 router = Router()
 

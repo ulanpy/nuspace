@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from google.cloud.exceptions import NotFound
 from google.cloud.storage import Bucket
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +22,7 @@ async def generate_upload_url(
     request: Request,
     signed_url_request: List[schemas.SignedUrlRequest],
     user: Annotated[dict, Depends(get_current_principals)],
+    db_session: AsyncSession = Depends(get_db_session),
 ):
     """
     Generates pre-signed URLs for direct upload to Google Cloud Storage bucket.
@@ -63,6 +64,8 @@ async def generate_upload_url(
     timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%S")
     config: Config = request.app.state.config
     bucket: Bucket = request.app.state.storage_client.bucket(request.app.state.config.BUCKET_NAME)
+
+
     for item in signed_url_request:
         filename = f"{config.ROUTING_PREFIX}/{user[0].get('sub')}_{timestamp}_{uuid.uuid4().hex}"
         blob = bucket.blob(filename)
@@ -79,12 +82,41 @@ async def generate_upload_url(
             config.GCS_METADATA_HEADERS["content_type"]: item.mime_type,
         }
 
-        signed_url = blob.generate_signed_url(
-            version="v4",
-            expiration=timedelta(minutes=15),
-            method="PUT",
-            headers=required_headers,
-        )
+        if config.USE_GCS_EMULATOR:
+            # Route uploads via backend proxy to emulator to avoid CORS/method issues
+            signed_url = f"{config.HOME_URL}/api/bucket/local-upload/{config.BUCKET_NAME}/{filename}"
+            # In local dev, write the media record immediately (no Pub/Sub push)
+            media_metadata = schemas.MediaMetadata(
+                name=filename,
+                mime_type=item.mime_type,
+                entity_type=item.entity_type,
+                entity_id=item.entity_id,
+                media_format=item.media_format,
+                media_order=item.media_order,
+            )
+            filters = [
+                Media.name == media_metadata.name,
+                Media.entity_type == media_metadata.entity_type,
+                Media.entity_id == media_metadata.entity_id,
+                Media.media_format == media_metadata.media_format,
+            ]
+            qb = QueryBuilder(db_session, Media)
+            existing: Media | None = await qb.base().filter(*filters).first()
+            try:
+                if existing:
+                    await qb.update(instance=existing, update_data=media_metadata)
+                else:
+                    await qb.add(data=media_metadata)
+            except Exception:
+                # Best-effort only in local mode; still return URL
+                pass
+        else:
+            signed_url = blob.generate_signed_url(
+                version="v4",
+                expiration=timedelta(minutes=15),
+                method="PUT",
+                headers=required_headers,
+            )
         urls.append(
             {
                 "filename": filename,
@@ -156,3 +188,48 @@ async def delete_bucket_object(
         return {"status": "success", "deleted": filename}
     except NotFound:
         raise HTTPException(status_code=404, detail="File not found")
+
+
+@router.put("/local-upload/{bucket}/{full_path:path}")
+async def local_upload_proxy(
+    request: Request,
+    bucket: str,
+    full_path: str,
+):
+    """
+    Dev-only upload proxy: accepts PUT body and uploads to the emulator via storage client.
+    """
+    config: Config = request.app.state.config
+    if not config.USE_GCS_EMULATOR:
+        raise HTTPException(status_code=404, detail="Not available in production")
+    storage_client = request.app.state.storage_client
+    blob = storage_client.bucket(bucket).blob(full_path)
+    try:
+        content = await request.body()
+        content_type = request.headers.get("content-type", "application/octet-stream")
+        blob.upload_from_string(content, content_type=content_type)
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/local-download/{bucket}/{full_path:path}")
+async def local_download_proxy(
+    request: Request,
+    bucket: str,
+    full_path: str,
+):
+    """
+    Dev-only download proxy: reads from emulator via storage client and returns bytes.
+    """
+    config: Config = request.app.state.config
+    if not config.USE_GCS_EMULATOR:
+        raise HTTPException(status_code=404, detail="Not available in production")
+    storage_client = request.app.state.storage_client
+    blob = storage_client.bucket(bucket).blob(full_path)
+    try:
+        data = blob.download_as_bytes()
+        content_type = blob.content_type or "application/octet-stream"
+        return Response(content=data, media_type=content_type)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))

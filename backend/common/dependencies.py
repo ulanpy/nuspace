@@ -6,6 +6,7 @@ from backend.core.database.models import User, UserRole
 from backend.routes.auth.app_token import AppTokenManager
 from backend.routes.auth.keycloak_manager import KeyCloakManager
 from backend.routes.auth.utils import set_kc_auth_cookies
+from backend.routes.auth.utils import get_mock_user_by_sub  # dev-only helper
 from backend.routes.notification import tasks
 from fastapi import Cookie, Depends, HTTPException, Request, Response, status
 from jose import JWTError, jwt
@@ -65,29 +66,40 @@ async def get_current_principals(
     kc_principal: dict | None = None
     keycloak_token_refreshed = False
 
-    try:
-        kc_principal = await kc_manager.validate_keycloak_token(access_token)
-    except jwt.ExpiredSignatureError:
+    if config.MOCK_KEYCLOAK and access_token.startswith("mock_access_"):
+        sub = access_token.removeprefix("mock_access_")
+        u = get_mock_user_by_sub(sub)
+        kc_principal = {
+            "sub": u["sub"],
+            "email": u["email"],
+            "given_name": u["given_name"],
+            "family_name": u["family_name"],
+            "name": f"{u['given_name']} {u['family_name']}",
+        }
+    else:
         try:
-            new_kc_creds = await kc_manager.refresh_access_token(refresh_token)
-            set_kc_auth_cookies(response, new_kc_creds)  # Sets new Keycloak cookies
-            access_token = new_kc_creds[
-                "access_token"
-            ]  # Use new access token for subsequent validation
             kc_principal = await kc_manager.validate_keycloak_token(access_token)
-            keycloak_token_refreshed = True
-        except Exception as e:
-            # Failed to refresh Keycloak token
+        except jwt.ExpiredSignatureError:
+            try:
+                new_kc_creds = await kc_manager.refresh_access_token(refresh_token)
+                set_kc_auth_cookies(response, new_kc_creds)  # Sets new Keycloak cookies
+                access_token = new_kc_creds[
+                    "access_token"
+                ]  # Use new access token for subsequent validation
+                kc_principal = await kc_manager.validate_keycloak_token(access_token)
+                keycloak_token_refreshed = True
+            except Exception as e:
+                # Failed to refresh Keycloak token
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"Failed to refresh Keycloak token: {str(e)}",
+                )
+        except JWTError as e:
+            # Other Keycloak token validation errors
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Failed to refresh Keycloak token: {str(e)}",
+                detail=f"Invalid Keycloak token: {str(e)}",
             )
-    except JWTError as e:
-        # Other Keycloak token validation errors
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid Keycloak token: {str(e)}",
-        )
 
     if not kc_principal:  # Should not happen if logic above is correct, but as a safeguard
         raise HTTPException(

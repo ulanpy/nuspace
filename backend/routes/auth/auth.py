@@ -25,6 +25,8 @@ from .utils import (
     exchange_code_for_credentials,
     set_kc_auth_cookies,
     unset_kc_auth_cookies,
+    build_mock_creds,
+    _select_mock_user,
 )
 
 router = APIRouter(tags=["Auth Routes"])
@@ -33,7 +35,12 @@ logger = logging.getLogger(__name__)
 
 # /login: always pass a state
 @router.get("/login")
-async def login(request: Request, state: str | None = None, return_to: str | None = None):
+async def login(
+    request: Request,
+    state: str | None = None,
+    return_to: str | None = None,
+    mock_user: str | None = "1",  # shorthand alias
+):
     kc: KeyCloakManager = request.app.state.kc_manager
     redis = request.app.state.redis
 
@@ -43,6 +50,15 @@ async def login(request: Request, state: str | None = None, return_to: str | Non
         csrf_key = f"csrf:{state}"
         # Optionally: await redis.set(csrf_key, return_to or "/", ex=600, nx=True)
         await redis.setex(csrf_key, 600, return_to or "/")
+
+    # Dev mock: bypass external IdP entirely
+    if config.MOCK_KEYCLOAK:
+        cb = kc.KEYCLOAK_REDIRECT_URI
+        sep = "&" if "?" in cb else "?"
+        callback_url = f"{cb}{sep}state={state}"
+        if mock_user:
+            callback_url += f"&mock_user={mock_user}"
+        return RedirectResponse(url=callback_url, status_code=303)
 
     return await getattr(kc.oauth, kc.__class__.__name__.lower()).authorize_redirect(
         request,
@@ -66,13 +82,15 @@ async def auth_callback(
     app_token_manager: AppTokenManager = request.app.state.app_token_manager
     redis = request.app.state.redis
 
-    # Validate Keycloak token from the fresh exchange
-    try:
-        await kc_manager.validate_keycloak_token(creds["access_token"])
-    except JWTError as e:
-        raise HTTPException(
-            status_code=401, detail=f"Invalid Keycloak token after code exchange: {str(e)}"
-        )
+
+    # Validate Keycloak token from the fresh exchange (skip in mock mode)
+    if not config.MOCK_KEYCLOAK:
+        try:
+            await kc_manager.validate_keycloak_token(creds["access_token"])
+        except JWTError as e:
+            raise HTTPException(
+                status_code=401, detail=f"Invalid Keycloak token after code exchange: {str(e)}"
+            )
 
     # Upsert user and mint app token
     user_schema: UserSchema = await create_user_schema(creds)
@@ -95,13 +113,7 @@ async def auth_callback(
     miniapp_state_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}{state}"
     creds_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}creds:{state}"
     miniapp_exists = await redis.get(miniapp_state_key)
-
     if miniapp_exists:
-        # Trace when we persist creds for Mini App flow for correlation with exchange polling
-        try:
-            logger.info("auth_callback: storing creds for miniapp state=%s", state)
-        except Exception:
-            pass
         try:
             # Store minimal creds needed; TTL prevents long exposure
             await redis.setex(
@@ -112,20 +124,16 @@ async def auth_callback(
                         "access_token": creds.get("access_token"),
                         "refresh_token": creds.get("refresh_token"),
                         "id_token": creds.get("id_token"),
+                        # Include userinfo so /miniapp/login/exchange can upsert the user
+                        "userinfo": creds.get("userinfo"),
                     }
                 ),
             )
         finally:
             await redis.delete(miniapp_state_key)
-
-        # Always deep-link back to Telegram so the Mini App re-opens with start_param
-        if (
-            not getattr(config, "TG_APP_PATH", None)
-            or str(config.TG_APP_PATH).lower() == "startapp"
-        ):
-            tme_url = f"https://t.me/{config.BOT_USERNAME}?startapp={state}"
-        else:
-            tme_url = f"https://t.me/{config.BOT_USERNAME}/{config.TG_APP_PATH}?startapp={state}"
+    
+        bot_username = request.app.state.bot_username
+        tme_url = f"https://t.me/{bot_username}?startapp={state}"
         return RedirectResponse(url=tme_url, status_code=303)
 
     # 2) Web flow: validate CSRF state and consume it
@@ -139,7 +147,6 @@ async def auth_callback(
     # 3) Neither MiniApp nor CSRF state is valid → reject
     raise HTTPException(status_code=400, detail="Invalid or expired state")
 
-
 @router.post("/connect-tg")
 async def bind_tg(request: Request, sub_param: Sub):
     bot: Bot = request.app.state.bot
@@ -150,7 +157,11 @@ async def bind_tg(request: Request, sub_param: Sub):
 
 
 @router.get("/miniapp/login/init")
-async def miniapp_login_init(request: Request, return_to: str | None = None):
+async def miniapp_login_init(
+    request: Request,
+    return_to: str | None = None,
+    mock_user: str | None = "1",
+):
     """
     Initialize a Mini App login by generating a one-time state code and returning
     the external login URL that must be opened in a system browser.
@@ -165,6 +176,29 @@ async def miniapp_login_init(request: Request, return_to: str | None = None):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Could not initialize miniapp login",
         )
+
+    # Dev-only: pre-mint mock credentials so exchange can succeed without Keycloak
+    if config.MOCK_KEYCLOAK:
+        try:
+            userinfo = _select_mock_user(mock_user)
+            creds = build_mock_creds(userinfo)
+            creds_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}creds:{code}"
+            await redis.setex(
+                creds_key,
+                300,
+                json.dumps(
+                    {
+                        "access_token": creds.get("access_token"),
+                        "refresh_token": creds.get("refresh_token"),
+                        "id_token": creds.get("id_token"),
+                        # Include userinfo for the exchange step
+                        "userinfo": creds.get("userinfo"),
+                    }
+                ),
+            )
+        except Exception:
+            # Non-fatal in dev; exchange can still proceed if real login happens
+            pass
 
     login_url = f"{config.HOME_URL}/api/login?state={code}"
     return {"code": code, "login_url": login_url}
@@ -233,16 +267,17 @@ async def miniapp_login_exchange(
     kc_manager: KeyCloakManager = request.app.state.kc_manager
     app_token_manager: AppTokenManager = request.app.state.app_token_manager
 
-    # Validate KC token
-    try:
-        await kc_manager.validate_keycloak_token(creds["access_token"])
-    except JWTError as e:
-        await redis.delete(creds_key)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid Keycloak token: {str(e)}",
-            headers={"X-MiniApp-Exchange": "invalid-kc-token"},
-        )
+    # Validate KC token (skip in mock mode)
+    if not config.MOCK_KEYCLOAK:
+        try:
+            await kc_manager.validate_keycloak_token(creds["access_token"])
+        except JWTError as e:
+            await redis.delete(creds_key)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid Keycloak token: {str(e)}",
+                headers={"X-MiniApp-Exchange": "invalid-kc-token"},
+            )
 
     # Upsert user and set cookies
     user_schema: UserSchema = await create_user_schema(creds)
@@ -271,7 +306,6 @@ async def miniapp_login_exchange(
         pass
     return {"ok": True}
 
-
 @router.post("/refresh-token", response_description="Refresh token")
 async def refresh_token(
     request: Request,
@@ -296,15 +330,31 @@ async def refresh_token(
     app_token_manager: AppTokenManager = request.app.state.app_token_manager
 
     try:
-        new_kc_creds = await kc_manager.refresh_access_token(kc_refresh_token)
-        set_kc_auth_cookies(response, new_kc_creds)  # Set new Keycloak cookies
+        if config.MOCK_KEYCLOAK:
+            # Parse mock refresh token: mock_refresh_<sub>
+            if not kc_refresh_token.startswith("mock_refresh_"):
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid mock refresh token")
+            sub = kc_refresh_token.removeprefix("mock_refresh_")
+            # Build new mock creds
+            from .utils import get_mock_user_by_sub, build_mock_creds  # local import to avoid cycles
 
-        # Validate new KC token to get principal for app token creation
-        kc_principal = await kc_manager.validate_keycloak_token(new_kc_creds["access_token"])
+            userinfo = get_mock_user_by_sub(sub)
+            new_kc_creds = build_mock_creds(userinfo)
+        else:
+            new_kc_creds = await kc_manager.refresh_access_token(kc_refresh_token)
+
+        set_kc_auth_cookies(response, new_kc_creds)
+
+        # Determine principal subject
+        if config.MOCK_KEYCLOAK:
+            kc_principal_sub = new_kc_creds["userinfo"]["sub"]
+        else:
+            kc_principal = await kc_manager.validate_keycloak_token(new_kc_creds["access_token"])
+            kc_principal_sub = kc_principal["sub"]
 
         # Issue new app token
         new_app_token_str, new_app_claims = await app_token_manager.create_app_token(
-            kc_principal["sub"], db_session
+            kc_principal_sub, db_session
         )
         response.set_cookie(
             key=config.COOKIE_APP_NAME,
@@ -315,7 +365,7 @@ async def refresh_token(
             max_age=app_token_manager.token_expiry.total_seconds(),
         )
 
-        return {**new_kc_creds, "app_token_claims": new_app_claims}  # Return all new token info
+        return {**new_kc_creds, "app_token_claims": new_app_claims}
 
     except JWTError as e:  # Catch validation error for the new KC token
         raise HTTPException(
@@ -380,7 +430,8 @@ async def logout(
     kc: KeyCloakManager = request.app.state.kc_manager
 
     try:
-        await kc.revoke_offline_refresh_token(refresh_token)
+        if not config.MOCK_KEYCLOAK:
+            await kc.revoke_offline_refresh_token(refresh_token)
 
     except Exception as e:
         raise HTTPException(

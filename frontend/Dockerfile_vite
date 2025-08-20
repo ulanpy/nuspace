@@ -2,7 +2,7 @@
 FROM node:20-alpine
 
 # Install bash and other essential tools for development
-RUN apk add --no-cache bash curl git
+RUN apk add --no-cache bash curl git jq
 
 # Set working directory in container
 WORKDIR /nuros
@@ -17,5 +17,21 @@ RUN npm install
 # Copy the rest of the project files
 COPY frontend .
 
+# Script to resolve quick tunnel URL from cloudflared metrics and export for Vite
+RUN printf '%s\n' '#!/bin/sh' \
+  'set -e' \
+  'cd /nuros' \
+  'METRICS="http://cloudflared:2000/metrics"' \
+  'for i in 1 2 3 4 5; do' \
+  '  URL=$(curl -fsS "$METRICS" | grep -Eo "https://[a-z0-9-]+\\.trycloudflare\\.com" | head -n1 || true)' \
+  '  if [ -n "$URL" ]; then echo "$URL"; break; fi' \
+  '  sleep 2' \
+  'done' \
+  'if [ -z "$URL" ]; then URL="http://localhost:5173"; fi' \
+  'export CLOUDFLARED_TUNNEL_URL="$URL"' \
+  'echo "Using CLOUDFLARED_TUNNEL_URL=$CLOUDFLARED_TUNNEL_URL"' \
+  'exec npm run dev -- --host' > /usr/local/bin/start-frontend.sh \
+  && chmod +x /usr/local/bin/start-frontend.sh
+
 # Start the Vite development server
-CMD ["npm", "run", "dev", "--", "--host"]
+CMD ["/usr/local/bin/start-frontend.sh"]
