@@ -8,6 +8,11 @@
 venv/
 
 **/nuspace.json
+# Terraform credentials and state files
+**/terraform.json
+*.tfstate
+*.tfstate.*
+.terraform/
 
 # PyCharm IDE files
 .idea/

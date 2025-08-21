@@ -27,15 +27,6 @@ async def lifespan(app: FastAPI):
         await setup_redis(app)
         await setup_meilisearch(app)
 
-        # In development, only require a public tunnel if using webhooks
-        if app.state.config.IS_DEBUG:
-            for _ in range(180):  # up to ~180s
-                url = app.state.config.DISCOVERED_TUNNEL_URL
-                if isinstance(url, str) and url.startswith("https://"):
-                    break
-                await asyncio.sleep(1)
-            else:
-                raise RuntimeError("Dev tunnel not available within timeout; aborting startup.")
         await setup_bot(app)
 
         for router in routers:

@@ -71,19 +71,14 @@ export default function HomePage() {
       {/* Beta banner - visible on all viewports with last commit inline */}
       <div className="w-full mb-6">
         <div className="w-full rounded-lg border border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-100 px-3 py-2 sm:px-4 sm:py-3">
-          <div className="w-full flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <div className="w-full flex flex-col gap-2 sm:gap-3">
             <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
               <FlaskConical className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 sm:mt-0" />
               <p className="text-xs sm:text-sm leading-snug">
-                <span className="font-semibold">Public Beta.</span> We’re actively improving Nuspace and truly value your feedback.
+                <span className="font-semibold">Public Beta.</span> We're actively improving Nuspace and truly value your feedback.
               </p>
             </div>
-            <div className="flex items-center justify-between sm:justify-end gap-3">
-              <LastCommitInline />
-              <div className="flex-shrink-0">
-                <ReportButton />
-              </div>
-            </div>
+            <LastCommitInline rightElement={<ReportButton />} />
           </div>
         </div>
       </div>
