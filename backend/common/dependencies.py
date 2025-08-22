@@ -56,7 +56,9 @@ async def get_current_principals(
             - 401 Unauthorized: For Keycloak token issues (missing, invalid, refresh failure).
             - 403 Forbidden: If a valid `app_principal` cannot be established.
     """
-    if not access_token or not refresh_token:
+    # If refresh token exists but access token is missing, try silent refresh.
+    # Otherwise, require both.
+    if not refresh_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing access and/or refresh token cookie(s)",
@@ -67,6 +69,18 @@ async def get_current_principals(
 
     kc_principal: dict | None = None
     keycloak_token_refreshed = False
+
+    # Attempt to recover when access_token is missing using refresh token
+    if not access_token:
+        try:
+            new_kc_creds = await request.app.state.kc_manager.refresh_access_token(refresh_token)
+            set_kc_auth_cookies(response, new_kc_creds)
+            access_token = new_kc_creds["access_token"]
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Failed to refresh Keycloak token: {str(e)}",
+            )
 
     if config.MOCK_KEYCLOAK and access_token.startswith("mock_access_"):
         sub = access_token.removeprefix("mock_access_")
