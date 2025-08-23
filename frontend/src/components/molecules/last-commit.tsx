@@ -136,13 +136,7 @@ export function LastCommitInline({ rightElement }: { rightElement?: React.ReactN
 
   return (
     <div className="flex items-start justify-between gap-2">
-      <a
-        href="https://github.com/ulanpy/nuspace"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-start gap-1.5 text-xs sm:text-sm text-blue-700 dark:text-blue-300 hover:underline"
-        aria-label="Open repository"
-      >
+      <div className="inline-flex items-start gap-1.5 text-xs sm:text-sm text-blue-700 dark:text-blue-300">
         <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 mt-0.5" />
         {isLoading ? (
           <span className="text-inherit">Checking updates…</span>
@@ -168,7 +162,6 @@ export function LastCommitInline({ rightElement }: { rightElement?: React.ReactN
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:underline text-inherit flex-shrink-0"
-                      onClick={(e) => e.stopPropagation()}
                     >
                       {actorName}
                     </a>
@@ -188,7 +181,16 @@ export function LastCommitInline({ rightElement }: { rightElement?: React.ReactN
             </div>
           </div>
         )}
-      </a>
+        <a
+          href="https://github.com/ulanpy/nuspace"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:underline"
+          aria-label="Open repository"
+        >
+          <span className="sr-only">View repository</span>
+        </a>
+      </div>
       {rightElement && (
         <div className="flex-shrink-0">
           {rightElement}
