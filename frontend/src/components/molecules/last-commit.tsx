@@ -135,17 +135,17 @@ export function LastCommitInline({ rightElement }: { rightElement?: React.ReactN
   const commitMessage = data?.commit?.message || undefined;
 
   return (
-    <div className="flex items-start justify-between gap-2">
-      <div className="inline-flex items-start gap-1.5 text-xs sm:text-sm text-blue-700 dark:text-blue-300">
+    <div className="flex items-start gap-2 min-w-0">
+      <div className="flex items-start gap-1.5 text-xs sm:text-sm text-blue-700 dark:text-blue-300 min-w-0 flex-1">
         <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 mt-0.5" />
         {isLoading ? (
           <span className="text-inherit">Checking updates…</span>
         ) : isError || !lastUpdated ? (
           <span className="text-inherit">Last update unknown</span>
         ) : (
-          <div className="flex flex-wrap items-center gap-1 min-w-0">
-            <span className="text-inherit whitespace-nowrap">Updated {lastUpdated}</span>
+          <div className="flex flex-col gap-1 min-w-0 flex-1">
             <div className="flex items-center gap-1 min-w-0">
+              <span className="text-inherit whitespace-nowrap">Updated {lastUpdated}</span>
               {actorAvatar && (
                 <img
                   src={actorAvatar}
@@ -170,22 +170,24 @@ export function LastCommitInline({ rightElement }: { rightElement?: React.ReactN
                   )}
                 </>
               )}
-              {commitMessage && (
+            </div>
+            {commitMessage && (
+              <div className="min-w-0">
                 <span
-                  className="text-inherit text-xs sm:text-[0.95em] truncate min-w-0 flex-1"
+                  className="text-inherit text-xs sm:text-[0.95em] truncate block"
                   title={commitMessage}
                 >
                   — {commitMessage.split('\n')[0]}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
         <a
           href="https://github.com/ulanpy/nuspace"
           target="_blank"
           rel="noopener noreferrer"
-          className="hover:underline"
+          className="hover:underline flex-shrink-0"
           aria-label="Open repository"
         >
           <span className="sr-only">View repository</span>
