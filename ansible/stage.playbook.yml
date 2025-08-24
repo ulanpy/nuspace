@@ -9,6 +9,16 @@
     image_tag: "{{ docker_image_tag }}"
 
   tasks:
+    - name: Check current container status
+      ansible.builtin.shell: |
+        docker ps --format "table {{ '{{.Names}}' }}\t{{ '{{.Status}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" || echo "No containers found"
+      register: container_status
+      changed_when: false
+
+    - name: Display container status
+      ansible.builtin.debug:
+        msg: "Current container status: {{ container_status.stdout_lines }}"
+
     - name: Check if git is installed
       ansible.builtin.command: git --version
       register: git_check
@@ -68,6 +78,32 @@
       args:
         executable: /bin/bash
 
+    - name: Ensure OS Login user exists and has proper permissions
+      ansible.builtin.shell: |
+        # Get the current OS Login user
+        CURRENT_USER=$(whoami)
+        echo "Current user: $CURRENT_USER"
+        
+        # Ensure the user exists and has sudo access
+        if ! id "$CURRENT_USER" &>/dev/null; then
+          echo "Creating user $CURRENT_USER"
+          useradd -m -s /bin/bash "$CURRENT_USER"
+        fi
+        
+        # Add user to sudo group if not already there
+        if ! groups "$CURRENT_USER" | grep -q sudo; then
+          usermod -aG sudo "$CURRENT_USER"
+        fi
+        
+        # Add user to docker group if not already there
+        if ! groups "$CURRENT_USER" | grep -q docker; then
+          usermod -aG docker "$CURRENT_USER"
+        fi
+        
+        echo "User $CURRENT_USER configured with sudo and docker access"
+      args:
+        executable: /bin/bash
+
     - name: Pull latest changes from git repository
       ansible.builtin.git:
         repo: "https://github.com/ulanpy/nuspace.git"
@@ -123,13 +159,62 @@
         username: "{{ docker_username }}"
         password: "{{ docker_password }}"
 
+    - name: Check which containers need to be started/restarted
+      ansible.builtin.shell: |
+        # Check if containers are running and get their image tags
+        docker ps --format "{{ '{{.Names}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" > /tmp/running_containers.txt 2>/dev/null || true
+        
+        # Check if any containers are missing or need restart
+        MISSING_CONTAINERS=""
+        NEED_RESTART=""
+        
+        # Check each expected container
+        for container in fastapi celery-worker nginx redis rabbitmq prometheus grafana loki alloy alertmanager wireguard; do
+          if ! grep -q "^${container}" /tmp/running_containers.txt; then
+            MISSING_CONTAINERS="${MISSING_CONTAINERS} ${container}"
+          elif [[ "${{ backend_changed }}" == "true" && "$container" =~ ^(fastapi|celery-worker)$ ]]; then
+            NEED_RESTART="${NEED_RESTART} ${container}"
+          elif [[ "${{ frontend_changed }}" == "true" && "$container" == "nginx" ]]; then
+            NEED_RESTART="${NEED_RESTART} ${container}"
+          elif [[ "${{ nginx_changed }}" == "true" && "$container" == "nginx" ]]; then
+            NEED_RESTART="${NEED_RESTART} ${container}"
+          elif [[ "${{ redis_changed }}" == "true" && "$container" == "redis" ]]; then
+            NEED_RESTART="${NEED_RESTART} ${container}"
+          elif [[ "${{ rabbitmq_changed }}" == "true" && "$container" == "rabbitmq" ]]; then
+            NEED_RESTART="${NEED_RESTART} ${container}"
+          elif [[ "${{ prometheus_changed }}" == "true" && "$container" == "prometheus" ]]; then
+            NEED_RESTART="${NEED_RESTART} ${container}"
+          elif [[ "${{ grafana_changed }}" == "true" && "$container" == "grafana" ]]; then
+            NEED_RESTART="${NEED_RESTART} ${container}"
+          elif [[ "${{ loki_changed }}" == "true" && "$container" == "loki" ]]; then
+            NEED_RESTART="${NEED_RESTART} ${container}"
+          elif [[ "${{ alloy_changed }}" == "true" && "$container" == "alloy" ]]; then
+            NEED_RESTART="${NEED_RESTART} ${container}"
+          elif [[ "${{ alertmanager_changed }}" == "true" && "$container" == "alertmanager" ]]; then
+            NEED_RESTART="${NEED_RESTART} ${container}"
+          elif [[ "${{ wireguard_changed }}" == "true" && "$container" == "wireguard" ]]; then
+            NEED_RESTART="${NEED_RESTART} ${container}"
+          fi
+        done
+        
+        echo "MISSING_CONTAINERS=${MISSING_CONTAINERS}" > /tmp/container_actions.txt
+        echo "NEED_RESTART=${NEED_RESTART}" >> /tmp/container_actions.txt
+        echo "Missing: ${MISSING_CONTAINERS}"
+        echo "Need restart: ${NEED_RESTART}"
+      register: container_analysis
+      changed_when: false
+
+    - name: Display container analysis
+      ansible.builtin.debug:
+        msg: "{{ container_analysis.stdout_lines }}"
+
     - name: Pull backend image for migrations
       ansible.builtin.command: >
         docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
         pull fastapi
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
-      when: (backend_changed | default(false)) | bool
+      when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout"
 
     - name: Run DB migrations (alembic upgrade head)
       ansible.builtin.command: >
@@ -137,7 +222,7 @@
         run --rm migrate
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
-      when: (backend_changed | default(false)) | bool
+      when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout"
 
     - name: Pull celery worker image
       ansible.builtin.command: >
@@ -145,7 +230,7 @@
         pull celery-worker
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
-      when: (backend_changed | default(false)) | bool
+      when: (backend_changed | default(false)) | bool or "'celery-worker' in container_analysis.stdout"
 
     - name: Recreate backend services (fastapi, celery-worker)
       ansible.builtin.command: >
@@ -153,7 +238,7 @@
         up -d fastapi celery-worker
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
-      when: (backend_changed | default(false)) | bool
+      when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout or 'celery-worker' in container_analysis.stdout"
 
     - name: Pull frontend builder image
       ansible.builtin.command: >
@@ -177,7 +262,7 @@
         up -d nginx
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
-      when: (nginx_changed | default(false)) | bool
+      when: (nginx_changed | default(false)) | bool or "'nginx' in container_analysis.stdout"
 
     - name: Recreate redis service
       ansible.builtin.command: >
@@ -185,7 +270,7 @@
         up -d redis
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
-      when: (redis_changed | default(false)) | bool
+      when: (redis_changed | default(false)) | bool or "'redis' in container_analysis.stdout"
 
     - name: Recreate rabbitmq service
       ansible.builtin.command: >
@@ -193,7 +278,7 @@
         up -d rabbitmq
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
-      when: (rabbitmq_changed | default(false)) | bool
+      when: (rabbitmq_changed | default(false)) | bool or "'rabbitmq' in container_analysis.stdout"
 
     - name: Recreate prometheus service
       ansible.builtin.command: >
@@ -201,7 +286,7 @@
         up -d prometheus
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
-      when: (prometheus_changed | default(false)) | bool
+      when: (prometheus_changed | default(false)) | bool or "'prometheus' in container_analysis.stdout"
 
     - name: Recreate grafana service
       ansible.builtin.command: >
@@ -209,7 +294,7 @@
         up -d grafana
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
-      when: (grafana_changed | default(false)) | bool
+      when: (grafana_changed | default(false)) | bool or "'grafana' in container_analysis.stdout"
 
     - name: Recreate loki service
       ansible.builtin.command: >
@@ -217,7 +302,7 @@
         up -d loki
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
-      when: (loki_changed | default(false)) | bool
+      when: (loki_changed | default(false)) | bool or "'loki' in container_analysis.stdout"
 
     - name: Recreate alloy service
       ansible.builtin.command: >
@@ -225,7 +310,7 @@
         up -d alloy
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
-      when: (alloy_changed | default(false)) | bool
+      when: (alloy_changed | default(false)) | bool or "'alloy' in container_analysis.stdout"
 
     - name: Recreate alertmanager service
       ansible.builtin.command: >
@@ -233,7 +318,7 @@
         up -d alertmanager
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
-      when: (alertmanager_changed | default(false)) | bool
+      when: (alertmanager_changed | default(false)) | bool or "'alertmanager' in container_analysis.stdout"
 
     - name: Recreate wireguard service
       ansible.builtin.command: >
@@ -241,7 +326,7 @@
         up -d wireguard
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
-      when: (wireguard_changed | default(false)) | bool
+      when: (wireguard_changed | default(false)) | bool or "'wireguard' in container_analysis.stdout"
 
     - name: Reconcile docker compose changes (definitions only)
       ansible.builtin.command: >
@@ -251,6 +336,19 @@
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
       when: (compose_changed | default(false)) | bool
 
+
+    - name: Show final container status
+      ansible.builtin.shell: |
+        echo "=== Final Container Status ==="
+        docker ps --format "table {{ '{{.Names}}' }}\t{{ '{{.Status}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" || echo "No containers found"
+        echo "=== All Containers ==="
+        docker ps --format "table {{ '{{.Names}}' }}\t{{ '{{.Status}}' }}"
+      register: final_status
+      changed_when: false
+
+    - name: Display final status
+      ansible.builtin.debug:
+        msg: "{{ final_status.stdout_lines }}"
 
     - name: Prune all unused Docker assets
       ansible.builtin.command: docker system prune -a -f
