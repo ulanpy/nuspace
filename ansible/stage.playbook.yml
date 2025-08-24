@@ -214,28 +214,105 @@
       ansible.builtin.debug:
         msg: "{{ container_analysis.stdout_lines }}"
 
-    - name: Pull backend image for migrations
-      ansible.builtin.command: >
-        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-        pull fastapi
+    - name: Pull backend image for migrations (with fallback to latest)
+      ansible.builtin.shell: |
+        set -e
+        COMPOSE_FILE="/home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml"
+        CURRENT_TAG="${DOCKER_IMAGE_TAG}"
+        
+        echo "=== Backend Image Pull Debug ==="
+        echo "DOCKER_IMAGE_TAG: ${CURRENT_TAG}"
+        echo "Backend changed: {{ backend_changed | default(false) }}"
+        echo "================================="
+        
+        echo "Attempting to pull fastapi image with tag: ${CURRENT_TAG}"
+        if DOCKER_IMAGE_TAG="${CURRENT_TAG}" docker compose -f "$COMPOSE_FILE" pull fastapi 2>&1; then
+          echo "Successfully pulled fastapi with tag: ${CURRENT_TAG}"
+        else
+          echo "Pull failed for tag ${CURRENT_TAG}. Falling back to latest..."
+          if DOCKER_IMAGE_TAG=latest docker compose -f "$COMPOSE_FILE" pull fastapi 2>&1; then
+            echo "Successfully pulled fastapi with tag: latest"
+          else
+            echo "Failed to pull both ${CURRENT_TAG} and latest tags for fastapi"
+            exit 1
+          fi
+        fi
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      args:
+        executable: /bin/bash
       when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout"
 
-    - name: Run DB migrations (alembic upgrade head)
-      ansible.builtin.command: >
-        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-        run --rm migrate
-      environment:
-        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+    - name: Ensure postgres is up before migrations
+      ansible.builtin.shell: |
+        #!/bin/bash
+        set -e
+        COMPOSE_FILE="/home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml"
+        docker compose -f "$COMPOSE_FILE" up -d postgres
+        # Wait for Postgres to accept connections (max ~60s)
+        for i in {1..30}; do
+          if docker compose -f "$COMPOSE_FILE" exec -T postgres sh -lc 'pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1'; then
+            echo "Postgres is ready"
+            exit 0
+          fi
+          sleep 2
+        done
+        echo "Postgres not ready after timeout" >&2
+        exit 1
+      args:
+        executable: /bin/bash
       when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout"
 
-    - name: Pull celery worker image
-      ansible.builtin.command: >
-        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-        pull celery-worker
+    - name: Run DB migrations (alembic upgrade head) with robust fallback
+      ansible.builtin.shell: |
+        #!/bin/bash
+        set -e
+        COMPOSE_FILE="/home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml"
+        CURRENT_TAG="${DOCKER_IMAGE_TAG}"
+
+        echo "=== Migration Debug Info ==="
+        echo "DOCKER_IMAGE_TAG from environment: ${DOCKER_IMAGE_TAG}"
+        echo "CURRENT_TAG: ${CURRENT_TAG}"
+        echo "Backend changed: {{ backend_changed | default(false) }}"
+        echo "============================="
+
+        # First try to pull with the current tag
+        echo "Attempting to pull migrate image with tag: ${CURRENT_TAG}"
+        if DOCKER_IMAGE_TAG="${CURRENT_TAG}" docker compose -f "$COMPOSE_FILE" pull migrate 2>&1; then
+          echo "Successfully pulled image with tag: ${CURRENT_TAG}"
+          MIGRATION_TAG="${CURRENT_TAG}"
+        else
+          echo "Pull failed for tag ${CURRENT_TAG}. Falling back to latest..."
+          if DOCKER_IMAGE_TAG=latest docker compose -f "$COMPOSE_FILE" pull migrate 2>&1; then
+            echo "Successfully pulled image with tag: latest"
+            MIGRATION_TAG="latest"
+          else
+            echo "Failed to pull both ${CURRENT_TAG} and latest tags"
+            exit 1
+          fi
+        fi
+
+        echo "Running migrations with tag: ${MIGRATION_TAG}"
+        if ! DOCKER_IMAGE_TAG="${MIGRATION_TAG}" docker compose -f "$COMPOSE_FILE" run --rm migrate; then
+          echo "Migration failed with tag ${MIGRATION_TAG}"
+          exit 1
+        fi
+        echo "Migrations completed successfully with tag: ${MIGRATION_TAG}"
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      args:
+        executable: /bin/bash
+      when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout"
+
+    - name: Pull celery worker image (with fallback to latest)
+      ansible.builtin.shell: |
+        set -e
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull celery-worker || \
+        DOCKER_IMAGE_TAG=latest docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull celery-worker
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      args:
+        executable: /bin/bash
       when: (backend_changed | default(false)) | bool or "'celery-worker' in container_analysis.stdout"
 
     - name: Recreate backend services (fastapi, celery-worker)
@@ -246,12 +323,15 @@
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
       when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout or 'celery-worker' in container_analysis.stdout"
 
-    - name: Pull frontend builder image
-      ansible.builtin.command: >
-        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-        pull frontend-builder
+    - name: Pull frontend builder image (with fallback to latest)
+      ansible.builtin.shell: |
+        set -e
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull frontend-builder || \
+        DOCKER_IMAGE_TAG=latest docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull frontend-builder
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      args:
+        executable: /bin/bash
       when: (frontend_changed | default(false)) | bool
 
     - name: Run frontend build (frontend-builder)
