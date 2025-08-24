@@ -11,7 +11,7 @@
   tasks:
     - name: Check current container status
       ansible.builtin.shell: |
-        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" || echo "No containers found"
+        docker ps --format "table {{ '{{.Names}}' }}\t{{ '{{.Status}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" || echo "No containers found"
       register: container_status
       changed_when: false
 
@@ -162,7 +162,7 @@
     - name: Check which containers need to be started/restarted
       ansible.builtin.shell: |
         # Check if containers are running and get their image tags
-        docker ps --format "{{.Names}}\t{{.Image}}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" > /tmp/running_containers.txt 2>/dev/null || true
+        docker ps --format "{{ '{{.Names}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" > /tmp/running_containers.txt 2>/dev/null || true
         
         # Check if any containers are missing or need restart
         MISSING_CONTAINERS=""
@@ -340,9 +340,9 @@
     - name: Show final container status
       ansible.builtin.shell: |
         echo "=== Final Container Status ==="
-        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" || echo "No containers found"
+        docker ps --format "table {{ '{{.Names}}' }}\t{{ '{{.Status}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" || echo "No containers found"
         echo "=== All Containers ==="
-        docker ps --format "table {{.Names}}\t{{.Status}}"
+        docker ps --format "table {{ '{{.Names}}' }}\t{{ '{{.Status}}' }}"
       register: final_status
       changed_when: false
 
