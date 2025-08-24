@@ -156,6 +156,22 @@ jobs:
             echo "should_deploy=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Create Ansible configuration
+        run: |
+          cat > ansible/ansible.cfg << EOF
+          [defaults]
+          remote_tmp = /tmp/.ansible-tmp
+          local_tmp = /tmp/.ansible-local-tmp
+          host_key_checking = False
+          timeout = 30
+          gathering = smart
+          fact_caching = memory
+          
+          [ssh_connection]
+          ssh_args = -o ControlMaster=auto -o ControlPersist=60s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+          control_path = /tmp/ansible-ssh-%%h-%%p-%%r
+          EOF
+
       - name: Create inventory file
         run: |
           cat > ansible/inventory.yml << EOF
@@ -166,9 +182,10 @@ jobs:
                 hosts:
                   ${{ steps.secrets.outputs.VM_NAME }}:
                     ansible_user: ${{ steps.secrets.outputs.ANSIBLE_USER }}
-                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
                     ansible_ssh_executable: gcloud
                     ansible_ssh_args: 'compute ssh --zone=europe-central2-a'
+                    ansible_become: yes
+                    ansible_become_method: sudo
           EOF
 
       - name: Run Ansible Playbook
@@ -178,9 +195,13 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
         run: |
-          # Test OS Login connection using instance name
+          # Test OS Login connection and prepare environment
           gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --command="echo 'OS Login configured'" --ssh-flag="-o ConnectTimeout=10" --quiet || true
           
-          ansible-playbook ansible/stage.playbook.yml \
-            --inventory ansible/inventory.yml \
+          # Prepare the remote environment
+          gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --command="sudo mkdir -p /tmp/.ansible-tmp && sudo chmod 777 /tmp/.ansible-tmp" --quiet || true
+          
+          # Run the Ansible playbook
+          cd ansible && ansible-playbook stage.playbook.yml \
+            --inventory inventory.yml \
             --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ steps.secrets.outputs.ANSIBLE_USER }} docker_user=${{ steps.secrets.outputs.DOCKER_USERNAME }} docker_pass=${{ steps.secrets.outputs.DOCKER_PASSWORD }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} compose_changed=${{ steps.changes.outputs.compose }}"
