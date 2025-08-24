@@ -47,3 +47,10 @@ resource "google_project_service" "iam_api" {
   service = "iam.googleapis.com"
   disable_on_destroy = false
 }
+
+# Enable the Secret Manager API for managing secrets.
+resource "google_project_service" "secretmanager_api" {
+  project = "nuspace-staging"
+  service = "secretmanager.googleapis.com"
+  disable_on_destroy = false
+}

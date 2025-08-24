@@ -1,7 +1,9 @@
 name: Terraform Stage Deploy
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - dev
 
 jobs:
   build_and_deploy:
@@ -103,16 +105,31 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Install Ansible
-        run: pip install ansible
-
-      - name: Set up SSH
+      - name: Install Ansible and Google Cloud SDK
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          echo "${{ secrets.ANSIBLE_HOST_KEY }}" >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
+          pip install ansible
+          curl -sSL https://sdk.cloud.google.com | bash
+          echo "$HOME/google-cloud-sdk/bin" >> $GITHUB_PATH
+
+      - name: Authenticate with Google Cloud
+        run: |
+          echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}' | base64 -d > /tmp/gcp-key.json
+          gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
+          gcloud config set project nuspace-staging
+
+      - name: Get VM information and Docker credentials from Secret Manager
+        id: secrets
+        run: |
+          # Get VM instance details using the service account
+          VM_INFO=$(gcloud compute instances describe nuspace-instance --zone=europe-central2-a --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+          SA_USERNAME=$(gcloud compute os-login describe-profile --format="value(posixAccounts[0].username)")
+          DOCKER_USERNAME=$(gcloud secrets versions access latest --secret="docker-username")
+          DOCKER_PASSWORD=$(gcloud secrets versions access latest --secret="docker-password")
+          echo "ANSIBLE_HOST=$VM_INFO" >> $GITHUB_OUTPUT
+          echo "ANSIBLE_USER=$SA_USERNAME" >> $GITHUB_OUTPUT
+          echo "DOCKER_USERNAME=$DOCKER_USERNAME" >> $GITHUB_OUTPUT
+          echo "::add-mask::$DOCKER_PASSWORD"
+          echo "DOCKER_PASSWORD=$DOCKER_PASSWORD" >> $GITHUB_OUTPUT
 
       - name: Create inventory file
         run: |
@@ -122,8 +139,9 @@ jobs:
             children:
               webservers:
                 hosts:
-                  ${{ secrets.ANSIBLE_HOST }}:
-                    ansible_user: ${{ secrets.ANSIBLE_USER }}
+                  ${{ steps.secrets.outputs.ANSIBLE_HOST }}:
+                    ansible_user: ${{ steps.secrets.outputs.ANSIBLE_USER }}
+                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
           EOF
 
       - name: Run Ansible Playbook
@@ -140,9 +158,14 @@ jobs:
           steps.changes.outputs.alertmanager == 'true' ||
           steps.changes.outputs.wireguard == 'true' ||
           steps.changes.outputs.compose == 'true'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
         run: |
-          ansible-playbook ansible/playbook.yml \
+          # Test OS Login connection
+          gcloud compute ssh ${{ steps.secrets.outputs.ANSIBLE_HOST }} --zone=europe-central2-a --command="echo 'OS Login configured'" --ssh-flag="-o ConnectTimeout=10" --quiet || true
+          
+          ansible-playbook ansible/stage.playbook.yml \
             --inventory ansible/inventory.yml \
-            --user "${{ secrets.ANSIBLE_USER }}" \
-            --private-key ~/.ssh/id_rsa \
-            --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ secrets.ANSIBLE_USER }} docker_user=${{ secrets.DOCKER_USERNAME }} docker_pass=${{ secrets.DOCKER_PASSWORD }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} compose_changed=${{ steps.changes.outputs.compose }}"
+            --user "${{ steps.secrets.outputs.ANSIBLE_USER }}" \
+            --ssh-common-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+            --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ steps.secrets.outputs.ANSIBLE_USER }} docker_user=${{ steps.secrets.outputs.DOCKER_USERNAME }} docker_pass=${{ steps.secrets.outputs.DOCKER_PASSWORD }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} compose_changed=${{ steps.changes.outputs.compose }}"
