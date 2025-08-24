@@ -132,6 +132,28 @@ jobs:
           echo "::add-mask::$DOCKER_PASSWORD"
           echo "DOCKER_PASSWORD=$DOCKER_PASSWORD" >> $GITHUB_OUTPUT
 
+      - name: Check if containers are running on VM
+        id: container_check
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
+        run: |
+          # Test connection and check container status
+          gcloud compute ssh ${{ steps.secrets.outputs.ANSIBLE_HOST }} --zone=europe-central2-a --command="docker ps --format 'table {{.Names}}\t{{.Status}}'" --ssh-flag="-o ConnectTimeout=10" --quiet > /tmp/container_status.txt 2>/dev/null || echo "Connection failed" > /tmp/container_status.txt
+          
+          # Check if expected containers are running
+          if grep -q "fastapi\|celery-worker\|nginx\|redis\|rabbitmq\|prometheus\|grafana\|loki\|alloy\|alertmanager\|wireguard" /tmp/container_status.txt; then
+            echo "containers_running=true" >> $GITHUB_OUTPUT
+          else
+            echo "containers_running=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Always run if there are code changes
+          if [[ "${{ steps.changes.outputs.backend }}" == "true" || "${{ steps.changes.outputs.frontend }}" == "true" || "${{ steps.changes.outputs.nginx }}" == "true" || "${{ steps.changes.outputs.redis }}" == "true" || "${{ steps.changes.outputs.rabbitmq }}" == "true" || "${{ steps.changes.outputs.prometheus }}" == "true" || "${{ steps.changes.outputs.grafana }}" == "true" || "${{ steps.changes.outputs.loki }}" == "true" || "${{ steps.changes.outputs.alloy }}" == "true" || "${{ steps.changes.outputs.alertmanager }}" == "true" || "${{ steps.changes.outputs.wireguard }}" == "true" || "${{ steps.changes.outputs.compose }}" == "true" ]]; then
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create inventory file
         run: |
           cat > ansible/inventory.yml << EOF
@@ -147,18 +169,8 @@ jobs:
 
       - name: Run Ansible Playbook
         if: |
-          steps.changes.outputs.backend == 'true' ||
-          steps.changes.outputs.frontend == 'true' ||
-          steps.changes.outputs.nginx == 'true' ||
-          steps.changes.outputs.redis == 'true' ||
-          steps.changes.outputs.rabbitmq == 'true' ||
-          steps.changes.outputs.prometheus == 'true' ||
-          steps.changes.outputs.grafana == 'true' ||
-          steps.changes.outputs.loki == 'true' ||
-          steps.changes.outputs.alloy == 'true' ||
-          steps.changes.outputs.alertmanager == 'true' ||
-          steps.changes.outputs.wireguard == 'true' ||
-          steps.changes.outputs.compose == 'true'
+          steps.container_check.outputs.should_deploy == 'true' ||
+          steps.container_check.outputs.containers_running == 'false'
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
         run: |
