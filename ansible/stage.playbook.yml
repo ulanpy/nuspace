@@ -245,12 +245,25 @@
         executable: /bin/bash
       when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout"
 
-    - name: Run DB migrations (alembic upgrade head) with tag fallback
+    - name: Run DB migrations (alembic upgrade head) with robust fallback
       ansible.builtin.shell: |
+        #!/bin/bash
         set -e
-        # Try migration with the provided tag; if the image/tag is missing, retry with latest
-        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml run --rm migrate || \
-        DOCKER_IMAGE_TAG=latest docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml run --rm migrate
+        COMPOSE_FILE="/home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml"
+        CURRENT_TAG="${DOCKER_IMAGE_TAG}"
+
+        echo "Pulling migrate image with tag: ${CURRENT_TAG}"
+        if ! docker compose -f "$COMPOSE_FILE" pull migrate; then
+          echo "Pull failed for tag ${CURRENT_TAG}. Retrying with latest..."
+          DOCKER_IMAGE_TAG=latest docker compose -f "$COMPOSE_FILE" pull migrate
+          export DOCKER_IMAGE_TAG=latest
+        fi
+
+        echo "Running migrations (tag: ${DOCKER_IMAGE_TAG})"
+        if ! docker compose -f "$COMPOSE_FILE" run --rm migrate; then
+          echo "First migrate run failed. Retrying with latest tag..."
+          DOCKER_IMAGE_TAG=latest docker compose -f "$COMPOSE_FILE" run --rm migrate
+        fi
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
       args:
