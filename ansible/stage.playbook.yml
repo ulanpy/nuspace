@@ -214,12 +214,15 @@
       ansible.builtin.debug:
         msg: "{{ container_analysis.stdout_lines }}"
 
-    - name: Pull backend image for migrations
-      ansible.builtin.command: >
-        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-        pull fastapi
+    - name: Pull backend image for migrations (with fallback to latest)
+      ansible.builtin.shell: |
+        set -e
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull fastapi || \
+        DOCKER_IMAGE_TAG=latest docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull fastapi
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      args:
+        executable: /bin/bash
       when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout"
 
     - name: Run DB migrations (alembic upgrade head)
@@ -230,12 +233,15 @@
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
       when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout"
 
-    - name: Pull celery worker image
-      ansible.builtin.command: >
-        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-        pull celery-worker
+    - name: Pull celery worker image (with fallback to latest)
+      ansible.builtin.shell: |
+        set -e
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull celery-worker || \
+        DOCKER_IMAGE_TAG=latest docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull celery-worker
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      args:
+        executable: /bin/bash
       when: (backend_changed | default(false)) | bool or "'celery-worker' in container_analysis.stdout"
 
     - name: Recreate backend services (fastapi, celery-worker)
@@ -246,12 +252,15 @@
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
       when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout or 'celery-worker' in container_analysis.stdout"
 
-    - name: Pull frontend builder image
-      ansible.builtin.command: >
-        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-        pull frontend-builder
+    - name: Pull frontend builder image (with fallback to latest)
+      ansible.builtin.shell: |
+        set -e
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull frontend-builder || \
+        DOCKER_IMAGE_TAG=latest docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull frontend-builder
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      args:
+        executable: /bin/bash
       when: (frontend_changed | default(false)) | bool
 
     - name: Run frontend build (frontend-builder)
