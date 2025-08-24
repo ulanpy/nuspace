@@ -225,12 +225,16 @@
         executable: /bin/bash
       when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout"
 
-    - name: Run DB migrations (alembic upgrade head)
-      ansible.builtin.command: >
-        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-        run --rm migrate
+    - name: Run DB migrations (alembic upgrade head) with tag fallback
+      ansible.builtin.shell: |
+        set -e
+        # Try migration with the provided tag; if the image/tag is missing, retry with latest
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml run --rm migrate || \
+        DOCKER_IMAGE_TAG=latest docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml run --rm migrate
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      args:
+        executable: /bin/bash
       when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout"
 
     - name: Pull celery worker image (with fallback to latest)
