@@ -10,7 +10,9 @@ from google.oauth2 import service_account
 from pydantic_settings import BaseSettings
 
 ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
-load_dotenv(os.path.join(ENV_DIR, ".env"))
+
+# Load ONLY from infra/.env
+load_dotenv(os.path.join(ENV_DIR, "infra/.env"), override=False)
 # should be in /nuspace/backend/core/configs/nuspace.json
 CREDENTIALS_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "nuspace.json"))
 
@@ -41,7 +43,7 @@ class Config(BaseSettings):
     GCP_TOPIC_ID: str
     PUSH_AUTH_SERVICE_ACCOUNT: str
     PUSH_AUTH_AUDIENCE: str
-    ORIGINS: List[str] = ["*"]
+    ORIGINS: List[str] = ["https://nu.campuscurrent.cc", "https://nuspace.kz"]
     MOCK_KEYCLOAK: bool  # always set True in local dev
     USE_GCS_EMULATOR: bool  # keep True for local dev; For staging/prod .env will have it False
     GCS_EMULATOR_HOST: str
@@ -65,7 +67,7 @@ class Config(BaseSettings):
     TG_APP_LOGIN_STATE_REDIS_PREFIX: str = "miniapp:login:state:"
 
     class Config:
-        env_file = os.path.join(ENV_DIR, ".env")
+        env_file = os.path.join(ENV_DIR, "infra/.env")
         env_file_encoding = "utf-8"
         extra = "allow"
 
