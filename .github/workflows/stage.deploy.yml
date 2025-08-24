@@ -164,9 +164,11 @@ jobs:
             children:
               webservers:
                 hosts:
-                  ${{ steps.secrets.outputs.ANSIBLE_HOST }}:
+                  ${{ steps.secrets.outputs.VM_NAME }}:
                     ansible_user: ${{ steps.secrets.outputs.ANSIBLE_USER }}
-                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+                    ansible_ssh_executable: gcloud
+                    ansible_ssh_args: 'compute ssh --zone=europe-central2-a'
           EOF
 
       - name: Run Ansible Playbook
@@ -181,6 +183,4 @@ jobs:
           
           ansible-playbook ansible/stage.playbook.yml \
             --inventory ansible/inventory.yml \
-            --user "${{ steps.secrets.outputs.ANSIBLE_USER }}" \
-            --ssh-common-args="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
             --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ steps.secrets.outputs.ANSIBLE_USER }} docker_user=${{ steps.secrets.outputs.DOCKER_USERNAME }} docker_pass=${{ steps.secrets.outputs.DOCKER_PASSWORD }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} compose_changed=${{ steps.changes.outputs.compose }}"
