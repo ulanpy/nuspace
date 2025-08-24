@@ -14,6 +14,8 @@
         docker ps --format "table {{ '{{.Names}}' }}\t{{ '{{.Status}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" || echo "No containers found"
       register: container_status
       changed_when: false
+      args:
+        executable: /bin/bash
 
     - name: Display container status
       ansible.builtin.debug:
@@ -161,6 +163,8 @@
 
     - name: Check which containers need to be started/restarted
       ansible.builtin.shell: |
+        #!/bin/bash
+        set -euo pipefail
         # Check if containers are running and get their image tags
         docker ps --format "{{ '{{.Names}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" > /tmp/running_containers.txt 2>/dev/null || true
         
@@ -172,27 +176,27 @@
         for container in fastapi celery-worker nginx redis rabbitmq prometheus grafana loki alloy alertmanager wireguard; do
           if ! grep -q "^${container}" /tmp/running_containers.txt; then
             MISSING_CONTAINERS="${MISSING_CONTAINERS} ${container}"
-          elif [[ "${{ backend_changed }}" == "true" && "$container" =~ ^(fastapi|celery-worker)$ ]]; then
+          elif [[ "${BACKEND_CHANGED:-false}" == "true" && "$container" =~ ^(fastapi|celery-worker)$ ]]; then
             NEED_RESTART="${NEED_RESTART} ${container}"
-          elif [[ "${{ frontend_changed }}" == "true" && "$container" == "nginx" ]]; then
+          elif [[ "${FRONTEND_CHANGED:-false}" == "true" && "$container" == "nginx" ]]; then
             NEED_RESTART="${NEED_RESTART} ${container}"
-          elif [[ "${{ nginx_changed }}" == "true" && "$container" == "nginx" ]]; then
+          elif [[ "${NGINX_CHANGED:-false}" == "true" && "$container" == "nginx" ]]; then
             NEED_RESTART="${NEED_RESTART} ${container}"
-          elif [[ "${{ redis_changed }}" == "true" && "$container" == "redis" ]]; then
+          elif [[ "${REDIS_CHANGED:-false}" == "true" && "$container" == "redis" ]]; then
             NEED_RESTART="${NEED_RESTART} ${container}"
-          elif [[ "${{ rabbitmq_changed }}" == "true" && "$container" == "rabbitmq" ]]; then
+          elif [[ "${RABBITMQ_CHANGED:-false}" == "true" && "$container" == "rabbitmq" ]]; then
             NEED_RESTART="${NEED_RESTART} ${container}"
-          elif [[ "${{ prometheus_changed }}" == "true" && "$container" == "prometheus" ]]; then
+          elif [[ "${PROMETHEUS_CHANGED:-false}" == "true" && "$container" == "prometheus" ]]; then
             NEED_RESTART="${NEED_RESTART} ${container}"
-          elif [[ "${{ grafana_changed }}" == "true" && "$container" == "grafana" ]]; then
+          elif [[ "${GRAFANA_CHANGED:-false}" == "true" && "$container" == "grafana" ]]; then
             NEED_RESTART="${NEED_RESTART} ${container}"
-          elif [[ "${{ loki_changed }}" == "true" && "$container" == "loki" ]]; then
+          elif [[ "${LOKI_CHANGED:-false}" == "true" && "$container" == "loki" ]]; then
             NEED_RESTART="${NEED_RESTART} ${container}"
-          elif [[ "${{ alloy_changed }}" == "true" && "$container" == "alloy" ]]; then
+          elif [[ "${ALLOY_CHANGED:-false}" == "true" && "$container" == "alloy" ]]; then
             NEED_RESTART="${NEED_RESTART} ${container}"
-          elif [[ "${{ alertmanager_changed }}" == "true" && "$container" == "alertmanager" ]]; then
+          elif [[ "${ALERTMANAGER_CHANGED:-false}" == "true" && "$container" == "alertmanager" ]]; then
             NEED_RESTART="${NEED_RESTART} ${container}"
-          elif [[ "${{ wireguard_changed }}" == "true" && "$container" == "wireguard" ]]; then
+          elif [[ "${WIREGUARD_CHANGED:-false}" == "true" && "$container" == "wireguard" ]]; then
             NEED_RESTART="${NEED_RESTART} ${container}"
           fi
         done
@@ -203,6 +207,8 @@
         echo "Need restart: ${NEED_RESTART}"
       register: container_analysis
       changed_when: false
+      args:
+        executable: /bin/bash
 
     - name: Display container analysis
       ansible.builtin.debug:

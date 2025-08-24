@@ -205,12 +205,7 @@ jobs:
           # Test OS Login connection and prepare environment
           gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --command="echo 'OS Login configured'" --ssh-flag="-o ConnectTimeout=10" --quiet || true
           
-          # Debug: Check user and environment
-          echo "Debugging user environment:"
-          gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --command="whoami && pwd && ls -la /tmp && mkdir -p /tmp/test && rmdir /tmp/test" || true
-          
-          # Run the Ansible playbook with verbose output
+          # Run the Ansible playbook
           cd ansible && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook stage.playbook.yml \
             --inventory inventory.yml \
-            -vvv \
             --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ steps.secrets.outputs.ANSIBLE_USER }} docker_user=${{ steps.secrets.outputs.DOCKER_USERNAME }} docker_pass=${{ steps.secrets.outputs.DOCKER_PASSWORD }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} compose_changed=${{ steps.changes.outputs.compose }}"
