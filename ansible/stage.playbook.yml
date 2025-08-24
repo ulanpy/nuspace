@@ -225,6 +225,26 @@
         executable: /bin/bash
       when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout"
 
+    - name: Ensure postgres is up before migrations
+      ansible.builtin.shell: |
+        #!/bin/bash
+        set -e
+        COMPOSE_FILE="/home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml"
+        docker compose -f "$COMPOSE_FILE" up -d postgres
+        # Wait for Postgres to accept connections (max ~60s)
+        for i in {1..30}; do
+          if docker compose -f "$COMPOSE_FILE" exec -T postgres sh -lc 'pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1'; then
+            echo "Postgres is ready"
+            exit 0
+          fi
+          sleep 2
+        done
+        echo "Postgres not ready after timeout" >&2
+        exit 1
+      args:
+        executable: /bin/bash
+      when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout"
+
     - name: Run DB migrations (alembic upgrade head) with tag fallback
       ansible.builtin.shell: |
         set -e
