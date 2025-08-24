@@ -43,3 +43,16 @@ output "loki_service_account_key" {
   description = "Base64 encoded private key for the Loki service account"
   sensitive = true
 }
+
+# Ansible service account information
+output "ansible_service_account_email" {
+  value = google_service_account.ansible_service_account.email
+  description = "Email of the Ansible service account"
+}
+
+# Ansible service account key (base64 encoded)
+output "ansible_service_account_key" {
+  value = google_service_account_key.ansible_key.private_key
+  description = "Base64 encoded private key for the Ansible service account"
+  sensitive = true
+}

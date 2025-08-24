@@ -1,0 +1,264 @@
+---
+- name: Deploy Docker Containers
+  hosts: webservers
+  become: true
+  vars:
+    docker_username: "{{ docker_user }}"
+    docker_password: "{{ docker_pass }}"
+    ansible_user: "{{ ansible_user_var }}"
+    image_tag: "{{ docker_image_tag }}"
+
+  tasks:
+    - name: Check if git is installed
+      ansible.builtin.command: git --version
+      register: git_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install git if not present
+      ansible.builtin.package:
+        name: git
+        state: present
+      when: git_check.rc != 0
+
+    - name: Check if docker is installed
+      ansible.builtin.command: docker --version
+      register: docker_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install docker if not present
+      ansible.builtin.package:
+        name: docker
+        state: present
+      when: docker_check.rc != 0
+
+    - name: Ensure docker service is running
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Ensure ansible service account user is in docker group
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+    - name: Check if gcloud is installed
+      ansible.builtin.command: gcloud --version
+      register: gcloud_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install Google Cloud SDK if not present
+      ansible.builtin.shell: |
+        curl -sSL https://sdk.cloud.google.com | bash
+        echo 'source /root/google-cloud-sdk/path.bash.inc' >> /root/.bashrc
+        echo 'source /root/google-cloud-sdk/completion.bash.inc' >> /root/.bashrc
+      args:
+        executable: /bin/bash
+      when: gcloud_check.rc != 0
+
+    - name: Configure gcloud to use VM service account and project
+      ansible.builtin.shell: |
+        export PATH="/root/google-cloud-sdk/bin:$PATH"
+        gcloud config set project nuspace-staging
+        # The VM already has the service account attached, so gcloud will use it automatically
+      args:
+        executable: /bin/bash
+
+    - name: Pull latest changes from git repository
+      ansible.builtin.git:
+        repo: "https://github.com/ulanpy/nuspace.git"
+        dest: "/home/{{ ansible_user }}/nuspace"
+        version: dev
+        force: yes
+
+    - name: Create SSL directory
+      ansible.builtin.file:
+        path: "/home/{{ ansible_user }}/nuspace/ssl"
+        state: directory
+        mode: '0755'
+
+    - name: Pull cloudflare.crt from Google Secret Manager
+      ansible.builtin.shell: |
+        export PATH="/root/google-cloud-sdk/bin:$PATH"
+        gcloud secrets versions access latest --secret="cloudflare-crt" --project="nuspace-staging" > /home/{{ ansible_user }}/nuspace/ssl/cloudflare.crt
+      args:
+        creates: "/home/{{ ansible_user }}/nuspace/ssl/cloudflare.crt"
+        executable: /bin/bash
+
+    - name: Pull cloudflare.key from Google Secret Manager
+      ansible.builtin.shell: |
+        export PATH="/root/google-cloud-sdk/bin:$PATH"
+        gcloud secrets versions access latest --secret="cloudflare-key" --project="nuspace-staging" > /home/{{ ansible_user }}/nuspace/ssl/cloudflare.key
+      args:
+        creates: "/home/{{ ansible_user }}/nuspace/ssl/cloudflare.key"
+        executable: /bin/bash
+
+    - name: Set proper permissions for SSL files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        mode: '0600'
+      loop:
+        - "/home/{{ ansible_user }}/nuspace/ssl/cloudflare.crt"
+        - "/home/{{ ansible_user }}/nuspace/ssl/cloudflare.key"
+
+    - name: Pull .env from Google Secret Manager
+      ansible.builtin.shell: |
+        export PATH="/root/google-cloud-sdk/bin:$PATH"
+        gcloud secrets versions access latest --secret="nuspace-env" --project="nuspace-staging" > /home/{{ ansible_user }}/nuspace/infra/.env
+      args:
+        creates: "/home/{{ ansible_user }}/nuspace/infra/.env"
+        executable: /bin/bash
+
+    - name: Set proper permissions for .env file
+      ansible.builtin.file:
+        path: "/home/{{ ansible_user }}/nuspace/infra/.env"
+        mode: '0600'
+
+    - name: Log in to Docker Hub
+      community.docker.docker_login:
+        username: "{{ docker_username }}"
+        password: "{{ docker_password }}"
+
+    - name: Pull backend image for migrations
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        pull fastapi
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (backend_changed | default(false)) | bool
+
+    - name: Run DB migrations (alembic upgrade head)
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        run --rm migrate
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (backend_changed | default(false)) | bool
+
+    - name: Pull celery worker image
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        pull celery-worker
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (backend_changed | default(false)) | bool
+
+    - name: Recreate backend services (fastapi, celery-worker)
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        up -d fastapi celery-worker
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (backend_changed | default(false)) | bool
+
+    - name: Pull frontend builder image
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        pull frontend-builder
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (frontend_changed | default(false)) | bool
+
+    - name: Run frontend build (frontend-builder)
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        up --no-deps frontend-builder
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (frontend_changed | default(false)) | bool
+
+    - name: Recreate nginx service
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        up -d nginx
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (nginx_changed | default(false)) | bool
+
+    - name: Recreate redis service
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        up -d redis
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (redis_changed | default(false)) | bool
+
+    - name: Recreate rabbitmq service
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        up -d rabbitmq
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (rabbitmq_changed | default(false)) | bool
+
+    - name: Recreate prometheus service
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        up -d prometheus
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (prometheus_changed | default(false)) | bool
+
+    - name: Recreate grafana service
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        up -d grafana
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (grafana_changed | default(false)) | bool
+
+    - name: Recreate loki service
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        up -d loki
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (loki_changed | default(false)) | bool
+
+    - name: Recreate alloy service
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        up -d alloy
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (alloy_changed | default(false)) | bool
+
+    - name: Recreate alertmanager service
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        up -d alertmanager
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (alertmanager_changed | default(false)) | bool
+
+    - name: Recreate wireguard service
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        up -d wireguard
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (wireguard_changed | default(false)) | bool
+
+    - name: Reconcile docker compose changes (definitions only)
+      ansible.builtin.command: >
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+        up -d --remove-orphans
+      environment:
+        DOCKER_IMAGE_TAG: "{{ image_tag }}"
+      when: (compose_changed | default(false)) | bool
+
+
+    - name: Prune all unused Docker assets
+      ansible.builtin.command: docker system prune -a -f
+      changed_when: false
+
+    - name: Ensure DOCKER_IMAGE_TAG is set correctly in user's .bashrc
+      ansible.builtin.lineinfile:
+        path: "/home/{{ ansible_user }}/.bashrc"
+        regexp: "^export DOCKER_IMAGE_TAG="
+        line: "export DOCKER_IMAGE_TAG={{ image_tag }}"
+        create: yes
