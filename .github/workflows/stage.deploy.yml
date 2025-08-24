@@ -169,7 +169,7 @@ jobs:
           ansible_managed = Ansible managed
           
           [ssh_connection]
-          ssh_args = -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ControlMaster=no
+          ssh_args = 
           control_path_dir = /tmp
           EOF
 
@@ -184,7 +184,7 @@ jobs:
                   ${{ steps.secrets.outputs.VM_NAME }}:
                     ansible_user: ${{ steps.secrets.outputs.ANSIBLE_USER }}
                     ansible_ssh_executable: gcloud
-                    ansible_ssh_args: 'compute ssh --zone=europe-central2-a'
+                    ansible_ssh_args: 'compute ssh --zone=europe-central2-a --ssh-flag="-o StrictHostKeyChecking=no"'
                     ansible_become: yes
                     ansible_become_method: sudo
                     ansible_remote_tmp: /tmp
