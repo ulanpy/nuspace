@@ -122,11 +122,13 @@ jobs:
         id: secrets
         run: |
           # Get VM instance details using the service account
-          VM_INFO=$(gcloud compute instances describe nuspace-instance --zone=europe-central2-a --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+          VM_IP=$(gcloud compute instances describe nuspace-instance --zone=europe-central2-a --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+          VM_NAME="nuspace-instance"
           SA_USERNAME=$(gcloud compute os-login describe-profile --format="value(posixAccounts[0].username)")
           DOCKER_USERNAME=$(gcloud secrets versions access latest --secret="docker-username")
           DOCKER_PASSWORD=$(gcloud secrets versions access latest --secret="docker-password")
-          echo "ANSIBLE_HOST=$VM_INFO" >> $GITHUB_OUTPUT
+          echo "ANSIBLE_HOST=$VM_IP" >> $GITHUB_OUTPUT
+          echo "VM_NAME=$VM_NAME" >> $GITHUB_OUTPUT
           echo "ANSIBLE_USER=$SA_USERNAME" >> $GITHUB_OUTPUT
           echo "DOCKER_USERNAME=$DOCKER_USERNAME" >> $GITHUB_OUTPUT
           echo "::add-mask::$DOCKER_PASSWORD"
@@ -137,8 +139,8 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
         run: |
-          # Test connection and check container status
-          gcloud compute ssh ${{ steps.secrets.outputs.ANSIBLE_HOST }} --zone=europe-central2-a --command="docker ps --format 'table {{.Names}}\t{{.Status}}'" --ssh-flag="-o ConnectTimeout=10" --quiet > /tmp/container_status.txt 2>/dev/null || echo "Connection failed" > /tmp/container_status.txt
+          # Test connection and check container status using instance name
+          gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --command="docker ps --format 'table {{.Names}}\t{{.Status}}'" --ssh-flag="-o ConnectTimeout=10" --quiet > /tmp/container_status.txt 2>/dev/null || echo "Connection failed" > /tmp/container_status.txt
           
           # Check if expected containers are running
           if grep -q "fastapi\|celery-worker\|nginx\|redis\|rabbitmq\|prometheus\|grafana\|loki\|alloy\|alertmanager\|wireguard" /tmp/container_status.txt; then
@@ -174,8 +176,8 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
         run: |
-          # Test OS Login connection
-          gcloud compute ssh ${{ steps.secrets.outputs.ANSIBLE_HOST }} --zone=europe-central2-a --command="echo 'OS Login configured'" --ssh-flag="-o ConnectTimeout=10" --quiet || true
+          # Test OS Login connection using instance name
+          gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --command="echo 'OS Login configured'" --ssh-flag="-o ConnectTimeout=10" --quiet || true
           
           ansible-playbook ansible/stage.playbook.yml \
             --inventory ansible/inventory.yml \
