@@ -113,7 +113,7 @@ jobs:
 
       - name: Authenticate with Google Cloud
         run: |
-          echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}' | base64 -d > /tmp/gcp-key.json
+          echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}' | tr -d '\n' | base64 -d > /tmp/gcp-key.json
           gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
           gcloud config set project nuspace-staging
 
