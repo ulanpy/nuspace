@@ -276,6 +276,32 @@
         echo "Backend changed: {{ backend_changed | default(false) }}"
         echo "============================="
 
+        # Debug: Check if .env file exists and has DB settings
+        echo "=== Environment Debug ==="
+        echo "Checking .env file at /home/{{ ansible_user }}/nuspace/infra/.env:"
+        if [ -f "/home/{{ ansible_user }}/nuspace/infra/.env" ]; then
+          echo "✓ .env file exists"
+          echo "DB settings from .env:"
+          grep -E "^(DB_NAME|DB_USER|DB_PASSWORD|DB_HOST|DB_PORT)=" "/home/{{ ansible_user }}/nuspace/infra/.env" || echo "No DB settings found in .env"
+        else
+          echo "✗ .env file missing"
+        fi
+        echo "========================="
+
+        # Debug: Check if backend code exists
+        echo "=== Backend Code Debug ==="
+        echo "Checking backend directory:"
+        if [ -d "/home/{{ ansible_user }}/nuspace/backend" ]; then
+          echo "✓ Backend directory exists"
+          echo "Backend files:"
+          ls -la "/home/{{ ansible_user }}/nuspace/backend/" | head -10
+          echo "Migrations directory:"
+          ls -la "/home/{{ ansible_user }}/nuspace/backend/migrations/versions/" | head -5
+        else
+          echo "✗ Backend directory missing"
+        fi
+        echo "=========================="
+
         # First try to pull with the current tag
         echo "Attempting to pull migrate image with tag: ${CURRENT_TAG}"
         if DOCKER_IMAGE_TAG="${CURRENT_TAG}" docker compose -f "$COMPOSE_FILE" pull migrate 2>&1; then
@@ -293,8 +319,16 @@
         fi
 
         echo "Running migrations with tag: ${MIGRATION_TAG}"
-        if ! DOCKER_IMAGE_TAG="${MIGRATION_TAG}" docker compose -f "$COMPOSE_FILE" run --rm migrate; then
+        echo "=== Migration Command Debug ==="
+        echo "Command: DOCKER_IMAGE_TAG=${MIGRATION_TAG} docker compose -f $COMPOSE_FILE run --rm migrate"
+        echo "==============================="
+        
+        # Run migration with full error capture
+        if ! DOCKER_IMAGE_TAG="${MIGRATION_TAG}" docker compose -f "$COMPOSE_FILE" run --rm migrate 2>&1; then
+          echo "=== Migration Failed ==="
           echo "Migration failed with tag ${MIGRATION_TAG}"
+          echo "Full error output captured above"
+          echo "========================"
           exit 1
         fi
         echo "Migrations completed successfully with tag: ${MIGRATION_TAG}"
