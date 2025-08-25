@@ -10,7 +10,9 @@ from google.oauth2 import service_account
 from pydantic_settings import BaseSettings
 
 ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
-load_dotenv(os.path.join(ENV_DIR, ".env"))
+
+# Load ONLY from infra/.env
+load_dotenv(os.path.join(ENV_DIR, "infra/.env"), override=False)
 # should be in /nuspace/backend/core/configs/nuspace.json
 CREDENTIALS_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "nuspace.json"))
 
@@ -65,7 +67,7 @@ class Config(BaseSettings):
     TG_APP_LOGIN_STATE_REDIS_PREFIX: str = "miniapp:login:state:"
 
     class Config:
-        env_file = os.path.join(ENV_DIR, ".env")
+        env_file = os.path.join(ENV_DIR, "infra/.env")
         env_file_encoding = "utf-8"
         extra = "allow"
 
