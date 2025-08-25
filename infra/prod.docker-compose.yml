@@ -24,12 +24,13 @@ services:
     restart: always
     depends_on:
       - postgres
+      - nginx
     environment:
       - PYTHONUNBUFFERED=1
       - WORKERS=${GUNICORN_WORKERS:-4}
     volumes:
       - ../backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
-      - .env:/nuros/.env:ro
+      - .env:/nuros/infra/.env:ro
 
   migrate:
     image: kamikadze24/fastapi:${DOCKER_IMAGE_TAG}
@@ -43,7 +44,7 @@ services:
       - PYTHONUNBUFFERED=1
     volumes:
       - ../backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
-      - .env:/nuros/.env:ro
+      - .env:/nuros/infra/.env:ro
     working_dir: /nuros/backend
     command: alembic upgrade head
 
@@ -63,7 +64,6 @@ services:
       - ../ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key
       - ./nginx/vpn-index.html:/etc/nginx/vpn-index.html:ro
     depends_on:
-      - fastapi
       - frontend-builder
     command: >
       /bin/sh -c "
@@ -127,7 +127,7 @@ services:
       - CELERY_WORKER_CONCURRENCY=4
       - CELERY_WORKER_PREFETCH_MULTIPLIER=1
     volumes:
-      - .env:/nuros/.env:ro
+      - .env:/nuros/infra/.env:ro
     deploy:
       replicas: 2
 
