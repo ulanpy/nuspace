@@ -5,12 +5,12 @@ Revises: None
 Create Date: 2025-08-01 00:00:00.000000
 
 """
+
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
-
 
 # revision identifiers, used by Alembic.
 revision: str = "1ff9b347b5f3"
@@ -69,7 +69,9 @@ def upgrade() -> None:
         sa.Column("type", sa.Enum(name="community_type"), nullable=False),
         sa.Column("category", sa.Enum(name="community_category"), nullable=False),
         sa.Column("email", sa.String(), nullable=True),
-        sa.Column("recruitment_status", sa.Enum(name="community_recruitment_status"), nullable=False),
+        sa.Column(
+            "recruitment_status", sa.Enum(name="community_recruitment_status"), nullable=False
+        ),
         sa.Column("recruitment_link", sa.String(), nullable=True),
         sa.Column("description", sa.String(), nullable=False),
         sa.Column("established", sa.Date(), nullable=False),
@@ -102,7 +104,7 @@ def upgrade() -> None:
         sa.Column("tag_id", sa.BigInteger(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
-        sa.Column("from_community", sa.Boolean(), nullable=False, server_default=sa.text('false')),
+        sa.Column("from_community", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.ForeignKeyConstraint(["community_id"], ["communities.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["user_sub"], ["users.sub"], ondelete="SET NULL"),
         sa.ForeignKeyConstraint(["tag_id"], ["community_post_tags.id"], ondelete="SET NULL"),
@@ -149,12 +151,8 @@ def upgrade() -> None:
     event_status = postgresql.ENUM(
         "pending", "approved", "rejected", "cancelled", name="event_status"
     )
-    event_tag = postgresql.ENUM(
-        "featured", "promotional", "regular", "charity", name="event_tag"
-    )
-    collaborator_type = postgresql.ENUM(
-        "user", "community", name="collaborator_type"
-    )
+    event_tag = postgresql.ENUM("featured", "promotional", "regular", "charity", name="event_tag")
+    collaborator_type = postgresql.ENUM("user", "community", name="collaborator_type")
 
     event_policy.create(bind, checkfirst=True)
     event_scope.create(bind, checkfirst=True)
@@ -221,9 +219,7 @@ def upgrade() -> None:
         sa.Column("tag", sa.Enum(name="event_tag"), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["community_id"], ["communities.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["community_id"], ["communities.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["creator_sub"], ["users.sub"], ondelete="SET NULL"),
     )
 
@@ -249,7 +245,7 @@ def upgrade() -> None:
         sa.Column("entity_type", sa.Enum(name="entity_type"), nullable=False),
         sa.Column("entity_id", sa.BigInteger(), nullable=False),
         sa.Column("media_format", sa.Enum(name="media_format"), nullable=False),
-        sa.Column("media_order", sa.Integer(), nullable=False, server_default=sa.text('0')),
+        sa.Column("media_order", sa.Integer(), nullable=False, server_default=sa.text("0")),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
     )
@@ -366,5 +362,3 @@ def downgrade() -> None:
         "userrole",
     ]:
         op.execute(sa.text(f"DROP TYPE IF EXISTS {enum_name} CASCADE"))
-
-
