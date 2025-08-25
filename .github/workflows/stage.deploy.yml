@@ -8,6 +8,8 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    env:
+      GCLOUD_VERSION: '472.0.0'
 
     steps:
       - name: Checkout code
@@ -103,12 +105,22 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: "3.11"
+          cache: 'pip'
+
+      - name: Cache Google Cloud SDK
+        uses: actions/cache@v4
+        with:
+          path: $HOME/google-cloud-sdk
+          key: ${{ runner.os }}-gcloud-${{ env.GCLOUD_VERSION }}
 
       - name: Install Ansible and Google Cloud SDK
         run: |
-          pip install ansible
-          curl -sSL https://sdk.cloud.google.com | bash
+          pip install --disable-pip-version-check ansible
+          if [ ! -d "$HOME/google-cloud-sdk" ]; then
+            curl -sSL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz -o /tmp/gcloud.tgz
+            tar -xzf /tmp/gcloud.tgz -C $HOME
+          fi
           echo "$HOME/google-cloud-sdk/bin" >> $GITHUB_PATH
 
       - name: Authenticate with Google Cloud
