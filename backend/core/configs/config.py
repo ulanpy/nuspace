@@ -43,7 +43,7 @@ class Config(BaseSettings):
     GCP_TOPIC_ID: str
     PUSH_AUTH_SERVICE_ACCOUNT: str
     PUSH_AUTH_AUDIENCE: str
-    ORIGINS: List[str] = ["*"]
+    ORIGINS: List[str] = ["https://nu.campuscurrent.cc", "https://nuspace.kz"]
     MOCK_KEYCLOAK: bool  # always set True in local dev
     USE_GCS_EMULATOR: bool  # keep True for local dev; For staging/prod .env will have it False
     GCS_EMULATOR_HOST: str
