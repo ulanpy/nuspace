@@ -74,7 +74,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
@@ -82,33 +81,8 @@
   .backface-hidden {
     backface-visibility: hidden;
   }
-  .safe-area-inset-top {
-    padding-top: env(safe-area-inset-top);
-  }
-  .safe-area-inset-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  /* Prevent iOS/Android webview zoom on input focus by enforcing >=16px font-size */
-  @media (max-width: 768px) {
-    input,
-    textarea,
-    select {
-      font-size: 16px !important;
-      line-height: 1.4;
-    }
-  }
 }
 
-<<<<<<< HEAD
-/* Add smooth transition for theme changes - faster for text color */
-* {
-  transition:
-    background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-=======
 /* Smooth transitions */
 /* * {
   transition:
@@ -117,4 +91,3 @@
     border-color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 } */
->>>>>>> 8fe1bc0 (hotfix1-day3)
