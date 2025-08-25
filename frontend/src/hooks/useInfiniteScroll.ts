@@ -45,7 +45,7 @@ export function useInfiniteScroll<T>({
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: [...queryKey, "infinite", { ...additionalParams, keyword: internalKeyword }] as const,
+    queryKey: [...queryKey, "infinite", internalKeyword, JSON.stringify(additionalParams)] as const,
     queryFn: async ({ pageParam = 1 }) => {
       const queryParams = new URLSearchParams();
       queryParams.set("page", String(pageParam));
@@ -110,9 +110,9 @@ export function useInfiniteScroll<T>({
     initialPageParam: 1,
   });
 
-  // Flatten all items from all pages
+  // Flatten all items from all pages with deduplication
   const allItems = useMemo(() => {
-    return data?.pages.flatMap(page => {
+    const items = data?.pages.flatMap(page => {
       // Handle different response structures
       if (page.events) return page.events;
       if (page.communities) return page.communities;
@@ -120,6 +120,17 @@ export function useInfiniteScroll<T>({
       if (Array.isArray(page)) return page;
       return [];
     }) ?? [];
+    
+    // Deduplicate items based on their ID
+    const seenIds = new Set();
+    return items.filter(item => {
+      const id = item.id || item.event_id || item.community_id || item.post_id;
+      if (seenIds.has(id)) {
+        return false;
+      }
+      seenIds.add(id);
+      return true;
+    });
   }, [data]);
 
   // Handle infinite scroll with window scrolling

@@ -1,22 +1,7 @@
 import { useCommunityForm } from "@/context/CommunityFormContext";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/atoms/select";
 import { CommunityRecruitmentStatus, CommunityType, CommunityCategory } from "@/features/campuscurrent/types/types";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/atoms/popover";
-import { Button } from "@/components/atoms/button";
-import { CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/atoms/calendar";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -100,45 +85,37 @@ export function CommunityDetailsForm() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="type">Community Type <span className="text-red-500">*</span></Label>
-          <Select
+          <select
             name="type"
             value={(formData as any).type || ""}
-            onValueChange={(value) => handleSelectChange("type", value)}
+            onChange={(e) => handleSelectChange("type", e.target.value)}
             disabled={!isFieldEditable("type")}
             required
+            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Select community type" />
-            </SelectTrigger>
-            <SelectContent className="z-[150]">
               {Object.values(CommunityType).map((type) => (
-                <SelectItem key={type} value={type}>
+                <option key={type} value={type}>
                   {type.charAt(0).toUpperCase() + type.slice(1)}
-                </SelectItem>
+                </option>
               ))}
-            </SelectContent>
-          </Select>
+          </select>
         </div>
         <div>
           <Label htmlFor="category">Community Category <span className="text-red-500">*</span></Label>
-          <Select
+          <select
             name="category"
             value={(formData as any).category || ""}
-            onValueChange={(value) => handleSelectChange("category", value)}
+            onChange={(e) => handleSelectChange("category", e.target.value)}
             disabled={!isFieldEditable("category")}
             required
+            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Select community category" />
-            </SelectTrigger>
-            <SelectContent className="z-[150]">
               {Object.values(CommunityCategory).map((category) => (
-                <SelectItem key={category} value={category}>
+                <option key={category} value={category}>
                   {category.charAt(0).toUpperCase() + category.slice(1)}
-                </SelectItem>
+                </option>
               ))}
-            </SelectContent>
-          </Select>
+          </select>
         </div>
       </div>
       <div>
@@ -178,26 +155,22 @@ export function CommunityDetailsForm() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <Label htmlFor="recruitment_status">Recruitment Status <span className="text-red-500">*</span></Label>
-          <Select
+          <select
             name="recruitment_status"
             value={formData.recruitment_status}
-            onValueChange={(value) =>
-              handleSelectChange("recruitment_status", value)
+            onChange={(e) =>
+              handleSelectChange("recruitment_status", e.target.value)
             }
             disabled={!isFieldEditable("recruitment_status")}
             required
+            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a status" />
-            </SelectTrigger>
-            <SelectContent className="z-[150]">
               {Object.values(CommunityRecruitmentStatus).map((status) => (
-                <SelectItem key={status} value={status}>
+                <option key={status} value={status}>
                   {status}
-                </SelectItem>
+                </option>
               ))}
-            </SelectContent>
-          </Select>
+          </select>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -227,34 +200,23 @@ export function CommunityDetailsForm() {
             />
           </div>
         )}
-        {isFieldEditable("established") && (
-          <div>
-            <Label htmlFor="established">Established <span className="text-red-500">*</span></Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={`w-full justify-start text-left font-normal ${
-                    !date && "text-muted-foreground"
-                  }`}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={handleDateSelect}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        )}
+                 {isFieldEditable("established") && (
+           <div>
+             <Label htmlFor="established">Established <span className="text-red-500">*</span></Label>
+             <Input
+               type="date"
+               value={date ? format(date, "yyyy-MM-dd") : ""}
+               onChange={(e) => {
+                 const selectedDate = e.target.value ? new Date(e.target.value) : undefined;
+                 handleDateSelect(selectedDate);
+               }}
+               className="w-full"
+               min="1900-01-01"
+               max="2030-12-31"
+             />
+           </div>
+         )}
       </div>
     </div>
   );
 }
-
