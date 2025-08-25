@@ -50,6 +50,11 @@ async def login(
         csrf_key = f"csrf:{state}"
         # Optionally: await redis.set(csrf_key, return_to or "/", ex=600, nx=True)
         await redis.setex(csrf_key, 600, return_to or "/")
+    else:
+        # If state is provided (e.g., MiniApp or custom client), still remember desired return_to
+        if return_to is not None:
+            csrf_key = f"csrf:{state}"
+            await redis.setex(csrf_key, 600, return_to or "/")
 
     # Dev mock: bypass external IdP entirely
     if config.MOCK_KEYCLOAK:
@@ -113,6 +118,10 @@ async def auth_callback(
     creds_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}creds:{state}"
     miniapp_exists = await redis.get(miniapp_state_key)
     if miniapp_exists:
+        # Preserve the MiniApp-specific return_to value if present
+        miniapp_return_to = (
+            miniapp_exists.decode() if isinstance(miniapp_exists, (bytes, bytearray)) else miniapp_exists
+        )
         try:
             # Store minimal creds needed; TTL prevents long exposure
             await redis.setex(
@@ -130,7 +139,21 @@ async def auth_callback(
             )
         finally:
             await redis.delete(miniapp_state_key)
+            # Also clear any CSRF mapping tied to this state, if one was set
+            try:
+                await redis.delete(f"csrf:{state}")
+            except Exception:
+                pass
 
+        # If a return_to was supplied for MiniApp, honor it (skip whitelist validation as requested)
+        if miniapp_return_to:
+            try:
+                redirect_response.headers["Location"] = miniapp_return_to
+            except Exception:
+                return RedirectResponse(url=miniapp_return_to, status_code=303)
+            return redirect_response
+
+        # Fallback: send user back to Telegram mini app
         bot_username = request.app.state.bot_username
         tme_url = f"https://t.me/{bot_username}?startapp={state}"
         return RedirectResponse(url=tme_url, status_code=303)
@@ -140,7 +163,17 @@ async def auth_callback(
     csrf_return_to = await redis.get(csrf_key)
     if csrf_return_to is not None:
         await redis.delete(csrf_key)
-        # Optional: validate return_to against a whitelist to prevent open redirects
+        # Honor the stored return_to for standard web flow (skip whitelist validation as requested)
+        try:
+            csrf_return_to_str = (
+                csrf_return_to.decode()
+                if isinstance(csrf_return_to, (bytes, bytearray))
+                else csrf_return_to
+            )
+            redirect_response.headers["Location"] = csrf_return_to_str
+        except Exception:
+            # As a fallback, create a fresh RedirectResponse with the desired URL
+            return RedirectResponse(url=csrf_return_to, status_code=303)
         return redirect_response
 
     # 3) Neither MiniApp nor CSRF state is valid → reject
