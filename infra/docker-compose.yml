@@ -29,6 +29,7 @@ services:
     depends_on:
       - postgres
       - gcs
+      - nginx
       - cloudflared
     environment:
       - PYTHONUNBUFFERED=1
@@ -46,7 +47,6 @@ services:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf
       - ../frontend/dist:/var/www/my-app/dist # Make sure this folder exists in production builds
     depends_on:
-      - fastapi
       - pgadmin
     command: [
         "/bin/sh",

@@ -3,6 +3,7 @@ import logging
 import random
 import secrets
 from typing import Annotated
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from aiogram import Bot
 from aiogram.utils.deep_linking import create_start_link
@@ -147,13 +148,46 @@ async def auth_callback(
             except Exception:
                 pass
 
-        # If a return_to was supplied for MiniApp, honor it (skip whitelist validation as requested)
+        # If a return_to was supplied for MiniApp, honor it ONLY if it is a Telegram deep link.
+        # Ensure the deep link includes the startapp=<state> parameter so the Mini App reopens with the code.
+        # Otherwise, fall back to the canonical t.me deep link so the user is returned to Telegram.
         if miniapp_return_to:
             try:
-                redirect_response.headers["Location"] = miniapp_return_to
+                # Accept only Telegram deep links here; anything else would strand the user in the external browser.
+                if isinstance(miniapp_return_to, str) and (
+                    miniapp_return_to.startswith("https://t.me/")
+                    or miniapp_return_to.startswith("tg://")
+                ):
+                    try:
+                        parsed = urlparse(miniapp_return_to)
+                        qs = dict(parse_qsl(parsed.query, keep_blank_values=True))
+                        if "startapp" not in qs and state:
+                            qs["startapp"] = state
+                            new_query = urlencode(qs, doseq=True)
+                            miniapp_return_to = urlunparse(parsed._replace(query=new_query))
+                    except Exception:
+                        # If parsing fails, proceed with the original URL
+                        pass
+                    redirect_response.headers["Location"] = miniapp_return_to
+                    return redirect_response
             except Exception:
-                return RedirectResponse(url=miniapp_return_to, status_code=303)
-            return redirect_response
+                # If setting the header fails but the URL is a valid Telegram link, fall back to a direct redirect
+                if isinstance(miniapp_return_to, str) and (
+                    miniapp_return_to.startswith("https://t.me/")
+                    or miniapp_return_to.startswith("tg://")
+                ):
+                    # Try to ensure startapp=<state> as above
+                    try:
+                        parsed = urlparse(miniapp_return_to)
+                        qs = dict(parse_qsl(parsed.query, keep_blank_values=True))
+                        if "startapp" not in qs and state:
+                            qs["startapp"] = state
+                            new_query = urlencode(qs, doseq=True)
+                            miniapp_return_to = urlunparse(parsed._replace(query=new_query))
+                    except Exception:
+                        pass
+                    return RedirectResponse(url=miniapp_return_to, status_code=303)
+            # Non-Telegram return_to provided: ignore and proceed to the standard t.me fallback below
 
         # Fallback: send user back to Telegram mini app
         bot_username = request.app.state.bot_username
