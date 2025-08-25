@@ -2,14 +2,6 @@ import { useCommunityForm } from "@/context/CommunityFormContext";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
 import { CommunityRecruitmentStatus, CommunityType, CommunityCategory } from "@/features/campuscurrent/types/types";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/atoms/popover";
-import { Button } from "@/components/atoms/button";
-import { CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/atoms/calendar";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -208,34 +200,23 @@ export function CommunityDetailsForm() {
             />
           </div>
         )}
-        {isFieldEditable("established") && (
-          <div>
-            <Label htmlFor="established">Established <span className="text-red-500">*</span></Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={`w-full justify-start text-left font-normal ${
-                    !date && "text-muted-foreground"
-                  }`}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={handleDateSelect}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        )}
+                 {isFieldEditable("established") && (
+           <div>
+             <Label htmlFor="established">Established <span className="text-red-500">*</span></Label>
+             <Input
+               type="date"
+               value={date ? format(date, "yyyy-MM-dd") : ""}
+               onChange={(e) => {
+                 const selectedDate = e.target.value ? new Date(e.target.value) : undefined;
+                 handleDateSelect(selectedDate);
+               }}
+               className="w-full"
+               min="1900-01-01"
+               max="2030-12-31"
+             />
+           </div>
+         )}
       </div>
     </div>
   );
 }
-
