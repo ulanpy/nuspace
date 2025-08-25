@@ -9,17 +9,7 @@
     image_tag: "{{ docker_image_tag }}"
 
   tasks:
-    - name: Check current container status
-      ansible.builtin.shell: |
-        docker ps --format "table {{ '{{.Names}}' }}\t{{ '{{.Status}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" || echo "No containers found"
-      register: container_status
-      changed_when: false
-      args:
-        executable: /bin/bash
-
-    - name: Display container status
-      ansible.builtin.debug:
-        msg: "Current container status: {{ container_status.stdout_lines }}"
+    # Removed initial container status debug check/output
 
     - name: Check if git is installed
       ansible.builtin.command: git --version
@@ -203,40 +193,20 @@
         
         echo "MISSING_CONTAINERS=${MISSING_CONTAINERS}" > /tmp/container_actions.txt
         echo "NEED_RESTART=${NEED_RESTART}" >> /tmp/container_actions.txt
-        echo "Missing: ${MISSING_CONTAINERS}"
-        echo "Need restart: ${NEED_RESTART}"
+        # Output only the container names for downstream condition checks
+        echo "${MISSING_CONTAINERS} ${NEED_RESTART}" | xargs -n1 | sort -u | tr '\n' ' '
       register: container_analysis
       changed_when: false
       args:
         executable: /bin/bash
 
-    - name: Display container analysis
-      ansible.builtin.debug:
-        msg: "{{ container_analysis.stdout_lines }}"
+    # Removed container analysis debug output
 
-    - name: Pull backend image for migrations (with fallback to latest)
+    - name: Pull backend image for migrations
       ansible.builtin.shell: |
         set -e
         COMPOSE_FILE="/home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml"
-        CURRENT_TAG="${DOCKER_IMAGE_TAG}"
-        
-        echo "=== Backend Image Pull Debug ==="
-        echo "DOCKER_IMAGE_TAG: ${CURRENT_TAG}"
-        echo "Backend changed: {{ backend_changed | default(false) }}"
-        echo "================================="
-        
-        echo "Attempting to pull fastapi image with tag: ${CURRENT_TAG}"
-        if DOCKER_IMAGE_TAG="${CURRENT_TAG}" docker compose -f "$COMPOSE_FILE" pull fastapi 2>&1; then
-          echo "Successfully pulled fastapi with tag: ${CURRENT_TAG}"
-        else
-          echo "Pull failed for tag ${CURRENT_TAG}. Falling back to latest..."
-          if DOCKER_IMAGE_TAG=latest docker compose -f "$COMPOSE_FILE" pull fastapi 2>&1; then
-            echo "Successfully pulled fastapi with tag: latest"
-          else
-            echo "Failed to pull both ${CURRENT_TAG} and latest tags for fastapi"
-            exit 1
-          fi
-        fi
+        docker compose -f "$COMPOSE_FILE" pull fastapi
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
       args:
@@ -263,86 +233,23 @@
         executable: /bin/bash
       when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout"
 
-    - name: Run DB migrations (alembic upgrade head) with robust fallback
+    - name: Run DB migrations (alembic upgrade head)
       ansible.builtin.shell: |
         #!/bin/bash
         set -e
         COMPOSE_FILE="/home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml"
-        CURRENT_TAG="${DOCKER_IMAGE_TAG}"
-
-        echo "=== Migration Debug Info ==="
-        echo "DOCKER_IMAGE_TAG from environment: ${DOCKER_IMAGE_TAG}"
-        echo "CURRENT_TAG: ${CURRENT_TAG}"
-        echo "Backend changed: {{ backend_changed | default(false) }}"
-        echo "============================="
-
-        # Debug: Check if .env file exists and has DB settings
-        echo "=== Environment Debug ==="
-        echo "Checking .env file at /home/{{ ansible_user }}/nuspace/infra/.env:"
-        if [ -f "/home/{{ ansible_user }}/nuspace/infra/.env" ]; then
-          echo "✓ .env file exists"
-          echo "DB settings from .env:"
-          grep -E "^(DB_NAME|DB_USER|DB_PASSWORD|DB_HOST|DB_PORT)=" "/home/{{ ansible_user }}/nuspace/infra/.env" || echo "No DB settings found in .env"
-        else
-          echo "✗ .env file missing"
-        fi
-        echo "========================="
-
-        # Debug: Check if backend code exists
-        echo "=== Backend Code Debug ==="
-        echo "Checking backend directory:"
-        if [ -d "/home/{{ ansible_user }}/nuspace/backend" ]; then
-          echo "✓ Backend directory exists"
-          echo "Backend files:"
-          ls -la "/home/{{ ansible_user }}/nuspace/backend/" | head -10
-          echo "Migrations directory:"
-          ls -la "/home/{{ ansible_user }}/nuspace/backend/migrations/versions/" | head -5
-        else
-          echo "✗ Backend directory missing"
-        fi
-        echo "=========================="
-
-        # First try to pull with the current tag
-        echo "Attempting to pull migrate image with tag: ${CURRENT_TAG}"
-        if DOCKER_IMAGE_TAG="${CURRENT_TAG}" docker compose -f "$COMPOSE_FILE" pull migrate 2>&1; then
-          echo "Successfully pulled image with tag: ${CURRENT_TAG}"
-          MIGRATION_TAG="${CURRENT_TAG}"
-        else
-          echo "Pull failed for tag ${CURRENT_TAG}. Falling back to latest..."
-          if DOCKER_IMAGE_TAG=latest docker compose -f "$COMPOSE_FILE" pull migrate 2>&1; then
-            echo "Successfully pulled image with tag: latest"
-            MIGRATION_TAG="latest"
-          else
-            echo "Failed to pull both ${CURRENT_TAG} and latest tags"
-            exit 1
-          fi
-        fi
-
-        echo "Running migrations with tag: ${MIGRATION_TAG}"
-        echo "=== Migration Command Debug ==="
-        echo "Command: DOCKER_IMAGE_TAG=${MIGRATION_TAG} docker compose -f $COMPOSE_FILE run --rm migrate"
-        echo "==============================="
-        
-        # Run migration with full error capture
-        if ! DOCKER_IMAGE_TAG="${MIGRATION_TAG}" docker compose -f "$COMPOSE_FILE" run --rm migrate 2>&1; then
-          echo "=== Migration Failed ==="
-          echo "Migration failed with tag ${MIGRATION_TAG}"
-          echo "Full error output captured above"
-          echo "========================"
-          exit 1
-        fi
-        echo "Migrations completed successfully with tag: ${MIGRATION_TAG}"
+        docker compose -f "$COMPOSE_FILE" pull migrate
+        docker compose -f "$COMPOSE_FILE" run --rm migrate
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
       args:
         executable: /bin/bash
       when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout"
 
-    - name: Pull celery worker image (with fallback to latest)
+    - name: Pull celery worker image
       ansible.builtin.shell: |
         set -e
-        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull celery-worker || \
-        DOCKER_IMAGE_TAG=latest docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull celery-worker
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull celery-worker
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
       args:
@@ -357,11 +264,10 @@
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
       when: (backend_changed | default(false)) | bool or "'fastapi' in container_analysis.stdout or 'celery-worker' in container_analysis.stdout"
 
-    - name: Pull frontend builder image (with fallback to latest)
+    - name: Pull frontend builder image
       ansible.builtin.shell: |
         set -e
-        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull frontend-builder || \
-        DOCKER_IMAGE_TAG=latest docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull frontend-builder
+        docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull frontend-builder
       environment:
         DOCKER_IMAGE_TAG: "{{ image_tag }}"
       args:
@@ -457,18 +363,7 @@
       when: (compose_changed | default(false)) | bool
 
 
-    - name: Show final container status
-      ansible.builtin.shell: |
-        echo "=== Final Container Status ==="
-        docker ps --format "table {{ '{{.Names}}' }}\t{{ '{{.Status}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" || echo "No containers found"
-        echo "=== All Containers ==="
-        docker ps --format "table {{ '{{.Names}}' }}\t{{ '{{.Status}}' }}"
-      register: final_status
-      changed_when: false
-
-    - name: Display final status
-      ansible.builtin.debug:
-        msg: "{{ final_status.stdout_lines }}"
+    # Removed final container status debug output
 
     - name: Prune all unused Docker assets
       ansible.builtin.command: docker system prune -a -f
