@@ -120,7 +120,9 @@ async def auth_callback(
     if miniapp_exists:
         # Preserve the MiniApp-specific return_to value if present
         miniapp_return_to = (
-            miniapp_exists.decode() if isinstance(miniapp_exists, (bytes, bytearray)) else miniapp_exists
+            miniapp_exists.decode()
+            if isinstance(miniapp_exists, (bytes, bytearray))
+            else miniapp_exists
         )
         try:
             # Store minimal creds needed; TTL prevents long exposure
