@@ -202,7 +202,7 @@ export default function EventDetailPage() {
                 <img
                   src={event.media[0].url || "/placeholder.svg"}
                   alt={event.name}
-                  className={`w-full h-full object-contain object-center transition-opacity duration-300 ${
+                  className={`w-full h-full object-cover sm:object-contain object-center transition-opacity duration-300 ${
                     imageLoaded ? "opacity-100" : "opacity-0"
                   }`}
                   onLoad={() => setImageLoaded(true)}
