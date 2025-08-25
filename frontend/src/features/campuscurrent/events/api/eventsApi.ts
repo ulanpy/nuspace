@@ -1,7 +1,7 @@
 import { apiCall } from "@/utils/api";
 import { queryOptions } from "@tanstack/react-query";
 import * as Routes from "@/data/routes";
-import { CreateEventData, Event } from "@/features/campuscurrent/types/types";
+import { CreateEventData, EditEventData, Event } from "@/features/campuscurrent/types/types";
 
 export type TimeFilter = "upcoming" | "today" | "week" | "month";
 
@@ -79,7 +79,7 @@ export const campuscurrentAPI = {
       json: data,
     });
   },
-  editEvent: (id: string, data: Event) => {
+  editEvent: (id: string, data: EditEventData) => {
     return apiCall<Event>(`/` + Routes.EVENTS + `/${id}`, {
       method: "PATCH",
       json: data,

@@ -223,9 +223,9 @@ import { Media } from "@/features/media/types/types";
     export interface EditEventData {
       name?: string;
       place?: string;
-      event_datetime?: string;
+      start_datetime?: string;
+      end_datetime?: string;
       description?: string;
-      duration?: number;
       policy?: EventPolicy;
       registration_link?: string;
       status?: EventStatus;
