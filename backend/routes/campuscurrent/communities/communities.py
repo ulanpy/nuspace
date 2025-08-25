@@ -183,20 +183,20 @@ async def get_communities(
         conditions.append(Community.id.in_(community_ids))
 
     qb = QueryBuilder(session=db_session, model=Community)
-    
+
     if keyword:
         # Preserve Meilisearch ranking order by using a custom order
         from sqlalchemy import case
+
         order_clause = case(
-            *[(Community.id == community_id, index) for index, community_id in enumerate(community_ids)],
-            else_=len(community_ids)
+            *[
+                (Community.id == community_id, index)
+                for index, community_id in enumerate(community_ids)
+            ],
+            else_=len(community_ids),
         )
         communities: List[Community] = (
-            await qb.base()
-            .filter(*conditions)
-            .eager(Community.head_user)
-            .order(order_clause)
-            .all()
+            await qb.base().filter(*conditions).eager(Community.head_user).order(order_clause).all()
         )
     else:
         # Alphabetical order when no keyword

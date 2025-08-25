@@ -62,10 +62,26 @@ class CommunityCreateRequest(BaseModel):
         example="https://www.instagram.com/nufencingclub",
     )
 
-    @field_validator("telegram_url", "instagram_url")
-    def validate_url(cls, value):
+    @field_validator("telegram_url", "instagram_url", mode="before")
+    def normalize_social_url(cls, value):
+        if value is None:
+            return None
+        value = value.strip()
+        if value == "":
+            return None
         if not value.startswith(("http://", "https://")):
-            raise ValueError("Invalid URL format")
+            return f"https://{value}"
+        return value
+
+    @field_validator("recruitment_link", mode="before")
+    def normalize_recruitment_link(cls, value):
+        if value is None:
+            return None
+        value = str(value).strip()
+        if value == "":
+            return None
+        if not value.startswith(("http://", "https://")):
+            return f"https://{value}"
         return value
 
     @field_serializer("recruitment_link")
@@ -80,6 +96,7 @@ class BaseCommunity(BaseModel):
     category: CommunityCategory
     email: EmailStr | None = None
     recruitment_status: CommunityRecruitmentStatus
+    verified: bool
     recruitment_link: HttpUrl | None = None
     description: str
     established: date
@@ -159,6 +176,28 @@ class CommunityUpdateRequest(BaseModel):
 
     class Config:
         from_attributes = True  # Make sure it can be used with SQLAlchemy models
+
+    @field_validator("telegram_url", "instagram_url", mode="before")
+    def normalize_social_url_update(cls, value):
+        if value is None:
+            return None
+        value = value.strip()
+        if value == "":
+            return None
+        if not value.startswith(("http://", "https://")):
+            return f"https://{value}"
+        return value
+
+    @field_validator("recruitment_link", mode="before")
+    def normalize_recruitment_link_update(cls, value):
+        if value is None:
+            return None
+        value = str(value).strip()
+        if value == "":
+            return None
+        if not value.startswith(("http://", "https://")):
+            return f"https://{value}"
+        return value
 
 
 class ListCommunity(BaseModel):

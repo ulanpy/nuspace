@@ -9,12 +9,13 @@ import {
 } from "@/features/campuscurrent/types/types";
 
 export const campuscurrentAPI = {
-  getCommunitiesQueryOptions: (params: { page?: number; size?: number; keyword?: string | null; category?: string | null } = {}) => {
+  getCommunitiesQueryOptions: (params: { page?: number; size?: number; keyword?: string | null; category?: string | null; recruitment_status?: string | null } = {}) => {
     const queryParams = new URLSearchParams();
     queryParams.set("page", String(params.page ?? 1));
     queryParams.set("size", String(params.size ?? 12));
     if (params.keyword) queryParams.set("keyword", String(params.keyword));
     if (params.category) queryParams.set("community_category", String(params.category));
+    if (params.recruitment_status) queryParams.set("recruitment_status", String(params.recruitment_status));
 
     return {
       queryKey: ["campusCurrent", "communities", params],

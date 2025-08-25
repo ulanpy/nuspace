@@ -25,6 +25,7 @@ async def lifespan(app: FastAPI):
         await setup_db(app)
         await setup_redis(app)
         await setup_meilisearch(app)
+
         await setup_bot(app)
 
         for router in routers:

@@ -17,7 +17,7 @@ async def post_exists_or_404(
     post = await (
         qb.base()
         .filter(CommunityPost.id == post_id)
-        .eager(CommunityPost.user, CommunityPost.tag)
+        .eager(CommunityPost.user, CommunityPost.tag, CommunityPost.community)
         .first()
     )
     if post is None:

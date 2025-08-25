@@ -37,18 +37,8 @@ export function useUpdateEvent() {
   });
 
   const handleUpdate = async (eventId: string, eventData: EditEventData) => {
-    setIsUploading(true);
-    setUploadProgress(0);
-
     try {
-      // First, delete any media that was marked for deletion
-      if (mediaToDelete.length > 0) {
-        setUploadProgress(10);
-        await mediaApi.deleteMedia(mediaToDelete);
-        setUploadProgress(15);
-      }
-
-      // Create the updated event first
+      // First update the event quickly
       const updatedEvent = await updateEventMutation.mutateAsync({
         id: eventId,
         data: {
@@ -60,41 +50,58 @@ export function useUpdateEvent() {
           created_at: "",
           updated_at: "",
           media: [],
-        } as Event
+        } as Event,
       });
 
-      // Handle media upload if there are new media files
-      if (mediaFiles.length > 0) {
-        setUploadProgress(20);
-        
-        const uploadOptions: UploadMediaOptions = {
-          entity_type: EntityType.community_events,
-          entityId: updatedEvent.id,
-          mediaFormat: MediaFormat.carousel,
-          startOrder: 0
-        };
-        
-        await handleMediaUpload(uploadOptions);
+      // Launch media operations in background (non-blocking)
+      if (mediaToDelete.length > 0 || mediaFiles.length > 0) {
+        void (async () => {
+          try {
+            setIsUploading(true);
+            setUploadProgress(0);
 
-        setUploadProgress(60);
+            // Delete marked media first
+            if (mediaToDelete.length > 0) {
+              setUploadProgress(10);
+              await mediaApi.deleteMedia(mediaToDelete);
+              setUploadProgress(15);
+            }
 
-        // Poll for uploaded images
-        await pollForEventImages(
-          updatedEvent.id,
-          queryClient,
-          "campusCurrent",
-          campuscurrentAPI.getEventQueryOptions
-        );
-        setUploadProgress(100);
+            // Upload new media files if any
+            if (mediaFiles.length > 0) {
+              setUploadProgress(20);
+              const uploadOptions: UploadMediaOptions = {
+                entity_type: EntityType.community_events,
+                entityId: updatedEvent.id,
+                mediaFormat: MediaFormat.carousel,
+                startOrder: 0,
+              };
+              await handleMediaUpload(uploadOptions);
+              setUploadProgress(60);
+
+              // Poll for uploaded images
+              await pollForEventImages(
+                updatedEvent.id,
+                queryClient,
+                "campusCurrent",
+                campuscurrentAPI.getEventQueryOptions
+              );
+            }
+
+            setUploadProgress(100);
+          } catch (uploadError) {
+            console.warn("Background media update failed:", uploadError);
+          } finally {
+            // Reset states regardless of outcome
+            resetMediaState();
+            setMediaToDelete([]);
+            setOriginalMedia([]);
+            setIsUploading(false);
+            setUploadProgress(0);
+          }
+        })();
       }
 
-      setUploadProgress(100);
-      
-      // Reset states
-      resetMediaState();
-      setMediaToDelete([]);
-      setOriginalMedia([]);
-      
       toast({
         title: "Success",
         description: "Event updated successfully",
@@ -104,9 +111,6 @@ export function useUpdateEvent() {
     } catch (error) {
       console.error("Event update failed:", error);
       throw error;
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
     }
   };
 

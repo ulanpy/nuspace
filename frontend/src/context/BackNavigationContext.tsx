@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useMemo, useRef } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
 
@@ -20,6 +20,7 @@ export function BackNavigationProvider({ children }: { children: React.ReactNode
   const navigate = useNavigate();
   const location = useLocation();
   const handlersRef = useRef<BackHandler[]>([]);
+  const backListenerRef = useRef<(() => void) | null>(null);
 
   const register = useCallback((handler: BackHandler) => {
     handlersRef.current.push(handler);
@@ -37,6 +38,15 @@ export function BackNavigationProvider({ children }: { children: React.ReactNode
       return;
     }
     
+    // If on Home, close the MiniApp instead of navigating
+    if (location.pathname === ROUTES.HOME) {
+      const tg = (window as any)?.Telegram?.WebApp;
+      try {
+        tg?.close?.();
+      } catch {}
+      return;
+    }
+
     // Layered parent path resolution
     const path = location.pathname;
 
@@ -104,6 +114,25 @@ export function BackNavigationProvider({ children }: { children: React.ReactNode
 
     navigate(parent);
   }, [location.pathname, navigate]);
+
+  // Hook Telegram native back button to our back logic
+  useEffect(() => {
+    const tg = (window as any)?.Telegram?.WebApp;
+    if (!tg?.BackButton) return;
+    const onBack = () => triggerBack();
+    backListenerRef.current = onBack;
+    try {
+      tg.BackButton.onClick?.(onBack);
+      tg.BackButton.show?.();
+    } catch {}
+    return () => {
+      try {
+        if (backListenerRef.current) tg.BackButton.offClick?.(backListenerRef.current);
+        tg.BackButton.hide?.();
+      } catch {}
+      backListenerRef.current = null;
+    };
+  }, [triggerBack]);
 
   const value = useMemo(
     () => ({

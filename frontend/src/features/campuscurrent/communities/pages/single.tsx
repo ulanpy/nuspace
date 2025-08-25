@@ -1,13 +1,10 @@
-"use client";
-
-// import { Navbar } from "@/components/Navbar";
-// import { Footer } from "@/components/Footer";
 import { Button } from "@/components/atoms/button";
 import {
   Tabs,
   TabsContent,
 } from "@/components/atoms/tabs";
 import { Badge } from "@/components/atoms/badge";
+import { VerificationBadge } from "@/components/molecules/verification-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar";
 import { EventCard } from "@/features/campuscurrent/events/components/EventCard";
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
@@ -36,6 +33,7 @@ import { useUser } from "@/hooks/use-user";
 import { CommunityModal } from "@/features/campuscurrent/communities/components/CommunityModal";
 import { EventModal } from "@/features/campuscurrent/events/components/EventModal";
 import { MediaFormat } from "@/features/media/types/types";
+import { SubspacePosts } from "../../subspace/components/SubspacePosts";
 
 // Helpers
 const getUserInitials = (name?: string, surname?: string) => {
@@ -268,8 +266,9 @@ export default function CommunityDetailPage() {
 
                 {/* Profile Info */}
                 <div className="flex-grow text-center md:text-left min-w-0 pt-0 md:pt-1">
-                  <h1 className="text-3xl md:text-4xl font-bold text-foreground leading-tight break-words mb-3 md:mb-2">
-                    {community.name}
+                  <h1 className="text-3xl md:text-4xl font-bold text-foreground leading-tight break-words mb-3 md:mb-2 flex items-center gap-2 justify-center md:justify-start">
+                    <span className="truncate">{community.name}</span>
+                    {community.verified && <VerificationBadge size={14} />}
                   </h1>
                   
                   {/* Tags */}
@@ -645,8 +644,7 @@ export default function CommunityDetailPage() {
                   <div className="p-6 text-center">
                     <div className="py-12">
                       <div className="text-6xl mb-4">🚧</div>
-                      <h3 className="text-xl font-semibold mb-2">Coming Soon!</h3>
-                      <p className="text-muted-foreground">We're working on something amazing for the community space.</p>
+                      {/* <SubspacePosts/> */}
                     </div>
                   </div>
                 </Card>

@@ -28,6 +28,8 @@ services:
       - .env:/nuros/.env:ro
     depends_on:
       - postgres
+      - gcs
+      - cloudflared
     environment:
       - PYTHONUNBUFFERED=1
       - WORKERS=${GUNICORN_WORKERS:-4}
@@ -68,6 +70,8 @@ services:
     depends_on:
       - postgres
     restart: always
+    ports:
+      - "8080:80"
     networks:
       - nuros
     volumes:
@@ -81,11 +85,11 @@ services:
     networks:
       - nuros
     restart: always
-    environment:
-      - TUNNEL_TOKEN=${CLOUDFLARED_TOKEN} # Each developer sets their token
-    command: tunnel run
-    depends_on:
-      - nginx # Ensure nginx is up before starting tunnel
+    # Expose Prometheus metrics so other services can discover the ephemeral URL
+    ports:
+      - "2000:2000"
+    # Run a Quick Tunnel (ephemeral) that forwards to nginx:80 and exposes metrics
+    command: tunnel --no-autoupdate --metrics 0.0.0.0:2000 --url http://nginx:80
 
   redis:
     image: redis:latest
@@ -98,6 +102,18 @@ services:
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server --bind 0.0.0.0 --protected-mode no
 
+  gcs:
+    image: fsouza/fake-gcs-server:latest
+    container_name: gcs
+    networks:
+      - nuros
+    restart: always
+    command: ["-scheme", "http", "-host", "0.0.0.0", "-port", "4443", "-backend", "filesystem", "-filesystem-root", "/data"]
+    ports:
+      - "4443:4443"
+    volumes:
+      - gcs_data:/data
+
   meilisearch:
     image: getmeili/meilisearch:latest
     networks:
@@ -105,6 +121,7 @@ services:
     container_name: meilisearch
     ports:
       - 7700:7700
+
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -157,6 +174,8 @@ services:
       - CHOKIDAR_USEPOLLING=true # Enable polling for file changes (Docker-friendly)
     networks:
       - nuros
+    depends_on:
+      - cloudflared
 
   loki:
     container_name: loki
@@ -299,3 +318,4 @@ volumes:
   grafana-data:
   prometheus_data:
   loki_data:
+  gcs_data:

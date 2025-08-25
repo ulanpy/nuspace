@@ -161,19 +161,19 @@ export function useUnifiedMedia(): UnifiedMediaHookReturn {
       setUploading(true);
       setProgress(10);
 
-      // Get signed URLs
-      const signedUrls = await getSignedUrls(options.entityId, mediaFiles, {
+      // Compress media first so that signed URLs and headers use final MIME
+      const compressedMedia = await compressMedia(mediaFiles, false); // Disable debug toasts
+      setProgress(30);
+
+      // Get signed URLs for compressed files
+      const signedUrls = await getSignedUrls(options.entityId, compressedMedia, {
         entity_type: options.entity_type,
         mediaFormat: options.mediaFormat,
         startOrder: options.startOrder || 0,
       });
-      setProgress(30);
-
-      // Compress media
-      const compressedMedia = await compressMedia(mediaFiles);
       setProgress(50);
 
-      // Upload media
+      // Upload media using headers matching compressed MIME types
       await uploadMedia(compressedMedia, signedUrls);
       setProgress(90);
 

@@ -20,17 +20,19 @@ export function useMediaUpload() {
         setIsUploading(true);
         setUploadProgress(30);
   
-        // 1. Signed URLs алу
+        // 1. Compress media first so signed URLs match final MIME types
+        const compressedMedia: File[] = await compressMedia(mediaFiles, false); // Disable debug toasts
+        setUploadProgress(50);
+
+        // 2. Request signed URLs for compressed files
         const signedUrls: SignedUrlResponse[] = await getSignedUrls(
-          options.entityId, mediaFiles, {
+          options.entityId, compressedMedia, {
           entity_type: options.entity_type,
           mediaFormat: options.mediaFormat,
           startOrder: options.startOrder,
         });
-  
-        const compressedMedia: File[] = await compressMedia(mediaFiles);
-        setUploadProgress(50);
-  
+
+        // 3. Upload compressed media
         await uploadMedia(compressedMedia, signedUrls);
         setUploadProgress(90);
   

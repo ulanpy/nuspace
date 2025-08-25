@@ -45,7 +45,11 @@ class CommunityPolicy:
         if action == ResourceAction.CREATE:
             # Any registered user can create communities
             # Validate that users can only create communities for themselves
-            if community_data and community_data.head != "me" and community_data.head != self.user_sub:
+            if (
+                community_data
+                and community_data.head != "me"
+                and community_data.head != self.user_sub
+            ):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You can only create communities for yourself",

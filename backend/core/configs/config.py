@@ -1,20 +1,25 @@
 import json
 import os
+import re
 from functools import cached_property
 from typing import List
 
+import requests
 from dotenv import load_dotenv
 from google.oauth2 import service_account
 from pydantic_settings import BaseSettings
 
 ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 load_dotenv(os.path.join(ENV_DIR, ".env"))
-
 # should be in /nuspace/backend/core/configs/nuspace.json
 CREDENTIALS_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "nuspace.json"))
 
 
 class Config(BaseSettings):
+    """
+    without type hints: required in all: dev/staging/prod
+    """
+
     SESSION_MIDDLEWARE_KEY: str
     DB_NAME: str
     DB_USER: str
@@ -28,16 +33,19 @@ class Config(BaseSettings):
     MEILISEARCH_URL: str
     CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str
-    IS_DEBUG: bool = True
+    IS_DEBUG: bool
     TELEGRAM_BOT_TOKEN: str
     TG_WEBHOOK_SECRET_TOKEN: str
-    CLOUDFLARED_TUNNEL_URL: str
     NUSPACE: str
     GCP_PROJECT_ID: str
     GCP_TOPIC_ID: str
     PUSH_AUTH_SERVICE_ACCOUNT: str
     PUSH_AUTH_AUDIENCE: str
     ORIGINS: List[str] = ["*"]
+    MOCK_KEYCLOAK: bool  # always set True in local dev
+    USE_GCS_EMULATOR: bool  # keep True for local dev; For staging/prod .env will have it False
+    GCS_EMULATOR_HOST: str
+
     # Header mapping for easy reference when setting values
     GCS_METADATA_HEADERS: dict = {
         "filename": "x-goog-meta-filename",
@@ -53,6 +61,8 @@ class Config(BaseSettings):
     _COOKIE_REFRESH_NAME: str = "refresh_token"
     _COOKIE_APP_NAME: str = "app_token"
     APP_TOKEN_EXPIRY_MINUTES: int = 5
+    # Telegram Mini App integration
+    TG_APP_LOGIN_STATE_REDIS_PREFIX: str = "miniapp:login:state:"
 
     class Config:
         env_file = os.path.join(ENV_DIR, ".env")
@@ -73,7 +83,7 @@ class Config(BaseSettings):
 
     @cached_property
     def HOME_URL(self) -> str:
-        return self.NUSPACE if not self.IS_DEBUG else self.CLOUDFLARED_TUNNEL_URL
+        return self.NUSPACE if not self.IS_DEBUG else self.DISCOVERED_TUNNEL_URL
 
     @cached_property
     def DATABASE_URL(self) -> str:
@@ -102,8 +112,30 @@ class Config(BaseSettings):
         - Used to generate blob filename for the media upload.
         - Used to validate if the GCS event belongs to the current backend service.
         """
-        raw_url = self.NUSPACE if not self.IS_DEBUG else self.CLOUDFLARED_TUNNEL_URL
-        return raw_url.split("https://", 1)[1]  # for example https://nuspace.kz -> nuspace.kz
+        raw_url = self.NUSPACE if not self.IS_DEBUG else self.DISCOVERED_TUNNEL_URL
+        # Support either https or http while tunnel is undiscovered
+        if "://" in raw_url:
+            return raw_url.split("://", 1)[1]  # e.g. https://nuspace.kz -> nuspace.kz
+        else:
+            # raise error if not a valid url
+            raise ValueError(f"Invalid URL: {raw_url}")
+
+    @property
+    def DISCOVERED_TUNNEL_URL(self) -> str:
+        """
+        Resolve the public dev URL.
+        - Parse quick tunnel hostname from cloudflared metrics (http://cloudflared:2000/metrics)
+        """
+        try:
+            resp = requests.get("http://cloudflared:2000/metrics", timeout=10)
+            if resp.status_code == 200:
+                # Prefer explicit userHostname label exposed by metrics
+                m = re.search(r'userHostname="(https://[^"\\]+)"', resp.text)
+                if m:
+                    url = m.group(1)
+                    return url
+        except Exception as e:
+            print(f"Failed to discover tunnel URL: {e}", flush=True)
 
 
 config = Config()

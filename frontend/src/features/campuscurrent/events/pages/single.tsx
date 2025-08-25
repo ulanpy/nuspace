@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,6 +8,7 @@ import {
   CalendarPlus,
   Share2,
   Pencil,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Badge } from "@/components/atoms/badge";
@@ -23,11 +22,12 @@ import { addToGoogleCalendar as addToGoogleCalendarUtil } from "@/features/campu
 import { EventModal } from "@/features/campuscurrent/events/components/EventModal";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { CountdownBadge } from "@/features/campuscurrent/events/components/CountdownBadge";
+import { VerificationBadge } from "@/components/molecules/verification-badge";
 
 // Helper function to format date for display
 const formatEventDate = (dateString: string) => {
   const date = new Date(dateString);
-  return format(date, "d MMMM, HH:mm");
+  return format(date, "d MMMM");
 };
 
 // Helper function to get policy display text
@@ -46,10 +46,8 @@ const getPolicyDisplay = (policy: string) => {
 const getPolicyColor = (policy: string) => {
   switch (policy) {
     case "open":
-      // green pill with proper dark mode contrast
       return "bg-green-100 text-green-900 border-green-200 dark:bg-green-900/30 dark:text-green-200 dark:border-green-800";
     case "registration":
-      // blue pill with proper dark mode contrast
       return "bg-blue-100 text-blue-900 border-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800";
     default:
       return "bg-gray-100 text-gray-900 border-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700";
@@ -102,7 +100,6 @@ export default function EventDetailPage() {
         url: window.location.href,
       });
     } else {
-      // Fallback for browsers that don't support the Web Share API
       navigator.clipboard.writeText(window.location.href);
       toast({
         title: "Link copied",
@@ -134,20 +131,67 @@ export default function EventDetailPage() {
     );
   }
 
-  const eventDate = new Date(event.event_datetime);
+  const eventDate = new Date(event.start_datetime);
   const isPast = eventDate < new Date();
-  const isUpcoming = !isPast;
-  const communityProfileImg = event.community?.media?.find((m) => m.media_format === "profile")?.url || event.community?.media?.[0]?.url;
+  const communityProfileImg =
+    event.community?.media?.find((m) => m.media_format === "profile")?.url ||
+    event.community?.media?.[0]?.url;
+
+  // Determine which action buttons to show
+  const actionButtons = [];
+
+  if (!isPast) {
+    actionButtons.push(
+      <Button
+        key="calendar"
+        className="flex items-center gap-2 flex-1 sm:flex-none"
+        onClick={handleAddToCalendar}
+      >
+        <CalendarPlus className="h-4 w-4" />
+        <span>Add to Calendar</span>
+      </Button>
+    );
+  }
+
+  if (!isPast && event.policy === "registration" && event.registration_link) {
+    actionButtons.push(
+      <a
+        key="register"
+        href={event.registration_link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-1 sm:flex-none"
+      >
+        <Button className="flex items-center gap-2 w-full">
+          <ExternalLink className="h-4 w-4" />
+          <span>Register</span>
+        </Button>
+      </a>
+    );
+  }
+
+  if (event.permissions?.can_edit === true) {
+    actionButtons.push(
+      <Button
+        key="edit"
+        variant="outline"
+        className="flex items-center gap-2 flex-1 sm:flex-none"
+        onClick={() => setShowEditModal(true)}
+      >
+        <Pencil className="h-4 w-4" />
+        <span>Edit Event</span>
+      </Button>
+    );
+  }
 
   return (
-    <div className="pb-20 px-4 max-w-full overflow-hidden">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Event Image */}
-        <div className="relative">
-          <div className="relative h-80 sm:h-96 md:h-[500px] w-full rounded-lg overflow-hidden bg-muted">
+    <div className="container mx-auto pb-20 px-4 max-w-7xl">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+        {/* Event Image - Left Column on Large Screens */}
+        <div className="lg:sticky lg:top-6 lg:self-start">
+          <div className="relative h-80 sm:h-96 lg:h-[600px] w-full rounded-xl overflow-hidden bg-muted shadow-sm">
             {event.media && event.media.length > 0 && !imageError ? (
               <>
-                {/* Loading skeleton */}
                 {!imageLoaded && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="animate-pulse flex items-center justify-center w-full h-full bg-muted">
@@ -155,15 +199,12 @@ export default function EventDetailPage() {
                     </div>
                   </div>
                 )}
-                
-                {/* Actual image */}
                 <img
                   src={event.media[0].url || "/placeholder.svg"}
                   alt={event.name}
-                  className={`
-                    w-full h-full object-contain object-center transition-opacity duration-300
-                    ${imageLoaded ? 'opacity-100' : 'opacity-0'}
-                  `}
+                  className={`w-full h-full object-contain object-center transition-opacity duration-300 ${
+                    imageLoaded ? "opacity-100" : "opacity-0"
+                  }`}
                   onLoad={() => setImageLoaded(true)}
                   onError={() => {
                     setImageError(true);
@@ -173,35 +214,45 @@ export default function EventDetailPage() {
                 />
               </>
             ) : (
-              // Fallback when no image or image failed to load
               <div className="w-full h-full bg-muted flex items-center justify-center">
                 <div className="text-center">
                   <Calendar className="h-16 w-16 text-muted-foreground opacity-50 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No poster available</p>
+                  <p className="text-sm text-muted-foreground">
+                    No poster available
+                  </p>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Event Details */}
-        <div className="space-y-4">
-          <div className="flex flex-wrap gap-2 mb-3">
-            <Badge variant="outline" className="">
-              {event.type[0].toUpperCase()}{event.type.slice(1)}
+        {/* Event Details - Right Column on Large Screens */}
+        <div className="space-y-6">
+          {/* Badges */}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="font-medium">
+              {event.type[0].toUpperCase()}
+              {event.type.slice(1)}
             </Badge>
-            <Badge variant="outline" className={`${getPolicyColor(event.policy)}`}>
+            <Badge variant="outline" className={getPolicyColor(event.policy)}>
               {getPolicyDisplay(event.policy)}
             </Badge>
-            <CountdownBadge eventDateIso={event.event_datetime} durationMinutes={event.duration} />
+            <CountdownBadge
+              eventDateIso={event.start_datetime}
+              durationMinutes={Math.round((new Date(event.end_datetime).getTime() - new Date(event.start_datetime).getTime()) / (1000 * 60))}
+            />
           </div>
 
-          <div className="flex justify-between items-start">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-bold break-words">{event.name}</h1>
-              {event.scope === "community" ? (
-                <div
-                  className="text-primary hover:underline cursor-pointer mt-1 break-words"
+          {/* Title and Organizer */}
+          <div className="space-y-2">
+            <h1 className="text-3xl lg:text-4xl font-bold leading-tight break-words">
+              {event.name}
+            </h1>
+            {event.scope === "community" ? (
+              <div className="text-primary text-lg font-medium break-words">
+                <button
+                  type="button"
+                  className="hover:underline inline-flex items-center gap-1"
                   onClick={() =>
                     navigate(
                       ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
@@ -210,167 +261,184 @@ export default function EventDetailPage() {
                     )
                   }
                 >
-                  by {event.community?.name || "Unknown Community"}
-                </div>
-              ) : (
-                <div className="text-muted-foreground mt-1 break-words">
-                  by {event.creator?.name} {event.creator?.surname}
-                </div>
-              )}
-            </div>
+                  <span>by {event.community?.name || "Unknown Community"}</span>
+                  <VerificationBadge className="ml-1" size={14} />
+                </button>
+              </div>
+            ) : (
+              <div className="text-muted-foreground text-lg break-words">
+                by {event.creator?.name} {event.creator?.surname}
+              </div>
+            )}
           </div>
 
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 flex-shrink-0" />
-              <span className="break-words">
-                {formatEventDate(event.event_datetime)}
+          {/* Event Info */}
+          <div className="space-y-3 text-muted-foreground">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-5 w-5 flex-shrink-0" />
+              <span className="text-base">
+                {formatEventDate(event.start_datetime)}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 flex-shrink-0" />
-              <span className="break-words">{event.duration} minutes</span>
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5 flex-shrink-0" />
+              <span className="text-base">
+                {(() => {
+                  const startTime = new Date(event.start_datetime);
+                  const endTime = new Date(event.end_datetime);
+                  const durationMs = endTime.getTime() - startTime.getTime();
+                  const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
+                  const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+                  
+                  if (durationHours > 0) {
+                    return `${durationHours}h ${durationMinutes > 0 ? `${durationMinutes}m` : ''}`;
+                  } else {
+                    return `${durationMinutes}m`;
+                  }
+                })()}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 flex-shrink-0" />
-              <span className="break-words">{event.place}</span>
+            <div className="flex items-center gap-3">
+              <MapPin className="h-5 w-5 flex-shrink-0" />
+              <span className="text-base">{event.place}</span>
             </div>
             {event.community && (
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 flex-shrink-0" />
-                <span className="break-words">
+              <div className="flex items-center gap-3">
+                <Users className="h-5 w-5 flex-shrink-0" />
+                <span className="text-base inline-flex items-center gap-1">
                   Organized by {event.community.name}
+                  {event.community.verified && (
+                    <VerificationBadge className="ml-1" size={12} />
+                  )}
                 </span>
               </div>
             )}
           </div>
 
-          <div className="h-px w-full bg-border my-4" />
+          {/* Description */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">About this event</h2>
+            <p className="text-muted-foreground text-base leading-relaxed whitespace-pre-line break-words">
+              {event.description}
+            </p>
+          </div>
 
-          <div className="flex flex-wrap gap-2 mt-6">
-            {!isPast && (
-              <Button
-                className="flex items-center gap-1"
-                onClick={handleAddToCalendar}
-              >
-                <CalendarPlus className="h-4 w-4" />
-                <span>Add to Calendar</span>
-              </Button>
+          {/* Action Buttons */}
+          <div className="space-y-3 pt-4">
+            {/* Primary action buttons row */}
+            {actionButtons.length > 0 && (
+              <div className="flex flex-col sm:flex-row gap-3">
+                {actionButtons}
+              </div>
             )}
-            {event.permissions?.can_edit === true && (
+
+            {/* Share button row */}
+            <div className="flex">
               <Button
                 variant="outline"
-                className="flex items-center gap-2"
-                onClick={() => setShowEditModal(true)}
+                className="flex items-center gap-2 w-full sm:w-auto"
+                onClick={shareEvent}
               >
-                <Pencil className="h-4 w-4" />
-                Edit Event
+                <Share2 className="h-4 w-4" />
+                <span>Share Event</span>
               </Button>
-            )}
-            <Button
-              variant="outline"
-              className="flex items-center gap-1"
-              onClick={shareEvent}
-            >
-              <Share2 className="h-4 w-4" />
-              <span>Share</span>
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-8 space-y-6">
-        <h2 className="font-medium mb-2">About this event</h2>
-        <p className="text-muted-foreground whitespace-pre-line break-words">
-          {event.description}
-        </p>
-      </div>
-
-      {/* Organizer details */}
-      {(event.scope === "community" && event.community) ||
-      (event.scope === "personal" && event.creator) ? (
-        <div className="mt-8 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            {event.scope === "community" && (
-              <Button
-                onClick={() =>
-                  navigate(
-                    ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
-                      event.community?.id.toString() ?? ""
-                    )
-                  )
-                }
-                className="flex items-center gap-2"
-              >
-                <Users className="h-4 w-4" />
-                <span>View Community</span>
-              </Button>
-            )}
-          </div>
-
-          {/* Organizer information */}
-          <div className="rounded-lg border p-4">
-            <h3 className="font-medium mb-3">Event Organizers</h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                {event.scope === "community" ? (
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                    {communityProfileImg ? (
-                      <img
-                        src={communityProfileImg}
-                        alt={`${event.community?.name} profile`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Users className="h-5 w-5 text-primary" />
-                    )}
-                  </div>
-                ) : (
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                    <img
-                      src={event.creator?.picture}
-                      alt={`${event.creator?.name}'s profile`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium break-words">
-                    {event.scope === "community"
-                      ? event.community?.name
-                      : `${event.creator?.name} ${event.creator?.surname}`}
-                  </p>
-                  <p className="text-sm text-muted-foreground break-words">
-                    {event.scope === "community"
-                      ? "Community"
-                      : "Event Organizer"}
-                  </p>
-                </div>
-              </div>
-              {event.scope === "community" && (
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                    {event.creator?.picture ? (
-                      <img
-                        src={event.creator.picture}
-                        alt={`${event.creator?.name} ${event.creator?.surname}`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Users className="h-5 w-5 text-primary" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium break-words">{`${event.creator?.name ?? ''} ${event.creator?.surname ?? ''}`.trim() || 'Event Coordinator'}</p>
-                    <p className="text-sm text-muted-foreground break-words">Event Coordinator</p>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
-        </div>
-      ) : null}
 
+          {/* Event Organizers */}
+          {((event.scope === "community" && event.community) ||
+            (event.scope === "personal" && event.creator)) && (
+            <div className="mt-8">
+              <div className="rounded-xl border bg-card p-6 shadow-sm">
+                <h3 className="text-lg font-semibold mb-4">Event Organizers</h3>
+                <div className="space-y-4">
+                  {event.scope === "community" ? (
+                    <div
+                      className="flex items-center gap-4 cursor-pointer hover:bg-muted/50 p-3 rounded-lg transition-colors"
+                      onClick={() =>
+                        navigate(
+                          ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
+                            event.community?.id.toString() ?? ""
+                          )
+                        )
+                      }
+                    >
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                        {communityProfileImg ? (
+                          <img
+                            src={communityProfileImg}
+                            alt={`${event.community?.name} profile`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Users className="h-6 w-6 text-primary" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-base break-words inline-flex items-center gap-1">
+                          <span className="truncate">{event.community?.name}</span>
+                          {event.community?.verified && (
+                            <VerificationBadge className="ml-1" size={12} />
+                          )}
+                        </p>
+                        <p className="text-sm text-muted-foreground break-words">
+                          Community
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-4 p-3">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                        <img
+                          src={event.creator?.picture}
+                          alt={`${event.creator?.name}'s profile`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-base break-words">
+                          {`${event.creator?.name} ${event.creator?.surname}`}
+                        </p>
+                        <p className="text-sm text-muted-foreground break-words">
+                          Event Organizer
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {event.scope === "community" && event.creator && (
+                    <div className="flex items-center gap-4 p-3">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                        {event.creator?.picture ? (
+                          <img
+                            src={event.creator.picture}
+                            alt={`${event.creator?.name} ${event.creator?.surname}`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Users className="h-6 w-6 text-primary" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-base break-words">
+                          {`${event.creator?.name ?? ""} ${
+                            event.creator?.surname ?? ""
+                          }`.trim() || "Event Coordinator"}
+                        </p>
+                        <p className="text-sm text-muted-foreground break-words">
+                          Event Coordinator
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Modals */}
       <EventModal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}

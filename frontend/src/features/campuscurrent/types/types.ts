@@ -37,10 +37,11 @@ import { Media } from "@/features/media/types/types";
     export enum EventEditableFields {
       name = "name",
       place = "place",
-      event_datetime = "event_datetime",
+      start_datetime = "start_datetime",
+      end_datetime = "end_datetime",
       description = "description",
-      duration = "duration",
       policy = "policy",
+      registration_link = "registration_link",
       status = "status",
       type = "type",
       tag = "tag"
@@ -78,6 +79,8 @@ import { Media } from "@/features/media/types/types";
       name: string;
       type: CommunityType;
       category: CommunityCategory;
+      /** Whether the community is verified */
+      verified?: boolean;
       email?: string;
       recruitment_status: CommunityRecruitmentStatus;
       recruitment_link: string;
@@ -176,7 +179,8 @@ import { Media } from "@/features/media/types/types";
       cultural = "cultural",
       sports = "sports",
       social = "social",
-      art = "art"
+      art = "art",
+      recruitment = "recruitment"
     }
 
     export interface Event {
@@ -184,11 +188,12 @@ import { Media } from "@/features/media/types/types";
       community_id: number;
       creator_sub: string;
       policy: EventPolicy;
+      registration_link?: string;
       name: string;
       place: string;
-      event_datetime: string;
+      start_datetime: string;
+      end_datetime: string;
       description: string;
-      duration: number;
       scope: Scope;
       type: EventType;
       status: EventStatus;
@@ -207,10 +212,11 @@ import { Media } from "@/features/media/types/types";
       policy: EventPolicy;
       name: string;
       place: string;
-      event_datetime: string;
+      start_datetime: string;
+      end_datetime: string;
       description: string;
-      duration: number;
       type: EventType;
+      registration_link?: string;
     }
 
     //no id, community_id, creator_sub, permissions, media, community, creator
@@ -221,6 +227,7 @@ import { Media } from "@/features/media/types/types";
       description?: string;
       duration?: number;
       policy?: EventPolicy;
+      registration_link?: string;
       status?: EventStatus;
       type?: EventType;
       tag?: EventTag;

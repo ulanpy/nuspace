@@ -13,6 +13,7 @@ export function SearchInput({
   handleSearch,
   setKeyword,
   setSelectedCondition,
+  placeholder = "Search",
 }: SearchInputProps) {
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
@@ -22,6 +23,8 @@ export function SearchInput({
 
   const suggestions = preSearchedItems || [];
   const hasSuggestions = Boolean(suggestions.length && inputValue.trim());
+  
+
 
   useEffect(() => {
     setIsDropdownOpen(false);
@@ -49,7 +52,6 @@ export function SearchInput({
     },
         selectItem: (item: string) => {
       setInputValue(item);
-      setKeyword(item);
       setSelectedCondition?.("All Conditions");
       setIsDropdownOpen(false);
       setSelectedIndex(-1);
@@ -97,18 +99,21 @@ export function SearchInput({
           handler();
         }
       },
-      focus: () => hasSuggestions && setIsDropdownOpen(true),
+      focus: () => {
+        if (hasSuggestions) {
+          setIsDropdownOpen(true);
+        }
+      },
       blur: () => setTimeout(() => setIsDropdownOpen(false), 200),
     },
   };
 
   return (
-    <>
     <div className="relative flex-grow">
       <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
       <Input
         ref={inputRef}
-        placeholder="Search"
+        placeholder={placeholder}
         className="text-base pl-9 rounded-l-none border-l-0 resize-none"
         value={inputValue}
         onChange={handlers.input.change}
@@ -116,7 +121,6 @@ export function SearchInput({
         onFocus={handlers.input.focus}
         onBlur={handlers.input.blur}
       />
-      </div>
       {!!inputValue.trim() && (
         <button
           type="button"
@@ -126,17 +130,12 @@ export function SearchInput({
           <X className="h-5 w-5" />
         </button>
       )}
-      {/* <div
-        onClick={handlers.search}
-        className={`absolute right-4 top-1/2 -translate-y-1/2 rounded-lg p-1 ${isDarkTheme ? "bg-slate-600 hover:bg-slate-700" : "bg-slate-200 hover:bg-slate-300"}`}
-      >
-      </div> */}
       {isDropdownOpen && hasSuggestions && (
         <ul
-          className={`absolute top-full left-0 right-0  border border-t-0  shadow-md z-10 rounded-b-lg ${
+          className={`absolute top-full left-0 right-0 border border-t-0 shadow-md z-50 rounded-b-lg max-h-60 overflow-y-auto ${
             isDarkTheme
               ? "bg-[#020817] border-gray-300"
-              : "bg-slate-100  border-slate-200"
+              : "bg-slate-100 border-slate-200"
           }`}
           onMouseLeave={() => setSelectedIndex(-1)}
         >
@@ -160,6 +159,6 @@ export function SearchInput({
           ))}
         </ul>
       )}
-    </>
+    </div>
   );
 }

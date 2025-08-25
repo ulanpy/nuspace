@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from google.api_core.exceptions import AlreadyExists
 from google.cloud import pubsub_v1, storage
@@ -22,6 +24,29 @@ def setup_google_cloud(app: FastAPI) -> None:
     In production, the push endpoint is set to the real API endpoint (https://nuspace.kz/api/bucket/gcs-hook)
     """
     config: Config = app.state.config
+
+    if config.USE_GCS_EMULATOR:
+        # Configure client for emulator
+        os.environ["STORAGE_EMULATOR_HOST"] = config.GCS_EMULATOR_HOST
+        # Use a non-anonymous client with a dummy project for bucket creation support
+        app.state.storage_client = storage.Client(project="dev")
+        print(
+            f"✅ Using GCS emulator at {config.GCS_EMULATOR_HOST} for bucket {config.BUCKET_NAME}"
+        )
+
+        # Ensure bucket exists in emulator
+        try:
+            bucket = app.state.storage_client.get_bucket(config.BUCKET_NAME)
+        except Exception:
+            try:
+                bucket = app.state.storage_client.create_bucket(config.BUCKET_NAME, location="US")
+                print(f"✅ Created emulator bucket: {bucket.name}")
+            except Exception as e:
+                print(f"⚠️  Warning: Could not create emulator bucket '{config.BUCKET_NAME}': {e}")
+        # Skip CORS and Pub/Sub setup in emulator mode
+        return
+
+    # Real GCP setup
     app.state.storage_client = storage.Client(credentials=config.BUCKET_CREDENTIALS)
 
     bucket = app.state.storage_client.bucket(config.BUCKET_NAME)

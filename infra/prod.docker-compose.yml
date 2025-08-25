@@ -31,6 +31,22 @@ services:
       - ../backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
       - .env:/nuros/.env:ro
 
+  migrate:
+    image: kamikadze24/fastapi:${DOCKER_IMAGE_TAG}
+    container_name: migrate
+    networks:
+      - nuros
+    depends_on:
+      - postgres
+    restart: "no"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ../backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
+      - .env:/nuros/.env:ro
+    working_dir: /nuros/backend
+    command: alembic upgrade head
+
   nginx:
     container_name: nginx
     image: nginx:latest

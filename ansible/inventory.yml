@@ -1,0 +1,7 @@
+---
+all:
+  children:
+    webservers:
+      hosts:
+        # This will be populated by the GitHub Actions workflow
+        # with the actual host from secrets.ANSIBLE_HOST

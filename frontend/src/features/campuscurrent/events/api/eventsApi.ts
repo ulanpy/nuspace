@@ -2,8 +2,12 @@ import { apiCall } from "@/utils/api";
 import { queryOptions } from "@tanstack/react-query";
 import * as Routes from "@/data/routes";
 import { CreateEventData, Event } from "@/features/campuscurrent/types/types";
+
+export type TimeFilter = "upcoming" | "today" | "week" | "month";
+
 export const campuscurrentAPI = {
   getEventsQueryOptions: (params: {
+    time_filter?: TimeFilter;
     start_date?: string;
     end_date?: string;
     page?: number;
@@ -21,8 +25,13 @@ export const campuscurrentAPI = {
     // Access policy: by default we show approved events in the public listing
     queryParams.set("event_status", params.event_status ?? "approved");
 
-    if (params.start_date) queryParams.set("start_date", params.start_date);
-    if (params.end_date) queryParams.set("end_date", params.end_date);
+    // Use time_filter if provided, otherwise fall back to start_date/end_date
+    if (params.time_filter) {
+      queryParams.set("time_filter", params.time_filter);
+    } else {
+      if (params.start_date) queryParams.set("start_date", params.start_date);
+      if (params.end_date) queryParams.set("end_date", params.end_date);
+    }
 
     // Pagination
     queryParams.set("page", String(params.page ?? 1));

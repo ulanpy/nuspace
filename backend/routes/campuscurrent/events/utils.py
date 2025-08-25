@@ -34,10 +34,11 @@ def get_event_permissions(
         permissions.editable_fields = [
             "name",
             "place",
-            "event_datetime",
+            "start_datetime",
+            "end_datetime",
             "description",
-            "duration",
             "policy",
+            "registration_link",
             "status",
             "type",
             "tag",
@@ -61,11 +62,12 @@ def get_event_permissions(
         permissions.editable_fields = [
             "name",
             "place",
-            "event_datetime",
+            "start_datetime",
+            "end_datetime",
             "description",
-            "duration",
             "policy",
             "type",
+            "registration_link",
         ]
 
         # Community head can also edit status

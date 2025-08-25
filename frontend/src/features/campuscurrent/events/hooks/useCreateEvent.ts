@@ -14,7 +14,7 @@ export function useCreateEvent() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { handleMediaUpload, resetMediaState } = useMediaUpload();
-  const { setIsUploading } = useMediaUploadContext();
+  const { setIsUploading, mediaFiles } = useMediaUploadContext();
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const createEventMutation = useMutation({
@@ -34,32 +34,40 @@ export function useCreateEvent() {
 
   const handleCreate = async (eventData: CreateEventData) => {
     try {
-      setIsUploading(true);
-      setUploadProgress(10);
-
       // Create the event first
       const newEvent = await createEventMutation.mutateAsync(eventData);
-      setUploadProgress(40);
 
-      // Upload media if any
-      await handleMediaUpload({
-        entity_type: EntityType.community_events,
-        entityId: newEvent.id,
-        mediaFormat: MediaFormat.carousel,
-      });
+      // Fire-and-forget media upload and polling in background (non-blocking)
+      if (mediaFiles.length > 0) {
+        void (async () => {
+          try {
+            setIsUploading(true);
+            setUploadProgress(10);
+            await handleMediaUpload({
+              entity_type: EntityType.community_events,
+              entityId: newEvent.id,
+              mediaFormat: MediaFormat.carousel,
+            });
 
-      setUploadProgress(70);
+            setUploadProgress(70);
 
-      // Poll for event images to be processed
-      await pollForEventImages(
-        newEvent.id,
-        queryClient,
-        "campusCurrent",
-        campuscurrentAPI.getEventQueryOptions
-      );
+            await pollForEventImages(
+              newEvent.id,
+              queryClient,
+              "campusCurrent",
+              campuscurrentAPI.getEventQueryOptions
+            );
 
-      setUploadProgress(100);
-      resetMediaState();
+            setUploadProgress(100);
+            resetMediaState();
+          } catch (uploadError) {
+            console.warn("Background media upload failed:", uploadError);
+          } finally {
+            setIsUploading(false);
+            setUploadProgress(0);
+          }
+        })();
+      }
 
       toast({
         title: "Success",
@@ -76,8 +84,7 @@ export function useCreateEvent() {
       });
       throw error;
     } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
+      // no-op; background task manages uploading state
     }
   };
 

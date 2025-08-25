@@ -11,6 +11,7 @@ export type SearchInputProps = {
   setKeyword: (keyword: string) => void;
   // Optional, used in some contexts (e.g., products) to reset a secondary filter
   setSelectedCondition?: (condition: string) => void;
+  placeholder?: string;
 };
 
 

@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from enum import Enum
 from typing import List, Optional
 
 from fastapi import Query
@@ -15,6 +16,15 @@ from backend.core.database.models import (
 from backend.routes.campuscurrent.communities.schemas import ShortCommunityResponse
 
 
+class TimeFilter(str, Enum):
+    """Enum for predefined time filters in event queries."""
+
+    UPCOMING = "upcoming"
+    TODAY = "today"
+    WEEK = "week"
+    MONTH = "month"
+
+
 class EventCreateRequest(BaseModel):
     community_id: int | None = Field(
         default=None,
@@ -29,27 +39,48 @@ class EventCreateRequest(BaseModel):
     )
     name: str = Field(..., description="The name of the event", example="NUspace 2025")
     place: str = Field(..., description="The place of the event", example="NU 3rd block, 3rd floor")
-    event_datetime: datetime = Field(
-        ..., description="The datetime of the event", example="2026-06-12T10:00:00Z"
+    start_datetime: datetime = Field(
+        ..., description="The start datetime of the event", example="2026-06-12T10:00:00Z"
+    )
+    end_datetime: datetime = Field(
+        ..., description="The end datetime of the event", example="2026-06-12T12:00:00Z"
     )
     description: str = Field(
         ..., description="The description of the event", example="NUspace is a community event"
     )
-    duration: int = Field(..., description="The duration of the event in minutes", example=120)
 
     type: EventType = Field(..., description="The type of the event", example=EventType.academic)
+    registration_link: str | None = Field(
+        default=None,
+        description="The registration link for the event",
+        example="https://forms.google.com/event-registration",
+    )
 
-    @field_validator("duration")
-    def validate_duration(cls, value):
-        if value <= 0:
-            raise ValueError("Duration should be positive")
+    @field_validator("end_datetime")
+    def validate_end_datetime(cls, value, info):
+        if (
+            "start_datetime" in info.data
+            and value is not None
+            and info.data["start_datetime"] is not None
+        ):
+            # Ensure both datetimes are timezone-aware for comparison
+            start_dt = info.data["start_datetime"]
+            if not start_dt.tzinfo:
+                start_dt = start_dt.replace(tzinfo=timezone.utc)
+            if not value.tzinfo:
+                value = value.replace(tzinfo=timezone.utc)
+
+            if value <= start_dt:
+                raise ValueError("End datetime must be after start datetime")
         return value
 
-    @field_validator("event_datetime")
-    def validate_event_datetime(cls, value):
-        if not value.tzinfo:
-            value = value.replace(tzinfo=timezone.utc)
-        return value.astimezone(timezone.utc).replace(tzinfo=None)
+    @field_validator("start_datetime", "end_datetime")
+    def validate_datetime(cls, value):
+        if value is not None:
+            if not value.tzinfo:
+                value = value.replace(tzinfo=timezone.utc)
+            return value.astimezone(timezone.utc).replace(tzinfo=None)
+        return value
 
 
 class EnrichedEventCreateRequest(EventCreateRequest):
@@ -75,16 +106,16 @@ class EventUpdateRequest(BaseModel):
     place: str | None = Field(
         default=None, description="The place of the event", example="NU 3rd block, 3rd floor"
     )
-    event_datetime: datetime | None = Field(
-        default=None, description="The datetime of the event", example="2026-06-12T10:00:00Z"
+    start_datetime: datetime | None = Field(
+        default=None, description="The start datetime of the event", example="2026-06-12T10:00:00Z"
+    )
+    end_datetime: datetime | None = Field(
+        default=None, description="The end datetime of the event", example="2026-06-12T12:00:00Z"
     )
     description: str | None = Field(
         default=None,
         description="The description of the event",
         example="NUspace is a community event",
-    )
-    duration: int | None = Field(
-        default=None, description="The duration of the event in minutes", example=120
     )
     policy: RegistrationPolicy | None = Field(
         default=None, description="The policy of the event", example=RegistrationPolicy.open
@@ -96,22 +127,42 @@ class EventUpdateRequest(BaseModel):
         default=None, description="The type of the event", example=EventType.academic
     )
 
+    registration_link: str | None = Field(
+        default=None,
+        description="The registration link for the event",
+        example="https://forms.google.com/event-registration",
+    )
+
     # admin only fields
     tag: EventTag | None = Field(
         default=None, description="The tag of the event. Admin only", example=None
     )
 
-    @field_validator("duration")
-    def validate_duration(cls, value):
-        if value is not None and value <= 0:
-            raise ValueError("Duration should be positive")
+    @field_validator("end_datetime")
+    def validate_end_datetime(cls, value, info):
+        if (
+            value is not None
+            and "start_datetime" in info.data
+            and info.data["start_datetime"] is not None
+        ):
+            # Ensure both datetimes are timezone-aware for comparison
+            start_dt = info.data["start_datetime"]
+            if not start_dt.tzinfo:
+                start_dt = start_dt.replace(tzinfo=timezone.utc)
+            if not value.tzinfo:
+                value = value.replace(tzinfo=timezone.utc)
+
+            if value <= start_dt:
+                raise ValueError("End datetime must be after start datetime")
         return value
 
-    @field_validator("event_datetime")
-    def validate_event_datetime(cls, value):
-        if not value.tzinfo:
-            value = value.replace(tzinfo=timezone.utc)
-        return value.astimezone(timezone.utc).replace(tzinfo=None)
+    @field_validator("start_datetime", "end_datetime")
+    def validate_datetime(cls, value):
+        if value is not None:
+            if not value.tzinfo:
+                value = value.replace(tzinfo=timezone.utc)
+            return value.astimezone(timezone.utc).replace(tzinfo=None)
+        return value
 
     @field_validator("name", "place", "description")
     def validate_string_fields(cls, value: Optional[str]) -> Optional[str]:
@@ -127,11 +178,12 @@ class BaseEventSchema(BaseModel):  # ORMtoPydantic
     community_id: Optional[int] = None
     creator_sub: str
     policy: RegistrationPolicy
+    registration_link: Optional[str] = None
     name: str
     place: str
-    event_datetime: datetime
+    start_datetime: datetime
+    end_datetime: datetime
     description: str
-    duration: int
     scope: EventScope
     type: EventType
     status: EventStatus

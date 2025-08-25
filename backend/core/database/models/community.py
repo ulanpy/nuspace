@@ -46,6 +46,7 @@ class Community(Base):
         nullable=False,
         default=CommunityRecruitmentStatus.closed,
     )
+    verified: Mapped[bool] = mapped_column(nullable=False, default=False)
     recruitment_link: Mapped[str] = mapped_column(nullable=True, unique=False)
     description: Mapped[str] = mapped_column(nullable=False)
     established: Mapped[date] = mapped_column(Date, nullable=False)

@@ -11,59 +11,140 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          token: ${{ github.token }}
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            nginx:
+              - 'infra/nginx/**'
+            redis:
+              - 'infra/redis/**'
+            rabbitmq:
+              - 'infra/rabbitmq/**'
+            prometheus:
+              - 'infra/prometheus/**'
+            grafana:
+              - 'infra/grafana/**'
+            loki:
+              - 'infra/loki/**'
+            alloy:
+              - 'infra/alloy/**'
+            alertmanager:
+              - 'infra/alertmanager/**'
+            wireguard:
+              - 'infra/wireguard/**'
+            compose:
+              - 'infra/prod.docker-compose.yml'
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
-      - name: Extract Git SHA
-        run: echo "GIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          tags: |
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and Push Docker Images
-        run: |
-          set -e
-          export TAG=$GIT_SHA
-          docker compose -f infra/build.docker-compose.yaml build
-          docker compose -f infra/build.docker-compose.yaml push
+      # --- Build FastAPI Image ---
+      - name: Build and Push FastAPI Image
+        if: steps.changes.outputs.backend == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./backend/Dockerfile
+          push: true
+          tags: kamikadze24/fastapi:${{ steps.meta.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=fastapi
+          cache-to: type=gha,mode=max,scope=fastapi
+
+      # --- Build Celery Worker Image ---
+      - name: Build and Push Celery Worker Image
+        if: steps.changes.outputs.backend == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./backend/Dockerfile_celery
+          push: true
+          tags: kamikadze24/celeryworker:${{ steps.meta.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=celeryworker
+          cache-to: type=gha,mode=max,scope=celeryworker
+
+      # --- Build Frontend Builder Image ---
+      - name: Build and Push Frontend Builder Image
+        if: steps.changes.outputs.frontend == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./frontend/Dockerfile_static_builder
+          push: true
+          tags: kamikadze24/frontendbuilder:${{ steps.meta.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
       - name: Install Ansible
-        run: |
-          sudo apt update
-          sudo apt install -y ansible
+        run: pip install ansible
 
-      - name: Write SSH private key to file
-        run: |
-          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ansible_key.pem
-          chmod 600 ansible_key.pem
-
-      - name: Create dynamic Ansible inventory
-        run: |
-          mkdir -p ansible
-          echo "[webservers]" > ansible/inventory.ini
-          echo "server ansible_host=${{ secrets.ANSIBLE_HOST }} ansible_user=${{ secrets.ANSIBLE_USER }} ansible_ssh_private_key_file=ansible_key.pem" >> ansible/inventory.ini
-
-      - name: Add server to known hosts
+      - name: Set up SSH
         run: |
           mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          ssh-keyscan ${{ secrets.ANSIBLE_HOST }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.ANSIBLE_HOST_KEY }}" >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-      - name: Run Ansible Playbook
+      - name: Create inventory file
         run: |
-          ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          DOCKER_IMAGE_TAG: ${{ env.GIT_SHA }}
+          cat > ansible/inventory.yml << EOF
+          ---
+          all:
+            children:
+              webservers:
+                hosts:
+                  ${{ secrets.ANSIBLE_HOST }}:
+                    ansible_user: ${{ secrets.ANSIBLE_USER }}
+          EOF
+
+      - name: Run Ansible Playbook
+        if: |
+          steps.changes.outputs.backend == 'true' ||
+          steps.changes.outputs.frontend == 'true' ||
+          steps.changes.outputs.nginx == 'true' ||
+          steps.changes.outputs.redis == 'true' ||
+          steps.changes.outputs.rabbitmq == 'true' ||
+          steps.changes.outputs.prometheus == 'true' ||
+          steps.changes.outputs.grafana == 'true' ||
+          steps.changes.outputs.loki == 'true' ||
+          steps.changes.outputs.alloy == 'true' ||
+          steps.changes.outputs.alertmanager == 'true' ||
+          steps.changes.outputs.wireguard == 'true' ||
+          steps.changes.outputs.compose == 'true'
+        run: |
+          ansible-playbook ansible/playbook.yml \
+            --inventory ansible/inventory.yml \
+            --user "${{ secrets.ANSIBLE_USER }}" \
+            --private-key ~/.ssh/id_rsa \
+            --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ secrets.ANSIBLE_USER }} docker_user=${{ secrets.DOCKER_USERNAME }} docker_pass=${{ secrets.DOCKER_PASSWORD }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} compose_changed=${{ steps.changes.outputs.compose }}"

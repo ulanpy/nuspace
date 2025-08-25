@@ -10,6 +10,7 @@ import { useCommunities } from "@/features/campuscurrent/communities/hooks/use-c
 import { Community } from "@/features/campuscurrent/types/types";
 import { Media, MediaFormat } from "@/features/media/types/types";
 import { CommunityModal } from "@/features/campuscurrent/communities/components/CommunityModal";
+import { EventModal } from "@/features/campuscurrent/events/components/EventModal";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 
 // Dynamic import of all webp files in the hero_assets directory
@@ -116,17 +117,50 @@ function AutoCarousel({
   );
 }
 
-export function EventsLayout() {
+export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isCreateCommunityModalOpen, setIsCreateCommunityModalOpen] = useState(false);
+  const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false);
 
-  // Scroll to top on route change unless there's a hash
+  // Store scroll position and previous path for tab navigation
+  const [savedScrollPosition, setSavedScrollPosition] = useState(0);
+  const [previousPath, setPreviousPath] = useState(location.pathname);
+
+  // Scroll to top on route change unless there's a hash or it's a tab navigation
   useEffect(() => {
     if (!location.hash) {
-      window.scrollTo(0, 0);
+      // Check if both current and previous paths are tab routes
+      const isCurrentTabRoute = navTabs.some(tab => 
+        location.pathname === tab.path || location.pathname.startsWith(tab.path)
+      );
+      
+      const isPreviousTabRoute = navTabs.some(tab => 
+        previousPath === tab.path || previousPath.startsWith(tab.path)
+      );
+      
+      // Only restore scroll position if we're navigating between tabs
+      if (isCurrentTabRoute && isPreviousTabRoute && location.pathname !== previousPath) {
+        // For tab-to-tab navigation, restore saved scroll position
+        setTimeout(() => {
+          window.scrollTo(0, savedScrollPosition);
+        }, 0);
+      } else {
+        // For other route changes, scroll to top
+        window.scrollTo(0, 0);
+      }
     }
-  }, [location.pathname]);
+    
+    // Update previous path
+    setPreviousPath(location.pathname);
+  }, [location.pathname, previousPath, savedScrollPosition]);
+
+  // Save scroll position before navigation
+  const handleTabChange = (value: string) => {
+    // Save current scroll position before navigating
+    setSavedScrollPosition(window.scrollY);
+    navigate(value);
+  };
 
   const currentPath = location.pathname;
   // Choose the most specific matching tab (longest path that prefixes currentPath)
@@ -163,7 +197,7 @@ export function EventsLayout() {
       key: e.id,
       render: () => {
         const poster = e.media?.[0]?.url || "/placeholder.svg";
-        const dateStr = new Date(e.event_datetime).toLocaleDateString();
+        const dateStr = new Date(e.start_datetime).toLocaleDateString();
         const hostName =
           e.scope === "community"
             ? e.community?.name || ""
@@ -312,8 +346,7 @@ export function EventsLayout() {
               Create Event
             </div>
           ),
-          onClick: () =>
-            navigate(`${ROUTES.APPS.CAMPUS_CURRENT.EVENTS}#create-event`),
+          onClick: () => setIsCreateEventModalOpen(true),
         },
         slides: eventSlides,
       }
@@ -402,7 +435,7 @@ export function EventsLayout() {
             <div className="px-3 sm:px-4 py-2">
               <Tabs
                 value={activeTabPath}
-                onValueChange={(value) => navigate(value)}
+                onValueChange={handleTabChange}
                 className="w-full"
               >
                 <TabsList className="grid w-full grid-cols-3">
@@ -425,6 +458,13 @@ export function EventsLayout() {
       <CommunityModal
         isOpen={isCreateCommunityModalOpen}
         onClose={() => setIsCreateCommunityModalOpen(false)}
+        isEditMode={false}
+      />
+
+      {/* Create Event Modal */}
+      <EventModal
+        isOpen={isCreateEventModalOpen}
+        onClose={() => setIsCreateEventModalOpen(false)}
         isEditMode={false}
       />
     </div>

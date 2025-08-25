@@ -8,9 +8,18 @@ import { Toasts } from "../components/atoms/toast";
 import { ListingProvider } from "../context/ListingContext";
 import { MediaUploadProvider } from "../context/MediaUploadContext";
 import { MediaEditProvider } from "../context/MediaEditContext";
-import { EventsLayout } from "../features/campuscurrent/pages/layout";
+import { Layout } from "../features/campuscurrent/pages/layout";
+
+
+import { LoginButton } from "../components/molecules/buttons/login-button";
+import { ThemeToggle } from "../components/molecules/theme-toggle";
+import { Header } from "@/components/atoms/header";
+import { Footer } from "@/components/ui/footer";
+import { MobileBottomNav } from "@/components/molecules/MobileBottomNav";
+import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 
 function App() {
+  const { isMiniApp } = useTelegramMiniApp();
   return (
     <ListingProvider>
       <MediaUploadProvider>
@@ -23,19 +32,20 @@ function App() {
                 <Route key={path} path={path} element={<Component />} />
               ))} */}
             {/* </Route> */}
-
             <Route path={ROUTES.APPS.ROOT} element={<AppsLayout />}>
               <Route index element={<Navigate to={ROUTES.HOME} replace />} />
               {LazyRoutes.APPS.BASIC.map(({ path, Component }) => (
                 <Route key={path} path={path} element={<Component />} />
               ))}
-              <Route element={<EventsLayout />}>
+              <Route element={<Layout />}>
                 {LazyRoutes.APPS.EVENTS.map(({ path, Component }) => (
                   <Route key={path} path={path} element={<Component />} />
                 ))}
               </Route>
             </Route>
           </Routes>
+          {!isMiniApp && <Footer note="About Nuspace" />}
+          <MobileBottomNav />
           <Toasts />
         </MediaEditProvider>
       </MediaUploadProvider>

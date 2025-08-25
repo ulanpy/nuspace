@@ -6,7 +6,7 @@ import { Community } from "@/features/campuscurrent/types/types";
 import { useLocation } from "react-router-dom";
 import { getSearchParamFromURL } from "@/utils/search-params";
 
-export const useCommunities = (options?: { category?: string | null }) => {
+export const useCommunities = (options?: { category?: string | null; recruitment_status?: 'open' | 'closed' | null }) => {
   const [page, setPage] = usePageParam();
   const [size, setSize] = useState(12);
   const [keyword, setKeyword] = useState("");
@@ -23,6 +23,7 @@ export const useCommunities = (options?: { category?: string | null }) => {
       size,
       keyword: keyword || null,
       category: options?.category ?? null,
+      recruitment_status: options?.recruitment_status ?? null,
     }),
   );
 
