@@ -20,7 +20,7 @@ export function useUpdateEvent() {
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const updateEventMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Event }) => 
+    mutationFn: ({ id, data }: { id: string; data: EditEventData }) => 
       campuscurrentAPI.editEvent(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["campusCurrent", "events"] });
@@ -41,16 +41,7 @@ export function useUpdateEvent() {
       // First update the event quickly
       const updatedEvent = await updateEventMutation.mutateAsync({
         id: eventId,
-        data: {
-          ...eventData,
-          id: parseInt(eventId),
-          community_id: 1, // Will be filled by backend
-          creator_sub: "", // Will be filled by backend
-          scope: "personal", // Will be filled by backend
-          created_at: "",
-          updated_at: "",
-          media: [],
-        } as Event,
+        data: eventData,
       });
 
       // Launch media operations in background (non-blocking)
