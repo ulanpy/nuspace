@@ -28,6 +28,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"] if config.IS_DEBUG else config.ORIGINS,
     allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 app.add_middleware(SessionMiddleware, secret_key=config.SESSION_MIDDLEWARE_KEY)
 
