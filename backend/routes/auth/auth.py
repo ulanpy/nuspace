@@ -118,13 +118,16 @@ async def auth_callback(
     miniapp_state_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}{state}"
     creds_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}creds:{state}"
     miniapp_exists = await redis.get(miniapp_state_key)
+    print(f"miniapp_exists: {miniapp_exists}")
     if miniapp_exists:
+        print(f"miniapp flow detected with state: {state}", flush=True)
         # Preserve the MiniApp-specific return_to value if present
         miniapp_return_to = (
             miniapp_exists.decode()
             if isinstance(miniapp_exists, (bytes, bytearray))
             else miniapp_exists
         )
+        print(f"miniapp_return_to: {miniapp_return_to}", flush=True)
         try:
             # Store minimal creds needed; TTL prevents long exposure
             await redis.setex(
@@ -140,6 +143,7 @@ async def auth_callback(
                     }
                 ),
             )
+            print(f"stored creds in redis with key: {creds_key}", flush=True)
         finally:
             await redis.delete(miniapp_state_key)
             # Also clear any CSRF mapping tied to this state, if one was set
@@ -152,22 +156,28 @@ async def auth_callback(
         # Ensure the deep link includes the startapp=<state> parameter so the Mini App reopens with the code.
         # Otherwise, fall back to the canonical t.me deep link so the user is returned to Telegram.
         if miniapp_return_to:
+            print(f"processing miniapp_return_to: {miniapp_return_to}", flush=True)
             try:
                 # Accept only Telegram deep links here; anything else would strand the user in the external browser.
                 if miniapp_return_to:
                     try:
                         parsed = urlparse(miniapp_return_to)
                         qs = dict(parse_qsl(parsed.query, keep_blank_values=True))
+                        print(f"parsed query params: {qs}", flush=True)
                         if "startapp" not in qs and state:
                             qs["startapp"] = state
                             new_query = urlencode(qs, doseq=True)
                             miniapp_return_to = urlunparse(parsed._replace(query=new_query))
-                    except Exception:
+                            print(f"modified return_to with startapp: {miniapp_return_to}", flush=True)
+                    except Exception as e:
+                        print(f"error parsing return_to URL: {str(e)}", flush=True)
                         # If parsing fails, proceed with the original URL
                         pass
                     redirect_response.headers["Location"] = miniapp_return_to
+                    print(f"redirecting to: {miniapp_return_to}", flush=True)
                     return redirect_response
-            except Exception:
+            except Exception as e:
+                print(f"error setting redirect header: {str(e)}", flush=True)
                 # If setting the header fails but the URL is a valid Telegram link, fall back to a direct redirect
                 if isinstance(miniapp_return_to, str) and (
                     miniapp_return_to.startswith("https://t.me/")
@@ -181,7 +191,9 @@ async def auth_callback(
                             qs["startapp"] = state
                             new_query = urlencode(qs, doseq=True)
                             miniapp_return_to = urlunparse(parsed._replace(query=new_query))
-                    except Exception:
+                            print(f"fallback: modified return_to with startapp: {miniapp_return_to}", flush=True)
+                    except Exception as e:
+                        print(f"error in fallback URL parsing: {str(e)}", flush=True)
                         pass
                     return RedirectResponse(url=miniapp_return_to, status_code=303)
             # Non-Telegram return_to provided: ignore and proceed to the standard t.me fallback below
@@ -189,6 +201,7 @@ async def auth_callback(
         # Fallback: send user back to Telegram mini app
         bot_username = request.app.state.bot_username
         tme_url = f"https://t.me/{bot_username}?startapp={state}"
+        print(f"using fallback t.me URL: {tme_url}", flush=True)
         return RedirectResponse(url=tme_url, status_code=303)
 
     # 2) Web flow: validate CSRF state and consume it
