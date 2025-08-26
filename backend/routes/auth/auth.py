@@ -157,45 +157,30 @@ async def auth_callback(
         # Otherwise, fall back to the canonical t.me deep link so the user is returned to Telegram.
         if miniapp_return_to:
             print(f"processing miniapp_return_to: {miniapp_return_to}", flush=True)
-            try:
-                # Accept only Telegram deep links here; anything else would strand the user in the external browser.
-                if miniapp_return_to:
-                    try:
-                        parsed = urlparse(miniapp_return_to)
-                        qs = dict(parse_qsl(parsed.query, keep_blank_values=True))
-                        print(f"parsed query params: {qs}", flush=True)
-                        if "startapp" not in qs and state:
-                            qs["startapp"] = state
-                            new_query = urlencode(qs, doseq=True)
-                            miniapp_return_to = urlunparse(parsed._replace(query=new_query))
-                            print(f"modified return_to with startapp: {miniapp_return_to}", flush=True)
-                    except Exception as e:
-                        print(f"error parsing return_to URL: {str(e)}", flush=True)
-                        # If parsing fails, proceed with the original URL
-                        pass
-                    redirect_response.headers["Location"] = miniapp_return_to
-                    print(f"redirecting to: {miniapp_return_to}", flush=True)
-                    return redirect_response
-            except Exception as e:
-                print(f"error setting redirect header: {str(e)}", flush=True)
-                # If setting the header fails but the URL is a valid Telegram link, fall back to a direct redirect
-                if isinstance(miniapp_return_to, str) and (
-                    miniapp_return_to.startswith("https://t.me/")
-                    or miniapp_return_to.startswith("tg://")
-                ):
-                    # Try to ensure startapp=<state> as above
-                    try:
-                        parsed = urlparse(miniapp_return_to)
-                        qs = dict(parse_qsl(parsed.query, keep_blank_values=True))
-                        if "startapp" not in qs and state:
-                            qs["startapp"] = state
-                            new_query = urlencode(qs, doseq=True)
-                            miniapp_return_to = urlunparse(parsed._replace(query=new_query))
-                            print(f"fallback: modified return_to with startapp: {miniapp_return_to}", flush=True)
-                    except Exception as e:
-                        print(f"error in fallback URL parsing: {str(e)}", flush=True)
-                        pass
-                    return RedirectResponse(url=miniapp_return_to, status_code=303)
+            
+            # Accept only Telegram deep links here; anything else would strand the user in the external browser.
+            if isinstance(miniapp_return_to, str) and (
+                miniapp_return_to.startswith("https://t.me/")
+                or miniapp_return_to.startswith("tg://")
+            ):
+                try:
+                    parsed = urlparse(miniapp_return_to)
+                    qs = dict(parse_qsl(parsed.query, keep_blank_values=True))
+                    print(f"parsed query params: {qs}", flush=True)
+                    if "startapp" not in qs and state:
+                        qs["startapp"] = state
+                        new_query = urlencode(qs, doseq=True)
+                        miniapp_return_to = urlunparse(parsed._replace(query=new_query))
+                        print(f"modified return_to with startapp: {miniapp_return_to}", flush=True)
+                except Exception as e:
+                    print(f"error parsing return_to URL: {str(e)}", flush=True)
+                    # If parsing fails, proceed with the original URL
+                    pass
+                
+                print(f"redirecting to telegram deep link: {miniapp_return_to}", flush=True)
+                return RedirectResponse(url=miniapp_return_to, status_code=303)
+            else:
+                print(f"miniapp_return_to is not a valid Telegram deep link: {miniapp_return_to}, falling back to t.me", flush=True)
             # Non-Telegram return_to provided: ignore and proceed to the standard t.me fallback below
 
         # Fallback: send user back to Telegram mini app
