@@ -64,9 +64,6 @@
 To set up the project, ensure you have the following installed:
 
 - [Docker](https://www.docker.com/)
-- Pre-commit
-- Google Cloud credentials (bucket name, project ID, topic, and `nuspace.json` file for bucket access).
-- Keycloak credentials for Google Identity Provider (IDP).
 
 ## Setup Instructions
 
@@ -74,26 +71,34 @@ To set up the project, ensure you have the following installed:
 
 ```bash
 git clone https://github.com/your-username/nuspace.git
-cd nuspace
+cd nuspace/infra 
 ```
 
 ### 2. Configure Environment Variables
 
-Create a `.env` file in the root directory and specify the required environment variables. Use the `.env.example` file as a reference:
+Create a `.env` file in the root directory and specify the TELEGRAM_BOT_TOKEN (create bot for yourself through @BotFather). Use the `.env.example` file as a reference:
 
 ```bash
 cp .env.example .env
 ```
 
-Update the `.env` file with:
+### 3. Build and Run with Docker
 
-- Google Cloud bucket name, project ID, topic.
-- Add `nuspace.json` under backend/core/configs/ directory. It is a service account credentials that has bucket access. Obtain it from [Google Cloud Console](https://console.cloud.google.com)
-- Keycloak credentials for Google IDP. You need to setup both Keycloak server and Google OAuth 2.0
-- Cloudflare Tunnel credentials. Go to [Zero Trust](https://one.dash.cloudflare.com/) to get these tunnels
-- Other variables such as database connections backend service configurations
+Build and start the project using Docker:
 
-### 3. Install Pre-commit Hooks
+```bash
+docker-compose up --build
+```
+Try code below if it doesn't work:
+
+```bash
+docker compose up --build
+```
+### 4. Verify Setup
+
+Ensure the application is running by accessing the appropriate URL (e.g., [localhost](http://localhost)).
+
+### Suggestion (optional). Install Pre-commit Hooks
 
 Install `pre-commit` and set up Git hooks:
 
@@ -101,37 +106,12 @@ Install `pre-commit` and set up Git hooks:
 pip install pre-commit
 pre-commit install
 ```
-
-### 4. Build and Run with Docker
-
-Build and start the project using Docker:
+Try creating venv if code above doesn't work and try again:
 
 ```bash
-docker-compose up --build
+python3 -m venv venv
+source venv/bin/activate
 ```
-
-### 5. Verify Setup
-
-Ensure the application is running by accessing the appropriate URL (e.g., [localhost](http://localhost)).
-
-### 6. Telegram Bot Localization binary compilation
-
-```bash
-msgfmt backend/routes/bot/locales/ru/LC_MESSAGES/messages.po -o backend/routes/bot/locales/ru/LC_MESSAGES/messages.mo
-msgfmt backend/routes/bot/locales/en/LC_MESSAGES/messages.po -o backend/routes/bot/locales/en/LC_MESSAGES/messages.mo
-msgfmt backend/routes/bot/locales/kz/LC_MESSAGES/messages.po -o backend/routes/bot/locales/kz/LC_MESSAGES/messages.mo
-```
-
-## Current Functionality and Roadmap
-
-**Current Features:**
-
-- **Kupi Prodai:** A marketplace service exclusively for NU students to buy and sell items. This ensures a trusted environment for transactions within the university community.
-
-**Roadmap/Upcoming Features:**
-
-- **Campus Current:** A dedicated section for information about holidays, meetings, and events happening on the University campus. Students will be able to discover activities and events that align with their interests, fostering a more connected campus life.
-- **Dorm Eats:** Daily menu in the university canteen. What dishes are available, what dishes are being prepared - all this students have the opportunity to find out in advance.
 
 ## Development Guidelines
 
