@@ -175,7 +175,9 @@ async def auth_callback(
                     parsed = urlparse(miniapp_return_to)
                     qs = dict(parse_qsl(parsed.query, keep_blank_values=True))
                     print(f"parsed query params: {qs}", flush=True)
-                    if "startapp" not in qs and state:
+                    # Always set startapp to the actual state to ensure the Mini App
+                    # receives the correct one-time code to exchange, even if a placeholder exists
+                    if state:
                         qs["startapp"] = state
                         new_query = urlencode(qs, doseq=True)
                         miniapp_return_to = urlunparse(parsed._replace(query=new_query))
