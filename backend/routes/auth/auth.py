@@ -154,10 +154,7 @@ async def auth_callback(
         if miniapp_return_to:
             try:
                 # Accept only Telegram deep links here; anything else would strand the user in the external browser.
-                if isinstance(miniapp_return_to, str) and (
-                    miniapp_return_to.startswith("https://t.me/")
-                    or miniapp_return_to.startswith("tg://")
-                ):
+                if miniapp_return_to:
                     try:
                         parsed = urlparse(miniapp_return_to)
                         qs = dict(parse_qsl(parsed.query, keep_blank_values=True))
