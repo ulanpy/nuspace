@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
 import { ROUTES } from "@/data/routes";
 import { useEvent } from "@/features/campuscurrent/events/hooks/useEvent";
-
+import { EventPolicy } from "@/features/campuscurrent/types/types";
 import { addToGoogleCalendar as addToGoogleCalendarUtil } from "@/features/campuscurrent/events/utils/calendar";
 import { EventModal } from "@/features/campuscurrent/events/components/EventModal";
 import { LoginModal } from "@/components/molecules/login-modal";
@@ -131,7 +131,7 @@ export default function EventDetailPage() {
     );
   }
 
-  const eventDate = new Date(event.start_datetime);
+  const eventDate = new Date(event.end_datetime);
   const isPast = eventDate < new Date();
   const communityProfileImg =
     event.community?.media?.find((m) => m.media_format === "profile")?.url ||
@@ -140,7 +140,7 @@ export default function EventDetailPage() {
   // Determine which action buttons to show
   const actionButtons = [];
 
-  if (!isPast) {
+  if (!isPast && event.type != "recruitment") {
     actionButtons.push(
       <Button
         key="calendar"
@@ -153,7 +153,8 @@ export default function EventDetailPage() {
     );
   }
 
-  if (!isPast && event.policy === "registration" && event.registration_link) {
+  if (!isPast && event.policy === EventPolicy.registration && event.registration_link) {
+    console.log(event.registration_link);
     actionButtons.push(
       <a
         key="register"
