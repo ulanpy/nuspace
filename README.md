@@ -64,9 +64,6 @@
 To set up the project, ensure you have the following installed:
 
 - [Docker](https://www.docker.com/)
-- Pre-commit
-- Google Cloud credentials (bucket name, project ID, topic, and `nuspace.json` file for bucket access).
-- Keycloak credentials for Google Identity Provider (IDP).
 
 ## Setup Instructions
 
@@ -74,24 +71,16 @@ To set up the project, ensure you have the following installed:
 
 ```bash
 git clone https://github.com/your-username/nuspace.git
-cd nuspace
+cd nuspace/infra 
 ```
 
 ### 2. Configure Environment Variables
 
-Create a `.env` file in the root directory and specify the required environment variables. Use the `.env.example` file as a reference:
+Create a `.env` file in the root directory and specify the TELEGRAM_BOT_TOKEN (create bot for yourself through @BotFather). Use the `.env.example` file as a reference:
 
 ```bash
 cp .env.example .env
 ```
-
-Update the `.env` file with:
-
-- Google Cloud bucket name, project ID, topic.
-- Add `nuspace.json` under backend/core/configs/ directory. It is a service account credentials that has bucket access. Obtain it from [Google Cloud Console](https://console.cloud.google.com)
-- Keycloak credentials for Google IDP. You need to setup both Keycloak server and Google OAuth 2.0
-- Cloudflare Tunnel credentials. Go to [Zero Trust](https://one.dash.cloudflare.com/) to get these tunnels
-- Other variables such as database connections backend service configurations
 
 ### 3. Install Pre-commit Hooks
 
@@ -101,6 +90,12 @@ Install `pre-commit` and set up Git hooks:
 pip install pre-commit
 pre-commit install
 ```
+Try creating venv if code above doesn't work and try again:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
 
 ### 4. Build and Run with Docker
 
@@ -109,7 +104,11 @@ Build and start the project using Docker:
 ```bash
 docker-compose up --build
 ```
+Try code below if it doesn't work:
 
+```bash
+docker compose up --build
+```
 ### 5. Verify Setup
 
 Ensure the application is running by accessing the appropriate URL (e.g., [localhost](http://localhost)).
