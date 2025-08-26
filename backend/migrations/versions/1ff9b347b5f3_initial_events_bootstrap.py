@@ -23,36 +23,53 @@ def upgrade() -> None:
     bind = op.get_bind()
 
     # --- Users/Communities enums ---
-    userrole = postgresql.ENUM("default", "admin", "community_admin", name="userrole")
-    userscope = postgresql.ENUM("allowed", "banned", name="userscope")
-    community_type = postgresql.ENUM("club", "university", "organization", name="community_type")
-    community_category = postgresql.ENUM(
-        "academic",
-        "professional",
-        "recreational",
-        "cultural",
-        "sports",
-        "social",
-        "art",
-        name="community_category",
+    def _pg_enum_create_if_not_exists(enum_name: str, labels: list[str]) -> None:
+        labels_sql = ", ".join([f"'{label}'" for label in labels])
+        op.execute(
+            sa.text(
+                f"""
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = '{enum_name}'
+    ) THEN
+        CREATE TYPE {enum_name} AS ENUM ({labels_sql});
+    END IF;
+END$$;
+"""
+            )
+        )
+
+    _pg_enum_create_if_not_exists("userrole", ["default", "admin", "community_admin"])
+    _pg_enum_create_if_not_exists("userscope", ["allowed", "banned"])
+    _pg_enum_create_if_not_exists("community_type", ["club", "university", "organization"])
+    _pg_enum_create_if_not_exists(
+        "community_category",
+        ["academic", "professional", "recreational", "cultural", "sports", "social", "art"],
     )
-    community_recruitment_status = postgresql.ENUM(
-        "open", "closed", "upcoming", name="community_recruitment_status"
+    _pg_enum_create_if_not_exists(
+        "community_recruitment_status", ["open", "closed", "upcoming"]
     )
 
-    userrole.create(bind, checkfirst=True)
-    userscope.create(bind, checkfirst=True)
-    community_type.create(bind, checkfirst=True)
-    community_category.create(bind, checkfirst=True)
-    community_recruitment_status.create(bind, checkfirst=True)
+    # Use non-creating enum references for columns
+    userrole_t = postgresql.ENUM(name="userrole", create_type=False)
+    userscope_t = postgresql.ENUM(name="userscope", create_type=False)
+    community_type_t = postgresql.ENUM(name="community_type", create_type=False)
+    community_category_t = postgresql.ENUM(name="community_category", create_type=False)
+    community_recruitment_status_t = postgresql.ENUM(
+        name="community_recruitment_status", create_type=False
+    )
 
     # --- Users table ---
     op.create_table(
         "users",
         sa.Column("sub", sa.String(), primary_key=True, nullable=False),
         sa.Column("email", sa.String(), nullable=False),
-        sa.Column("role", userrole, nullable=False),
-        sa.Column("scope", userscope, nullable=False),
+        sa.Column("role", userrole_t, nullable=False),
+        sa.Column("scope", userscope_t, nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("surname", sa.String(), nullable=False),
         sa.Column("picture", sa.String(), nullable=True),
@@ -66,10 +83,10 @@ def upgrade() -> None:
         "communities",
         sa.Column("id", sa.BigInteger(), primary_key=True, nullable=False),
         sa.Column("name", sa.String(), nullable=False),
-        sa.Column("type", community_type, nullable=False),
-        sa.Column("category", community_category, nullable=False),
+        sa.Column("type", community_type_t, nullable=False),
+        sa.Column("category", community_category_t, nullable=False),
         sa.Column("email", sa.String(), nullable=True),
-        sa.Column("recruitment_status", community_recruitment_status, nullable=False),
+        sa.Column("recruitment_status", community_recruitment_status_t, nullable=False),
         sa.Column("recruitment_link", sa.String(), nullable=True),
         sa.Column("description", sa.String(), nullable=False),
         sa.Column("established", sa.Date(), nullable=False),
@@ -134,87 +151,88 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_sub"], ["users.sub"], ondelete="SET NULL"),
     )
 
-    event_policy = postgresql.ENUM("registration", "open", name="event_policy")
-    event_scope = postgresql.ENUM("personal", "community", name="event_scope")
-    event_type = postgresql.ENUM(
-        "academic",
-        "professional",
-        "recreational",
-        "cultural",
-        "sports",
-        "social",
-        "art",
-        name="event_type",
+    _pg_enum_create_if_not_exists("event_policy", ["registration", "open"])
+    _pg_enum_create_if_not_exists("event_scope", ["personal", "community"])
+    _pg_enum_create_if_not_exists(
+        "event_type",
+        ["academic", "professional", "recreational", "cultural", "sports", "social", "art"],
     )
-    event_status = postgresql.ENUM(
-        "pending", "approved", "rejected", "cancelled", name="event_status"
+    _pg_enum_create_if_not_exists(
+        "event_status", ["pending", "approved", "rejected", "cancelled"]
     )
-    event_tag = postgresql.ENUM("featured", "promotional", "regular", "charity", name="event_tag")
-    collaborator_type = postgresql.ENUM("user", "community", name="collaborator_type")
-
-    event_policy.create(bind, checkfirst=True)
-    event_scope.create(bind, checkfirst=True)
-    event_type.create(bind, checkfirst=True)
-    event_status.create(bind, checkfirst=True)
-    event_tag.create(bind, checkfirst=True)
-    collaborator_type.create(bind, checkfirst=True)
+    _pg_enum_create_if_not_exists(
+        "event_tag", ["featured", "promotional", "regular", "charity"]
+    )
+    _pg_enum_create_if_not_exists("collaborator_type", ["user", "community"])
 
     # --- Media/Product/Review enums ---
-    entity_type = postgresql.ENUM(
-        "products",
-        "community_events",
-        "communities",
-        "community_posts",
-        "reviews",
-        "community_comments",
-        name="entity_type",
+    _pg_enum_create_if_not_exists(
+        "entity_type",
+        [
+            "products",
+            "community_events",
+            "communities",
+            "community_posts",
+            "reviews",
+            "community_comments",
+        ],
     )
-    media_format = postgresql.ENUM("banner", "carousel", "profile", name="media_format")
-    product_category = postgresql.ENUM(
-        "books",
-        "electronics",
-        "clothing",
-        "furniture",
-        "appliances",
-        "sports",
-        "stationery",
-        "art_supplies",
-        "beauty",
-        "services",
-        "food",
-        "tickets",
-        "transport",
-        "others",
-        name="product_category",
+    _pg_enum_create_if_not_exists("media_format", ["banner", "carousel", "profile"])
+    _pg_enum_create_if_not_exists(
+        "product_category",
+        [
+            "books",
+            "electronics",
+            "clothing",
+            "furniture",
+            "appliances",
+            "sports",
+            "stationery",
+            "art_supplies",
+            "beauty",
+            "services",
+            "food",
+            "tickets",
+            "transport",
+            "others",
+        ],
     )
-    product_condition = postgresql.ENUM("new", "like_new", "used", name="product_condition")
-    product_status = postgresql.ENUM("inactive", "active", name="product_status")
-    reviewable_type = postgresql.ENUM("products", "club_events", name="reviewable_type")
-    owner_type = postgresql.ENUM("users", "clubs", name="owner_type")
+    _pg_enum_create_if_not_exists("product_condition", ["new", "like_new", "used"])
+    _pg_enum_create_if_not_exists("product_status", ["inactive", "active"])
+    _pg_enum_create_if_not_exists("reviewable_type", ["products", "club_events"])
+    _pg_enum_create_if_not_exists("owner_type", ["users", "clubs"])
 
-    entity_type.create(bind, checkfirst=True)
-    media_format.create(bind, checkfirst=True)
-    product_category.create(bind, checkfirst=True)
-    product_condition.create(bind, checkfirst=True)
-    product_status.create(bind, checkfirst=True)
-    reviewable_type.create(bind, checkfirst=True)
-    owner_type.create(bind, checkfirst=True)
+    # Non-creating enum references for columns (events/media/products/reviews)
+    event_policy_t = postgresql.ENUM(name="event_policy", create_type=False)
+    event_scope_t = postgresql.ENUM(name="event_scope", create_type=False)
+    event_type_t = postgresql.ENUM(name="event_type", create_type=False)
+    event_status_t = postgresql.ENUM(name="event_status", create_type=False)
+    event_tag_t = postgresql.ENUM(name="event_tag", create_type=False)
+    collaborator_type_t = postgresql.ENUM(name="collaborator_type", create_type=False)
+
+    entity_type_t = postgresql.ENUM(name="entity_type", create_type=False)
+    media_format_t = postgresql.ENUM(name="media_format", create_type=False)
+    product_category_t = postgresql.ENUM(name="product_category", create_type=False)
+    product_condition_t = postgresql.ENUM(name="product_condition", create_type=False)
+    product_status_t = postgresql.ENUM(name="product_status", create_type=False)
+    reviewable_type_t = postgresql.ENUM(name="reviewable_type", create_type=False)
+    owner_type_t = postgresql.ENUM(name="owner_type", create_type=False)
 
     op.create_table(
         "events",
         sa.Column("id", sa.BigInteger(), primary_key=True, nullable=False),
         sa.Column("community_id", sa.BigInteger(), nullable=True),
         sa.Column("creator_sub", sa.String(), nullable=True),
-        sa.Column("policy", event_policy, nullable=False),
+        sa.Column("policy", event_policy_t, nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("place", sa.String(), nullable=False),
         sa.Column("event_datetime", sa.DateTime(), nullable=False),
         sa.Column("description", sa.String(), nullable=False),
         sa.Column("duration", sa.Integer(), nullable=True),
-        sa.Column("scope", event_scope, nullable=False),
-        sa.Column("type", event_type, nullable=False),
-        sa.Column("status", event_status, nullable=False),
-        sa.Column("tag", event_tag, nullable=False),
+        sa.Column("scope", event_scope_t, nullable=False),
+        sa.Column("type", event_type_t, nullable=False),
+        sa.Column("status", event_status_t, nullable=False),
+        sa.Column("tag", event_tag_t, nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(["community_id"], ["communities.id"], ondelete="CASCADE"),
@@ -225,7 +243,7 @@ def upgrade() -> None:
         "event_collaborators",
         sa.Column("id", sa.BigInteger(), primary_key=True, nullable=False),
         sa.Column("event_id", sa.BigInteger(), nullable=False),
-        sa.Column("collaborator_type", collaborator_type, nullable=False),
+        sa.Column("collaborator_type", collaborator_type_t, nullable=False),
         sa.Column("user_sub", sa.String(), nullable=True),
         sa.Column("community_id", sa.BigInteger(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False),
@@ -240,9 +258,9 @@ def upgrade() -> None:
         sa.Column("id", sa.BigInteger(), primary_key=True, autoincrement=True, nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("mime_type", sa.String(), nullable=False),
-        sa.Column("entity_type", entity_type, nullable=False),
+        sa.Column("entity_type", entity_type_t, nullable=False),
         sa.Column("entity_id", sa.BigInteger(), nullable=False),
-        sa.Column("media_format", media_format, nullable=False),
+        sa.Column("media_format", media_format_t, nullable=False),
         sa.Column("media_order", sa.Integer(), nullable=False, server_default=sa.text("0")),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
@@ -256,9 +274,9 @@ def upgrade() -> None:
         sa.Column("description", sa.String(), nullable=True),
         sa.Column("price", sa.BigInteger(), nullable=False),
         sa.Column("user_sub", sa.String(), nullable=False),
-        sa.Column("category", product_category, nullable=False),
-        sa.Column("condition", product_condition, nullable=False),
-        sa.Column("status", product_status, nullable=False),
+        sa.Column("category", product_category_t, nullable=False),
+        sa.Column("condition", product_condition_t, nullable=False),
+        sa.Column("status", product_status_t, nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(["user_sub"], ["users.sub"], ondelete=None),
@@ -279,12 +297,12 @@ def upgrade() -> None:
     op.create_table(
         "reviews",
         sa.Column("id", sa.BigInteger(), primary_key=True, autoincrement=True, nullable=False),
-        sa.Column("reviewable_type", reviewable_type, nullable=False),
+        sa.Column("reviewable_type", reviewable_type_t, nullable=False),
         sa.Column("entity_id", sa.BigInteger(), nullable=False),
         sa.Column("user_sub", sa.String(), nullable=False),
         sa.Column("rating", sa.Integer(), nullable=False),
         sa.Column("content", sa.Text(), nullable=True),
-        sa.Column("owner_type", owner_type, nullable=False),
+        sa.Column("owner_type", owner_type_t, nullable=False),
         sa.Column("owner_id", sa.String(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
