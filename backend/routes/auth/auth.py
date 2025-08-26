@@ -56,6 +56,14 @@ async def login(
         if return_to is not None:
             csrf_key = f"csrf:{state}"
             await redis.setex(csrf_key, 600, return_to or "/")
+            
+            # Also update the miniapp state if this is a miniapp flow
+            miniapp_state_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}{state}"
+            miniapp_exists = await redis.get(miniapp_state_key)
+            if miniapp_exists:
+                # Update the stored return_to for the miniapp flow
+                await redis.setex(miniapp_state_key, 300, return_to)
+                print(f"updated miniapp return_to from login endpoint: {return_to}", flush=True)
 
     # Dev mock: bypass external IdP entirely
     if config.MOCK_KEYCLOAK:
