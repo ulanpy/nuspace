@@ -57,6 +57,14 @@ async def login(
             csrf_key = f"csrf:{state}"
             await redis.setex(csrf_key, 600, return_to or "/")
 
+            # Also update the miniapp state if this is a miniapp flow
+            miniapp_state_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}{state}"
+            miniapp_exists = await redis.get(miniapp_state_key)
+            if miniapp_exists:
+                # Update the stored return_to for the miniapp flow
+                await redis.setex(miniapp_state_key, 300, return_to)
+                print(f"updated miniapp return_to from login endpoint: {return_to}", flush=True)
+
     # Dev mock: bypass external IdP entirely
     if config.MOCK_KEYCLOAK:
         cb = kc.KEYCLOAK_REDIRECT_URI
@@ -149,45 +157,39 @@ async def auth_callback(
                 pass
 
         # If a return_to was supplied for MiniApp, honor it ONLY if it is a Telegram deep link.
-        # Ensure the deep link includes the startapp=<state> parameter so the Mini App reopens with the code.
-        # Otherwise, fall back to the canonical t.me deep link so the user is returned to Telegram.
+        # Ensure the deep link includes the startapp=<state> parameter so the Mini App reopens
+        # with the code. Otherwise, fall back to the canonical t.me deep link so the user is
+        # returned to Telegram.
         if miniapp_return_to:
-            try:
-                # Accept only Telegram deep links here; anything else would strand the user in the external browser.
-                if isinstance(miniapp_return_to, str) and (
-                    miniapp_return_to.startswith("https://t.me/")
-                    or miniapp_return_to.startswith("tg://")
-                ):
-                    try:
-                        parsed = urlparse(miniapp_return_to)
-                        qs = dict(parse_qsl(parsed.query, keep_blank_values=True))
-                        if "startapp" not in qs and state:
-                            qs["startapp"] = state
-                            new_query = urlencode(qs, doseq=True)
-                            miniapp_return_to = urlunparse(parsed._replace(query=new_query))
-                    except Exception:
-                        # If parsing fails, proceed with the original URL
-                        pass
-                    redirect_response.headers["Location"] = miniapp_return_to
-                    return redirect_response
-            except Exception:
-                # If setting the header fails but the URL is a valid Telegram link, fall back to a direct redirect
-                if isinstance(miniapp_return_to, str) and (
-                    miniapp_return_to.startswith("https://t.me/")
-                    or miniapp_return_to.startswith("tg://")
-                ):
-                    # Try to ensure startapp=<state> as above
-                    try:
-                        parsed = urlparse(miniapp_return_to)
-                        qs = dict(parse_qsl(parsed.query, keep_blank_values=True))
-                        if "startapp" not in qs and state:
-                            qs["startapp"] = state
-                            new_query = urlencode(qs, doseq=True)
-                            miniapp_return_to = urlunparse(parsed._replace(query=new_query))
-                    except Exception:
-                        pass
-                    return RedirectResponse(url=miniapp_return_to, status_code=303)
-            # Non-Telegram return_to provided: ignore and proceed to the standard t.me fallback below
+            # Accept only Telegram deep links here; anything else would strand the user in the
+            # external browser.
+            if isinstance(miniapp_return_to, str) and (
+                miniapp_return_to.startswith("https://t.me/")
+                or miniapp_return_to.startswith("tg://")
+            ):
+                try:
+                    parsed = urlparse(miniapp_return_to)
+                    qs = dict(parse_qsl(parsed.query, keep_blank_values=True))
+                    # Always set startapp to the actual state to ensure the Mini App
+                    # receives the correct one-time code to exchange, even if a placeholder exists
+                    if state:
+                        qs["startapp"] = state
+                        new_query = urlencode(qs, doseq=True)
+                        miniapp_return_to = urlunparse(parsed._replace(query=new_query))
+                except Exception:
+                    # If parsing fails, proceed with the original URL
+                    pass
+
+                print(f"redirecting to telegram deep link: {miniapp_return_to}", flush=True)
+                return RedirectResponse(url=miniapp_return_to, status_code=303)
+            else:
+                print(
+                    f"miniapp_return_to is not a valid Telegram deep link: {miniapp_return_to}, "
+                    "falling back to t.me",
+                    flush=True,
+                )
+            # Non-Telegram return_to provided: ignore and proceed to the standard
+            # t.me fallback below
 
         # Fallback: send user back to Telegram mini app
         bot_username = request.app.state.bot_username
@@ -196,20 +198,9 @@ async def auth_callback(
 
     # 2) Web flow: validate CSRF state and consume it
     csrf_key = f"csrf:{state}"
-    csrf_return_to = await redis.get(csrf_key)
-    if csrf_return_to is not None:
+    csrf_exists = await redis.get(csrf_key)
+    if csrf_exists is not None:
         await redis.delete(csrf_key)
-        # Honor the stored return_to for standard web flow (skip whitelist validation as requested)
-        try:
-            csrf_return_to_str = (
-                csrf_return_to.decode()
-                if isinstance(csrf_return_to, (bytes, bytearray))
-                else csrf_return_to
-            )
-            redirect_response.headers["Location"] = csrf_return_to_str
-        except Exception:
-            # As a fallback, create a fresh RedirectResponse with the desired URL
-            return RedirectResponse(url=csrf_return_to, status_code=303)
         return redirect_response
 
     # 3) Neither MiniApp nor CSRF state is valid → reject
@@ -304,19 +295,8 @@ async def miniapp_login_exchange(
 
     creds_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}creds:{code}"
     raw_creds = await redis.get(creds_key)
+
     if not raw_creds:
-        # Not ready yet — add explicit trace and header so 404s can be attributed
-        try:
-            client_ip = request.client.host if getattr(request, "client", None) else "unknown"
-            ua = request.headers.get("user-agent", "")
-            logger.info(
-                "miniapp_login_exchange: not ready yet (code=%s, ip=%s, ua=%s)",
-                code,
-                client_ip,
-                ua,
-            )
-        except Exception:
-            pass
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Not ready",

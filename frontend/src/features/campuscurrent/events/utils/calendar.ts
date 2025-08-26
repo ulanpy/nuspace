@@ -1,8 +1,8 @@
 import { Event } from "../../types/types";
 
 export const addToGoogleCalendar = (event: Event) => {
-  const eventDate = new Date(event.event_datetime);
-  const endDate = new Date(eventDate.getTime() + event.duration * 60000);
+  const eventDate = new Date(event.start_datetime);
+  const endDate = new Date(event.end_datetime);
 
   const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
     event.name,
