@@ -14,7 +14,6 @@ ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 # Load ONLY from infra/.env
 load_dotenv(os.path.join(ENV_DIR, "infra/.env"), override=False)
 # should be in /nuspace/backend/core/configs/nuspace.json
-CREDENTIALS_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "nuspace.json"))
 
 
 class Config(BaseSettings):
@@ -94,12 +93,6 @@ class Config(BaseSettings):
     @cached_property
     def REDIS_URL(self):
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}"
-
-    @cached_property
-    def BUCKET_CREDENTIALS(self):
-        with open(CREDENTIALS_PATH, "r") as f:
-            credentials_info = json.load(f)
-        return service_account.Credentials.from_service_account_info(credentials_info)
 
     @cached_property
     def ROUTING_PREFIX(self) -> str:

@@ -1,0 +1,120 @@
+---
+- name: Recreate redis service
+  ansible.builtin.command: >
+    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    up -d redis
+  environment:
+    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+  when: (redis_changed | default(false)) | bool or (container_analysis is defined and 'redis' in container_analysis.stdout)
+  async: 600
+  poll: 0
+  register: redis_job
+
+- name: Recreate rabbitmq service
+  ansible.builtin.command: >
+    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    up -d rabbitmq
+  environment:
+    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+  when: (rabbitmq_changed | default(false)) | bool or (container_analysis is defined and 'rabbitmq' in container_analysis.stdout)
+  async: 600
+  poll: 0
+  register: rabbitmq_job
+
+- name: Recreate prometheus service
+  ansible.builtin.command: >
+    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    up -d prometheus
+  environment:
+    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+  when: (prometheus_changed | default(false)) | bool or (container_analysis is defined and 'prometheus' in container_analysis.stdout)
+  async: 600
+  poll: 0
+  register: prometheus_job
+
+- name: Recreate grafana service
+  ansible.builtin.command: >
+    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    up -d grafana
+  environment:
+    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+  when: (grafana_changed | default(false)) | bool or (container_analysis is defined and 'grafana' in container_analysis.stdout)
+  async: 600
+  poll: 0
+  register: grafana_job
+
+- name: Recreate loki service
+  ansible.builtin.command: >
+    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    up -d loki
+  environment:
+    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+  when: (loki_changed | default(false)) | bool or (container_analysis is defined and 'loki' in container_analysis.stdout)
+  async: 600
+  poll: 0
+  register: loki_job
+
+- name: Recreate alloy service
+  ansible.builtin.command: >
+    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    up -d alloy
+  environment:
+    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+  when: (alloy_changed | default(false)) | bool or (container_analysis is defined and 'alloy' in container_analysis.stdout)
+  async: 600
+  poll: 0
+  register: alloy_job
+
+- name: Recreate alertmanager service
+  ansible.builtin.command: >
+    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    up -d alertmanager
+  environment:
+    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+  when: (alertmanager_changed | default(false)) | bool or (container_analysis is defined and 'alertmanager' in container_analysis.stdout)
+  async: 600
+  poll: 0
+  register: alertmanager_job
+
+- name: Recreate wireguard service
+  ansible.builtin.command: >
+    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    up -d wireguard
+  environment:
+    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+  when: (wireguard_changed | default(false)) | bool or (container_analysis is defined and 'wireguard' in container_analysis.stdout)
+  async: 600
+  poll: 0
+  register: wireguard_job
+
+- name: Wait for infra services tasks to finish
+  ansible.builtin.async_status:
+    jid: "{{ item.ansible_job_id }}"
+  register: infra_wait_result
+  until: infra_wait_result.finished
+  retries: 200
+  delay: 2
+  loop: "{{ [
+      redis_job|default({}),
+      rabbitmq_job|default({}),
+      prometheus_job|default({}),
+      grafana_job|default({}),
+      loki_job|default({}),
+      alloy_job|default({}),
+      alertmanager_job|default({}),
+      wireguard_job|default({})
+    ] | selectattr('ansible_job_id', 'defined') | list }}"
+
+- name: Reconcile docker compose changes (definitions only)
+  ansible.builtin.command: >
+    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    up -d --remove-orphans
+  environment:
+    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+  when: (compose_changed | default(false)) | bool
+
+- name: Prune all unused Docker assets
+  ansible.builtin.command: docker system prune -a -f
+  changed_when: false
+
+

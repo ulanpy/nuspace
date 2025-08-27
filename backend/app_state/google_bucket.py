@@ -46,8 +46,10 @@ def setup_google_cloud(app: FastAPI) -> None:
         # Skip CORS and Pub/Sub setup in emulator mode
         return
 
-    # Real GCP setup
-    app.state.storage_client = storage.Client(credentials=config.BUCKET_CREDENTIALS)
+    # Real GCP setup: rely on Application Default Credentials (ADC)
+    # When running on GCE, ADC will pull credentials from the metadata server.
+    # Ensure container can reach metadata.google.internal (see compose extra_hosts).
+    app.state.storage_client = storage.Client()
 
     bucket = app.state.storage_client.bucket(config.BUCKET_NAME)
     bucket.cors = [
@@ -65,7 +67,8 @@ def setup_google_cloud(app: FastAPI) -> None:
         print(f"⚠️  Warning: Could not set CORS policies: {e}")
         # Don't fail startup, but log the issue
 
-    client = pubsub_v1.SubscriberClient(credentials=config.BUCKET_CREDENTIALS)
+    # Use ADC for Pub/Sub as well
+    client = pubsub_v1.SubscriberClient()
     topic_path = client.topic_path(config.GCP_PROJECT_ID, config.GCP_TOPIC_ID)
     subscription_path = client.subscription_path(
         project=config.GCP_PROJECT_ID,
