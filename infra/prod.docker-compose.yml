@@ -28,8 +28,11 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - WORKERS=${GUNICORN_WORKERS:-4}
+      - NO_PROXY=169.254.169.254,metadata.google.internal
+      - no_proxy=169.254.169.254,metadata.google.internal
+    extra_hosts:
+      - "metadata.google.internal:169.254.169.254"
     volumes:
-      - ../backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
       - .env:/nuros/infra/.env:ro
 
   migrate:
@@ -42,6 +45,10 @@ services:
     restart: "no"
     environment:
       - PYTHONUNBUFFERED=1
+      - NO_PROXY=169.254.169.254,metadata.google.internal
+      - no_proxy=169.254.169.254,metadata.google.internal
+    extra_hosts:
+      - "metadata.google.internal:169.254.169.254"
     volumes:
       - ../backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
       - .env:/nuros/infra/.env:ro
@@ -255,8 +262,7 @@ services:
       - NET_ADMIN
       - SYS_MODULE
     networks:
-      nuros:
-        ipv4_address: 172.28.0.10
+      - nuros
     environment:
       - PUID=3182562138
       - PGID=1007
@@ -274,6 +280,7 @@ services:
       - /lib/modules:/lib/modules
     ports:
       - 51820:51820/udp
+    # Avoid static IP conflicts, rely on dynamic DHCP in bridge network
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
     restart: unless-stopped
