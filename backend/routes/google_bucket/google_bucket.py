@@ -4,6 +4,9 @@ from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from google.cloud.exceptions import NotFound
+import google.auth
+from google.auth.transport.requests import Request as GoogleAuthRequest
+from google.auth import iam as google_iam
 from google.cloud.storage import Bucket
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -65,6 +68,12 @@ async def generate_upload_url(
     config: Config = request.app.state.config
     bucket: Bucket = request.app.state.storage_client.bucket(request.app.state.config.BUCKET_NAME)
 
+    # Prepare IAM signer once (for ADC without private key)
+    adc_credentials, _ = google.auth.default()
+    auth_request = GoogleAuthRequest()
+    adc_credentials.refresh(auth_request)
+    signer = google_iam.Signer(auth_request, adc_credentials, config.PUSH_AUTH_SERVICE_ACCOUNT)
+
     for item in signed_url_request:
         filename = f"{config.ROUTING_PREFIX}/{user[0].get('sub')}_{timestamp}_{uuid.uuid4().hex}"
         blob = bucket.blob(filename)
@@ -112,11 +121,14 @@ async def generate_upload_url(
                 # Best-effort only in local mode; still return URL
                 pass
         else:
+            # Use IAM-based signing (no local private key required)
             signed_url = blob.generate_signed_url(
                 version="v4",
                 expiration=timedelta(minutes=15),
                 method="PUT",
                 headers=required_headers,
+                service_account_email=config.PUSH_AUTH_SERVICE_ACCOUNT,
+                signer=signer,
             )
         urls.append(
             {

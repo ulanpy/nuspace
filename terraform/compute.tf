@@ -55,3 +55,44 @@ resource "google_compute_instance" "vm_instance" {
     on_host_maintenance = "MIGRATE"
   }
 }
+
+# Firewall rule to allow HTTP traffic
+resource "google_compute_firewall" "allow_http" {
+  name    = "allow-http-ingress"
+  network = "default"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["80"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["https-server"]
+}
+
+# Firewall rule to allow HTTPS traffic
+resource "google_compute_firewall" "allow_https" {
+  name    = "allow-https-ingress"
+  network = "default"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["443"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["https-server"]
+}
+
+# Optional: Firewall rule to allow ICMP (ping) for debugging
+resource "google_compute_firewall" "allow_icmp" {
+  name    = "allow-icmp-ingress"
+  network = "default"
+
+  allow {
+    protocol = "icmp"
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["https-server"]
+}
