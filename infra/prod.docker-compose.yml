@@ -133,10 +133,10 @@ services:
 
   frontend-builder:
     container_name: frontend-builder
-    image: kamikadze24/frontendbuilder:${DOCKER_IMAGE_TAG}
+    image: kamikadze24/frontendbuilder:${DOCKER_IMAGE_TAG:-latest}
     build:
       context: ..
-      dockerfile: ../frontend/Dockerfile_static_builder
+      dockerfile: frontend/Dockerfile_static_builder
     networks:
       - nuros
     volumes:

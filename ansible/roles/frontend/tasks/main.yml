@@ -20,7 +20,7 @@
 - name: Recreate nginx service
   ansible.builtin.command: >
     docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-    up -d nginx
+    up --no-deps -d nginx
   environment:
     DOCKER_IMAGE_TAG: "{{ image_tag }}"
   when: (nginx_changed | default(false)) | bool or (container_analysis is defined and 'nginx' in container_analysis.stdout)
