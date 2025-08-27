@@ -29,3 +29,17 @@ resource "google_storage_notification" "bucket_object_finalize" {
   payload_format = "JSON_API_V1"
   event_types    = ["OBJECT_FINALIZE"]
 }
+
+# Optional: Manage the push subscription via Terraform to avoid runtime creation
+resource "google_pubsub_subscription" "gcs_object_created_push" {
+  name  = "gcs-object-created-sub-${var.subscription_suffix}"
+  topic = google_pubsub_topic.gcs_object_created.name
+
+  push_config {
+    push_endpoint = var.push_endpoint
+    oidc_token {
+      service_account_email = var.push_auth_service_account_email != "" ? var.push_auth_service_account_email : "nuspace-vm-sa@nuspace-staging.iam.gserviceaccount.com"
+      audience              = var.push_auth_audience
+    }
+  }
+}
