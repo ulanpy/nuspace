@@ -1,0 +1,9 @@
+---
+- name: Pull latest changes from git repository
+  ansible.builtin.git:
+    repo: "https://github.com/ulanpy/nuspace.git"
+    dest: "/home/{{ ansible_user }}/nuspace"
+    version: dev
+    force: yes
+
+

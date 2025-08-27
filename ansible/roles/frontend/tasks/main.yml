@@ -1,0 +1,28 @@
+---
+- name: Pull frontend builder image
+  ansible.builtin.shell: |
+    set -e
+    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml build frontend-builder
+  environment:
+    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+  args:
+    executable: /bin/bash
+  when: (frontend_changed | default(false)) | bool
+
+- name: Run frontend build (frontend-builder)
+  ansible.builtin.command: >
+    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    up --no-deps frontend-builder
+  environment:
+    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+  when: (frontend_changed | default(false)) | bool
+
+- name: Recreate nginx service
+  ansible.builtin.command: >
+    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    up --no-deps -d nginx
+  environment:
+    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+  when: (nginx_changed | default(false)) | bool or (container_analysis is defined and 'nginx' in container_analysis.stdout)
+
+
