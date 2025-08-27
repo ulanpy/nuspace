@@ -1,0 +1,44 @@
+---
+- name: Check which containers need to be started/restarted
+  ansible.builtin.shell: |
+    #!/bin/bash
+    set -euo pipefail
+    docker ps --format "{{ '{{.Names}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" > /tmp/running_containers.txt 2>/dev/null || true
+    MISSING_CONTAINERS=""
+    NEED_RESTART=""
+    for container in fastapi celery-worker nginx redis rabbitmq prometheus grafana loki alloy alertmanager wireguard; do
+      if ! grep -q "^${container}" /tmp/running_containers.txt; then
+        MISSING_CONTAINERS="${MISSING_CONTAINERS} ${container}"
+      elif [[ "${BACKEND_CHANGED:-false}" == "true" && "$container" =~ ^(fastapi|celery-worker)$ ]]; then
+        NEED_RESTART="${NEED_RESTART} ${container}"
+      elif [[ "${FRONTEND_CHANGED:-false}" == "true" && "$container" == "nginx" ]]; then
+        NEED_RESTART="${NEED_RESTART} ${container}"
+      elif [[ "${NGINX_CHANGED:-false}" == "true" && "$container" == "nginx" ]]; then
+        NEED_RESTART="${NEED_RESTART} ${container}"
+      elif [[ "${REDIS_CHANGED:-false}" == "true" && "$container" == "redis" ]]; then
+        NEED_RESTART="${NEED_RESTART} ${container}"
+      elif [[ "${RABBITMQ_CHANGED:-false}" == "true" && "$container" == "rabbitmq" ]]; then
+        NEED_RESTART="${NEED_RESTART} ${container}"
+      elif [[ "${PROMETHEUS_CHANGED:-false}" == "true" && "$container" == "prometheus" ]]; then
+        NEED_RESTART="${NEED_RESTART} ${container}"
+      elif [[ "${GRAFANA_CHANGED:-false}" == "true" && "$container" == "grafana" ]]; then
+        NEED_RESTART="${NEED_RESTART} ${container}"
+      elif [[ "${LOKI_CHANGED:-false}" == "true" && "$container" == "loki" ]]; then
+        NEED_RESTART="${NEED_RESTART} ${container}"
+      elif [[ "${ALLOY_CHANGED:-false}" == "true" && "$container" == "alloy" ]]; then
+        NEED_RESTART="${NEED_RESTART} ${container}"
+      elif [[ "${ALERTMANAGER_CHANGED:-false}" == "true" && "$container" == "alertmanager" ]]; then
+        NEED_RESTART="${NEED_RESTART} ${container}"
+      elif [[ "${WIREGUARD_CHANGED:-false}" == "true" && "$container" == "wireguard" ]]; then
+        NEED_RESTART="${NEED_RESTART} ${container}"
+      fi
+    done
+    echo "MISSING_CONTAINERS=${MISSING_CONTAINERS}" > /tmp/container_actions.txt
+    echo "NEED_RESTART=${NEED_RESTART}" >> /tmp/container_actions.txt
+    echo "${MISSING_CONTAINERS} ${NEED_RESTART}" | xargs -n1 | sort -u | tr '\n' ' '
+  register: container_analysis
+  changed_when: false
+  args:
+    executable: /bin/bash
+
+

@@ -1,0 +1,9 @@
+---
+- name: Ensure DOCKER_IMAGE_TAG is set correctly in user's .bashrc
+  ansible.builtin.lineinfile:
+    path: "/home/{{ ansible_user }}/.bashrc"
+    regexp: "^export DOCKER_IMAGE_TAG="
+    line: "export DOCKER_IMAGE_TAG={{ image_tag }}"
+    create: yes
+
+
