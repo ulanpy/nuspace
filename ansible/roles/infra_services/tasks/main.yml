@@ -94,9 +94,16 @@
   until: infra_wait_result.finished
   retries: 200
   delay: 2
-  loop: |
-    {{ [redis_job, rabbitmq_job, prometheus_job, grafana_job, loki_job, alloy_job, alertmanager_job, wireguard_job] | select('defined') | list }}
-  when: item is defined
+  loop: "{{ [
+      redis_job|default({}),
+      rabbitmq_job|default({}),
+      prometheus_job|default({}),
+      grafana_job|default({}),
+      loki_job|default({}),
+      alloy_job|default({}),
+      alertmanager_job|default({}),
+      wireguard_job|default({})
+    ] | selectattr('ansible_job_id', 'defined') | list }}"
 
 - name: Reconcile docker compose changes (definitions only)
   ansible.builtin.command: >
