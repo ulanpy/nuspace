@@ -8,18 +8,7 @@ resource "google_service_account" "vm_service_account" {
   description  = "Service account for VM with bucket access and CORS management permissions"
 }
 
-# Create a service account for Loki with logs bucket access
-resource "google_service_account" "loki_service_account" {
-  depends_on = [google_project_service.iam_api]
-  account_id   = "nuspace-loki-sa"
-  display_name = "Nuspace Loki Service Account"
-  description  = "Service account for Loki with logs bucket access permissions"
-}
 
-# Create a service account key for Loki (for use in Docker Compose)
-resource "google_service_account_key" "loki_key" {
-  service_account_id = google_service_account.loki_service_account.name
-}
 
 # Grant the VM service account Storage Admin role for bucket management (CORS, policies, etc.)
 resource "google_project_iam_member" "storage_admin" {
@@ -42,12 +31,7 @@ resource "google_project_iam_member" "pubsub_editor" {
   member  = "serviceAccount:${google_service_account.vm_service_account.email}"
 }
 
-# Grant the Loki service account Storage Object Admin role for logs bucket access
-resource "google_project_iam_member" "loki_storage_object_admin" {
-  project = "nuspace-staging"
-  role    = "roles/storage.objectAdmin"
-  member  = "serviceAccount:${google_service_account.loki_service_account.email}"
-}
+
 
 # Create a service account for Ansible deployment
 resource "google_service_account" "ansible_service_account" {
@@ -102,4 +86,13 @@ resource "google_project_iam_member" "vm_secret_accessor" {
   project = "nuspace-staging"
   role    = "roles/secretmanager.secretAccessor"
   member  = "serviceAccount:${google_service_account.vm_service_account.email}"
+}
+
+# Allow Pub/Sub service agent to sign OIDC tokens for the VM service account
+data "google_project" "current" {}
+
+resource "google_service_account_iam_member" "push_sa_token_creator" {
+  service_account_id = google_service_account.vm_service_account.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-pubsub.iam.gserviceaccount.com"
 }
