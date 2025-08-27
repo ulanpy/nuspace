@@ -1,7 +1,7 @@
 import os
 
 from fastapi import FastAPI
-from google.api_core.exceptions import AlreadyExists
+from google.api_core.exceptions import AlreadyExists, PermissionDenied, NotFound
 from google.cloud import pubsub_v1, storage
 
 from backend.core.configs.config import Config
@@ -82,6 +82,12 @@ def setup_google_cloud(app: FastAPI) -> None:
         print(f"Subscription created: {subscription.name}")
     except AlreadyExists:
         print(f"Subscription already exists: {subscription_path}")
+    except (PermissionDenied, NotFound) as e:
+        print(
+            "⚠️  Warning: Could not create subscription due to permission or missing resource: "
+            f"{e}. Skipping Pub/Sub subscription setup; app will continue to start."
+        )
+        return
 
     push_config = pubsub_v1.types.PushConfig(  # type: ignore
         push_endpoint=f"{config.HOME_URL}/api/bucket/gcs-hook",
@@ -92,14 +98,22 @@ def setup_google_cloud(app: FastAPI) -> None:
     )
     update_mask = {"paths": ["push_config"]}
 
-    response = client.update_subscription(
-        request={
-            "subscription": {
-                "name": subscription_path,
-                "push_config": push_config,
-            },
-            "update_mask": update_mask,
-        }
-    )
-    print(f"✅ Updated push endpoint to: {response.push_config.push_endpoint}")
-    print(f"✅ Push auth service account: {config.PUSH_AUTH_SERVICE_ACCOUNT}")
+    try:
+        response = client.update_subscription(
+            request={
+                "subscription": {
+                    "name": subscription_path,
+                    "push_config": push_config,
+                },
+                "update_mask": update_mask,
+            }
+        )
+        print(f"✅ Updated push endpoint to: {response.push_config.push_endpoint}")
+        print(f"✅ Push auth service account: {config.PUSH_AUTH_SERVICE_ACCOUNT}")
+    except PermissionDenied as e:
+        print(
+            "⚠️  Warning: Could not update push config (OIDC). This typically requires "
+            "roles/iam.serviceAccountTokenCreator on the push service account for the Pub/Sub service agent, "
+            "and roles/pubsub.editor for managing subscriptions. "
+            f"Error: {e}"
+        )
