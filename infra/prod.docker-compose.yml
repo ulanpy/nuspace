@@ -135,7 +135,7 @@ services:
     container_name: frontend-builder
     image: kamikadze24/frontendbuilder:${DOCKER_IMAGE_TAG}
     build:
-      context: .
+      context: ..
       dockerfile: ../frontend/Dockerfile_static_builder
     networks:
       - nuros
