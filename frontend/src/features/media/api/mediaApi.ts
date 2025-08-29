@@ -44,7 +44,7 @@ export const mediaApi = {
 
     try {
       const deletePromises = mediaIds.map((mediaId) => {
-        return apiCall(`/bucket/delete?media_id=${mediaId}`, {
+        return apiCall(`/bucket?media_id=${mediaId}`, {
           method: "DELETE",
           credentials: "include",
         });
