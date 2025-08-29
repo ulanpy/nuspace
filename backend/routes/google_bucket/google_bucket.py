@@ -13,6 +13,8 @@ from backend.core.configs.config import Config
 from backend.core.database.models.media import Media
 from backend.routes.google_bucket import dependencies as deps
 from backend.routes.google_bucket import schemas
+from backend.routes.google_bucket.policy import GoogleBucketPolicy
+from backend.common.utils.enums import ResourceAction
 
 router = APIRouter(prefix="/bucket", tags=["Google Bucket Routes"])
 
@@ -164,20 +166,24 @@ async def gcs_webhook(
     return {"status": "ok"}
 
 
-@router.delete("/{filename}")
+@router.delete("")
 async def delete_bucket_object(
-    request: Request, media_id: int, db_session: AsyncSession = Depends(get_db_session)
+    request: Request,
+    media_id: int, #don't delete, used by mediaexists_or_404
+    user: Annotated[dict, Depends(get_current_principals)],
+    resource_data: Annotated[tuple[str, Media], Depends(deps.check_resource)],
+    db_session: AsyncSession = Depends(get_db_session),
 ):
     """
     This endpoint is used by the client(frontend) when he is editing the media carousel
     and during the process deletes the media object from the carousel.
     It deletes the media object from the bucket and the database.
     """
-    qb = QueryBuilder(db_session, Media)
-    media: Media | None = await qb.base().filter(Media.id == media_id).first()
-
-    if not media:
-        raise HTTPException(status_code=404, detail="Media not found")
+    resource_owner_sub, media = resource_data
+    
+    await GoogleBucketPolicy(user=user).check_permission(
+        action=ResourceAction.DELETE, owner_sub=resource_owner_sub, media=media
+    )
 
     filename = media.name
     blob = request.app.state.storage_client.bucket(request.app.state.config.BUCKET_NAME).blob(
@@ -185,6 +191,7 @@ async def delete_bucket_object(
     )
     try:
         blob.delete()
+        qb = QueryBuilder(db_session, Media)
         await qb.delete(target=media)
         return {"status": "success", "deleted": filename}
     except NotFound:
