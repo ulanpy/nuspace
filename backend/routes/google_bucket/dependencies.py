@@ -1,11 +1,25 @@
 import json
+from typing import Annotated
 
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request
+from fastapi import status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.configs.config import Config
 from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.media import MediaFormat
+from backend.core.database.models.media import Media, MediaFormat
 from backend.routes.google_bucket import schemas
+
+from backend.common.cruds import QueryBuilder
+from backend.common.dependencies import get_current_principals, get_db_session
+from backend.core.database.models import (
+    Product,
+    CommunityPost,
+    CommunityComment,
+    Event,
+    Community,
+    Review,
+)
 
 
 def get_media_metadata(
@@ -43,6 +57,115 @@ def validate_routing_prefix(request: Request, pubsub_message: schemas.PubSubMess
     if len(parts) < 2 or parts[0] != config.ROUTING_PREFIX:
         raise HTTPException(status_code=200, detail="outside_routing_prefix")
 
+
+
+async def media_exists_or_404(
+    media_id: int,
+    db_session: AsyncSession = Depends(get_db_session),
+) -> Media:
+    qb = QueryBuilder(session=db_session, model=Media)
+
+    media: Media | None = (
+        await qb.base().filter(Media.id == media_id).first()
+    )
+
+    if not media:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media not found")
+
+    return media
+
+
+async def check_resource(
+    media_id: int,
+    db_session: AsyncSession = Depends(get_db_session),
+) -> tuple[str, Media]:
+    """
+    Resolve the owner user_sub for the resource that the media belongs to.
+
+    Ownership mapping by EntityType:
+    - products: Product.user_sub
+    - community_posts: CommunityPost.user_sub
+    - community_comments: CommunityComment.user_sub
+    - community_events: Event.creator_sub (fallback to Community.head if creator_sub is None)
+    - communities: Community.head
+    - reviews: Review.user_sub
+
+    Returns:
+        Tuple of (owner_user_sub, media_object).
+
+    Raises:
+        HTTPException 404 if the parent resource or its owner cannot be determined.
+        HTTPException 400 for unsupported entity types.
+    """
+    qb = QueryBuilder(session=db_session, model=Media)
+    
+    # First get the media object
+    media: Media | None = await qb.base().filter(Media.id == media_id).first()
+    if not media:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media not found")
+
+    entity_type = media.entity_type
+    entity_id = media.entity_id
+
+    if entity_type == EntityType.products:
+        qb_product = QueryBuilder(session=db_session, model=Product)
+        product: Product | None = await qb_product.base().filter(Product.id == entity_id).first()
+        if not product or not product.user_sub:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+        return product.user_sub, media
+
+    if entity_type == EntityType.community_posts:
+        qb_post = QueryBuilder(session=db_session, model=CommunityPost)
+        post: CommunityPost | None = await qb_post.base().filter(CommunityPost.id == entity_id).first()
+        if not post or not post.user_sub:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+        return post.user_sub, media
+
+    if entity_type == EntityType.community_comments:
+        qb_comment = QueryBuilder(session=db_session, model=CommunityComment)
+        comment: CommunityComment | None = (
+            await qb_comment.base().filter(CommunityComment.id == entity_id).first()
+        )
+        if not comment or not comment.user_sub:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
+        return comment.user_sub, media
+
+    if entity_type == EntityType.community_events:
+        qb_event = QueryBuilder(session=db_session, model=Event)
+        event: Event | None = await qb_event.base().filter(Event.id == entity_id).first()
+        if not event:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        if event.creator_sub:
+            return event.creator_sub, media
+        # Fallback to community head if no creator_sub
+        if event.community_id is not None:
+            qb_community = QueryBuilder(session=db_session, model=Community)
+            community: Community | None = (
+                await qb_community.base().filter(Community.id == event.community_id).first()
+            )
+            if community and community.head:
+                return community.head, media
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event owner not found"
+        )
+
+    if entity_type == EntityType.communities:
+        qb_community = QueryBuilder(session=db_session, model=Community)
+        community: Community | None = (
+            await qb_community.base().filter(Community.id == entity_id).first()
+        )
+        if not community or not community.head:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Community not found")
+        return community.head, media
+
+    if entity_type == EntityType.reviews:
+        qb_review = QueryBuilder(session=db_session, model=Review)
+        review: Review | None = await qb_review.base().filter(Review.id == entity_id).first()
+        if not review or not review.user_sub:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Review not found")
+        return review.user_sub, media
+
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported entity type")
 
 # temporary putted here
 # from fastapi import FastAPI, Request, HTTPException, Depends
