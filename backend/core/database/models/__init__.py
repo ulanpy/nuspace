@@ -24,6 +24,7 @@ __all__ = [
     "User",
     "UserRole",
     "UserScope",
+    "GradeReport",
     "EventCollaborator",
     "Notification",
 ]
@@ -47,6 +48,7 @@ from .events import (
     EventType,
     RegistrationPolicy,
 )
+from .grade_report import GradeReport
 from .media import Media
 from .notification import Notification
 from .product import Product, ProductReport
