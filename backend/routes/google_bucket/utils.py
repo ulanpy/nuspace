@@ -22,11 +22,19 @@ async def generate_download_url(
         # Use backend proxy to avoid nginx /gcs path issues during local dev
         url = f"{config.HOME_URL}/api/bucket/local-download/{config.BUCKET_NAME}/{filename}"
         return {"signed_url": url}
+    
+    # Generate signed URL using impersonated credentials to avoid private key requirement
+    from backend.core.utils.gcp_auth import get_signing_credentials
+    
+    # Use the same service account that's attached to the VM for impersonation
+    impersonated_credentials = get_signing_credentials(config.VM_SERVICE_ACCOUNT_EMAIL)
+    
     blob: storage.Blob = request.app.state.storage_client.bucket(config.BUCKET_NAME).blob(filename)
     signed_url = blob.generate_signed_url(
         version="v4",
         expiration=timedelta(minutes=15),
         method="GET",
+        credentials=impersonated_credentials,
     )
     return {"signed_url": signed_url}
 
