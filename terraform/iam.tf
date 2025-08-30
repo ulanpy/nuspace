@@ -96,3 +96,17 @@ resource "google_service_account_iam_member" "push_sa_token_creator" {
   role               = "roles/iam.serviceAccountTokenCreator"
   member             = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-pubsub.iam.gserviceaccount.com"
 }
+
+# Allow the VM service account to impersonate itself for signed URL generation
+resource "google_service_account_iam_member" "vm_sa_token_creator" {
+  service_account_id = google_service_account.vm_service_account.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "serviceAccount:${google_service_account.vm_service_account.email}"
+}
+
+# Allow the VM service account to use itself for impersonation
+resource "google_service_account_iam_member" "vm_sa_user" {
+  service_account_id = google_service_account.vm_service_account.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.vm_service_account.email}"
+}
