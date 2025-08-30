@@ -1,8 +1,6 @@
 # Contributing to Nuspace.kz
 
-First off, thank you for considering contributing to Nuspace.kz! We're excited to welcome contributions from the Nazarbayev University community and beyond. Your help is essential for making this platform better for everyone.
-
-This document provides guidelines for contributing to the project. Please read it carefully to ensure a smooth and effective contribution process.
+This document provides comprehensive guidelines for contributing to the project. Please read it carefully to ensure a smooth and effective contribution process.
 
 ## Table of Contents
 
@@ -15,8 +13,9 @@ This document provides guidelines for contributing to the project. Please read i
     - [Your First Code Contribution](#your-first-code-contribution)
     - [Pull Requests](#pull-requests)
   - [Development Setup](#development-setup)
-  - [Coding Style](#coding-style)
+  - [Coding Standards](#coding-standards)
   - [Commit Messages](#commit-messages)
+  - [Testing Guidelines](#testing-guidelines)
   - [Questions?](#questions)
 
 ## Code of Conduct
@@ -25,105 +24,342 @@ While we don't have a formal Code of Conduct document yet, we expect all contrib
 
 ## How Can I Contribute?
 
-There are many ways to contribute to Nuspace.kz, from reporting bugs and suggesting features to writing code or improving documentation.
+There are many ways to contribute to Nuspace.kz! Whether you're a developer, designer, tester, or documentation writer, your contributions are welcome. Here's how you can get involved:
 
-### Reporting Bugs
+### 🐛 Reporting Bugs
 
-If you encounter a bug, please help us by reporting it!
+**Before reporting a bug, please:**
+- ✅ Search existing issues to avoid duplicates
+- ✅ Check documentation for configuration issues  
+- ✅ Try to reproduce the issue consistently
+- ✅ Test on different browsers/devices if applicable
 
-- **Ensure the bug was not already reported** by searching on GitHub under [Issues](https://github.com/ulanpy/nuspace/issues).
-- If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/ulanpy/nuspace/issues/new). Be sure to include:
-  - A **clear and descriptive title**.
-  - **Steps to reproduce** the bug.
-  - What you **expected to happen** and what **actually happened**.
-  - Your **environment details** (e.g., browser version, OS) if relevant.
-  - Screenshots or error messages if applicable.
+**When reporting, include:**
 
-### Suggesting Enhancements
+| What to Include | Description |
+|----------------|-------------|
+| **Clear title** | Brief, descriptive summary |
+| **Reproduction steps** | Step-by-step instructions |
+| **Expected vs Actual** | What should happen vs what does happen |
+| **Environment details** | OS, browser, version, etc. |
+| **Screenshots/logs** | Visual evidence or error messages |
+| **Regression info** | Did it work before? |
 
-We welcome suggestions for new features or improvements to existing functionality.
+**📝 Bug Report Template:**
+```markdown
+## 🐛 Bug Report
 
-- **Check if the enhancement has already been suggested** by searching on GitHub under [Issues](https://github.com/ulanpy/nuspace/issues).
-- If it hasn't, [open a new issue](https://github.com/ulanpy/nuspace/issues/new).
-  - Provide a **clear and descriptive title**.
-  - Explain **why this enhancement would be useful** to Nuspace.kz users.
-  - Provide as much detail as possible about the **suggested functionality** and any potential use cases.
+### Description
+Brief description of the issue
 
-### Your First Code Contribution
+### Steps to Reproduce
+1. Go to '...'
+2. Click on '...'
+3. Scroll down to '...'
+4. See error
 
-Unsure where to begin contributing to Nuspace.kz? You can start by looking through `good first issue` or `help wanted` issues:
+### Expected Behavior
+What should happen
 
-- [`Good first issues`](https://github.com/ulanpy/nuspace/labels/good%20first%20issue) - These are issues that are relatively easy to tackle and are a great way to get familiar with the codebase.
-- [`Help wanted issues`](https://github.com/ulanpy/nuspace/labels/help%20wanted) - These are issues that the core team would appreciate help with.
+### Actual Behavior
+What actually happens
 
-### Pull Requests
+### Environment
+- **OS:** [e.g., Windows 11, macOS 14.0, Ubuntu 22.04]
+- **Browser:** [e.g., Chrome 120, Firefox 121]
+- **Version:** [e.g., 1.2.3]
 
-If you'd like to contribute code, please follow these steps:
+### Additional Context
+- Screenshots, error messages, or logs
+- Is this a regression? (worked before, doesn't work now)
+```
 
-1.  **Fork the repository**: Click the "Fork" button on the [Nuspace.kz GitHub page](https://github.com/ulanpy/nuspace). This creates your own copy of the project.
-2.  **Clone your fork**:
-    ```bash
-    git clone https://github.com/ulanpy/nuspace.git
-    cd nuspace
-    ```
-3.  **Set up the development environment**: Follow the [Setup Instructions in the README.md](./README.md#setup-instructions) to get your local environment ready.
-4.  **Create a new branch**: Create a descriptive branch name for your feature or bugfix.
-    ```bash
-    git checkout -b feature/your-feature-name  # For new features
-    # or
-    git checkout -b fix/issue-number-or-bug-name # For bug fixes
-    ```
-5.  **Make your changes**: Write your code and add any necessary tests.
-6.  **Follow the [Coding Style](#coding-style)**: Ensure your code adheres to our style guidelines (enforced by pre-commit hooks).
-7.  **Commit your changes**: Use [clear and descriptive commit messages](#commit-messages).
-    ```bash
-    git add .
-    git commit -m "feat: Implement X feature"
-    # or
-    git commit -m "fix: Resolve Y bug in Z component"
-    ```
-8.  **Push to your fork**:
-    ```bash
-    git push origin feature/your-feature-name
-    ```
-9.  **Open a Pull Request (PR)**: Go to the original Nuspace.kz repository and open a new Pull Request from your forked branch to the `main` branch of the Nuspace.kz repository.
-    - Provide a clear title and a detailed description of the changes you've made.
-    - Link to any relevant issues (e.g., "Closes #123").
-    - Ensure all CI checks (GitHub Actions) pass.
-    - Be prepared to address any feedback or requested changes from the maintainers.
+### 💡 Suggesting Enhancements
+
+**Before suggesting, consider:**
+- 🔍 Search existing issues for similar requests
+- 🎯 Think about user impact and value
+- ⚡ Consider implementation complexity
+- 🔄 Check if there are alternative solutions
+
+**When suggesting, provide:**
+
+| Element | Details |
+|---------|---------|
+| **Clear problem statement** | What issue does this solve? |
+| **Detailed solution** | How should it work? |
+| **Use cases** | Who will benefit and how? |
+| **Mockups/wireframes** | Visual examples if applicable |
+| **Implementation notes** | Technical considerations |
+
+**📝 Enhancement Request Template:**
+```markdown
+## 💡 Enhancement Request
+
+### Problem Statement
+What problem does this solve? What's the current limitation?
+
+### Proposed Solution
+Detailed description of the proposed feature/improvement
+
+### Use Cases
+- **Use case 1:** [description]
+- **Use case 2:** [description]
+
+### Mockups/Examples
+[Add screenshots, wireframes, or code examples]
+
+### Alternatives Considered
+Any alternative solutions you've thought about
+
+### Implementation Notes
+Technical considerations or dependencies
+```
+
+### 🚀 Your First Code Contribution
+
+**New to the project? Start here:**
+
+#### 🎯 Good First Issues
+- [`good first issue`](https://github.com/ulanpy/nuspace/labels/good%20first%20issue) - Perfect for newcomers
+- [`help wanted`](https://github.com/ulanpy/nuspace/labels/help%20wanted) - We'd love your help
+- [`documentation`](https://github.com/ulanpy/nuspace/labels/documentation) - Improve docs
+- [`bug`](https://github.com/ulanpy/nuspace/labels/bug) - Fix bugs
+
+#### 📋 Getting Started Checklist
+
+1. **🔧 Setup Environment**
+   ```bash
+   # Fork and clone
+   git clone https://github.com/YOUR_USERNAME/nuspace.git
+   cd nuspace
+   
+   # Follow setup instructions in README.md
+   ```
+
+2. **🎯 Pick an Issue**
+   - Browse issues with labels above
+   - Comment "I'd like to work on this" to claim it
+   - Ask questions if anything is unclear
+
+3. **🌿 Create Branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   # or
+   git checkout -b fix/issue-number
+   ```
+
+4. **💻 Code & Test**
+   - Follow our [coding standards](#coding-standards)
+   - Write tests for your changes
+   - Test thoroughly before submitting
+
+5. **📤 Submit PR**
+   - Push your branch
+   - Create pull request with detailed description
+   - Request review from maintainers
+
+### 🔄 Pull Requests
+
+**Before submitting your PR:**
+
+| Checklist Item | Status |
+|----------------|--------|
+| ✅ Code works and passes tests | |
+| ✅ Follows coding standards | |
+| ✅ Clear commit messages | |
+| ✅ Documentation updated | |
+| ✅ Tests added/updated | |
+| ✅ No new warnings | |
+
+**📝 PR Process:**
+
+1. **Create Feature Branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   # or
+   git checkout -b fix/issue-number
+   ```
+
+2. **Make Changes & Commit**
+   ```bash
+   git add .
+   git commit -m "feat: Add user profile page"
+   ```
+
+3. **Push & Create PR**
+   ```bash
+   git push origin feature/your-feature-name
+   # Then create PR on GitHub
+   ```
+
+**📋 PR Template:**
+```markdown
+## 📝 Description
+Brief description of the changes
+
+## 🏷️ Type of Change
+- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
+- [ ] ✨ New feature (non-breaking change which adds functionality)
+- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] 📚 Documentation update
+
+## 🧪 Testing
+- [ ] My code follows the style guidelines of this project
+- [ ] I have performed a self-review of my own code
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings
+- [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] New and existing unit tests pass locally with my changes
+
+## ✅ Checklist
+- [ ] I have read the [CONTRIBUTING.md](CONTRIBUTING.md) document
+- [ ] My code follows the project's coding standards
+- [ ] I have updated the documentation as necessary
+- [ ] I have linked this PR to the relevant issue(s)
+
+## 📸 Screenshots (if applicable)
+[Add screenshots for UI changes]
+
+## 🔗 Related Issues
+Closes #123
+```
+
+### 🎉 Contribution Recognition
+
+- **Contributors** will be recognized in project documentation
+- **Significant contributions** highlighted in release notes
+- **Community shoutouts** for impactful work
+- **Mentorship opportunities** for regular contributors
+
+**Ready to contribute?** 🚀 Pick an issue and get started!
 
 ## Development Setup
 
-Please refer to the [Setup Instructions in our README.md](./README.md#setup-instructions) for detailed guidance on setting up your development environment using Docker.
+Please refer to the [Quick Start section in our README.md](./README.md#quick-start) for detailed guidance on setting up your development environment.
 
-## Coding Style
+**Quick Setup:**
+```bash
+# Clone and navigate
+git clone https://github.com/ulanpy/nuspace.git
+cd nuspace/infra
 
-We use `pre-commit` hooks to enforce code style and quality. Please ensure you have it [installed as per the README.md instructions](./README.md#3-install-pre-commit-hooks). The hooks will automatically check and format your code before each commit.
+# Configure environment
+cp .env.example .env
+# Edit .env with your TELEGRAM_BOT_TOKEN
 
-- **Backend (Python/FastAPI)**: We generally follow PEP 8, with linters like Flake8 and formatters like Black and isort managed via pre-commit.
-- **Frontend (TypeScript/React)**: We use tools like ESLint and Prettier, also managed via pre-commit.
+# Start the application
+docker-compose up --build
+```
 
-Please ensure your contributions pass all pre-commit checks.
+**For Development:**
+```bash
+# Set up pre-commit hooks
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install pre-commit
+pre-commit install
+```
+
+## Coding Standards
+
+We use `pre-commit` hooks to enforce code quality and consistency. The hooks will automatically run on each commit and ensure your code meets our standards.
+
+### Backend (Python/FastAPI)
+- **Style Guide**: PEP 8
+- **Formatter**: Black
+- **Import Sorting**: isort
+- **Linting**: Flake8
+- **Type Checking**: mypy (where applicable)
+
+### Frontend (TypeScript/React)
+- **Formatter**: Prettier
+- **Linting**: ESLint
+- **Type Checking**: TypeScript strict mode
+- **Component Structure**: Functional components with hooks
+
+### General Guidelines
+- **Write clear, readable code** with meaningful variable names
+- **Add comments** for complex logic
+- **Keep functions small** and focused on a single responsibility
+- **Write self-documenting code** when possible
+- **Follow the existing code style** in the file you're modifying
 
 ## Commit Messages
 
-We aim for clear and informative commit messages. While we don't strictly enforce a specific format like Conventional Commits yet, we encourage you to:
+We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification for commit messages.
 
-- Start with a short imperative verb (e.g., `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`).
-- Write a concise summary in the first line (max 72 characters).
-- Optionally, provide more details in the body of the commit message.
+**Format:**
+```
+<type>[optional scope]: <description>
 
-Example:
+[optional body]
+
+[optional footer(s)]
+```
+
+**Types:**
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation only changes
+- `style`: Changes that do not affect the meaning of the code
+- `refactor`: A code change that neither fixes a bug nor adds a feature
+- `perf`: A code change that improves performance
+- `test`: Adding missing tests or correcting existing tests
+- `chore`: Changes to the build process or auxiliary tools
+
+**Examples:**
+```
+feat: add user profile page
+
+- Implement basic profile structure
+- Add avatar upload functionality
+- Include user statistics display
+
+Closes #123
+```
 
 ```
-feat: Add user profile page
+fix(auth): resolve login redirect issue
 
-- Implement basic structure for the user profile.
-- Display user information and activity.
+The login redirect was not working properly on mobile devices
+due to incorrect URL handling in the authentication flow.
 ```
+
+## Testing Guidelines
+
+**Backend Testing:**
+- Write unit tests for new functions and classes
+- Add integration tests for API endpoints
+- Ensure test coverage for critical business logic
+- Use pytest for testing framework
+
+**Frontend Testing:**
+- Write unit tests for React components
+- Add integration tests for user workflows
+- Test responsive design on different screen sizes
+- Use React Testing Library for component testing
+
+**General Testing:**
+- Test both positive and negative scenarios
+- Include edge cases and error conditions
+- Ensure tests are fast and reliable
+- Mock external dependencies appropriately
 
 ## Questions?
 
-If you have any questions about contributing, feel free to ask on the [project's Issues page](https://github.com/ulanpy/nuspace/issues) or contact the maintainers listed in the `README.md`.
+If you have questions about contributing:
 
-Thank you for contributing to Nuspace.kz!
+1. **Check the documentation** first (README.md, code comments, etc.)
+2. **Search existing issues** to see if your question has been answered
+3. **Open a new issue** with the `question` label
+4. **Contact the maintainers**:
+   - Email: [ulan.sharipov@nu.edu.kz](mailto:ulan.sharipov@nu.edu.kz)
+   - Telegram: [@kamikadze24](https://t.me/kamikadze24)
+
+## Recognition
+
+Contributors will be recognized in our project documentation and release notes. Significant contributions may also be highlighted in our community communications.
+
+Thank you for contributing to Nuspace.kz! 🚀

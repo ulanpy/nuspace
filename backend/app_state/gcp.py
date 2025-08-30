@@ -1,7 +1,7 @@
 import os
 
 from fastapi import FastAPI
-from google.api_core.exceptions import AlreadyExists, PermissionDenied, NotFound
+from google.api_core.exceptions import AlreadyExists, NotFound, PermissionDenied
 from google.cloud import pubsub_v1, storage
 
 from backend.core.configs.config import Config
@@ -11,7 +11,7 @@ from backend.core.configs.config import Config
 # TODO: This method is not per fastapi app.
 # Hence, should be launched once across entire app.
 # It works currently because we have only one fastapi app AND requests to gcloud are idempotent.
-def setup_google_cloud(app: FastAPI) -> None:
+def setup_gcp(app: FastAPI) -> None:
     """
     Sets up Google Cloud Storage and Pub/Sub integration:
     1. Creates a subscription to the GCS bucket's object change notifications topic

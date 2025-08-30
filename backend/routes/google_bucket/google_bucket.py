@@ -4,20 +4,17 @@ from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from google.cloud.exceptions import NotFound
-import google.auth
-from google.auth.transport.requests import Request as GoogleAuthRequest
-from google.auth import iam as google_iam
 from google.cloud.storage import Bucket
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_current_principals, get_db_session
+from backend.common.utils.enums import ResourceAction
 from backend.core.configs.config import Config
 from backend.core.database.models.media import Media
 from backend.routes.google_bucket import dependencies as deps
 from backend.routes.google_bucket import schemas
 from backend.routes.google_bucket.policy import GoogleBucketPolicy
-from backend.common.utils.enums import ResourceAction
 
 router = APIRouter(prefix="/bucket", tags=["Google Bucket Routes"])
 
@@ -70,11 +67,7 @@ async def generate_upload_url(
     config: Config = request.app.state.config
     bucket: Bucket = request.app.state.storage_client.bucket(request.app.state.config.BUCKET_NAME)
 
-    # Prepare IAM signer once (for ADC without private key)
-    adc_credentials, _ = google.auth.default()
-    auth_request = GoogleAuthRequest()
-    adc_credentials.refresh(auth_request)
-    signer = google_iam.Signer(auth_request, adc_credentials, config.PUSH_AUTH_SERVICE_ACCOUNT)
+    # Note: Using default credentials for signing (ADC)
 
     for item in signed_url_request:
         filename = f"{config.ROUTING_PREFIX}/{user[0].get('sub')}_{timestamp}_{uuid.uuid4().hex}"
@@ -123,14 +116,12 @@ async def generate_upload_url(
                 # Best-effort only in local mode; still return URL
                 pass
         else:
-            # Use IAM-based signing (no local private key required)
+            # Generate signed URL using Application Default Credentials
             signed_url = blob.generate_signed_url(
                 version="v4",
                 expiration=timedelta(minutes=15),
                 method="PUT",
                 headers=required_headers,
-                service_account_email=config.PUSH_AUTH_SERVICE_ACCOUNT,
-                signer=signer,
             )
         urls.append(
             {
@@ -181,7 +172,7 @@ async def gcs_webhook(
 @router.delete("")
 async def delete_bucket_object(
     request: Request,
-    media_id: int, #don't delete, used by mediaexists_or_404
+    media_id: int,  # don't delete, used by mediaexists_or_404
     user: Annotated[dict, Depends(get_current_principals)],
     resource_data: Annotated[tuple[str, Media], Depends(deps.check_resource)],
     db_session: AsyncSession = Depends(get_db_session),
@@ -192,7 +183,7 @@ async def delete_bucket_object(
     It deletes the media object from the bucket and the database.
     """
     resource_owner_sub, media = resource_data
-    
+
     await GoogleBucketPolicy(user=user).check_permission(
         action=ResourceAction.DELETE, owner_sub=resource_owner_sub, media=media
     )

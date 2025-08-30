@@ -1,131 +1,133 @@
-# Nuspace.kz
-
-<img align="right" width="150" src="./backend/core/configs/coverpage.jpg">
-
-**Nuspace.kz** is a secure platform for Nazarbayev University students, accessible via `@nu.edu.kz` email verification. It restricts access to verified users, reducing fraud risk, and offers a set of services that streamline and centralize student communication—replacing unstructured Telegram chats with a more reliable and organized solution.
+<div align="center">
+  <img src="./backend/core/configs/coverpage.jpg" alt="Nuspace Logo" width="200" height="auto" style="border-radius: 10px; margin-bottom: 20px;">
+  
+  # Nuspace.kz
+  
+  **The superapp for NU students, offering campus services, announcements, and student essentials in one trusted, convenient platform.**
+</div> 
 
 ## Table of Contents
 
 - [Nuspace.kz](#nuspacekz)
   - [Table of Contents](#table-of-contents)
-  - [Features](#features)
   - [Tech Stack](#tech-stack)
+  - [Features](#features)
   - [Prerequisites](#prerequisites)
-  - [Setup Instructions](#setup-instructions)
-    - [1. Clone the Repository](#1-clone-the-repository)
-    - [2. Configure Environment Variables](#2-configure-environment-variables)
-    - [3. Install Pre-commit Hooks](#3-install-pre-commit-hooks)
-    - [4. Build and Run with Docker](#4-build-and-run-with-docker)
-    - [5. Verify Setup](#5-verify-setup)
-    - [6. Telegram Bot Localization binary compilation](#6-telegram-bot-localization-binary-compilation)
-  - [Current Functionality and Roadmap](#current-functionality-and-roadmap)
-  - [Development Guidelines](#development-guidelines)
-  - [License](#license)
+  - [Quick Start](#quick-start)
+  - [Development](#development)
   - [Contributing](#contributing)
+  - [License](#license)
   - [Contact](#contact)
-
-## Features
-
-- Private and secure access for Nazarbayev University students.
-- Centralized services to replace unstructured Telegram chats.
-- Reliable and efficient communication platform.
 
 ## Tech Stack
 
-**Nuspace.kz** is built with following technology stack:
+### Backend
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white)
+![Celery](https://img.shields.io/badge/Celery-37814A?style=for-the-badge&logo=celery&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)
+![Meilisearch](https://img.shields.io/badge/Meilisearch-000000?style=for-the-badge&logo=meilisearch&logoColor=white)
 
-**Backend:**
+### Frontend
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
-- **Framework:** FastAPI (Python)
-- **Asynchronous Task Processing:** Celery
-- **Database:** PostgreSQL
-- **Caching:** Redis
-- **Message Broker:** RabbitMQ
-- **Search Engine:** Meilisearch
+### DevOps & Infrastructure
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white)
+![Google Cloud](https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)
+![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
 
-**Frontend:**
+## Features
 
-- **Language:** TypeScript
-- **Framework/Library:** React
-- **Build Tool:** Vite
-- **Styling:** Tailwind CSS
-
-**DevOps & Infrastructure:**
-
-- **Containerization:** Docker, Docker Compose
-- **Web Server/Reverse Proxy:** Nginx
-- **Tunneling:** Cloudflare Tunnel (Cloudflared)
-- **Version Control:** Git & GitHub
-- **CI/CD & Automation:** Pre-commit hooks, GitHub Actions
-- **Database Management:** PgAdmin
+- 🔐 **Secure Authentication** - Email verification via `@nu.edu.kz` domain
+- 💬 **Student Communication Platform** - Centralized messaging and community management
+- 🤖 **Telegram Bot Integration** - Seamless bot functionality with localization
+- 📱 **Modern Web Interface** - Responsive React-based frontend
+- 🚀 **Scalable Architecture** - Microservices with async task processing
+- 📊 **Real-time Notifications** - Instant updates and alerts
+- 🎯 **Community Management** - Tools for organizing student groups and events
 
 ## Prerequisites
 
-To set up the project, ensure you have the following installed:
+Before setting up the project, ensure you have the following installed:
 
 - [Docker](https://www.docker.com/)
+- [Git](https://git-scm.com/) 
 
-## Setup Instructions
+## Quick Start
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/nuspace.git
-cd nuspace/infra 
+git clone https://github.com/ulanpy/nuspace.git
+cd nuspace/infra
 ```
 
 ### 2. Configure Environment Variables
 
-Create a `.env` file in the root directory and specify the TELEGRAM_BOT_TOKEN (create bot for yourself through @BotFather). Use the `.env.example` file as a reference:
+Create a `.env` file using the provided example:
 
 ```bash
 cp .env.example .env
 ```
 
-### 3. Build and Run with Docker
+**Important:** Add your `TELEGRAM_BOT_TOKEN` (create a bot through [@BotFather](https://t.me/botfather) if needed).
 
-Build and start the project using Docker:
+### 3. Build and Run
+
+Start the application using Docker Compose:
 
 ```bash
+# syntax from Compose v2.0 and above
+docker compose up --build
+
+# If older version try
 docker-compose up --build
 ```
-Try code below if it doesn't work:
 
-```bash
-docker compose up --build
-```
 ### 4. Verify Setup
 
-Ensure the application is running by accessing the appropriate URL (e.g., [localhost](http://localhost)).
+Access the application at [localhost](http://localhost) to confirm everything is running correctly.
 
-### Suggestion (optional). Install Pre-commit Hooks
+## Development
 
-Install `pre-commit` and set up Git hooks:
+### Pre-commit Hooks (Recommended)
+
+Set up pre-commit hooks for code quality:
 
 ```bash
+# Create virtual environment (if needed)
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install pre-commit
 pip install pre-commit
 pre-commit install
 ```
-Try creating venv if code above doesn't work and try again:
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
+### Development Guidelines
 
-## Development Guidelines
+- Always use `pre-commit` to ensure code quality
+- Follow the contribution guidelines for submitting pull requests
+- Test your changes thoroughly before submitting
 
-- Always use `pre-commit` to ensure code quality.
-- Follow the contribution guidelines for submitting pull requests.
+## Contributing
+
+We welcome contributions! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) file for detailed guidelines.
 
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## Contributing
-
-We welcome contributions! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines.
-
 ## Contact
 
-For any questions or support, please contact the maintainers at [ulan.sharipov@nu.edu.kz](mailto:ulan.sharipov@nu.edu.kz) or [telegram](https://t.me/kamikadze24).
+For questions or support, reach out to:
+
+- **Email:** [ulan.sharipov@nu.edu.kz](mailto:ulan.sharipov@nu.edu.kz)
+- **Telegram:** [@kamikadze24](https://t.me/kamikadze24)
