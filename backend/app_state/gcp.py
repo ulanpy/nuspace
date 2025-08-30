@@ -7,7 +7,7 @@ from google.cloud import pubsub_v1, storage
 from backend.core.configs.config import Config
 
 
-# TODO: add topic existence check and create if not exists()
+# TODO: add topic existence check and create if not exists() - done
 # TODO: This method is not per fastapi app.
 # Hence, should be launched once across entire app.
 # It works currently because we have only one fastapi app AND requests to gcloud are idempotent.
@@ -18,8 +18,8 @@ def setup_gcp(app: FastAPI) -> None:
     2. Configures push delivery to our API endpoint with OIDC authentication
     3. Enables real-time notifications when files are uploaded to the bucket
 
-    Note for local development: push endpoint set as cloudflared tunnel (i.e. https://tunnel1.nuspace.kz)
-    directing to http://localhost:80 (nginx) which then routes to the http://fastapi:8000/api/bucket/gcs-hook
+    Note for local development: push endpoint set as cloudflared ephemeral tunnel
+    directing to http://nginx:80 (nginx) which then routes to the http://fastapi:8000/api/bucket/gcs-hook
 
     In production, the push endpoint is set to the real API endpoint (https://nuspace.kz/api/bucket/gcs-hook)
     """
