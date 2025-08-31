@@ -64,7 +64,7 @@ class ProductReport(Base):
     __tablename__ = "product_reports"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_sub: Mapped[str] = mapped_column(ForeignKey("users.sub"), nullable=False)
-    product_id: Mapped[int] = mapped_column(Integer, ForeignKey("products.id"))
+    product_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("products.id"))
     text: Mapped[str] = mapped_column(String)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 

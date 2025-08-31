@@ -1,25 +1,25 @@
 import os
 
 from fastapi import FastAPI
-from google.api_core.exceptions import AlreadyExists
+from google.api_core.exceptions import AlreadyExists, NotFound, PermissionDenied
 from google.cloud import pubsub_v1, storage
 
 from backend.core.configs.config import Config
 
 
-# TODO: add topic existence check and create if not exists()
+# TODO: add topic existence check and create if not exists() - done
 # TODO: This method is not per fastapi app.
 # Hence, should be launched once across entire app.
 # It works currently because we have only one fastapi app AND requests to gcloud are idempotent.
-def setup_google_cloud(app: FastAPI) -> None:
+def setup_gcp(app: FastAPI) -> None:
     """
     Sets up Google Cloud Storage and Pub/Sub integration:
     1. Creates a subscription to the GCS bucket's object change notifications topic
     2. Configures push delivery to our API endpoint with OIDC authentication
     3. Enables real-time notifications when files are uploaded to the bucket
 
-    Note for local development: push endpoint set as cloudflared tunnel (i.e. https://tunnel1.nuspace.kz)
-    directing to http://localhost:80 (nginx) which then routes to the http://fastapi:8000/api/bucket/gcs-hook
+    Note for local development: push endpoint set as cloudflared ephemeral tunnel
+    directing to http://nginx:80 (nginx) which then routes to the http://fastapi:8000/api/bucket/gcs-hook
 
     In production, the push endpoint is set to the real API endpoint (https://nuspace.kz/api/bucket/gcs-hook)
     """
@@ -46,8 +46,10 @@ def setup_google_cloud(app: FastAPI) -> None:
         # Skip CORS and Pub/Sub setup in emulator mode
         return
 
-    # Real GCP setup
-    app.state.storage_client = storage.Client(credentials=config.BUCKET_CREDENTIALS)
+    # Real GCP setup: rely on Application Default Credentials (ADC)
+    # When running on GCE, ADC will pull credentials from the metadata server.
+    # Ensure container can reach metadata.google.internal (see compose extra_hosts).
+    app.state.storage_client = storage.Client()
 
     bucket = app.state.storage_client.bucket(config.BUCKET_NAME)
     bucket.cors = [
@@ -65,7 +67,8 @@ def setup_google_cloud(app: FastAPI) -> None:
         print(f"⚠️  Warning: Could not set CORS policies: {e}")
         # Don't fail startup, but log the issue
 
-    client = pubsub_v1.SubscriberClient(credentials=config.BUCKET_CREDENTIALS)
+    # Use ADC for Pub/Sub as well
+    client = pubsub_v1.SubscriberClient()
     topic_path = client.topic_path(config.GCP_PROJECT_ID, config.GCP_TOPIC_ID)
     subscription_path = client.subscription_path(
         project=config.GCP_PROJECT_ID,
@@ -79,6 +82,12 @@ def setup_google_cloud(app: FastAPI) -> None:
         print(f"Subscription created: {subscription.name}")
     except AlreadyExists:
         print(f"Subscription already exists: {subscription_path}")
+    except (PermissionDenied, NotFound) as e:
+        print(
+            "⚠️  Warning: Could not create subscription due to permission or missing resource: "
+            f"{e}. Skipping Pub/Sub subscription setup; app will continue to start."
+        )
+        return
 
     push_config = pubsub_v1.types.PushConfig(  # type: ignore
         push_endpoint=f"{config.HOME_URL}/api/bucket/gcs-hook",
@@ -89,14 +98,22 @@ def setup_google_cloud(app: FastAPI) -> None:
     )
     update_mask = {"paths": ["push_config"]}
 
-    response = client.update_subscription(
-        request={
-            "subscription": {
-                "name": subscription_path,
-                "push_config": push_config,
-            },
-            "update_mask": update_mask,
-        }
-    )
-    print(f"✅ Updated push endpoint to: {response.push_config.push_endpoint}")
-    print(f"✅ Push auth service account: {config.PUSH_AUTH_SERVICE_ACCOUNT}")
+    try:
+        response = client.update_subscription(
+            request={
+                "subscription": {
+                    "name": subscription_path,
+                    "push_config": push_config,
+                },
+                "update_mask": update_mask,
+            }
+        )
+        print(f"✅ Updated push endpoint to: {response.push_config.push_endpoint}")
+        print(f"✅ Push auth service account: {config.PUSH_AUTH_SERVICE_ACCOUNT}")
+    except PermissionDenied as e:
+        print(
+            "⚠️  Warning: Could not update push config (OIDC). This typically requires "
+            "roles/iam.serviceAccountTokenCreator on the push service account for the Pub/Sub service agent, "
+            "and roles/pubsub.editor for managing subscriptions. "
+            f"Error: {e}"
+        )

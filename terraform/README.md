@@ -1,3 +1,15 @@
+## Environments
+
+Use per-environment tfvars files under `envs/`.
+
+Examples:
+
+```
+terraform apply -var-file=envs/staging.tfvars
+terraform apply -var-file=envs/production.tfvars
+```
+
+The provider reads credentials from `var.credentials_file`.
 # Project Setup with Terraform and Google Cloud
 
 This guide provides a step-by-step walkthrough for setting up your Google Cloud project and deploying infrastructure using Terraform. It specifically addresses the common "chicken and egg" problem where you need to enable an API for Terraform to work, but Terraform is the tool you want to use to enable the APIs.
@@ -80,7 +92,7 @@ gcloud services enable cloudresourcemanager.googleapis.com serviceusage.googleap
 
 > **Note:** This is a one-time step per project. Once these APIs are enabled, Terraform will be able to manage all other APIs for you, including the Compute Engine API.
 
-## 3. Service Account Creation
+## 3. Service Account Creation (i.e. for staging env)
 
 This section details the commands you used to create the service account for Terraform. A service account is a special type of Google Account that applications (like Terraform) can use to make authorized API calls.
 
@@ -121,7 +133,7 @@ These commands grant the necessary permissions to the Terraform service account:
 ### Create and Download the Key
 
 ```bash
-gcloud iam service-accounts keys create ./terraform.json \
+gcloud iam service-accounts keys create ./staging.json \
     --iam-account="terraform-admin@nuspace-staging.iam.gserviceaccount.com"
 ```
 
@@ -159,7 +171,7 @@ This command executes the planned actions. It will prompt you to confirm the cha
 
 ## Security Notes
 
-- Keep your service account key file (`terraform.json`) secure and never commit it to version control
+- Keep your service account key file (`staging.json`) secure and never commit it to version control
 - Consider using environment variables or Google Cloud's default credentials for production environments
 - Regularly rotate your service account keys
 - Follow the principle of least privilege when assigning IAM roles

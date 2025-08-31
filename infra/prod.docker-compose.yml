@@ -24,12 +24,16 @@ services:
     restart: always
     depends_on:
       - postgres
+      - nginx
     environment:
       - PYTHONUNBUFFERED=1
       - WORKERS=${GUNICORN_WORKERS:-4}
+      - NO_PROXY=169.254.169.254,metadata.google.internal
+      - no_proxy=169.254.169.254,metadata.google.internal
+    extra_hosts:
+      - "metadata.google.internal:169.254.169.254"
     volumes:
-      - ../backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
-      - .env:/nuros/.env:ro
+      - .env:/nuros/infra/.env:ro
 
   migrate:
     image: kamikadze24/fastapi:${DOCKER_IMAGE_TAG}
@@ -41,9 +45,12 @@ services:
     restart: "no"
     environment:
       - PYTHONUNBUFFERED=1
+      - NO_PROXY=169.254.169.254,metadata.google.internal
+      - no_proxy=169.254.169.254,metadata.google.internal
+    extra_hosts:
+      - "metadata.google.internal:169.254.169.254"
     volumes:
-      - ../backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
-      - .env:/nuros/.env:ro
+      - .env:/nuros/infra/.env:ro
     working_dir: /nuros/backend
     command: alembic upgrade head
 
@@ -63,7 +70,6 @@ services:
       - ../ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key
       - ./nginx/vpn-index.html:/etc/nginx/vpn-index.html:ro
     depends_on:
-      - fastapi
       - frontend-builder
     command: >
       /bin/sh -c "
@@ -127,16 +133,16 @@ services:
       - CELERY_WORKER_CONCURRENCY=4
       - CELERY_WORKER_PREFETCH_MULTIPLIER=1
     volumes:
-      - .env:/nuros/.env:ro
+      - .env:/nuros/infra/.env:ro
     deploy:
       replicas: 2
 
   frontend-builder:
     container_name: frontend-builder
-    image: kamikadze24/frontendbuilder:${DOCKER_IMAGE_TAG}
+    image: kamikadze24/frontendbuilder:${DOCKER_IMAGE_TAG:-latest}
     build:
-      context: .
-      dockerfile: ../frontend/Dockerfile_static_builder
+      context: ..
+      dockerfile: frontend/Dockerfile_static_builder
     networks:
       - nuros
     volumes:
@@ -255,8 +261,7 @@ services:
       - NET_ADMIN
       - SYS_MODULE
     networks:
-      nuros:
-        ipv4_address: 172.28.0.10
+      - nuros
     environment:
       - PUID=3182562138
       - PGID=1007
@@ -274,6 +279,7 @@ services:
       - /lib/modules:/lib/modules
     ports:
       - 51820:51820/udp
+    # Avoid static IP conflicts, rely on dynamic DHCP in bridge network
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
     restart: unless-stopped

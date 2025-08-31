@@ -4,6 +4,7 @@ from typing import List
 from fastapi import Request
 from google.cloud import storage
 
+from backend.core.configs.config import Config
 from backend.core.database.models import Media
 
 
@@ -16,16 +17,24 @@ async def generate_download_url(
     - In production: signed URL valid for 15 minutes (GET only)
     - In emulator mode: direct proxy URL via nginx (/gcs/{bucket}/{object})
     """
-    config = request.app.state.config
+    config: Config = request.app.state.config
     if config.USE_GCS_EMULATOR:
         # Use backend proxy to avoid nginx /gcs path issues during local dev
         url = f"{config.HOME_URL}/api/bucket/local-download/{config.BUCKET_NAME}/{filename}"
         return {"signed_url": url}
-    blob = request.app.state.storage_client.bucket(config.BUCKET_NAME).blob(filename)
+
+    # Generate signed URL using impersonated credentials to avoid private key requirement
+    from backend.routes.google_bucket.utils import get_signing_credentials
+
+    # Use the same service account that's attached to the VM for impersonation
+    impersonated_credentials = get_signing_credentials(config.VM_SERVICE_ACCOUNT_EMAIL)
+
+    blob: storage.Blob = request.app.state.storage_client.bucket(config.BUCKET_NAME).blob(filename)
     signed_url = blob.generate_signed_url(
         version="v4",
         expiration=timedelta(minutes=15),
         method="GET",
+        credentials=impersonated_credentials,
     )
     return {"signed_url": signed_url}
 
@@ -34,9 +43,9 @@ async def delete_bucket_object(
     request: Request,
     filename: str,
 ) -> None:
-    blob = request.app.state.storage_client.bucket(request.app.state.config.BUCKET_NAME).blob(
-        filename
-    )
+    blob: storage.Blob = request.app.state.storage_client.bucket(
+        request.app.state.config.BUCKET_NAME
+    ).blob(filename)
     try:
         blob.delete()
     except Exception:
@@ -101,3 +110,83 @@ async def batch_delete_blobs(request: Request, media_objects: List[Media]) -> No
                     blob.delete()
                 except Exception:
                     pass
+
+
+"""
+Google Cloud Platform authentication utilities for service account impersonation.
+
+This module provides utilities to generate impersonated credentials that can be used
+to sign URLs without requiring hardcoded service account keys.
+"""
+from typing import Optional
+
+import google.auth
+import google.auth.transport.requests
+from google.auth import impersonated_credentials
+from google.auth.credentials import Credentials
+
+
+def get_impersonated_credentials(
+    target_principal: str,
+    scopes: Optional[list[str]] = None,
+    lifetime: int = 3600,
+) -> Credentials:
+    """
+    Create impersonated credentials for a target service account.
+
+    This function uses the current default credentials (from compute engine metadata server)
+    to impersonate the specified service account. This allows generating signed URLs
+    without needing hardcoded service account keys.
+
+    Args:
+        target_principal: Email address of the service account to impersonate
+        scopes: OAuth 2.0 scopes for the impersonated credentials
+        lifetime: Lifetime of the impersonated credentials in seconds (max 3600)
+
+    Returns:
+        Impersonated credentials that can be used for signing operations
+
+    Raises:
+        google.auth.exceptions.DefaultCredentialsError: If default credentials cannot be obtained
+        google.auth.exceptions.RefreshError: If credentials cannot be refreshed
+    """
+    if scopes is None:
+        scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+
+    # Get default credentials from the compute engine metadata server
+    source_credentials, _ = google.auth.default(scopes=scopes)
+
+    # Ensure the source credentials are refreshed
+    if source_credentials.token is None:
+        request = google.auth.transport.requests.Request()
+        source_credentials.refresh(request)
+
+    # Create impersonated credentials
+    impersonated_creds = impersonated_credentials.Credentials(
+        source_credentials=source_credentials,
+        target_principal=target_principal,
+        target_scopes=scopes,
+        lifetime=lifetime,
+    )
+
+    return impersonated_creds
+
+
+def get_signing_credentials(service_account_email: str) -> Credentials:
+    """
+    Get credentials suitable for signing operations (like generating signed URLs).
+
+    This is a convenience function that creates impersonated credentials specifically
+    for signing operations with a reasonable lifetime.
+
+    Args:
+        service_account_email: Email of the service account to impersonate for signing
+
+    Returns:
+        Credentials that can be used for signing operations
+    """
+    return get_impersonated_credentials(
+        target_principal=service_account_email,
+        scopes=["https://www.googleapis.com/auth/cloud-platform"],
+        lifetime=3600,  # 1 hour should be sufficient for most operations
+    )
