@@ -1,7 +1,7 @@
 ---
 - name: Recreate redis service
   ansible.builtin.command: >
-    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d redis
   environment:
     DOCKER_IMAGE_TAG: "{{ image_tag }}"
@@ -12,7 +12,7 @@
 
 - name: Recreate rabbitmq service
   ansible.builtin.command: >
-    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d rabbitmq
   environment:
     DOCKER_IMAGE_TAG: "{{ image_tag }}"
@@ -23,7 +23,7 @@
 
 - name: Recreate prometheus service
   ansible.builtin.command: >
-    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d prometheus
   environment:
     DOCKER_IMAGE_TAG: "{{ image_tag }}"
@@ -34,7 +34,7 @@
 
 - name: Recreate grafana service
   ansible.builtin.command: >
-    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d grafana
   environment:
     DOCKER_IMAGE_TAG: "{{ image_tag }}"
@@ -45,7 +45,7 @@
 
 - name: Recreate loki service
   ansible.builtin.command: >
-    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d loki
   environment:
     DOCKER_IMAGE_TAG: "{{ image_tag }}"
@@ -56,7 +56,7 @@
 
 - name: Recreate alloy service
   ansible.builtin.command: >
-    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d alloy
   environment:
     DOCKER_IMAGE_TAG: "{{ image_tag }}"
@@ -67,7 +67,7 @@
 
 - name: Recreate alertmanager service
   ansible.builtin.command: >
-    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d alertmanager
   environment:
     DOCKER_IMAGE_TAG: "{{ image_tag }}"
@@ -78,7 +78,7 @@
 
 - name: Recreate wireguard service
   ansible.builtin.command: >
-    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d wireguard
   environment:
     DOCKER_IMAGE_TAG: "{{ image_tag }}"
@@ -107,7 +107,7 @@
 
 - name: Reconcile docker compose changes (definitions only)
   ansible.builtin.command: >
-    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d --remove-orphans
   environment:
     DOCKER_IMAGE_TAG: "{{ image_tag }}"

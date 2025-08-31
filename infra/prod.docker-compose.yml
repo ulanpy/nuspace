@@ -50,7 +50,6 @@ services:
     extra_hosts:
       - "metadata.google.internal:169.254.169.254"
     volumes:
-      - ../backend/core/configs/nuspace.json:/nuros/backend/core/configs/nuspace.json:ro
       - .env:/nuros/infra/.env:ro
     working_dir: /nuros/backend
     command: alembic upgrade head
@@ -146,6 +145,7 @@ services:
       dockerfile: frontend/Dockerfile_static_builder
     networks:
       - nuros
+    user: "0:0"
     volumes:
       - ../frontend/dist:/app/dist
     command: sh -c "npm run build"
@@ -155,9 +155,11 @@ services:
     container_name: loki
     image: grafana/loki:latest
     environment:
-      - GOOGLE_APPLICATION_CREDENTIALS=/loki/service-account-key.json
+      - NO_PROXY=169.254.169.254,metadata.google.internal
+      - no_proxy=169.254.169.254,metadata.google.internal
+    extra_hosts:
+      - "metadata.google.internal:169.254.169.254"
     volumes:
-      - ./nuspace_bucket.json:/loki/service-account-key.json:ro
       - ./loki/loki.prod.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml -log.level="warn" -config.expand-env=true
