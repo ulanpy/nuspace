@@ -6,9 +6,9 @@ resource "google_compute_address" "static_ip" {
   depends_on = [google_project_service.compute_api]
   
   # Give the static IP a meaningful name
-  name   = "nuspace-static-ip"
+  name   = var.static_ip_name
   # It needs to be in the same region as the VM.
-  region = "europe-central2"
+  region = var.region
 }
 
 # Create the VM instance and attach the static IP.
@@ -16,9 +16,9 @@ resource "google_compute_instance" "vm_instance" {
   # We make sure this resource depends on the Compute API being enabled first.
   depends_on = [google_project_service.compute_api]
 
-  name         = "nuspace-instance"
-  machine_type = "e2-medium"
-  zone         = "europe-central2-a"
+  name         = var.vm_name
+  machine_type = var.vm_machine_type
+  zone         = var.zone
   allow_stopping_for_update = true
 
   # Attach the service account to the VM for automatic authentication
@@ -28,10 +28,9 @@ resource "google_compute_instance" "vm_instance" {
   }
 
   boot_disk {
-    initialize_params {
-      image = "debian-cloud/debian-12"
-      size  = 20
-    }
+    source      = var.use_existing_boot_disk ? data.google_compute_disk.existing_boot[0].self_link : google_compute_disk.new_boot[0].self_link
+    auto_delete = var.use_existing_boot_disk ? false : true
+    interface   = "SCSI"
   }
 
   network_interface {
@@ -47,13 +46,29 @@ resource "google_compute_instance" "vm_instance" {
     enable-oslogin = "TRUE"
   }
 
-  tags = ["https-server"]
+  tags = var.vm_instance_tags
 
   # Scheduling configuration
   scheduling {
     automatic_restart   = true
     on_host_maintenance = "MIGRATE"
   }
+}
+# Lookup existing disk (when reusing)
+data "google_compute_disk" "existing_boot" {
+  count = var.use_existing_boot_disk ? 1 : 0
+  name  = var.existing_boot_disk_name
+  zone  = var.zone
+}
+
+# Create new boot disk (when not reusing)
+resource "google_compute_disk" "new_boot" {
+  count = var.use_existing_boot_disk ? 0 : 1
+  name  = "${var.vm_name}-boot"
+  zone  = var.zone
+  size  = var.boot_disk_size_gb
+  type  = var.boot_disk_type
+  image = "debian-cloud/debian-12"
 }
 
 # Firewall rule to allow HTTP traffic
@@ -67,7 +82,7 @@ resource "google_compute_firewall" "allow_http" {
   }
 
   source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["https-server"]
+  target_tags   = var.vm_instance_tags
 }
 
 # Firewall rule to allow HTTPS traffic
@@ -81,7 +96,7 @@ resource "google_compute_firewall" "allow_https" {
   }
 
   source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["https-server"]
+  target_tags   = var.vm_instance_tags
 }
 
 # Optional: Firewall rule to allow ICMP (ping) for debugging
@@ -94,5 +109,5 @@ resource "google_compute_firewall" "allow_icmp" {
   }
 
   source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["https-server"]
+  target_tags   = var.vm_instance_tags
 }

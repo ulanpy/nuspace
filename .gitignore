@@ -10,6 +10,7 @@ venv/
 **/nuspace.json
 # Terraform credentials and state files
 **/terraform.json
+terraform/creds/
 *.tfstate
 *.tfstate.*
 .terraform/

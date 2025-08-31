@@ -3,13 +3,13 @@
 # Pub/Sub topic for GCS object creation notifications
 resource "google_pubsub_topic" "gcs_object_created" {
   depends_on = [google_project_service.pubsub_api]
-  name       = "gcs-object-created"
+  name       = var.topic_name
 }
 
 # Get the GCS service account that will publish notifications
 # This service account is automatically created when you first use Cloud Storage
 data "google_storage_project_service_account" "gcs_account" {
-  project = "nuspace-staging"
+  project = var.project_id
 }
 
 # Allow Cloud Storage to publish to the topic
@@ -32,13 +32,18 @@ resource "google_storage_notification" "bucket_object_finalize" {
 
 # Optional: Manage the push subscription via Terraform to avoid runtime creation
 resource "google_pubsub_subscription" "gcs_object_created_push" {
-  name  = "gcs-object-created-sub-${var.subscription_suffix}"
+  name  = "${var.subscription_name}-${var.subscription_suffix}"
   topic = google_pubsub_topic.gcs_object_created.name
+
+  depends_on = [
+    google_project_service.pubsub_api,
+    google_service_account_iam_member.push_sa_token_creator
+  ]
 
   push_config {
     push_endpoint = var.push_endpoint
     oidc_token {
-      service_account_email = var.push_auth_service_account_email != "" ? var.push_auth_service_account_email : "nuspace-vm-sa@nuspace-staging.iam.gserviceaccount.com"
+      service_account_email = var.push_auth_service_account_email != "" ? var.push_auth_service_account_email : google_service_account.vm_service_account.email
       audience              = var.push_auth_audience
     }
   }
