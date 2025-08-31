@@ -145,6 +145,7 @@ services:
       dockerfile: frontend/Dockerfile_static_builder
     networks:
       - nuros
+    user: "0:0"
     volumes:
       - ../frontend/dist:/app/dist
     command: sh -c "npm run build"
