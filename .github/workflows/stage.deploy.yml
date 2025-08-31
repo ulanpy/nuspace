@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev
+      - main
 
 jobs:
   build_and_deploy:
@@ -123,12 +124,22 @@ jobs:
           fi
           echo "$HOME/google-cloud-sdk/bin" >> $GITHUB_PATH
 
+      - name: Select GCP credentials and project based on branch
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "GCP_KEY=${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY_PROD }}" >> $GITHUB_ENV
+            echo "GCP_PROJECT=nuspace2025" >> $GITHUB_ENV
+          else
+            echo "GCP_KEY=${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}" >> $GITHUB_ENV
+            echo "GCP_PROJECT=nuspace-staging" >> $GITHUB_ENV
+          fi
+
       - name: Authenticate with Google Cloud
         run: |
           # Clean and decode the base64 service account key
-          echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}' | tr -d '\n\r' | sed 's/[[:space:]]//g' | sed 's/%$//' | base64 -d > /tmp/gcp-key.json
+          echo "$GCP_KEY" | tr -d '\n\r' | sed 's/[[:space:]]//g' | sed 's/%$//' | base64 -d > /tmp/gcp-key.json
           gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
-          gcloud config set project nuspace-staging
+          gcloud config set project "$GCP_PROJECT"
 
       - name: Get VM information and Docker credentials from Secret Manager
         id: secrets
