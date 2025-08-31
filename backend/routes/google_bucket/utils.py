@@ -23,18 +23,28 @@ async def generate_download_url(
         url = f"{config.HOME_URL}/api/bucket/local-download/{config.BUCKET_NAME}/{filename}"
         return {"signed_url": url}
 
-    # Generate signed URL using impersonated credentials to avoid private key requirement
-    from backend.routes.google_bucket.utils import get_signing_credentials
-
-    # Use the same service account that's attached to the VM for impersonation
-    impersonated_credentials = get_signing_credentials(config.VM_SERVICE_ACCOUNT_EMAIL)
+    # Use cached impersonated credentials from app startup
+    # Falls back to creating fresh credentials if cache failed at startup or expired
+    signing_credentials = request.app.state.signing_credentials
+    if signing_credentials is None or (
+        hasattr(signing_credentials, "expired") and signing_credentials.expired
+    ):
+        # Fallback: create fresh credentials (this will be slower)
+        signing_credentials = get_signing_credentials(config.VM_SERVICE_ACCOUNT_EMAIL)
+        # Update the cache with fresh credentials
+        request.app.state.signing_credentials = signing_credentials
 
     blob: storage.Blob = request.app.state.storage_client.bucket(config.BUCKET_NAME).blob(filename)
-    signed_url = blob.generate_signed_url(
+
+    # Move synchronous signing operation to thread to avoid blocking async event loop
+    import asyncio
+
+    signed_url = await asyncio.to_thread(
+        blob.generate_signed_url,
         version="v4",
         expiration=timedelta(minutes=15),
         method="GET",
-        credentials=impersonated_credentials,
+        credentials=signing_credentials,
     )
     return {"signed_url": signed_url}
 

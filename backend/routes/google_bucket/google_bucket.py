@@ -117,17 +117,26 @@ async def generate_upload_url(
                 pass
         else:
             # Generate signed URL using impersonated credentials to avoid private key requirement
-            from backend.routes.google_bucket.utils import get_signing_credentials
+            signing_credentials = request.app.state.signing_credentials
+            if signing_credentials is None or (
+                hasattr(signing_credentials, "expired") and signing_credentials.expired
+            ):
+                from backend.routes.google_bucket.utils import get_signing_credentials
 
-            # Use the same service account that's attached to the VM for impersonation
-            impersonated_credentials = get_signing_credentials(config.VM_SERVICE_ACCOUNT_EMAIL)
+                signing_credentials = get_signing_credentials(config.VM_SERVICE_ACCOUNT_EMAIL)
+                # Update the cache with fresh credentials
+                request.app.state.signing_credentials = signing_credentials
 
-            signed_url = blob.generate_signed_url(
+            # Offload synchronous signing to a thread to avoid blocking the async event loop
+            import asyncio
+
+            signed_url = await asyncio.to_thread(
+                blob.generate_signed_url,
                 version="v4",
                 expiration=timedelta(minutes=15),
                 method="PUT",
                 headers=required_headers,
-                credentials=impersonated_credentials,
+                credentials=signing_credentials,
             )
         urls.append(
             {
