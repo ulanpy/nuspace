@@ -1,13 +1,16 @@
-name: Build, Push, and Deploy
+name: Terraform Stage Deploy
 
 on:
   push:
     branches:
+      - dev
       - main
 
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    env:
+      GCLOUD_VERSION: '472.0.0'
 
     steps:
       - name: Checkout code
@@ -103,18 +106,95 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: "3.11"
+          cache: 'pip'
 
-      - name: Install Ansible
-        run: pip install ansible
+      - name: Cache Google Cloud SDK
+        uses: actions/cache@v4
+        with:
+          path: $HOME/google-cloud-sdk
+          key: ${{ runner.os }}-gcloud-${{ env.GCLOUD_VERSION }}
 
-      - name: Set up SSH
+      - name: Install Ansible and Google Cloud SDK
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.ANSIBLE_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          echo "${{ secrets.ANSIBLE_HOST_KEY }}" >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
+          pip install --disable-pip-version-check ansible
+          if [ ! -d "$HOME/google-cloud-sdk" ]; then
+            curl -sSL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz -o /tmp/gcloud.tgz
+            tar -xzf /tmp/gcloud.tgz -C $HOME
+          fi
+          echo "$HOME/google-cloud-sdk/bin" >> $GITHUB_PATH
+
+      - name: Select GCP credentials and project based on branch
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            echo "GCP_KEY=${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY_PROD }}" >> $GITHUB_ENV
+            echo "GCP_PROJECT=nuspace2025" >> $GITHUB_ENV
+          else
+            echo "GCP_KEY=${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}" >> $GITHUB_ENV
+            echo "GCP_PROJECT=nuspace-staging" >> $GITHUB_ENV
+          fi
+
+      - name: Authenticate with Google Cloud
+        run: |
+          # Clean and decode the base64 service account key
+          echo "$GCP_KEY" | tr -d '\n\r' | sed 's/[[:space:]]//g' | sed 's/%$//' | base64 -d > /tmp/gcp-key.json
+          gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
+          gcloud config set project "$GCP_PROJECT"
+
+      - name: Get VM information and Docker credentials from Secret Manager
+        id: secrets
+        run: |
+          # Get VM instance details using the service account
+          VM_IP=$(gcloud compute instances describe nuspace-instance --zone=europe-central2-a --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+          VM_NAME="nuspace-instance"
+          SA_USERNAME=$(gcloud compute os-login describe-profile --format="value(posixAccounts[0].username)")
+          DOCKER_USERNAME=$(gcloud secrets versions access latest --secret="docker-username")
+          DOCKER_PASSWORD=$(gcloud secrets versions access latest --secret="docker-password")
+          echo "ANSIBLE_HOST=$VM_IP" >> $GITHUB_OUTPUT
+          echo "VM_NAME=$VM_NAME" >> $GITHUB_OUTPUT
+          echo "ANSIBLE_USER=$SA_USERNAME" >> $GITHUB_OUTPUT
+          echo "DOCKER_USERNAME=$DOCKER_USERNAME" >> $GITHUB_OUTPUT
+          echo "::add-mask::$DOCKER_PASSWORD"
+          echo "DOCKER_PASSWORD=$DOCKER_PASSWORD" >> $GITHUB_OUTPUT
+
+      - name: Check if containers are running on VM
+        id: container_check
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
+        run: |
+          # Test connection and check container status using instance name
+          gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --command="docker ps --format 'table {{.Names}}\t{{.Status}}'" --ssh-flag="-o ConnectTimeout=10" --quiet > /tmp/container_status.txt 2>/dev/null || echo "Connection failed" > /tmp/container_status.txt
+          
+          # Check if expected containers are running
+          if grep -q "fastapi\|celery-worker\|nginx\|redis\|rabbitmq\|prometheus\|grafana\|loki\|alloy\|alertmanager\|wireguard" /tmp/container_status.txt; then
+            echo "containers_running=true" >> $GITHUB_OUTPUT
+          else
+            echo "containers_running=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Always run if there are code changes
+          if [[ "${{ steps.changes.outputs.backend }}" == "true" || "${{ steps.changes.outputs.frontend }}" == "true" || "${{ steps.changes.outputs.nginx }}" == "true" || "${{ steps.changes.outputs.redis }}" == "true" || "${{ steps.changes.outputs.rabbitmq }}" == "true" || "${{ steps.changes.outputs.prometheus }}" == "true" || "${{ steps.changes.outputs.grafana }}" == "true" || "${{ steps.changes.outputs.loki }}" == "true" || "${{ steps.changes.outputs.alloy }}" == "true" || "${{ steps.changes.outputs.alertmanager }}" == "true" || "${{ steps.changes.outputs.wireguard }}" == "true" || "${{ steps.changes.outputs.compose }}" == "true" ]]; then
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Ansible configuration
+        run: |
+          cat > ansible/ansible.cfg << EOF
+          [defaults]
+          remote_tmp = /tmp
+          local_tmp = /tmp
+          host_key_checking = False
+          timeout = 60
+          gathering = explicit
+          fact_caching = memory
+          ansible_managed = Ansible managed
+          
+          [ssh_connection]
+          ssh_args = 
+          control_path_dir = /tmp
+          EOF
 
       - name: Create inventory file
         run: |
@@ -124,27 +204,31 @@ jobs:
             children:
               webservers:
                 hosts:
-                  ${{ secrets.ANSIBLE_HOST }}:
-                    ansible_user: ${{ secrets.ANSIBLE_USER }}
+                  ${{ steps.secrets.outputs.VM_NAME }}:
+                    ansible_host: ${{ steps.secrets.outputs.ANSIBLE_HOST }}
+                    ansible_user: ${{ steps.secrets.outputs.ANSIBLE_USER }}
+                    ansible_ssh_private_key_file: ~/.ssh/google_compute_engine
+                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o CertificateFile=~/.ssh/google_compute_engine-cert.pub'
+                    ansible_become: yes
+                    ansible_become_method: sudo
+                    ansible_remote_tmp: /tmp
+                    ansible_shell_type: sh
           EOF
 
       - name: Run Ansible Playbook
         if: |
-          steps.changes.outputs.backend == 'true' ||
-          steps.changes.outputs.frontend == 'true' ||
-          steps.changes.outputs.nginx == 'true' ||
-          steps.changes.outputs.redis == 'true' ||
-          steps.changes.outputs.rabbitmq == 'true' ||
-          steps.changes.outputs.prometheus == 'true' ||
-          steps.changes.outputs.grafana == 'true' ||
-          steps.changes.outputs.loki == 'true' ||
-          steps.changes.outputs.alloy == 'true' ||
-          steps.changes.outputs.alertmanager == 'true' ||
-          steps.changes.outputs.wireguard == 'true' ||
-          steps.changes.outputs.compose == 'true'
+          steps.container_check.outputs.should_deploy == 'true' ||
+          steps.container_check.outputs.containers_running == 'false'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
+          ANSIBLE_HOST_KEY_CHECKING: False
+          ANSIBLE_REMOTE_TMP: /tmp
+          ANSIBLE_LOCAL_TMP: /tmp
         run: |
-          ansible-playbook ansible/playbook.yml \
-            --inventory ansible/inventory.yml \
-            --user "${{ secrets.ANSIBLE_USER }}" \
-            --private-key ~/.ssh/id_rsa \
-            --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ secrets.ANSIBLE_USER }} docker_user=${{ secrets.DOCKER_USERNAME }} docker_pass=${{ secrets.DOCKER_PASSWORD }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} compose_changed=${{ steps.changes.outputs.compose }}"
+          # Test OS Login connection and prepare environment
+          gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --command="echo 'OS Login configured'" --ssh-flag="-o ConnectTimeout=10" --quiet || true
+          
+          # Run the Ansible playbook
+          cd ansible && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook playbook.yml \
+            --inventory inventory.yml \
+            --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ steps.secrets.outputs.ANSIBLE_USER }} docker_user=${{ steps.secrets.outputs.DOCKER_USERNAME }} docker_pass=${{ steps.secrets.outputs.DOCKER_PASSWORD }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} compose_changed=${{ steps.changes.outputs.compose }}"

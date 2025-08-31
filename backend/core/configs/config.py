@@ -13,7 +13,6 @@ ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 
 # Load ONLY from infra/.env
 load_dotenv(os.path.join(ENV_DIR, "infra/.env"), override=False)
-# should be in /nuspace/backend/core/configs/nuspace.json
 
 
 class Config(BaseSettings):
