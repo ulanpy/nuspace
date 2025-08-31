@@ -79,7 +79,7 @@
 - name: Configure gcloud to use VM service account and project
   ansible.builtin.shell: |
     export PATH="/root/google-cloud-sdk/bin:$PATH"
-    gcloud config set project nuspace-staging
+    gcloud config set project {{ gcp_project }}
   args:
     executable: /bin/bash
 

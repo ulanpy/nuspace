@@ -8,6 +8,7 @@
     docker_username: "{{ docker_user }}"
     docker_password: "{{ docker_pass }}"
     image_tag: "{{ docker_image_tag }}"
+    gcp_project: "{{ gcp_project_var }}"
 
   tasks:
     - name: Include prerequisites role
