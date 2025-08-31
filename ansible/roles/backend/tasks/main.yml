@@ -3,7 +3,7 @@
   ansible.builtin.shell: |
     set -e
     COMPOSE_FILE="/home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml"
-    docker compose -f "$COMPOSE_FILE" pull fastapi
+    {{ compose_cmd }} -f "$COMPOSE_FILE" pull fastapi
   environment:
     DOCKER_IMAGE_TAG: "{{ image_tag }}"
   args:
@@ -18,9 +18,9 @@
     #!/bin/bash
     set -e
     COMPOSE_FILE="/home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml"
-    docker compose -f "$COMPOSE_FILE" up -d postgres
+    {{ compose_cmd }} -f "$COMPOSE_FILE" up -d postgres
     for i in {1..30}; do
-      if docker compose -f "$COMPOSE_FILE" exec -T postgres sh -lc 'pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1'; then
+      if {{ compose_cmd }} -f "$COMPOSE_FILE" exec -T postgres sh -lc 'pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1'; then
         echo "Postgres is ready"
         exit 0
       fi
@@ -38,20 +38,19 @@
     #!/bin/bash
     set -e
     COMPOSE_FILE="/home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml"
-    docker compose -f "$COMPOSE_FILE" pull migrate
-    docker compose -f "$COMPOSE_FILE" run --rm migrate
+    {{ compose_cmd }} -f "$COMPOSE_FILE" pull migrate
+    {{ compose_cmd }} -f "$COMPOSE_FILE" run --rm migrate
   environment:
     DOCKER_IMAGE_TAG: "{{ image_tag }}"
   args:
     executable: /bin/bash
-  when: (backend_changed | default(false)) | bool or (container_analysis is defined and 'fastapi' in container_analysis.stdout)
   when: (backend_changed | default(false)) | bool or (container_analysis is defined and 'fastapi' in container_analysis.stdout)
   register: migrate_result
 
 - name: Pull celery worker image
   ansible.builtin.shell: |
     set -e
-    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull celery-worker
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull celery-worker
   environment:
     DOCKER_IMAGE_TAG: "{{ image_tag }}"
   args:
@@ -63,7 +62,7 @@
 
 - name: Recreate backend services (fastapi, celery-worker)
   ansible.builtin.command: >
-    docker compose -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up --no-deps -d fastapi celery-worker
   environment:
     DOCKER_IMAGE_TAG: "{{ image_tag }}"
@@ -77,8 +76,7 @@
   until: backend_pull_wait.finished
   retries: 200
   delay: 2
-  loop: |
-    {{ [pull_fastapi_job, pull_celery_job] | select('defined') | list }}
-  when: item is defined
+  loop: "{{ [pull_fastapi_job, pull_celery_job] | select('defined') | selectattr('ansible_job_id', 'defined') | list }}"
+  when: item.ansible_job_id is defined
 
 

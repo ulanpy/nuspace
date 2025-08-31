@@ -18,16 +18,42 @@
   changed_when: false
 
 - name: Install docker if not present
-  ansible.builtin.package:
-    name: docker
+  ansible.builtin.apt:
+    name:
+      - docker.io
     state: present
+    update_cache: yes
   when: docker_check.rc != 0
+
 
 - name: Ensure docker service is running
   ansible.builtin.service:
     name: docker
     state: started
     enabled: yes
+
+- name: Check if Docker Compose v2 subcommand is available
+  ansible.builtin.command: docker compose version
+  register: docker_compose_subcommand_check
+  failed_when: false
+  changed_when: false
+
+- name: Check if docker-compose CLI is available
+  ansible.builtin.command: docker-compose version
+  register: docker_compose_cli_check
+  failed_when: false
+  changed_when: false
+
+- name: Install docker-compose if no compose is available
+  ansible.builtin.apt:
+    name: docker-compose
+    state: present
+    update_cache: yes
+  when: docker_compose_subcommand_check.rc != 0 and docker_compose_cli_check.rc != 0
+
+- name: Set compose_cmd fact
+  ansible.builtin.set_fact:
+    compose_cmd: "{{ 'docker compose' if docker_compose_subcommand_check.rc == 0 else ('docker-compose' if docker_compose_cli_check.rc == 0 else 'docker-compose') }}"
 
 - name: Ensure ansible service account user is in docker group
   ansible.builtin.user:
@@ -53,7 +79,7 @@
 - name: Configure gcloud to use VM service account and project
   ansible.builtin.shell: |
     export PATH="/root/google-cloud-sdk/bin:$PATH"
-    gcloud config set project nuspace-staging
+    gcloud config set project {{ gcp_project }}
   args:
     executable: /bin/bash
 

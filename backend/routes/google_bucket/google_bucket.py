@@ -117,11 +117,11 @@ async def generate_upload_url(
                 pass
         else:
             # Generate signed URL using impersonated credentials to avoid private key requirement
-            from backend.core.utils.gcp_auth import get_signing_credentials
-            
+            from backend.routes.google_bucket.utils import get_signing_credentials
+
             # Use the same service account that's attached to the VM for impersonation
             impersonated_credentials = get_signing_credentials(config.VM_SERVICE_ACCOUNT_EMAIL)
-            
+
             signed_url = blob.generate_signed_url(
                 version="v4",
                 expiration=timedelta(minutes=15),

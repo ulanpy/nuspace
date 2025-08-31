@@ -7,11 +7,11 @@ output "vm_public_ip" {
 
 # Convenient outputs for the newly created bucket
 output "media_bucket_name" {
-  value = google_storage_bucket.media_bucket.name
+  value = google_storage_bucket.media_bucket_target.name
 }
 
 output "media_bucket_url" {
-  value = format("gs://%s", google_storage_bucket.media_bucket.name)
+  value = format("gs://%s", google_storage_bucket.media_bucket_target.name)
 }
 
 # Service account information
