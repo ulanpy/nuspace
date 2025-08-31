@@ -3,10 +3,10 @@
   ansible.builtin.shell: |
     #!/bin/bash
     set -euo pipefail
-    docker ps --format "{{ '{{.Names}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard)" > /tmp/running_containers.txt 2>/dev/null || true
+    docker ps --format "{{ '{{.Names}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard|meilisearch)" > /tmp/running_containers.txt 2>/dev/null || true
     MISSING_CONTAINERS=""
     NEED_RESTART=""
-    for container in fastapi celery-worker nginx redis rabbitmq prometheus grafana loki alloy alertmanager wireguard; do
+    for container in fastapi celery-worker nginx redis rabbitmq prometheus grafana loki alloy alertmanager wireguard meilisearch; do
       if ! grep -q "^${container}" /tmp/running_containers.txt; then
         MISSING_CONTAINERS="${MISSING_CONTAINERS} ${container}"
       elif [[ "${BACKEND_CHANGED:-false}" == "true" && "$container" =~ ^(fastapi|celery-worker)$ ]]; then
@@ -30,6 +30,8 @@
       elif [[ "${ALERTMANAGER_CHANGED:-false}" == "true" && "$container" == "alertmanager" ]]; then
         NEED_RESTART="${NEED_RESTART} ${container}"
       elif [[ "${WIREGUARD_CHANGED:-false}" == "true" && "$container" == "wireguard" ]]; then
+        NEED_RESTART="${NEED_RESTART} ${container}"
+      elif [[ "${MEILISEARCH_CHANGED:-false}" == "true" && "$container" == "meilisearch" ]]; then
         NEED_RESTART="${NEED_RESTART} ${container}"
       fi
     done

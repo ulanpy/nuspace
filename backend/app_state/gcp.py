@@ -51,6 +51,17 @@ def setup_gcp(app: FastAPI) -> None:
     # Ensure container can reach metadata.google.internal (see compose extra_hosts).
     app.state.storage_client = storage.Client()
 
+    # Cache impersonated signing credentials at startup to avoid per-request impersonation
+    # These credentials are valid for 1 hour and can be reused across all signing operations
+    from backend.routes.google_bucket.utils import get_signing_credentials
+
+    try:
+        app.state.signing_credentials = get_signing_credentials(config.VM_SERVICE_ACCOUNT_EMAIL)
+        print(f"✅ Cached signing credentials for {config.VM_SERVICE_ACCOUNT_EMAIL}")
+    except Exception as e:
+        print(f"⚠️  Warning: Could not cache signing credentials: {e}")
+        app.state.signing_credentials = None
+
     bucket = app.state.storage_client.bucket(config.BUCKET_NAME)
     bucket.cors = [
         {
