@@ -5,18 +5,6 @@ on:
     branches:
       - dev
       - main
-  workflow_dispatch:
-    inputs:
-      force_deploy:
-        description: 'Force run Ansible even with no detected changes'
-        required: false
-        type: boolean
-        default: false
-      force_frontend_build:
-        description: 'Force run frontend builder to populate dist'
-        required: false
-        type: boolean
-        default: false
 
 jobs:
   build_and_deploy:
@@ -230,10 +218,6 @@ jobs:
           EOF
 
       - name: Run Ansible Playbook
-        if: |
-          inputs.force_deploy == true ||
-          steps.container_check.outputs.should_deploy == 'true' ||
-          steps.container_check.outputs.containers_running == 'false'
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
           ANSIBLE_HOST_KEY_CHECKING: False
@@ -246,4 +230,4 @@ jobs:
           # Run the Ansible playbook
           cd ansible && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook playbook.yml \
             --inventory inventory.yml \
-            --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ steps.secrets.outputs.ANSIBLE_USER }} docker_user=${{ steps.secrets.outputs.DOCKER_USERNAME }} docker_pass=${{ steps.secrets.outputs.DOCKER_PASSWORD }} gcp_project_var=${{ env.ANSIBLE_GCP_PROJECT }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} compose_changed=${{ steps.changes.outputs.compose }} force_frontend_build=${{ inputs.force_frontend_build || 'false' }}"
+            --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ steps.secrets.outputs.ANSIBLE_USER }} docker_user=${{ steps.secrets.outputs.DOCKER_USERNAME }} docker_pass=${{ steps.secrets.outputs.DOCKER_PASSWORD }} gcp_project_var=${{ env.ANSIBLE_GCP_PROJECT }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} compose_changed=${{ steps.changes.outputs.compose }} force_frontend_build=true"
