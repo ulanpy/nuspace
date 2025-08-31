@@ -43,6 +43,17 @@
   poll: 0
   register: grafana_job
 
+- name: Recreate meilisearch service
+  ansible.builtin.command: >
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    up -d meilisearch
+  environment:
+    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+  when: (meilisearch_changed | default(false)) | bool or (container_analysis is defined and 'meilisearch' in container_analysis.stdout)
+  async: 600
+  poll: 0
+  register: meilisearch_job
+
 - name: Recreate loki service
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
@@ -99,6 +110,7 @@
       rabbitmq_job|default({}),
       prometheus_job|default({}),
       grafana_job|default({}),
+      meilisearch_job|default({}),
       loki_job|default({}),
       alloy_job|default({}),
       alertmanager_job|default({}),

@@ -101,3 +101,10 @@ resource "google_service_account_iam_member" "vm_sa_token_creator" {
   role               = "roles/iam.serviceAccountTokenCreator"
   member             = "serviceAccount:${google_service_account.vm_service_account.email}"
 }
+
+# Allow the VM service account to act as the push auth service account (self in this setup)
+resource "google_service_account_iam_member" "vm_sa_act_as_self" {
+  service_account_id = google_service_account.vm_service_account.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.vm_service_account.email}"
+}
