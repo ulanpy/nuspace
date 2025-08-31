@@ -18,9 +18,11 @@
   changed_when: false
 
 - name: Install docker if not present
-  ansible.builtin.package:
-    name: docker
+  ansible.builtin.apt:
+    name:
+      - docker.io
     state: present
+    update_cache: yes
   when: docker_check.rc != 0
 
 - name: Ensure docker service is running
