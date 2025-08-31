@@ -24,7 +24,7 @@ resource "google_pubsub_topic_iam_member" "gcs_can_publish" {
 # Configure the bucket to publish OBJECT_FINALIZE events to the topic
 resource "google_storage_notification" "bucket_object_finalize" {
   depends_on     = [google_pubsub_topic_iam_member.gcs_can_publish]
-  bucket         = google_storage_bucket.media_bucket.name
+  bucket         = google_storage_bucket.media_bucket_target.name
   topic          = google_pubsub_topic.gcs_object_created.id
   payload_format = "JSON_API_V1"
   event_types    = ["OBJECT_FINALIZE"]

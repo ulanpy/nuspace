@@ -28,7 +28,7 @@ resource "google_compute_instance" "vm_instance" {
   }
 
   boot_disk {
-    source      = var.use_existing_boot_disk ? data.google_compute_disk.existing_boot[0].self_link : google_compute_disk.new_boot[0].self_link
+    source      = var.use_existing_boot_disk ? data.google_compute_disk.existing_boot[0].self_link : (var.use_boot_snapshot ? google_compute_disk.from_snapshot[0].self_link : google_compute_disk.new_boot[0].self_link)
     auto_delete = var.use_existing_boot_disk ? false : true
     interface   = "SCSI"
   }
@@ -63,12 +63,22 @@ data "google_compute_disk" "existing_boot" {
 
 # Create new boot disk (when not reusing)
 resource "google_compute_disk" "new_boot" {
-  count = var.use_existing_boot_disk ? 0 : 1
+  count = (var.use_existing_boot_disk || var.use_boot_snapshot) ? 0 : 1
   name  = "${var.vm_name}-boot"
   zone  = var.zone
   size  = var.boot_disk_size_gb
   type  = var.boot_disk_type
   image = "debian-cloud/debian-12"
+}
+
+# Create boot disk from a snapshot (when requested)
+resource "google_compute_disk" "from_snapshot" {
+  count           = var.use_boot_snapshot && !var.use_existing_boot_disk ? 1 : 0
+  name            = "${var.vm_name}-boot"
+  zone            = var.zone
+  type            = var.boot_disk_type
+  size            = var.boot_disk_size_gb
+  snapshot        = "projects/${var.project_id}/global/snapshots/${var.boot_snapshot_name}"
 }
 
 # Firewall rule to allow HTTP traffic

@@ -3,6 +3,8 @@ credentials_file = "./creds/staging.json"
 
 # Boot disk strategy
 use_existing_boot_disk = false
+use_boot_snapshot      = false
+boot_snapshot_name     = null
 boot_disk_size_gb      = 30
 boot_disk_type         = "pd-standard"
 

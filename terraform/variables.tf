@@ -116,11 +116,23 @@ variable "existing_boot_disk_name" {
 variable "boot_disk_size_gb" {
   description = "Size of boot disk when creating a new one"
   type        = number
-  default     = 30
 }
 
 variable "boot_disk_type" {
   description = "Type of boot disk when creating a new one"
   type        = string
   default     = "pd-standard"
+}
+
+# Snapshot-based boot restoration/migration
+variable "use_boot_snapshot" {
+  description = "Create boot disk from a snapshot when true (ignores image)"
+  type        = bool
+  default     = false
+}
+
+variable "boot_snapshot_name" {
+  description = "Snapshot name to restore from when use_boot_snapshot = true"
+  type        = string
+  default     = null
 }

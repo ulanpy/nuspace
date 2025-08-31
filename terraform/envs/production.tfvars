@@ -3,18 +3,19 @@ credentials_file = "./creds/production.json"
 
 
 # Boot disk strategy
-use_existing_boot_disk  = true
-existing_boot_disk_name = "nuspace"
-
+use_existing_boot_disk  = false
+use_boot_snapshot       = true
+boot_snapshot_name      = "nuspace-boot-20250901-0012"
+boot_disk_size_gb       = 30
 
 project_id  = "nuspace2025"
 region      = "europe-central2"
 zone        = "europe-central2-a"
 
-vm_name          = "nuspace-vm-prod"
+vm_name          = "nuspace-instance"
 vm_machine_type  = "e2-medium"
 vm_instance_tags = ["https-server"]
-static_ip_name   = "nuspace-static-ip-prod"
+static_ip_name   = "nuspace-static-ip"
 
 media_bucket_name = "nuspace"
 logs_bucket_name  = "nuspace-logs"
@@ -26,7 +27,7 @@ subscription_suffix = "prod"
 
 # Push subscription
 push_endpoint                   = "https://nuspace.kz/api/bucket/gcs-hook"
-push_auth_service_account_email = "nuspace-vm-sa@nuspace-production.iam.gserviceaccount.com"
+push_auth_service_account_email = "nuspace-vm-sa@nuspace2025.iam.gserviceaccount.com"
 push_auth_audience              = "https://nuspace.kz"
 
 # Service accounts (IDs)
