@@ -76,8 +76,7 @@
   until: backend_pull_wait.finished
   retries: 200
   delay: 2
-  loop: |
-    {{ [pull_fastapi_job, pull_celery_job] | select('defined') | list }}
-  when: item is defined
+  loop: "{{ [pull_fastapi_job, pull_celery_job] | select('defined') | selectattr('ansible_job_id', 'defined') | list }}"
+  when: item.ansible_job_id is defined
 
 
