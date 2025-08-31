@@ -45,7 +45,6 @@
   args:
     executable: /bin/bash
   when: (backend_changed | default(false)) | bool or (container_analysis is defined and 'fastapi' in container_analysis.stdout)
-  when: (backend_changed | default(false)) | bool or (container_analysis is defined and 'fastapi' in container_analysis.stdout)
   register: migrate_result
 
 - name: Pull celery worker image

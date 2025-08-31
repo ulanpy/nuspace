@@ -25,6 +25,19 @@
     update_cache: yes
   when: docker_check.rc != 0
 
+- name: Check if Docker Compose v2 is available
+  ansible.builtin.command: docker compose version
+  register: compose_check
+  failed_when: false
+  changed_when: false
+
+- name: Install docker-compose-plugin if not present
+  ansible.builtin.apt:
+    name: docker-compose-plugin
+    state: present
+    update_cache: yes
+  when: compose_check.rc != 0
+
 - name: Ensure docker service is running
   ansible.builtin.service:
     name: docker
