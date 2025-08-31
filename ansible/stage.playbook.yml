@@ -7,7 +7,6 @@
   vars:
     docker_username: "{{ docker_user }}"
     docker_password: "{{ docker_pass }}"
-    ansible_user: "{{ ansible_user_var }}"
     image_tag: "{{ docker_image_tag }}"
 
   tasks:
