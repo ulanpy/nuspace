@@ -1,27 +1,48 @@
+import asyncio
 from datetime import timedelta
-from typing import List
+from typing import List, Optional
 
+import google.auth
+import google.auth.transport.requests
 from fastapi import Request
+from google.auth import impersonated_credentials
+from google.auth.credentials import Credentials
 from google.cloud import storage
 
 from backend.core.configs.config import Config
 from backend.core.database.models import Media
 
 
-async def generate_download_url(
+async def generate_batch_download_urls(
     request: Request,
-    filename: str,
-) -> dict:
+    filenames: List[str],
+) -> List[dict]:
     """
-    Generates a download URL.
-    - In production: signed URL valid for 15 minutes (GET only)
-    - In emulator mode: direct proxy URL via nginx (/gcs/{bucket}/{object})
+    Generates download URLs for multiple files in batch for optimal performance.
+    - In production: signed URLs valid for 15 minutes (GET only)
+    - In emulator mode: direct proxy URLs via nginx (/gcs/{bucket}/{object})
+
+    This function significantly improves performance by:
+    1. Batching credential checks and refreshes
+    2. Using a single asyncio.gather for all signing operations
+    3. Avoiding repeated credential validation per file
+
+    Args:
+        request: FastAPI request object
+        filenames: List of filenames to generate URLs for
+
+    Returns:
+        List of dicts with signed_url keys, in the same order as input filenames
     """
+    if not filenames:
+        return []
+
     config: Config = request.app.state.config
+
     if config.USE_GCS_EMULATOR:
         # Use backend proxy to avoid nginx /gcs path issues during local dev
-        url = f"{config.HOME_URL}/api/bucket/local-download/{config.BUCKET_NAME}/{filename}"
-        return {"signed_url": url}
+        base_url = f"{config.HOME_URL}/api/bucket/local-download/{config.BUCKET_NAME}"
+        return [{"signed_url": f"{base_url}/{filename}"} for filename in filenames]
 
     # Use cached impersonated credentials from app startup
     # Falls back to creating fresh credentials if cache failed at startup or expired
@@ -34,19 +55,25 @@ async def generate_download_url(
         # Update the cache with fresh credentials
         request.app.state.signing_credentials = signing_credentials
 
-    blob: storage.Blob = request.app.state.storage_client.bucket(config.BUCKET_NAME).blob(filename)
+    # Prepare all blobs
+    bucket = request.app.state.storage_client.bucket(config.BUCKET_NAME)
+    blobs = [bucket.blob(filename) for filename in filenames]
 
-    # Move synchronous signing operation to thread to avoid blocking async event loop
-    import asyncio
+    # Move all synchronous signing operations to threads and execute in parallel
 
-    signed_url = await asyncio.to_thread(
-        blob.generate_signed_url,
-        version="v4",
-        expiration=timedelta(minutes=15),
-        method="GET",
-        credentials=signing_credentials,
-    )
-    return {"signed_url": signed_url}
+    async def sign_single_blob(blob: storage.Blob) -> str:
+        return await asyncio.to_thread(
+            blob.generate_signed_url,
+            version="v4",
+            expiration=timedelta(minutes=15),
+            method="GET",
+            credentials=signing_credentials,
+        )
+
+    # Execute all signing operations in parallel
+    signed_urls = await asyncio.gather(*[sign_single_blob(blob) for blob in blobs])
+
+    return [{"signed_url": url} for url in signed_urls]
 
 
 async def delete_bucket_object(
@@ -128,12 +155,6 @@ Google Cloud Platform authentication utilities for service account impersonation
 This module provides utilities to generate impersonated credentials that can be used
 to sign URLs without requiring hardcoded service account keys.
 """
-from typing import Optional
-
-import google.auth
-import google.auth.transport.requests
-from google.auth import impersonated_credentials
-from google.auth.credentials import Credentials
 
 
 def get_impersonated_credentials(

@@ -1,9 +1,8 @@
-import asyncio
 from typing import List, Sequence, Type, TypeVar
 
 from backend.common.schemas import MediaResponse
 from backend.core.database.models.media import Media
-from backend.routes.google_bucket.utils import generate_download_url
+from backend.routes.google_bucket.utils import generate_batch_download_urls
 from fastapi import Request
 from pydantic import BaseModel
 from sqlalchemy.ext.declarative import DeclarativeMeta
@@ -12,47 +11,42 @@ T = TypeVar("T", bound=DeclarativeMeta)
 R = TypeVar("R", bound=BaseModel)
 
 
-async def build_media_response(request: Request, media: Media) -> MediaResponse:
-    """
-    Generate a signed URL for a media file.
-
-    Parameters:
-    - `request` (Request): FastAPI request object.
-    - `media` (Media): Media database object.
-
-    Returns:
-    - `MediaResponse`: Signed URL and metadata.
-    """
-    url_data = await generate_download_url(request, media.name)
-    return MediaResponse(
-        id=media.id,
-        url=url_data["signed_url"],
-        mime_type=media.mime_type,
-        entity_type=media.entity_type,
-        entity_id=media.entity_id,
-        media_format=media.media_format,
-        media_order=media.media_order,
-    )
-
-
 async def build_media_responses(
     request: Request, media_objects: List[Media]
 ) -> List[MediaResponse]:
     """
-    Generate media responses for a list of media objects.
+    Generate media responses for a list of media objects using batch signed URL generation.
+    This is significantly faster than individual URL generation for multiple media objects.
 
     Parameters:
     - `request` (Request): FastAPI request object.
     - `media_objects` (List[Media]): Media objects.
 
     Returns:
-    - `List[MediaResponse] | None`: List of media responses.
+    - `List[MediaResponse]`: List of media responses with signed URLs.
     """
-    return list(
-        await asyncio.gather(
-            *(build_media_response(request, media_object) for media_object in media_objects)
+    if not media_objects:
+        return []
+
+    # Extract all filenames for batch URL generation
+    filenames = [media.name for media in media_objects]
+
+    # Generate all signed URLs in one batch operation
+    url_data_list = await generate_batch_download_urls(request, filenames)
+
+    # Build MediaResponse objects with the generated URLs
+    return [
+        MediaResponse(
+            id=media.id,
+            url=url_data["signed_url"],
+            mime_type=media.mime_type,
+            entity_type=media.entity_type,
+            entity_id=media.entity_id,
+            media_format=media.media_format,
+            media_order=media.media_order,
         )
-    )
+        for media, url_data in zip(media_objects, url_data_list)
+    ]
 
 
 def calculate_pages(count: int, size: int):
@@ -114,6 +108,7 @@ async def map_media_to_resources(
 ) -> List[List[MediaResponse]]:
     """
     Maps media objects to their corresponding resources and returns ordered media responses.
+    Optimized version that uses batch signed URL generation for maximum performance.
 
     Args:
         request: The FastAPI request object
@@ -125,16 +120,44 @@ async def map_media_to_resources(
         List of lists of MediaResponse, where each inner list corresponds to the media
         for the resource at the same index in the resources sequence
     """
-    return await asyncio.gather(
-        *[
-            build_media_responses(
-                request=request,
-                media_objects=[
-                    media
-                    for media in media_objects
-                    if media.entity_id == getattr(resource, resource_id_field, None)
-                ],
+    if not media_objects or not resources:
+        return [[] for _ in resources]
+
+    # Pre-group media objects by entity_id for O(1) lookup instead of O(n) search
+    from collections import defaultdict
+
+    media_by_entity_id = defaultdict(list)
+    for media in media_objects:
+        media_by_entity_id[media.entity_id].append(media)
+
+    # Generate signed URLs for ALL media objects in one batch operation
+    all_filenames = [media.name for media in media_objects]
+    all_url_data = await generate_batch_download_urls(request, all_filenames)
+
+    # Create a mapping from media object to its signed URL
+    media_to_url = {
+        media: url_data["signed_url"] for media, url_data in zip(media_objects, all_url_data)
+    }
+
+    # Build the result list maintaining the order of resources
+    result = []
+    for resource in resources:
+        resource_id = getattr(resource, resource_id_field, None)
+        resource_media = media_by_entity_id.get(resource_id, [])
+
+        # Build MediaResponse objects using pre-generated URLs
+        media_responses = [
+            MediaResponse(
+                id=media.id,
+                url=media_to_url[media],
+                mime_type=media.mime_type,
+                entity_type=media.entity_type,
+                entity_id=media.entity_id,
+                media_format=media.media_format,
+                media_order=media.media_order,
             )
-            for resource in resources
+            for media in resource_media
         ]
-    )
+        result.append(media_responses)
+
+    return result
