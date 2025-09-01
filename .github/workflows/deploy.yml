@@ -134,12 +134,13 @@ jobs:
           if [ "${GITHUB_REF_NAME}" = "main" ]; then
             echo "GCP_PROJECT=nuspace2025" >> $GITHUB_ENV
             echo "WIF_PROVIDER=projects/283390667737/locations/global/workloadIdentityPools/github-actions/providers/github-oidc" >> $GITHUB_ENV
+            echo "WIF_SERVICE_ACCOUNT=nuspace-ansible-sa@nuspace2025.iam.gserviceaccount.com" >> $GITHUB_ENV
           else
             echo "GCP_PROJECT=nuspace-staging" >> $GITHUB_ENV
             echo "WIF_PROVIDER=projects/139212374894/locations/global/workloadIdentityPools/github-actions/providers/github-oidc" >> $GITHUB_ENV
+            echo "WIF_SERVICE_ACCOUNT=nuspace-ansible-sa@nuspace-staging.iam.gserviceaccount.com" >> $GITHUB_ENV
           fi
           echo "ANSIBLE_GCP_PROJECT=${GCP_PROJECT}" >> $GITHUB_ENV
-          echo "WIF_SERVICE_ACCOUNT=nuspace-ansible-sa@${GCP_PROJECT}.iam.gserviceaccount.com" >> $GITHUB_ENV
 
       - name: Authenticate to Google Cloud via Workload Identity Federation
         uses: google-github-actions/auth@v2
