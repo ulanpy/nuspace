@@ -37,9 +37,18 @@ output "ansible_service_account_email" {
   description = "Email of the Ansible service account"
 }
 
-# Ansible service account key (base64 encoded)
-output "ansible_service_account_key" {
-  value = google_service_account_key.ansible_key.private_key
-  description = "Base64 encoded private key for the Ansible service account"
-  sensitive = true
+output "project_number" {
+  value       = data.google_project.current.number
+  description = "Project number"
+}
+
+# WIF pool and provider resource names
+output "wif_pool_name" {
+  value       = google_iam_workload_identity_pool.github_pool.name
+  description = "Full resource name of the WIF pool"
+}
+
+output "wif_provider_name" {
+  value       = google_iam_workload_identity_pool_provider.github_provider.name
+  description = "Full resource name of the WIF provider"
 }

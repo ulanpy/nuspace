@@ -39,9 +39,51 @@ resource "google_service_account" "ansible_service_account" {
   description  = "Service account for Ansible deployment and VM access"
 }
 
-# Create a service account key for Ansible (for authentication)
-resource "google_service_account_key" "ansible_key" {
+# Workload Identity Federation for GitHub Actions
+# Create a Workload Identity Pool
+resource "google_iam_workload_identity_pool" "github_pool" {
+  depends_on = [
+    google_project_service.iam_api,
+    google_project_service.iamcredentials_api,
+    google_project_service.sts_api
+  ]
+  workload_identity_pool_id = "github-actions"
+  display_name              = "GitHub Actions Pool"
+  description               = "OIDC pool for GitHub Actions"
+}
+
+# Create a Workload Identity Provider for GitHub OIDC
+resource "google_iam_workload_identity_pool_provider" "github_provider" {
+  workload_identity_pool_id          = google_iam_workload_identity_pool.github_pool.workload_identity_pool_id
+  workload_identity_pool_provider_id = "github-oidc"
+  display_name                       = "GitHub OIDC Provider"
+  description                        = "Trusts tokens from token.actions.githubusercontent.com"
+  attribute_mapping = {
+    "google.subject"            = "assertion.sub"
+    "attribute.repository"      = "assertion.repository"
+    "attribute.repository_owner"= "assertion.repository_owner"
+    "attribute.ref"             = "assertion.ref"
+    "attribute.actor"           = "assertion.actor"
+    "attribute.workflow"        = "assertion.workflow"
+  }
+
+  attribute_condition = format(
+    "attribute.repository == '%s' && (%s)",
+    var.github_repository,
+    join(" || ", [for b in var.github_branches : format("attribute.ref == 'refs/heads/%s'", b)])
+  )
+
+  oidc {
+    issuer_uri        = "https://token.actions.githubusercontent.com"
+  }
+}
+
+# Allow identities from the provider to impersonate the Ansible service account.
+# Restrict to this repository and branches.
+resource "google_service_account_iam_member" "ansible_wif_binding" {
   service_account_id = google_service_account.ansible_service_account.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github_pool.name}/attribute.repository/${var.github_repository}"
 }
 
 # Grant the Ansible service account Compute Instance Admin role for VM management
