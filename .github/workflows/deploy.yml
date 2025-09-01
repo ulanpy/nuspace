@@ -161,7 +161,7 @@ jobs:
           # Get VM instance details using the service account
           VM_IP=$(gcloud compute instances describe nuspace-instance --zone=europe-central2-a --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
           VM_NAME="nuspace-instance"
-          SA_USERNAME=$(gcloud compute ssh "$VM_NAME" --zone=europe-central2-a --command="whoami" --ssh-flag="-o ConnectTimeout=10" --quiet 2>/dev/null | tr -d '\r')
+          SA_USERNAME=$(gcloud compute ssh "$VM_NAME" --zone=europe-central2-a --command="whoami" --ssh-flag="-o ConnectTimeout=10" --quiet 2>/dev/null | tail -n1 | tr -d '\r')
           DOCKER_USERNAME=$(gcloud secrets versions access latest --secret="docker-username")
           DOCKER_PASSWORD=$(gcloud secrets versions access latest --secret="docker-password")
           echo "ANSIBLE_HOST=$VM_IP" >> $GITHUB_OUTPUT
