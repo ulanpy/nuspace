@@ -150,6 +150,7 @@ jobs:
           token_format: 'access_token'
           create_credentials_file: true
           access_token_scopes: 'https://www.googleapis.com/auth/cloud-platform'
+          export_environment_variables: true
 
       - name: Set gcloud project
         run: |
@@ -161,7 +162,15 @@ jobs:
           # Get VM instance details using the service account
           VM_IP=$(gcloud compute instances describe nuspace-instance --zone=europe-central2-a --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
           VM_NAME="nuspace-instance"
-          SA_USERNAME=$(gcloud compute ssh "$VM_NAME" --zone=europe-central2-a --command="whoami" --ssh-flag="-o ConnectTimeout=10" --quiet 2>/dev/null | tail -n1 | tr -d '\r')
+          # Derive OS Login POSIX username from service account unique ID (sa_<uniqueId>)
+          SA_UNIQUE_ID=$(gcloud iam service-accounts describe "$WIF_SERVICE_ACCOUNT" --format="value(uniqueId)" || true)
+          if [ -z "$SA_UNIQUE_ID" ]; then
+            echo "Failed to get service account uniqueId for $WIF_SERVICE_ACCOUNT" >&2
+            exit 1
+          fi
+          SA_USERNAME="sa_${SA_UNIQUE_ID}"
+          # Prime OS Login SSH certificate and verify access
+          gcloud compute ssh "$VM_NAME" --zone=europe-central2-a --command="true" --ssh-flag="-o ConnectTimeout=10" --quiet || { echo "OS Login SSH failed. Ensure oslogin API is enabled and roles/compute.osAdminLogin is granted to $WIF_SERVICE_ACCOUNT" >&2; exit 1; }
           DOCKER_USERNAME=$(gcloud secrets versions access latest --secret="docker-username")
           DOCKER_PASSWORD=$(gcloud secrets versions access latest --secret="docker-password")
           echo "ANSIBLE_HOST=$VM_IP" >> $GITHUB_OUTPUT

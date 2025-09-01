@@ -68,3 +68,10 @@ resource "google_project_service" "sts_api" {
   service            = "sts.googleapis.com"
   disable_on_destroy = false
 }
+
+# Enable the OS Login API for OS Login-based SSH access
+resource "google_project_service" "oslogin_api" {
+  project            = var.project_id
+  service            = "oslogin.googleapis.com"
+  disable_on_destroy = false
+}
