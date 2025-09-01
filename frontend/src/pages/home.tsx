@@ -6,6 +6,8 @@ import { LoginButton } from "../components/molecules/buttons/login-button";
 import { GlowCarouselWithImage } from "../components/organisms/glow-carousel-with-images";
 import { useUser } from "@/hooks/use-user";
 import { ReportButton } from "@/components/molecules/buttons/report-button";
+import { DonateButton } from "@/components/molecules/buttons/donate-button";
+import { ChannelButton } from "@/components/molecules/buttons/channel-button";
 import { TelegramStatus } from "@/components/molecules/telegram-status";
 import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
 import nuSpacePresentation from "@/assets/images/nu-space-presentation.jpg";
@@ -78,7 +80,26 @@ export default function HomePage() {
                 <span className="font-semibold">Public Beta.</span> We're actively improving Nuspace and truly value your feedback.
               </p>
             </div>
-            <LastCommitInline rightElement={<ReportButton />} />
+            
+            {/* 
+              Mobile-first responsive layout: 
+              - On mobile: commit info and buttons stack vertically for better readability
+              - On larger screens: commit info and buttons are side-by-side
+              - Commit info takes available space, buttons maintain their natural width
+            */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              {/* Commit info - takes full width on mobile, flex-1 on larger screens */}
+              <div className="flex-1 min-w-0">
+                <LastCommitInline />
+              </div>
+              
+              {/* Action buttons - full width on mobile, auto width on larger screens */}
+              <div className="flex gap-2 sm:flex-shrink-0">
+                <DonateButton />
+                <ChannelButton />
+                <ReportButton />
+              </div>
+            </div>
           </div>
         </div>
       </div>

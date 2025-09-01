@@ -4,34 +4,10 @@ import {Button} from "@/components/atoms/button";
 import {ThemeToggle} from "@/components/molecules/theme-toggle";
 import {BindTelegramButton} from "@/components/molecules/buttons/bind-telegram-button";
 import {TelegramStatus} from "@/components/molecules/telegram-status";
-import {Copy, LogOut, User} from "lucide-react";
-import {useState} from "react";
+import {LogOut, User} from "lucide-react";
 
 export default function ProfilePage() {
     const {user, isLoading, logout, login} = useUser();
-    const [copyButtonText, setCopyButtonText] = useState("Copy Session");
-
-    // Function to copy the currently available document cookies to the clipboard
-    const handleCopyCookies = async () => {
-        if (!document.cookie) {
-            alert("No session cookies found to copy.");
-            return;
-        }
-        try {
-            await navigator.clipboard.writeText(document.cookie);
-            setCopyButtonText("Copied!");
-            setTimeout(() => {
-                setCopyButtonText("Copy Session Cookies");
-            }, 2000); // Reset button text after 2 seconds
-        } catch (err) {
-            console.error("Failed to copy cookies: ", err);
-            setCopyButtonText("Failed to copy");
-            alert("Could not copy cookies to clipboard. See console for details.");
-            setTimeout(() => {
-                setCopyButtonText("Copy Session Cookies");
-            }, 2000);
-        }
-    };
 
 
     return (
@@ -96,24 +72,7 @@ export default function ProfilePage() {
                     </div>
                 </CardFooter>
 
-                {user && (
-                    <CardFooter className="p-4 pt-3 border-t">
-                        <div className="flex items-center justify-between w-full">
-                            <div>
-                                <div className="text-sm font-medium">Developer Tools</div>
-                                <div className="text-xs text-muted-foreground">Don't share copied values!</div>
-                            </div>
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                className="inline-flex items-center gap-2"
-                                onClick={handleCopyCookies}
-                            >
-                                <Copy size={16}/> {copyButtonText}
-                            </Button>
-                        </div>
-                    </CardFooter>
-                )}
+
             </Card>
         </div>
     );
