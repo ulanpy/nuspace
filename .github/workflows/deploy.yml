@@ -159,6 +159,13 @@ jobs:
       - name: Get VM information and Docker credentials from Secret Manager
         id: secrets
         run: |
+          # Debug: Show current gcloud auth info
+          echo "Current gcloud account: $(gcloud auth list --filter=status:ACTIVE --format="value(account)")"
+          echo "Current gcloud project: $(gcloud config get-value project)"
+          
+          # Explicitly set the account to use for gcloud commands
+          gcloud config set account "$WIF_SERVICE_ACCOUNT"
+          
           # Get VM instance details using the service account
           VM_IP=$(gcloud compute instances describe nuspace-instance --zone=europe-central2-a --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
           VM_NAME="nuspace-instance"
@@ -169,6 +176,8 @@ jobs:
             exit 1
           fi
           SA_USERNAME="sa_${SA_UNIQUE_ID}"
+          echo "Using OS Login username: $SA_USERNAME"
+          
           # Prime OS Login SSH certificate and verify access
           gcloud compute ssh "$VM_NAME" --zone=europe-central2-a --command="true" --ssh-flag="-o ConnectTimeout=10" --quiet || { echo "OS Login SSH failed. Ensure oslogin API is enabled and roles/compute.osAdminLogin is granted to $WIF_SERVICE_ACCOUNT" >&2; exit 1; }
           DOCKER_USERNAME=$(gcloud secrets versions access latest --secret="docker-username")
