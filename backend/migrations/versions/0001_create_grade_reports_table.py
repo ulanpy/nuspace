@@ -1,7 +1,7 @@
 """create grade_reports table
 
 Revision ID: 0001_create_grade_reports_table
-Revises: 
+Revises: de873a88b9db
 Create Date: 2025-08-29
 """
 
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "0001_create_grade_reports_table"
-down_revision = None
+down_revision = "de873a88b9db"
 branch_labels = None
 depends_on = None
 

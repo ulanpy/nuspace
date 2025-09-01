@@ -8,11 +8,11 @@ from .auth import auth
 from .campuscurrent.comments import comments
 from .campuscurrent.communities import communities
 from .campuscurrent.events import events
-from .campuscurrent.grades import grades
 from .campuscurrent.posts import posts
 from .campuscurrent.profile import profile
 from .campuscurrent.tags import tags
 from .google_bucket import google_bucket
+from .grades import grades
 from .kupiprodai import product
 from .notification import notification
 from .review import reply, review
@@ -34,7 +34,5 @@ routers: List[APIRouter] = [
     review.router,
     reply.router,
     grades.router,
-    comments.router,
-    posts.router,
     notification.router,
 ]
