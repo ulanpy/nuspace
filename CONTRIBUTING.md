@@ -5,13 +5,11 @@ This document provides comprehensive guidelines for contributing to the project.
 ## Table of Contents
 
 - [Contributing to Nuspace.kz](#contributing-to-nuspacekz)
-  - [Table of Contents](#table-of-contents)
   - [Code of Conduct](#code-of-conduct)
-  - [How Can I Contribute?](#how-can-i-contribute)
-    - [Reporting Bugs](#reporting-bugs)
-    - [Suggesting Enhancements](#suggesting-enhancements)
-    - [Your First Code Contribution](#your-first-code-contribution)
-    - [Pull Requests](#pull-requests)
+   - [Reporting Bugs](#reporting-bugs)
+   - [Suggesting Enhancements](#suggesting-enhancements)
+   - [Your First Code Contribution](#your-first-code-contribution)
+   - [Pull Requests](#pull-requests)
   - [Development Setup](#development-setup)
   - [Coding Standards](#coding-standards)
   - [Commit Messages](#commit-messages)
@@ -22,11 +20,7 @@ This document provides comprehensive guidelines for contributing to the project.
 
 While we don't have a formal Code of Conduct document yet, we expect all contributors to engage in a respectful and constructive manner. Please be considerate of others, value diverse perspectives, and help maintain a positive and welcoming environment. Harassment or any form of disrespectful behavior will not be tolerated.
 
-## How Can I Contribute?
-
-There are many ways to contribute to Nuspace.kz! Whether you're a developer, designer, tester, or documentation writer, your contributions are welcome. Here's how you can get involved:
-
-### 🐛 Reporting Bugs
+## 🐛 Reporting Bugs
 
 **Before reporting a bug, please:**
 - ✅ Search existing issues to avoid duplicates
@@ -74,7 +68,7 @@ What actually happens
 - Is this a regression? (worked before, doesn't work now)
 ```
 
-### 💡 Suggesting Enhancements
+## 💡 Suggesting Enhancements
 
 **Before suggesting, consider:**
 - 🔍 Search existing issues for similar requests
@@ -116,7 +110,7 @@ Any alternative solutions you've thought about
 Technical considerations or dependencies
 ```
 
-### 🚀 Your First Code Contribution
+## 🚀 Your First Code Contribution
 
 **New to the project? Start here:**
 
@@ -253,7 +247,7 @@ cp .env.example .env
 docker-compose up --build
 ```
 
-**For Development:**
+**(Optional) For Development:**
 ```bash
 # Set up pre-commit hooks
 python3 -m venv venv
@@ -361,5 +355,66 @@ If you have questions about contributing:
 ## Recognition
 
 Contributors will be recognized in our project documentation and release notes. Significant contributions may also be highlighted in our community communications.
+
+### Our Amazing Contributors
+
+<div id="contributors-container">
+  <p>Loading contributors...</p>
+</div>
+
+<script>
+// Fetch contributors from GitHub API
+async function loadContributors() {
+  try {
+    const response = await fetch('https://api.github.com/repos/ulanpy/nuspace/contributors');
+    const contributors = await response.json();
+    
+    const container = document.getElementById('contributors-container');
+    
+    if (contributors.length === 0) {
+      container.innerHTML = '<p>No contributors found.</p>';
+      return;
+    }
+    
+    // Create contributors grid
+    const contributorsHTML = `
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0;">
+        ${contributors.map(contributor => `
+          <div style="display: flex; align-items: center; padding: 0.5rem; border: 1px solid #e1e4e8; border-radius: 6px; background: #f6f8fa;">
+            <img src="${contributor.avatar_url}" 
+                 alt="${contributor.login}" 
+                 style="width: 40px; height: 40px; border-radius: 50%; margin-right: 0.75rem;">
+            <div>
+              <a href="${contributor.html_url}" 
+                 style="font-weight: 600; color: #0366d6; text-decoration: none;">
+                ${contributor.login}
+              </a>
+              <div style="font-size: 0.875rem; color: #586069;">
+                ${contributor.contributions} contribution${contributor.contributions !== 1 ? 's' : ''}
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <p style="margin-top: 1rem; font-size: 0.875rem; color: #586069;">
+        <em>Contributors are automatically fetched from GitHub API. Last updated: ${new Date().toLocaleDateString()}</em>
+      </p>
+    `;
+    
+    container.innerHTML = contributorsHTML;
+  } catch (error) {
+    console.error('Error loading contributors:', error);
+    document.getElementById('contributors-container').innerHTML = 
+      '<p>Unable to load contributors. Please check the <a href="https://github.com/ulanpy/nuspace/graphs/contributors">GitHub contributors page</a>.</p>';
+  }
+}
+
+// Load contributors when the page loads
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadContributors);
+} else {
+  loadContributors();
+}
+</script>
 
 Thank you for contributing to Nuspace.kz! 🚀
