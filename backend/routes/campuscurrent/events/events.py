@@ -26,7 +26,7 @@ from backend.core.database.models.user import User
 from backend.routes.campuscurrent.events import dependencies as deps
 from backend.routes.campuscurrent.events import schemas, utils
 from backend.routes.campuscurrent.events.policy import EventPolicy, ResourceAction
-from backend.routes.google_bucket.utils import batch_delete_blobs
+from backend.routes.google_bucket.utils import batch_delete_blobs, generate_batch_download_urls
 
 router = APIRouter(tags=["Events Routes"])
 
@@ -85,7 +85,8 @@ async def get_events(
     - `event_type`: Filter by event type (optional)
     - `event_status`: Filter by event status (optional)
     - `community_id`: Filter by specific community (optional)
-    - `time_filter`: Predefined time filter (upcoming, today, week, month) - takes precedence over start_date/end_date
+    - `time_filter`: Predefined time filter (upcoming, today, week, month) - takes precedence over
+       start_date/end_date
     - `start_date`: Start date for filtering events (optional, ignored if time_filter is provided)
     - `end_date`: End date for filtering events (optional, ignored if time_filter is provided)
     - `creator_sub`: Filter by event creator (optional)
@@ -227,10 +228,6 @@ async def get_events(
         .all()
     )
 
-    media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-        request=request, media_objects=media_objs, resources=events
-    )
-
     # Get community media for all events
     community_ids = [event.community_id for event in events if event.community_id]
     community_media_objs: List[Media] = []
@@ -246,29 +243,79 @@ async def get_events(
             .all()
         )
 
+    # Process ALL media (events + communities) in parallel with single batch operation
+    all_media_objects = media_objs + community_media_objs
+
+    # Generate signed URLs for ALL media objects at once
+    if all_media_objects:
+        all_filenames = [media.name for media in all_media_objects]
+        all_url_data = await generate_batch_download_urls(request, all_filenames)
+
+        # Create media-to-URL mapping
+        media_to_url = {
+            media: url_data["signed_url"]
+            for media, url_data in zip(all_media_objects, all_url_data)
+        }
+    else:
+        media_to_url = {}
+
+    # Pre-group event media by entity_id
+    from collections import defaultdict
+
+    event_media_by_id = defaultdict(list)
+    for media in media_objs:
+        event_media_by_id[media.entity_id].append(media)
+
+    # Pre-group community media by entity_id
+    community_media_by_id = defaultdict(list)
+    for media in community_media_objs:
+        community_media_by_id[media.entity_id].append(media)
+
     if keyword:
         count = meili_result.get("estimatedTotalHits", 0)
     else:
         count: int = await qb.blank(model=Event).base(count=True).filter(*filters).count()
 
+    # Build event responses without any additional async calls
     event_responses: List[schemas.EventResponse] = []
-    for event, media in zip(events, media_results):
-        # Get community media for this specific event
-        community_media = (
-            [m for m in community_media_objs if m.entity_id == event.community_id]
-            if event.community_id
-            else []
-        )
+    for event in events:
+        # Get event media using pre-grouped data and pre-generated URLs
+        event_media_objects = event_media_by_id.get(event.id, [])
+        event_media_responses = [
+            MediaResponse(
+                id=media.id,
+                url=media_to_url.get(media, ""),
+                mime_type=media.mime_type,
+                entity_type=media.entity_type,
+                entity_id=media.entity_id,
+                media_format=media.media_format,
+                media_order=media.media_order,
+            )
+            for media in event_media_objects
+        ]
 
-        community_media_responses = await response_builder.build_media_responses(
-            request=request, media_objects=community_media
+        # Get community media using pre-grouped data and pre-generated URLs
+        community_media_objects = (
+            community_media_by_id.get(event.community_id, []) if event.community_id else []
         )
+        community_media_responses = [
+            MediaResponse(
+                id=media.id,
+                url=media_to_url.get(media, ""),
+                mime_type=media.mime_type,
+                entity_type=media.entity_type,
+                entity_id=media.entity_id,
+                media_format=media.media_format,
+                media_order=media.media_order,
+            )
+            for media in community_media_objects
+        ]
 
         event_responses.append(
             response_builder.build_schema(
                 schemas.EventResponse,
                 schemas.EventResponse.model_validate(event),
-                media=media,
+                media=event_media_responses,
                 collaborators=event.collaborators,
                 community=(
                     response_builder.build_schema(
