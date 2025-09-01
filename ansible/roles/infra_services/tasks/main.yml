@@ -3,8 +3,7 @@
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d redis
-  environment:
-    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+
   when: (redis_changed | default(false)) | bool or (container_analysis is defined and 'redis' in container_analysis.stdout)
   async: 600
   poll: 0
@@ -14,8 +13,7 @@
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d rabbitmq
-  environment:
-    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+
   when: (rabbitmq_changed | default(false)) | bool or (container_analysis is defined and 'rabbitmq' in container_analysis.stdout)
   async: 600
   poll: 0
@@ -25,8 +23,7 @@
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d prometheus
-  environment:
-    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+
   when: (prometheus_changed | default(false)) | bool or (container_analysis is defined and 'prometheus' in container_analysis.stdout)
   async: 600
   poll: 0
@@ -36,8 +33,7 @@
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d grafana
-  environment:
-    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+
   when: (grafana_changed | default(false)) | bool or (container_analysis is defined and 'grafana' in container_analysis.stdout)
   async: 600
   poll: 0
@@ -47,8 +43,7 @@
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d meilisearch
-  environment:
-    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+
   when: (meilisearch_changed | default(false)) | bool or (container_analysis is defined and 'meilisearch' in container_analysis.stdout)
   async: 600
   poll: 0
@@ -58,8 +53,7 @@
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d loki
-  environment:
-    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+
   when: (loki_changed | default(false)) | bool or (container_analysis is defined and 'loki' in container_analysis.stdout)
   async: 600
   poll: 0
@@ -69,8 +63,7 @@
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d alloy
-  environment:
-    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+
   when: (alloy_changed | default(false)) | bool or (container_analysis is defined and 'alloy' in container_analysis.stdout)
   async: 600
   poll: 0
@@ -80,8 +73,7 @@
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d alertmanager
-  environment:
-    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+
   when: (alertmanager_changed | default(false)) | bool or (container_analysis is defined and 'alertmanager' in container_analysis.stdout)
   async: 600
   poll: 0
@@ -91,8 +83,7 @@
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d wireguard
-  environment:
-    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+
   when: (wireguard_changed | default(false)) | bool or (container_analysis is defined and 'wireguard' in container_analysis.stdout)
   async: 600
   poll: 0
@@ -121,8 +112,7 @@
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d --remove-orphans
-  environment:
-    DOCKER_IMAGE_TAG: "{{ image_tag }}"
+
   when: (compose_changed | default(false)) | bool
 
 - name: Prune all unused Docker assets
