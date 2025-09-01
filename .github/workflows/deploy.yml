@@ -9,6 +9,9 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     env:
       GCLOUD_VERSION: '472.0.0'
 
@@ -126,23 +129,29 @@ jobs:
           fi
           echo "$HOME/google-cloud-sdk/bin" >> $GITHUB_PATH
 
-      - name: Select GCP credentials and project based on branch
+      - name: Select GCP project and WIF provider based on branch
         run: |
           if [ "${GITHUB_REF_NAME}" = "main" ]; then
-            echo "GCP_KEY=${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY_PROD }}" >> $GITHUB_ENV
             echo "GCP_PROJECT=nuspace2025" >> $GITHUB_ENV
-            echo "ANSIBLE_GCP_PROJECT=nuspace2025" >> $GITHUB_ENV
+            echo "WIF_PROVIDER=projects/283390667737/locations/global/workloadIdentityPools/github-actions/providers/github-oidc" >> $GITHUB_ENV
           else
-            echo "GCP_KEY=${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}" >> $GITHUB_ENV
             echo "GCP_PROJECT=nuspace-staging" >> $GITHUB_ENV
-            echo "ANSIBLE_GCP_PROJECT=nuspace-staging" >> $GITHUB_ENV
+            echo "WIF_PROVIDER=projects/139212374894/locations/global/workloadIdentityPools/github-actions/providers/github-oidc" >> $GITHUB_ENV
           fi
+          echo "ANSIBLE_GCP_PROJECT=${GCP_PROJECT}" >> $GITHUB_ENV
+          echo "WIF_SERVICE_ACCOUNT=nuspace-ansible-sa@${GCP_PROJECT}.iam.gserviceaccount.com" >> $GITHUB_ENV
 
-      - name: Authenticate with Google Cloud
+      - name: Authenticate to Google Cloud via Workload Identity Federation
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SERVICE_ACCOUNT }}
+          token_format: 'access_token'
+          create_credentials_file: true
+          access_token_scopes: 'https://www.googleapis.com/auth/cloud-platform'
+
+      - name: Set gcloud project
         run: |
-          # Clean and decode the base64 service account key
-          echo "$GCP_KEY" | tr -d '\n\r' | sed 's/[[:space:]]//g' | sed 's/%$//' | base64 -d > /tmp/gcp-key.json
-          gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
           gcloud config set project "$GCP_PROJECT"
 
       - name: Get VM information and Docker credentials from Secret Manager
@@ -163,8 +172,6 @@ jobs:
 
       - name: Check if containers are running on VM
         id: container_check
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
         run: |
           # Test connection and check container status using instance name
           gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --command="docker ps --format 'table {{.Names}}\t{{.Status}}'" --ssh-flag="-o ConnectTimeout=10" --quiet > /tmp/container_status.txt 2>/dev/null || echo "Connection failed" > /tmp/container_status.txt
@@ -221,7 +228,6 @@ jobs:
 
       - name: Run Ansible Playbook
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
           ANSIBLE_HOST_KEY_CHECKING: False
           ANSIBLE_REMOTE_TMP: /tmp
           ANSIBLE_LOCAL_TMP: /tmp
