@@ -117,6 +117,11 @@ pre-commit install
 - Follow the contribution guidelines for submitting pull requests
 - Test your changes thoroughly before submitting
 
+## Documentation
+
+- [Workload Identity Federation Setup](docs/wif-setup.md) - GitHub Actions authentication with GCP
+- [Infrastructure Guide](infra/README.md) - Docker Compose and deployment setup
+
 ## Contributing
 
 We welcome contributions! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) file for detailed guidelines.
