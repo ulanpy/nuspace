@@ -9,12 +9,12 @@
 ## Table of Contents
 
 - [Nuspace.kz](#nuspacekz)
-  - [Table of Contents](#table-of-contents)
   - [Tech Stack](#tech-stack)
   - [Features](#features)
   - [Prerequisites](#prerequisites)
   - [Quick Start](#quick-start)
   - [Development](#development)
+  - [Documentation](#documentation)
   - [Contributing](#contributing)
   - [License](#license)
   - [Contact](#contact)
@@ -119,8 +119,9 @@ pre-commit install
 
 ## Documentation
 
-- [Workload Identity Federation Setup](docs/wif-setup.md) - GitHub Actions authentication with GCP
-- [Infrastructure Guide](infra/README.md) - Docker Compose and deployment setup
+- [Workload Identity Federation Setup](docs/wif-setup.md) - GitHub Actions authentication with GCP for CI/CD pipeline
+- [Monitoring Guide](infra/README.md) - How to set up monitoring services like Grafana and Prometheus
+- [Terraform Setup](terraform/README.md) - Provision cloud services for stage/production environments by IoC
 
 ## Contributing
 
@@ -135,4 +136,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 For questions or support, reach out to:
 
 - **Email:** [ulan.sharipov@nu.edu.kz](mailto:ulan.sharipov@nu.edu.kz)
-- **Telegram:** [@kamikadze24](https://t.me/kamikadze24)
+- **Nuspace dev chat:** https://t.me/nuspacedevcommunity
