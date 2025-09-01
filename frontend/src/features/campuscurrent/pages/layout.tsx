@@ -74,6 +74,9 @@ function AutoCarousel({
 }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [isSwiping, setIsSwiping] = useState(false);
 
   useEffect(() => {
     if (paused) return;
@@ -85,11 +88,51 @@ function AutoCarousel({
 
   if (!slides || slides.length === 0) return null;
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    setTouchStartX(t.clientX);
+    setTouchStartY(t.clientY);
+    setIsSwiping(false);
+    setPaused(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX == null || touchStartY == null) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    if (!isSwiping && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
+      setIsSwiping(true);
+      e.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX == null || touchStartY == null) {
+      setPaused(false);
+      return;
+    }
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    const threshold = 40;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > threshold) {
+      setIndex((prev) => (dx < 0 ? (prev + 1) % slides.length : (prev - 1 + slides.length) % slides.length));
+    }
+    setTouchStartX(null);
+    setTouchStartY(null);
+    setIsSwiping(false);
+    setPaused(false);
+  };
+
   return (
     <div
       className="relative w-full aspect-[16/9] rounded-xl overflow-hidden border border-white/10 shadow-sm"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       <div className="absolute inset-0" aria-roledescription="carousel">
         <div

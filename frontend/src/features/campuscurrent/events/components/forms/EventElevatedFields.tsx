@@ -31,7 +31,7 @@ export function EventElevatedFields() {
             <SelectTrigger>
               <SelectValue placeholder="Select event tag" />
             </SelectTrigger>
-            <SelectContent className="z-[150]">
+            <SelectContent className="z-[11050]">
               <SelectItem value="featured">Featured</SelectItem>
               <SelectItem value="promotional">Promotional</SelectItem>
               <SelectItem value="regular">Regular</SelectItem>
@@ -53,7 +53,7 @@ export function EventElevatedFields() {
             <SelectTrigger>
               <SelectValue placeholder="Select event status" />
             </SelectTrigger>
-            <SelectContent className="z-[150]">
+            <SelectContent className="z-[11050]">
               <SelectItem value="approved">Approved</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>
