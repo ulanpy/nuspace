@@ -16,7 +16,7 @@ services:
 
   fastapi:
     container_name: fastapi
-    image: kamikadze24/fastapi:${DOCKER_IMAGE_TAG}
+    image: kamikadze24/fastapi:latest
     cap_add:
       - NET_ADMIN
     networks:
@@ -36,7 +36,7 @@ services:
       - .env:/nuros/infra/.env:ro
 
   migrate:
-    image: kamikadze24/fastapi:${DOCKER_IMAGE_TAG}
+    image: kamikadze24/fastapi:latest
     container_name: migrate
     networks:
       - nuros
@@ -120,7 +120,7 @@ services:
       retries: 5
 
   celery-worker:
-    image: kamikadze24/celeryworker:${DOCKER_IMAGE_TAG}
+    image: kamikadze24/celeryworker:latest
     networks:
       - nuros
     restart: always
@@ -139,7 +139,7 @@ services:
 
   frontend-builder:
     container_name: frontend-builder
-    image: kamikadze24/frontendbuilder:${DOCKER_IMAGE_TAG:-latest}
+    image: kamikadze24/frontendbuilder:latest
     build:
       context: ..
       dockerfile: frontend/Dockerfile_static_builder
