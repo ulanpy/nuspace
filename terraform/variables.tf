@@ -70,10 +70,7 @@ variable "logs_bucket_name" {
   type        = string
 }
 
-variable "media_migration_bucket_name" {
-  description = "Temporary/target media bucket name for migration"
-  type        = string
-}
+
 
 variable "media_migration_region" {
   description = "Region for the target media bucket during migration"
@@ -135,4 +132,16 @@ variable "boot_snapshot_name" {
   description = "Snapshot name to restore from when use_boot_snapshot = true"
   type        = string
   default     = null
+}
+
+# GitHub OIDC settings for WIF
+variable "github_repository" {
+  description = "GitHub repository in the form owner/repo that is allowed to impersonate via WIF"
+  type        = string
+}
+
+variable "github_branches" {
+  description = "List of Git refs (branch names) allowed to impersonate (e.g., ['main','dev'])"
+  type        = list(string)
+  default     = ["main", "dev"]
 }

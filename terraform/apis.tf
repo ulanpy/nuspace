@@ -54,3 +54,17 @@ resource "google_project_service" "secretmanager_api" {
   service = "secretmanager.googleapis.com"
   disable_on_destroy = false
 }
+
+# Enable the IAM Credentials API (needed for service account impersonation)
+resource "google_project_service" "iamcredentials_api" {
+  project            = var.project_id
+  service            = "iamcredentials.googleapis.com"
+  disable_on_destroy = false
+}
+
+# Enable the Security Token Service API (needed for Workload Identity Federation)
+resource "google_project_service" "sts_api" {
+  project            = var.project_id
+  service            = "sts.googleapis.com"
+  disable_on_destroy = false
+}
