@@ -17,7 +17,7 @@ vm_machine_type  = "e2-medium"
 vm_instance_tags = ["https-server"]
 static_ip_name   = "nuspace-static-ip"
 
-media_bucket_name = "nuspace"
+media_bucket_name = "nuspace-media"
 logs_bucket_name  = "nuspace-logs"
 
 # Pub/Sub
@@ -34,5 +34,7 @@ push_auth_audience              = "https://nuspace.kz"
 vm_account_id      = "nuspace-vm-sa"
 ansible_account_id = "nuspace-ansible-sa"
 
-media_migration_bucket_name = "nuspace-media"
 media_migration_region      = "europe-central2"
+
+# WIF: GitHub repo allowed to impersonate (format: owner/repo)
+github_repository = "ulanpy/nuspace"
