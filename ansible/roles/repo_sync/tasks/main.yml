@@ -3,7 +3,7 @@
   ansible.builtin.git:
     repo: "https://github.com/ulanpy/nuspace.git"
     dest: "/home/{{ ansible_user }}/nuspace"
-    version: dev
+    version: "{{ github_ref_name | default('main') }}"
     force: yes
 
 
