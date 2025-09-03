@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Keyboard, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "./button";
 import { cn } from "../../utils/utils";
 import { createPortal } from "react-dom";
@@ -27,7 +27,7 @@ export function Modal({
   className = "max-w-md",
 }: ModalProps) {
   const backNav = useMaybeBackNavigation();
-  const { isMiniApp, hideKeyboard } = useTelegramMiniApp();
+  const { isMiniApp } = useTelegramMiniApp();
   useEffect(() => {
     if (!isOpen || !backNav) return;
     // Register modal close to back stack
@@ -121,11 +121,6 @@ export function Modal({
             )}
           </div>
           <div className="flex items-center gap-1">
-            {isMiniApp && (
-              <Button variant="ghost" size="icon" onClick={hideKeyboard} aria-label="Hide keyboard">
-                <Keyboard className="h-4 w-4" />
-              </Button>
-            )}
             <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
               <X className="h-4 w-4" />
             </Button>
