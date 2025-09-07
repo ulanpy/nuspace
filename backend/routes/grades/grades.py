@@ -1,155 +1,111 @@
-import asyncio
-from typing import Annotated
+from typing import List
 
-from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
-from sqlalchemy import text
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import get_current_principals, get_db_session
+from backend.common.cruds import QueryBuilder
+from backend.common.dependencies import get_db_session
+from backend.common.utils import meilisearch, response_builder
+from backend.core.database.models import GradeReport
+from backend.core.database.models.common_enums import EntityType
+from backend.routes.grades import schemas
 
-from .schemas import UploadSummary
-from .utils import import_from_csv
-
-router = APIRouter(prefix="/grades", tags=["Grades"])
-
-
-@router.post("/upload")
-async def upload_grades(
-    file: UploadFile = File(...),
-    course_code: str = Form(...),
-    term: str = Form(...),
-    replace: bool = Form(False),
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)] = None,
-) -> UploadSummary:
-    """Accept a normalized CSV file and import rows into grade_reports.
-
-    The heavy work runs in a thread (sync DB engine). If replace=True, existing
-    rows for course_code+term will be deleted before insert.
-    """
-    try:
-        inserted = await asyncio.to_thread(
-            import_from_csv, file.file, 50, replace, course_code, term
-        )
-    except Exception as exc:  # pragma: no cover - surface errors to client
-        return UploadSummary(imported=0, skipped=0, errors=[{"error": str(exc)}])
-
-    return UploadSummary(imported=inserted, skipped=0, errors=[])
+router = APIRouter(tags=["Grades"])
 
 
-@router.get("/reports")
-async def get_reports(
-    term: str = Query(...),
-    course_code: str | None = Query(None),
-    faculty: str | None = Query(None),
+@router.get("/grades", response_model=schemas.ListGradeReportResponse)
+async def get_grades(
+    request: Request,
+    size: int = Query(20, ge=1, le=100),
+    page: int = 1,
+    keyword: str | None = Query(
+        default=None, description="Search keyword for course code or course title"
+    ),
     db_session: AsyncSession = Depends(get_db_session),
-) -> dict:
-    """Return section-level reports for a course or faculty in a term.
-
-    If course_code provided  exact match; if faculty provided  ILIKE match.
+) -> schemas.ListGradeReportResponse:
     """
-    conditions = ["term = :term"]
-    params = {"term": term}
+    Retrieves a paginated list of grade reports with search functionality.
 
-    if course_code:
-        conditions.append("course_code = :course_code")
-        params["course_code"] = course_code
-    if faculty:
-        conditions.append("faculty ILIKE :faculty")
-        params["faculty"] = f"%{faculty}%"
+    **Access Policy:**
+    - All authenticated users can view grade reports
 
-    sql = (
-        "SELECT * FROM grade_reports WHERE "
-        + " AND ".join(conditions)
-        + " ORDER BY course_code, section"
+    **Parameters:**
+    - `size`: Number of grade reports per page (default: 20, max: 100)
+    - `page`: Page number (default: 1)
+    - `keyword`: Search keyword for course code or course title (optional)
+
+    **Returns:**
+    - List of grade reports matching the criteria with pagination info
+
+    **Notes:**
+    - Results are ordered by creation date in descending order
+    - Search is performed on course code and course title fields
+    - Returns empty list if no results found for search keyword
+    """
+
+    conditions = []
+
+    if keyword:
+        meili_result = await meilisearch.get(
+            request=request,
+            storage_name=EntityType.grade_reports.value,
+            keyword=keyword,
+            page=page,
+            size=size,
+            filters=None,
+        )
+        grade_report_ids = [item["id"] for item in meili_result["hits"]]
+
+        if not grade_report_ids:
+            return schemas.ListGradeReportResponse(grades=[], total_pages=1)
+
+    if keyword:
+        conditions.append(GradeReport.id.in_(grade_report_ids))
+
+    qb = QueryBuilder(session=db_session, model=GradeReport)
+    if keyword:
+        # Preserve Meilisearch ranking order by using a custom order
+        from sqlalchemy import case
+
+        order_clause = case(
+            *[
+                (GradeReport.id == grade_report_id, index)
+                for index, grade_report_id in enumerate(grade_report_ids)
+            ],
+            else_=len(grade_report_ids),
+        )
+        grades: List[GradeReport] = await qb.base().filter(*conditions).order(order_clause).all()
+    else:
+        # Alphabetical order when no keyword
+        grades: List[GradeReport] = (
+            await qb.base()
+            .filter(*conditions)
+            .paginate(size, page)
+            .order(GradeReport.created_at.desc())
+            .all()
+        )
+    if keyword:
+        count = meili_result.get("estimatedTotalHits", 0)
+    else:
+        count: int = await qb.blank(model=GradeReport).base(count=True).filter(*conditions).count()
+    total_pages: int = response_builder.calculate_pages(count=count, size=size)
+
+    return schemas.ListGradeReportResponse(
+        grades=[schemas.BaseGradeReportSchema.model_validate(grade) for grade in grades],
+        total_pages=total_pages,
     )
 
-    result = await db_session.execute(text(sql), params)
-    # use mappings() to get dict-like rows
-    rows = [dict(r) for r in result.mappings().all()]
 
-    # Build response: sections and overall summary
-    sections = []
-    total_count = 0
-    weighted_sum = 0.0
-    for r in rows:
-        sections.append(
-            {
-                "section": r.get("section"),
-                "course_title": r.get("course_title"),
-                "faculty": r.get("faculty"),
-                "grades_count": r.get("grades_count"),
-                "avg_gpa": float(r.get("avg_gpa")) if r.get("avg_gpa") is not None else None,
-                "median_gpa": (
-                    float(r.get("median_gpa")) if r.get("median_gpa") is not None else None
-                ),
-                "std_dev": float(r.get("std_dev")) if r.get("std_dev") is not None else None,
-                "pct_A": float(r.get("pct_A")) if r.get("pct_A") is not None else None,
-                "pct_B": float(r.get("pct_B")) if r.get("pct_B") is not None else None,
-                "pct_C": float(r.get("pct_C")) if r.get("pct_C") is not None else None,
-                "pct_D": float(r.get("pct_D")) if r.get("pct_D") is not None else None,
-                "pct_F": float(r.get("pct_F")) if r.get("pct_F") is not None else None,
-            }
-        )
-        try:
-            cnt = int(r.get("grades_count") or 0)
-        except Exception:
-            cnt = 0
-        if r.get("avg_gpa") is not None:
-            weighted_sum += float(r.get("avg_gpa")) * cnt
-            total_count += cnt
-
-    overall_avg = float(weighted_sum / total_count) if total_count > 0 else None
-
-    return {"sections": sections, "overall": {"avg_gpa": overall_avg, "total_count": total_count}}
-
-
-@router.get("/search")
-async def search_grades(
-    term: str = Query(...),
-    q: str = Query(...),
-    size: int = Query(20, ge=1, le=200),
-    page: int = Query(1, ge=1),
+@router.get("/grades/{id}", response_model=schemas.BaseGradeReportSchema)
+async def get_grade(
+    id: int,
     db_session: AsyncSession = Depends(get_db_session),
-) -> dict:
-    """Search by course_code (exact) or faculty name (ILIKE).
-
-    Returns matching course_code + faculty + summary.
+) -> schemas.BaseGradeReportSchema:
     """
-    # If q looks like a course code (contains space and digits) try exact match first
-    is_course_code = any(char.isdigit() for char in q)
-
-    params = {"term": term}
-    if is_course_code:
-        params["course_code"] = q
-        sql = (
-            "SELECT course_code, course_title, faculty, "
-            "SUM(coalesce(grades_count,0))::int as total_count, "
-            "AVG(coalesce(avg_gpa,0)) as avg_gpa "
-            "FROM grade_reports WHERE term = :term "
-            "AND course_code = :course_code "
-            "GROUP BY course_code, course_title, faculty "
-            "ORDER BY course_code LIMIT :limit OFFSET :offset"
-        )
-    else:
-        params["faculty"] = f"%{q}%"
-        sql = (
-            "SELECT course_code, course_title, faculty, "
-            "SUM(coalesce(grades_count,0))::int as total_count, "
-            "AVG(coalesce(avg_gpa,0)) as avg_gpa "
-            "FROM grade_reports WHERE term = :term "
-            "AND faculty ILIKE :faculty "
-            "GROUP BY course_code, course_title, faculty "
-            "ORDER BY course_code LIMIT :limit OFFSET :offset"
-        )
-
-    params["limit"] = size
-    params["offset"] = (page - 1) * size
-
-    result = await db_session.execute(text(sql), params)
-    items = [dict(r) for r in result.mappings().all()]
-
-    # normalize numeric fields
-    for it in items:
-        it["avg_gpa"] = float(it["avg_gpa"]) if it.get("avg_gpa") is not None else None
-
-    return {"items": items, "page": page, "size": size}
+    Retrieves a grade report by id.
+    """
+    qb = QueryBuilder(session=db_session, model=GradeReport)
+    grade = await qb.base().filter(GradeReport.id == id).first()
+    if not grade:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Grade report not found")
+    return schemas.BaseGradeReportSchema.model_validate(grade)

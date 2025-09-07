@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, Column, DateTime, Integer, Numeric, String
+from sqlalchemy import Column, DateTime, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -32,8 +32,6 @@ class GradeReport(Base):
 
     letters_count: Mapped[int] = mapped_column(Integer, nullable=True)
     faculty: Mapped[str] = mapped_column(String(256), nullable=True, index=True)
-
-    raw_row: Mapped[dict] = mapped_column(JSON, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

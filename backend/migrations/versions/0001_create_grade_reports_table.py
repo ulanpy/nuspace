@@ -38,7 +38,6 @@ def upgrade():
         sa.Column("pct_W_AW", sa.Numeric(5, 2), nullable=True),
         sa.Column("letters_count", sa.Integer, nullable=True),
         sa.Column("faculty", sa.String(256), nullable=True, index=True),
-        sa.Column("raw_row", sa.JSON, nullable=True),
         sa.Column("created_at", sa.DateTime, nullable=False, server_default=sa.func.now()),
         sa.Column("updated_at", sa.DateTime, nullable=False, server_default=sa.func.now()),
     )

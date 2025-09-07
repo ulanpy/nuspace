@@ -1,48 +1,38 @@
-from typing import List, Optional
+from datetime import datetime
+from typing import List
 
+from fastapi import Query
 from pydantic import BaseModel
 
 
-class ReportSection(BaseModel):
-    section: Optional[str]
-    course_title: Optional[str]
-    faculty: Optional[str]
-    grades_count: Optional[int]
-    avg_gpa: Optional[float]
-    median_gpa: Optional[float]
-    std_dev: Optional[float]
-    pct_A: Optional[float]
-    pct_B: Optional[float]
-    pct_C: Optional[float]
-    pct_D: Optional[float]
-    pct_F: Optional[float]
-
-
-class OverallSummary(BaseModel):
-    avg_gpa: Optional[float]
-    total_count: int
-
-
-class ReportsResponse(BaseModel):
-    sections: List[ReportSection]
-    overall: OverallSummary
-
-
-class SearchItem(BaseModel):
+class BaseGradeReportSchema(BaseModel):
+    id: int
     course_code: str
-    course_title: Optional[str]
-    faculty: Optional[str]
-    total_count: int
-    avg_gpa: Optional[float]
+    course_title: str
+    section: str
+    term: str
+    grades_count: int
+    avg_gpa: float
+    std_dev: float
+    median_gpa: float
+    pct_A: float
+    pct_B: float
+    pct_C: float
+    pct_D: float
+    pct_F: float
+    pct_P: float
+    pct_I: float
+    pct_AU: float
+    pct_W_AW: float
+    letters_count: int
+    faculty: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
-class SearchResponse(BaseModel):
-    items: List[SearchItem]
-    page: int
-    size: int
-
-
-class UploadSummary(BaseModel):
-    imported: int
-    skipped: int
-    errors: List[dict]
+class ListGradeReportResponse(BaseModel):
+    grades: List[BaseGradeReportSchema] = []
+    total_pages: int = Query(1, ge=1)
