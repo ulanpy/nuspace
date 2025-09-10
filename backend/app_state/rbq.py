@@ -12,4 +12,5 @@ async def setup_rbq(app: FastAPI):
 
 async def cleanup_rbq(app: FastAPI):
     broker: RabbitBroker = dependencies.broker()
-    await broker.close()
+    await broker.stop()
+    

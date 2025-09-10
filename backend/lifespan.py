@@ -21,7 +21,6 @@ async def lifespan(app: FastAPI):
         app.state.config = Config()  # type: ignore
         app.state.app_token_manager = AppTokenManager()
         setup_gcp(app)
-        await setup_rbq(app)
         await setup_db(app)
         await setup_redis(app)
         await setup_meilisearch(app)
@@ -33,7 +32,6 @@ async def lifespan(app: FastAPI):
         yield
 
     finally:
-        await cleanup_rbq(app)
         await cleanup_bot(app)
         await cleanup_meilisearch(app)
         await cleanup_redis(app)

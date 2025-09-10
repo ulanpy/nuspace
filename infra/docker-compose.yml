@@ -154,6 +154,7 @@ services:
       - redis
       - fastapi
     volumes:
+      - ..:/nuros # Sync local backend folder with container's /nuros
       - .env:/nuros/.env:ro
     command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
     environment:

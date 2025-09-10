@@ -13,6 +13,11 @@ from backend.routes.bot.keyboards.callback_factory import (
     ConfirmTelegramUser,
     Languages,
     NotificationAction,
+    PianoScheduleDay,
+    PianoTimeSlot,
+    PianoBookingConfirm,
+    PianoBookingCancel,
+    PianoDropConfirm,
 )
 from backend.routes.bot.utils.enums import NotificationEnum
 
@@ -92,3 +97,89 @@ def user_profile_button(user_id: int, _: Callable[[str], str]) -> InlineKeyboard
         ]
     )
     return keyboard
+
+
+# Piano Room Booking Keyboards
+
+def piano_weekly_schedule_keyboard(week_days: list[tuple[str, str]], _: Callable[[str], str]) -> InlineKeyboardMarkup:
+    """Create keyboard for selecting days of the week
+    
+    Args:
+        week_days: List of tuples (date_str, day_name) where date_str is YYYY-MM-DD format
+    """
+    buttons = []
+    for date_str, day_name in week_days:
+        button = InlineKeyboardButton(
+            text=f"{day_name}",
+            callback_data=PianoScheduleDay(date=date_str).pack()
+        )
+        buttons.append([button])
+    
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def piano_time_slots_keyboard(
+    date_str: str, 
+    available_hours: list[int], 
+    _: Callable[[str], str]
+) -> InlineKeyboardMarkup:
+    """Create keyboard for selecting time slots for a specific day"""
+    buttons = []
+    
+    # Group hours in rows of 3
+    for i in range(0, len(available_hours), 3):
+        row = []
+        for hour in available_hours[i:i+3]:
+            button = InlineKeyboardButton(
+                text=f"{hour:02d}:00-{hour+1:02d}:00",
+                callback_data=PianoTimeSlot(date=date_str, hour=hour).pack()
+            )
+            row.append(button)
+        buttons.append(row)
+    
+    # Back button
+    back_button = InlineKeyboardButton(
+        text=_("⬅️ Назад"),
+        callback_data="piano_back_to_schedule"
+    )
+    buttons.append([back_button])
+    
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def piano_booking_confirmation_keyboard(
+    date_str: str, 
+    hour: int, 
+    _: Callable[[str], str]
+) -> InlineKeyboardMarkup:
+    """Create confirmation keyboard for booking"""
+    confirm_button = InlineKeyboardButton(
+        text=_("✅ Подтвердить"),
+        callback_data=PianoBookingConfirm(date=date_str, hour=hour).pack()
+    )
+    cancel_button = InlineKeyboardButton(
+        text=_("❌ Отменить"),
+        callback_data=PianoBookingCancel(booking_id=0).pack()  # booking_id=0 means cancel before creation
+    )
+    
+    return InlineKeyboardMarkup(inline_keyboard=[[confirm_button], [cancel_button]])
+
+
+def piano_user_bookings_keyboard(bookings: list[tuple[int, str]], _: Callable[[str], str]) -> InlineKeyboardMarkup:
+    """Create keyboard showing user's bookings with drop options
+    
+    Args:
+        bookings: List of tuples (booking_id, booking_description)
+    """
+    buttons = []
+    
+    for booking_id, description in bookings:
+        button = InlineKeyboardButton(
+            text=f"❌ {description}",
+            callback_data=PianoDropConfirm(booking_id=booking_id).pack()
+        )
+        buttons.append([button])
+    
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+

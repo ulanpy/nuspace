@@ -27,6 +27,7 @@ __all__ = [
     "GradeReport",
     "EventCollaborator",
     "Notification",
+    "PianoRoomBooking",
 ]
 from .base import Base
 from .community import (
@@ -54,3 +55,4 @@ from .notification import Notification
 from .product import Product, ProductReport
 from .review import Review, ReviewReply
 from .user import User, UserRole, UserScope
+from .piano_room import PianoRoomBooking

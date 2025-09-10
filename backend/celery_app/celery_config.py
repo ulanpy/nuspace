@@ -24,5 +24,18 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,  # Better for fairness  gives prefetch_count=1 to RMQ
     task_soft_time_limit=30,  # 30 seconds timeout
     task_default_queue="default",
-    task_routes={"backend.celery_app.tasks.schedule_kick": {"queue": "kick_queue"}},
+    task_routes={
+        "backend.celery_app.tasks.schedule_kick": {"queue": "kick_queue"},
+        "backend.celery_app.tasks.weekly_piano_room_reset": {"queue": "default"},
+    },
 )
+
+# Schedule periodic tasks
+from celery.schedules import crontab
+
+celery_app.conf.beat_schedule = {
+    'weekly-piano-room-reset': {
+        'task': 'backend.celery_app.tasks.weekly_piano_room_reset',
+        'schedule': crontab(hour=10, minute=30, day_of_week=1),  # Every Monday at 08:00 UTC (13:00 Asia/Almaty)
+    },
+}
