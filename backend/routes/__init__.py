@@ -12,6 +12,7 @@ from .campuscurrent.posts import posts
 from .campuscurrent.profile import profile
 from .campuscurrent.tags import tags
 from .google_bucket import google_bucket
+from .grades import grades
 from .kupiprodai import product
 from .notification import notification
 from .review import reply, review
@@ -32,7 +33,6 @@ routers: List[APIRouter] = [
     web_router,
     review.router,
     reply.router,
-    comments.router,
-    posts.router,
+    grades.router,
     notification.router,
 ]

@@ -145,6 +145,50 @@ export function GlowCarouselWithImage({
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
 
+  // Touch swipe handling for mobile
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [isSwiping, setIsSwiping] = useState(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setTouchStartX(touch.clientX);
+    setTouchStartY(touch.clientY);
+    setIsSwiping(false);
+    setIsPaused(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX == null || touchStartY == null) return;
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStartX;
+    const deltaY = touch.clientY - touchStartY;
+    // Start swiping only if horizontal movement dominates
+    if (!isSwiping && Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 8) {
+      setIsSwiping(true);
+      // Prevent vertical scroll when actively swiping horizontally
+      e.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX == null || touchStartY == null) {
+      setIsPaused(false);
+      return;
+    }
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartX;
+    const deltaY = touch.clientY - touchStartY;
+    const threshold = 40; // px
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > threshold) {
+      paginate(deltaX < 0 ? 1 : -1);
+    }
+    setTouchStartX(null);
+    setTouchStartY(null);
+    setIsSwiping(false);
+    setIsPaused(false);
+  };
+
   const itemIndex = Math.abs(page % items.length);
   const currentItem = items[itemIndex];
 
@@ -207,6 +251,9 @@ export function GlowCarouselWithImage({
         className="relative w-full aspect-[16/9] bg-gradient-to-b from-background/80 to-background/40 backdrop-blur-lg border border-border/40 shadow-lg rounded-2xl overflow-hidden"
         initial="initial"
         animate="animate"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <motion.div
           className={`absolute -inset-2 bg-gradient-radial from-transparent ${
@@ -236,15 +283,15 @@ export function GlowCarouselWithImage({
             initial="enter"
             animate="center"
             exit="exit"
-            className={`absolute inset-0 flex items-center justify-center ${
-              React.isValidElement(currentItem.content) &&
-              React.isValidElement(
-                (currentItem.content as any).props?.children,
-              ) &&
-              (currentItem.content as any).props?.children?.type === "img"
-                ? "p-0"
-                : "p-6"
-            }`}
+            className={`absolute inset-0 flex items-center justify-center ${(() => {
+              const node: any = currentItem.content as any;
+              if (React.isValidElement(node)) {
+                if (node.props?.["data-full-bleed"]) return "p-0";
+                const child = node.props?.children as any;
+                if (React.isValidElement(child) && child.type === "img") return "p-0";
+              }
+              return "p-6";
+            })()}`}
           >
             {currentItem.content}
           </motion.div>
@@ -254,7 +301,7 @@ export function GlowCarouselWithImage({
       {showControls && (
         <>
           <motion.button
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 flex items-center justify-center text-foreground shadow-lg"
+            className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 items-center justify-center text-foreground shadow-lg"
             onClick={() => paginate(-1)}
             variants={buttonVariants}
             initial="initial"
@@ -266,7 +313,7 @@ export function GlowCarouselWithImage({
           </motion.button>
 
           <motion.button
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 flex items-center justify-center text-foreground shadow-lg"
+            className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/80 backdrop-blur-sm border border-border/40 items-center justify-center text-foreground shadow-lg"
             onClick={() => paginate(1)}
             variants={buttonVariants}
             initial="initial"

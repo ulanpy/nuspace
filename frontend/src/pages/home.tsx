@@ -12,31 +12,42 @@ import { TelegramStatus } from "@/components/molecules/telegram-status";
 import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
 import nuSpacePresentation from "@/assets/images/nu-space-presentation.jpg";
 import welcomeNuSpace from "@/assets/images/welcome-nu-space.jpg";
+import miniapp from "@/assets/images/miniapp.webp";
 import { FlaskConical } from "lucide-react";
 import { Header } from "@/components/atoms/header";
 import { LastCommitInline } from "@/components/molecules/last-commit";
 import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
+import { useMemo } from "react";
+import { useEvents } from "@/features/campuscurrent/events/hooks/useEvents";
+import { Link } from "react-router-dom";
+import { ROUTES } from "@/data/routes";
 
-const homeCarouselItems = [
+// Static slides reused below when composing the final carousel list
+const staticSlides = [
   {
-    id: 1,
+    id: "miniapp",
     content: (
-      <div className="w-full h-full flex items-center justify-center">
+      <a
+        href="https://t.me/NUspaceBot/app"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="w-full h-full block cursor-pointer hover:opacity-90 transition-opacity"
+      >
         <img
-          src={nuSpacePresentation}
-          alt="Featured image"
+          src={miniapp}
+          alt="NUspace Telegram Mini App"
           className="w-full h-full object-cover rounded-xl"
           loading="eager"
           decoding="async"
         />
-      </div>
+      </a>
     ),
     gradient:
-      "radial-gradient(circle, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.06) 50%, rgba(194,65,12,0) 100%)",
-    accentColor: "rgb(249 115 22)",
+      "radial-gradient(circle, rgba(0,122,255,0.15) 0%, rgba(0,122,255,0.06) 50%, rgba(0,122,255,0) 100%)",
+    accentColor: "rgb(0 122 255)",
   },
   {
-    id: 2,
+    id: "welcome",
     content: (
       <div className="w-full h-full flex items-center justify-center">
         <img
@@ -57,6 +68,60 @@ const homeCarouselItems = [
 export default function HomePage() {
   const { user, isLoading, isSuccess } = useUser();
   const { isMiniApp } = useTelegramMiniApp();
+  // Fetch first upcoming event for the leading carousel item
+  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+  const { events: eventsData } = useEvents({ start_date: todayStr, size: 1 });
+
+  const eventSlide = useMemo(() => {
+    const e = eventsData?.events?.[0];
+    if (!e) return null;
+    const poster = e.media?.[0]?.url || "/placeholder.svg";
+    const dateStr = new Date(e.start_datetime).toLocaleDateString();
+    const hostName =
+      e.scope === "community"
+        ? e.community?.name || ""
+        : `${e.creator?.name || ""} ${e.creator?.surname || ""}`;
+
+    return {
+      id: `event-${e.id}`,
+      content: (
+        <Link
+          to={ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(String(e.id))}
+          className="block w-full h-full"
+          data-full-bleed
+        >
+          <div className="relative w-full h-full bg-black/10">
+            <div className="flex h-full">
+              <div className="w-1/2 relative">
+                <img src={poster} alt={e.name} className="w-full h-full object-cover rounded-xl" />
+              </div>
+              <div className="w-1/2 p-4 md:p-6 flex flex-col justify-center text-white bg-black/20 gap-2">
+                <h3 className="text-lg md:text-xl font-semibold line-clamp-2">{e.name}</h3>
+                <div className="flex items-center text-sm">
+                  <span className="mr-2">📅</span>
+                  <span>{dateStr}</span>
+                </div>
+                <div className="flex items-center text-sm">
+                  <span className="mr-2">📍</span>
+                  <span className="truncate">{e.place}</span>
+                </div>
+                {hostName && (
+                  <div className="mt-1 text-xs md:text-sm opacity-80">by {hostName}</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </Link>
+      ),
+      gradient:
+        "radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(124,58,237,0.06) 50%, rgba(109,40,217,0) 100%)",
+      accentColor: "rgb(139 92 246)",
+    };
+  }, [eventsData]);
+
+  const homeCarouselItems = useMemo(() => {
+    return eventSlide ? [eventSlide, ...staticSlides] : staticSlides;
+  }, [eventSlide]);
   return (
     <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4 pb-[calc(56px+env(safe-area-inset-bottom))]">
       {/* Header with login button */}

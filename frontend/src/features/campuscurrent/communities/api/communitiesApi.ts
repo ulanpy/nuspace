@@ -64,5 +64,22 @@ export const campuscurrentAPI = {
       method: "DELETE",
     });
   },
+
+  getUserCommunitiesQueryOptions: (userSub: string) => {
+    return queryOptions({
+      queryKey: ["campusCurrent", "userCommunities", userSub],
+      queryFn: async () => {
+        const queryParams = new URLSearchParams();
+        queryParams.set("head", userSub);
+        queryParams.set("size", "100"); // Get all communities for the user
+        queryParams.set("page", "1");
+        
+        const res = await apiCall<any>(
+          `/` + Routes.COMMUNITIES + `?` + queryParams.toString()
+        );
+        return res as Types.PaginatedResponse<Community, "communities">;
+      },
+    });
+  },
 };
 

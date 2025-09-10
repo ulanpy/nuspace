@@ -1,10 +1,10 @@
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { EventCard } from "@/features/campuscurrent/events/components/EventCard";
 import { InfiniteList } from "@/components/virtual/InfiniteList";
-import { Event } from "@/features/campuscurrent/types/types";
+import { Event, Community } from "@/features/campuscurrent/types/types";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, ChevronDown, Users } from "lucide-react";
+import { Calendar, ChevronDown, Users, Building2, X } from "lucide-react";
 import { EventModal } from "@/features/campuscurrent/events/components/EventModal";
 import { TimeFilter } from "@/features/campuscurrent/events/api/eventsApi";
 import { Button } from "@/components/atoms/button";
@@ -14,20 +14,29 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/atoms/dropdown-menu";
+import { CommunitySelectionModal } from "@/features/campuscurrent/communities/components/CommunitySelectionModal";
 
-const renderEmptyEvents = (filterType: string, eventTypeFilter: string | null) => () => (
+const renderEmptyEvents = (filterType: string, eventTypeFilter: string | null, selectedCommunity: Community | null) => () => (
   <div className="flex flex-col items-center justify-center py-12 text-center">
     <Calendar className="h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" />
     <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No events found</h3>
     <p className="text-gray-500 dark:text-gray-400 mb-4">
-      {eventTypeFilter === "recruitment" && filterType === "upcoming" && "No upcoming recruitment events at the moment."}
-      {eventTypeFilter === "recruitment" && filterType === "today" && "No recruitment events scheduled for today."}
-      {eventTypeFilter === "recruitment" && filterType === "week" && "No recruitment events scheduled for this week."}
-      {eventTypeFilter === "recruitment" && filterType === "month" && "No recruitment events scheduled for this month."}
-      {!eventTypeFilter && filterType === "upcoming" && "No upcoming events at the moment."}
-      {!eventTypeFilter && filterType === "today" && "No events scheduled for today."}
-      {!eventTypeFilter && filterType === "week" && "No events scheduled for this week."}
-      {!eventTypeFilter && filterType === "month" && "No events scheduled for this month."}
+      {selectedCommunity && eventTypeFilter === "recruitment" && filterType === "upcoming" && `No upcoming recruitment events from ${selectedCommunity.name} at the moment.`}
+      {selectedCommunity && eventTypeFilter === "recruitment" && filterType === "today" && `No recruitment events from ${selectedCommunity.name} scheduled for today.`}
+      {selectedCommunity && eventTypeFilter === "recruitment" && filterType === "week" && `No recruitment events from ${selectedCommunity.name} scheduled for this week.`}
+      {selectedCommunity && eventTypeFilter === "recruitment" && filterType === "month" && `No recruitment events from ${selectedCommunity.name} scheduled for this month.`}
+      {selectedCommunity && !eventTypeFilter && filterType === "upcoming" && `No upcoming events from ${selectedCommunity.name} at the moment.`}
+      {selectedCommunity && !eventTypeFilter && filterType === "today" && `No events from ${selectedCommunity.name} scheduled for today.`}
+      {selectedCommunity && !eventTypeFilter && filterType === "week" && `No events from ${selectedCommunity.name} scheduled for this week.`}
+      {selectedCommunity && !eventTypeFilter && filterType === "month" && `No events from ${selectedCommunity.name} scheduled for this month.`}
+      {!selectedCommunity && eventTypeFilter === "recruitment" && filterType === "upcoming" && "No upcoming recruitment events at the moment."}
+      {!selectedCommunity && eventTypeFilter === "recruitment" && filterType === "today" && "No recruitment events scheduled for today."}
+      {!selectedCommunity && eventTypeFilter === "recruitment" && filterType === "week" && "No recruitment events scheduled for this week."}
+      {!selectedCommunity && eventTypeFilter === "recruitment" && filterType === "month" && "No recruitment events scheduled for this month."}
+      {!selectedCommunity && !eventTypeFilter && filterType === "upcoming" && "No upcoming events at the moment."}
+      {!selectedCommunity && !eventTypeFilter && filterType === "today" && "No events scheduled for today."}
+      {!selectedCommunity && !eventTypeFilter && filterType === "week" && "No events scheduled for this week."}
+      {!selectedCommunity && !eventTypeFilter && filterType === "month" && "No events scheduled for this month."}
     </p>
   </div>
 );
@@ -42,10 +51,20 @@ const filterOptions = [
 export default function Events() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("upcoming");
   const [eventTypeFilter, setEventTypeFilter] = useState<string | null>(null);
+  const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const currentFilterLabel = filterOptions.find(option => option.value === timeFilter)?.label || "All Upcoming";
+
+  const handleCommunitySelect = (community: Community) => {
+    setSelectedCommunity(community);
+  };
+
+  const handleCommunityRemove = () => {
+    setSelectedCommunity(null);
+  };
 
   const renderEventCard = (event: Event) => (
     <EventCard
@@ -93,6 +112,22 @@ export default function Events() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Community filter button */}
+              <Button
+                variant={selectedCommunity ? "default" : "outline"}
+                onClick={() => setIsCommunityModalOpen(true)}
+                className={`
+                  w-full sm:w-auto justify-center sm:justify-start gap-2
+                  ${selectedCommunity 
+                    ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm' 
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm'
+                  }
+                `}
+              >
+                <Building2 className="h-4 w-4" />
+                <span>{selectedCommunity ? selectedCommunity.name : "Select Community"}</span>
+              </Button>
+
               {/* Recruitment filter button */}
               <Button
                 variant={eventTypeFilter === "recruitment" ? "default" : "outline"}
@@ -111,36 +146,47 @@ export default function Events() {
             </div>
 
             {/* Active filters display */}
-            {(eventTypeFilter) && (
-              <div className="flex flex-wrap gap-2">
-                {eventTypeFilter === "recruitment" && (
-                  <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm">
-                    <Users className="h-3 w-3" />
-                    <span>Now Recruiting</span>
-                    <button
-                      onClick={() => setEventTypeFilter(null)}
-                      className="ml-1 hover:text-blue-600 dark:hover:text-blue-300"
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="flex flex-wrap gap-2">
+              {selectedCommunity && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-full text-sm">
+                  <Building2 className="h-3 w-3" />
+                  <span>{selectedCommunity.name}</span>
+                  <button
+                    onClick={handleCommunityRemove}
+                    className="ml-1 hover:text-green-600 dark:hover:text-green-300"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+              {eventTypeFilter === "recruitment" && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+                  <Users className="h-3 w-3" />
+                  <span>Now Recruiting</span>
+                  <button
+                    onClick={() => setEventTypeFilter(null)}
+                    className="ml-1 hover:text-blue-600 dark:hover:text-blue-300"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Single InfiniteList that changes based on filter */}
           <InfiniteList
-            queryKey={["campusCurrent", "events", timeFilter, eventTypeFilter]}
+            queryKey={["campusCurrent", "events", timeFilter, eventTypeFilter ?? "", selectedCommunity?.id?.toString() ?? ""]}
             apiEndpoint="/events"
             size={12}
             additionalParams={{
               time_filter: timeFilter,
               event_status: "approved",
               event_type: eventTypeFilter,
+              community_id: selectedCommunity?.id || undefined,
             }}
             renderItem={renderEventCard}
-            renderEmpty={renderEmptyEvents(timeFilter, eventTypeFilter)}
+            renderEmpty={renderEmptyEvents(timeFilter, eventTypeFilter, selectedCommunity)}
             showSearch={false}
             gridLayout={{
               mobile: 2,
@@ -155,6 +201,14 @@ export default function Events() {
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           isEditMode={false}
+        />
+
+        {/* Community Selection Modal */}
+        <CommunitySelectionModal
+          isOpen={isCommunityModalOpen}
+          onClose={() => setIsCommunityModalOpen(false)}
+          onSelect={handleCommunitySelect}
+          selectedCommunityId={selectedCommunity?.id}
         />
       </div>
     </MotionWrapper>

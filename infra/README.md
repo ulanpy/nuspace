@@ -1,25 +1,32 @@
 # Monitoring
 
-## Running Monitoring Locally
+[![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white)](http://localhost:3000)
+[![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white)](http://localhost:9090)
+[![Loki](https://img.shields.io/badge/Loki-00B3A4?logo=grafana&logoColor=white)](http://localhost:3100)
+[![Grafana Alloy](https://img.shields.io/badge/Grafana%20Alloy-3A3A3A?logo=grafana&logoColor=white)](http://localhost:12345)
+[![Node Exporter](https://img.shields.io/badge/Node%20Exporter-E6522C?logo=prometheus&logoColor=white)](#stack-components)
+[![cAdvisor](https://img.shields.io/badge/cAdvisor-2496ED?logo=docker&logoColor=white)](#stack-components)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](http://localhost/api/metrics)
 
-1. Add Grafana credentials to `.env`:
+This directory contains monitoring infrastructure for local development and production/staging environments.
+
+## Local Development Setup
+
+### Prerequisites
+1. Ensure following credential is set in `infra/.env`:
 
 ```
-# Grafana credentials
-GF_SECURITY_ADMIN_USER=your_login
-GF_SECURITY_ADMIN_PASSWORD=your_secure_password
+# Telegram Chat where bot should send logs
+TELEGRAM_CHAT_ID=123
 ```
 
-2. Note that `TELEGRAM_BOT_TOKEN` field in the `.env` is required for Grafana alerting. Grafana won't start if value is not provided. Next, get the chat ID and update the `chatid: "123456789"` field in `/monitoring/grafana/provisioning/alerting/contact-pints.yaml`. [Here](https://stackoverflow.com/a/61215414/23123006) is how to get the chat ID.
+2. Start the monitoring services (run from root folder):
+```sh
+cd infra
+docker compose -f docker-compose --profile monitoring up -d 
+```
 
-3. Update the same Telegram credentials in relevant fields in `monitoring/prometheus/alertmanager.yml`.
-
-4. Start the monitoring services (run inside root folder):
-   ```sh
-   docker compose -f ./monitoring/docker-compose.monitoring.yaml up -d
-   ```
-
-## Service Addresses
+### Service Addresses
 
 | Service                                                         | Addresses               |
 | --------------------------------------------------------------- | ----------------------- |
@@ -29,7 +36,7 @@ GF_SECURITY_ADMIN_PASSWORD=your_secure_password
 | Loki <br/>(No UI, if running `404 page not found` is displayed) | `localhost:3100 `       |
 | FastAPI Metrics endpoint                                        | `localhost/api/metrics` |
 
-## Stack
+### Stack Components
 
 - **Grafana Alloy** – collector of metrics and logs
   - Scraper from FastAPI
@@ -39,30 +46,19 @@ GF_SECURITY_ADMIN_PASSWORD=your_secure_password
 - **Grafana Loki** – logs store
 - **Grafana** – Visualization
 
-## Using Google Bucket for logs storage
+## Production/Staging Setup
 
-1. Add `nuspace_bucket.json` under `/monitoring` directory. It is a service account credentials that has bucket access. Obtain it from [Google Cloud Console](https://console.cloud.google.com).
-2. (THIS WILL PROBABLY CHANGE FOR PROD) Add Grafana credentials to `.env`:
+### Authentication
+Production and staging environments use Google Cloud metadata server for authentication instead of service account keys.
 
-```
-# Grafana credentials
-GF_SECURITY_ADMIN_USER=your_login
-GF_SECURITY_ADMIN_PASSWORD=your_secure_password
-```
+2. Update the same Telegram credentials in relevant fields in `monitoring/prometheus/alertmanager.yml`.
 
-3. Note that `TELEGRAM_BOT_TOKEN` field in the `.env` is required for Grafana alerting. Grafana won't start if value is not provided. Next, get the chat ID and update the `chatid: "123456789"` field in `/monitoring/grafana/provisioning/alerting/contact-pints.yaml`. [Here](https://stackoverflow.com/a/61215414/23123006) is how to get the chat ID.
-
-4. Update the same Telegram credentials in relevant fields in `monitoring/prometheus/alertmanager.yml`.
-
-5. Start the monitoring services (run inside root folder):
+3. Start the monitoring services (in prod/stage they started together with all services):
 
    ```sh
-   docker compose -f ./monitoring/docker-compose.monitoring.prod.yaml up -d
+   cd infra
+   docker compose -f prod.docker-compose up -d
    ```
-
-## Next Steps
-
-Next is configuring the endpoints to be accessible over the internet, and securing it with stronger authentication methods, like [Google OAuth](https://grafana.com/docs/grafana/latest/setup-grafana/configure-security/configure-authentication/google/).
 
 ## Explanation
 

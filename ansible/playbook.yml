@@ -35,18 +35,18 @@
       ansible.builtin.include_role:
         name: container_analysis
 
-    - name: Backend tasks (migrations and services)
+    - name: Backend tasks (migrations, fastapi, celery-worker)
       ansible.builtin.include_role:
         name: backend
 
-    - name: Frontend tasks (build and nginx)
+    - name: Frontend tasks (build dist and reload nginx)
       ansible.builtin.include_role:
         name: frontend
 
-    - name: Infra services (redis, rabbitmq, prometheus, grafana, loki, alloy, alertmanager, wireguard)
+    - name: Infra services (redis, rabbitmq, prometheus, grafana, loki, alloy, alertmanager, wireguard, meilisearch)
       ansible.builtin.include_role:
         name: infra_services
 
-    - name: Post tasks
+    - name: Post tasks (cleanup)
       ansible.builtin.include_role:
         name: post_tasks

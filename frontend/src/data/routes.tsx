@@ -11,6 +11,7 @@ export const PRODUCT = "product";
 export const USER = "user";
 export const KUPI_PRODAI = "kupi-prodai";
 export const CAMPUS_CURRENT = "campuscurrent";
+export const GRADE_STATISTICS = "grade-statistics";
 export const DORM_EATS = "dorm-eats";
 export const POSTS = "posts";
 export const PROFILE = "profile";
@@ -76,6 +77,9 @@ export const ROUTES = {
       },
       POSTS: buildPath(APPS, CAMPUS_CURRENT, POSTS),
     },
+    GRADE_STATISTICS: {
+      ROOT: buildPath(APPS, GRADE_STATISTICS),
+    },
     DORM_EATS: {
       ROOT: buildPath(APPS, DORM_EATS),
     },
@@ -96,6 +100,7 @@ const LAZY_ROUTES_REL = {
     KUPI_PRODAI_CREATE: `${KUPI_PRODAI}/${CREATE}`,
     KUPI_PRODAI_PRODUCT_DETAIL: `${KUPI_PRODAI}/${PRODUCT}/:id`,
     ABOUT: ABOUT,
+    GRADE_STATISTICS: GRADE_STATISTICS,
     DORM_EATS: DORM_EATS,
     CAMPUS_CURRENT_ROOT: CAMPUS_CURRENT,
     CAMPUS_CURRENT_EVENTS: `${CAMPUS_CURRENT}/${EVENTS}`,
@@ -126,6 +131,10 @@ export const LazyRoutes = {
       {
         path: LAZY_ROUTES_REL.APPS.PROFILE,
         Component: withSuspense(lazy(() => import("@/pages/profile"))),
+      },
+      {
+        path: LAZY_ROUTES_REL.APPS.GRADE_STATISTICS,
+        Component: withSuspense(lazy(() => import("@/features/grade-statistics/pages/GradeStatisticsPage"))),
       },
       {
         path: LAZY_ROUTES_REL.APPS.DORM_EATS,

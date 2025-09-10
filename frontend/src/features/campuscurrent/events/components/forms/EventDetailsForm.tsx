@@ -65,18 +65,22 @@ export function EventDetailsForm() {
 
       <div className="space-y-2">
         <Label htmlFor="policy">Entry Policy</Label>
-        <select
+        <Select
           value={formData.policy || "open"}
           disabled={!isFieldEditable("policy")}
-          onChange={(e) => handleSelectChange("policy", e.target.value)}
-          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          onValueChange={(value) => handleSelectChange("policy", value)}
         >
-          {Object.values(EventPolicy).map((policy) => (
-            <option key={policy} value={policy}>
-              {policy}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger>
+            <SelectValue placeholder="Select entry policy" />
+          </SelectTrigger>
+          <SelectContent className="z-[11050]">
+            {Object.values(EventPolicy).map((policy) => (
+              <SelectItem key={policy} value={policy}>
+                {policy}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {formData.policy === EventPolicy.registration && (
@@ -104,19 +108,22 @@ export function EventDetailsForm() {
 
       <div className="space-y-2">
         <Label htmlFor="type">Event Type</Label>
-        <select 
+        <Select 
           value={String(formData.type || "")}
           disabled={!isFieldEditable('type')} 
-          onChange={(e) => handleSelectChange("type", e.target.value)}
-          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          onValueChange={(value) => handleSelectChange("type", value)}
         >
-          <option value="">Select event type</option>
-          {eventTypes.map((type) => (
-            <option key={type.value} value={type.value}>
-              {type.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger>
+            <SelectValue placeholder="Select event type" />
+          </SelectTrigger>
+          <SelectContent className="z-[11050]">
+            {eventTypes.map((type) => (
+              <SelectItem key={type.value} value={type.value}>
+                {type.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

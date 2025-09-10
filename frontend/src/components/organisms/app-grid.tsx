@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingBag, Calendar, Coffee } from "lucide-react";
+import { ShoppingBag, Calendar, Coffee, BarChart3 } from "lucide-react";
 import { AppButton } from "../molecules/buttons/app-button";
 import { ROUTES } from "@/data/routes";
 
@@ -35,19 +35,28 @@ export function AppGrid() {
       delay: 0.2,
     },
     {
+      icon: <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
+      title: "Grade Statistics",
+      href: ROUTES.APPS.GRADE_STATISTICS.ROOT,
+      gradient:
+        "radial-gradient(circle, rgba(168,85,247,0.3) 0%, rgba(147,51,234,0.15) 50%, rgba(126,34,206,0) 100%)",
+      iconColor: "text-purple-500",
+      delay: 0.3,
+    },
+    {
       icon: <Coffee className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
       title: "Dorm Eats",
       href: ROUTES.APPS.DORM_EATS.ROOT,
       gradient:
         "radial-gradient(circle, rgba(34,197,94,0.3) 0%, rgba(22,163,74,0.15) 50%, rgba(21,128,61,0) 100%)",
       iconColor: "text-green-500",
-      delay: 0.3,
+      delay: 0.4,
       comingSoon: true,
     },
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-5 sm:gap-6 md:gap-8">
+    <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-5 sm:gap-6 md:gap-8">
       {apps.map((app) => (
         <AppButton key={app.title} {...app} />
       ))}

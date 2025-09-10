@@ -10,7 +10,83 @@
     />
     <meta name="keywords" content="nuspace, buy, sell, products, students" />
     <title>NU Space</title>
-    <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
+    <script>
+      // Telegram WebApp script loading with fallback for Android compatibility
+      window.telegramScriptLoaded = false;
+      window.telegramScriptError = false;
+      window.telegramLoadAttempts = 0;
+      window.__telegramScriptDispatched = false;
+      window.__telegramImmediateInitDone = false;
+      
+      function loadTelegramScript() {
+        window.telegramLoadAttempts++;
+        console.log(`Attempting to load Telegram WebApp script (attempt ${window.telegramLoadAttempts})`);
+        
+        const script = document.createElement('script');
+        script.src = 'https://telegram.org/js/telegram-web-app.js?59';
+        script.async = true;
+        
+        script.onload = function() {
+          window.telegramScriptLoaded = true;
+          console.log('Telegram WebApp script loaded successfully');
+
+          // Guard: dispatch only once
+          if (!window.__telegramScriptDispatched) {
+            window.__telegramScriptDispatched = true;
+            window.dispatchEvent(new CustomEvent('telegramScriptLoaded'));
+          }
+
+          // Immediate light init to help Android WebView when hooks mount late
+          try {
+            if (!window.__telegramImmediateInitDone && window.Telegram && window.Telegram.WebApp) {
+              window.__telegramImmediateInitDone = true;
+              const tg = window.Telegram.WebApp;
+              // Soft init only, no style mutations here
+              tg.ready && tg.ready();
+              setTimeout(() => tg.expand && tg.expand(), 150);
+            }
+          } catch {}
+        };
+        
+        script.onerror = function() {
+          window.telegramScriptError = true;
+          console.error(`Failed to load Telegram WebApp script (attempt ${window.telegramLoadAttempts})`);
+          
+          // Retry up to 3 times with increasing delays
+          if (window.telegramLoadAttempts < 3) {
+            const delay = window.telegramLoadAttempts * 2000; // 2s, 4s, 6s
+            console.log(`Retrying in ${delay}ms...`);
+            setTimeout(loadTelegramScript, delay);
+          } else {
+            console.error('Failed to load Telegram WebApp script after 3 attempts');
+            // Dispatch failure event
+            if (!window.__telegramScriptDispatched) {
+              window.__telegramScriptDispatched = true;
+              window.dispatchEvent(new CustomEvent('telegramScriptFailed'));
+            }
+          }
+        };
+        
+        // Remove any existing script to avoid duplicates
+        const existingScript = document.querySelector('script[src*="telegram-web-app.js"]');
+        if (existingScript) {
+          existingScript.remove();
+        }
+        
+        document.head.appendChild(script);
+      }
+      
+      // Start loading immediately
+      loadTelegramScript();
+      
+      // Fallback timeout - if script doesn't load in 10 seconds, try again
+      setTimeout(function() {
+        if (!window.telegramScriptLoaded && !window.telegramScriptError) {
+          console.warn('Telegram script loading timeout, forcing retry...');
+          loadTelegramScript();
+        }
+      }, 10000);
+    </script>
   </head>
   <body>
     <div id="root"></div>
