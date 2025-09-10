@@ -1,22 +1,67 @@
 ---
+- name: Ensure frontend dist directory exists with proper permissions
+  ansible.builtin.file:
+    path: "/home/{{ ansible_user }}/nuspace/frontend/dist"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+  when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
+
 - name: Pull frontend builder image
   ansible.builtin.shell: |
     set -e
-    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml build frontend-builder
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull frontend-builder
+  args:
+    executable: /bin/bash
+  when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
+
+- name: Stop and remove old frontend-builder container if running
+  ansible.builtin.shell: |
+    set -e
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml rm -f frontend-builder || true
   args:
     executable: /bin/bash
   when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
 
 - name: Run frontend build (frontend-builder)
-  ansible.builtin.command: >
-    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-    up --no-deps frontend-builder
+  ansible.builtin.shell: |
+    set -e
+    cd /home/{{ ansible_user }}/nuspace/infra
+    echo "Starting frontend build..."
+    {{ compose_cmd }} -f prod.docker-compose.yml run --rm frontend-builder
+    echo "Frontend build completed"
+    ls -la ../frontend/dist/
+  args:
+    executable: /bin/bash
+  when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
+  register: frontend_build_result
+
+- name: Verify dist files were created
+  ansible.builtin.stat:
+    path: "/home/{{ ansible_user }}/nuspace/frontend/dist/index.html"
+  register: dist_check
   when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
 
-- name: Recreate nginx service
+- name: Fail if dist files are missing
+  ansible.builtin.fail:
+    msg: "Frontend build failed - dist/index.html not found. Build output: {{ frontend_build_result.stdout | default('No output') }}"
+  when: 
+    - (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
+    - not dist_check.stat.exists
+
+- name: Show frontend build success message
+  ansible.builtin.debug:
+    msg: "Frontend build completed successfully. New dist files are ready."
+
+- name: Recreate nginx service to pick up new dist files
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up --no-deps -d nginx
-  when: (nginx_changed | default(false)) | bool or (container_analysis is defined and 'nginx' in container_analysis.stdout)
+  when: 
+    - (nginx_changed | default(false)) | bool or 
+      (container_analysis is defined and 'nginx' in container_analysis.stdout) or
+      (frontend_changed | default(false)) | bool or 
+      (force_frontend_build | default(false)) | bool
 
 

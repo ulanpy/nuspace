@@ -140,9 +140,6 @@ services:
   frontend-builder:
     container_name: frontend-builder
     image: kamikadze24/frontendbuilder:latest
-    build:
-      context: ..
-      dockerfile: frontend/Dockerfile_static_builder
     networks:
       - nuros
     user: "0:0"
