@@ -37,7 +37,7 @@ services:
 
   nginx:
     container_name: nginx
-    image: nginx:latest
+    image: nginx:1.29.1-alpine
     networks:
       - nuros
     restart: always
