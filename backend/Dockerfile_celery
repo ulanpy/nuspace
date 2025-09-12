@@ -1,5 +1,5 @@
 # Use official Python 3.12 slim image
-FROM python:3.12-slim-bookworm
+FROM python:3.12-alpine3.22
 
 # Set timezone and Python settings
 ENV TZ=UTC \
@@ -15,10 +15,10 @@ WORKDIR /nuros
 ENV PATH="/root/.local/bin:${PATH}"
 
 # Install system dependencies and build tools
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
+RUN apk -u add \ 
     python3-dev \
     libpq-dev \
+    build-base \
     && pip install --no-cache-dir poetry \
     && rm -rf /var/lib/apt/lists/*
 
