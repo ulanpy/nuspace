@@ -64,18 +64,6 @@ export function GradeStatisticsCard({ statistics, showChart = true, onToggleSele
             </div>
           </div>
         </div>
-        {onToggleSelect && (
-          <div className="absolute top-3 right-3">
-            <Button
-              size="sm"
-              onClick={() => onToggleSelect(statistics)}
-              disabled={!isSelected && disableAdd}
-              variant={isSelected ? "secondary" : "default"}
-            >
-              {isSelected ? "Remove" : "Add to course list"}
-            </Button>
-          </div>
-        )}
       </CardHeader>
 
       <CardContent className="space-y-6">

@@ -10,7 +10,6 @@ import { DonateButton } from "@/components/molecules/buttons/donate-button";
 import { ChannelButton } from "@/components/molecules/buttons/channel-button";
 import { TelegramStatus } from "@/components/molecules/telegram-status";
 import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
-import nuSpacePresentation from "@/assets/images/nu-space-presentation.jpg";
 import welcomeNuSpace from "@/assets/images/welcome-nu-space.jpg";
 import miniapp from "@/assets/images/miniapp.webp";
 import { FlaskConical } from "lucide-react";
@@ -205,6 +204,8 @@ export default function HomePage() {
         <div className="flex flex-col items-center gap-8 sm:gap-12 w-full">
           <AppGrid />
         </div>
+
+        {/* Emergency info moved to its own page reachable from AppGrid */}
       </div>
     </div>
   );

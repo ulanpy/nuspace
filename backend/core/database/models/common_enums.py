@@ -12,6 +12,7 @@ class EntityType(str, PyEnum):
     reviews = "reviews"
     community_comments = "community_comments"
     grade_reports = "grade_reports"
+    courses = "courses"
 
 
 class NotificationType(str, PyEnum):

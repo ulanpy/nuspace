@@ -1,0 +1,1506 @@
+School,Level,Course Abbr,S/T,Cr(ECTS),Faculty,Term
+GSB,UG,BBA 208,1L,6,"Assem Seidalina, Mirat Akshalov, Jaehyeon Kim",F2025
+GSB,UG,BBA 210,1L,6,"Mirat Akshalov, Mustafa Karatas",F2025
+GSB,UG,BBA 230,1L,6,"Mirat Akshalov, Jiyang Dong",F2025
+GSB,UG,BBA 399,1Int,6,"Mirat Akshalov, Jiyang Dong",F2025
+GSB,UG,BUS 101,10R,6,"Saniya Barbolova, Zharaskhan Temirkhanov, Moldir Kaiynbayeva, Raola Yerbolat",F2025
+GSB,UG,BUS 101,1L,6,"Mirat Akshalov, Saniya Barbolova, Zharaskhan Temirkhanov, Moldir Kaiynbayeva, Raola Yerbolat",F2025
+GSB,UG,BUS 101,1R,6,"Saniya Barbolova, Zharaskhan Temirkhanov, Moldir Kaiynbayeva, Raola Yerbolat",F2025
+GSB,UG,BUS 101,2R,6,"Saniya Barbolova, Zharaskhan Temirkhanov, Moldir Kaiynbayeva, Raola Yerbolat",F2025
+GSB,UG,BUS 101,4R,6,"Saniya Barbolova, Zharaskhan Temirkhanov, Moldir Kaiynbayeva, Raola Yerbolat",F2025
+GSB,UG,BUS 101,5R,6,"Saniya Barbolova, Zharaskhan Temirkhanov, Moldir Kaiynbayeva, Raola Yerbolat",F2025
+GSB,UG,BUS 101,6R,6,"Saniya Barbolova, Zharaskhan Temirkhanov, Moldir Kaiynbayeva, Raola Yerbolat",F2025
+GSB,UG,BUS 101,7R,6,"Saniya Barbolova, Zharaskhan Temirkhanov, Moldir Kaiynbayeva, Raola Yerbolat",F2025
+GSB,UG,BUS 101,8R,6,"Saniya Barbolova, Zharaskhan Temirkhanov, Moldir Kaiynbayeva, Raola Yerbolat",F2025
+GSB,UG,BUS 101,9R,6,"Saniya Barbolova, Zharaskhan Temirkhanov, Moldir Kaiynbayeva, Raola Yerbolat",F2025
+GSB,UG,BUS 101,11R,6,"Saniya Barbolova, Zharaskhan Temirkhanov, Moldir Kaiynbayeva, Raola Yerbolat",F2025
+GSB,UG,BUS 101,12R,6,"Saniya Barbolova, Zharaskhan Temirkhanov, Moldir Kaiynbayeva, Raola Yerbolat",F2025
+GSB,UG,BUS 101,3R,6,"Saniya Barbolova, Zharaskhan Temirkhanov, Moldir Kaiynbayeva, Raola Yerbolat",F2025
+GSB,GrM,GSBF 501,1L,1,"Zhanerke Kozybayeva, Tom Vinaimont",F2025
+GSB,GrM,GSBF 511,1L,5,"Tom Vinaimont, Zhanar Smailova, Jaehyeon Kim",F2025
+GSB,GrM,GSBF 512,1L,5,"Gerrit Post, Zhanar Smailova",F2025
+GSB,GrM,GSBF 515a,1L,5,"Zhanar Smailova, Francesco Rocciolo",F2025
+GSB,GrM,GSBF 517,1L,5,"Aigerim Yergabulova, Zhanar Smailova",F2025
+GSB,GrM,GSBF 520,1L,5,"Assem Seidalina, Zhanar Smailova, Francesco Rocciolo",F2025
+GSB,GrM,GSBF 523,1L,5,"Bektemir Ysmailov, Zhanar Smailova",F2025
+GSB,GrM,GSBF 550A,1ThDef,10,"Assem Seidalina, Francesco Rocciolo",F2025
+GSB,PhD,GSBPHD 01,1L,8,"Mirat Akshalov, Shumaila Yousafzai",F2025
+GSB,PhD,GSBPHD 04,1S,8,"Mirat Akshalov, Mustafa Karatas",F2025
+GSB,PhD,GSBPHD 05,1L,8,Doron Israeli,F2025
+GSB,PhD,GSBPHD 06,1L,8,"Mirat Akshalov, Doron Israeli",F2025
+GSB,PhD,GSBPHD 07,1L,8,Doron Israeli,F2025
+GSB,PhD,GSBPHD 14,1IS,0,"Mirat Akshalov, Doron Israeli",F2025
+GSB,PhD,GSBPHD 15,1P,10,Doron Israeli,F2025
+GSB,PhD,GSBPHD 17,1L,8,"TBA TBA, Mirat Akshalov",F2025
+GSB,PhD,GSBPHD 18,1L,8,"Mirat Akshalov, David De Remer",F2025
+GSB,GrM,MBA 01,1Wsh,4,"Alminiya Ussingaliyeva, Alexander Krasnikov",F2025
+GSB,GrM,MBA 02,1L,6,"Assem Seidalina, Doron Israeli",F2025
+GSB,GrM,MBA 03,1L,6,David Reinhard,F2025
+GSB,GrM,MBA 04,1L,6,Alexander Krasnikov,F2025
+GSB,GrM,MBA 06,1L,6,Aigerim Yergabulova,F2025
+GSB,GrM,MBA 17,1L,6,"Tom Vinaimont, Alminiya Ussingaliyeva",F2025
+GSB,GrM,MBA 20,1Wsh,10,"Narendra Singh, Alminiya Ussingaliyeva",F2025
+GSB,GrM,MBAE 13,1L,6,"Tom Vinaimont, Alminiya Ussingaliyeva",F2025
+GSB,GrM,MBAE 16,1L,6,"Narendra Singh, Alminiya Ussingaliyeva, Aziza Bakytzhanova",F2025
+GSB,GrM,MBAE 18,1L,6,"Shumaila Yousafzai, Alminiya Ussingaliyeva",F2025
+GSB,GrM,MBAE 20,1L,6,"Alminiya Ussingaliyeva, Alexander Krasnikov",F2025
+GSB,GrM,MBAE 22,1L,6,"Roza Nurgozhayeva, Alminiya Ussingaliyeva",F2025
+GSB,GrM,MSF 07,1L,5,"David De Remer, Zhanar Smailova",F2025
+GSB,GrM,MSF 08,1L,5,"David De Remer, Zhanar Smailova",F2025
+GSB,GrM,MSF 10,1IS,5,"Zhanerke Kozybayeva, Tom Vinaimont",F2025
+GSB,GrM,MSF 12,1L,5,"Zhanar Smailova, Christian Sofilkanitsch",F2025
+GSB,GrM,MSF 513b,1Wsh,5,"Tom Vinaimont, Zhanar Smailova",F2025
+GSB,GrM,MSF 514,1L,5,"Aigerim Yergabulova, Zhanar Smailova",F2025
+GSE,GrM,EDHE 603,2L,6,Alper Calikoglu,F2025
+GSE,GrM,EDHE 603,3L,6,Zumrad Kataeva,F2025
+GSE,GrM,EDHE 603,1L,6,Ahmet Aypay,F2025
+GSE,GrM,EDHE 603,4L,6,Gulzhanat Gafu,F2025
+GSE,GrM,EDHE 625,1L,6,Aslan Sarinzhipov,F2025
+GSE,GrM,EDHE 627,1L,6,Dilrabo Jonbekova,F2025
+GSE,GrM,EDHE 631,1L,6,Munyaradzi Hwami,F2025
+GSE,GrM,EDIE 603,2L,6,Sourav Mukhopadhyay,F2025
+GSE,GrM,EDIE 603,1L,6,Janet Helmer,F2025
+GSE,GrM,EDIE 625,1L,6,Oliver Mutanga,F2025
+GSE,GrM,EDML 601,1L,6,Anas Hajar,F2025
+GSE,GrM,EDML 602,1L,6,Bridget Goodman,F2025
+GSE,GrM,EDML 610,1L,6,Bridget Goodman,F2025
+GSE,GrM,EDML 613,1L,6,Syed Manan,F2025
+GSE,GrM,EDML 614,1L,6,Philip Montgomery,F2025
+GSE,GrM,EDML 625,1L,6,Bridget Goodman,F2025
+GSE,GrM,EDML 627,1L,6,Sulushash Kerimkulova,F2025
+GSE,GrM,EDML 694,1L,0,Anas Hajar,F2025
+GSE,GrM,EDML 694,2L,0,Syed Manan,F2025
+GSE,GrM,EDML 694,3L,0,Sulushash Kerimkulova,F2025
+GSE,GrM,EDML 694,4L,0,Philip Montgomery,F2025
+GSE,GrM,EDSE 603,2L,6,Gulmira Qanay,F2025
+GSE,GrM,EDSE 603,3L,6,Daniel Torrano,F2025
+GSE,GrM,EDSE 603,1L,6,Kairat Kurakbayev,F2025
+GSE,GrM,EDSE 621,1L,6,Assel Sharimova,F2025
+GSE,GrM,EDSE 625,1L,6,Afzal Mir,F2025
+GSE,GrM,EDUC 512,1L,6,Anita Jayachandran,F2025
+GSE,GrM,EDUC 535,1L,4,Jeremy Richard Spring,F2025
+GSE,GrM,EDUC 535,2L,4,Jeremy Richard Spring,F2025
+GSE,GrM,EDUC 535,3L,4,Andrew Drybrough,F2025
+GSE,GrM,EDUC 571,1L,6,Nazira Amirzhanova,F2025
+GSE,GrM,EDUC 572,1L,6,Nazira Amirzhanova,F2025
+GSE,GrM,EDUC 581,1L,4,Nazira Amirzhanova,F2025
+GSE,GrM,EDUC 582,1L,4,Nazira Amirzhanova,F2025
+GSE,GrM,EDUC 602,1L,6,Sulushash Kerimkulova,F2025
+GSE,GrM,EDUC 606,1L,4,Alper Calikoglu,F2025
+GSE,GrM,EDUC 606,2L,4,Oliver Mutanga,F2025
+GSE,GrM,EDUC 607,2L,6,Sourav Mukhopadhyay,F2025
+GSE,GrM,EDUC 607,4L,6,Munyaradzi Hwami,F2025
+GSE,GrM,EDUC 607,3L,6,Abdelaal Amr,F2025
+GSE,GrM,EDUC 607,1L,6,Alper Calikoglu,F2025
+GSE,GrM,EDUC 617,1L,6,Darkhan Bilyalov,F2025
+GSE,GrM,EDUC 617,3L,6,Zumrad Kataeva,F2025
+GSE,GrM,EDUC 617,2L,6,Gulzhanat Gafu,F2025
+GSE,GrM,EDUC 627,2L,6,Janet Helmer,F2025
+GSE,PhD,EDUC 701,1L,6,"Dilrabo Jonbekova, Janet Helmer",F2025
+GSE,PhD,EDUC 709,1L,6,Naureen Durrani,F2025
+GSE,PhD,EDUC 712,1L,6,Kairat Kurakbayev,F2025
+GSE,PhD,EDUC 727,1IS,0,Dilrabo Jonbekova,F2025
+GSE,PhD,EDUC 730,1L,0,Sourav Mukhopadhyay,F2025
+GSE,PhD,EDUC 730,2L,0,Daniel Torrano,F2025
+GSE,PhD,EDUC 730,3L,0,Afzal Mir,F2025
+GSE,PhD,EDUC 730,4L,0,Kairat Kurakbayev,F2025
+GSE,PhD,EDUC 730,5L,0,Sulushash Kerimkulova,F2025
+GSE,PhD,EDUC 730,6L,0,Syed Manan,F2025
+GSE,PhD,EDUC 751,1L,0,Ahmet Aypay,F2025
+GSE,PhD,EDUC 751,2L,0,Anas Hajar,F2025
+GSE,PhD,EDUC 751,3L,0,Duishonkul Shamatov,F2025
+GSE,PhD,EDUC 751,4L,0,Jason Sparks,F2025
+GSE,PhD,EDUC 751,5L,0,Afzal Mir,F2025
+GSE,PhD,EDUC 751,6L,0,Sourav Mukhopadhyay,F2025
+GSE,PhD,EDUC 751,7L,0,Munyaradzi Hwami,F2025
+GSE,PhD,EDUC 751,8L,0,Daniel Torrano,F2025
+GSE,PhD,EDUC 751,9L,0,Lynne Parmenter,F2025
+GSE,PhD,EDUC 751,10L,0,Syed Manan,F2025
+GSE,PhD,EDUC 751,11L,0,Bridget Goodman,F2025
+GSE,PhD,EDUC 751,12L,0,Naureen Durrani,F2025
+GSE,PhD,EDUC 800,1L,24,TBA TBA,F2025
+GSPP,PhD,DPE 608,1L,8,Scott Valentine,F2025
+GSPP,PhD,DPE 609,1L,8,Hyesong Ha,F2025
+GSPP,PhD,DPE 612,1L,8,Vladimir Kozlov,F2025
+GSPP,PhD,DPE 615,1L,8,Omer Baris,F2025
+GSPP,PhD,DPE 620,1L,8,Scott Valentine,F2025
+GSPP,PhD,DPE 628,1L,8,Riccardo Pelizzo,F2025
+GSPP,PhD,DPE 632,1L,8,Asad Bokhari,F2025
+GSPP,PhD,DPE 646,1L,8,Lisa Lim,F2025
+GSPP,PhD,DPE 651,1L,8,Aliya Assubayeva,F2025
+GSPP,PhD,DPE 660,1L,8,Dayashankar Maurya,F2025
+GSPP,PhD,DPE 665,1L,8,Dayashankar Maurya,F2025
+GSPP,PhD,DPE 671,1L,8,Omer Baris,F2025
+GSPP,PhD,DPE 685,1L,8,Aliya Assubayeva,F2025
+GSPP,PhD,DPM 604,1L,8,Omer Baris,F2025
+GSPP,PhD,DPP 600,1R,0,Riccardo Pelizzo,F2025
+GSPP,PhD,DPP 601,1L,8,Peter Howie,F2025
+GSPP,PhD,DPP 603,1L,8,Artan Karini,F2025
+GSPP,PhD,DPP 611,1L,8,Simeon Nanovsky,F2025
+GSPP,PhD,DPP 614,1L,8,Hyesong Ha,F2025
+GSPP,PhD,DPP 615,1L,8,Serik Orazgaliyev,F2025
+GSPP,PhD,DPP 616,1L,8,Dina Sharipova,F2025
+GSPP,PhD,DPP 690-0,1R,0,Riccardo Pelizzo,F2025
+GSPP,GrM,MPA 602,1L,8,Aziz Burkhanov,F2025
+GSPP,GrM,MPA 603,1L,8,Omer Baris,F2025
+GSPP,GrM,MPA 605,1L,8,Clifford Wentworth Frasier,F2025
+GSPP,GrM,MPA 607,1L,8,Vladimir Kozlov,F2025
+GSPP,GrM,MPA 699,1Wsh,0,"Lisa Lim, Amina Akhmetbekova",F2025
+GSPP,GrM,MPE 608,1L,8,Scott Valentine,F2025
+GSPP,GrM,MPE 609,1L,8,Hyesong Ha,F2025
+GSPP,GrM,MPE 612,1L,8,Vladimir Kozlov,F2025
+GSPP,GrM,MPE 615,1L,8,Omer Baris,F2025
+GSPP,GrM,MPE 620,1L,8,Scott Valentine,F2025
+GSPP,GrM,MPE 628,1L,8,Riccardo Pelizzo,F2025
+GSPP,GrM,MPE 632,1L,8,Asad Bokhari,F2025
+GSPP,GrM,MPE 641,1L,8,Zhanibek Arynov,F2025
+GSPP,GrM,MPE 646,1L,8,Lisa Lim,F2025
+GSPP,GrM,MPE 651,1L,8,Aliya Assubayeva,F2025
+GSPP,GrM,MPE 660,1L,8,Dayashankar Maurya,F2025
+GSPP,GrM,MPE 665,1L,8,Dayashankar Maurya,F2025
+GSPP,GrM,MPE 671,1L,8,Omer Baris,F2025
+GSPP,GrM,MPE 685,1L,8,Aliya Assubayeva,F2025
+GSPP,GrM,MPP 601,1L,8,Peter Howie,F2025
+GSPP,GrM,MPP 611,1L,8,Simeon Nanovsky,F2025
+GSPP,GrM,MPP 613,1L,8,Zhanibek Arynov,F2025
+GSPP,GrM,MPP 621,1L,8,Serik Orazgaliyev,F2025
+GSPP,GrM,MPP 631,1L,8,"Aziz Burkhanov, Amina Akhmetbekova",F2025
+GSPP,GrM,MPP 699-0,1L,0,"Lisa Lim, Amina Akhmetbekova",F2025
+Other,ND,STUMOB 001,1L,0,TBA TBA,F2025
+SEDS,UG,CEE 200,1L,6,Elnara Kussinova,F2025
+SEDS,UG,CEE 200,1T,6,Elnara Kussinova,F2025
+SEDS,UG,CEE 200,2L,6,Asma Perveen,F2025
+SEDS,UG,CEE 200,2T,6,Asma Perveen,F2025
+SEDS,UG,CEE 200,1Lb,6,Elnara Kussinova,F2025
+SEDS,UG,CEE 200,2Lb,6,Elnara Kussinova,F2025
+SEDS,UG,CEE 200,3Lb,6,Asma Perveen,F2025
+SEDS,UG,CEE 200,4Lb,6,Asma Perveen,F2025
+SEDS,UG,CEE 201,1L,6,Mert Guney,F2025
+SEDS,UG,CEE 201,1T,6,Mert Guney,F2025
+SEDS,UG,CEE 201,1Lb,6,Mert Guney,F2025
+SEDS,UG,CEE 201,2Lb,6,Mert Guney,F2025
+SEDS,UG,CEE 204,1L,6,Bakhyt Aubakirova,F2025
+SEDS,UG,CEE 204,1CLb,6,Bakhyt Aubakirova,F2025
+SEDS,UG,CEE 204,2CLb,6,Bakhyt Aubakirova,F2025
+SEDS,UG,CEE 204,3CLb,6,Bakhyt Aubakirova,F2025
+SEDS,UG,CEE 204,1Lb,6,Bakhyt Aubakirova,F2025
+SEDS,UG,CEE 204,2Lb,6,Bakhyt Aubakirova,F2025
+SEDS,UG,CEE 204,3Lb,6,Bakhyt Aubakirova,F2025
+SEDS,UG,CEE 300,1L,6,Shazim Memon,F2025
+SEDS,UG,CEE 300,1T,6,Shazim Memon,F2025
+SEDS,UG,CEE 302,1L,6,Sung Moon,F2025
+SEDS,UG,CEE 302,1Lb,6,Sung Moon,F2025
+SEDS,UG,CEE 302,2Lb,6,Sung Moon,F2025
+SEDS,UG,CEE 304,1L,6,Ferhat Karaca,F2025
+SEDS,UG,CEE 304,1T,6,Ferhat Karaca,F2025
+SEDS,UG,CEE 306,1L,6,Chang Shon,F2025
+SEDS,UG,CEE 306,1Lb,6,Chang Shon,F2025
+SEDS,UG,CEE 306,2Lb,6,Chang Shon,F2025
+SEDS,UG,CEE 306,3Lb,6,Chang Shon,F2025
+SEDS,UG,CEE 401,1T,6,Abid Nadeem,F2025
+SEDS,UG,CEE 401,1L,6,Abid Nadeem,F2025
+SEDS,UG,CEE 450,1L,6,Dichuan Zhang,F2025
+SEDS,UG,CEE 450,1P,6,Dichuan Zhang,F2025
+SEDS,UG,CEE 460,1L,6,Ferhat Karaca,F2025
+SEDS,UG,CEE 460,1T,6,Ferhat Karaca,F2025
+SEDS,UG,CEE 462,1L,6,Chang Shon,F2025
+SEDS,UG,CEE 462,1P,6,Chang Shon,F2025
+SEDS,UG,CEE 463,1L,6,"Jong Kim, Bakhyt Aubakirova",F2025
+SEDS,UG,CEE 467,1Lb,6,Alfrendo Satyanaga,F2025
+SEDS,UG,CEE 467,1L,6,Alfrendo Satyanaga,F2025
+SEDS,UG,CHME 200,1L,6,Cevat Erisken,F2025
+SEDS,UG,CHME 200,1R,6,Cevat Erisken,F2025
+SEDS,UG,CHME 201,1L,6,Nurxat Nuraje,F2025
+SEDS,UG,CHME 201,1R,6,Nurxat Nuraje,F2025
+SEDS,UG,CHME 222,1Lb,6,Almagul Mentbayeva,F2025
+SEDS,UG,CHME 222,2Lb,6,Almagul Mentbayeva,F2025
+SEDS,UG,CHME 222,1L,6,Almagul Mentbayeva,F2025
+SEDS,UG,CHME 300,1T,6,Sergey Spotar,F2025
+SEDS,UG,CHME 300,1L,6,Sergey Spotar,F2025
+SEDS,UG,CHME 301,1L,6,"Boris Golman, Sabina Khamzina",F2025
+SEDS,UG,CHME 301,1Lb,6,"Boris Golman, Sabina Khamzina",F2025
+SEDS,UG,CHME 302,1Lb,6,Chang-Keun Lim,F2025
+SEDS,UG,CHME 302,1L,6,Chang-Keun Lim,F2025
+SEDS,UG,CHME 351,1L,6,Stavros Poulopoulos,F2025
+SEDS,UG,CHME 353,1L,6,Azhar Mukasheva,F2025
+SEDS,UG,CHME 353,1Lb,6,Azhar Mukasheva,F2025
+SEDS,UG,CHME 354,1L,6,Aishuak Konarov,F2025
+SEDS,UG,CHME 354,1Lb,6,Aishuak Konarov,F2025
+SEDS,UG,CHME 400,1L,6,Dhawal Shah,F2025
+SEDS,UG,CHME 400,1Lb,6,Dhawal Shah,F2025
+SEDS,UG,CHME 400,2Lb,6,Dhawal Shah,F2025
+SEDS,UG,CHME 401,1Lb,6,Azhar Mukasheva,F2025
+SEDS,UG,CHME 401,2Lb,6,Azhar Mukasheva,F2025
+SEDS,UG,CHME 401,3Lb,6,Azhar Mukasheva,F2025
+SEDS,UG,CHME 401,4Lb,6,Azhar Mukasheva,F2025
+SEDS,UG,CHME 453,1L,6,Sergey Spotar,F2025
+SEDS,UG,CHME 453,1Lb,6,Sergey Spotar,F2025
+SEDS,UG,CSCI 111,1L,6,Irina Dolzhikova,F2025
+SEDS,UG,CSCI 111,2L,6,Talgat Manglayev,F2025
+SEDS,UG,CSCI 111,3L,6,Syed Muhammad Umair Arif,F2025
+SEDS,UG,CSCI 115,1L,8,Minho Lee,F2025
+SEDS,UG,CSCI 115,2L,8,Sain Saginbekov,F2025
+SEDS,UG,CSCI 115,3L,8,Saida Mussakhojayeva,F2025
+SEDS,UG,CSCI 115,4L,8,Anwar Ghani,F2025
+SEDS,UG,CSCI 115,1Lb,8,Marat Isteleyev,F2025
+SEDS,UG,CSCI 115,2Lb,8,Marat Isteleyev,F2025
+SEDS,UG,CSCI 115,3Lb,8,"Marat Isteleyev, Adai Shomanov",F2025
+SEDS,UG,CSCI 115,4Lb,8,Adai Shomanov,F2025
+SEDS,UG,CSCI 115,5Lb,8,Adai Shomanov,F2025
+SEDS,UG,CSCI 151,1L,8,Antonio Cerone,F2025
+SEDS,UG,CSCI 151,2L,8,Shinnazar Seytnazarov,F2025
+SEDS,UG,CSCI 151,3L,8,Muhammed Demirci,F2025
+SEDS,UG,CSCI 151,1CLb,8,Adai Shomanov,F2025
+SEDS,UG,CSCI 151,2CLb,8,Adai Shomanov,F2025
+SEDS,UG,CSCI 151,3CLb,8,Irina Dolzhikova,F2025
+SEDS,UG,CSCI 151,4CLb,8,Irina Dolzhikova,F2025
+SEDS,UG,CSCI 231,1L,6,Shinnazar Seytnazarov,F2025
+SEDS,UG,CSCI 231,2L,6,Hashim Ali,F2025
+SEDS,UG,CSCI 231,3L,6,Hari Mohan Rai,F2025
+SEDS,UG,CSCI 231,1Lb,6,Asset Berdibek,F2025
+SEDS,UG,CSCI 231,2Lb,6,Asset Berdibek,F2025
+SEDS,UG,CSCI 231,3Lb,6,Iliyas Tursynbek,F2025
+SEDS,UG,CSCI 231,4Lb,6,Iliyas Tursynbek,F2025
+SEDS,UG,CSCI 235,1L,8,Ben Tyler,F2025
+SEDS,UG,CSCI 235,2L,8,Jean Marie Guillaume Gerard de Nivelle,F2025
+SEDS,UG,CSCI 235,1Lb,8,Aigerim Yessenbayeva,F2025
+SEDS,UG,CSCI 235,2Lb,8,Aigerim Yessenbayeva,F2025
+SEDS,UG,CSCI 235,3Lb,8,Iliyas Tursynbek,F2025
+SEDS,UG,CSCI 235,4Lb,8,Iliyas Tursynbek,F2025
+SEDS,UG,CSCI 281,1L,6,Antonio Cerone,F2025
+SEDS,UG,CSCI 299,1Int,6,Ben Tyler,F2025
+SEDS,UG,CSCI 341,1L,6,Meiram Murzabulatov,F2025
+SEDS,UG,CSCI 341,2L,6,Adnan Yazici,F2025
+SEDS,UG,CSCI 341,3L,6,Yesdaulet Izenov,F2025
+SEDS,UG,CSCI 344,1L,6,Jurn Gyu Park,F2025
+SEDS,UG,CSCI 355,1L,6,Jean Marie Guillaume Gerard de Nivelle,F2025
+SEDS,UG,CSCI 361,1L,6,Askar Boranbayev,F2025
+SEDS,UG,CSCI 361,2L,6,Askar Boranbayev,F2025
+SEDS,UG,CSCI 361,1Lb,6,Marat Isteleyev,F2025
+SEDS,UG,CSCI 361,2Lb,6,Marat Isteleyev,F2025
+SEDS,UG,CSCI 361,3Lb,6,Syed Muhammad Umair Arif,F2025
+SEDS,UG,CSCI 361,4Lb,6,Syed Muhammad Umair Arif,F2025
+SEDS,UG,CSCI 364,1L,6,Marko Ristin,F2025
+SEDS,UG,CSCI 390,3L,6,Khalil Khan,F2025
+SEDS,UG,CSCI 390,1L,6,Anh Tu Nguyen,F2025
+SEDS,UG,CSCI 390,2L,6,Minho Lee,F2025
+SEDS,UG,CSCI 393,1L,6,Lisa Chalaguine,F2025
+SEDS,UG,CSCI 399,1Int,6,Ben Tyler,F2025
+SEDS,UG,CSCI 408,1L,6,"Askar Boranbayev, Enver Ever",F2025
+SEDS,UG,CSCI 423,1L,6,Talgat Manglayev,F2025
+SEDS,UG,CSCI 434,1L,6,Anwar Ghani,F2025
+SEDS,UG,CSCI 437,1L,6,Dimitrios Zormpas,F2025
+SEDS,UG,CSCI 447,1L,6,Hari Mohan Rai,F2025
+SEDS,UG,CSCI 471,1L,6,Meiram Murzabulatov,F2025
+SEDS,UG,CSCI 494,1L,6,Siamac Fazli,F2025
+SEDS,GrM,CSCI 501,1L,6,"Aigerim Yessenbayeva, Asset Berdibek",F2025
+SEDS,GrM,CSCI 523,1L,6,Talgat Manglayev,F2025
+SEDS,GrM,CSCI 535,1L,6,Sain Saginbekov,F2025
+SEDS,GrM,CSCI 537,1L,6,Latif Zohaib,F2025
+SEDS,GrM,CSCI 538,1L,6,Dimitrios Zormpas,F2025
+SEDS,GrM,CSCI 575,1L,6,Ben Tyler,F2025
+SEDS,GrM,CSCI 585,1L,6,Anh Tu Nguyen,F2025
+SEDS,GrM,CSCI 592,1L,6,Hashim Ali,F2025
+SEDS,GrM,CSCI 594,1L,6,Jurn Gyu Park,F2025
+SEDS,GrM,CSCI 693,1S,6,Latif Zohaib,F2025
+SEDS,PhD,CSCI 700-0,1R,0,Siamac Fazli,F2025
+SEDS,PhD,CSCI 701,1L,8,"Aigerim Yessenbayeva, Asset Berdibek",F2025
+SEDS,PhD,CSCI 723,1L,8,Talgat Manglayev,F2025
+SEDS,PhD,CSCI 735,1L,8,Sain Saginbekov,F2025
+SEDS,PhD,CSCI 737,1L,8,Latif Zohaib,F2025
+SEDS,PhD,CSCI 775,1L,8,Ben Tyler,F2025
+SEDS,PhD,CSCI 785,1L,8,Anh Tu Nguyen,F2025
+SEDS,PhD,CSCI 792,1L,8,Hashim Ali,F2025
+SEDS,PhD,CSCI 794,1L,8,Jurn Gyu Park,F2025
+SEDS,PhD,DCEE 700-0,1L,0,"Jong Kim, Bakhyt Aubakirova",F2025
+SEDS,PhD,DCEE 750,1L,8,Dichuan Zhang,F2025
+SEDS,PhD,DCEE 750,1CLb,8,Dichuan Zhang,F2025
+SEDS,PhD,DCEE 757,1L,8,Woojin Lee,F2025
+SEDS,PhD,DCEE 760,1L,8,Alfrendo Satyanaga,F2025
+SEDS,PhD,DCEE 761,1L,8,Sung Moon,F2025
+SEDS,PhD,DCEE 761,1CLb,8,Sung Moon,F2025
+SEDS,PhD,DCEE 772,1L,8,Abid Nadeem,F2025
+SEDS,PhD,DCHME 700,1Th,178,"Nurxat Nuraje, Chang-Keun Lim",F2025
+SEDS,PhD,DCHME 700-0,1L,0,"Nurxat Nuraje, Chang-Keun Lim",F2025
+SEDS,PhD,DCHME 755,1L,8,Yanwei Wang,F2025
+SEDS,PhD,DCHME 755,1Lb,8,Yanwei Wang,F2025
+SEDS,PhD,DCHME 761,1L,8,"Stavros Poulopoulos, Sabina Khamzina",F2025
+SEDS,PhD,DCHME 761,1P,8,"Stavros Poulopoulos, Sabina Khamzina",F2025
+SEDS,PhD,DCHME 762,1L,8,Almagul Mentbayeva,F2025
+SEDS,PhD,DCHME 762,1Lb,8,Almagul Mentbayeva,F2025
+SEDS,PhD,DELCE 700,1Th,178,Mehdi Bagheri,F2025
+SEDS,PhD,DELCE 700-0,1L,0,Mehdi Bagheri,F2025
+SEDS,PhD,DELCE 753,1L,8,Behrouz Maham,F2025
+SEDS,PhD,DELCE 760,1L,8,Prashant Jamwal,F2025
+SEDS,PhD,DELCE 761,1L,8,"Ainur Rakhymbay, Aresh Dadlani",F2025
+SEDS,PhD,DELCE 766,1L,8,Mehdi Shafiee,F2025
+SEDS,PhD,DENG 700,1Th,178,Konstantinos Kostas,F2025
+SEDS,PhD,DENG 700-0,1L,0,Konstantinos Kostas,F2025
+SEDS,PhD,DENG 782,1L,6,Saltanat Akhmadi,F2025
+SEDS,PhD,DENG 794,1IS,24,Konstantinos Kostas,F2025
+SEDS,PhD,DENG 795,1R,12,Konstantinos Kostas,F2025
+SEDS,PhD,DENG 796,1OCA,0,Konstantinos Kostas,F2025
+SEDS,PhD,DENG 797,1IS,0,Konstantinos Kostas,F2025
+SEDS,PhD,DMAE 700,1Th,178,Yerkin Abdildin,F2025
+SEDS,PhD,DMAE 700-0,1S,0,Yerkin Abdildin,F2025
+SEDS,PhD,DMAE 701,1Lb,8,Dmitriy Sizov,F2025
+SEDS,PhD,DMAE 701,1L,8,Dmitriy Sizov,F2025
+SEDS,PhD,DMAE 751,1L,8,Md. Hazrat Ali,F2025
+SEDS,PhD,DMAE 751,1Lb,8,Md. Hazrat Ali,F2025
+SEDS,PhD,DMAE 757,1L,8,Altay Zhakatayev,F2025
+SEDS,PhD,DMAE 765,1L,8,Asma Perveen,F2025
+SEDS,PhD,DMAE 765,1Lb,8,Asma Perveen,F2025
+SEDS,PhD,DMAE 772,1Lb,8,Sherif Gouda,F2025
+SEDS,PhD,DMAE 772,1L,8,Sherif Gouda,F2025
+SEDS,PhD,DMAE 773,1L,8,Amgad Salama,F2025
+SEDS,PhD,DMAE 773,1T,8,Amgad Salama,F2025
+SEDS,GrM,DS 501,1L,6,"Michael Lewis, Lisa Chalaguine",F2025
+SEDS,GrM,DS 502,1L,6,Siamac Fazli,F2025
+SEDS,GrM,DS 507,1L,6,Yesdaulet Izenov,F2025
+SEDS,GrM,DS 551,1L,6,Jose Berengueres,F2025
+SEDS,GrM,DS 552,1L,6,Jose Berengueres,F2025
+SEDS,GrM,DS 693,1S,6,Michael Lewis,F2025
+SEDS,UG,ELCE 200,1L,6,Galymzhan Nauryzbayev,F2025
+SEDS,UG,ELCE 203,1L,6,Muhammad Akhtar,F2025
+SEDS,UG,ELCE 203,1T,6,Muhammad Akhtar,F2025
+SEDS,UG,ELCE 203L,2Lb,2,Shyngys Salakchinov,F2025
+SEDS,UG,ELCE 203L,1Lb,2,Shyngys Salakchinov,F2025
+SEDS,UG,ELCE 204,1L,6,Annie Ng,F2025
+SEDS,UG,ELCE 204L,1Lb,2,Annie Ng,F2025
+SEDS,UG,ELCE 204L,2Lb,2,Annie Ng,F2025
+SEDS,UG,ELCE 205,1L,6,Carlo Molardi,F2025
+SEDS,UG,ELCE 301,1L,6,Mohammad Hashmi,F2025
+SEDS,UG,ELCE 301,1T,6,Mohammad Hashmi,F2025
+SEDS,UG,ELCE 301L,1Lb,2,Gulsim Kulsharova,F2025
+SEDS,UG,ELCE 301L,2Lb,2,Gulsim Kulsharova,F2025
+SEDS,UG,ELCE 304,1L,6,Refik Kizilirmak,F2025
+SEDS,UG,ELCE 304L,1Lb,2,Refik Kizilirmak,F2025
+SEDS,UG,ELCE 304L,2Lb,2,Refik Kizilirmak,F2025
+SEDS,UG,ELCE 306,1L,6,Refik Kizilirmak,F2025
+SEDS,UG,ELCE 307,1T,6,Muhammad Akhtar,F2025
+SEDS,UG,ELCE 307,1L,6,Muhammad Akhtar,F2025
+SEDS,UG,ELCE 307L,1Lb,2,Muhammad Akhtar,F2025
+SEDS,UG,ELCE 352,1Lb,4,Ainur Rakhymbay,F2025
+SEDS,UG,ELCE 352,2Lb,4,Ainur Rakhymbay,F2025
+SEDS,UG,ELCE 354,1L,6,Ainur Rakhymbay,F2025
+SEDS,UG,ELCE 355,1L,6,Ainur Rakhymbay,F2025
+SEDS,UG,ELCE 455,1L,6,Mehdi Shafiee,F2025
+SEDS,UG,ELCE 462,1L,6,Behrouz Maham,F2025
+SEDS,UG,ELCE 463,1L,6,"Ainur Rakhymbay, Aresh Dadlani",F2025
+SEDS,UG,ELCE 466,1L,6,Mohammad Hashmi,F2025
+SEDS,GrM,EMEM 533,1L,6,Abid Nadeem,F2025
+SEDS,GrM,EMEM 535,1L,6,Essam Shehab,F2025
+SEDS,GrM,EMEM 537,1L,6,Saltanat Akhmadi,F2025
+SEDS,GrM,EMEM 537,1T,6,Saltanat Akhmadi,F2025
+SEDS,GrM,EMEM 538,1L,6,Maria Tsakalerou,F2025
+SEDS,GrM,EMEM 539,1L,6,Georgios Dafoulas,F2025
+SEDS,GrM,EMEM 552,1L,12,Maria Tsakalerou,F2025
+SEDS,GrM,EMEM 554,1L,6,Saltanat Akhmadi,F2025
+SEDS,UG,ENG 100,1Lb,6,"Gulnur Kalimuldina, Assiya Yermukhambetova, Gulsim Kulsharova, Woojin Lee",F2025
+SEDS,UG,ENG 100,2Lb,6,"Gulnur Kalimuldina, Assiya Yermukhambetova, Gulsim Kulsharova, Woojin Lee",F2025
+SEDS,UG,ENG 100,3Lb,6,"Gulnur Kalimuldina, Assiya Yermukhambetova, Gulsim Kulsharova, Woojin Lee",F2025
+SEDS,UG,ENG 100,4Lb,6,"Gulnur Kalimuldina, Assiya Yermukhambetova, Gulsim Kulsharova, Woojin Lee",F2025
+SEDS,UG,ENG 100,1L,6,"Gulnur Kalimuldina, Assiya Yermukhambetova, Gulsim Kulsharova, Woojin Lee",F2025
+SEDS,UG,ENG 101,1Lb,6,Shyngys Salakchinov,F2025
+SEDS,UG,ENG 101,2Lb,6,Shyngys Salakchinov,F2025
+SEDS,UG,ENG 101,3Lb,6,Shyngys Salakchinov,F2025
+SEDS,UG,ENG 101,4Lb,6,Shyngys Salakchinov,F2025
+SEDS,UG,ENG 101,1L,6,Sultangali Arzykulov,F2025
+SEDS,UG,ENG 200,2Lb,6,Yanwei Wang,F2025
+SEDS,UG,ENG 200,3Lb,6,Dmitriy Sizov,F2025
+SEDS,UG,ENG 200,4L,6,Daniele Tosi,F2025
+SEDS,UG,ENG 200,1L,6,Elnara Kussinova,F2025
+SEDS,UG,ENG 200,4Lb,6,Ainur Rakhymbay,F2025
+SEDS,UG,ENG 200,5Lb,6,Ainur Rakhymbay,F2025
+SEDS,UG,ENG 200,2L,6,Yanwei Wang,F2025
+SEDS,UG,ENG 200,3L,6,Dmitriy Sizov,F2025
+SEDS,UG,ENG 200,5L,6,Prashant Jamwal,F2025
+SEDS,UG,ENG 200,1Lb,6,Elnara Kussinova,F2025
+SEDS,UG,ENG 400,2L,6,"Dhawal Shah, Sabina Khamzina",F2025
+SEDS,UG,ENG 400,4L,6,Galymzhan Nauryzbayev,F2025
+SEDS,UG,ENG 400,1L,6,Mert Guney,F2025
+SEDS,UG,ENG 400,3L,6,"Yerkin Abdildin, Essam Shehab",F2025
+SEDS,UG,MAE 201,1Lb,6,Konstantinos Kostas,F2025
+SEDS,UG,MAE 201,1L,6,Konstantinos Kostas,F2025
+SEDS,UG,MAE 202,1T,6,Gulnur Kalimuldina,F2025
+SEDS,UG,MAE 202,1L,6,Gulnur Kalimuldina,F2025
+SEDS,UG,MAE 202,1Lb,6,Gulnur Kalimuldina,F2025
+SEDS,UG,MAE 202,2Lb,6,Gulnur Kalimuldina,F2025
+SEDS,UG,MAE 300,2Lb,6,Sergey Spotar,F2025
+SEDS,UG,MAE 300,1T,6,Sergey Spotar,F2025
+SEDS,UG,MAE 300,1L,6,Sergey Spotar,F2025
+SEDS,UG,MAE 300,1Lb,6,Sergey Spotar,F2025
+SEDS,UG,MAE 301,2Lb,6,Amgad Salama,F2025
+SEDS,UG,MAE 301,1T,6,Amgad Salama,F2025
+SEDS,UG,MAE 301,1L,6,Amgad Salama,F2025
+SEDS,UG,MAE 301,1Lb,6,Amgad Salama,F2025
+SEDS,UG,MAE 303,2Lb,6,Md. Hazrat Ali,F2025
+SEDS,UG,MAE 303,1L,6,Md. Hazrat Ali,F2025
+SEDS,UG,MAE 303,1Lb,6,Md. Hazrat Ali,F2025
+SEDS,UG,MAE 307,2L,6,Sherif Gouda,F2025
+SEDS,UG,MAE 307,2Lb,6,Sherif Gouda,F2025
+SEDS,UG,MAE 307,2T,6,Sherif Gouda,F2025
+SEDS,UG,MAE 307,1L,6,Sherif Gouda,F2025
+SEDS,UG,MAE 307,1T,6,Sherif Gouda,F2025
+SEDS,UG,MAE 307,1Lb,6,Sherif Gouda,F2025
+SEDS,UG,MAE 400,1T,6,Yerbol Sarbassov,F2025
+SEDS,UG,MAE 400,1L,6,Yerbol Sarbassov,F2025
+SEDS,UG,MAE 400,1Lb,6,Yerbol Sarbassov,F2025
+SEDS,UG,MAE 401,1T,6,Didier Talamona,F2025
+SEDS,UG,MAE 401,1L,6,Didier Talamona,F2025
+SEDS,UG,MAE 401,1P,6,Didier Talamona,F2025
+SEDS,UG,MAE 450,1L,6,Didier Talamona,F2025
+SEDS,UG,MAE 450,1Lb,6,Didier Talamona,F2025
+SEDS,UG,MAE 455,1T,6,"Altay Zhakatayev, Dmitriy Sizov",F2025
+SEDS,UG,MAE 455,1L,6,"Altay Zhakatayev, Dmitriy Sizov",F2025
+SEDS,UG,MAE 467,1L,6,Yerbol Sarbassov,F2025
+SEDS,UG,MAE 467,1T,6,Yerbol Sarbassov,F2025
+SEDS,UG,MAE 468,1L,6,Altay Zhakatayev,F2025
+SEDS,UG,MAE 468,1T,6,Altay Zhakatayev,F2025
+SEDS,GrM,MBME 601,1RP,24,Cevat Erisken,F2025
+SEDS,GrM,MBME 603,1L,6,Cevat Erisken,F2025
+SEDS,GrM,MBME 604,1L,6,Daniele Tosi,F2025
+SEDS,GrM,MBME 610,1L,6,Lyazzat Mukhangaliyeva,F2025
+SEDS,GrM,MBME 710,1L,6,Chang-Keun Lim,F2025
+SEDS,GrM,MCEE 601,1IS,24,"Jong Kim, Elnara Kussinova",F2025
+SEDS,GrM,MCEE 603,1L,6,Dichuan Zhang,F2025
+SEDS,GrM,MCEE 603,1CLb,6,Dichuan Zhang,F2025
+SEDS,GrM,MCEE 604,1L,6,Sung Moon,F2025
+SEDS,GrM,MCEE 604,1CLb,6,Sung Moon,F2025
+SEDS,GrM,MCEE 605,1L,6,Woojin Lee,F2025
+SEDS,GrM,MCEE 708,1P,6,Alfrendo Satyanaga,F2025
+SEDS,GrM,MCEE 708,1L,6,Alfrendo Satyanaga,F2025
+SEDS,GrM,MCHME 601,1IS,24,"Nurxat Nuraje, Chang-Keun Lim",F2025
+SEDS,GrM,MCHME 601,1S,24,"Nurxat Nuraje, Chang-Keun Lim",F2025
+SEDS,GrM,MCHME 603,1L,6,Almagul Mentbayeva,F2025
+SEDS,GrM,MCHME 603,1Lb,6,Almagul Mentbayeva,F2025
+SEDS,GrM,MCHME 604,1L,6,"Zhumabay Bakenov, Aishuak Konarov",F2025
+SEDS,GrM,MCHME 604,1Lb,6,"Zhumabay Bakenov, Aishuak Konarov",F2025
+SEDS,GrM,MCHME 605,1L,6,"Stavros Poulopoulos, Sabina Khamzina",F2025
+SEDS,GrM,MCHME 605,1Lb,6,"Stavros Poulopoulos, Sabina Khamzina",F2025
+SEDS,GrM,MCHME 714,1L,6,Yanwei Wang,F2025
+SEDS,GrM,MCHME 714,1CLb,6,Yanwei Wang,F2025
+SEDS,GrM,MECE 601,1IS,24,Mehdi Bagheri,F2025
+SEDS,GrM,MECE 603,1L,6,"Ainur Rakhymbay, Aresh Dadlani",F2025
+SEDS,GrM,MECE 605,1L,6,Behrouz Maham,F2025
+SEDS,GrM,MECE 606,1L,6,Sultangali Arzykulov,F2025
+SEDS,GrM,MECE 702,1L,6,Ainur Rakhymbay,F2025
+SEDS,GrM,MECE 724,1L,6,Prashant Jamwal,F2025
+SEDS,GrM,MECE 726,1L,6,Annie Ng,F2025
+SEDS,GrM,MECE 727,1L,6,Daniele Tosi,F2025
+SEDS,GrM,MECE 731,1L,6,Mohammad Hashmi,F2025
+SEDS,GrM,MECE 734,1L,6,"Ainur Rakhymbay, Aresh Dadlani",F2025
+SEDS,GrM,MECE 735,1L,6,Mehdi Shafiee,F2025
+SEDS,GrM,MMAE 600,1S,6,Yerkin Abdildin,F2025
+SEDS,GrM,MMAE 601,1S,24,Konstantinos Kostas,F2025
+SEDS,GrM,MMAE 603,1L,6,Md. Hazrat Ali,F2025
+SEDS,GrM,MMAE 603,1T,6,Md. Hazrat Ali,F2025
+SEDS,GrM,MMAE 605,1L,6,Asma Perveen,F2025
+SEDS,GrM,MMAE 605,1Lb,6,Asma Perveen,F2025
+SEDS,GrM,MMAE 621,1L,6,Amgad Salama,F2025
+SEDS,GrM,MMAE 621,1T,6,Amgad Salama,F2025
+SEDS,GrM,MMAE 705,1L,6,Altay Zhakatayev,F2025
+SEDS,GrM,MMAE 717,1Lb,6,Sherif Gouda,F2025
+SEDS,GrM,MMAE 717,1L,6,Sherif Gouda,F2025
+SEDS,GrM,MSC 601,1L,6,Bakhtiar Naghdipour,F2025
+SEDS,GrM,MSC 601,2L,6,Bakhtiar Naghdipour,F2025
+SEDS,GrM,MSC 601,3L,6,Yamen Rahvan,F2025
+SEDS,GrM,MSC 601,4L,6,Yamen Rahvan,F2025
+SEDS,GrM,MSC 602,2Lb,6,Carlo Molardi,F2025
+SEDS,GrM,MSC 602,3Lb,6,Boris Golman,F2025
+SEDS,GrM,MSC 602,1Lb,6,Dmitriy Sizov,F2025
+SEDS,GrM,MSC 602,2L,6,Carlo Molardi,F2025
+SEDS,GrM,MSC 602,1L,6,Dmitriy Sizov,F2025
+SEDS,GrM,MSC 602,3L,6,Boris Golman,F2025
+SEDS,GrM,MSC 615,1T,6,Yerkin Abdildin,F2025
+SEDS,GrM,MSC 615,1L,6,Yerkin Abdildin,F2025
+SEDS,UG,ROBT 201,1L,6,Aibek Niyetkaliyev,F2025
+SEDS,UG,ROBT 203,1L,8,Ton Duc Do,F2025
+SEDS,UG,ROBT 203,1Lb,8,Ahmad Alhassan,F2025
+SEDS,UG,ROBT 203,2Lb,8,Ahmad Alhassan,F2025
+SEDS,UG,ROBT 205,1L,8,Matteo Rubagotti,F2025
+SEDS,UG,ROBT 205,1Lb,8,Togzhan Syrymova,F2025
+SEDS,UG,ROBT 205,2Lb,8,Togzhan Syrymova,F2025
+SEDS,UG,ROBT 301,1L,8,Aibek Niyetkaliyev,F2025
+SEDS,UG,ROBT 301,1Lb,8,Azamat Yeshmukhametov,F2025
+SEDS,UG,ROBT 301,2Lb,8,Azamat Yeshmukhametov,F2025
+SEDS,UG,ROBT 303,1L,8,Tohid Alizadeh,F2025
+SEDS,UG,ROBT 303,1Lb,8,Togzhan Syrymova,F2025
+SEDS,UG,ROBT 303,2Lb,8,Togzhan Syrymova,F2025
+SEDS,UG,ROBT 310,1L,6,Zhanat Kappassov,F2025
+SEDS,UG,ROBT 403,1L,8,Tohid Alizadeh,F2025
+SEDS,UG,ROBT 403,2Lb,8,Zhanat Kappassov,F2025
+SEDS,UG,ROBT 403,1Lb,8,Zhanat Kappassov,F2025
+SEDS,UG,ROBT 407,1L,6,Berdakh Abibullaev,F2025
+SEDS,UG,ROBT 491,1L,6,Togzhan Syrymova,F2025
+SEDS,UG,ROBT 491,2L,6,Togzhan Syrymova,F2025
+SEDS,GrM,ROBT 501,1L,6,Michele Folgheraiter,F2025
+SEDS,GrM,ROBT 503,1L,6,Huseyin Atakan Varol,F2025
+SEDS,GrM,ROBT 611,1L,6,Almas Shintemirov,F2025
+SEDS,GrM,ROBT 613,1L,6,Berdakh Abibullaev,F2025
+SEDS,GrM,ROBT 615,1L,6,Ton Duc Do,F2025
+SEDS,GrM,ROBT 691,1IS,12,Tohid Alizadeh,F2025
+SEDS,PhD,ROBT 700,1Th,178,Michele Folgheraiter,F2025
+SEDS,PhD,ROBT 700-0,1R,0,Michele Folgheraiter,F2025
+SEDS,PhD,ROBT 701,1L,8,Michele Folgheraiter,F2025
+SEDS,PhD,ROBT 703,1L,8,Ton Duc Do,F2025
+SEDS,PhD,ROBT 709,1L,8,Huseyin Atakan Varol,F2025
+SEDS,GrM,SEDS 503,1S,6,Ben Tyler,F2025
+SEDS,GrM,SEDS 505,1CL,6,"Stavros Poulopoulos, Lyazzat Mukhangaliyeva",F2025
+SEDS,GrM,SEDS 505,2CL,6,Sherif Gouda,F2025
+SEDS,GrM,SEDS 505,3CL,6,Mehdi Bagheri,F2025
+SEDS,GrM,SEDS 505,4CL,6,"Jong Kim, Bakhyt Aubakirova",F2025
+SEDS,GrM,SEDS 591,1L,6,Anara Sandygulova,F2025
+SMG,UG,GEOL 201,1L,6,Kamal Regmi,F2025
+SMG,UG,GEOL 202,1L,6,Jovid Aminov,F2025
+SMG,UG,GEOL 203,1L,6,Jovid Aminov,F2025
+SMG,UG,GEOL 207,1L,6,Medet Junussov,F2025
+SMG,UG,GEOL 302,1L,6,Kamal Regmi,F2025
+SMG,UG,GEOL 303,1L,6,Sebastianus Willem Josef Den Brok,F2025
+SMG,UG,GEOL 305,1L,6,George Mathews,F2025
+SMG,UG,GEOL 310,1OCA,6,Sebastianus Willem Josef Den Brok,F2025
+SMG,UG,GEOL 401,1L,6,Milovan Fustic,F2025
+SMG,UG,GEOL 402,1L,6,Marzhan Baigaliyeva,F2025
+SMG,UG,GEOL 404,1P,6,Sebastianus Willem Josef Den Brok,F2025
+SMG,UG,GEOL 412,1L,6,Marzhan Baigaliyeva,F2025
+SMG,GrM,GEOL 501,1L,6,George Mathews,F2025
+SMG,GrM,GEOL 502,1L,6,Milovan Fustic,F2025
+SMG,GrM,GEOL 503,1L,6,Milovan Fustic,F2025
+SMG,GrM,GEOL 504,1L,6,Mahmoud Leila,F2025
+SMG,GrM,GEOL 505,1L,6,Mahmoud Leila,F2025
+SMG,GrM,GEOL 509,1L,6,Sebastianus Willem Josef Den Brok,F2025
+SMG,GrM,GEOL 601,1L,6,Sebastianus Willem Josef Den Brok,F2025
+SMG,GrM,GEOL 603,1L,6,Marzhan Baigaliyeva,F2025
+SMG,GrM,GEOL 689,1S,18,Sebastianus Willem Josef Den Brok,F2025
+SMG,UG,MINE 301,1L,6,Emil Bayramov,F2025
+SMG,UG,MINE 302,1L,6,Fidelis Suorineni,F2025
+SMG,UG,MINE 401,1L,6,Ali Mortazavi,F2025
+SMG,UG,MINE 402,1L,6,Nasser Madaniesfahani,F2025
+SMG,UG,MINE 403,1L,6,Fidelis Suorineni,F2025
+SMG,UG,MINE 405,1L,6,Sergei Sabanov,F2025
+SMG,UG,MINE 407,1L,6,Ata Akcil,F2025
+SMG,UG,MINE 489,1S,6,Sergei Sabanov,F2025
+SMG,GrM,MINE 501,1L,6,Ali Mortazavi,F2025
+SMG,GrM,MINE 502,1L,6,Saffet Yagiz,F2025
+SMG,GrM,MINE 503,1L,6,Nasser Madaniesfahani,F2025
+SMG,GrM,MINE 504,1L,6,Amoussou Coffi Adoko,F2025
+SMG,GrM,MINE 511,1L,6,Ata Akcil,F2025
+SMG,GrM,MINE 602,1L,6,Sergei Sabanov,F2025
+SMG,GrM,MINE 690,1S,12,Fidelis Suorineni,F2025
+SMG,PhD,MINE 701,1L,8,Amoussou Coffi Adoko,F2025
+SMG,PhD,MINE 890,1S,180,Fidelis Suorineni,F2025
+SMG,PhD,MINE 890-0,1S,0,Fidelis Suorineni,F2025
+SMG,UG,PETE 201,1L,6,Shams Kalam,F2025
+SMG,UG,PETE 301,1L,6,Sagyn Omirbekov,F2025
+SMG,UG,PETE 302,1L,8,Masoud Riazi,F2025
+SMG,UG,PETE 303,1L,6,Ali  Shafiei,F2025
+SMG,UG,PETE 304,1L,6,Irawan Sonny,F2025
+SMG,UG,PETE 400,1P,6,Mian Umer Shafiq,F2025
+SMG,UG,PETE 405,1L,6,Peyman Pourafshary,F2025
+SMG,UG,PETE 409,1L,6,Mian Umer Shafiq,F2025
+SMG,GrM,PETE 501,1L,6,Shams Kalam,F2025
+SMG,GrM,PETE 502,1L,6,Milovan Fustic,F2025
+SMG,GrM,PETE 503,1L,6,Peyman Pourafshary,F2025
+SMG,GrM,PETE 504,1L,6,Ali  Shafiei,F2025
+SMG,GrM,PETE 505,1L,6,Irawan Sonny,F2025
+SMG,GrM,PETE 509,1L,6,Mian Umer Shafiq,F2025
+SMG,GrM,PETE 600,1S,12,Peyman Pourafshary,F2025
+SMG,GrM,PETE 601,1L,6,Masoud Riazi,F2025
+SMG,GrM,PETE 602,1S,6,Irawan Sonny,F2025
+SMG,PhD,PETE 802,1L,8,Peyman Pourafshary,F2025
+SMG,PhD,PETE 805,1L,8,Masoud Riazi,F2025
+SMG,PhD,PETE 890,1S,180,Peyman Pourafshary,F2025
+SMG,PhD,PETE 890-0,1S,0,Peyman Pourafshary,F2025
+SMG,UG,SMG 100,1L,6,Randy Hazlett,F2025
+SMG,UG,SMG 200/ECON 220,1L,6,Zauresh Atakhanova,F2025
+SMG,UG,SMG 200/ECON 220,2L,6,Zauresh Atakhanova,F2025
+SMG,UG,SMG 210,1L,6,Amoussou Coffi Adoko,F2025
+SMG,GrM,SMG 520,1L,6,Saffet Yagiz,F2025
+SMG,PhD,SMG 710,1L,6,Emil Bayramov,F2025
+SoM,GrM,MMMM 605,1L,6,Denis Bulanin,F2025
+SoM,GrM,MMMM 608,1L,6,Nikolai Barlev,F2025
+SoM,GrM,MMMM 610,1L,6,Larisa Lezina,F2025
+SoM,GrM,MPTX 506,1L,6,"Mohamad Aljofan, Vladimir Surov",F2025
+SoM,GrM,MPTX 602,1L,6,"Mohamad Aljofan, Vladimir Surov, Assem Zhakupova",F2025
+SoM,GrM,MPTX 603,1IS,12,Mohamad Aljofan,F2025
+SoM,GrM,MPTX 604E,1L,6,Marina Kriajevskaia,F2025
+SoM,GrM,MPTX 606,1L,6,"Mohamad Aljofan, Kamilya Kokabi",F2025
+SoM,GrM,MSBM 501,1L,6,Nikolai Barlev,F2025
+SoM,GrM,MSBM 502,1S,6,Dmitriy Viderman,F2025
+SoM,GrM,MSBM 503,1L,6,Marina Kriajevskaia,F2025
+SoM,GrM,MSBM 504,1L,6,Byron Crape,F2025
+SoM,GrM,MSBM 505,1L,6,Eugene Tulchinsky,F2025
+SoM,GrM,MSMR 514,1S,6,Yeltay Rakhmanov,F2025
+SoM,GrM,MSMR 603,1RP,16,"Syed Ali, Yeltay Rakhmanov",F2025
+SoM,GrM,MSN 501,1L,6,Jonas Cruz,F2025
+SoM,GrM,MSN 502,1L,6,Ejercito Balay-Odao,F2025
+SoM,GrM,MSN 503,1L,6,"Jonas Cruz, Aizada Badiyeva",F2025
+SoM,GrM,MSN 504,1L,6,Joseph Almazan,F2025
+SoM,GrM,MSN 505,1L,6,Paolo Colet,F2025
+SoM,UG,NUR 205,1L,6,Ejercito Balay-Odao,F2025
+SoM,UG,NUR 221,1L,6,Jonas Cruz,F2025
+SoM,UG,NUR 302,1L,8,"Ainetta Nurmagambetova, Joseph Almazan, Jamilya Saparbay",F2025
+SoM,UG,NUR 303,1L,8,Joseph Almazan,F2025
+SoM,UG,NUR 304,1L,6,"Nancy Stitt, Aizada Badiyeva",F2025
+SoM,UG,NUR 308,1L,8,"Nancy Stitt, Anargul Kuntuganova",F2025
+SoM,UG,NUR 308,1L,8,Anargul Kuntuganova,F2025
+SoM,UG,NUR 311C,1ClinPract,10,Paolo Colet,F2025
+SoM,UG,NUR 311C,1L,10,Paolo Colet,F2025
+SoM,UG,NUR 312C,1ClinPract,8,"Ruslan Bilal, Joseph Almazan",F2025
+SoM,UG,NUR 312C,1L,8,"Ruslan Bilal, Joseph Almazan",F2025
+SoM,UG,NUR 401,1L,8,"Nancy Stitt, Anargul Kuntuganova",F2025
+SoM,UG,NUR 403,1L,6,Paolo Colet,F2025
+SoM,UG,NUR 404,1L,8,Anargul Kuntuganova,F2025
+SoM,UG,NUR 406.1,1L,8,Ejercito Balay-Odao,F2025
+SoM,UG,NUR 411C,1ClinPract,8,"Anargul Kuntuganova, Jonas Cruz",F2025
+SoM,UG,NUR 411C,1L,8,"Anargul Kuntuganova, Jonas Cruz",F2025
+SoM,UG,NUR 412,1L,6,Joseph Almazan,F2025
+SoM,UG,NUR 413C,1ClinPract,14,Nancy Stitt,F2025
+SoM,UG,NUR 413C,1L,14,Nancy Stitt,F2025
+SoM,UG,NUR 421,1L,6,Jonas Cruz,F2025
+SoM,UG,NUSM 101,1L,4,Arman Saparov,F2025
+SoM,UG,NUSM 102,1L,8,Larisa Lezina,F2025
+SoM,UG,NUSM 102,1Lb,8,"Agata Natasza Burska, Assem Zhakupova, Kamila Raziyeva",F2025
+SoM,UG,NUSM 102,2Lb,8,"Agata Natasza Burska, Assem Zhakupova, Kamila Raziyeva",F2025
+SoM,UG,NUSM 102,3Lb,8,"Agata Natasza Burska, Assem Zhakupova, Kamila Raziyeva",F2025
+SoM,UG,NUSM 102,4Lb,8,"Agata Natasza Burska, Assem Zhakupova, Kamila Raziyeva",F2025
+SoM,UG,NUSM 301,1L,6,"Arman Saparov, Jeanette Kunz Halder, Denis Bulanin, Prim Singh, Sanja Terzic, Syed Hani Hassan Abidi",F2025
+SoM,UG,NUSM 302,1L,6,Yuliya Semenova,F2025
+SoM,UG,NUSM 303,1L,6,"Matthew Naanlep Tanko, Srinivasa Bolla",F2025
+SoM,UG,NUSM 401,1L,4,Arman Saparov,F2025
+SoM,UG,NUSM 402,1L,16,"Lyazzat Toleubekova, Srinivasa Bolla",F2025
+SoM,UG,NUSM 403,1L,6,"Denis Bulanin, Prim Singh",F2025
+SoM,UG,NUSM 405,1L,6,Denis Bulanin,F2025
+SoM,UG,NUSM 408,1L,4,Mohamad Aljofan,F2025
+SoM,UG,NUSM 410,1L,0,Dinara Almabayeva,F2025
+SoM,UG,NUSM 411a,1L,0,Vitaliy Sazonov,F2025
+SoM,UG,NUSM 412,1L,0,Yesbolat Sakko,F2025
+SoM,UG,NUSM 413,1L,0,Ruslan Bilal,F2025
+SoM,UG,NUSM 414,1L,0,"Alessandra Clementi, Lyazzat Toleubekova",F2025
+SoM,PhD,PHDBS 701,1Lb,180,Eva Riethmacher,F2025
+SoM,PhD,PHDBS 701-0,1Lb,0,Eva Riethmacher,F2025
+SoM,PhD,PHDBS 702a,1S,0,Agata Natasza Burska,F2025
+SoM,PhD,PHDBS 703a,1S,0,Eva Riethmacher,F2025
+SoM,PhD,PHDBS 704-0,1S,0,Eugene Tulchinsky,F2025
+SoM,PhD,PHDBS 705,1L,8,Eva Riethmacher,F2025
+SoM,PhD,PHDBS 706a,1S,0,Eva Riethmacher,F2025
+SoM,PhD,PHDBS 707a,1S,0,Eva Riethmacher,F2025
+SoM,PhD,PHDBS 708,1S,6,Carlos Abaunza,F2025
+SoM,PhD,PHDBS 717,1L,6,Dmitriy Viderman,F2025
+SoM,PhD,PHDGH 701-0,1P,0,Antonio Sarria-Santamera,F2025
+SoM,PhD,PHDGH 702,1L,8,Antonio Sarria-Santamera,F2025
+SoM,PhD,PHDGH 703,1L,8,Antonio Sarria-Santamera,F2025
+SoM,PhD,PHDGH 704-0,1S,0,Mei Yen Chan,F2025
+SoM,PhD,PHDGH 708,1L,6,Yuliya Semenova,F2025
+SoM,GrM,PUBH 501,1L,6,Raushan Alibekova,F2025
+SoM,GrM,PUBH 511,1L,6,Aizada Badiyeva,F2025
+SoM,GrM,PUBH 511,1Lb,6,Aizada Badiyeva,F2025
+SoM,GrM,PUBH 521,1L,6,Yesbolat Sakko,F2025
+SoM,GrM,PUBH 528,1L,6,Kuanysh Yergaliyev,F2025
+SoM,GrM,PUBH 552,1L,6,Anargul Kuntuganova,F2025
+SoM,GrM,PUBH 561,1S,6,Byron Crape,F2025
+SoM,GrM,PUBH 599,1L,6,Mei Yen Chan,F2025
+SoM,GrM,PUBH 601,1L,6,Raushan Alibekova,F2025
+SoM,GrM,PUBH 633,1L,6,"Byron Crape, Dinara Galiyeva, Anargul Kuntuganova, Yesbolat Sakko, Aizada Badiyeva",F2025
+SoM,GrM,PUBH 681,1S,6,"Byron Crape, Mei Yen Chan",F2025
+SSH,UG,ANT 101,1L,6,Russell Zanca,F2025
+SSH,UG,ANT 160,1L,6,Reed Coil,F2025
+SSH,UG,ANT 214/SOC 214,1S,6,Karina Matkarimova,F2025
+SSH,UG,ANT 214/SOC 214,2S,6,Karina Matkarimova,F2025
+SSH,UG,ANT 240,1L,6,Abay Namen,F2025
+SSH,UG,ANT 285/SOC 212,1L,6,Katherine Erdman,F2025
+SSH,UG,ANT 333,2L,6,Reed Coil,F2025
+SSH,UG,ANT 400,1Int,2,Ulan Bigozhin,F2025
+SSH,UG,ANT 400,2Int,2,Katherine Erdman,F2025
+SSH,UG,ANT 401,1Int,2,Reed Coil,F2025
+SSH,UG,ANT 402,1Int,2,TBA TBA,F2025
+SSH,UG,ANT 475,1S,6,Philipp Schroeder,F2025
+SSH,UG,ANT 482/SOC 482,1S,6,Philipp Schroeder,F2025
+SSH,UG,ANT 482/SOC 482,2S,6,Philipp Schroeder,F2025
+SSH,UG,ANT 498,1R,6,Dana Burkhanova,F2025
+SSH,GrM,ANT 585,1L,8,Alima Bissenova,F2025
+SSH,UG,BIOL 101,5L,6,Radmir Sarsenov,F2025
+SSH,UG,BIOL 101,1L,6,Sergey Yegorov,F2025
+SSH,UG,BIOL 101,2L,6,Burkitkan Akbay,F2025
+SSH,UG,BIOL 101,3L,6,Zarina Sautbayeva,F2025
+SSH,UG,BIOL 101,4L,6,Nurtilek Galimov,F2025
+SSH,UG,BIOL 105,1L,6,Radmir Sarsenov,F2025
+SSH,UG,BIOL 110,1L,6,Olena Filchakova,F2025
+SSH,UG,BIOL 120,1L,6,Alexandr Pak,F2025
+SSH,UG,BIOL 120L,2Lb,2,Nurtilek Galimov,F2025
+SSH,UG,BIOL 120L,1Lb,2,Zarina Sautbayeva,F2025
+SSH,UG,BIOL 120L,3Lb,2,Zarina Sautbayeva,F2025
+SSH,UG,BIOL 120L,4Lb,2,Radmir Sarsenov,F2025
+SSH,UG,BIOL 230,1R,8,Sergey Yegorov,F2025
+SSH,UG,BIOL 230,2R,8,Sergey Yegorov,F2025
+SSH,UG,BIOL 230,1L,8,Tursonjan Tokay,F2025
+SSH,UG,BIOL 301,1L,6,Ivan Vorobyev,F2025
+SSH,UG,BIOL 305,1L,6,Damira Kanayeva,F2025
+SSH,UG,BIOL 305L,1Lb,2,Burkitkan Akbay,F2025
+SSH,UG,BIOL 305L,2Lb,2,Nurtilek Galimov,F2025
+SSH,UG,BIOL 305L,3Lb,2,Burkitkan Akbay,F2025
+SSH,UG,BIOL 310,1L,6,Timo Burster,F2025
+SSH,UG,BIOL 320,1L,6,Zhanat Muminova,F2025
+SSH,UG,BIOL 321,1L,6,Otilia Nuta,F2025
+SSH,UG,BIOL 340,1L,8,Ulykbek Kairov,F2025
+SSH,UG,BIOL 341,1L,6,Timo Burster,F2025
+SSH,UG,BIOL 355,4L,6,"Jeanette Kunz Halder, Kamilya Kokabi",F2025
+SSH,UG,BIOL 355,1L,6,yingqiu Xie,F2025
+SSH,UG,BIOL 355,3L,6,yingqiu Xie,F2025
+SSH,UG,BIOL 363,1L,8,Ferdinand Molnar,F2025
+SSH,UG,BIOL 363,1Lb,8,Ferdinand Molnar,F2025
+SSH,UG,BIOL 370,1L,6,Zhanat Muminova,F2025
+SSH,UG,BIOL 380,1L,6,Tursonjan Tokay,F2025
+SSH,UG,BIOL 385,1L,6,Alexandr Pak,F2025
+SSH,UG,BIOL 452,1L,6,Eugene Ponomarev,F2025
+SSH,UG,BIOL 456,2S,6,Tri Pham,F2025
+SSH,UG,BIOL 456,4S,6,Eugene Ponomarev,F2025
+SSH,UG,BIOL 460,1L,6,Zhanat Muminova,F2025
+SSH,UG,BIOL 470,1L,6,Ivan Vorobyev,F2025
+SSH,UG,BIOL 490,1R,6,Olena Filchakova,F2025
+SSH,UG,BIOL 491,1Wsh,18,Dos Sarbassov,F2025
+SSH,GrM,BIOL 520,1L,6,Tri Pham,F2025
+SSH,GrM,BIOL 550,1L,6,Natalie Barteneva,F2025
+SSH,GrM,BIOL 560,1L,6,Damira Kanayeva,F2025
+SSH,GrM,BIOL 571,1L,6,Ivan Vorobyev,F2025
+SSH,GrM,BIOL 592,1S,6,Natalie Barteneva,F2025
+SSH,GrM,BIOL 599,1R,0,Tursonjan Tokay,F2025
+SSH,GrM,BIOL 599,2R,0,Tri Pham,F2025
+SSH,GrM,BIOL 605,1L,6,Otilia Nuta,F2025
+SSH,GrM,BIOL 631,1L,6,Ferdinand Molnar,F2025
+SSH,GrM,BIOL 632,1L,6,Ferdinand Molnar,F2025
+SSH,GrM,BIOL 634,1L,6,Dos Sarbassov,F2025
+SSH,GrM,BIOL 691,1S,6,yingqiu Xie,F2025
+SSH,PhD,BIOL 800-0,1R,0,Eugene Ponomarev,F2025
+SSH,PhD,BIOL 800-0,2R,0,Eugene Ponomarev,F2025
+SSH,PhD,BIOL 800-0,3R,0,Timo Burster,F2025
+SSH,PhD,BIOL 800-0,4R,0,Timo Burster,F2025
+SSH,PhD,BIOL 805,1L,8,Otilia Nuta,F2025
+SSH,PhD,BIOL 820,1L,6,Tri Pham,F2025
+SSH,PhD,BIOL 831,1L,8,Ferdinand Molnar,F2025
+SSH,PhD,BIOL 832,1L,8,Ferdinand Molnar,F2025
+SSH,PhD,BIOL 834,1L,8,Dos Sarbassov,F2025
+SSH,PhD,BIOL 850,1L,8,Natalie Barteneva,F2025
+SSH,PhD,BIOL 860,1L,8,Damira Kanayeva,F2025
+SSH,PhD,BIOL 871,1L,8,Ivan Vorobyev,F2025
+SSH,UG,CHEM 100,1L,6,Zhannat Ashikbayeva,F2025
+SSH,UG,CHEM 100,2L,6,Zhannat Ashikbayeva,F2025
+SSH,UG,CHEM 101,1L,6,Khalil Amro,F2025
+SSH,UG,CHEM 101,2L,6,Aisulu Zhanbossinova,F2025
+SSH,UG,CHEM 101,5L,6,Roza Oztopcu,F2025
+SSH,UG,CHEM 101,4L,6,Akmaral Suleimenova,F2025
+SSH,UG,CHEM 101,6L,6,Rauan Smail,F2025
+SSH,UG,CHEM 101,3L,6,Aigerim Galyamova,F2025
+SSH,UG,CHEM 101L,1ChLb,2,Roza Oztopcu,F2025
+SSH,UG,CHEM 101L,2ChLb,2,Aliya Toleuova,F2025
+SSH,UG,CHEM 101L,3ChLb,2,Roza Oztopcu,F2025
+SSH,UG,CHEM 101L,4ChLb,2,Aisulu Zhanbossinova,F2025
+SSH,UG,CHEM 101L,5ChLb,2,Sandugash Kalybekkyzy,F2025
+SSH,UG,CHEM 101L,6ChLb,2,Rauan Smail,F2025
+SSH,UG,CHEM 101L,7ChLb,2,Roza Oztopcu,F2025
+SSH,UG,CHEM 101L,8ChLb,2,Aliya Toleuova,F2025
+SSH,UG,CHEM 101L,9ChLb,2,Akmaral Suleimenova,F2025
+SSH,UG,CHEM 101L,10ChLb,2,Akmaral Suleimenova,F2025
+SSH,UG,CHEM 101L,11ChLb,2,Zhannat Ashikbayeva,F2025
+SSH,UG,CHEM 101L,12ChLb,2,Rauan Smail,F2025
+SSH,UG,CHEM 101L,13ChLb,2,Rauan Smail,F2025
+SSH,UG,CHEM 102,1L,6,Aliya Toleuova,F2025
+SSH,UG,CHEM 104,1L,6,Timur Atabaev,F2025
+SSH,UG,CHEM 211,3L,6,Irshad Kammakakam,F2025
+SSH,UG,CHEM 211,4L,6,Salimgerey Adilov,F2025
+SSH,UG,CHEM 211,1L,6,Ahmed Elkamhawy,F2025
+SSH,UG,CHEM 211,2L,6,Irshad Kammakakam,F2025
+SSH,UG,CHEM 211L,2Lb,2,Ozgur Oztopcu,F2025
+SSH,UG,CHEM 211L,3Lb,2,Ozgur Oztopcu,F2025
+SSH,UG,CHEM 211L,4Lb,2,Ellina Mun,F2025
+SSH,UG,CHEM 211L,5Lb,2,Ozgur Oztopcu,F2025
+SSH,UG,CHEM 212,1L,6,Davit Hayrapetyan,F2025
+SSH,UG,CHEM 212L,1ChLb,2,Davit Hayrapetyan,F2025
+SSH,UG,CHEM 220,1L,6,Rostislav Bukasov,F2025
+SSH,UG,CHEM 220L,1ChLb,2,Aliya Toleuova,F2025
+SSH,UG,CHEM 331,1L,6,Haiyan Fan,F2025
+SSH,UG,CHEM 331L,1ChLb,2,Haiyan Fan,F2025
+SSH,UG,CHEM 341,1L,6,Ahmed Elkamhawy,F2025
+SSH,UG,CHEM 350,1L,6,Andrey Khalimon,F2025
+SSH,UG,CHEM 350L,1Lb,2,Aisulu Zhanbossinova,F2025
+SSH,UG,CHEM 410,1L,8,Salimgerey Adilov,F2025
+SSH,UG,CHEM 432,1L,6,Mannix Balanay,F2025
+SSH,UG,CHEM 440,1L,6,"Ellina Mun, Ahmed Elkamhawy",F2025
+SSH,UG,CHEM 471,1L,6,Mannix Balanay,F2025
+SSH,UG,CHEM 488,1Lb,6,Timur Atabaev,F2025
+SSH,GrM,CHEM 510,1L,6,Haiyan Fan,F2025
+SSH,GrM,CHEM 512,1L,8,Mannix Balanay,F2025
+SSH,GrM,CHEM 518,1L,8,"Ellina Mun, Vesselin Paunov",F2025
+SSH,GrM,CHEM 520,1L,6,Rostislav Bukasov,F2025
+SSH,GrM,CHEM 522,1L,6,Mannix Balanay,F2025
+SSH,GrM,CHEM 524,1L,6,"Sandugash Kalybekkyzy, Irshad Kammakakam",F2025
+SSH,GrM,CHEM 530,1L,6,Andrey Khalimon,F2025
+SSH,GrM,CHEM 531,1L,6,Timur Atabaev,F2025
+SSH,GrM,CHEM 541,1L,6,"Ellina Mun, Ahmed Elkamhawy",F2025
+SSH,GrM,CHEM 543,1L,6,Salimgerey Adilov,F2025
+SSH,GrM,CHEM 591,1L,6,Vesselin Paunov,F2025
+SSH,GrM,CHEM 691,1IS,6,Mannix Balanay,F2025
+SSH,PhD,CHEM 700,1L,8,Vesselin Paunov,F2025
+SSH,PhD,CHEM 711,1L,8,"Ellina Mun, Vesselin Paunov",F2025
+SSH,PhD,CHEM 720,1L,8,Rostislav Bukasov,F2025
+SSH,PhD,CHEM 722,1L,8,Mannix Balanay,F2025
+SSH,PhD,CHEM 723,1L,8,"Sandugash Kalybekkyzy, Irshad Kammakakam",F2025
+SSH,PhD,CHEM 730,1L,8,Haiyan Fan,F2025
+SSH,PhD,CHEM 732,1L,8,Mannix Balanay,F2025
+SSH,PhD,CHEM 740,1L,8,"Ellina Mun, Ahmed Elkamhawy",F2025
+SSH,PhD,CHEM 750,1L,8,Andrey Khalimon,F2025
+SSH,PhD,CHEM 798-0,1R,0,Mannix Balanay,F2025
+SSH,UG,CHN 101,1L,8,Lili Zhang,F2025
+SSH,UG,CHN 101,2L,8,Lili Zhang,F2025
+SSH,UG,CHN 202,1L,8,Lili Zhang,F2025
+SSH,UG,DUT 101,1L,8,Bastiaan Lohmann,F2025
+SSH,UG,DUT 101,2L,8,Bastiaan Lohmann,F2025
+SSH,UG,DUT 101,3L,8,Bastiaan Lohmann,F2025
+SSH,GrM,EAS 500,1L,8,Daniel Scarborough,F2025
+SSH,GrM,EAS 501,1L,8,Funda Guven,F2025
+SSH,GrM,EAS 503,1T,15,Daniel Scarborough,F2025
+SSH,GrM,EAS 504,1L,25,Daniel Scarborough,F2025
+SSH,GrM,EAS 511,1IS,8,Yuliya Kozitskaya,F2025
+SSH,GrM,EAS 512,3L,8,Wulidanayi Jumabay,F2025
+SSH,GrM,EAS 512,1L,8,Mikhail Sokolov,F2025
+SSH,GrM,EAS 512,2L,8,Yuliya Kozitskaya,F2025
+SSH,GrM,EAS 513,1L,8,U Kim,F2025
+SSH,GrM,EAS 513,2L,8,Reed Coil,F2025
+SSH,GrM,EAS 514,1L,8,Philipp Schroeder,F2025
+SSH,PhD,EAS 700,1L,8,Daniel Scarborough,F2025
+SSH,PhD,EAS 701,1L,4,Uli Schamiloglu,F2025
+SSH,PhD,EAS 702,6L,8,U Kim,F2025
+SSH,PhD,EAS 702,4L,8,Wulidanayi Jumabay,F2025
+SSH,PhD,EAS 702,2L,8,Yuliya Kozitskaya,F2025
+SSH,PhD,EAS 702,3L,8,Mollie Arbuthnot,F2025
+SSH,PhD,EAS 702,5L,8,Zhanar Baiteliyeva,F2025
+SSH,PhD,EAS 703,2L,8,Philipp Schroeder,F2025
+SSH,PhD,EAS 703,1L,8,Reed Coil,F2025
+SSH,PhD,EAS 704,1L,8,Yuliya Kozitskaya,F2025
+SSH,PhD,EAS 705,1L,8,Alima Bissenova,F2025
+SSH,PhD,EAS 705,2L,8,Abay Namen,F2025
+SSH,PhD,EAS 709,1S,8,Alima Bissenova,F2025
+SSH,PhD,EAS 710,1L,8,Alima Bissenova,F2025
+SSH,PhD,EAS 710,2L,8,Ana Cristina Henriques Marques,F2025
+SSH,PhD,EAS 710,3L,8,Chun Young Park,F2025
+SSH,PhD,EAS 711,1S,8,Uli Schamiloglu,F2025
+SSH,PhD,EAS 800-0,1R,0,Uli Schamiloglu,F2025
+SSH,UG,ECON 101,1T,6,Aigerim Sarsenbayeva,F2025
+SSH,UG,ECON 101,2T,6,Aigerim Sarsenbayeva,F2025
+SSH,UG,ECON 101,3T,6,Aigerim Sarsenbayeva,F2025
+SSH,UG,ECON 101,4T,6,Levent Kockesen,F2025
+SSH,UG,ECON 101,5T,6,Levent Kockesen,F2025
+SSH,UG,ECON 101,6T,6,Levent Kockesen,F2025
+SSH,UG,ECON 101,2L,6,Levent Kockesen,F2025
+SSH,UG,ECON 101,1L,6,Aigerim Sarsenbayeva,F2025
+SSH,UG,ECON 102,1T,6,Dana Bazarkulova,F2025
+SSH,UG,ECON 102,2T,6,Dana Bazarkulova,F2025
+SSH,UG,ECON 102,3T,6,Dana Bazarkulova,F2025
+SSH,UG,ECON 102,1L,6,Dana Bazarkulova,F2025
+SSH,UG,ECON 120,1L,6,Aigerim Sarsenbayeva,F2025
+SSH,UG,ECON 201,1T,6,Oleg Rubanov,F2025
+SSH,UG,ECON 201,2T,6,Oleg Rubanov,F2025
+SSH,UG,ECON 201,3T,6,Oleg Rubanov,F2025
+SSH,UG,ECON 201,1L,6,Oleg Rubanov,F2025
+SSH,UG,ECON 211,2T,6,Vladyslav Nora,F2025
+SSH,UG,ECON 211,3T,6,Vladyslav Nora,F2025
+SSH,UG,ECON 211,1T,6,Vladyslav Nora,F2025
+SSH,UG,ECON 211,1L,6,Vladyslav Nora,F2025
+SSH,UG,ECON 300,1Int,2,Andrey Tkachenko,F2025
+SSH,UG,ECON 300,2Int,2,Aigerim Sarsenbayeva,F2025
+SSH,UG,ECON 300,3Int,2,Ahmet Altinok,F2025
+SSH,UG,ECON 300,4Int,2,Alejandro Melo Ponce,F2025
+SSH,UG,ECON 300,5Int,2,Nino Buliskeria,F2025
+SSH,UG,ECON 300,6Int,2,Rajarshi Bhowal,F2025
+SSH,UG,ECON 300,7Int,2,Okan Yilankaya,F2025
+SSH,UG,ECON 300,8Int,2,Mehmet Demir,F2025
+SSH,UG,ECON 300,9Int,2,Vladyslav Nora,F2025
+SSH,UG,ECON 300,10Int,2,Dana Bazarkulova,F2025
+SSH,UG,ECON 301,3T,6,Nino Buliskeria,F2025
+SSH,UG,ECON 301,1T,6,Nino Buliskeria,F2025
+SSH,UG,ECON 301,2T,6,Nino Buliskeria,F2025
+SSH,UG,ECON 301,1L,6,Nino Buliskeria,F2025
+SSH,UG,ECON 302,1L,6,Okan Yilankaya,F2025
+SSH,UG,ECON 302,2L,6,Okan Yilankaya,F2025
+SSH,UG,ECON 305,1L,6,Oleg Rubanov,F2025
+SSH,UG,ECON 325,2L,6,Andrey Tkachenko,F2025
+SSH,UG,ECON 325,3L,6,Andrey Tkachenko,F2025
+SSH,UG,ECON 326,1L,6,Giulio Seccia,F2025
+SSH,UG,ECON 333,1L,6,Ahmet Altinok,F2025
+SSH,UG,ECON 333,2L,6,Ahmet Altinok,F2025
+SSH,UG,ECON 399,1S,6,Nino Buliskeria,F2025
+SSH,UG,ECON 400,1IS,2,Andrey Tkachenko,F2025
+SSH,UG,ECON 400,2IS,2,Aigerim Sarsenbayeva,F2025
+SSH,UG,ECON 400,3IS,2,Alejandro Melo Ponce,F2025
+SSH,UG,ECON 400,4IS,2,Nino Buliskeria,F2025
+SSH,UG,ECON 400,5IS,2,Mehmet Demir,F2025
+SSH,UG,ECON 400,6IS,2,Rajarshi Bhowal,F2025
+SSH,UG,ECON 400,7IS,2,Vladyslav Nora,F2025
+SSH,UG,ECON 403,2L,6,Alejandro Melo Ponce,F2025
+SSH,UG,ECON 403,1L,6,Alejandro Melo Ponce,F2025
+SSH,UG,ECON 414,1L,6,Ali Elminejad,F2025
+SSH,UG,ECON 414,2L,6,Ali Elminejad,F2025
+SSH,UG,ECON 418,1L,6,Mehmet Demir,F2025
+SSH,UG,ECON 418,2L,6,Mehmet Demir,F2025
+SSH,UG,ECON 433,2L,6,Rajarshi Bhowal,F2025
+SSH,UG,ECON 433,3L,6,Rajarshi Bhowal,F2025
+SSH,UG,ECON 449,1L,6,Ali Elminejad,F2025
+SSH,GrM,ECON 501,1L,8,Julio Davila Muro,F2025
+SSH,GrM,ECON 502,1L,8,Nino Buliskeria,F2025
+SSH,GrM,ECON 503,1L,8,Alejandro Melo Ponce,F2025
+SSH,GrM,ECON 511,1L,8,Josef Ruzicka,F2025
+SSH,GrM,ECON 512,1L,8,Julio Davila Muro,F2025
+SSH,GrM,ECON 514,1L,8,Ali Elminejad,F2025
+SSH,GrM,ECON 518,1L,8,Mehmet Demir,F2025
+SSH,GrM,ECON 533,1L,8,Rajarshi Bhowal,F2025
+SSH,GrM,ECON 549,1L,8,Ali Elminejad,F2025
+SSH,GrM,ECON 580,1R,0,Vladyslav Nora,F2025
+SSH,GrM,ECON 589,1CP,8,Vladyslav Nora,F2025
+SSH,UG,GER 101,1L,8,Florian Kuechler,F2025
+SSH,UG,GER 101,2L,8,Florian Kuechler,F2025
+SSH,UG,GER 201,1L,8,Florian Kuechler,F2025
+SSH,UG,HST 100,1L,6,Rozaliya Garipova,F2025
+SSH,UG,HST 100,1S,6,Diana Kopbayeva,F2025
+SSH,UG,HST 100,2S,6,Diana Kopbayeva,F2025
+SSH,UG,HST 100,3S,6,Aybike Tezel,F2025
+SSH,UG,HST 100,4S,6,Diana Kopbayeva,F2025
+SSH,UG,HST 100,5S,6,Diana Kopbayeva,F2025
+SSH,UG,HST 100,6S,6,Halit Akarca,F2025
+SSH,UG,HST 100,7S,6,Mollie Arbuthnot,F2025
+SSH,UG,HST 100,8S,6,Mollie Arbuthnot,F2025
+SSH,UG,HST 100,9S,6,Aybike Tezel,F2025
+SSH,UG,HST 100,10S,6,Meiramgul Kussainova,F2025
+SSH,UG,HST 100,11S,6,Meiramgul Kussainova,F2025
+SSH,UG,HST 100,12S,6,Halit Akarca,F2025
+SSH,UG,HST 100,13S,6,Aybike Tezel,F2025
+SSH,UG,HST 100,14S,6,Diana Kopbayeva,F2025
+SSH,UG,HST 100,15S,6,Rozaliya Garipova,F2025
+SSH,UG,HST 100,16S,6,Rozaliya Garipova,F2025
+SSH,UG,HST 100,17S,6,Rozaliya Garipova,F2025
+SSH,UG,HST 100,19S,6,Mollie Arbuthnot,F2025
+SSH,UG,HST 100,20S,6,Aybike Tezel,F2025
+SSH,UG,HST 100,21S,6,Halit Akarca,F2025
+SSH,UG,HST 100,22S,6,Aybike Tezel,F2025
+SSH,UG,HST 100,23S,6,Aybike Tezel,F2025
+SSH,UG,HST 100,24S,6,Diana Kopbayeva,F2025
+SSH,UG,HST 100,25S,6,Aybike Tezel,F2025
+SSH,UG,HST 100,26S,6,Aybike Tezel,F2025
+SSH,UG,HST 100,27S,6,Aybike Tezel,F2025
+SSH,UG,HST 100,28S,6,Rozaliya Garipova,F2025
+SSH,UG,HST 100,29S,6,Rozaliya Garipova,F2025
+SSH,UG,HST 100,30S,6,Rozaliya Garipova,F2025
+SSH,UG,HST 100,31S,6,Meiramgul Kussainova,F2025
+SSH,UG,HST 100,32S,6,Diana Kopbayeva,F2025
+SSH,UG,HST 100,33S,6,Diana Kopbayeva,F2025
+SSH,UG,HST 104,1L,6,Diana Kopbayeva,F2025
+SSH,UG,HST 110/REL 110,1L,6,Nikolay Tsyrempilov,F2025
+SSH,UG,HST 110/REL 110,1S,6,Nikolay Tsyrempilov,F2025
+SSH,UG,HST 110/REL 110,2S,6,Nikolay Tsyrempilov,F2025
+SSH,UG,HST 110/REL 110,3S,6,Nikolay Tsyrempilov,F2025
+SSH,UG,HST 110/REL 110,4S,6,Nikolay Tsyrempilov,F2025
+SSH,UG,HST 121,1L,6,Di Lu,F2025
+SSH,UG,HST 124,1L,6,Di Lu,F2025
+SSH,UG,HST 271/TUR 271,1L,6,Halit Akarca,F2025
+SSH,UG,HST 274/WLL 274,1L,6,Curtis Murphy,F2025
+SSH,UG,HST 375/TUR 375/ANT 375/SOC 375,1L,6,U Kim,F2025
+SSH,UG,HST 399,1L,6,Rozaliya Garipova,F2025
+SSH,UG,HST 435,1S,6,Mollie Arbuthnot,F2025
+SSH,UG,HST 498,1IS,6,Curtis Murphy,F2025
+SSH,GrM,HST 535,1S,8,Mollie Arbuthnot,F2025
+SSH,UG,KAZ 001,1L,0,Aidar Balabekov,F2025
+SSH,UG,KAZ 201,3L,6,Kulyan Kopesh,F2025
+SSH,UG,KAZ 201,5L,6,Kulyan Kopesh,F2025
+SSH,UG,KAZ 201,1L,6,Aidar Balabekov,F2025
+SSH,UG,KAZ 201,2L,6,Aidar Balabekov,F2025
+SSH,UG,KAZ 201,4L,6,Aidar Balabekov,F2025
+SSH,UG,KAZ 201,6L,6,Gulzhamilya Shalabayeva,F2025
+SSH,UG,KAZ 202,1L,6,Raushan Myrzabekova,F2025
+SSH,UG,KAZ 202,2L,6,Raushan Myrzabekova,F2025
+SSH,UG,KAZ 202,3L,6,Bakyt Akbuzauova,F2025
+SSH,UG,KAZ 202,4L,6,Bakyt Akbuzauova,F2025
+SSH,UG,KAZ 202,5L,6,Bakyt Akbuzauova,F2025
+SSH,UG,KAZ 202,6L,6,Gulzhamilya Shalabayeva,F2025
+SSH,UG,KAZ 202,7L,6,Gulzhamilya Shalabayeva,F2025
+SSH,UG,KAZ 202,8L,6,Gulzhamilya Shalabayeva,F2025
+SSH,UG,KAZ 202,10L,6,Raushan Myrzabekova,F2025
+SSH,UG,KAZ 300,1L,6,"Uli Schamiloglu, Moldiyar Yergebekov",F2025
+SSH,UG,KAZ 300,1S,6,Moldiyar Yergebekov,F2025
+SSH,UG,KAZ 300,2S,6,Moldiyar Yergebekov,F2025
+SSH,UG,KAZ 300,3S,6,Moldiyar Yergebekov,F2025
+SSH,UG,KAZ 300,4S,6,Moldiyar Yergebekov,F2025
+SSH,UG,KAZ 300,5S,6,Moldiyar Yergebekov,F2025
+SSH,UG,KAZ 300,6S,6,Moldiyar Yergebekov,F2025
+SSH,UG,KAZ 313,4S,6,Zeinep Zhumatayeva,F2025
+SSH,UG,KAZ 313,2S,6,Zeinekhan Kuzekova,F2025
+SSH,UG,KAZ 313,5S,6,Gulnara Omarbekova,F2025
+SSH,UG,KAZ 313,1S,6,Samal Abzhanova,F2025
+SSH,UG,KAZ 313,3S,6,Samal Abzhanova,F2025
+SSH,UG,KAZ 313,6S,6,Zeinep Zhumatayeva,F2025
+SSH,UG,KAZ 349,1L,6,Zhanar Baiteliyeva,F2025
+SSH,UG,KAZ 350,2S,6,Mustafa Shokay,F2025
+SSH,UG,KAZ 350,1S,6,Mustafa Shokay,F2025
+SSH,UG,KAZ 350,3S,6,Mustafa Shokay,F2025
+SSH,UG,KAZ 350,4S,6,Mustafa Shokay,F2025
+SSH,UG,KAZ 351,1S,6,Zhanar Abdigapparova,F2025
+SSH,UG,KAZ 356,1S,6,Meiramgul Kussainova,F2025
+SSH,UG,KAZ 357,1L,6,Zhanar Abdigapparova,F2025
+SSH,UG,KAZ 357,2L,6,Aigul Ismakova,F2025
+SSH,UG,KAZ 359,1L,6,Kulyan Kopesh,F2025
+SSH,UG,KAZ 359,2L,6,Kulyan Kopesh,F2025
+SSH,UG,KAZ 363,1S,6,Gulnara Omarbekova,F2025
+SSH,UG,KAZ 363,2S,6,Gulnara Omarbekova,F2025
+SSH,UG,KAZ 366,1S,6,Zhazira Agabekova,F2025
+SSH,UG,KAZ 368,1L,6,Zhazira Agabekova,F2025
+SSH,UG,KAZ 371,1L,6,Yermek Adayeva,F2025
+SSH,UG,KAZ 371,2L,6,Yermek Adayeva,F2025
+SSH,UG,KAZ 371,3L,6,Yermek Adayeva,F2025
+SSH,UG,KAZ 371,4L,6,Yermek Adayeva,F2025
+SSH,UG,KAZ 372,1L,6,Zhanar Baiteliyeva,F2025
+SSH,UG,KAZ 373,1S,6,Sarkyt Aliszhan,F2025
+SSH,UG,KAZ 374,1S,6,Zeinekhan Kuzekova,F2025
+SSH,UG,KAZ 376,1S,6,Sarkyt Aliszhan,F2025
+SSH,UG,KAZ 377,1S,6,Zeinep Zhumatayeva,F2025
+SSH,UG,KAZ 378,1L,6,Samal Abzhanova,F2025
+SSH,UG,KAZ 378,2L,6,Samal Abzhanova,F2025
+SSH,UG,KAZ 410,1L,6,Aigul Ismakova,F2025
+SSH,UG,KFL 101,1L,8,Raushan Myrzabekova,F2025
+SSH,UG,KFL 201,1L,8,Aidar Balabekov,F2025
+SSH,UG,KOR 101,1L,8,Joomi Kong,F2025
+SSH,UG,KOR 101,2L,8,Joomi Kong,F2025
+SSH,UG,KOR 101,3L,8,Joomi Kong,F2025
+SSH,UG,KOR 201,1L,8,Joomi Kong,F2025
+SSH,UG,LING 131,1L,6,Olga Potanina,F2025
+SSH,UG,LING 270,1L,6,Benjamin Brosig,F2025
+SSH,UG,LING 273,1L,6,"Andrey Filchenko, Nikolay Mikhailov",F2025
+SSH,UG,LING 277,2L,6,Olga Potanina,F2025
+SSH,UG,LING 278,1L,6,Clinton Parker,F2025
+SSH,UG,LING 350,1L,6,Clinton Parker,F2025
+SSH,UG,LING 371,1Wsh,4,Lili Zhang,F2025
+SSH,UG,LING 371,2Wsh,4,Florian Kuechler,F2025
+SSH,UG,LING 431,1L,6,Nikolay Mikhailov,F2025
+SSH,UG,LING 479,1L,6,Benjamin Brosig,F2025
+SSH,GrM,LING 531,1L,8,Nikolay Mikhailov,F2025
+SSH,GrM,LING 579,1L,8,Benjamin Brosig,F2025
+SSH,PhD,LING 731,1L,8,Nikolay Mikhailov,F2025
+SSH,PhD,LING 779,1L,8,Benjamin Brosig,F2025
+SSH,UG,MATH 161,1L,8,Achenef Tesfahun,F2025
+SSH,UG,MATH 161,2L,8,Achenef Tesfahun,F2025
+SSH,UG,MATH 161,3L,8,Ardak Kashkynbayev,F2025
+SSH,UG,MATH 161,4L,8,Yerlan Amanbek,F2025
+SSH,UG,MATH 161,1R,8,Samat Kassabek,F2025
+SSH,UG,MATH 161,2R,8,Samat Kassabek,F2025
+SSH,UG,MATH 161,3R,8,Catalina Troshev,F2025
+SSH,UG,MATH 161,4R,8,Samat Kassabek,F2025
+SSH,UG,MATH 161,5R,8,Samat Kassabek,F2025
+SSH,UG,MATH 161,6R,8,Catalina Troshev,F2025
+SSH,UG,MATH 161,7R,8,Samat Kassabek,F2025
+SSH,UG,MATH 161,8R,8,Samat Kassabek,F2025
+SSH,UG,MATH 161,9R,8,Khumoyun Jabbarkhanov,F2025
+SSH,UG,MATH 161,10R,8,Khumoyun Jabbarkhanov,F2025
+SSH,UG,MATH 161,11R,8,Khumoyun Jabbarkhanov,F2025
+SSH,UG,MATH 161,12R,8,Bibinur Shupeyeva,F2025
+SSH,UG,MATH 161,13R,8,Khumoyun Jabbarkhanov,F2025
+SSH,UG,MATH 161,14R,8,Khumoyun Jabbarkhanov,F2025
+SSH,UG,MATH 161,15R,8,Khumoyun Jabbarkhanov,F2025
+SSH,UG,MATH 161,16R,8,Khumoyun Jabbarkhanov,F2025
+SSH,UG,MATH 161,17R,8,Bibinur Shupeyeva,F2025
+SSH,UG,MATH 161,18R,8,Khumoyun Jabbarkhanov,F2025
+SSH,UG,MATH 162,2R,8,Bibinur Shupeyeva,F2025
+SSH,UG,MATH 162,1L,8,Bibinur Shupeyeva,F2025
+SSH,UG,MATH 251,3L,6,Catalina Troshev,F2025
+SSH,UG,MATH 251,1L,6,Zhanbota Myrzakul,F2025
+SSH,UG,MATH 251,2L,6,Catalina Troshev,F2025
+SSH,UG,MATH 251,4L,6,Zhanbota Myrzakul,F2025
+SSH,UG,MATH 263,1R,8,Eunghyun Lee,F2025
+SSH,UG,MATH 263,2L,8,Andrey Melnikov,F2025
+SSH,UG,MATH 263,1L,8,Andrey Melnikov,F2025
+SSH,UG,MATH 263,3L,8,Amin Esfahani,F2025
+SSH,UG,MATH 273,5L,8,Zhansaya Tleuliyeva,F2025
+SSH,UG,MATH 273,6L,8,Zhansaya Tleuliyeva,F2025
+SSH,UG,MATH 273,1R,8,Viktor Ten,F2025
+SSH,UG,MATH 273,2L,8,Viktor Ten,F2025
+SSH,UG,MATH 273,2R,8,Zhansaya Tleuliyeva,F2025
+SSH,UG,MATH 273,7L,8,Zhansaya Tleuliyeva,F2025
+SSH,UG,MATH 273,3R,8,Zhansaya Tleuliyeva,F2025
+SSH,UG,MATH 273,4L,8,Zhanbota Myrzakul,F2025
+SSH,UG,MATH 273,4R,8,Zhanbota Myrzakul,F2025
+SSH,UG,MATH 274,1L,6,Adilet Otemissov,F2025
+SSH,UG,MATH 274,3L,6,Aigerim Madiyeva,F2025
+SSH,UG,MATH 274,2L,6,Aigerim Madiyeva,F2025
+SSH,UG,MATH 301,1L,6,Durvudkhan Suragan,F2025
+SSH,UG,MATH 302,1L,6,Manat Mustafa,F2025
+SSH,UG,MATH 302,2L,6,Zhibek Kadyrsizova,F2025
+SSH,UG,MATH 310,1L,6,Bibinur Shupeyeva,F2025
+SSH,UG,MATH 321,3L,6,Viktor Ten,F2025
+SSH,UG,MATH 321,2L,6,Viktor Ten,F2025
+SSH,UG,MATH 321,1L,6,Erum Rehman,F2025
+SSH,UG,MATH 322,1L,6,Erum Rehman,F2025
+SSH,UG,MATH 322,2L,6,Kerem Ugurlu,F2025
+SSH,UG,MATH 323,1L,6,Dongming Wei,F2025
+SSH,UG,MATH 351,1L,6,Piotr Sebastian Skrzypacz,F2025
+SSH,UG,MATH 361,1L,6,Alejandro Javier Castro Castilla,F2025
+SSH,UG,MATH 371,1L,6,Ardak Kashkynbayev,F2025
+SSH,UG,MATH 417,1L,6,Manat Mustafa,F2025
+SSH,UG,MATH 424,1L,6,Tolga Etgu,F2025
+SSH,UG,MATH 425,1L,6,Kerem Ugurlu,F2025
+SSH,UG,MATH 446,1L,6,Piotr Sebastian Skrzypacz,F2025
+SSH,UG,MATH 449,1L,6,Rustem Takhanov,F2025
+SSH,UG,MATH 471,1L,6,Adilbek Kairzhan,F2025
+SSH,UG,MATH 477,1L,6,Dongming Wei,F2025
+SSH,UG,MATH 480,1L,6,Amin Esfahani,F2025
+SSH,UG,MATH 481,1L,6,Adilbek Kairzhan,F2025
+SSH,UG,MATH 490,2L,6,Eunghyun Lee,F2025
+SSH,UG,MATH 490,3L,6,Durvudkhan Suragan,F2025
+SSH,UG,MATH 490,1L,6,Zhibek Kadyrsizova,F2025
+SSH,UG,MATH 491,2L,6,Eunghyun Lee,F2025
+SSH,UG,MATH 491,3L,6,Durvudkhan Suragan,F2025
+SSH,UG,MATH 491,1L,6,Zhibek Kadyrsizova,F2025
+SSH,UG,MATH 492,2L,6,Eunghyun Lee,F2025
+SSH,UG,MATH 492,3L,6,Durvudkhan Suragan,F2025
+SSH,UG,MATH 492,1L,6,Zhibek Kadyrsizova,F2025
+SSH,UG,MATH 497,1L,6,Zhibek Kadyrsizova,F2025
+SSH,GrM,MATH 510,1L,6,Eunghyun Lee,F2025
+SSH,GrM,MATH 514,1L,6,Rustem Takhanov,F2025
+SSH,GrM,MATH 519,1L,6,Yerlan Amanbek,F2025
+SSH,GrM,MATH 540,1L,6,Adilet Otemissov,F2025
+SSH,GrM,MATH 555,1L,6,Eunghyun Lee,F2025
+SSH,GrM,MATH 576,1L,6,Alejandro Javier Castro Castilla,F2025
+SSH,GrM,MATH 582,1L,6,Ardak Kashkynbayev,F2025
+SSH,GrM,MATH 592,1S,6,Manat Mustafa,F2025
+SSH,GrM,MATH 601,1L,6,Durvudkhan Suragan,F2025
+SSH,PhD,MATH 700-0,1L,0,Alejandro Javier Castro Castilla,F2025
+SSH,PhD,MATH 701,1L,8,Eunghyun Lee,F2025
+SSH,PhD,MATH 711,1L,8,Zhibek Kadyrsizova,F2025
+SSH,PhD,MATH 740,1L,8,Adilet Otemissov,F2025
+SSH,PhD,MATH 771,1L,8,Rustem Takhanov,F2025
+SSH,PhD,MATH 776,1L,8,Alejandro Javier Castro Castilla,F2025
+SSH,PhD,MATH 780,1L,6,Alejandro Javier Castro Castilla,F2025
+SSH,PhD,MATH 791,1L,8,Dongming Wei,F2025
+SSH,UG,PER 101,2L,8,Marzieh Sadat Razavi,F2025
+SSH,UG,PER 101,3L,8,Marzieh Sadat Razavi,F2025
+SSH,UG,PHIL 131,1L,6,Siegfried Van Duffel,F2025
+SSH,UG,PHIL 160,1L,6,Ted Parent,F2025
+SSH,UG,PHIL 210,3L,6,Bakinaz Abdalla,F2025
+SSH,UG,PHIL 210,4L,6,Bakinaz Abdalla,F2025
+SSH,UG,PHIL 210,5L,6,Donovan Cox,F2025
+SSH,UG,PHIL 210,8L,6,Chandler Hatch,F2025
+SSH,UG,PHIL 210,11L,6,James Hutchinson,F2025
+SSH,UG,PHIL 210,12L,6,Bakinaz Abdalla,F2025
+SSH,UG,PHIL 210,9L,6,Matthew Heeney,F2025
+SSH,UG,PHIL 210,13L,6,Mihnea Capraru,F2025
+SSH,UG,PHIL 210,16L,6,Matthew Heeney,F2025
+SSH,UG,PHIL 210,1L,6,Ted Parent,F2025
+SSH,UG,PHIL 210,7L,6,Donovan Cox,F2025
+SSH,UG,PHIL 210,10L,6,Donovan Cox,F2025
+SSH,UG,PHIL 210,14L,6,Donovan Cox,F2025
+SSH,UG,PHIL 232,1L,6,Siegfried Van Duffel,F2025
+SSH,UG,PHIL 362,1L,6,Mihnea Capraru,F2025
+SSH,UG,PHIL 383,1L,6,Chandler Hatch,F2025
+SSH,UG,PHIL 399,1L,6,James Hutchinson,F2025
+SSH,UG,PHYS 161,2PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,4PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,5PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,8PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,10PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,12PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,15PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,16PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,18PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,20PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,23PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,24PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,27PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,1PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,3PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,7PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,9PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,11PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,13PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,14PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,19PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,21PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,22PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,25PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,26PLb,8,Diana Seitova,F2025
+SSH,UG,PHYS 161,1L,8,Kyunghwan Oh,F2025
+SSH,UG,PHYS 161,2L,8,Ernazar Abdikamalov,F2025
+SSH,UG,PHYS 161,3L,8,Alexander Tikhonov,F2025
+SSH,UG,PHYS 161,4L,8,Zhandos Utegulov,F2025
+SSH,UG,PHYS 161,5L,8,Marat Kaikanov,F2025
+SSH,UG,PHYS 161,1R,8,Ainur Koshkinbayeva,F2025
+SSH,UG,PHYS 161,2R,8,Ainur Koshkinbayeva,F2025
+SSH,UG,PHYS 161,3R,8,Bekdaulet Shukirgaliyev,F2025
+SSH,UG,PHYS 161,5R,8,Bekdaulet Shukirgaliyev,F2025
+SSH,UG,PHYS 161,7R,8,Ainur Koshkinbayeva,F2025
+SSH,UG,PHYS 161,8R,8,Ainur Koshkinbayeva,F2025
+SSH,UG,PHYS 161,9R,8,Bekdaulet Shukirgaliyev,F2025
+SSH,UG,PHYS 161,11R,8,Ainur Koshkinbayeva,F2025
+SSH,UG,PHYS 161,12R,8,Ainur Koshkinbayeva,F2025
+SSH,UG,PHYS 161,13R,8,Ainur Koshkinbayeva,F2025
+SSH,UG,PHYS 161,14R,8,Bekdaulet Shukirgaliyev,F2025
+SSH,UG,PHYS 161,16R,8,Ainur Koshkinbayeva,F2025
+SSH,UG,PHYS 161,17R,8,Ainur Koshkinbayeva,F2025
+SSH,UG,PHYS 161,18R,8,Omid Farzadian,F2025
+SSH,UG,PHYS 201,1L,6,Dana Alina,F2025
+SSH,UG,PHYS 221,1R,6,"Daniele Malafarina, Rayner Rodriguez Guzman",F2025
+SSH,UG,PHYS 221,1L,6,"Daniele Malafarina, Rayner Rodriguez Guzman",F2025
+SSH,UG,PHYS 250,1L,6,Rayner Rodriguez Guzman,F2025
+SSH,UG,PHYS 261,1Lb,8,"Ainur Koshkinbayeva, Bekdaulet Shukirgaliyev",F2025
+SSH,UG,PHYS 261,1L,8,Askhat Jumabekov,F2025
+SSH,UG,PHYS 315,1L,6,Michael Good,F2025
+SSH,UG,PHYS 315,1R,6,Michael Good,F2025
+SSH,UG,PHYS 361,1L,6,Bakhtiyar Orazbayev,F2025
+SSH,UG,PHYS 361,1R,6,Bakhtiyar Orazbayev,F2025
+SSH,UG,PHYS 395,1L,6,Anton Desyatnikov,F2025
+SSH,UG,PHYS 421,1L,8,"Sergiy Bubin, Bekdaulet Shukirgaliyev",F2025
+SSH,UG,PHYS 452,1L,6,Sergiy Bubin,F2025
+SSH,UG,PHYS 452,1R,6,Sergiy Bubin,F2025
+SSH,UG,PHYS 463,1L,6,Daniele Malafarina,F2025
+SSH,UG,PHYS 498,1P,0,Anton Desyatnikov,F2025
+SSH,GrM,PHYS 505,1R,8,"Daniele Malafarina, Rayner Rodriguez Guzman",F2025
+SSH,GrM,PHYS 505,1L,8,"Daniele Malafarina, Rayner Rodriguez Guzman",F2025
+SSH,GrM,PHYS 515,1L,8,Bakhtiyar Orazbayev,F2025
+SSH,GrM,PHYS 515,1R,8,Bakhtiyar Orazbayev,F2025
+SSH,GrM,PHYS 521,1L,8,Sergiy Bubin,F2025
+SSH,GrM,PHYS 550,1L,8,Michael Good,F2025
+SSH,GrM,PHYS 550,1R,8,Michael Good,F2025
+SSH,GrM,PHYS 563,1L,8,Daniele Malafarina,F2025
+SSH,GrM,PHYS 590,1IS,8,Ernazar Abdikamalov,F2025
+SSH,GrM,PHYS 591,1S,8,Anton Desyatnikov,F2025
+SSH,GrM,PHYS 600,1L,0,Rayner Rodriguez Guzman,F2025
+SSH,PhD,PHYS 700-0,1R,0,Ernazar Abdikamalov,F2025
+SSH,PhD,PHYS 705,1S,8,"Daniele Malafarina, Rayner Rodriguez Guzman",F2025
+SSH,PhD,PHYS 705,1L,8,"Daniele Malafarina, Rayner Rodriguez Guzman",F2025
+SSH,PhD,PHYS 715,1L,8,Bakhtiyar Orazbayev,F2025
+SSH,PhD,PHYS 715,1S,8,Bakhtiyar Orazbayev,F2025
+SSH,PhD,PHYS 721,1L,8,Sergiy Bubin,F2025
+SSH,PhD,PHYS 750,1L,8,Michael Good,F2025
+SSH,PhD,PHYS 750,1R,8,Michael Good,F2025
+SSH,PhD,PHYS 763,1L,8,Daniele Malafarina,F2025
+SSH,PhD,PHYS 791,1ThDef,6,Anton Desyatnikov,F2025
+SSH,UG,PLS 100,1L,6,Sabina Insebayeva,F2025
+SSH,UG,PLS 101,1L,6,Neil Collins,F2025
+SSH,UG,PLS 120,1L,6,Brian Smith,F2025
+SSH,UG,PLS 140,1L,6,Caress Schenk,F2025
+SSH,UG,PLS 150,1L,6,Maja Savevska,F2025
+SSH,UG,PLS 210,1L,6,Alexei Trochev,F2025
+SSH,UG,PLS 210,2L,6,Dinara Pisareva,F2025
+SSH,UG,PLS 211,2L,6,Ho Koh,F2025
+SSH,UG,PLS 211,1L,6,Chunho Park,F2025
+SSH,UG,PLS 330,1L,6,Andrey Semenov,F2025
+SSH,UG,PLS 338,1L,6,Neil Collins,F2025
+SSH,UG,PLS 341,1L,6,Bimal Adhikari,F2025
+SSH,UG,PLS 352,1L,6,Dinara Pisareva,F2025
+SSH,UG,PLS 354,1L,6,Alexei Trochev,F2025
+SSH,UG,PLS 356,1L,6,Chun Young Park,F2025
+SSH,UG,PLS 360,1L,6,Bimal Adhikari,F2025
+SSH,UG,PLS 370,1L,6,Alexei Trochev,F2025
+SSH,UG,PLS 395,1L,6,Jessica Neafie,F2025
+SSH,UG,PLS 395,2L,6,Andrey Semenov,F2025
+SSH,UG,PLS 395,3L,6,Dinara Pisareva,F2025
+SSH,UG,PLS 395,4L,6,Helene Thibault,F2025
+SSH,UG,PLS 416,1L,6,Ho Koh,F2025
+SSH,UG,PLS 424,1S,6,Dinara Pisareva,F2025
+SSH,UG,PLS 426,1L,6,Brian Smith,F2025
+SSH,UG,PLS 431,1L,6,Andrey Semenov,F2025
+SSH,UG,PLS 432,1S,6,Chunho Park,F2025
+SSH,UG,PLS 441,1L,6,Berikbol Dukeyev,F2025
+SSH,UG,PLS 460,1L,6,Jessica Neafie,F2025
+SSH,UG,PLS 463,1L,6,Chun Young Park,F2025
+SSH,UG,PLS 495,1Int,2,Jessica Neafie,F2025
+SSH,UG,PLS 495,4Int,2,Bimal Adhikari,F2025
+SSH,GrM,PLS 510,1L,8,Jessica Neafie,F2025
+SSH,GrM,PLS 514/EAS 506/SOC 514,1L,8,Alima Bissenova,F2025
+SSH,GrM,PLS 516,1S,8,Ho Koh,F2025
+SSH,GrM,PLS 524,1S,8,Dinara Pisareva,F2025
+SSH,GrM,PLS 526,1L,8,Brian Smith,F2025
+SSH,GrM,PLS 531,1L,8,Andrey Semenov,F2025
+SSH,GrM,PLS 532,1L,8,Chunho Park,F2025
+SSH,GrM,PLS 541,1L,8,Berikbol Dukeyev,F2025
+SSH,GrM,PLS 550,1L,8,Chun Young Park,F2025
+SSH,GrM,PLS 560,1L,8,Jessica Neafie,F2025
+SSH,GrM,PLS 563,1L,8,Chun Young Park,F2025
+SSH,GrM,PLS 581,1S,8,Brian Smith,F2025
+SSH,GrM,PLS 581,2S,8,Jessica Neafie,F2025
+SSH,GrM,PLS 598,1L,12,Brian Smith,F2025
+SSH,PhD,PLS 716,1P,8,Ho Koh,F2025
+SSH,PhD,PLS 724,1S,8,Dinara Pisareva,F2025
+SSH,PhD,PLS 726,1P,8,Brian Smith,F2025
+SSH,PhD,PLS 731,1S,8,Andrey Semenov,F2025
+SSH,PhD,PLS 732,1S,8,Chunho Park,F2025
+SSH,PhD,PLS 741,1P,8,Berikbol Dukeyev,F2025
+SSH,PhD,PLS 760,1L,8,Jessica Neafie,F2025
+SSH,PhD,PLS 763,1L,8,Chun Young Park,F2025
+SSH,UG,POL 101,1L,8,Katarzyna Galaj,F2025
+SSH,UG,POL 101,2L,8,Katarzyna Galaj,F2025
+SSH,UG,POL 102,2L,8,Katarzyna Galaj,F2025
+SSH,UG,REL 212,1L,6,Nikolay Tsyrempilov,F2025
+SSH,UG,RFL 211,1L,6,Yuliya Kozitskaya,F2025
+SSH,UG,RFL 213,1L,6,Aleksandr Grishin,F2025
+SSH,UG,RFL 303,1L,8,TBA TBA,F2025
+SSH,UG,RFL 356,1S,6,Meiramgul Kussainova,F2025
+SSH,UG,RFL 469,1L,6,Sabina Insebayeva,F2025
+SSH,UG,SOC 101,1L,6,"Dana Burkhanova, Ana Cristina Henriques Marques",F2025
+SSH,UG,SOC 101,1S,6,Dana Burkhanova,F2025
+SSH,UG,SOC 101,2S,6,Dana Burkhanova,F2025
+SSH,UG,SOC 101,3S,6,Ana Cristina Henriques Marques,F2025
+SSH,UG,SOC 101,4S,6,Ana Cristina Henriques Marques,F2025
+SSH,UG,SOC 201,2L,6,Katherine Erdman,F2025
+SSH,UG,SOC 201,3L,6,Katherine Erdman,F2025
+SSH,UG,SOC 203,1L,6,Darkhan Medeuov,F2025
+SSH,UG,SOC 203,2L,6,Darkhan Medeuov,F2025
+SSH,UG,SOC 203,3L,6,Mariya Safonova,F2025
+SSH,UG,SOC 203,4L,6,Mariya Safonova,F2025
+SSH,UG,SOC 210,1L,6,Ana Cristina Henriques Marques,F2025
+SSH,UG,SOC 220,1L,6,Darkhan Medeuov,F2025
+SSH,UG,SOC 221,1L,6,Saltanat Akhmetova,F2025
+SSH,UG,SOC 223,1L,6,Matvey Lomonosov,F2025
+SSH,UG,SOC 301,1L,6,Dana Burkhanova,F2025
+SSH,UG,SOC 301,2L,6,Mikhail Sokolov,F2025
+SSH,UG,SOC 310,1L,6,Ana Cristina Henriques Marques,F2025
+SSH,UG,SOC 313,1L,6,Karina Matkarimova,F2025
+SSH,UG,SOC 350,1L,6,Saltanat Akhmetova,F2025
+SSH,UG,SOC 399,1L,6,Mariya Safonova,F2025
+SSH,UG,SOC 399,2L,6,Mariya Safonova,F2025
+SSH,UG,SOC 400,1Int,2,Matvey Lomonosov,F2025
+SSH,UG,SOC 401,1Int,2,Matvey Lomonosov,F2025
+SSH,UG,SOC 402,1Int,2,Matvey Lomonosov,F2025
+SSH,UG,SOC 475,1L,6,Mikhail Sokolov,F2025
+SSH,UG,SOC 485,1L,6,Matvey Lomonosov,F2025
+SSH,UG,SOC 498,1CP,6,Dana Burkhanova,F2025
+SSH,GrM,SOC 510,2L,8,Ana Cristina Henriques Marques,F2025
+SSH,PhD,SOC 710,2L,8,Ana Cristina Henriques Marques,F2025
+SSH,UG,SPA 101,3L,8,Arturo Bellido,F2025
+SSH,UG,SPA 101,1L,8,Edyta Denst-Garcia,F2025
+SSH,UG,SPA 101,2L,8,Edyta Denst-Garcia,F2025
+SSH,UG,SPA 201,1L,8,Arturo Bellido,F2025
+SSH,UG,SPA 201,2L,8,Arturo Bellido,F2025
+SSH,UG,SPA 314,1L,6,Edyta Denst-Garcia,F2025
+SSH,UG,SSH 300,1Int,6,Daniel Beben,F2025
+SSH,UG,SSH 300,2Int,6,Brandon Brock,F2025
+SSH,UG,SSH 301,1Int,6,Daniel Beben,F2025
+SSH,UG,TUR 230,2L,6,Uli Schamiloglu,F2025
+SSH,UG,TUR 231,1L,6,Funda Guven,F2025
+SSH,UG,TUR 280/LING 280,1L,6,Wulidanayi Jumabay,F2025
+SSH,UG,TUR 411,1L,6,TBA TBA,F2025
+SSH,UG,TUR 451,1L,6,Funda Guven,F2025
+SSH,UG,TUR 480/LING 480,1L,6,Wulidanayi Jumabay,F2025
+SSH,GrM,TUR 575,1L,8,Uli Schamiloglu,F2025
+SSH,PhD,TUR 775,1L,8,Uli Schamiloglu,F2025
+SSH,UG,WCS 101,1L,6,Thomas Duke,F2025
+SSH,UG,WCS 150,38L,6,Nurly Marshal,F2025
+SSH,UG,WCS 150,41L,6,Gulden Issina,F2025
+SSH,UG,WCS 150,1L,6,Joy Ross,F2025
+SSH,UG,WCS 150,40L,6,Joy Ross,F2025
+SSH,UG,WCS 150,42L,6,Gulden Issina,F2025
+SSH,UG,WCS 150,43L,6,Joy Ross,F2025
+SSH,UG,WCS 150,8L,6,Andrew Drybrough,F2025
+SSH,UG,WCS 150,16L,6,Ian Albert Peterkin Jr,F2025
+SSH,UG,WCS 150,17L,6,Ian Albert Peterkin Jr,F2025
+SSH,UG,WCS 150,21L,6,Jane Hoelker,F2025
+SSH,UG,WCS 150,22L,6,Jane Hoelker,F2025
+SSH,UG,WCS 150,23L,6,Jane Hoelker,F2025
+SSH,UG,WCS 150,28L,6,Michael Jones,F2025
+SSH,UG,WCS 150,29L,6,Michael Jones,F2025
+SSH,UG,WCS 150,35L,6,James Swider,F2025
+SSH,UG,WCS 150,39L,6,Nurly Marshal,F2025
+SSH,UG,WCS 150,2L,6,Gulden Issina,F2025
+SSH,UG,WCS 150,6L,6,Adam Hefty,F2025
+SSH,UG,WCS 150,7L,6,Adam Hefty,F2025
+SSH,UG,WCS 150,9L,6,Fariza Tolesh,F2025
+SSH,UG,WCS 150,24L,6,Jeremy Richard Spring,F2025
+SSH,UG,WCS 150,25L,6,Marina Zaffari,F2025
+SSH,UG,WCS 150,26L,6,Marina Zaffari,F2025
+SSH,UG,WCS 150,27L,6,Marina Zaffari,F2025
+SSH,UG,WCS 150,30L,6,Olga Campbell-Thomson,F2025
+SSH,UG,WCS 150,31L,6,Olga Campbell-Thomson,F2025
+SSH,UG,WCS 150,3L,6,Nicholas Walmsley,F2025
+SSH,UG,WCS 150,4L,6,Nicholas Walmsley,F2025
+SSH,UG,WCS 150,5L,6,Nicholas Walmsley,F2025
+SSH,UG,WCS 150,13L,6,Bellido Languasco,F2025
+SSH,UG,WCS 150,14L,6,Bellido Languasco,F2025
+SSH,UG,WCS 150,15L,6,Bellido Languasco,F2025
+SSH,UG,WCS 150,32L,6,Shahreen Binti Mat Nayan,F2025
+SSH,UG,WCS 150,33L,6,Shahreen Binti Mat Nayan,F2025
+SSH,UG,WCS 150,34L,6,Benjamin Gibbon,F2025
+SSH,UG,WCS 150,36L,6,Benjamin Gibbon,F2025
+SSH,UG,WCS 150,37L,6,Fariza Tolesh,F2025
+SSH,UG,WCS 150,10L,6,Elizabeth Abele,F2025
+SSH,UG,WCS 150,11L,6,Elizabeth Abele,F2025
+SSH,UG,WCS 150,12L,6,Elizabeth Abele,F2025
+SSH,UG,WCS 150,18L,6,Fariza Tolesh,F2025
+SSH,UG,WCS 150,19L,6,Benjamin Gibbon,F2025
+SSH,UG,WCS 150,20L,6,Nurly Marshal,F2025
+SSH,UG,WCS 200,6L,6,Thomas Carl Hughes,F2025
+SSH,UG,WCS 200,7L,6,Thomas Carl Hughes,F2025
+SSH,UG,WCS 200,1L,6,Samira Esat,F2025
+SSH,UG,WCS 200,2L,6,Samira Esat,F2025
+SSH,UG,WCS 200,3L,6,Samira Esat,F2025
+SSH,UG,WCS 200,4L,6,Tiffany Moore,F2025
+SSH,UG,WCS 200,5L,6,Tiffany Moore,F2025
+SSH,UG,WCS 201,1L,6,Thomas Carl Hughes,F2025
+SSH,UG,WCS 203,1L,6,Tiffany Moore,F2025
+SSH,UG,WCS 210,4L,6,Gamze Oncul,F2025
+SSH,UG,WCS 210,5L,6,James Nielsen,F2025
+SSH,UG,WCS 210,6L,6,James Nielsen,F2025
+SSH,UG,WCS 210,10L,6,James Nielsen,F2025
+SSH,UG,WCS 210,2L,6,Gamze Oncul,F2025
+SSH,UG,WCS 210,3L,6,Gamze Oncul,F2025
+SSH,UG,WCS 210,1L,6,Bakhtiar Naghdipour,F2025
+SSH,UG,WCS 210,7L,6,Shane Coates,F2025
+SSH,UG,WCS 210,8L,6,Shane Coates,F2025
+SSH,UG,WCS 210,9L,6,Shane Coates,F2025
+SSH,UG,WCS 230,1L,6,Zhanar Kabylbekova,F2025
+SSH,UG,WCS 230,2L,6,Zhanar Kabylbekova,F2025
+SSH,UG,WCS 230,5L,6,Zhanar Kabylbekova,F2025
+SSH,UG,WCS 230,3L,6,Marilyn Plumlee,F2025
+SSH,UG,WCS 230,4L,6,Marilyn Plumlee,F2025
+SSH,UG,WCS 240,1L,6,Brandon Brock,F2025
+SSH,UG,WCS 240,2L,6,Brandon Brock,F2025
+SSH,UG,WCS 240,3L,6,James Swider,F2025
+SSH,UG,WCS 240,4L,6,Michael Jones,F2025
+SSH,UG,WCS 250,1L,6,Arlyce Menzies,F2025
+SSH,UG,WCS 250,2L,6,Arlyce Menzies,F2025
+SSH,UG,WCS 270,1L,6,Yamen Rahvan,F2025
+SSH,UG,WCS 270,2L,6,Thomas Duke,F2025
+SSH,UG,WCS 300,1Int,6,Thomas Duke,F2025
+SSH,UG,WCS 301,1Int,6,Thomas Duke,F2025
+SSH,UG,WCS 390,1L,6,Marilyn Plumlee,F2025
+SSH,UG,WCS 393,1Int,6,"Adina-Camelia Arvatu, James Swider",F2025
+SSH,UG,WCS 394,1Int,6,"Adina-Camelia Arvatu, James Swider",F2025
+SSH,GrM,WCS 501,1L,8,Carlos Abaunza,F2025
+SSH,GrM,WCS 501,2L,8,Carlos Abaunza,F2025
+SSH,PhD,WCS 730,1S,8,Adam Hefty,F2025
+SSH,UG,WLL 110,1L,6,Jenni Lehtinen,F2025
+SSH,UG,WLL 110,1S,6,Jenni Lehtinen,F2025
+SSH,UG,WLL 110,2S,6,Jenni Lehtinen,F2025
+SSH,UG,WLL 110,3S,6,Jenni Lehtinen,F2025
+SSH,UG,WLL 110,4S,6,Jenni Lehtinen,F2025
+SSH,UG,WLL 171/ANT 175,1L,6,U Kim,F2025
+SSH,UG,WLL 201,1L,6,Gabriel McGuire,F2025
+SSH,UG,WLL 209,1L,6,Amanda Murphy,F2025
+SSH,UG,WLL 218,1L,6,Maria Rybakova,F2025
+SSH,UG,WLL 235/WCS 260,1L,6,Jonathan Dupuy,F2025
+SSH,UG,WLL 235/WCS 260,2L,6,Jonathan Dupuy,F2025
+SSH,UG,WLL 235/WCS 260,3L,6,Ian Albert Peterkin Jr,F2025
+SSH,UG,WLL 244,1L,6,Yuliya Kozitskaya,F2025
+SSH,UG,WLL 333,1L,6,Ivan Delazari,F2025
+SSH,UG,WLL 340,1L,6,Yuliya Kozitskaya,F2025
+SSH,UG,WLL 360/WCS 360,1L,6,Arlyce Menzies,F2025
+SSH,UG,WLL 377/PHIL 377,1L,6,Matthew Heeney,F2025
+SSH,UG,WLL 385/ANT 385,1L,6,Alima Bissenova,F2025
+SSH,UG,WLL 399,1L,6,Amanda Murphy,F2025
+SSH,UG,WLL 399,2L,6,Marzieh Sadat Razavi,F2025
+SSH,UG,WLL 399,3L,6,Florian Kuechler,F2025
+SSH,UG,WLL 400,1Int,2,Yuliya Kozitskaya,F2025
+SSH,UG,WLL 400,2Int,2,Andrey Filchenko,F2025
+SSH,UG,WLL 400,3Int,2,Wulidanayi Jumabay,F2025
+SSH,UG,WLL 410,1L,6,Ivan Delazari,F2025
+SSH,UG,WLL 462/WCS 462,1S,6,Maria Rybakova,F2025
+SSH,UG,WLL 465/WCS 465,1S,6,Jonathan Dupuy,F2025
+SSH,UG,WLL 498,1R,6,Amanda Murphy,F2025
+SSH,GrM,WLL 510,1L,8,Ivan Delazari,F2025
+SSH,GrM,WLL 562/WCS 562,1S,8,Maria Rybakova,F2025
+SSH,GrM,WLL 577/PHIL 577,1L,8,Matthew Heeney,F2025
+SSH,PhD,WLL 710,1L,8,Ivan Delazari,F2025
+SSH,PhD,WLL 777/PHIL 777,1L,8,Matthew Heeney,F2025

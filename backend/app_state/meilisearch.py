@@ -8,7 +8,14 @@ from sqlalchemy.orm import DeclarativeBase
 
 from backend.common.utils import meilisearch
 from backend.core.configs.config import config
-from backend.core.database.models import Community, CommunityPost, Event, GradeReport, Product
+from backend.core.database.models import (
+    Community,
+    CommunityPost,
+    Course,
+    Event,
+    GradeReport,
+    Product,
+)
 
 
 @dataclass
@@ -90,6 +97,12 @@ async def setup_meilisearch(app: FastAPI):
             filterable_attributes=None,
             primary_key=GradeReport.id,  # Explicitly specify primary key
         ),
+        MeilisearchIndexConfig(
+            model=Course,
+            searchable_columns=[Course.course_code, Course.faculty, Course.term],
+            filterable_attributes=[Course.term],
+            primary_key=Course.id,  # Explicitly specify primary key
+        ),
     ]
 
     # Import data for each configured index
@@ -102,6 +115,19 @@ async def setup_meilisearch(app: FastAPI):
             columns_for_searching=index_config.get_searchable_names(),
             primary_key=index_config.get_primary_key_name(),  # Pass primary key name
         )
+
+        # Ensure only intended attributes are searchable (avoid matching by id)
+        try:
+            await app.state.meilisearch_client.patch(
+                f"/indexes/{index_config.model.__tablename__}/settings",
+                json={
+                    "searchableAttributes": index_config.get_searchable_names(),
+                },
+            )
+        except Exception as e:
+            print(
+                f"Error setting searchable attributes for {index_config.model.__tablename__}: {str(e)}"
+            )
 
         # Set filterable attributes if specified
         if index_config.filterable_attributes:

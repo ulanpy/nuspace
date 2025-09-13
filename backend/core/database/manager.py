@@ -1,7 +1,8 @@
 from typing import AsyncGenerator
 
 from backend.core.configs.config import config
-from backend.core.database.models import Base
+
+# from backend.core.database.models import Base
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 
@@ -20,10 +21,11 @@ class AsyncDatabaseManager:
             expire_on_commit=False,
         )
 
-    async def create_all_tables(self) -> None:
-        async with self.async_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        await self.async_engine.dispose()
+    # === Deprecated. Will be removed starting from October 2025 ===
+    # async def create_all_tables(self) -> None:
+    #     async with self.async_engine.begin() as conn:
+    #         await conn.run_sync(Base.metadata.create_all)
+    #     await self.async_engine.dispose()
 
     # this function returns async session used in fastapi dependency injections
     async def get_async_session(self) -> AsyncGenerator[AsyncSession, None]:

@@ -98,20 +98,23 @@ export function Modal({
   // Use portal to render modal at the document root level
   return createPortal(
     <div
-      className="fixed inset-0 z-[10000] grid place-items-center px-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-[10000] grid place-items-center px-4"
       style={{
         paddingTop: "calc(env(safe-area-inset-top, 0px) + var(--tg-header-offset, 0px) + 2rem)",
         paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
       }}
       onWheel={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
-      >
+    >
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
       <div
         className={cn(
-          "bg-background rounded-lg shadow-lg w-full overflow-hidden",
+          "relative bg-background rounded-lg shadow-lg w-full overflow-hidden",
           className,
         )}
-        onClick={(e: MouseEvent) => e.stopPropagation()}
       >
         <div className="sticky top-0 z-10 flex justify-between items-center p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <div className="flex items-center gap-2">
