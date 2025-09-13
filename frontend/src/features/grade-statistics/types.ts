@@ -42,3 +42,77 @@ export interface GradeDistribution {
   color: string;
 }
 
+
+// ==== Live GPA / Courses types ====
+export interface BaseCourse {
+  id: number;
+  school: string; // Backend returns enum string
+  level: string; // Backend returns enum string
+  course_code: string;
+  section: string | null;
+  credits: number | null;
+  term: string | null;
+  faculty: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BaseCourseListResponse {
+  courses: BaseCourse[];
+  total_pages: number;
+}
+
+export interface BaseCourseFilters {
+  keyword?: string;
+  page?: number;
+  size?: number;
+  term?: string;
+}
+
+export interface BaseCourseItem {
+  id: number;
+  student_course_id: number;
+  item_name: string;
+  total_weight_pct: number | null; // e.g., 20.00 for 20%
+  obtained_score_pct: number | null; // e.g., 16.00 for 16%
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StudentCourse {
+  id: number;
+  student_sub: string;
+  course_id: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RegisteredCourse {
+  id: number;
+  course: BaseCourse;
+  items: BaseCourseItem[];
+  class_average?: number | null;
+}
+
+export interface CourseWithItems {
+  course: BaseCourse;
+  items: BaseCourseItem[];
+}
+
+export interface CourseItemCreate {
+  student_course_id: number;
+  item_name: string;
+  total_weight_pct?: number | null;
+  obtained_score_pct?: number | null;
+}
+
+export interface CourseItemUpdate {
+  item_name?: string;
+  total_weight_pct?: number | null;
+  obtained_score_pct?: number | null;
+}
+
+export interface RegisteredCourseCreate {
+  course_id: number;
+}
+

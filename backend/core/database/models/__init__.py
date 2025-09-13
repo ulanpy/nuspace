@@ -27,6 +27,8 @@ __all__ = [
     "GradeReport",
     "EventCollaborator",
     "Notification",
+    "Course",
+    "CourseItem",
 ]
 from .base import Base
 from .community import (
@@ -48,7 +50,7 @@ from .events import (
     EventType,
     RegistrationPolicy,
 )
-from .grade_report import GradeReport
+from .grade_report import Course, CourseItem, GradeReport
 from .media import Media
 from .notification import Notification
 from .product import Product, ProductReport

@@ -44,6 +44,7 @@ class QueryBuilder:
         self._page: Optional[int] = None
         self._is_count: bool = False
         self._selected_entities: Optional[List[Any]] = None
+        self._distinct: bool = False
 
     # —— READ QUERIES —— #
     def base(self, count: bool = False) -> "QueryBuilder":
@@ -89,6 +90,16 @@ class QueryBuilder:
             self._selected_entities = None
         else:
             self._selected_entities = list(entities)
+        return self
+
+    def distinct(self, *entities: Any) -> "QueryBuilder":
+        """
+        Add DISTINCT clause to the query. If entities are provided, select only those
+        distinct entities. If no entities provided, applies DISTINCT to the current selection.
+        """
+        if entities:
+            self._selected_entities = list(entities)
+        self._distinct = True
         return self
 
     def paginate(self, size: Optional[int], page: Optional[int]) -> "QueryBuilder":
@@ -159,6 +170,10 @@ class QueryBuilder:
                 stmt = select(*self._selected_entities)
             else:
                 stmt = select(self.model)
+
+        # Apply DISTINCT if requested
+        if self._distinct:
+            stmt = stmt.distinct()
 
         if self._filters:
             stmt = stmt.where(and_(*self._filters))

@@ -6,6 +6,7 @@ from backend.app_state.bot import cleanup_bot, setup_bot
 from backend.app_state.db import cleanup_db, setup_db
 from backend.app_state.gcp import setup_gcp
 from backend.app_state.meilisearch import cleanup_meilisearch, setup_meilisearch
+
 # from backend.app_state.rbq import cleanup_rbq, setup_rbq
 from backend.app_state.redis import cleanup_redis, setup_redis
 from backend.core.configs.config import Config

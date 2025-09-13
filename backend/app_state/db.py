@@ -1,14 +1,16 @@
 from fastapi import FastAPI
 
-from backend.core.configs.config import config
+# from backend.core.configs.config import config
 from backend.core.database.manager import AsyncDatabaseManager
 
 
 async def setup_db(app: FastAPI):
     app.state.db_manager = AsyncDatabaseManager()
     # Avoid implicit schema creation in production – rely on Alembic migrations instead
-    if config.IS_DEBUG:
-        await app.state.db_manager.create_all_tables()
+
+    # === Now, even in debug mode, we don't create all tables ===
+    # if config.IS_DEBUG:
+    #     await app.state.db_manager.create_all_tables()
 
 
 async def cleanup_db(app: FastAPI):

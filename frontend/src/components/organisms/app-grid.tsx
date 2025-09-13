@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingBag, Calendar, Coffee, BarChart3 } from "lucide-react";
+import { ShoppingBag, Calendar, Coffee, BookOpen } from "lucide-react";
 import { AppButton } from "../molecules/buttons/app-button";
 import { ROUTES } from "@/data/routes";
 
@@ -35,14 +35,24 @@ export function AppGrid() {
       delay: 0.2,
     },
     {
-      icon: <BarChart3 className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
-      title: "Grade Statistics",
+      icon: <BookOpen className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
+      title: "Courses",
       href: ROUTES.APPS.GRADE_STATISTICS.ROOT,
       gradient:
         "radial-gradient(circle, rgba(168,85,247,0.3) 0%, rgba(147,51,234,0.15) 50%, rgba(126,34,206,0) 100%)",
       iconColor: "text-purple-500",
       delay: 0.3,
     },
+    
+    // {
+    //   icon: <ShieldAlert className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
+    //   title: "Emergency",
+    //   href: ROUTES.APPS.EMERGENCY.ROOT,
+    //   gradient:
+    //     "radial-gradient(circle, rgba(244,63,94,0.3) 0%, rgba(225,29,72,0.15) 50%, rgba(190,24,60,0) 100%)",
+    //   iconColor: "text-rose-500",
+    //   delay: 0.35,
+    // },
     {
       icon: <Coffee className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
       title: "Dorm Eats",
