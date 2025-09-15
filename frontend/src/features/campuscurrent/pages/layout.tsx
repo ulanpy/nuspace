@@ -165,9 +165,14 @@ export function Layout() {
   const navigate = useNavigate();
   const [isCreateCommunityModalOpen, setIsCreateCommunityModalOpen] = useState(false);
   const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false);
+  
+  let scrollY = Number.parseInt(sessionStorage.getItem("scrollState") ?? "0");
+  if (!Number.isInteger(scrollY)) {
+    console.error("Scroll restored from sessionStorage is not an integer, defauling to 0");
+    scrollY = 0;
+  }
 
   // Store scroll position and previous path for tab navigation
-  const [savedScrollPosition, setSavedScrollPosition] = useState(0);
   const [previousPath, setPreviousPath] = useState(location.pathname);
 
   // Scroll to top on route change unless there's a hash or it's a tab navigation
@@ -181,27 +186,26 @@ export function Layout() {
       const isPreviousTabRoute = navTabs.some(tab => 
         previousPath === tab.path || previousPath.startsWith(tab.path)
       );
-      
+
       // Only restore scroll position if we're navigating between tabs
       if (isCurrentTabRoute && isPreviousTabRoute && location.pathname !== previousPath) {
         // For tab-to-tab navigation, restore saved scroll position
         setTimeout(() => {
-          window.scrollTo(0, savedScrollPosition);
+          window.scrollTo(0, scrollY);
         }, 0);
       } else {
-        // For other route changes, scroll to top
-        window.scrollTo(0, 0);
+        sessionStorage.removeItem(`scrollState`)
       }
     }
     
     // Update previous path
     setPreviousPath(location.pathname);
-  }, [location.pathname, previousPath, savedScrollPosition]);
+  }, [location.pathname, previousPath]);
 
   // Save scroll position before navigation
   const handleTabChange = (value: string) => {
     // Save current scroll position before navigating
-    setSavedScrollPosition(window.scrollY);
+    sessionStorage.setItem(`scrollState`, window.scrollY.toString());
     navigate(value);
   };
 
