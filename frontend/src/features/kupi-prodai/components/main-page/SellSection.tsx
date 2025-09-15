@@ -14,24 +14,13 @@ export function SellSection() {
 
 
     return (
-        <div className="relative overflow-hidden">
-            <FloatingElements />
-            
-            <motion.div 
-                className="relative space-y-6 pt-4"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-            >
-                <motion.div variants={itemVariants}>
-                    <AuthenticationGuard>
-                        <ProductCreateForm
-                            handleCreate={handleCreate}
-                            uploadProgress={uploadProgress}
-                        />
-                    </AuthenticationGuard>
-                </motion.div>
-            </motion.div>
+        <div className="relative overflow-hidden">  
+                <AuthenticationGuard>
+                    <ProductCreateForm
+                        handleCreate={handleCreate}
+                        uploadProgress={uploadProgress}
+                    />
+                </AuthenticationGuard>
         </div>
     );
 }

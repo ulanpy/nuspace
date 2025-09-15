@@ -1,7 +1,7 @@
 """add_grades_to_entity_type_enum
 
 Revision ID: fb04158b1dea
-Revises: 31ef04faea30
+Revises: 0001_create_grade_reports_table
 Create Date: 2025-09-05 15:48:30.506523
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'fb04158b1dea'
-down_revision: Union[str, Sequence[str], None] = '31ef04faea30'
+down_revision: Union[str, Sequence[str], None] = '0001_create_grade_reports_table'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
