@@ -1,76 +1,86 @@
-import { motion } from "framer-motion";
-import { Pagination } from "../../../../components/molecules/pagination";
 import { useNavigate } from "react-router-dom";
 import { MessageButton } from "@/components/molecules/buttons/message-button";
 import { ProductCard } from "@/features/kupi-prodai/components/product-card";
 import { ROUTES } from "@/data/routes";
 import { Product } from "@/features/kupi-prodai/types";
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-} as const;
-
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      type: "spring",
-      stiffness: 100,
-      damping: 15,
-    },
-  },
-} as const;
+import { InfiniteList } from "@/components/virtual/InfiniteList";
 export function ProductGrid({
-  products,
-  page,
-  setPage,
-  className,
+  selectedCategory,
+  selectedCondition,
+  keyword,
 }: {
-  products: Types.PaginatedResponse<Product, "products"> | null;
-  page: number;
-  setPage: (page: number) => void;
-  className?: string;
+  selectedCategory?: string;
+  selectedCondition?: string;
+  keyword?: string;
 }) {
   const navigate = useNavigate();
+
+  // Render function for product cards
+  const renderProductCard = (product: Product) => (
+    <ProductCard
+      key={product.id}
+      product={product}
+      onClick={() =>
+        navigate(
+          ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(product.id.toString()),
+        )
+      }
+      actions={<MessageButton />}
+    />
+  );
+
+  // Render empty state
+  const renderEmpty = () => (
+    <div className="text-center py-12">
+      <div className="text-lg font-medium mb-2">No products found</div>
+      <p className="text-sm text-muted-foreground">
+        Try adjusting your search criteria or check back later for new listings.
+      </p>
+    </div>
+  );
+
+  // Render loading state
+  const renderLoading = () => (
+    <div className="text-center py-8">
+      <div className="text-sm text-muted-foreground">Loading products...</div>
+    </div>
+  );
+
+  // Render load more state
+  const renderLoadMore = () => (
+    <div className="text-center py-4">
+      <div className="text-sm text-muted-foreground">Loading more products...</div>
+    </div>
+  );
+
   return (
-    <>
-      <motion.div
-        className={
-          className
-            ? className
-            : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3"
-        }
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {products?.products.map((product: Product) => (
-          <motion.div key={product.id} variants={itemVariants}>
-            <ProductCard
-              product={product}
-              onClick={() =>
-                navigate(
-                  ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(product.id.toString()),
-                )
-              }
-              actions={<MessageButton />}
-            />
-          </motion.div>
-        ))}
-      </motion.div>
-      <Pagination
-        length={products?.total_pages ?? 0}
-        currentPage={page}
-        onChange={(page) => setPage(page)}
+    <InfiniteList<Product>
+        queryKey={[
+          "kupi-prodai", 
+          "products", 
+          selectedCategory || "all", 
+          selectedCondition || "all", 
+          keyword || ""
+        ]}
+        apiEndpoint="/products"
+        size={12}
+        keyword={keyword || ""}
+        additionalParams={{
+          status: "active",
+          category: selectedCategory !== "All" ? selectedCategory?.toLowerCase() : undefined,
+          condition: selectedCondition !== "All Conditions" ? selectedCondition?.toLowerCase() : undefined,
+        }}
+        renderItem={renderProductCard}
+        renderEmpty={renderEmpty}
+        renderLoading={renderLoading}
+        renderLoadMore={renderLoadMore}
+        showSearch={false}
+        gridLayout={{
+          mobile: 2,
+          tablet: 3,
+          desktop: 4
+        }}
+        itemCountPlaceholder="Products"
       />
-    </>
   );
 }

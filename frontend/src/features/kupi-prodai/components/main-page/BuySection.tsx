@@ -7,24 +7,17 @@ import { CombinedSearch } from "@/components/molecules/combined-search";
 import { CategorySlider } from "@/components/organisms/category-slider";
 import { FilterContainer } from "@/components/organisms/filter-container";
 import { ProductLoadingState } from "@/features/kupi-prodai/components/state/product-loading-state";
-import { ProductErrorState } from "@/features/kupi-prodai/components/state/product-error-state";
-import { ProductEmptyState } from "@/features/kupi-prodai/components/state/product-empy-state";
 import { ProductGrid } from "@/features/kupi-prodai/components/common/ProductGrid";
 import { useProductForm } from "@/features/kupi-prodai/hooks/useProductForm";
-import { Product } from "@/features/kupi-prodai/types";
-import { getPlaceholderImage } from "@/utils/image-utils";
 
 export function BuySection() {
   const {
-    productItems,
-    isLoading,
-    isError,
     selectedCategory,
     selectedCondition,
     setSelectedCategory,
     setSelectedCondition,
+    keyword,
     setKeyword,
-    page,
     setPage,
   } = useProducts();
   
@@ -75,23 +68,12 @@ export function BuySection() {
       </FilterContainer>
 
       <Suspense fallback={<ProductLoadingState count={8} />}>
-        {isLoading ? (
-          <ProductLoadingState />
-        ) : isError ? (
-          <ProductErrorState error={"Failed to load products."} />
-        ) : (productItems?.products.length ?? 0) > 0 ? (
-          <ProductGrid
-            products={productItems as Types.PaginatedResponse<Product, "products">}
-            page={page}
-            setPage={setPage}
-          />
-        ) : (
-          <ProductEmptyState />
-        )}
+        <ProductGrid
+          selectedCategory={selectedCategory}
+          selectedCondition={selectedCondition}
+          keyword={keyword}
+        />
       </Suspense>
     </div>
   );
 }
-
-
-
