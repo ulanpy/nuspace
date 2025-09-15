@@ -118,6 +118,7 @@ export function useInfiniteScroll<T>({
       if (page.communities) return page.communities;
       if (page.posts) return page.posts;
       if (page.grades) return page.grades;
+      if (page.products) return page.products;
       if (Array.isArray(page)) return page;
       return [];
     }) ?? [];
