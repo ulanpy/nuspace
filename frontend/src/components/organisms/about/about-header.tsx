@@ -6,7 +6,7 @@ export const AboutHeader = () => {
   return (
     <div className="text-center mb-16">
       <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-        About <span className="text-indigo-500">NU Space</span>
+        About <span className="text-indigo-500">Nuspace</span>
       </h1>
       <p
         className={`mt-6 text-xl leading-8 ${
