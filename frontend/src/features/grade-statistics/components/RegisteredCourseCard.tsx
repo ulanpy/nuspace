@@ -31,7 +31,7 @@ export function RegisteredCourseCard({
   onDeleteItem,
   onEditItem,
 }: RegisteredCourseCardProps) {
-  const [showItems, setShowItems] = useState(false);
+  const [showAssignments, setShowAssignments] = useState(false);
   const [showClassAverageModal, setShowClassAverageModal] = useState(false);
   const { course } = registeredCourse;
   const courseGPA = calculateCourseGPA(registeredCourse.items);
@@ -80,13 +80,26 @@ export function RegisteredCourseCard({
             <Trash2 className="h-4 w-4" />
           </Button>
         )}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="flex flex-col gap-4">
           <div className="flex-1 pr-8">
-            <CardTitle className="text-xl font-bold text-gray-800 dark:text-gray-200">
-              {course.course_code}
-            </CardTitle>
+            <div className="flex flex-row sm:items-center sm:justify-between gap-3">
+              <CardTitle className="text-xl font-bold text-gray-800 dark:text-gray-200">
+                {course.course_code}
+              </CardTitle>
+              {onAddItem && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onAddItem(registeredCourse.id)}
+                  className="flex items-center gap-2 w-full sm:w-auto"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Assignment
+                </Button>
+              )}
+            </div>
             {courseDetails && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                 {courseDetails}
               </p>
             )}
@@ -108,7 +121,7 @@ export function RegisteredCourseCard({
               </div>
             )}
             
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex flex-wrap items-center gap-2 mt-3">
               <Badge variant="outline" className="text-xs">
                 {course.school}
               </Badge>
@@ -125,30 +138,19 @@ export function RegisteredCourseCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-row flex-wrap items-center gap-x-4 gap-y-2">
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            onClick={() => setShowItems(!showItems)}
+            onClick={() => setShowAssignments(!showAssignments)}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
           >
             <BookOpen className="h-4 w-4" />
-            {showItems ? 'Hide Items' : 'Show Items'} ({registeredCourse.items.length})
+            {showAssignments ? 'Hide Assignments' : 'Show Assignments'} ({registeredCourse.items.length})
           </Button>
-          {onAddItem && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onAddItem(registeredCourse.id)}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              <Plus className="h-4 w-4" />
-              Add Item
-            </Button>
-          )}
           {registeredCourse.class_average !== null && registeredCourse.class_average !== undefined && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => setShowClassAverageModal(true)}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
@@ -165,76 +167,76 @@ export function RegisteredCourseCard({
             <div className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-gray-200">
               {courseScore.toFixed(1)}%
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Current Score</div>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Current Score</div>
           </div>
           <div className="text-center">
             <div className={`text-lg sm:text-2xl font-bold ${getGPAColorClass(courseGPA)}`}>
               {courseGrade}
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Letter Grade</div>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Letter Grade</div>
           </div>
           <div className="text-center">
             <div className={`text-lg sm:text-2xl font-bold ${getGPAColorClass(courseGPA)}`}>
               {formatGPA(courseGPA)}
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Current GPA</div>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Current GPA</div>
           </div>
         </div>
 
         {/* Max possible if acing remaining work */}
-        <div className="mt-2 grid grid-cols-3 gap-4 p-3 border rounded-lg">
+        <div className="mt-2 grid grid-cols-3 gap-2 sm:gap-4 p-3 border rounded-lg">
           <div className="text-center">
-            <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+            <div className="text-base sm:text-xl font-semibold text-gray-800 dark:text-gray-200">
               {maxPossibleScore.toFixed(1)}%
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Max Possible</div>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Max Possible</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-semibold">
+            <div className="text-base sm:text-xl font-semibold">
               {maxPossibleGrade}
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Max Grade</div>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Max Grade</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-semibold">
+            <div className="text-base sm:text-xl font-semibold">
               {formatGPA(maxPossibleGPA)}
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Max GPA</div>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Max GPA</div>
           </div>
         </div>
 
-        {/* Projected based on average of entered items */}
-        <div className="mt-2 grid grid-cols-3 gap-4 p-3 border rounded-lg">
+        {/* Projected based on average of entered assignments */}
+        <div className="mt-2 grid grid-cols-3 gap-2 sm:gap-4 p-3 border rounded-lg">
           <div className="text-center">
-            <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+            <div className="text-base sm:text-xl font-semibold text-gray-800 dark:text-gray-200">
               {projectedScore.toFixed(1)}%
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Projected</div>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Projected</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-semibold">
+            <div className="text-base sm:text-xl font-semibold">
               {projectedGrade}
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Projected Grade</div>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Projected Grade</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-semibold">
+            <div className="text-base sm:text-xl font-semibold">
               {formatGPA(projectedGPA)}
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Projected GPA</div>
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Projected GPA</div>
           </div>
         </div>
 
         
 
-        {/* Course Items */}
-        {showItems && (
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Course Items ({registeredCourse.items.length})
+        {/* Course Assignments */}
+        {showAssignments && (
+          <div className="space-y-4">
+            <h4 className="text-base font-semibold text-gray-700 dark:text-gray-300">
+              Course Assignments ({registeredCourse.items.length})
             </h4>
             {registeredCourse.items.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {registeredCourse.items.map((item) => (
                   <RegisteredCourseItem 
                     key={item.id} 
@@ -245,10 +247,10 @@ export function RegisteredCourseCard({
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <BookOpen className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>No course items added yet</p>
-                <p className="text-sm">Add items to track your progress</p>
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">No assignments added yet</p>
+                <p className="text-sm">Add assignments to track your progress</p>
               </div>
             )}
           </div>

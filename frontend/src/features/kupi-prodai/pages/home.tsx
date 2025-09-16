@@ -15,7 +15,7 @@ export default function KupiProdaiPage() {
         <MotionWrapper>
             <div className="space-y-4 sm:space-y-6">
                 <div className="flex flex-col space-y-1 sm:space-y-2">
-                    <h1 className="text-2xl sm:text-3xl font-bold">Kupi&Prodai</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold">Marketplace</h1>
                 </div>
 
                 <Tabs

@@ -9,7 +9,7 @@ export const features = [
     link: ROUTES.APPS.KUPI_PRODAI.ROOT,
   },
   {
-    title: "Campus Current",
+    title: "Events",
     description:
       "Information about holidays, meetings and events that take place on the territory of the University. Students will be able to find activities that are interesting to them.",
     icon: MdEvent,

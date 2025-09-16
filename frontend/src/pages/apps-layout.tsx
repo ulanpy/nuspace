@@ -19,7 +19,7 @@ export default function AppsLayout() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { isMiniApp } = useTelegramMiniApp();
 
-  // Check if the current path is for Kupi&Prodai
+  // Check if the current path is for Marketplace
   const isKupiProdaiPath = location.pathname.includes(
     ROUTES.APPS.KUPI_PRODAI.ROOT,
   );
@@ -65,7 +65,7 @@ export default function AppsLayout() {
           {showLoginModal && (
             <LoginRequirementModal
               title="Login Required"
-              description="You need to login to create or manage listings in the Kupi&Prodai marketplace. Browsing is available to everyone."
+              description="You need to login to create or manage listings in the Marketplace. Browsing is available to everyone."
               onLogin={handleLogin}
               onDismiss={handleDismiss}
             />
