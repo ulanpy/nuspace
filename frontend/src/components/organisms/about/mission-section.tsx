@@ -11,7 +11,7 @@ export const MessionSection = () => {
     >
       <h2 className="text-2xl font-bold mb-6">Mission</h2>
       <p className={`mb-4 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
-        NU Space is a single platform for Nazarbayev University students. Our
+        Nuspace is a single platform for Nazarbayev University students. Our
         goal is to simplify the daily life of students and make campus life more
         comfortable.
       </p>
