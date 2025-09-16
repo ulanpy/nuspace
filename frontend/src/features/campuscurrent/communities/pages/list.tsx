@@ -1,21 +1,27 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, Plus } from "lucide-react";
 
 import { LoginModal } from "@/components/molecules/login-modal";
 import { CommunityCard } from "@/features/campuscurrent/communities/components/CommunityCard";
-import { SearchableInfiniteList } from "@/components/virtual/SearchableInfiniteList";
+import { InfiniteList } from "@/components/virtual/InfiniteList";
 import { Community, CommunityCategory } from "@/features/campuscurrent/types/types";
-import { ConditionDropdown } from "@/components/molecules/condition-dropdown";
-import { usePreSearchCommunities } from "@/features/campuscurrent/communities/api/hooks/usePreSearchCommunities";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/atoms/dropdown-menu";
+import { ChevronDown } from "lucide-react";
+import { Button } from "@/components/atoms/button";
+import { Input } from "@/components/atoms/input";
+import { CommunityModal } from "@/features/campuscurrent/communities/components/CommunityModal";
 
 // import { useLocation } from "react-router-dom";
-// import { Button } from "@/components/atoms/button";
 // import { useUser } from "@/hooks/use-user";
 
 import MotionWrapper from "@/components/atoms/motion-wrapper";
-import { FilterContainer } from "@/components/organisms/filter-container";
 // import { Badge } from "@/components/atoms/badge";
 
 export default function CommunitiesPage() {
@@ -23,7 +29,8 @@ export default function CommunitiesPage() {
   // const { user } = useUser();
   const [selectedCommunityCategory, setSelectedCommunityCategory] =
     useState<string>("All");
-  // const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
 
   // Open-only filter toggle
   const [isWifiFilterActive, setIsWifiFilterActive] = useState<boolean>(false);
@@ -78,8 +85,38 @@ export default function CommunitiesPage() {
      return (
     <MotionWrapper>
         <div className="w-full max-w-none">
-          {/* Filters Container - Above Search and Results */}
-          <FilterContainer className="z-[5] mb-6">
+          {/* Page Header */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <div className="pr-4 sm:pr-0">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Communities</h1>
+                <p className="text-gray-600 dark:text-gray-400">Join communities and connect with like-minded people</p>
+              </div>
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Create Community</span>
+                <span className="sm:hidden">Create</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="mb-4">
+            <Input
+              type="text"
+              placeholder="Search communities..."
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              className="w-full"
+            />
+          </div>
+
+          {/* Optimized mobile filter section */}
+          <div className="mb-6">
             <style>
               {`
               @keyframes wifiPulse {
@@ -88,88 +125,133 @@ export default function CommunitiesPage() {
               }
             `}
             </style>
-            <div className="flex w-full gap-2 items-center">
-              <div className="flex-1">
-                <ConditionDropdown
-                  conditions={categoryOptions}
-                  selectedCondition={selectedCommunityCategory}
-                  setSelectedCondition={handleCategoryChange}
-                  disableNavigation={true}
-                />
-              </div>
-              <div className="flex items-center">
-                <button
-                  type="button"
-                  onClick={handleWifiButtonClick}
-                  className={`relative inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${
-                    isWifiFilterActive
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-                      : "border-muted bg-background"
-                  }`}
-                  aria-pressed={isWifiFilterActive}
-                  aria-label="Toggle open-only communities"
-                  title={isWifiFilterActive ? "Showing open-only" : "Show open-only"}
-                >
-                  {/* WiFi arcs icon */}
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
+            <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible">
+              {/* Category filter - compact on mobile */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm justify-between bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
-                    <path
-                      d="M1.42 9a16 16 0 0 1 21.16 0"
-                      style={{
-                        animation: isWifiFilterActive
-                          ? "wifiPulse 1.2s ease-in-out infinite"
-                          : undefined,
-                        animationDelay: isWifiFilterActive ? "0.3s" : undefined,
-                      }}
-                    />
-                    <path
-                      d="M5 12.55a11 11 0 0 1 14 0"
-                      style={{
-                        animation: isWifiFilterActive
-                          ? "wifiPulse 1.2s ease-in-out infinite"
-                          : undefined,
-                        animationDelay: isWifiFilterActive ? "0.15s" : undefined,
-                      }}
-                    />
-                    <path
-                      d="M8.53 16.11a6 6 0 0 1 6.95 0"
-                      style={{
-                        animation: isWifiFilterActive
-                          ? "wifiPulse 1.2s ease-in-out infinite"
-                          : undefined,
-                        animationDelay: isWifiFilterActive ? "0s" : undefined,
-                      }}
-                    />
-                    <circle cx="12" cy="20" r="1.5" fill="currentColor" />
-                  </svg>
-                  <span
-                    className={`${
-                      isWifiFilterActive
-                        ? "absolute inset-0 rounded-full ring-2 ring-blue-400/60"
-                        : ""
-                    }`}
-                    aria-hidden
+                    <span className="hidden sm:inline">{selectedCommunityCategory}</span>
+                    <span className="sm:hidden">{selectedCommunityCategory === "All" ? "All" : selectedCommunityCategory.slice(0, 8) + (selectedCommunityCategory.length > 8 ? "..." : "")}</span>
+                    <ChevronDown className="h-3 w-3 ml-1 sm:h-4 sm:w-4 sm:ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  className="w-48 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                  align="start"
+                >
+                  {categoryOptions.map((option) => (
+                    <DropdownMenuItem
+                      key={option}
+                      onClick={() => handleCategoryChange(option)}
+                      className={`
+                        text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700
+                        ${selectedCommunityCategory === option 
+                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
+                          : ''
+                        }
+                      `}
+                    >
+                      {option}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {/* Open-only filter - compact on mobile */}
+              <Button
+                variant={isWifiFilterActive ? "default" : "outline"}
+                size="sm"
+                onClick={handleWifiButtonClick}
+                className={`
+                  flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm gap-1 sm:gap-2
+                  ${isWifiFilterActive 
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-sm' 
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }
+                `}
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                  className="sm:w-4 sm:h-4"
+                >
+                  <path
+                    d="M1.42 9a16 16 0 0 1 21.16 0"
+                    style={{
+                      animation: isWifiFilterActive
+                        ? "wifiPulse 1.2s ease-in-out infinite"
+                        : undefined,
+                      animationDelay: isWifiFilterActive ? "0.3s" : undefined,
+                    }}
                   />
-                </button>
-              </div>
+                  <path
+                    d="M5 12.55a11 11 0 0 1 14 0"
+                    style={{
+                      animation: isWifiFilterActive
+                        ? "wifiPulse 1.2s ease-in-out infinite"
+                        : undefined,
+                      animationDelay: isWifiFilterActive ? "0.15s" : undefined,
+                    }}
+                  />
+                  <path
+                    d="M8.53 16.11a6 6 0 0 1 6.95 0"
+                    style={{
+                      animation: isWifiFilterActive
+                        ? "wifiPulse 1.2s ease-in-out infinite"
+                        : undefined,
+                      animationDelay: isWifiFilterActive ? "0s" : undefined,
+                    }}
+                  />
+                  <circle cx="12" cy="20" r="1.5" fill="currentColor" />
+                </svg>
+                <span className="hidden sm:inline">Recruitment Open</span>
+                <span className="sm:hidden">Recruitment Open</span>
+              </Button>
             </div>
-          </FilterContainer>
+
+            {/* Active filters display - only show if there are active filters */}
+            {isWifiFilterActive && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-xs">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                    <path d="M5 12.55a11 11 0 0 1 14 0"/>
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                    <circle cx="12" cy="20" r="1.5" fill="currentColor"/>
+                  </svg>
+                  <span>Open Only</span>
+                  <button
+                    onClick={() => setIsWifiFilterActive(false)}
+                    className="ml-1 hover:text-blue-600 dark:hover:text-blue-300"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Communities List with Search */}
           <div className="w-full overflow-x-hidden" id="communities-section">
-            <SearchableInfiniteList
-              queryKey={["campusCurrent", "communities"]}
+            <InfiniteList
+              queryKey={["campusCurrent", "communities", searchKeyword, selectedCategoryParam ?? "", isWifiFilterActive.toString()]}
               apiEndpoint="/communities"
               size={12}
+              keyword={searchKeyword}
               additionalParams={{
                 community_category: selectedCategoryParam,
                 recruitment_status: isWifiFilterActive ? 'open' : null,
@@ -193,13 +275,23 @@ export default function CommunitiesPage() {
                   </p>
                 </div>
               )}
-              searchPlaceholder="Search communities..."
-              usePreSearch={usePreSearchCommunities}
-              setSelectedCondition={handleCategoryChange}
-              title="Communities"
+              showSearch={false} // Disable built-in search since we have external search
+              title="" // Remove the title since we have it in header now
               itemCountPlaceholder="" // Remove the items counter
+              gridLayout={{
+                mobile: 2,
+                tablet: 2,
+                desktop: 3
+              }}
             />
           </div>
+
+        {/* Create Community Modal */}
+        <CommunityModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          isEditMode={false}
+        />
 
         {/* Login Modal */}
         <LoginModal

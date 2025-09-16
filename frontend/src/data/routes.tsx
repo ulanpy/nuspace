@@ -81,6 +81,13 @@ export const ROUTES = {
       },
       POSTS: buildPath(APPS, CAMPUS_CURRENT, POSTS),
     },
+    COMMUNITIES: {
+      ROOT: buildPath(APPS, COMMUNITIES),
+      COMMUNITY: {
+        DETAIL: buildPath(APPS, COMMUNITIES, COMMUNITY, ":id"),
+        DETAIL_FN: (id: string) => buildPath(APPS, COMMUNITIES, COMMUNITY, id),
+      },
+    },
     GRADE_STATISTICS: {
       ROOT: buildPath(APPS, GRADE_STATISTICS),
     },
@@ -113,6 +120,8 @@ const LAZY_ROUTES_REL = {
     CAMPUS_CURRENT_COMMUNITY_DETAIL: `${CAMPUS_CURRENT}/${COMMUNITY}/:id`,
     CAMPUS_CURRENT_COMMUNITIES: `${CAMPUS_CURRENT}/${COMMUNITIES}`,
     CAMPUS_CURRENT_POSTS: `${CAMPUS_CURRENT}/${POSTS}`,
+    COMMUNITIES_ROOT: COMMUNITIES,
+    COMMUNITIES_COMMUNITY_DETAIL: `${COMMUNITIES}/${COMMUNITY}/:id`,
   },
 };
 export const LazyRoutes = {
@@ -155,14 +164,20 @@ export const LazyRoutes = {
           lazy(() => import("@/features/campuscurrent/subspace/pages/list")),
         ),
       },
-    ],
-    EVENTS: [
       {
-        path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_ROOT,
+        path: LAZY_ROUTES_REL.APPS.COMMUNITIES_ROOT,
         Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/pages/home")),
+          lazy(() => import("@/features/campuscurrent/communities/pages/list")),
         ),
       },
+      {
+        path: LAZY_ROUTES_REL.APPS.COMMUNITIES_COMMUNITY_DETAIL,
+        Component: withSuspense(
+          lazy(() => import("@/features/campuscurrent/communities/pages/single")),
+        ),
+      },
+    ],
+    EVENTS: [
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_EVENTS,
         Component: withSuspense(

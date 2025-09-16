@@ -1,4 +1,3 @@
-import type React from "react";
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { PiHouse, PiHouseFill, PiUserCircle, PiUserCircleFill, PiChatCircle, PiChatCircleFill } from "react-icons/pi";
@@ -14,7 +13,7 @@ interface BottomNavItem {
 function buildNavItems(): BottomNavItem[] {
   return [
     { to: ROUTES.HOME, label: "Home", icon: "home" },
-    { to: ROUTES.APPS.CAMPUS_CURRENT.POSTS, label: "SubSpace", icon: "subspace" },
+    { to: ROUTES.APPS.CAMPUS_CURRENT.POSTS, label: "Subspace", icon: "subspace" },
     { to: ROUTES.APPS.PROFILE, label: "Profile", icon: "profile" },
   ];
 }

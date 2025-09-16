@@ -11,15 +11,10 @@ import { MediaEditProvider } from "../context/MediaEditContext";
 import { Layout } from "../features/campuscurrent/pages/layout";
 
 
-import { LoginButton } from "../components/molecules/buttons/login-button";
-import { ThemeToggle } from "../components/molecules/theme-toggle";
-import { Header } from "@/components/atoms/header";
 import { Footer } from "@/components/ui/footer";
 import { MobileBottomNav } from "@/components/molecules/MobileBottomNav";
-import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 
 function App() {
-  const { isMiniApp } = useTelegramMiniApp();
   return (
     <ListingProvider>
       <MediaUploadProvider>
@@ -37,6 +32,7 @@ function App() {
               {LazyRoutes.APPS.BASIC.map(({ path, Component }) => (
                 <Route key={path} path={path} element={<Component />} />
               ))}
+              <Route path={ROUTES.APPS.CAMPUS_CURRENT.ROOT} element={<Navigate to={ROUTES.APPS.CAMPUS_CURRENT.EVENTS} replace />} />
               <Route element={<Layout />}>
                 {LazyRoutes.APPS.EVENTS.map(({ path, Component }) => (
                   <Route key={path} path={path} element={<Component />} />
@@ -44,7 +40,7 @@ function App() {
               </Route>
             </Route>
           </Routes>
-          {!isMiniApp && <Footer note="About Nuspace" />}
+          {/* <Footer note="About Nuspace" /> */}
           <MobileBottomNav />
           <Toasts />
         </MediaEditProvider>

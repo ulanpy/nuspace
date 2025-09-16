@@ -1,6 +1,5 @@
 "use client";
 
-import { ThemeToggle } from "../components/molecules/theme-toggle";
 import { AppGrid } from "../components/organisms/app-grid";
 import { LoginButton } from "../components/molecules/buttons/login-button";
 import { GlowCarouselWithImage } from "../components/organisms/glow-carousel-with-images";
@@ -123,17 +122,15 @@ export default function HomePage() {
   }, [eventSlide]);
   return (
     <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4 pb-[calc(56px+env(safe-area-inset-bottom))]">
-      {/* Header with login button */}
-      <Header
-        right={
-          !isMiniApp ? (
-            <div className="flex gap-4">
-              <ThemeToggle />
-              <LoginButton />
-            </div>
-          ) : undefined
-        }
-      ></Header>
+      {/* Header with main navigation */}
+      <Header 
+        right={!isMiniApp ? (
+          <div className="flex gap-2">
+            <LoginButton />
+          </div>
+        ) : undefined}
+        showMainNav={!isMiniApp} 
+      />
       {/* Beta banner - visible on all viewports with last commit inline */}
       <div className="w-full mb-6">
         <div className="w-full rounded-lg border border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-100 px-3 py-2 sm:px-4 sm:py-3">
