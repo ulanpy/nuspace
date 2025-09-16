@@ -77,8 +77,7 @@ export function ProductDetails({ product, initiateContactWithSeller, isContactLo
                     </div>
                 ) : (
                     <div className="flex flex-col gap-2">
-                        <p className="text-sm text-muted-foreground">Login to see the seller and contact details.</p>
-                        <Button size="sm" onClick={login}>Login to view seller</Button>
+                        <p className="text-sm text-muted-foreground">Login to connect with the seller.</p>
                     </div>
                 )}
 

@@ -36,7 +36,7 @@ export function ProductPageActions({
                 <span>{
                     isContactAllowed
                         ? (isContactLoading ? "Loading..." : "Contact on Telegram")
-                        : "Login to contact"
+                        : "Login to contact the seller"
                 }</span>
             </Button>
 

@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { MessageButton } from "@/components/molecules/buttons/message-button";
 import { ProductCard } from "@/features/kupi-prodai/components/product-card";
 import { ROUTES } from "@/data/routes";
 import { Product } from "@/features/kupi-prodai/types";
@@ -25,7 +24,6 @@ export function ProductGrid({
           ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL_FN(product.id.toString()),
         )
       }
-      actions={<MessageButton />}
     />
   );
 
