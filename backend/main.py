@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi.responses import ORJSONResponse
 
 from backend.core.configs.config import config
 from backend.lifespan import lifespan
@@ -11,6 +12,7 @@ from backend.middlewares.prometheus_metrics import instrument_app, metrics_app
 app = FastAPI(
     debug=config.IS_DEBUG,
     lifespan=lifespan,
+    default_response_class=ORJSONResponse, # for performance
     root_path="/api",
     docs_url="/docs" if config.IS_DEBUG else None,
     redoc_url="/redoc" if config.IS_DEBUG else None,
