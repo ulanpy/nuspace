@@ -22,7 +22,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-gray-300 rounded-lg',
+        'flex flex-col items-center justify-center text-center p-8',
         className
       )}
     >
