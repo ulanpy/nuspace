@@ -318,15 +318,6 @@ export default function GradeStatisticsPage() {
   return (
     <MotionWrapper>
       <div className="w-full max-w-none">
-        {/* Header */}
-        <div className="space-y-2 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            📚 Courses
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Track your current semester progress and explore historical grade statistics.
-          </p>
-        </div>
 
         {/* Tabs: Course Statistics vs Live GPA */}
         <Tabs defaultValue="live-gpa">
@@ -592,10 +583,6 @@ export default function GradeStatisticsPage() {
                 </Modal>
               )}
 
-              <p className="text-sm text-muted-foreground mb-3">
-                Track your progress with smart analytics, real-time GPA projections, and class statistics.
-              </p>
-
               {!user ? (
                 <div className="p-4 border rounded-md bg-muted/30 flex items-center justify-between gap-3">
                   <div className="text-sm text-muted-foreground">Login to track your course progress this semester.</div>
@@ -681,9 +668,6 @@ export default function GradeStatisticsPage() {
           </TabsContent>
 
           <TabsContent value="course-stats">
-            <p className="text-sm text-muted-foreground mb-3">
-              Historical performance and grade distribution statistics for courses.
-            </p>
             {/* Course Statistics List (historical) */}
             <div className="w-full overflow-x-hidden" id="grade-statistics-section">
               <SearchableInfiniteList

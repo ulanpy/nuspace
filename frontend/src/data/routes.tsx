@@ -158,12 +158,6 @@ export const LazyRoutes = {
     ],
     EVENTS: [
       {
-        path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_ROOT,
-        Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/pages/home")),
-        ),
-      },
-      {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_EVENTS,
         Component: withSuspense(
           lazy(() => import("@/features/campuscurrent/events/pages/list")),

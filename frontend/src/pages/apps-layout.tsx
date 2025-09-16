@@ -52,12 +52,12 @@ export default function AppsLayout() {
         <Header
           left={!isMiniApp ? <BackButton label={location.pathname === ROUTES.HOME ? "Close" : "Back"} /> : undefined}
           right={!isMiniApp ? (
-            <div className="flex gap-4">
-              <ThemeToggle />
+            <div className="flex gap-2">
               <LoginButton />
             </div>
           ) : undefined}
-        ></Header>
+          showMainNav={!isMiniApp}
+        />
         <main className="flex-1 container py-4 sm:py-6 px-3 sm:px-4">
           <Outlet />
 

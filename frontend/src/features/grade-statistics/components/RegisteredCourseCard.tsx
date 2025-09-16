@@ -82,8 +82,8 @@ export function RegisteredCourseCard({
         )}
         <div className="flex flex-col gap-4">
           <div className="flex-1 pr-8">
-            <div className="flex flex-row sm:items-center sm:justify-between gap-3">
-              <CardTitle className="text-xl font-bold text-gray-800 dark:text-gray-200">
+            <div className="flex flex-row items-center justify-center sm:justify-between gap-3">
+              <CardTitle className="text-xl font-bold text-gray-800 dark:text-gray-200 flex-1 text-center sm:text-left truncate">
                 {course.course_code}
               </CardTitle>
               {onAddItem && (
@@ -91,7 +91,7 @@ export function RegisteredCourseCard({
                   variant="outline"
                   size="sm"
                   onClick={() => onAddItem(registeredCourse.id)}
-                  className="flex items-center gap-2 w-full sm:w-auto"
+                  className="flex items-center gap-2 shrink-0 whitespace-nowrap"
                 >
                   <Plus className="h-4 w-4" />
                   Add Assignment
@@ -160,6 +160,33 @@ export function RegisteredCourseCard({
             </Button>
           )}
         </div>
+
+        {/* Course Assignments - moved directly under the toggle button */}
+        {showAssignments && (
+          <div className="space-y-4">
+            <h4 className="text-base font-semibold text-gray-700 dark:text-gray-300">
+              Course Assignments ({registeredCourse.items.length})
+            </h4>
+            {registeredCourse.items.length > 0 ? (
+              <div className="space-y-3">
+                {registeredCourse.items.map((item) => (
+                  <RegisteredCourseItem 
+                    key={item.id} 
+                    item={item}
+                    onDelete={onDeleteItem ? () => onDeleteItem(item) : undefined}
+                    onEdit={onEditItem ? () => onEditItem(item) : undefined}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">No assignments added yet</p>
+                <p className="text-sm">Add assignments to track your progress</p>
+              </div>
+            )}
+          </div>
+        )}
         
         {/* Course GPA Summary */}
         <div className="grid grid-cols-3 gap-2 sm:gap-4 p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -226,35 +253,6 @@ export function RegisteredCourseCard({
             <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Projected GPA</div>
           </div>
         </div>
-
-        
-
-        {/* Course Assignments */}
-        {showAssignments && (
-          <div className="space-y-4">
-            <h4 className="text-base font-semibold text-gray-700 dark:text-gray-300">
-              Course Assignments ({registeredCourse.items.length})
-            </h4>
-            {registeredCourse.items.length > 0 ? (
-              <div className="space-y-3">
-                {registeredCourse.items.map((item) => (
-                  <RegisteredCourseItem 
-                    key={item.id} 
-                    item={item}
-                    onDelete={onDeleteItem ? () => onDeleteItem(item) : undefined}
-                    onEdit={onEditItem ? () => onEditItem(item) : undefined}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-2">No assignments added yet</p>
-                <p className="text-sm">Add assignments to track your progress</p>
-              </div>
-            )}
-          </div>
-        )}
       </CardContent>
 
       {/* Class Average Modal */}

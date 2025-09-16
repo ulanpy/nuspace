@@ -143,6 +143,18 @@ export default function Events() {
                 <Users className="h-4 w-4" />
                 <span>Now Recruiting</span>
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => setIsCreateModalOpen(true)}
+                className={`
+                  w-full sm:w-auto justify-center sm:justify-start gap-2
+                  bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm
+                `}
+              >
+                <Calendar className="h-4 w-4" />
+                <span>Create Event</span>
+              </Button>
+
             </div>
 
             {/* Active filters display */}

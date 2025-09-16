@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { useEffect, MouseEvent } from "react";
 import { useMaybeBackNavigation } from "@/context/BackNavigationContext";
 import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
+import { motion } from "framer-motion";
 
 interface ModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export function Modal({
   children,
   className = "max-w-md",
 }: ModalProps) {
+  
   const backNav = useMaybeBackNavigation();
   const { isMiniApp } = useTelegramMiniApp();
   useEffect(() => {
@@ -97,6 +99,21 @@ export function Modal({
 
   // Use portal to render modal at the document root level
   return createPortal(
+    // Example structure for animated modal
+<motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1}}
+  exit={{ opacity: 0 }}
+  transition={{ duration: 0.2, ease: "easeIn" }}
+  className="fixed inset-0 bg-black/50 z-50"
+>
+  <motion.div
+    initial={{ scale: 0.95, opacity: 0 }}
+    animate={{ scale: 1, opacity: 1 }}
+    exit={{ scale: 0.95, opacity: 0 }}
+    transition={{ duration: 0.2, ease: "easeIn" }}
+    className="relative bg-background rounded-lg shadow-lg w-full overflow-hidden"
+  >
     <div
       className="fixed inset-0 z-[10000] grid place-items-center px-4"
       style={{
@@ -131,7 +148,9 @@ export function Modal({
         </div>
         <div className="p-4">{children}</div>
       </div>
-    </div>,
+    </div>
+  </motion.div>
+</motion.div>,
     document.body,
   );
 }
