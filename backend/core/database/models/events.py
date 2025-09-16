@@ -53,16 +53,16 @@ class EventCollaborator(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     event_id: Mapped[int] = mapped_column(
-        ForeignKey("events.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True
     )
     collaborator_type: Mapped[CollaboratorType] = mapped_column(
         SQLEnum(CollaboratorType, name="collaborator_type"), nullable=False
     )
     user_sub: Mapped[str] = mapped_column(
-        ForeignKey("users.sub", ondelete="CASCADE"), nullable=True
+        ForeignKey("users.sub", ondelete="CASCADE"), nullable=True, index=True
     )
     community_id: Mapped[int] = mapped_column(
-        ForeignKey("communities.id", ondelete="CASCADE"), nullable=True
+        ForeignKey("communities.id", ondelete="CASCADE"), nullable=True, index=True
     )
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -75,28 +75,32 @@ class Event(Base):
     __tablename__ = "events"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     community_id: Mapped[int] = mapped_column(
-        ForeignKey("communities.id", ondelete="CASCADE"), nullable=True, unique=False
+        ForeignKey("communities.id", ondelete="CASCADE"), nullable=True, unique=False, index=True
     )
     creator_sub: Mapped[str] = mapped_column(
-        ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, unique=False
+        ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, unique=False, index=True
     )
     policy: Mapped[RegistrationPolicy] = mapped_column(
-        SQLEnum(RegistrationPolicy, name="event_policy"), nullable=False
+        SQLEnum(RegistrationPolicy, name="event_policy"), nullable=False, index=True
     )
     registration_link: Mapped[str] = mapped_column(nullable=True, unique=False)
     name: Mapped[str] = mapped_column(nullable=False, unique=False)
     place: Mapped[str] = mapped_column(nullable=False, unique=False)
     start_datetime: Mapped[DateTime] = mapped_column(
-        DateTime, nullable=False
+        DateTime, nullable=False, index=True
     )  # Renamed from event_datetime
-    end_datetime: Mapped[DateTime] = mapped_column(DateTime, nullable=False)  # New field
+    end_datetime: Mapped[DateTime] = mapped_column(
+        DateTime, nullable=False, index=True
+    )  # New field
     description: Mapped[str] = mapped_column(nullable=False, unique=False)
     scope: Mapped[EventScope] = mapped_column(
-        SQLEnum(EventScope, name="event_scope"), nullable=False
+        SQLEnum(EventScope, name="event_scope"), nullable=False, index=True
     )
-    type: Mapped[EventType] = mapped_column(SQLEnum(EventType, name="event_type"), nullable=False)
+    type: Mapped[EventType] = mapped_column(
+        SQLEnum(EventType, name="event_type"), nullable=False, index=True
+    )
     status: Mapped[EventStatus] = mapped_column(
-        SQLEnum(EventStatus, name="event_status"), nullable=False
+        SQLEnum(EventStatus, name="event_status"), nullable=False, index=True
     )
     tag: Mapped[EventTag] = mapped_column(
         SQLEnum(EventTag, name="event_tag"), nullable=False, default=EventTag.regular

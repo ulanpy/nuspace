@@ -33,27 +33,30 @@ class CommunityRecruitmentStatus(PyEnum):
 class Community(Base):
     __tablename__ = "communities"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
-    name: Mapped[str] = mapped_column(nullable=False, unique=False)
+    name: Mapped[str] = mapped_column(nullable=False, unique=False, index=True)
     type: Mapped[CommunityType] = mapped_column(
-        SQLEnum(CommunityType, name="community_type"), nullable=False
+        SQLEnum(CommunityType, name="community_type"), nullable=False, index=True
     )
     category: Mapped[CommunityCategory] = mapped_column(
-        SQLEnum(CommunityCategory, name="community_category"), nullable=False
+        SQLEnum(CommunityCategory, name="community_category"), nullable=False, index=True
     )
     email: Mapped[str] = mapped_column(nullable=True, unique=False)
     recruitment_status: Mapped[CommunityRecruitmentStatus] = mapped_column(
         SQLEnum(CommunityRecruitmentStatus, name="community_recruitment_status"),
         nullable=False,
         default=CommunityRecruitmentStatus.closed,
+        index=True,
     )
-    verified: Mapped[bool] = mapped_column(nullable=False, default=False)
+    verified: Mapped[bool] = mapped_column(nullable=False, default=False, index=True)
     recruitment_link: Mapped[str] = mapped_column(nullable=True, unique=False)
     description: Mapped[str] = mapped_column(nullable=False)
-    established: Mapped[date] = mapped_column(Date, nullable=False)
-    head: Mapped[str] = mapped_column(ForeignKey("users.sub", ondelete="SET NULL"), nullable=True)
+    established: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    head: Mapped[str] = mapped_column(
+        ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, index=True
+    )
     telegram_url: Mapped[str] = mapped_column(nullable=True, unique=False)
     instagram_url: Mapped[str] = mapped_column(nullable=True, unique=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     head_user = relationship("User", back_populates="communities_led")
@@ -80,17 +83,20 @@ class CommunityPost(Base):
     __tablename__ = "community_posts"
     id: Mapped[BigInteger] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     community_id: Mapped[int] = mapped_column(
-        ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, unique=False
+        ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, unique=False, index=True
     )
     user_sub: Mapped[str] = mapped_column(
-        ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, unique=False
+        ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, unique=False, index=True
     )
     title: Mapped[str] = mapped_column(nullable=False, unique=False)
     description: Mapped[str] = mapped_column(nullable=False, unique=False)
     tag_id: Mapped[int] = mapped_column(
-        ForeignKey("community_post_tags.id", ondelete="SET NULL"), nullable=True, unique=False
+        ForeignKey("community_post_tags.id", ondelete="SET NULL"),
+        nullable=True,
+        unique=False,
+        index=True,
     )
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     from_community: Mapped[bool] = mapped_column(nullable=False, default=False)
 
@@ -119,19 +125,27 @@ class CommunityComment(Base):
     __tablename__ = "community_comments"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
     post_id: Mapped[int] = mapped_column(
-        ForeignKey("community_posts.id", ondelete="CASCADE"), nullable=False, unique=False
+        ForeignKey("community_posts.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=False,
+        index=True,
     )
     parent_id: Mapped[int] = mapped_column(
-        ForeignKey("community_comments.id", ondelete="CASCADE"), nullable=True, unique=False
+        ForeignKey("community_comments.id", ondelete="CASCADE"),
+        nullable=True,
+        unique=False,
+        index=True,
     )
     user_sub: Mapped[str] = mapped_column(
-        ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, unique=False
+        ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, unique=False, index=True
     )
     content: Mapped[str] = mapped_column(nullable=False, unique=False)
-    created_at: Mapped[DateTime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[DateTime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False, index=True
+    )
     updated_at: Mapped[DateTime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
-    deleted_at: Mapped[DateTime] = mapped_column(DateTime, nullable=True)
+    deleted_at: Mapped[DateTime] = mapped_column(DateTime, nullable=True, index=True)
 
     user = relationship("User")

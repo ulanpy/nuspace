@@ -1,8 +1,8 @@
-from datetime import date, datetime
+from datetime import date
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from sqlalchemy import func
+from sqlalchemy import and_, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
@@ -119,7 +119,7 @@ async def get_events(
     creator_sub = user[0].get("sub") if creator_sub == "me" else creator_sub
 
     if keyword:
-        meili_result = await meilisearch.get(
+        meili_result: dict = await meilisearch.get(
             request=request,
             storage_name=EntityType.community_events.value,
             keyword=keyword,
@@ -127,7 +127,7 @@ async def get_events(
             size=size,
             filters=None,
         )
-        event_ids = [item["id"] for item in meili_result["hits"]]
+        event_ids: List[int] = [item["id"] for item in meili_result["hits"]]
 
         if not event_ids:
             return schemas.ListEventResponse(events=[], total_pages=1)
@@ -149,57 +149,9 @@ async def get_events(
         filters.append(Event.creator_sub == creator_sub)
 
     # Handle time filtering with improved logic
-    now = datetime.utcnow()
-
     if time_filter:
-        # Use predefined time filters that properly handle ongoing events
-        if time_filter == schemas.TimeFilter.UPCOMING:
-            # Show events that haven't ended yet (upcoming + ongoing)
-            filters.append(Event.end_datetime > now)
-        elif time_filter == schemas.TimeFilter.TODAY:
-            # Show events that intersect with today AND haven't ended yet
-            today_start = datetime.combine(now.date(), datetime.min.time())
-            today_end = datetime.combine(now.date(), datetime.max.time())
-            filters.append(
-                (
-                    (Event.start_datetime >= today_start) & (Event.start_datetime <= today_end)
-                    | (Event.start_datetime < today_start) & (Event.end_datetime > today_start)
-                )
-                & (Event.end_datetime > now)  # Exclude events that have ended
-            )
-        elif time_filter == schemas.TimeFilter.WEEK:
-            # Show events that intersect with this week AND haven't ended yet
-            from datetime import timedelta
-
-            start_of_week = now - timedelta(days=now.weekday())
-            start_of_week = datetime.combine(start_of_week.date(), datetime.min.time())
-            end_of_week = start_of_week + timedelta(days=7)
-            filters.append(
-                (
-                    (Event.start_datetime >= start_of_week) & (Event.start_datetime < end_of_week)
-                    | (Event.start_datetime < start_of_week) & (Event.end_datetime > start_of_week)
-                )
-                & (Event.end_datetime > now)  # Exclude events that have ended
-            )
-        elif time_filter == schemas.TimeFilter.MONTH:
-            # Show events that intersect with this month AND haven't ended yet
-            start_of_month = datetime.combine(now.replace(day=1).date(), datetime.min.time())
-            if now.month == 12:
-                end_of_month = datetime.combine(
-                    now.replace(year=now.year + 1, month=1, day=1).date(), datetime.min.time()
-                )
-            else:
-                end_of_month = datetime.combine(
-                    now.replace(month=now.month + 1, day=1).date(), datetime.min.time()
-                )
-            filters.append(
-                (
-                    (Event.start_datetime >= start_of_month) & (Event.start_datetime < end_of_month)
-                    | (Event.start_datetime < start_of_month)
-                    & (Event.end_datetime > start_of_month)
-                )
-                & (Event.end_datetime > now)  # Exclude events that have ended
-            )
+        # Use predefined time filters from utils that properly handle ongoing events
+        filters.extend(utils.build_time_filter_expressions(time_filter=time_filter))
     else:
         # Legacy date range filtering (for backward compatibility)
         if start_date:
@@ -208,6 +160,8 @@ async def get_events(
             filters.append(func.date(Event.start_datetime) <= end_date)
 
     qb = QueryBuilder(session=db_session, model=Event)
+
+    # === FIRST SQL QUERY: GET ALL EVENTS, COMMUNITIES, COLLABORATORS ===
     events: List[Event] = (
         await qb.base()
         .filter(*filters)
@@ -217,44 +171,57 @@ async def get_events(
         .all()
     )
 
-    media_objs: List[Media] = (
-        await qb.blank(model=Media)
-        .base()
-        .filter(
-            Media.entity_id.in_([event.id for event in events]),
-            Media.entity_type == EntityType.community_events,
-            Media.media_format == MediaFormat.carousel,
-        )
-        .all()
-    )
+    event_ids: List[int] = [event.id for event in events]
+    community_ids: List[int] = [event.community_id for event in events if event.community_id]
 
-    # Get community media for all events
-    community_ids = [event.community_id for event in events if event.community_id]
-    community_media_objs: List[Media] = []
+    # Build OR conditions for media query
+    media_conditions = []
+
+    if event_ids:
+        media_conditions.append(
+            and_(
+                Media.entity_id.in_(event_ids),
+                Media.entity_type == EntityType.community_events,
+                Media.media_format == MediaFormat.carousel,
+            )
+        )
+
     if community_ids:
-        community_media_objs = (
-            await qb.blank(model=Media)
-            .base()
-            .filter(
+        media_conditions.append(
+            and_(
                 Media.entity_id.in_(community_ids),
                 Media.entity_type == EntityType.communities,
                 Media.media_format.in_([MediaFormat.profile, MediaFormat.banner]),
             )
-            .all()
         )
 
-    # Process ALL media (events + communities) in parallel with single batch operation
-    all_media_objects = media_objs + community_media_objs
+    # === SECOND SQL QUERY: GET ALL MEDIA FOR EVENTS AND COMMUNITIES ===
+    if media_conditions:
+        all_media_objs: List[Media] = (
+            await qb.blank(model=Media).base().filter(or_(*media_conditions)).all()
+        )
+    else:
+        all_media_objs: List[Media] = []
+
+    event_media_objs: List[Media] = [
+        media
+        for media in all_media_objs
+        if media.entity_type == EntityType.community_events and media.entity_id in event_ids
+    ]
+    community_media_objs: List[Media] = [
+        media
+        for media in all_media_objs
+        if media.entity_type == EntityType.communities and media.entity_id in community_ids
+    ]
 
     # Generate signed URLs for ALL media objects at once
-    if all_media_objects:
-        all_filenames = [media.name for media in all_media_objects]
+    if all_media_objs:
+        all_filenames: List[str] = [media.name for media in all_media_objs]
         all_url_data = await generate_batch_download_urls(request, all_filenames)
 
         # Create media-to-URL mapping
         media_to_url = {
-            media: url_data["signed_url"]
-            for media, url_data in zip(all_media_objects, all_url_data)
+            media: url_data["signed_url"] for media, url_data in zip(all_media_objs, all_url_data)
         }
     else:
         media_to_url = {}
@@ -263,7 +230,7 @@ async def get_events(
     from collections import defaultdict
 
     event_media_by_id = defaultdict(list)
-    for media in media_objs:
+    for media in event_media_objs:
         event_media_by_id[media.entity_id].append(media)
 
     # Pre-group community media by entity_id
@@ -274,14 +241,15 @@ async def get_events(
     if keyword:
         count = meili_result.get("estimatedTotalHits", 0)
     else:
+        # === THIRD SQL QUERY: GET COUNT OF EVENTS ===
         count: int = await qb.blank(model=Event).base(count=True).filter(*filters).count()
 
     # Build event responses without any additional async calls
     event_responses: List[schemas.EventResponse] = []
     for event in events:
         # Get event media using pre-grouped data and pre-generated URLs
-        event_media_objects = event_media_by_id.get(event.id, [])
-        event_media_responses = [
+        event_media_objects: List[Media] = event_media_by_id.get(event.id, [])
+        event_media_responses: List[MediaResponse] = [
             MediaResponse(
                 id=media.id,
                 url=media_to_url.get(media, ""),
@@ -295,7 +263,7 @@ async def get_events(
         ]
 
         # Get community media using pre-grouped data and pre-generated URLs
-        community_media_objects = (
+        community_media_objects: List[Media] = (
             community_media_by_id.get(event.community_id, []) if event.community_id else []
         )
         community_media_responses = [

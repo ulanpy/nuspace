@@ -1,4 +1,3 @@
-import asyncio
 from copy import deepcopy
 from datetime import datetime
 from typing import Annotated, List
@@ -19,6 +18,7 @@ from backend.core.database.models.user import User
 from backend.routes.campuscurrent.comments import cruds, schemas, utils
 from backend.routes.campuscurrent.comments import dependencies as deps
 from backend.routes.campuscurrent.comments.policy import CommentPolicy
+from backend.routes.google_bucket.utils import generate_batch_download_urls
 
 router = APIRouter(tags=["Community Posts Comments Routes"])
 
@@ -124,6 +124,7 @@ async def get(
         parent_ids=comment_ids,
     )
 
+    # —— Optimized media fetching and mapping (single SQL + single URL batch) ——
     media_objs: List[Media] = (
         await qb.blank(model=Media)
         .base()
@@ -134,27 +135,48 @@ async def get(
         .all()
     )
 
-    media_results: List[List[MediaResponse]] = await asyncio.gather(
-        *[
-            response_builder.build_media_responses(
-                request=request,
-                media_objects=[media for media in media_objs if media.entity_id == comment.id],
-            )
-            for comment in comments
-        ]
-    )
+    # Generate all signed URLs once
+    if media_objs:
+        filenames = [m.name for m in media_objs]
+        url_data_list = await generate_batch_download_urls(request, filenames)
+        media_to_url = {m: u["signed_url"] for m, u in zip(media_objs, url_data_list)}
+    else:
+        media_to_url = {}
 
-    comments_response: List[schemas.ResponseCommunityCommentSchema] = [
-        utils.build_schema(
-            schemas.ResponseCommunityCommentSchema,
-            schemas.ResponseCommunityCommentSchema.model_validate(comment),
-            total_replies=replies_counter.get(comment.id, 0),
-            media=media,
-            user=comment.user,
-            permissions=utils.get_comment_permissions(comment, user),
+    # Group media by comment id for O(1) lookup
+    from collections import defaultdict
+
+    media_by_comment_id = defaultdict(list)
+    for m in media_objs:
+        media_by_comment_id[m.entity_id].append(m)
+
+    # Build responses using pre-grouped media and pre-generated URLs
+    comments_response: List[schemas.ResponseCommunityCommentSchema] = []
+    for comment in comments:
+        comment_media_objects: List[Media] = media_by_comment_id.get(comment.id, [])
+        comment_media_responses: List[MediaResponse] = [
+            MediaResponse(
+                id=m.id,
+                url=media_to_url.get(m, ""),
+                mime_type=m.mime_type,
+                entity_type=m.entity_type,
+                entity_id=m.entity_id,
+                media_format=m.media_format,
+                media_order=m.media_order,
+            )
+            for m in comment_media_objects
+        ]
+
+        comments_response.append(
+            utils.build_schema(
+                schemas.ResponseCommunityCommentSchema,
+                schemas.ResponseCommunityCommentSchema.model_validate(comment),
+                total_replies=replies_counter.get(comment.id, 0),
+                media=comment_media_responses,
+                user=comment.user,
+                permissions=utils.get_comment_permissions(comment, user),
+            )
         )
-        for comment, media in zip(comments, media_results)
-    ]
 
     return schemas.ListCommunityCommentResponseSchema(
         comments=comments_response,

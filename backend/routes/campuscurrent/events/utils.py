@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from typing import Tuple
 
 from backend.common.schemas import ResourcePermissions
@@ -114,3 +115,67 @@ class EventEnrichmentService:
             return EventStatus.approved
         else:
             return EventStatus.pending
+
+
+def build_time_filter_expressions(time_filter: schemas.TimeFilter, now: datetime | None = None):
+    """
+    Build SQLAlchemy filter expressions for event time filtering.
+
+    Args:
+        time_filter: One of schemas.TimeFilter values
+        now: Optional fixed current time (UTC). If None, uses datetime.utcnow().
+
+    Returns:
+        List of SQLAlchemy boolean expressions to be applied in queries.
+    """
+    current_time = now if now is not None else datetime.utcnow()
+    expressions = []
+
+    if time_filter == schemas.TimeFilter.UPCOMING:
+        # Show events that haven't ended yet (upcoming + ongoing)
+        expressions.append(Event.end_datetime > current_time)
+    elif time_filter == schemas.TimeFilter.TODAY:
+        # Show events that intersect with today AND haven't ended yet
+        today_start = datetime.combine(current_time.date(), datetime.min.time())
+        today_end = datetime.combine(current_time.date(), datetime.max.time())
+        expressions.append(
+            (
+                (Event.start_datetime >= today_start) & (Event.start_datetime <= today_end)
+                | (Event.start_datetime < today_start) & (Event.end_datetime > today_start)
+            )
+            & (Event.end_datetime > current_time)
+        )
+    elif time_filter == schemas.TimeFilter.WEEK:
+        # Show events that intersect with this week AND haven't ended yet
+        start_of_week = current_time - timedelta(days=current_time.weekday())
+        start_of_week = datetime.combine(start_of_week.date(), datetime.min.time())
+        end_of_week = start_of_week + timedelta(days=7)
+        expressions.append(
+            (
+                (Event.start_datetime >= start_of_week) & (Event.start_datetime < end_of_week)
+                | (Event.start_datetime < start_of_week) & (Event.end_datetime > start_of_week)
+            )
+            & (Event.end_datetime > current_time)
+        )
+    elif time_filter == schemas.TimeFilter.MONTH:
+        # Show events that intersect with this month AND haven't ended yet
+        start_of_month = datetime.combine(current_time.replace(day=1).date(), datetime.min.time())
+        if current_time.month == 12:
+            end_of_month = datetime.combine(
+                current_time.replace(year=current_time.year + 1, month=1, day=1).date(),
+                datetime.min.time(),
+            )
+        else:
+            end_of_month = datetime.combine(
+                current_time.replace(month=current_time.month + 1, day=1).date(),
+                datetime.min.time(),
+            )
+        expressions.append(
+            (
+                (Event.start_datetime >= start_of_month) & (Event.start_datetime < end_of_month)
+                | (Event.start_datetime < start_of_month) & (Event.end_datetime > start_of_month)
+            )
+            & (Event.end_datetime > current_time)
+        )
+
+    return expressions
