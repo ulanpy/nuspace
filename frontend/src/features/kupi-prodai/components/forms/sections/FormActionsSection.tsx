@@ -1,8 +1,6 @@
 import { Button } from "@/components/atoms/button";
 import { Progress } from "@/components/atoms/progress";
-import { motion } from "framer-motion";
 import { Plus, Save, Trash2, RefreshCw } from "lucide-react";
-import { sectionVariants } from "@/utils/animationVariants";
 
 interface FormActionsSectionProps {
   mode: 'create' | 'edit';
@@ -27,7 +25,7 @@ export function FormActionsSection({
   const finalSubmitText = submitText || defaultSubmitText;
 
   return (
-    <motion.div variants={sectionVariants}>
+    <div>
       {/* Submit Button */}
       <Button
         type="submit"
@@ -83,6 +81,6 @@ export function FormActionsSection({
           )}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

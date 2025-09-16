@@ -1,10 +1,8 @@
-import { motion } from "framer-motion";
 import { ProductNameField } from "@/features/kupi-prodai/components/forms/fields/ProductNameField";
 import { ProductDescriptionField } from "@/features/kupi-prodai/components/forms/fields/ProductDescriptionField";
 import { ProductPriceField } from "@/features/kupi-prodai/components/forms/fields/ProductPriceField";
 import { ProductCategoryField } from "@/features/kupi-prodai/components/forms/fields/ProductCategoryField";
 import { ProductConditionField } from "@/features/kupi-prodai/components/forms/fields/ProductConditionField";
-import { containerVariants, fieldVariants } from "@/utils/animationVariants";
 
 interface BasicInfoSectionProps {
   data: {
@@ -43,12 +41,7 @@ export function BasicInfoSection({
   };
 
   return (
-    <motion.div 
-      className="space-y-6"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
+    <div className="space-y-6">
       {/* Name */}
       <ProductNameField
         value={data.name}
@@ -64,10 +57,7 @@ export function BasicInfoSection({
       />
       
       {/* Price, Category, and Condition */}
-      <motion.div 
-        className="grid grid-cols-1 sm:grid-cols-3 gap-4"
-        variants={fieldVariants}
-      >
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <ProductPriceField
           value={data.price}
           onChange={handleFieldChange('price')}
@@ -86,7 +76,7 @@ export function BasicInfoSection({
           onChange={handleSelectChange('condition')}
           conditions={conditions}
         />
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

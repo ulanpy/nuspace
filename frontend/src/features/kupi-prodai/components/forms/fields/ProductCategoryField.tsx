@@ -1,5 +1,4 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
-import { motion } from "framer-motion";
 import { Zap } from "lucide-react";
 import { AnimatedFormField } from "@/components/organisms/animations/AnimatedFormField";
 import { useFormAnimations } from "@/hooks/useFormAnimations";
@@ -34,13 +33,13 @@ export function ProductCategoryField({
         onBlur={handleFieldBlur}
         showFocusIndicator={false}
       >
-      <motion.div whileHover={{ scale: 1.01 }}>
+      <div>
         <Select 
           value={value} 
           onValueChange={handleValueChange}
         >
           <SelectTrigger 
-            className="transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="transition-colors duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
             onFocus={() => handleFieldFocus('category')}
             onBlur={handleFieldBlur}
           >
@@ -56,7 +55,7 @@ export function ProductCategoryField({
         </Select>
         {/* Hidden input to ensure category is included in FormData */}
         <input type="hidden" name="category" value={value} />
-      </motion.div>
+      </div>
     </AnimatedFormField>
     </div>
   );

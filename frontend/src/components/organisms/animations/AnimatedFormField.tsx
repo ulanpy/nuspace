@@ -25,41 +25,18 @@ export function AnimatedFormField({
 }: AnimatedFormFieldProps) {
   return (
     <div className={`space-y-2 relative ${className}`}>
-      <motion.div
-        className="flex items-center gap-2"
-        animate={{ x: isFocused ? [0, 2, 0] : 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <motion.div
-          animate={{ 
-            scale: isFocused ? 1.1 : 1,
-            rotate: isFocused ? [0, 10, 0] : 0
-          }}
-          transition={{ duration: 0.3 }}
-        >
+      <div className="flex items-center gap-2">
+        <div className="transition-colors duration-200">
           {icon}
-        </motion.div>
+        </div>
         <Label htmlFor={fieldName} className="text-sm font-medium text-foreground">
           {label}
         </Label>
-      </motion.div>
+      </div>
       
-      <motion.div
-        whileFocus={{ scale: 1.02 }}
-        className="relative"
-      >
+      <div className="relative">
         {children}
-        
-        {/* Animated bottom border */}
-        {showFocusIndicator && (
-          <motion.div
-            className={`absolute bottom-0 left-0 h-0.5 bg-${focusColor}`}
-            initial={{ width: 0 }}
-            animate={{ width: isFocused ? '100%' : 0 }}
-            transition={{ duration: 0.3 }}
-          />
-        )}
-      </motion.div>
+      </div>
     </div>
   );
 }
