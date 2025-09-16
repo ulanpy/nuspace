@@ -1,6 +1,7 @@
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import case
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -186,7 +187,6 @@ async def get_communities(
 
     if keyword:
         # Preserve Meilisearch ranking order by using a custom order
-        from sqlalchemy import case
 
         order_clause = case(
             *[

@@ -1,6 +1,7 @@
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,7 +31,7 @@ from backend.routes.campuscurrent.posts.schemas import (
 )
 from backend.routes.campuscurrent.posts.utils import get_post_permissions
 from backend.routes.campuscurrent.tags.schemas import ShortCommunityTag
-from backend.routes.google_bucket.utils import batch_delete_blobs
+from backend.routes.google_bucket.utils import batch_delete_blobs, generate_batch_download_urls
 
 router = APIRouter(tags=["Community Posts"])
 
@@ -186,57 +187,95 @@ async def get_posts(
             .all()
         )
 
-    media_objs: List[Media] = (
-        await qb.blank(model=Media)
-        .base()
-        .filter(
-            Media.entity_id.in_([post.id for post in posts]),
-            Media.entity_type == EntityType.community_posts,
-            Media.media_format == MediaFormat.carousel,  # Assuming carousel for posts
+    # —— Optimized media fetching and mapping (single SQL + single URL batch) ——
+    post_ids: List[int] = [post.id for post in posts]
+    community_ids: List[int] = [post.community_id for post in posts if post.community_id]
+
+    media_conditions = []
+    if post_ids:
+        media_conditions.append(
+            and_(
+                Media.entity_type == EntityType.community_posts,
+                Media.entity_id.in_(post_ids),
+                Media.media_format == MediaFormat.carousel,
+            )
         )
-        .all()
-    )
-
-    media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-        request=request, media_objects=media_objs, resources=posts
-    )
-
-    # Get community media for all posts
-    community_ids = [post.community_id for post in posts if post.community_id]
-    community_media_objs: List[Media] = []
     if community_ids:
-        community_media_objs = (
-            await qb.blank(model=Media)
-            .base()
-            .filter(
-                Media.entity_id.in_(community_ids),
+        media_conditions.append(
+            and_(
                 Media.entity_type == EntityType.communities,
+                Media.entity_id.in_(community_ids),
                 Media.media_format.in_([MediaFormat.profile, MediaFormat.banner]),
             )
-            .all()
         )
 
-    # Get comment counts for each post using a dictionary
+    if media_conditions:
+        all_media_objs: List[Media] = (
+            await qb.blank(model=Media).base().filter(or_(*media_conditions)).all()
+        )
+    else:
+        all_media_objs = []
+
+    # Generate signed URLs once for all media
+    if all_media_objs:
+        filenames = [m.name for m in all_media_objs]
+        url_data_list = await generate_batch_download_urls(request, filenames)
+        media_to_url = {m: u["signed_url"] for m, u in zip(all_media_objs, url_data_list)}
+    else:
+        media_to_url = {}
+
+    # Group media by resource id for O(1) lookup
+    from collections import defaultdict
+
+    post_media_by_id = defaultdict(list)
+    community_media_by_id = defaultdict(list)
+    for m in all_media_objs:
+        if m.entity_type == EntityType.community_posts:
+            post_media_by_id[m.entity_id].append(m)
+        elif m.entity_type == EntityType.communities:
+            community_media_by_id[m.entity_id].append(m)
+
+    # Get comment counts once
+    comments_count: dict = await cruds.get_comment_counts(db_session, posts)
+
+    # Build responses using pre-grouped media and pre-generated URLs
     post_responses: List[CommunityPostResponse] = []
-    for post, media in zip(posts, media_results):
-        # Get community media for this specific event
-        community_media = (
-            [m for m in community_media_objs if m.entity_id == post.community_id]
-            if post.community_id
-            else []
-        )
+    for post in posts:
+        post_media_objects: List[Media] = post_media_by_id.get(post.id, [])
+        post_media_responses: List[MediaResponse] = [
+            MediaResponse(
+                id=m.id,
+                url=media_to_url.get(m, ""),
+                mime_type=m.mime_type,
+                entity_type=m.entity_type,
+                entity_id=m.entity_id,
+                media_format=m.media_format,
+                media_order=m.media_order,
+            )
+            for m in post_media_objects
+        ]
 
-        community_media_responses = await response_builder.build_media_responses(
-            request=request, media_objects=community_media
+        community_media_objects: List[Media] = (
+            community_media_by_id.get(post.community_id, []) if post.community_id else []
         )
-
-        comments_count: dict = await cruds.get_comment_counts(db_session, posts)
+        community_media_responses: List[MediaResponse] = [
+            MediaResponse(
+                id=m.id,
+                url=media_to_url.get(m, ""),
+                mime_type=m.mime_type,
+                entity_type=m.entity_type,
+                entity_id=m.entity_id,
+                media_format=m.media_format,
+                media_order=m.media_order,
+            )
+            for m in community_media_objects
+        ]
 
         post_responses.append(
             response_builder.build_schema(
                 CommunityPostResponse,
                 CommunityPostResponse.model_validate(post),
-                media=media,
+                media=post_media_responses,
                 community=(
                     response_builder.build_schema(
                         ShortCommunityResponse,

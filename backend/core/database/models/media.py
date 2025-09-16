@@ -22,11 +22,11 @@ class Media(Base):
     name: Mapped[str] = mapped_column(nullable=False, index=True, unique=True)
     mime_type: Mapped[str] = mapped_column(nullable=False, unique=False)
     entity_type: Mapped[EntityType] = mapped_column(
-        SQLEnum(EntityType, name="entity_type"), nullable=False
+        SQLEnum(EntityType, name="entity_type"), nullable=False, index=True
     )
     entity_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True, unique=False)
     media_format: Mapped[MediaFormat] = mapped_column(
-        SQLEnum(MediaFormat, name="media_format"), nullable=False
+        SQLEnum(MediaFormat, name="media_format"), nullable=False, index=True
     )
     media_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
