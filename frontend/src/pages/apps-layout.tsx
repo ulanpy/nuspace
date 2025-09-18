@@ -53,6 +53,7 @@ export default function AppsLayout() {
           left={!isMiniApp ? <BackButton label={location.pathname === ROUTES.HOME ? "Close" : "Back"} /> : undefined}
           right={!isMiniApp ? (
             <div className="flex gap-2">
+              <ThemeToggle />
               <LoginButton />
             </div>
           ) : undefined}

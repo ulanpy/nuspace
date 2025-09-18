@@ -22,6 +22,11 @@ export const EVENT = "event";
 export const COMMUNITY = "community";
 export const COMMUNITIES = "communities";
 export const CREATE = "create";
+export const SGOTINISH = "sgotinish";
+export const STUDENT = "student";
+export const SG = "sg";
+export const TICKET = "ticket";
+
 
 // --- Helper to build paths ---
 const buildPath = (...args: string[]) => `/${args.filter(Boolean).join("/")}`;
@@ -94,6 +99,24 @@ export const ROUTES = {
     DORM_EATS: {
       ROOT: buildPath(APPS, DORM_EATS),
     },
+    SGOTINISH: {
+      ROOT: buildPath(APPS, SGOTINISH),
+      STUDENT: {
+        ROOT: buildPath(APPS, SGOTINISH, STUDENT),
+        CREATE: buildPath(APPS, SGOTINISH, STUDENT, CREATE),
+        TICKET: {
+          DETAIL: buildPath(APPS, SGOTINISH, STUDENT, TICKET, ":id"),
+          DETAIL_FN: (id: string) => buildPath(APPS, SGOTINISH, STUDENT, TICKET, id),
+        },
+      },
+      SG: {
+        ROOT: buildPath(APPS, SGOTINISH, SG),
+        TICKET: {
+          DETAIL: buildPath(APPS, SGOTINISH, SG, TICKET, ":id"),
+          DETAIL_FN: (id: string) => buildPath(APPS, SGOTINISH, SG, TICKET, id),
+        },
+      },
+    }
   },
 };
 
@@ -114,6 +137,12 @@ const LAZY_ROUTES_REL = {
     ABOUT: ABOUT,
     GRADE_STATISTICS: GRADE_STATISTICS,
     DORM_EATS: DORM_EATS,
+    SGOTINISH: SGOTINISH,
+    SGOTINISH_STUDENT_ROOT: `${SGOTINISH}/${STUDENT}`,
+    SGOTINISH_STUDENT_CREATE: `${SGOTINISH}/${STUDENT}/${CREATE}`,
+    SGOTINISH_STUDENT_TICKET_DETAIL: `${SGOTINISH}/${STUDENT}/${TICKET}/:id`,
+    SGOTINISH_SG_ROOT: `${SGOTINISH}/${SG}`,
+    SGOTINISH_SG_TICKET_DETAIL: `${SGOTINISH}/${SG}/${TICKET}/:id`,
     CAMPUS_CURRENT_ROOT: CAMPUS_CURRENT,
     CAMPUS_CURRENT_EVENTS: `${CAMPUS_CURRENT}/${EVENTS}`,
     CAMPUS_CURRENT_EVENT_DETAIL: `${CAMPUS_CURRENT}/${EVENT}/:id`,
@@ -157,6 +186,30 @@ export const LazyRoutes = {
       {
         path: LAZY_ROUTES_REL.APPS.EMERGENCY,
         Component: withSuspense(lazy(() => import("@/pages/apps/emergency"))),
+      },
+      {
+        path: LAZY_ROUTES_REL.APPS.SGOTINISH,
+        Component: withSuspense(lazy(() => import("@/features/sgotinish/pages/SgotinishPage"))),
+      },
+      {
+        path: LAZY_ROUTES_REL.APPS.SGOTINISH_STUDENT_ROOT,
+        Component: withSuspense(lazy(() => import("@/features/sgotinish/components/StudentDashboard"))),
+      },
+      {
+        path: LAZY_ROUTES_REL.APPS.SGOTINISH_STUDENT_CREATE,
+        Component: withSuspense(lazy(() => import("@/features/sgotinish/components/CreateTicket"))),
+      },
+      {
+        path: LAZY_ROUTES_REL.APPS.SGOTINISH_STUDENT_TICKET_DETAIL,
+        Component: withSuspense(lazy(() => import("@/features/sgotinish/components/TicketDetail"))),
+      },
+      {
+        path: LAZY_ROUTES_REL.APPS.SGOTINISH_SG_ROOT,
+        Component: withSuspense(lazy(() => import("@/features/sgotinish/components/SGDashboard"))),
+      },
+      {
+        path: LAZY_ROUTES_REL.APPS.SGOTINISH_SG_TICKET_DETAIL,
+        Component: withSuspense(lazy(() => import("@/features/sgotinish/components/TicketDetail"))),
       },
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_POSTS,
