@@ -21,6 +21,7 @@ import { useMemo } from "react";
 import { useEvents } from "@/features/campuscurrent/events/hooks/useEvents";
 import { Link } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
+import { ThemeToggle } from "@/components/molecules/theme-toggle";
 
 // Static slides reused below when composing the final carousel list
 const staticSlides = [
@@ -126,8 +127,9 @@ export default function HomePage() {
     <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4 pb-[calc(56px+env(safe-area-inset-bottom))]">
       {/* Header with main navigation */}
       <Header 
-        right={!isMiniApp ? (
+        right={!isMiniApp? (
           <div className="flex gap-2">
+            <ThemeToggle />
             <LoginButton />
           </div>
         ) : undefined}
