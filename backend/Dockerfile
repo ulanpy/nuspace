@@ -29,6 +29,7 @@ RUN apk -u add \
 
 
 COPY backend/pyproject.toml backend/poetry.lock ./
+COPY backend/start.sh /
 RUN poetry install --no-root --no-cache
 
 COPY .. .
