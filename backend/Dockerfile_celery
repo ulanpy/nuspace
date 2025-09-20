@@ -19,10 +19,14 @@ RUN apk -u add \
     build-base \
     python3-dev \
     libpq-dev \
+<<<<<<< HEAD
     gcc \
     g++ \
     musl-dev \
     linux-headers \
+=======
+    build-base \
+>>>>>>> b334041 (cleanup: removed unnecessary command from celery Dockerfile)
     && pip install --no-cache-dir poetry
 
 # Copy dependency files first for better layer caching
