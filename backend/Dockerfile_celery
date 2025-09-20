@@ -19,8 +19,7 @@ RUN apk -u add \
     python3-dev \
     libpq-dev \
     build-base \
-    && pip install --no-cache-dir poetry \
-    && rm -rf /var/lib/apt/lists/*
+    && pip install --no-cache-dir poetry
 
 # Copy dependency files first for better layer caching
 COPY backend/pyproject.toml backend/poetry.lock ./
