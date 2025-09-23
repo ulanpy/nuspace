@@ -14,15 +14,44 @@ from sqlalchemy.sql.elements import BinaryExpression, ColumnElement
 
 class QueryBuilder:
     """
-    A reusable query builder and repository for SQLAlchemy AsyncSession that supports:
-    - Filtering
-    - Joining
-    - Eager loading
-    - Ordering
-    - Pagination
-    - Counting
-    - Fetching single or multiple results
-    - Adding, updating, and deleting records
+    A reusable query builder and repository for SQLAlchemy AsyncSession.
+
+    This class provides a fluent, chainable interface to build and execute
+    SQLAlchemy queries, simplifying common CRUD operations and reducing
+    boilerplate code. It is designed to handle straightforward queries involving
+    filtering, joining, ordering, and pagination on a single primary model.
+
+    Core Concerns Handled:
+    - **Filtering:** Dynamically add WHERE clauses.
+    - **Joins:** Simple INNER JOINs based on relationships.
+    - **Eager Loading:** Efficiently load related entities to prevent N+1 problems.
+    - **Ordering:** Apply single or multiple ORDER BY clauses.
+    - **Pagination:** Simple offset/limit based pagination.
+    - **Attribute Selection:** Select specific columns instead of the whole model.
+    - **Soft Deletes:** Automatically filters for records that are not soft-deleted if configured.
+    - **Mutations:** Provides simple methods for adding, updating, and deleting records.
+
+    When to Use:
+    Use this builder for standard, everyday queries that fit the common patterns
+    listed above.
+
+    When NOT to Use (use raw SQLAlchemy instead):
+    - Queries requiring complex aggregations (GROUP BY).
+    - Queries needing outer joins (LEFT/RIGHT JOIN).
+    - Subqueries.
+    - Window functions or other advanced SQL features.
+
+    @example
+        #
+        # >>> qb = QueryBuilder(db_session, User)
+        # >>> users = await (
+        # ...     qb.base()
+        # ...     .filter(User.status == "active", User.is_verified == True)
+        # ...     .eager(User.profile)
+        # ...     .order(User.created_at.desc())
+        # ...     .paginate(size=10, page=1)
+        # ...     .all()
+        # ... )
     """
 
     def __init__(
@@ -45,46 +74,106 @@ class QueryBuilder:
         self._is_count: bool = False
         self._selected_entities: Optional[List[Any]] = None
         self._distinct: bool = False
+        self._group_by: List[ColumnElement] = []
 
     # —— READ QUERIES —— #
     def base(self, count: bool = False) -> "QueryBuilder":
-        """Initialize select statement; use count=True for count query"""
+        """
+        Initializes a new select statement.
+
+        This is the starting point for any read query.
+
+        @param count - If True, initializes a `COUNT(*)` query instead of a SELECT.
+        """
         self._is_count = count
         return self
 
     def filter(self, *conditions: Optional[ColumnElement]) -> "QueryBuilder":
-        """Add WHERE clauses"""
+        """
+        Adds one or more WHERE clauses to the query, joined by AND.
+
+        @param conditions - A list of SQLAlchemy column conditions.
+        @example
+            # .filter(User.name == "John", User.age > 30)
+        """
         for cond in conditions:
             if cond is not None:
                 self._filters.append(cond)
         return self
 
     def join(self, *targets: Optional[DeclarativeBase]) -> "QueryBuilder":
-        """Add JOINs"""
+        """
+        Adds an INNER JOIN to the query.
+
+        The join condition is inferred by SQLAlchemy from the model relationships.
+
+        @param targets - The relationship attribute to join on.
+        @example
+            # .join(User.profile)
+        """
         for t in targets:
             if t is not None:
                 self._joins.append(t)
         return self
 
     def eager(self, *relationships: Optional[InstrumentedAttribute]) -> "QueryBuilder":
-        """Add eager-load options (selectinload)"""
+        """
+        Adds a `selectinload` option to eagerly load a relationship.
+
+        This helps prevent the N+1 query problem by loading related objects
+        in the same query.
+
+        @param relationships - The relationship attributes to load.
+        @example
+            # .eager(Ticket.author, Ticket.conversations)
+        """
         for rel in relationships:
             if rel is not None:
                 self._options.append(selectinload(rel))
         return self
 
+    def option(self, *opts: Any) -> "QueryBuilder":
+        """Adds an arbitrary loader option to the query (e.g., for chained eager loads)."""
+        for opt in opts:
+            if opt is not None:
+                self._options.append(opt)
+        return self
+
     def order(self, *clauses: Optional[ColumnElement]) -> "QueryBuilder":
-        """Add ORDER BY clauses"""
+        """
+        Adds one or more ORDER BY clauses to the query.
+
+        @param clauses - A list of SQLAlchemy columns with ordering (e.g., .asc(), .desc()).
+        @example
+            # .order(User.created_at.desc(), User.name.asc())
+        """
         for c in clauses:
             if c is not None:
                 self._order_by.append(c)
         return self
 
+    def group_by(self, *clauses: Optional[ColumnElement]) -> "QueryBuilder":
+        """
+        Adds one or more GROUP BY clauses to the query.
+
+        @param clauses - A list of SQLAlchemy columns to group by.
+        @example
+            # .group_by(User.status)
+        """
+        for c in clauses:
+            if c is not None:
+                self._group_by.append(c)
+        return self
+
     def attributes(self, *entities: Any) -> "QueryBuilder":
         """
-        Specify specific model attributes, columns, or other selectable entities.
-        Calling with no arguments clears any specific selection, reverting to selecting
-        the full model.
+        Selects specific model attributes or columns instead of the full model.
+
+        If called with no arguments, it reverts to selecting the full model.
+
+        @param entities - The columns or attributes to select.
+        @example
+            # .attributes(User.id, User.email)
         """
         if not entities:
             self._selected_entities = None
@@ -103,7 +192,12 @@ class QueryBuilder:
         return self
 
     def paginate(self, size: Optional[int], page: Optional[int]) -> "QueryBuilder":
-        """Set pagination parameters"""
+        """
+        Applies pagination (LIMIT/OFFSET) to the query.
+
+        @param size - The number of items per page.
+        @param page - The page number to retrieve.
+        """
         self._size = size
         self._page = page
         return self
@@ -111,14 +205,14 @@ class QueryBuilder:
     async def all(self) -> List[Any]:
         """
         Execute and return list of results.
-        - If multiple entities were selected via .attributes() (e.g.,
-          .attributes(User.id, User.name)), returns List[sqlalchemy.engine.Row].
-        - If a single entity was selected via .attributes() (e.g.,
-          .attributes(User.id) or .attributes(User)), or if .attributes() was not
-          used (default, selecting the full model), returns a list of those items
-          directly (e.g., List[int], List[User]).
-        - If query was set for count (e.g. via .base(count=True)), returns a list
-          containing the count [count_value].
+
+        - If multiple entities were selected via `.attributes()` (e.g.,
+          `.attributes(User.id, User.name)`), returns a List of `sqlalchemy.engine.Row`.
+        - If a single entity was selected via `.attributes()` (e.g.,
+          `.attributes(User.id)`), or if no attributes were specified (default),
+          returns a direct list of those items (e.g., `List[int]`, `List[User]`).
+        - If the query was for a count (`.base(count=True)`), returns a list
+          containing a single number: `[count_value]`.
         """
         stmt = self._build_select()
         if not self._is_count and self._size is not None:
@@ -145,16 +239,15 @@ class QueryBuilder:
 
     async def first(self) -> Optional[Any]:
         """
-        Execute and return the first result.
-        The type of the returned item depends on what was selected and how .all()
-        processes it. It could be a model instance, a sqlalchemy.engine.Row, a
-        single attribute value, or the count.
+        Executes the query and returns the first result, or None if no result is found.
         """
         results = await self.all()
         return results[0] if results else None
 
     async def count(self) -> int:
-        """Execute a count query and return the total count"""
+        """
+        Executes the query as a `COUNT` and returns the total number of rows.
+        """
         self._is_count = True
         stmt = self._build_select()
         result = await self.session.execute(stmt)
@@ -187,6 +280,9 @@ class QueryBuilder:
             for opt in self._options:
                 stmt = stmt.options(opt)
 
+        for g in self._group_by:
+            stmt = stmt.group_by(g)
+
         for o in self._order_by:
             stmt = stmt.order_by(o)
         return stmt
@@ -198,7 +294,11 @@ class QueryBuilder:
         preload: Optional[List[InstrumentedAttribute]] = None,
     ) -> DeclarativeBase:
         """
-        Add a new record and optionally preload relationships.
+        Adds a new record to the database from a Pydantic model.
+
+        @param data - The Pydantic model instance containing the data.
+        @param preload - A list of relationships to eagerly load on the new instance.
+        @return The newly created SQLAlchemy model instance.
         """
         instance = self.model(**data.model_dump())
         self.session.add(instance)
@@ -214,6 +314,15 @@ class QueryBuilder:
             instance = result.scalars().first()
         return instance
 
+    async def add_orm_list(self, instances: List[DeclarativeBase]):
+        """
+        Adds multiple new records to the database in a single transaction.
+
+        @param instances - A list of SQLAlchemy model instances to add.
+        """
+        self.session.add_all(instances)
+        await self.session.commit()
+
     async def update(
         self,
         instance: DeclarativeBase,
@@ -222,7 +331,13 @@ class QueryBuilder:
         preload: Optional[List[RelationshipProperty]] = None,
     ) -> DeclarativeBase:
         """
-        Update an existing record with fields from a Pydantic model.
+        Updates an existing record with fields from a Pydantic model.
+
+        @param instance - The SQLAlchemy model instance to update.
+        @param update_data - The Pydantic model with updated values.
+        @param exclude_unset - If True, only fields explicitly set in the model are updated.
+        @param preload - A list of relationships to eagerly load on the updated instance.
+        @return The updated SQLAlchemy model instance.
         """
         data_dict = update_data.model_dump(exclude_unset=exclude_unset)
         for field, val in data_dict.items():
@@ -245,7 +360,10 @@ class QueryBuilder:
         target: Union[DeclarativeBase, List[DeclarativeBase]],
     ) -> bool:
         """
-        Delete one or multiple records.
+        Deletes one or more records from the database.
+
+        @param target - A single model instance or a list of instances to delete.
+        @return True if deletion was successful, False otherwise.
         """
         try:
             if isinstance(target, list):
@@ -261,8 +379,23 @@ class QueryBuilder:
             return False
 
     async def conditional_delete(self, conditions: Optional[BinaryExpression]):
+        """
+        Deletes records that match a specific condition.
+
+        @param conditions - A SQLAlchemy condition to select rows for deletion.
+        @example
+            # .conditional_delete(User.status == "inactive")
+        """
         await self.session.execute(delete(self.model).where(conditions))
         await self.session.commit()
 
     def blank(self, model: Optional[Type[DeclarativeBase]] = None) -> "QueryBuilder":
+        """
+        Creates a new, empty QueryBuilder instance with the same session.
+
+        This is useful for creating a fresh query (e.g., for a count) without
+        the filters and options of the current instance.
+
+        @param model - Optionally, the new builder can be for a different model.
+        """
         return QueryBuilder(self.session, model or self.model)

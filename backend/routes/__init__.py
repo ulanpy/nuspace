@@ -2,6 +2,7 @@ from typing import List
 
 from fastapi import APIRouter
 
+from backend.routes.bot import routes
 from backend.routes.bot.bot import web_router
 
 from .auth import auth
@@ -17,7 +18,9 @@ from .kupiprodai import product
 from .notification import notification
 from .review import reply, review
 from .search import search
-
+from .sgotinish.tickets import tickets, delegation
+from .sgotinish.conversations import conversations
+from .sgotinish.messages import messages  
 # Import all routers from the routes directory
 routers: List[APIRouter] = [
     auth.router,
@@ -35,4 +38,8 @@ routers: List[APIRouter] = [
     reply.router,
     grades.router,
     notification.router,
+    tickets.router,
+    conversations.router,
+    messages.router,
+    delegation.router,
 ]
