@@ -28,5 +28,6 @@ COPY .. .
 
 COPY backend/start.sh /
 RUN chmod +x /start.sh
+RUN apk add --no-cache bash
 # Run the script to decide the server behavior based on IS_DEBUG
 CMD ["/start.sh"]

@@ -36,6 +36,7 @@ class AppTokenManager:
             "communities": [community.id for community in headed_communities],
             "exp": datetime.now(UTC) + self.token_expiry,
             "tg_id": tg_id,
+            "department_id": user.department_id,
         }
 
         token = jwt.encode(claims, self.secret_key, algorithm="HS256")
