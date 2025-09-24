@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from enum import Enum
 from typing import List, Optional
 
@@ -203,6 +203,35 @@ class EventResponse(BaseEventSchema):
 
     class Config:
         from_attributes = True
+
+
+class EventFilter(BaseModel):
+    """Filter model for event queries with pagination and filtering options."""
+
+    size: int = Field(default=20, ge=1, le=100, description="Number of events per page")
+    page: int = Field(default=1, ge=1, description="Page number")
+    registration_policy: Optional[RegistrationPolicy] = Field(
+        default=None, description="Filter by event registration policy"
+    )
+    event_scope: Optional[EventScope] = Field(default=None, description="Filter by event scope")
+    event_type: Optional[EventType] = Field(default=None, description="Filter by event type")
+    event_status: Optional[EventStatus] = Field(default=None, description="Filter by event status")
+    community_id: Optional[int] = Field(default=None, description="Filter by specific community")
+    time_filter: Optional[TimeFilter] = Field(
+        default=None, description="Predefined time filter: upcoming, today, week, month"
+    )
+    start_date: Optional[date] = Field(
+        default=None, description="Start date for filtering events (format: YYYY-MM-DD)"
+    )
+    end_date: Optional[date] = Field(
+        default=None, description="End date for filtering events (format: YYYY-MM-DD)"
+    )
+    creator_sub: Optional[str] = Field(
+        default=None, description="Filter by event creator. Use 'me' for current user's events"
+    )
+    keyword: Optional[str] = Field(
+        default=None, description="Search keyword for event name or description"
+    )
 
 
 class ListEventResponse(BaseModel):

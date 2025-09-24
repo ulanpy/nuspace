@@ -58,7 +58,7 @@ async def test_db_session(test_engine):
 async def client(test_db_session):
     from fastapi import FastAPI
 
-    from backend.common.dependencies import get_current_principals, get_db_session
+    from backend.common.dependencies import get_creds_or_401, get_db_session
     from backend.lifespan import lifespan
     from backend.routes import routers
 
@@ -71,13 +71,13 @@ async def client(test_db_session):
 
     app.dependency_overrides[get_db_session] = override_get_db
 
-    async def override_get_current_principals(request=None, response=None, db_session=None):
+    async def override_get_creds_or_401(request=None, response=None, db_session=None):
         return (
             {"sub": "test_user_id", "email": "test@example.com"},
             {"role": "default", "sub": "test_user_id"},
         )
 
-    app.dependency_overrides[get_current_principals] = override_get_current_principals
+    app.dependency_overrides[get_creds_or_401] = override_get_creds_or_401
     client = TestClient(app, base_url="http://test/api")
     client.cookies.set("access_token", "test")
     client.cookies.set("refresh_token", "test")
@@ -87,9 +87,9 @@ async def client(test_db_session):
 
 # Mock dependencies
 @pytest.fixture
-def mock_get_current_principals():
-    """Mock the get_current_principals dependency."""
-    with patch("backend.routes.kupiprodai.product.get_current_principals") as mock:
+def mock_get_creds_or_401():
+    """Mock the get_creds_or_401 dependency."""
+    with patch("backend.routes.kupiprodai.product.get_creds_or_401") as mock:
         mock.return_value = ({"sub": "test_user_id", "email": "test@example.com"}, {"role": "user"})
         yield mock
 

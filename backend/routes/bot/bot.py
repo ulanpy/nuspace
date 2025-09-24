@@ -5,7 +5,7 @@ from aiogram.utils.deep_linking import create_start_link
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import get_current_principals, get_db_session
+from backend.common.dependencies import get_creds_or_401, get_db_session
 from backend.core.configs.config import config
 from backend.core.database.models import Product
 from backend.routes.bot.cruds import find_product
@@ -30,7 +30,7 @@ async def webhook(request: Request) -> Response:
 async def contact(
     request: Request,
     product_id: int,
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> str:
     product: Product | None = await find_product(db_session, int(product_id))

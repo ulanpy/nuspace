@@ -8,7 +8,7 @@ from google.cloud.storage import Bucket
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_current_principals, get_db_session
+from backend.common.dependencies import get_creds_or_401, get_db_session
 from backend.common.utils.enums import ResourceAction
 from backend.core.configs.config import Config
 from backend.core.database.models.media import Media
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/bucket", tags=["Google Bucket Routes"])
 async def generate_upload_url(
     request: Request,
     signed_url_request: List[schemas.SignedUrlRequest],
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
 ):
     """
@@ -188,7 +188,7 @@ async def gcs_webhook(
 async def delete_bucket_object(
     request: Request,
     media_id: int,  # don't delete, used by mediaexists_or_404
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     resource_data: Annotated[tuple[str, Media], Depends(deps.check_resource)],
     db_session: AsyncSession = Depends(get_db_session),
 ):

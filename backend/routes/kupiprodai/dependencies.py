@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_current_principals, get_db_session
+from backend.common.dependencies import get_creds_or_401, get_db_session
 from backend.core.database.models.product import Product
 from backend.core.database.models.user import User
 from backend.routes.kupiprodai import schemas
@@ -29,7 +29,7 @@ async def product_exists_or_404(
 
 async def user_exists_or_404(
     product_data: schemas.ProductRequest,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> User:
     qb = QueryBuilder(session=db_session, model=User)

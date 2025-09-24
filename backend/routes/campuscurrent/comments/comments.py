@@ -7,7 +7,7 @@ from faststream.rabbit import RabbitBroker
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import broker, get_current_principals, get_db_session
+from backend.common.dependencies import broker, get_creds_or_401, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import response_builder
 from backend.common.utils.enums import ResourceAction
@@ -26,7 +26,7 @@ router = APIRouter(tags=["Community Posts Comments Routes"])
 @router.get("/comments", response_model=schemas.ListCommunityCommentResponseSchema)
 async def get(
     request: Request,
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     broker: Annotated[RabbitBroker, Depends(broker)],
     post_id: int,
     comment_id: int | None = None,
@@ -138,7 +138,13 @@ async def get(
     # Generate all signed URLs once
     if media_objs:
         filenames = [m.name for m in media_objs]
-        url_data_list = await generate_batch_download_urls(request, filenames)
+        url_data_list = await generate_batch_download_urls(
+            request.app.state.storage_client,
+            request.app.state.config,
+            request.app.state.signing_credentials,
+            filenames,
+        )
+        # signing_credentials is already set in the global state by dependencies
         media_to_url = {m: u["signed_url"] for m, u in zip(media_objs, url_data_list)}
     else:
         media_to_url = {}
@@ -188,7 +194,7 @@ async def get(
 async def create_comment(
     request: Request,
     comment_data: schemas.RequestCommunityCommentSchema,
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
     post: CommunityPost = Depends(deps.post_exists_or_404),
     parent_comment: CommunityComment | None = Depends(deps.parent_comment_exists_or_404),
@@ -270,7 +276,7 @@ async def create_comment(
 @router.delete("/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete(
     comment_id: int,
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
     comment: CommunityComment = Depends(deps.comment_exists_or_404),
 ):

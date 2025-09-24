@@ -1,7 +1,7 @@
 from typing import Annotated, List
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_current_principals, get_db_session
+from backend.common.dependencies import get_creds_or_401, get_db_session
 from backend.common.utils import response_builder
 from backend.core.database.models import Community, CommunityPostTag
 from backend.routes.campuscurrent.tags import dependencies as deps
@@ -22,7 +22,7 @@ router = APIRouter(tags=["Community Tags"])
 @router.post("/tags", response_model=CommunityTagResponse)
 async def create_tag(
     tag_data: CommunityTagRequest,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
     community: Community = Depends(deps.community_exists_or_404),
 ) -> CommunityTagResponse:
@@ -59,7 +59,7 @@ async def create_tag(
 
 @router.get("/tags", response_model=ListCommunityTagResponse)
 async def get_tags(
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     community_id: int,
     size: int = Query(20, ge=1, le=100),
     page: int = Query(1, ge=1),
@@ -106,7 +106,7 @@ async def get_tags(
 @router.delete("/tags/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_tag(
     tag_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
     tag: CommunityPostTag = Depends(tag_exists_or_404),
 ):

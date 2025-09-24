@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from google.auth.credentials import Credentials
 
 from backend.app_state.bot import cleanup_bot, setup_bot
 from backend.app_state.db import cleanup_db, setup_db
@@ -21,6 +22,7 @@ async def lifespan(app: FastAPI):
         app.state.kc_manager = KeyCloakManager()  # type: ignore
         app.state.config = Config()  # type: ignore
         app.state.app_token_manager = AppTokenManager()
+        app.state.signing_credentials: Credentials | None = None
         setup_gcp(app)
         # await setup_rbq(app)
         await setup_db(app)

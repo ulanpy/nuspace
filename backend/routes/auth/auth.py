@@ -12,7 +12,7 @@ from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_current_principals, get_db_session
+from backend.common.dependencies import get_creds_or_401, get_db_session
 from backend.core.configs.config import config
 from backend.routes.auth.app_token import AppTokenManager
 from backend.routes.auth.keycloak_manager import KeyCloakManager
@@ -311,10 +311,10 @@ async def miniapp_login_exchange(
 async def refresh_token(
     request: Request,
     response: Response,
-    # This endpoint might become less necessary if get_current_principals handles silent refresh
+    # This endpoint might become less necessary if get_creds_or_401 handles silent refresh
     # well. However, frontend might still explicitly call it.
     # If kept, it should also refresh the app_token.
-    # For now, let's assume get_current_principals is the primary way tokens are managed post-login.
+    # For now, let's assume get_creds_or_401 is the primary way tokens are managed post-login.
     # We can revisit this endpoint's logic if it's still actively used by the frontend.
     kc_refresh_token: Annotated[str | None, Cookie(alias=config.COOKIE_REFRESH_NAME)] = None,
     db_session: AsyncSession = Depends(get_db_session),
@@ -386,7 +386,7 @@ async def refresh_token(
 
 @router.get("/me", response_model=CurrentUserResponse)
 async def get_current_user(
-    principals: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    principals: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
     extended: bool = False,  # under development
 ):

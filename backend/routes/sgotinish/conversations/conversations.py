@@ -1,23 +1,21 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
-
 from backend.common.dependencies import (
-    get_current_principals,
+    get_creds_or_401,
 )
 from backend.core.database.models.sgotinish import (
     Conversation,
     Ticket,
 )
 from backend.routes.sgotinish.conversations import dependencies as deps
-from backend.routes.sgotinish.tickets.dependencies import get_ticket_service
 from backend.routes.sgotinish.conversations import schemas
 from backend.routes.sgotinish.conversations.policy import ConversationPolicy
 from backend.routes.sgotinish.conversations.service import ConversationService
+from backend.routes.sgotinish.tickets.dependencies import get_ticket_service
 from backend.routes.sgotinish.tickets.service import TicketService
+from fastapi import APIRouter, Depends
 
 router = APIRouter(tags=["SGotinish Conversations Routes"])
-
 
 
 # ============================================================================
@@ -28,7 +26,7 @@ router = APIRouter(tags=["SGotinish Conversations Routes"])
 @router.post("/conversations", response_model=schemas.ConversationResponseDTO)
 async def create_conversation(
     conversation_data: schemas.ConversationCreateDTO,
-    user_tuple: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     service: ConversationService = Depends(deps.get_conversation_service),
     ticket: Ticket = Depends(deps.validate_ticket_exists_or_404),
     ticket_service: TicketService = Depends(get_ticket_service),
@@ -51,17 +49,13 @@ async def create_conversation(
 
     ConversationPolicy(user_tuple).check_create(ticket, access)
 
-    return await service.create_conversation(
-        conversation_data=conversation_data, user=user_tuple
-    )
+    return await service.create_conversation(conversation_data=conversation_data, user=user_tuple)
 
 
-@router.patch(
-    "/conversations/{conversation_id}", response_model=schemas.ConversationResponseDTO
-)
+@router.patch("/conversations/{conversation_id}", response_model=schemas.ConversationResponseDTO)
 async def update_conversation(
     conversation_data: schemas.ConversationUpdateDTO,
-    user_tuple: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     service: ConversationService = Depends(deps.get_conversation_service),
     conversation: Conversation = Depends(deps.conversation_exists_or_404),
     ticket_service: TicketService = Depends(get_ticket_service),

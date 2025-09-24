@@ -17,7 +17,6 @@ async def setup_bot(
 ):
     app.state.bot = Bot(token=token)
     app.state.dp = Dispatcher(storage=RedisStorage(app.state.redis))
-
     # Discover bot username dynamically (without @) to avoid hardcoding
     try:
         me = await app.state.bot.get_me()

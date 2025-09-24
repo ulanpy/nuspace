@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_current_principals, get_db_session
+from backend.common.dependencies import get_creds_or_401, get_db_session
 from backend.common.utils import meilisearch, response_builder
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.models import GradeReport
@@ -52,7 +52,7 @@ async def get_grades(
 
     if keyword:
         meili_result = await meilisearch.get(
-            request=request,
+            client=request.app.state.meilisearch_client,
             storage_name=EntityType.grade_reports.value,
             keyword=keyword,
             page=page,
@@ -104,7 +104,7 @@ async def get_grades(
 @router.post("/registered_courses", response_model=schemas.RegisteredCourseResponse)
 async def register_course(
     data: schemas.RegisteredCourseCreate,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
 ):
     student_sub = user[0].get("sub")
@@ -132,7 +132,7 @@ async def register_course(
 
 @router.get("/registered_courses", response_model=List[schemas.RegisteredCourseResponse])
 async def get_registered_courses(
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
 ):
     student_sub = user[0].get("sub")
@@ -199,7 +199,7 @@ async def get_registered_courses(
 @router.delete("/registered_courses/{student_course_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def unregister_course(
     student_course_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
 ):
     student_sub = user[0].get("sub")
@@ -271,7 +271,7 @@ async def get_courses(
         filters.append(Course.term == term)
     if keyword:
         meili_result = await meilisearch.get(
-            request=request,
+            client=request.app.state.meilisearch_client,
             storage_name=EntityType.courses.value,
             keyword=keyword,
             page=page,
@@ -323,7 +323,7 @@ async def get_courses(
 async def add_course_item(
     request: Request,
     course_item_data: schemas.CourseItemCreate,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> schemas.BaseCourseItem:
 
@@ -355,7 +355,7 @@ async def add_course_item(
 async def update_course_item(
     request: Request,
     item_update: schemas.CourseItemUpdate,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
     item: CourseItem = Depends(deps.course_item_exists_or_404),
 ) -> schemas.BaseCourseItem:
@@ -373,7 +373,7 @@ async def update_course_item(
 
 @router.delete("/course_items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_course_item(
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
     item: CourseItem = Depends(deps.course_item_exists_or_404),
 ) -> None:

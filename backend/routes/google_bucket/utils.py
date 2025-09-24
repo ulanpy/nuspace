@@ -4,7 +4,6 @@ from typing import List, Optional
 
 import google.auth
 import google.auth.transport.requests
-from fastapi import Request
 from google.auth import impersonated_credentials
 from google.auth.credentials import Credentials
 from google.cloud import storage
@@ -14,7 +13,9 @@ from backend.core.database.models import Media
 
 
 async def generate_batch_download_urls(
-    request: Request,
+    storage_client: storage.Client,
+    config: Config,
+    signing_credentials: Credentials,
     filenames: List[str],
 ) -> List[dict]:
     """
@@ -23,7 +24,6 @@ async def generate_batch_download_urls(
     - In emulator mode: direct proxy URLs via nginx (/gcs/{bucket}/{object})
 
     This function significantly improves performance by:
-    1. Batching credential checks and refreshes
     2. Using a single asyncio.gather for all signing operations
     3. Avoiding repeated credential validation per file
 
@@ -37,26 +37,13 @@ async def generate_batch_download_urls(
     if not filenames:
         return []
 
-    config: Config = request.app.state.config
-
     if config.USE_GCS_EMULATOR:
         # Use backend proxy to avoid nginx /gcs path issues during local dev
         base_url = f"{config.HOME_URL}/api/bucket/local-download/{config.BUCKET_NAME}"
         return [{"signed_url": f"{base_url}/{filename}"} for filename in filenames]
 
-    # Use cached impersonated credentials from app startup
-    # Falls back to creating fresh credentials if cache failed at startup or expired
-    signing_credentials = request.app.state.signing_credentials
-    if signing_credentials is None or (
-        hasattr(signing_credentials, "expired") and signing_credentials.expired
-    ):
-        # Fallback: create fresh credentials (this will be slower)
-        signing_credentials = get_signing_credentials(config.VM_SERVICE_ACCOUNT_EMAIL)
-        # Update the cache with fresh credentials
-        request.app.state.signing_credentials = signing_credentials
-
     # Prepare all blobs
-    bucket = request.app.state.storage_client.bucket(config.BUCKET_NAME)
+    bucket = storage_client.bucket(config.BUCKET_NAME)
     blobs = [bucket.blob(filename) for filename in filenames]
 
     # Move all synchronous signing operations to threads and execute in parallel
@@ -77,19 +64,20 @@ async def generate_batch_download_urls(
 
 
 async def delete_bucket_object(
-    request: Request,
+    storage_client: storage.Client,
+    config: Config,
     filename: str,
 ) -> None:
-    blob: storage.Blob = request.app.state.storage_client.bucket(
-        request.app.state.config.BUCKET_NAME
-    ).blob(filename)
+    blob: storage.Blob = storage_client.bucket(config.BUCKET_NAME).blob(filename)
     try:
         blob.delete()
     except Exception:
         pass
 
 
-async def batch_delete_blobs(request: Request, media_objects: List[Media]) -> None:
+async def batch_delete_blobs(
+    storage_client: storage.Client, config: Config, media_objects: List[Media]
+) -> None:
     """
     Bulk delete all media files associated with given `media_objects` using GCS batch operations.
 
@@ -114,7 +102,8 @@ async def batch_delete_blobs(request: Request, media_objects: List[Media]) -> No
         Total: 3 HTTP requests (instead of 250)
 
     Args:
-        request: FastAPI request object containing GCS client
+        storage_client: storage.Client
+        config: Config
         media_objects: List of media objects to delete
 
     Note:
@@ -127,8 +116,7 @@ async def batch_delete_blobs(request: Request, media_objects: List[Media]) -> No
         return
 
     # Get storage client and bucket
-    storage_client: storage.Client = request.app.state.storage_client
-    bucket: storage.Bucket = storage_client.bucket(request.app.state.config.BUCKET_NAME)
+    bucket: storage.Bucket = storage_client.bucket(config.BUCKET_NAME)
 
     # Create a batch of blobs to delete
     blobs_to_delete: List[storage.Blob] = [bucket.blob(media.name) for media in media_objects]
