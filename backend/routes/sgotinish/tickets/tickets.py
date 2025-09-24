@@ -1,11 +1,6 @@
-from typing import Annotated, List
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
-
-from backend.common.dependencies import (
-    get_current_principals
-)
-from backend.core.database.models.common_enums import EntityType
+from backend.common.dependencies import get_creds_or_401
 from backend.core.database.models.sgotinish import (
     Ticket,
     TicketAccess,
@@ -16,9 +11,9 @@ from backend.routes.sgotinish.tickets import dependencies as deps
 from backend.routes.sgotinish.tickets import schemas
 from backend.routes.sgotinish.tickets.policy import TicketPolicy
 from backend.routes.sgotinish.tickets.service import TicketService
+from fastapi import APIRouter, Depends, Query
 
 router = APIRouter(tags=["SGotinish Tickets Routes"])
-
 
 
 # ============================================================================
@@ -29,7 +24,7 @@ router = APIRouter(tags=["SGotinish Tickets Routes"])
 @router.post("/tickets", response_model=schemas.TicketResponseDTO)
 async def create_ticket(
     ticket_data: schemas.TicketCreateDTO,
-    user_tuple: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     ticket_service: TicketService = Depends(deps.get_ticket_service),
     ticket_user: User = Depends(deps.user_exists_or_404_for_ticket_creation),
 ) -> schemas.TicketResponseDTO:
@@ -61,9 +56,11 @@ async def create_ticket(
 
 @router.get("/tickets", response_model=schemas.ListTicketDTO)
 async def get_tickets(
-    user_tuple: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     ticket_service: TicketService = Depends(deps.get_ticket_service),
-    size: int = Query(20, ge=1, le=100, description="Number of tickets to return per page for pagination"),
+    size: int = Query(
+        20, ge=1, le=100, description="Number of tickets to return per page for pagination"
+    ),
     page: int = Query(1, ge=1, description="Page number for ticket listing pagination"),
     category: TicketCategory | None = Query(default=None),
 ) -> schemas.ListTicketDTO:
@@ -84,22 +81,19 @@ async def get_tickets(
     """
     TicketPolicy(user_tuple).check_read_list()
 
-    ticket_ids: List[int] | None = None
-
     response: schemas.ListTicketDTO = await ticket_service.get_tickets(
         user=user_tuple,
         size=size,
         page=page,
         category=category,
-        )
+    )
 
     return response
 
 
-
 @router.get("/tickets/{ticket_id}", response_model=schemas.TicketResponseDTO)
 async def get_ticket(
-    user_tuple: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     ticket_service: TicketService = Depends(deps.get_ticket_service),
     ticket: Ticket = Depends(deps.get_ticket),
 ) -> schemas.TicketResponseDTO:
@@ -117,11 +111,7 @@ async def get_ticket(
     - A detailed ticket object with all its information
     """
     # Get ticket access manually since we now have a flat dependency structure
-    access: TicketAccess | None = (
-        await ticket_service.get_user_ticket_access(
-            ticket, user_tuple
-            )
-        )
+    access: TicketAccess | None = await ticket_service.get_user_ticket_access(ticket, user_tuple)
 
     policy = TicketPolicy(user_tuple)
     policy.check_read_one(ticket=ticket, access=access)
@@ -130,10 +120,11 @@ async def get_ticket(
 
     return response_dto
 
+
 @router.patch("/tickets/{ticket_id}", response_model=schemas.TicketResponseDTO)
 async def update_ticket(
     ticket_data: schemas.TicketUpdateDTO,
-    user_tuple: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     ticket_service: TicketService = Depends(deps.get_ticket_service),
     ticket: Ticket = Depends(deps.get_ticket),
 ) -> schemas.TicketResponseDTO:
@@ -141,20 +132,12 @@ async def update_ticket(
     Updates a ticket by its unique ID.
     """
     # Get ticket access manually since we now have a flat dependency structure
-    access: TicketAccess | None = (
-        await ticket_service.get_user_ticket_access(
-            ticket, user_tuple
-            )
-        )
+    access: TicketAccess | None = await ticket_service.get_user_ticket_access(ticket, user_tuple)
 
     TicketPolicy(user_tuple).check_update(ticket, access)
 
-    response_dto = (
-        await ticket_service.update_ticket(
-            ticket=ticket, 
-            ticket_data=ticket_data, 
-            user=user_tuple
-            )
-        )
+    response_dto = await ticket_service.update_ticket(
+        ticket=ticket, ticket_data=ticket_data, user=user_tuple
+    )
 
     return response_dto

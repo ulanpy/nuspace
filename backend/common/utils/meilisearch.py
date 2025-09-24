@@ -1,9 +1,8 @@
 from enum import Enum
 from typing import Type
 
-import httpx
 from backend.core.database.manager import AsyncDatabaseManager
-from fastapi import Request
+from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.orm import DeclarativeBase
 
@@ -19,7 +18,9 @@ from sqlalchemy.orm import DeclarativeBase
 """
 
 
-async def upsert(request: Request, storage_name: str, json_values: dict, primary_key: str = "id"):
+async def upsert(
+    client: AsyncClient, storage_name: str, json_values: dict, primary_key: str = "id"
+):
     """
     Adds or updates a document in Meilisearch. If a document with the same primary key exists,
     it will be completely replaced. If it doesn't exist, a new document will be created.
@@ -40,14 +41,12 @@ async def upsert(request: Request, storage_name: str, json_values: dict, primary
     if primary_key not in json_values:
         raise ValueError(f"Document must contain a '{primary_key}' field")
 
-    response = await request.app.state.meilisearch_client.post(
-        f"/indexes/{storage_name}/documents", json=json_values
-    )
+    response = await client.post(f"/indexes/{storage_name}/documents", json=json_values)
     return response.json()
 
 
 async def get(
-    request: Request,
+    client: AsyncClient,
     storage_name: str,
     keyword: str,
     filters: list | None = None,
@@ -81,21 +80,21 @@ async def get(
     if filters:
         payload["filter"] = filters
 
-    response = await request.app.state.meilisearch_client.post(
-        f"/indexes/{storage_name}/search", json=payload
-    )
+    response = await client.post(f"/indexes/{storage_name}/search", json=payload)
     return response.json()
 
 
-async def delete(request: Request, storage_name: str, primary_key: str):
-    response = await request.app.state.meilisearch_client.delete(
-        f"indexes/{storage_name}/documents/{primary_key}"
-    )
+async def delete(
+    client: AsyncClient,
+    storage_name: str,
+    primary_key: str,
+):
+    response = await client.delete(f"indexes/{storage_name}/documents/{primary_key}")
     return response.json()
 
 
 async def sync_with_db(
-    meilisearch_client: httpx.AsyncClient,
+    meilisearch_client: AsyncClient,
     storage_name: str,
     db_manager: AsyncDatabaseManager,
     model: Type[DeclarativeBase],

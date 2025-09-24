@@ -8,11 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app_state.meilisearch import meilisearch
 from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import (
-    get_current_principals,
+    get_creds_or_401,
+    get_creds_or_guest,
     get_db_session,
-    get_optional_principals,
+    get_infra,
 )
-from backend.common.schemas import MediaResponse, ShortUserResponse
+from backend.common.schemas import Infra, MediaResponse, ShortUserResponse
 from backend.common.utils import response_builder
 from backend.core.database.models import Community, CommunityPost, CommunityPostTag, Media
 from backend.core.database.models.common_enums import EntityType
@@ -40,10 +41,11 @@ router = APIRouter(tags=["Community Posts"])
 async def create_post(
     request: Request,
     post_data: CommunityPostRequest,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
     community: Community = Depends(deps.community_exists_or_404),
     post_user: User = Depends(deps.user_exists_or_404),
+    infra: Infra = Depends(get_infra),
     tag: CommunityPostTag | None = Depends(deps.tag_exists_or_404),
 ) -> CommunityPostResponse:
     await PostPolicy(user=user).check_permission(action=ResourceAction.CREATE, post_data=post_data)
@@ -63,7 +65,7 @@ async def create_post(
         )
 
     await meilisearch.upsert(
-        request=request,
+        client=request.app.state.meilisearch_client,
         storage_name=CommunityPost.__tablename__,
         json_values={"id": post.id, "title": post.title, "description": post.description},
     )
@@ -80,7 +82,7 @@ async def create_post(
         .all()
     )
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-        request=request, media_objects=media_objs, resources=[post]
+        infra=infra, media_objects=media_objs, resources=[post]
     )  # one to one mapping
 
     community_media_objs: List[Media] = (
@@ -96,7 +98,7 @@ async def create_post(
 
     community_media_results: List[List[MediaResponse]] = (
         await response_builder.map_media_to_resources(
-            request=request, media_objects=community_media_objs, resources=[post.community]
+            infra=infra, media_objects=community_media_objs, resources=[post.community]
         )
     )
 
@@ -131,7 +133,7 @@ async def create_post(
 @router.get("/posts", response_model=ListCommunityPostResponse)
 async def get_posts(
     request: Request,
-    user: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     community_id: int | None = None,
     size: int = Query(20, ge=1, le=100),
     page: int = Query(1, ge=1),
@@ -146,7 +148,7 @@ async def get_posts(
 
     if keyword:
         meili_result = await meilisearch.get(
-            request=request,
+            client=request.app.state.meilisearch_client,
             storage_name=EntityType.community_posts.value,
             keyword=keyword,
             page=page,
@@ -219,7 +221,13 @@ async def get_posts(
     # Generate signed URLs once for all media
     if all_media_objs:
         filenames = [m.name for m in all_media_objs]
-        url_data_list = await generate_batch_download_urls(request, filenames)
+        url_data_list, signing_credentials = await generate_batch_download_urls(
+            request.app.state.storage_client,
+            request.app.state.config,
+            request.app.state.signing_credentials,
+            filenames,
+        )
+        request.app.state.signing_credentials = signing_credentials
         media_to_url = {m: u["signed_url"] for m, u in zip(all_media_objs, url_data_list)}
     else:
         media_to_url = {}
@@ -308,8 +316,9 @@ async def get_posts(
 async def get_post(
     request: Request,
     post_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     db_session: AsyncSession = Depends(get_db_session),
+    infra: Infra = Depends(get_infra),
     post: CommunityPost = Depends(deps.post_exists_or_404),
 ) -> CommunityPostResponse:
     await PostPolicy(user=user).check_permission(action=ResourceAction.READ, post=post)
@@ -326,7 +335,7 @@ async def get_post(
         .all()
     )
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-        request=request, media_objects=media_objs, resources=[post]
+        infra=infra, media_objects=media_objs, resources=[post]
     )
 
     community_media_objs: List[Media] = (
@@ -342,7 +351,7 @@ async def get_post(
 
     community_media_results: List[List[MediaResponse]] = (
         await response_builder.map_media_to_resources(
-            request=request, media_objects=community_media_objs, resources=[post.community]
+            infra=infra, media_objects=community_media_objs, resources=[post.community]
         )
     )
 
@@ -378,8 +387,9 @@ async def update_post(
     request: Request,
     post_id: int,
     post_data: CommunityPostUpdate,  # Changed to CommunityPostUpdate
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
+    infra: Infra = Depends(get_infra),
     post: CommunityPost = Depends(deps.post_exists_or_404),
     tag: CommunityPostTag | None = Depends(deps.tag_exists_or_404),
 ) -> CommunityPostResponse:
@@ -395,7 +405,7 @@ async def update_post(
     )
 
     await meilisearch.upsert(
-        request=request,
+        client=request.app.state.meilisearch_client,
         storage_name=CommunityPost.__tablename__,
         json_values={
             "id": updated_post.id,
@@ -415,7 +425,7 @@ async def update_post(
         .all()
     )
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-        request=request, media_objects=media_objs, resources=[updated_post]
+        infra=infra, media_objects=media_objs, resources=[updated_post]
     )
 
     community_media_objs: List[Media] = (
@@ -431,7 +441,7 @@ async def update_post(
 
     community_media_results: List[List[MediaResponse]] = (
         await response_builder.map_media_to_resources(
-            request=request, media_objects=community_media_objs, resources=[updated_post.community]
+            infra=infra, media_objects=community_media_objs, resources=[updated_post.community]
         )
     )
     total_comments: int = await (
@@ -464,7 +474,7 @@ async def update_post(
 @router.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_post(
     request: Request,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
     post: CommunityPost = Depends(deps.post_exists_or_404),
 ):
@@ -498,7 +508,11 @@ async def delete_post(
             )
             .all()
         )
-        await batch_delete_blobs(request, media_objects=comment_media_objects)
+        await batch_delete_blobs(
+            request.app.state.storage_client,
+            request.app.state.config,
+            media_objects=comment_media_objects,
+        )
         await qb.blank(CommunityComment).delete(target=comments)
 
     # 3. Handle post media
@@ -508,12 +522,18 @@ async def delete_post(
         .filter(Media.entity_id == post.id, Media.entity_type == EntityType.community_posts)
         .all()
     )
-    await batch_delete_blobs(request, media_objects=post_media_objects)
+    await batch_delete_blobs(
+        request.app.state.storage_client,
+        request.app.state.config,
+        media_objects=post_media_objects,
+    )
 
     # 4. Delete the post itself
     await qb.blank(CommunityPost).delete(target=post)
 
     # 5. Clean up search index
     await meilisearch.delete(
-        request=request, storage_name=CommunityPost.__tablename__, primary_key=str(post.id)
+        client=request.app.state.meilisearch_client,
+        storage_name=CommunityPost.__tablename__,
+        primary_key=str(post.id),
     )

@@ -1,7 +1,7 @@
 from typing import Annotated, List
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_role, get_current_principals, get_db_session
+from backend.common.dependencies import check_role, get_creds_or_401, get_db_session
 from backend.core.database.models.review import ReviewReply
 from backend.core.database.models.user import UserRole
 from backend.routes.review.dependencies import (
@@ -19,7 +19,7 @@ router = APIRouter(tags=["review_reply"])
 @router.post("/review/reply")
 async def add_review_reply(
     review_reply: ReviewReplyRequestSchema,
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     owner: Annotated[bool, Depends(check_resourse_owner)],
     db: AsyncSession = Depends(get_db_session),
 ):
@@ -38,7 +38,7 @@ async def add_review_reply(
 @router.delete("/review/reply", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_review_reply(
     review_reply_id: int,
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     role: Annotated[UserRole, Depends(check_role)],
     owner: Annotated[bool, Depends(check_review_reply_owner)],
     db: AsyncSession = Depends(get_db_session),

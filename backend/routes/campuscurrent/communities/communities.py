@@ -7,11 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import (
-    get_current_principals,
+    get_creds_or_401,
+    get_creds_or_guest,
     get_db_session,
-    get_optional_principals,
+    get_infra,
 )
-from backend.common.schemas import MediaResponse, ShortUserResponse
+from backend.common.schemas import Infra, MediaResponse, ShortUserResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import (
@@ -37,8 +38,9 @@ router = APIRouter(tags=["Community Routes"])
 async def add_community(
     request: Request,
     community_data: schemas.CommunityCreateRequest,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
+    infra: Infra = Depends(get_infra),
     community_head: User = Depends(deps.user_exists_or_404),
 ) -> schemas.CommunityResponse:
     """
@@ -75,7 +77,7 @@ async def add_community(
         )
 
     await meilisearch.upsert(
-        request=request,
+        client=request.app.state.meilisearch_client,
         storage_name=Community.__tablename__,
         json_values={
             "id": community.id,
@@ -96,7 +98,7 @@ async def add_community(
     )
 
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-        request=request, media_objects=media_objs, resources=[community]
+        infra=infra, media_objects=media_objs, resources=[community]
     )
 
     return response_builder.build_schema(
@@ -112,7 +114,7 @@ async def add_community(
 @router.get("/communities", response_model=schemas.ListCommunity)
 async def get_communities(
     request: Request,
-    user: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     community_type: CommunityType | None = None,
@@ -123,6 +125,7 @@ async def get_communities(
         description=("if 'me' then current user's sub will be used"),
     ),
     db_session: AsyncSession = Depends(get_db_session),
+    infra: Infra = Depends(get_infra),
     keyword: str | None = Query(
         default=None, description="Search keyword for community name or description"
     ),
@@ -160,7 +163,7 @@ async def get_communities(
 
     if keyword:
         meili_result = await meilisearch.get(
-            request=request,
+            client=request.app.state.meilisearch_client,
             storage_name=EntityType.communities.value,
             keyword=keyword,
             page=page,
@@ -221,7 +224,7 @@ async def get_communities(
     )
 
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-        request=request, media_objects=media_objs, resources=communities
+        infra=infra, media_objects=media_objs, resources=communities
     )
 
     if keyword:
@@ -247,8 +250,9 @@ async def get_communities(
 async def get_community(
     request: Request,
     community_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     db_session: AsyncSession = Depends(get_db_session),
+    infra: Infra = Depends(get_infra),
     community: Community = Depends(deps.community_exists_or_404),
 ) -> schemas.CommunityResponse:
     """
@@ -286,7 +290,7 @@ async def get_community(
         .all()
     )
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-        request=request, media_objects=media_objs, resources=[community]
+        infra=infra, media_objects=media_objs, resources=[community]
     )
 
     return response_builder.build_schema(
@@ -303,8 +307,9 @@ async def update_community(
     request: Request,
     community_id: int,
     new_data: schemas.CommunityUpdateRequest,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
+    infra: Infra = Depends(get_infra),
     community: Community = Depends(deps.community_exists_or_404),
 ) -> schemas.CommunityResponse:
     """
@@ -335,7 +340,7 @@ async def update_community(
 
     # Update Meilisearch index
     await meilisearch.upsert(
-        request=request,
+        client=request.app.state.meilisearch_client,
         storage_name=Community.__tablename__,
         json_values={
             "id": community.id,
@@ -356,7 +361,7 @@ async def update_community(
     )
 
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-        request=request, media_objects=media_objs, resources=[community]
+        infra=infra, media_objects=media_objs, resources=[community]
     )
 
     return response_builder.build_schema(
@@ -372,8 +377,9 @@ async def update_community(
 async def delete_community(
     request: Request,
     community_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
+    infra: Infra = Depends(get_infra),
     community: Community = Depends(deps.community_exists_or_404),
 ):
     """
@@ -433,7 +439,11 @@ async def delete_community(
             )
             .all()
         )
-        await batch_delete_blobs(request, media_objects=comment_media_objects)
+        await batch_delete_blobs(
+            request.app.state.storage_client,
+            request.app.state.config,
+            media_objects=comment_media_objects,
+        )
         await qb.blank(Media).delete(target=comment_media_objects)
 
     # 3. Handle post media
@@ -443,7 +453,11 @@ async def delete_community(
         .filter(Media.entity_id.in_(post_ids), Media.entity_type == EntityType.community_posts)
         .all()
     )
-    await batch_delete_blobs(request, media_objects=post_media_objects)
+    await batch_delete_blobs(
+        request.app.state.storage_client,
+        request.app.state.config,
+        media_objects=post_media_objects,
+    )
     await qb.blank(Media).delete(target=post_media_objects)
     # 4. Handle community media
     community_media_objects: List[Media] = await (
@@ -452,12 +466,18 @@ async def delete_community(
         .filter(Media.entity_id == community_id, Media.entity_type == EntityType.communities)
         .all()
     )
-    await batch_delete_blobs(request, media_objects=community_media_objects)
+    await batch_delete_blobs(
+        request.app.state.storage_client,
+        request.app.state.config,
+        media_objects=community_media_objects,
+    )
     await qb.blank(Media).delete(target=community_media_objects)
     # 5. Delete the community itself
     await qb.blank(Community).delete(target=community)
 
     # 6. Clean up search index
     await meilisearch.delete(
-        request=request, storage_name=Community.__tablename__, primary_key=str(community_id)
+        client=infra.meilisearch_client,
+        storage_name=Community.__tablename__,
+        primary_key=str(community_id),
     )

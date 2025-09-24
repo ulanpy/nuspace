@@ -7,11 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import (
     check_tg,
-    get_current_principals,
+    get_creds_or_401,
+    get_creds_or_guest,
     get_db_session,
-    get_optional_principals,
+    get_infra,
 )
-from backend.common.schemas import MediaResponse, ShortUserResponse
+from backend.common.schemas import Infra, MediaResponse, ShortUserResponse
 from backend.common.utils import meilisearch, response_builder
 from backend.common.utils.enums import ResourceAction
 from backend.core.database.models.common_enums import EntityType
@@ -36,7 +37,7 @@ async def add_product(
     request: Request,
     product_data: schemas.ProductRequest,
     tg: Annotated[bool, Depends(check_tg)],
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
     product_user: User = Depends(deps.user_exists_or_404),
 ) -> schemas.ProductResponse:
@@ -77,7 +78,7 @@ async def add_product(
         )
 
     await meilisearch.upsert(
-        request=request,
+        client=request.app.state.meilisearch_client,
         storage_name=Product.__tablename__,
         json_values={
             "id": product.id,
@@ -112,11 +113,12 @@ async def add_product(
 @router.get("/products", response_model=schemas.ListProductResponse)
 async def get_products(
     request: Request,
-    user: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     category: ProductCategory | None = Query(default=None),
     condition: ProductCondition | None = Query(default=None),
+    infra: Infra = Depends(get_infra),
     status: ProductStatus | None = Query(
         default=None, description="Not setting this parameter returns all products"
     ),
@@ -157,7 +159,7 @@ async def get_products(
 
     if keyword:
         meili_result = await meilisearch.get(
-            request=request,
+            client=request.app.state.meilisearch_client,
             storage_name=EntityType.products.value,
             keyword=keyword,
             page=page,
@@ -183,20 +185,17 @@ async def get_products(
 
     # Fetch products from the database with conditions
     qb = QueryBuilder(session=db_session, model=Product)
-    
+
     if keyword:
         # Preserve Meilisearch ranking order by using a custom order
         from sqlalchemy import case
+
         order_clause = case(
             *[(Product.id == product_id, index) for index, product_id in enumerate(product_ids)],
-            else_=len(product_ids)
+            else_=len(product_ids),
         )
         products: List[Product] = (
-            await qb.base()
-            .filter(*conditions)
-            .eager(Product.user)
-            .order(order_clause)
-            .all()
+            await qb.base().filter(*conditions).eager(Product.user).order(order_clause).all()
         )
     else:
         # Default order by creation date when no keyword
@@ -221,7 +220,7 @@ async def get_products(
     )
 
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-        request=request, media_objects=media_objs, resources=products
+        infra=infra, media_objects=media_objs, resources=products
     )
 
     if keyword:
@@ -252,8 +251,9 @@ async def update_product(
     request: Request,
     product_data: schemas.ProductUpdateRequest,
     product_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
+    infra: Infra = Depends(get_infra),
     product: Product = Depends(deps.product_exists_or_404),
 ) -> schemas.ProductResponse:
     """
@@ -283,7 +283,7 @@ async def update_product(
 
     # Single Meilisearch update with all fields
     await meilisearch.upsert(
-        request=request,
+        client=request.app.state.meilisearch_client,
         storage_name=Product.__tablename__,
         json_values={
             "id": updated_product.id,
@@ -305,7 +305,7 @@ async def update_product(
     )
 
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-        request=request, media_objects=media_objs, resources=[updated_product]
+        infra=infra, media_objects=media_objs, resources=[updated_product]
     )
 
     return response_builder.build_schema(
@@ -321,9 +321,10 @@ async def update_product(
 @router.get("/products/{product_id}", response_model=schemas.ProductResponse)
 async def get_product_by_id(
     request: Request,
-    user: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     product_id: int,
     db_session: AsyncSession = Depends(get_db_session),
+    infra: Infra = Depends(get_infra),
     product: Product = Depends(deps.product_exists_or_404),
 ) -> schemas.ProductResponse:
     """
@@ -360,7 +361,7 @@ async def get_product_by_id(
     media_objs: List[Media] = await qb.blank(model=Media).base().filter(*conditions).all()
 
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-        request=request, media_objects=media_objs, resources=[product]
+        infra=infra, media_objects=media_objs, resources=[product]
     )
 
     is_guest: bool = bool(user[1].get("is_guest"))
@@ -379,9 +380,10 @@ async def get_product_by_id(
 @router.delete("/products/{product_id}")
 async def remove_product(
     request: Request,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     product_id: int,
     db_session: AsyncSession = Depends(get_db_session),
+    infra: Infra = Depends(get_infra),
     product: Product = Depends(deps.product_exists_or_404),
 ):
     """
@@ -415,7 +417,11 @@ async def remove_product(
 
         if media_objects:
             for media in media_objects:
-                await delete_bucket_object(request, media.name)
+                await delete_bucket_object(
+                    request.app.state.storage_client,
+                    request.app.state.config,
+                    media.name,
+                )
 
         product_deleted: bool = await qb.blank(Product).delete(target=product)
         media_deleted: bool = await qb.blank(Media).delete(target=media_objects)
@@ -427,7 +433,9 @@ async def remove_product(
             )
 
         await meilisearch.delete(
-            request=request, storage_name=Product.__tablename__, primary_key=str(product_id)
+            client=request.app.state.meilisearch_client,
+            storage_name=Product.__tablename__,
+            primary_key=str(product_id),
         )
         return status.HTTP_204_NO_CONTENT
 

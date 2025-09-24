@@ -1,16 +1,14 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
-
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_current_principals
+from backend.common.dependencies import get_creds_or_401
 from backend.core.database.models.sgotinish import Ticket, TicketAccess
 from backend.core.database.models.user import User
 from backend.routes.sgotinish.tickets import dependencies as deps
-from backend.routes.sgotinish.tickets.policy import TicketPolicy
 from backend.routes.sgotinish.tickets import schemas
+from backend.routes.sgotinish.tickets.policy import TicketPolicy
 from backend.routes.sgotinish.tickets.service import TicketService
-
+from fastapi import APIRouter, Depends, status
 
 router = APIRouter(tags=["SGotinish Delegation Routes"])
 
@@ -19,7 +17,7 @@ router = APIRouter(tags=["SGotinish Delegation Routes"])
 async def delegate_ticket_access(
     ticket_id: int,
     payload: schemas.DelegateAccessPayload,
-    user_tuple: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     ticket: Ticket = Depends(deps.get_ticket),
     target_user: User = Depends(deps.user_exists_or_404_for_delegation_creation),
     ticket_service: TicketService = Depends(deps.get_ticket_service),

@@ -1,7 +1,7 @@
 from typing import Annotated, List
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import check_role, get_current_principals, get_db_session
+from backend.common.dependencies import check_role, get_creds_or_401, get_db_session
 from backend.common.schemas import MediaResponse
 from backend.common.utils import response_builder
 from backend.core.database.models import Media, Review
@@ -30,7 +30,7 @@ router = APIRouter(tags=["review"])
 async def get(
     request: Request,
     reviewable_type: ReviewableType,
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     entity_id: int | None = None,
     owner_id: str | int | None = None,
     size: int = Query(20, ge=1, le=100),
@@ -68,7 +68,7 @@ async def get(
     )
 
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-        request=request, media_objects=media_objs, resources=reviews
+        infra=request.app.state.infra, media_objects=media_objs, resources=reviews
     )
 
     review_responses: List[ReviewResponseSchema] = [
@@ -91,7 +91,7 @@ async def get(
 async def add(
     request: Request,
     review: ReviewRequestSchema,
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     db: AsyncSession = Depends(get_db_session),
 ) -> ReviewResponseSchema:
     model: DeclarativeBase = service.REVIEWABLE_TYPE_MODEL_MAP.get(review.reviewable_type)
@@ -139,7 +139,7 @@ async def add(
         .all()
     )
     media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-        request=request, media_objects=media_objs, resources=[review_obj]
+        infra=request.app.state.infra, media_objects=media_objs, resources=[review_obj]
     )  # one to one mapping
 
     return response_builder.build_schema(
@@ -154,7 +154,7 @@ async def update(
     request: Request,
     review_id: int,
     new_data: ReviewUpdateSchema,
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     role: Annotated[UserRole, Depends(check_role)],
     db: AsyncSession = Depends(get_db_session),
 ) -> ReviewResponseSchema:
@@ -195,7 +195,7 @@ async def update(
 async def delete(
     request: Request,
     review_id: int,
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     role: Annotated[UserRole, Depends(check_role)],
     db: AsyncSession = Depends(get_db_session),
 ):
@@ -222,7 +222,11 @@ async def delete(
     # Delete media files from storage bucket
     if media_objects:
         for media in media_objects:
-            await delete_bucket_object(request, media.name)
+            await delete_bucket_object(
+                request.app.state.storage_client,
+                request.app.state.config,
+                media.name,
+            )
 
     review_deleted: bool = await qb.blank(model=Review).delete(target=review)
 

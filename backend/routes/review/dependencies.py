@@ -1,7 +1,7 @@
 from typing import Annotated, Protocol, Type
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_current_principals, get_db_session
+from backend.common.dependencies import get_creds_or_401, get_db_session
 from backend.core.database.models import Event
 from backend.core.database.models.review import Review, ReviewableType, ReviewReply
 from fastapi import Depends, HTTPException, status
@@ -12,7 +12,7 @@ class ReviewOwnershipChecker(Protocol):
     async def check_ownership(
         self,
         review: Review,
-        user: Annotated[dict, Depends(get_current_principals)],
+        user: Annotated[dict, Depends(get_creds_or_401)],
         db: AsyncSession,
     ) -> bool: ...
 
@@ -21,7 +21,7 @@ class ProductReviewOwnershipChecker(ReviewOwnershipChecker):
     async def check_ownership(
         self,
         review: Review,
-        user: Annotated[dict, Depends(get_current_principals)],
+        user: Annotated[dict, Depends(get_creds_or_401)],
         db: AsyncSession,
     ) -> bool:
         if review.owner_id != user["sub"]:
@@ -36,7 +36,7 @@ class EventReviewOwnershipChecker(ReviewOwnershipChecker):
     async def check_ownership(
         self,
         review: Review,
-        user: Annotated[dict, Depends(get_current_principals)],
+        user: Annotated[dict, Depends(get_creds_or_401)],
         db: AsyncSession,
     ) -> bool:
         qb = QueryBuilder(session=db, model=Event)
@@ -71,7 +71,7 @@ OWNERSHIP_CHECKERS: dict[ReviewableType, Type[ReviewOwnershipChecker]] = {
 
 async def check_resourse_owner(
     review_reply_id: int,
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     db: AsyncSession = Depends(get_db_session),
 ) -> bool:
 
@@ -88,7 +88,7 @@ async def check_resourse_owner(
 
 async def check_review_reply_owner(
     review_reply_id: int,
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     db: AsyncSession = Depends(get_db_session),
 ) -> bool:
 

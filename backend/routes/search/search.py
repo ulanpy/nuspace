@@ -25,7 +25,7 @@ async def full_search(
     print(storage_name.value)
     try:
         result = await meilisearch.get(
-            request=request,
+            client=request.app.state.meilisearch_client,
             storage_name=storage_name.value,
             keyword=keyword,
             page=page,

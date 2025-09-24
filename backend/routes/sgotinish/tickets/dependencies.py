@@ -1,13 +1,13 @@
-from backend.core.database.models.sgotinish import Ticket
-from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_db_session, get_current_principals
-from fastapi import Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 
+from backend.common.cruds import QueryBuilder
+from backend.common.dependencies import get_creds_or_401, get_db_session
+from backend.core.database.models.sgotinish import Ticket
 from backend.core.database.models.user import User
 from backend.routes.sgotinish.tickets import schemas
 from backend.routes.sgotinish.tickets.service import TicketService
+from fastapi import Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 def get_ticket_service(db_session: AsyncSession = Depends(get_db_session)) -> TicketService:
@@ -20,14 +20,14 @@ async def get_ticket(
 ) -> Ticket:
     """
     Dependency to validate that a ticket exists and return it.
-    
+
     Args:
         ticket_id: ID of the ticket to validate
         db_session: Database session
-        
+
     Returns:
         Ticket: The ticket if found
-        
+
     Raises:
         HTTPException: 404 if ticket not found
     """
@@ -59,20 +59,20 @@ async def user_exists_or_404_for_delegation_creation(
 
 async def user_exists_or_404_for_ticket_creation(
     ticket_data: schemas.TicketCreateDTO,
-    user: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> User:
     """
     Dependency to validate that a user exists for ticket creation.
-    
+
     Args:
         ticket_data: Ticket creation data
         user: Current user principals
         db_session: Database session
-        
+
     Returns:
         User: The user if found
-        
+
     Raises:
         HTTPException: 404 if user not found
     """
@@ -81,7 +81,7 @@ async def user_exists_or_404_for_ticket_creation(
         db_user = await qb.base().filter(User.sub == user[0]["sub"]).first()
     else:
         db_user = await qb.base().filter(User.sub == ticket_data.author_sub).first()
-    
+
     if db_user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return db_user    
+    return db_user

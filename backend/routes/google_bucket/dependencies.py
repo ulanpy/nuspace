@@ -1,25 +1,22 @@
 import json
-from typing import Annotated
 
-from fastapi import Depends, HTTPException, Request
-from fastapi import status
+from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.common.cruds import QueryBuilder
+from backend.common.dependencies import get_db_session
 from backend.core.configs.config import Config
+from backend.core.database.models import (
+    Community,
+    CommunityComment,
+    CommunityPost,
+    Event,
+    Product,
+    Review,
+)
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
 from backend.routes.google_bucket import schemas
-
-from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_current_principals, get_db_session
-from backend.core.database.models import (
-    Product,
-    CommunityPost,
-    CommunityComment,
-    Event,
-    Community,
-    Review,
-)
 
 
 def get_media_metadata(
@@ -58,16 +55,13 @@ def validate_routing_prefix(request: Request, pubsub_message: schemas.PubSubMess
         raise HTTPException(status_code=200, detail="outside_routing_prefix")
 
 
-
 async def media_exists_or_404(
     media_id: int,
     db_session: AsyncSession = Depends(get_db_session),
 ) -> Media:
     qb = QueryBuilder(session=db_session, model=Media)
 
-    media: Media | None = (
-        await qb.base().filter(Media.id == media_id).first()
-    )
+    media: Media | None = await qb.base().filter(Media.id == media_id).first()
 
     if not media:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media not found")
@@ -98,7 +92,7 @@ async def check_resource(
         HTTPException 400 for unsupported entity types.
     """
     qb = QueryBuilder(session=db_session, model=Media)
-    
+
     # First get the media object
     media: Media | None = await qb.base().filter(Media.id == media_id).first()
     if not media:
@@ -116,7 +110,9 @@ async def check_resource(
 
     if entity_type == EntityType.community_posts:
         qb_post = QueryBuilder(session=db_session, model=CommunityPost)
-        post: CommunityPost | None = await qb_post.base().filter(CommunityPost.id == entity_id).first()
+        post: CommunityPost | None = (
+            await qb_post.base().filter(CommunityPost.id == entity_id).first()
+        )
         if not post or not post.user_sub:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
         return post.user_sub, media
@@ -145,9 +141,7 @@ async def check_resource(
             )
             if community and community.head:
                 return community.head, media
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Event owner not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event owner not found")
 
     if entity_type == EntityType.communities:
         qb_community = QueryBuilder(session=db_session, model=Community)
@@ -166,6 +160,7 @@ async def check_resource(
         return review.user_sub, media
 
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported entity type")
+
 
 # temporary putted here
 # from fastapi import FastAPI, Request, HTTPException, Depends

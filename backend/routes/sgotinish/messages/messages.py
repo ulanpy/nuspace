@@ -1,27 +1,26 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.common.dependencies import (
-    get_current_principals,
+    get_creds_or_401,
+    get_creds_or_guest,
     get_db_session,
-    get_optional_principals,
 )
 from backend.core.database.models.sgotinish import (
-    Message,
     Conversation,
+    Message,
 )
-from backend.routes.sgotinish.messages import dependencies as deps
 from backend.routes.sgotinish.conversations.dependencies import (
     conversation_exists_or_404,
     get_conversation_from_body_or_404,
 )
+from backend.routes.sgotinish.messages import dependencies as deps
 from backend.routes.sgotinish.messages import schemas
 from backend.routes.sgotinish.messages.policy import MessagePolicy
 from backend.routes.sgotinish.messages.service import MessageService
 from backend.routes.sgotinish.tickets.dependencies import get_ticket_service
 from backend.routes.sgotinish.tickets.service import TicketService
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(tags=["SGotinish Messages Routes"])
 
@@ -40,7 +39,7 @@ def get_message_service(
 @router.post("/messages", response_model=schemas.MessageResponseDTO)
 async def create_message(
     message_data: schemas.MessageCreateDTO,
-    user_tuple: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     service: MessageService = Depends(get_message_service),
     ticket_service: TicketService = Depends(get_ticket_service),
     conversation: Conversation = Depends(get_conversation_from_body_or_404),
@@ -59,19 +58,16 @@ async def create_message(
     - Created message with all its details
     """
     # Get ticket access for permission checking
-    access = await ticket_service.get_user_ticket_access(
-        conversation.ticket, user_tuple
-    )
+    access = await ticket_service.get_user_ticket_access(conversation.ticket, user_tuple)
 
     MessagePolicy(user_tuple).check_create(message_data, conversation, access)
     return await service.create_message(message_data=message_data, user=user_tuple)
 
 
-
 @router.get("/messages", response_model=schemas.ListMessageDTO)
 async def get_messages(
     conversation_id: int,
-    user_tuple: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     service: MessageService = Depends(get_message_service),
     ticket_service: TicketService = Depends(get_ticket_service),
     conversation: Conversation = Depends(conversation_exists_or_404),
@@ -95,7 +91,7 @@ async def get_messages(
     """
     # Get ticket access for permission checking
     access = await ticket_service.get_user_ticket_access(conversation.ticket, user_tuple)
-    
+
     MessagePolicy(user_tuple).check_read_list(conversation, access)
 
     return await service.get_messages(
@@ -103,10 +99,9 @@ async def get_messages(
     )
 
 
-
 @router.get("/messages/{message_id}", response_model=schemas.MessageResponseDTO)
 async def get_message(
-    user_tuple: Annotated[tuple[dict, dict], Depends(get_optional_principals)],
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     message: Message = Depends(deps.message_exists_or_404),
     service: MessageService = Depends(get_message_service),
     ticket_service: TicketService = Depends(get_ticket_service),
@@ -126,7 +121,7 @@ async def get_message(
     """
     # Get ticket access for permission checking
     access = await ticket_service.get_user_ticket_access(message.conversation.ticket, user_tuple)
-    
+
     MessagePolicy(user_tuple).check_read_one(message, access)
     return await service.get_message_by_id(message_id=message.id, user=user_tuple)
 
@@ -138,7 +133,7 @@ async def get_message(
 
 @router.post("/messages/{message_id}/read", response_model=schemas.MessageResponseDTO)
 async def mark_message_as_read(
-    user_tuple: Annotated[tuple[dict, dict], Depends(get_current_principals)],
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     message: Message = Depends(deps.message_exists_or_404),
     service: MessageService = Depends(get_message_service),
     ticket_service: TicketService = Depends(get_ticket_service),
@@ -157,6 +152,6 @@ async def mark_message_as_read(
     """
     # Get ticket access for permission checking
     access = await ticket_service.get_user_ticket_access(message.conversation.ticket, user_tuple)
-    
+
     MessagePolicy(user_tuple).check_read_one(message, access)
     return await service.mark_message_as_read(message=message, user=user_tuple)
