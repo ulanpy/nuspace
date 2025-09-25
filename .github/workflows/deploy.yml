@@ -1,4 +1,4 @@
-name: Terraform Stage Deploy
+name: Build and Deploy
 
 on:
   push:

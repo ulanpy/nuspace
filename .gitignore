@@ -50,3 +50,6 @@ Thumbs.db
 
 # Loki bucket service account 
 **/nuspace_bucket.json
+
+**/.ruff_cache/
+**/.pytest_cache/

@@ -53,7 +53,7 @@ def setup_gcp(app: FastAPI) -> None:
 
     # Cache impersonated signing credentials at startup to avoid per-request impersonation
     # These credentials are valid for 1 hour and can be reused across all signing operations
-    from backend.routes.google_bucket.utils import get_signing_credentials
+    from backend.modules.google_bucket.utils import get_signing_credentials
 
     try:
         app.state.signing_credentials = get_signing_credentials(config.VM_SERVICE_ACCOUNT_EMAIL)

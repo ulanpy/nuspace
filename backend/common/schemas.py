@@ -6,6 +6,8 @@ from backend.core.database.models.media import MediaFormat
 from google.auth.credentials import Credentials
 from google.cloud import storage
 from httpx import AsyncClient
+from redis.asyncio import Redis
+from faststream.rabbit import RabbitBroker
 from pydantic import BaseModel
 
 
@@ -42,6 +44,7 @@ class Infra(BaseModel):
     storage_client: storage.Client
     config: Config
     signing_credentials: Credentials | None = None
-
+    redis: Redis
+    broker: RabbitBroker
     class Config:
         arbitrary_types_allowed = True

@@ -60,7 +60,7 @@ async def client(test_db_session):
 
     from backend.common.dependencies import get_creds_or_401, get_db_session
     from backend.lifespan import lifespan
-    from backend.routes import routers
+    from backend.modules import routers
 
     app = FastAPI(lifespan=lifespan, root_path="/api")
     for router in routers:
