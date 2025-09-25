@@ -27,6 +27,7 @@ RUN poetry install --no-root --no-cache
 COPY .. .
 
 COPY backend/start.sh /
+RUN sed -i 's/\r$//' /start.sh
 RUN chmod +x /start.sh
 RUN apk add --no-cache bash
 # Run the script to decide the server behavior based on IS_DEBUG
