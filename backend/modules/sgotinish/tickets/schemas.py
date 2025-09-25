@@ -6,7 +6,24 @@ from typing import Optional, List
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
 from backend.modules.sgotinish.conversations.schemas import ConversationResponseDTO
 from backend.core.database.models.sgotinish import PermissionType
+from backend.core.database.models.user import UserRole
 
+
+class DepartmentResponseDTO(BaseModel):
+    """DTO for department information."""
+
+    id: int
+    name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SGUserResponse(BaseModel):
+    """DTO for SG user information."""
+
+    user: ShortUserResponse
+    department_name: str
+    role: UserRole
 
 
 class BaseTicket(BaseModel):  # ORM to Pydantic

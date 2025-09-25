@@ -29,6 +29,23 @@ def _get_highest_permission(
 class TicketPolicy(BasePolicy):
     """Permissions for Ticket resources."""
 
+    def check_read_sg_members(self):
+        """Check if user can read the list of SG members."""
+        allowed_roles = [
+            UserRole.admin,
+            UserRole.boss,
+            UserRole.capo,
+            UserRole.soldier,
+        ]
+        user_role_value = self.user_creds[1].get("role")
+        if user_role_value and UserRole(user_role_value) in allowed_roles:
+            return
+
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this resource.",
+        )
+
     def check_read_list(self):
         """
         Any authenticated user can attempt to list tickets.
