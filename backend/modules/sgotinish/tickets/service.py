@@ -15,6 +15,7 @@ from backend.modules.sgotinish.tickets.interfaces import (
     AbstractConversationService,
     AbstractNotificationService,
 )
+from backend.core.database.models.sgotinish import Department
 
 
 class TicketService:
@@ -27,6 +28,31 @@ class TicketService:
         self.db_session = db_session
         self.conversation_service = conversation_service
         self.notification_service = notification_service
+
+    async def get_departments(self) -> List[schemas.DepartmentResponseDTO]:
+        """Retrieves all departments from the database."""
+        departments = await QueryBuilder(self.db_session, Department).base().all()
+        return [schemas.DepartmentResponseDTO.model_validate(dept) for dept in departments]
+
+    async def get_sg_users(self, department_id: int) -> List[schemas.SGUserResponse]:
+        """Retrieves all SG users within a specific department."""
+        sg_roles = [UserRole.boss, UserRole.capo, UserRole.soldier]
+        users = (
+            await QueryBuilder(self.db_session, User)
+            .base()
+            .filter(User.department_id == department_id, User.role.in_(sg_roles))
+            .eager(User.department)
+            .all()
+        )
+
+        return [
+            schemas.SGUserResponse(
+                user=ShortUserResponse.model_validate(user),
+                department_name=user.department.name if user.department else "N/A",
+                role=user.role,
+            )
+            for user in users
+        ]
 
     async def _build_ticket_response(
         self,

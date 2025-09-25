@@ -9,8 +9,40 @@ from backend.modules.sgotinish.tickets import schemas
 from backend.modules.sgotinish.tickets.policy import TicketPolicy
 from backend.modules.sgotinish.tickets.service import TicketService
 from fastapi import APIRouter, Depends, status
+from typing import List
 
 router = APIRouter(tags=["SGotinish Delegation Routes"])
+
+
+@router.get("/sg-delegation/departments", response_model=List[schemas.DepartmentResponseDTO])
+async def get_departments(
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    ticket_service: TicketService = Depends(deps.get_ticket_service),
+):
+    """
+    Retrieves a list of all departments.
+
+    **Access Policy:**
+    - Any authenticated user who is an SG member (Soldier, Capo, Boss) or Admin can access this.
+    """
+    TicketPolicy(user_tuple).check_read_sg_members()
+    return await ticket_service.get_departments()
+
+
+@router.get("/sg-delegation/users", response_model=List[schemas.SGUserResponse])
+async def get_sg_users(
+    department_id: int,
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    ticket_service: TicketService = Depends(deps.get_ticket_service),
+):
+    """
+    Retrieries a list of SG users, filtered by department.
+
+    **Access Policy:**
+    - Any authenticated user who is an SG member (Soldier, Capo, Boss) or Admin can access this.
+    """
+    TicketPolicy(user_tuple).check_read_sg_members()
+    return await ticket_service.get_sg_users(department_id=department_id)
 
 
 @router.post("/tickets/{ticket_id}/delegate", status_code=status.HTTP_204_NO_CONTENT)
@@ -50,3 +82,4 @@ async def delegate_ticket_access(
         grantee_sub=payload.target_user_sub,
         permission=payload.permission,
     )
+
