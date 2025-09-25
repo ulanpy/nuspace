@@ -117,10 +117,18 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
           description: formData.description,
           policy: formData.policy,
            registration_link: (formData as any).registration_link,
-          status: 'status' in formData ? formData.status : event.status,
           type: formData.type as EventType,
-          tag: 'tag' in formData ? formData.tag : event.tag,
         };
+
+        // Only include status if user has permission to edit it
+        if (permissions?.editable_fields.includes('status' as any)) {
+          editData.status = 'status' in formData ? formData.status : event.status;
+        }
+
+        // Only include tag if user has permission to edit it
+        if (permissions?.editable_fields.includes('tag' as any)) {
+          editData.tag = 'tag' in formData ? formData.tag : event.tag;
+        }
         
         await handleUpdate(event.id.toString(), editData);
       } else {

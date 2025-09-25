@@ -3,7 +3,7 @@ from typing import List, Sequence, Type, TypeVar
 from backend.common.dependencies import get_infra
 from backend.common.schemas import Infra, MediaResponse
 from backend.core.database.models.media import Media
-from backend.routes.google_bucket.utils import generate_batch_download_urls
+from backend.modules.google_bucket.utils import generate_batch_download_urls
 from fastapi import Request
 from pydantic import BaseModel
 from sqlalchemy.ext.declarative import DeclarativeMeta

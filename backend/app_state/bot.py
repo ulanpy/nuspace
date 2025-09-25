@@ -7,8 +7,8 @@ from aiogram.types.web_app_info import WebAppInfo
 from fastapi import FastAPI
 
 from backend.core.configs.config import config
-from backend.routes.bot.middlewares import setup_middlewares
-from backend.routes.bot.routes import include_routers
+from backend.modules.bot.middlewares import setup_middlewares
+from backend.modules.bot.routes import include_routers
 
 
 async def setup_bot(

@@ -4,14 +4,13 @@ from backend.common.schemas import Infra
 from backend.core.configs.config import config
 from backend.core.database.manager import AsyncDatabaseManager
 from backend.core.database.models import User, UserRole
-from backend.routes.auth.app_token import AppTokenManager
-from backend.routes.auth.keycloak_manager import KeyCloakManager
-from backend.routes.auth.utils import (
+from backend.modules.auth.app_token import AppTokenManager
+from backend.modules.auth.keycloak_manager import KeyCloakManager
+from backend.modules.auth.utils import (
     get_mock_user_by_sub,  # dev-only helper
     set_kc_auth_cookies,
 )
-from backend.routes.google_bucket.utils import get_signing_credentials
-from backend.routes.notification import tasks
+from backend.modules.google_bucket.utils import get_signing_credentials
 from fastapi import Cookie, Depends, HTTPException, Request, Response, status
 from jose import JWTError, jwt
 from sqlalchemy import select
@@ -41,6 +40,8 @@ async def get_infra(request: Request) -> Infra:
         storage_client=request.app.state.storage_client,
         config=request.app.state.config,
         signing_credentials=signing_credentials,
+        redis=request.app.state.redis,
+        broker=request.app.state.broker,
     )
 
 
@@ -263,7 +264,3 @@ async def check_role(
     if not role:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not found")
     return role
-
-
-def broker():
-    return tasks.broker

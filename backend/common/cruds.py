@@ -314,14 +314,42 @@ class QueryBuilder:
             instance = result.scalars().first()
         return instance
 
-    async def add_orm_list(self, instances: List[DeclarativeBase]):
+    async def add_orm_list(
+        self, 
+        instances: List[DeclarativeBase], 
+        preload: Optional[List[InstrumentedAttribute]] = None
+    ) -> List[DeclarativeBase]:
         """
         Adds multiple new records to the database in a single transaction.
 
         @param instances - A list of SQLAlchemy model instances to add.
+        @param preload - A list of relationships to eagerly load on the new instances.
+        @return The list of newly created instances with preloaded relationships.
         """
         self.session.add_all(instances)
         await self.session.commit()
+        
+        # Refresh all instances to get their IDs
+        for instance in instances:
+            await self.session.refresh(instance)
+        
+        # If preload is specified, reload instances with relationships
+        if preload and instances:
+            # Get primary key column name
+            pk = list(self.model.__table__.primary_key)[0]
+            
+            # Get all primary key values
+            pk_values = [getattr(instance, pk.name) for instance in instances]
+            
+            # Build query to reload instances with preloaded relationships
+            stmt = select(self.model).where(pk.in_(pk_values))
+            for rel in preload:
+                stmt = stmt.options(selectinload(rel))
+            
+            result = await self.session.execute(stmt)
+            instances = result.scalars().all()
+        
+        return instances
 
     async def update(
         self,

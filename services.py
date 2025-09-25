@@ -11,7 +11,7 @@ from backend.core.database.models.sgotinish import (
     Ticket,
     TicketCategory,
 )
-from backend.routes.sgotinish import cruds, schemas, utils
+from backend.modules.sgotinish import cruds, schemas, utils
 from sqlalchemy.orm import selectinload
 
 

@@ -15,11 +15,11 @@ from backend.core.database.models.sgotinish import (
     TicketCategory,
 )
 from backend.core.database.models.user import User
-from backend.routes.sgotinish import dependencies as deps
-from backend.routes.sgotinish import schemas
+from backend.modules.sgotinish import dependencies as deps
+from backend.modules.sgotinish import schemas
 from backend.common.utils import meilisearch
-from backend.routes.sgotinish.policy import SGotinishPolicy
-from backend.routes.sgotinish.services import TicketService
+from backend.modules.sgotinish.policy import SGotinishPolicy
+from backend.modules.sgotinish.services import TicketService
 
 router = APIRouter(tags=["SGotinish Tickets Routes"])
 
