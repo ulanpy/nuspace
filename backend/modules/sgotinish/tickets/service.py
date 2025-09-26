@@ -15,6 +15,7 @@ from backend.modules.sgotinish.tickets.interfaces import (
     AbstractConversationService,
     AbstractNotificationService,
 )
+from backend.core.database.models.sgotinish import Department
 
 
 class TicketService:
@@ -27,6 +28,31 @@ class TicketService:
         self.db_session = db_session
         self.conversation_service = conversation_service
         self.notification_service = notification_service
+
+    async def get_departments(self) -> List[schemas.DepartmentResponseDTO]:
+        """Retrieves all departments from the database."""
+        departments = await QueryBuilder(self.db_session, Department).base().all()
+        return [schemas.DepartmentResponseDTO.model_validate(dept) for dept in departments]
+
+    async def get_sg_users(self, department_id: int) -> List[schemas.SGUserResponse]:
+        """Retrieves all SG users within a specific department."""
+        sg_roles = [UserRole.boss, UserRole.capo, UserRole.soldier]
+        users = (
+            await QueryBuilder(self.db_session, User)
+            .base()
+            .filter(User.department_id == department_id, User.role.in_(sg_roles))
+            .eager(User.department)
+            .all()
+        )
+
+        return [
+            schemas.SGUserResponse(
+                user=ShortUserResponse.model_validate(user),
+                department_name=user.department.name if user.department else "N/A",
+                role=user.role,
+            )
+            for user in users
+        ]
 
     async def _build_ticket_response(
         self,
@@ -87,6 +113,7 @@ class TicketService:
             permissions=TicketPolicy(user).get_permissions(
                 ticket, access_map.get(ticket.id)
             ),
+            ticket_access=access_map.get(ticket.id)[0].permission if access_map.get(ticket.id) else None,
         )
 
     async def get_tickets(
@@ -227,7 +254,21 @@ class TicketService:
         self, ticket: Ticket, ticket_data: schemas.TicketUpdateDTO, user: tuple[dict, dict]
     ) -> schemas.TicketResponseDTO:
         qb = QueryBuilder(session=self.db_session, model=Ticket)
-        ticket: Ticket = await qb.update(instance=ticket, update_data=ticket_data)
+        ticket: Ticket = await qb.update(
+            instance=ticket, 
+            update_data=ticket_data, 
+            preload=[Ticket.author]
+        )
+        # Reload the ticket with all necessary relationships
+        ticket = await (
+            qb.blank(model=Ticket)
+            .base()
+            .filter(Ticket.id == ticket.id)
+            .eager(Ticket.author)
+            .option(selectinload(Ticket.conversations).selectinload(Conversation.sg_member))
+            .first()
+        )
+        await self.notification_service.notify_ticket_updated(ticket)
         return await self._build_ticket_response(ticket, user)
 
     async def get_ticket_by_id(

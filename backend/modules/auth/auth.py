@@ -39,7 +39,7 @@ async def login(
     request: Request,
     state: str | None = None,
     return_to: str | None = None,
-    mock_user: str | None = "2",  # shorthand alias
+    mock_user: str | None = "3",  # shorthand alias
 ):
     kc: KeyCloakManager = request.app.state.kc_manager
     redis = request.app.state.redis
@@ -405,13 +405,14 @@ async def get_current_user(
     qb = QueryBuilder(db_session, User)
     user: User = await qb.filter(User.sub == sub).first()
     tg_id: int = user.telegram_id
-
+    department_id: int = user.department_id
     # Construct user response. You might want to combine info from kc_principal and app_principal
     # For example, user profile from kc_principal, roles from app_principal
     user_data_for_response = {
         **kc_principal,  # Contains name, email, etc.
         "role": app_principal.get("role"),  # Example from your AppTokenManager
         "communities": app_principal.get("communities"),
+        "department_id": department_id,
     }
 
     # under development

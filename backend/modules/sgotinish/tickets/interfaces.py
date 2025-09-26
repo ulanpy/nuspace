@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from backend.core.database.models.sgotinish import Ticket, TicketAccess
+from backend.core.database.models.sgotinish import Ticket, TicketAccess, Message
 from backend.core.database.models.user import User
 from backend.modules.sgotinish.tickets import schemas
 
@@ -16,6 +16,15 @@ class AbstractNotificationService(ABC):
         """Notifies user about a ticket access granted."""
         pass
 
+    @abstractmethod
+    async def notify_ticket_updated(self, ticket: Ticket) -> None:
+        """Notifies user about a ticket updated."""
+        pass
+
+    @abstractmethod
+    async def notify_new_message(self, message: Message) -> None:
+        """Notifies user about a new message."""
+        pass
 
 class AbstractConversationService(ABC):
     @abstractmethod
@@ -24,3 +33,4 @@ class AbstractConversationService(ABC):
     ) -> dict[int, List[schemas.ConversationResponseDTO]]:
         """Gets conversation DTOs for a list of tickets."""
         pass
+

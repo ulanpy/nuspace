@@ -1,9 +1,14 @@
-from backend.core.database.models.sgotinish import Conversation, Message, TicketAccess, PermissionType
-from backend.modules.sgotinish.base import BasePolicy
 from backend.common.schemas import ResourcePermissions
-from fastapi import HTTPException, status as http_status
-
+from backend.core.database.models.sgotinish import (
+    Conversation,
+    Message,
+    PermissionType,
+    TicketAccess,
+)
+from backend.modules.sgotinish.base import BasePolicy
 from backend.modules.sgotinish.messages import schemas
+from fastapi import HTTPException
+from fastapi import status as http_status
 
 
 class MessagePolicy(BasePolicy):
@@ -15,10 +20,7 @@ class MessagePolicy(BasePolicy):
             return
 
         # Check if user is the ticket author
-        if (
-            conversation.ticket
-            and self._is_owner(conversation.ticket.author_sub)
-        ):
+        if conversation.ticket and self._is_owner(conversation.ticket.author_sub):
             return
 
         # Check if user has at least VIEW permission on the ticket
@@ -54,30 +56,28 @@ class MessagePolicy(BasePolicy):
         ]:
             return
 
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND, detail="Message not found"
-        )
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Message not found")
 
-    def check_create(self, message_data: schemas.MessageCreateDTO, conversation: Conversation, access: TicketAccess | None = None):
-        """Check if user can create a message in a conversation."""
+    def check_create(
+        self,
+        message_data: schemas.MessageCreateDTO,
+        conversation: Conversation,
+        access: TicketAccess | None = None,
+    ):
+        """
+        Check if user can create a message in a conversation.
+        Only the ticket author and the assigned SG member (conversation creator) can send messages.
+        """
         if self.is_admin:
             return
 
         # Check if user is the ticket author
-        is_ticket_author = (
-            conversation.ticket and self._is_owner(conversation.ticket.author_sub)
-        )
-        
+        is_ticket_author = conversation.ticket and self._is_owner(conversation.ticket.author_sub)
+
         # Check if user is the conversation creator (assigned SG member)
         is_conversation_creator = self._is_owner(conversation.sg_member_sub)
-        
-        # Check if user has ASSIGN or DELEGATE permission on the ticket
-        has_write_permission = access and access.permission in [
-            PermissionType.ASSIGN,
-            PermissionType.DELEGATE,
-        ]
 
-        if not (is_ticket_author or is_conversation_creator or has_write_permission):
+        if not (is_ticket_author or is_conversation_creator):
             raise HTTPException(
                 status_code=http_status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to send messages in this conversation.",

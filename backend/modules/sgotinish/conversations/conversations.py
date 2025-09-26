@@ -35,9 +35,9 @@ async def create_conversation(
     Creates a new conversation for a ticket.
 
     **Access Policy:**
-    - The ticket's author can reply.
-    - An SG member with at least VIEW access can reply.
-    - Admins can always reply.
+    - An SG member with at least ASSIGN access can create a conversation.
+    - Each SG member can create only one conversation per ticket.
+    - Admins can always create conversations.
 
     **Parameters:**
     - `conversation_data`: Conversation data including ticket_id, sg_member_sub

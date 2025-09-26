@@ -16,13 +16,12 @@ async def process_notification(notification: schemas._RequestNotification, msg: 
     if not notification.switch:
         return
     bot = Bot(token=config.TELEGRAM_BOT_TOKEN)
-    message = f"*{notification.title}*\n\n_{notification.message}_"
+    message = f"{notification.title}\n\n{notification.message}"
     try:
         await bot.send_message(
             notification.tg_id,
             message,
             reply_markup=kb_url(notification.url) if notification.url else None,
-            parse_mode="Markdown",
         )
         await msg.ack()
     except TelegramForbiddenError:
