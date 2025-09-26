@@ -1,19 +1,25 @@
-from backend.core.database.models.sgotinish import Message, MessageReadStatus
+from typing import List
+
 from backend.common.cruds import QueryBuilder
 from backend.common.utils import response_builder
+from backend.core.database.models.sgotinish import Conversation, Message, MessageReadStatus, Ticket
+from backend.core.database.models.user import User, UserRole
 from backend.modules.sgotinish.messages import schemas
 from backend.modules.sgotinish.messages.policy import MessagePolicy
+from backend.modules.sgotinish.tickets.interfaces import AbstractNotificationService
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from typing import List
-from backend.core.database.models.sgotinish import Conversation
-from backend.core.database.models.user import UserRole
-
 
 class MessageService:
-    def __init__(self, db_session: AsyncSession):
+    def __init__(
+        self,
+        db_session: AsyncSession,
+        notification_service: AbstractNotificationService,
+    ):
         self.db_session = db_session
+        self.notification_service = notification_service
 
     async def _build_message_response(
         self, message: Message, user: tuple[dict, dict]
@@ -30,8 +36,7 @@ class MessageService:
             schemas.MessageResponseDTO,
             dto,
             message_read_statuses=[
-                schemas.BaseMessageReadStatus.model_validate(rs)
-                for rs in message.read_statuses
+                schemas.BaseMessageReadStatus.model_validate(rs) for rs in message.read_statuses
             ],
             permissions=MessagePolicy(user).get_permissions(message),
         )
@@ -95,17 +100,37 @@ class MessageService:
         )
 
         qb = QueryBuilder(self.db_session, Message)
-        message = await qb.add(data=internal_message_data, preload=[Message.conversation, Message.read_statuses])
+        message = await qb.add(
+            data=internal_message_data,
+        )
+        await self.db_session.flush()
 
         # Automatically mark the message as read for the sender
         await qb.blank(model=MessageReadStatus).add(
-            schemas.MessageReadStatusCreateDTO(
-                message_id=message.id, user_sub=user_sub
-            )
+            schemas.MessageReadStatusCreateDTO(message_id=message.id, user_sub=user_sub)
         )
 
-        # Refetch the message with all relations to build the response
-        return await self._build_message_response(message, user)
+        # Reload message with all necessary data for notification AND response
+        stmt = (
+            select(Message)
+            .where(Message.id == message.id)
+            .options(
+                selectinload(Message.read_statuses),
+                selectinload(Message.conversation)
+                .selectinload(Conversation.ticket)
+                .selectinload(Ticket.author),
+                selectinload(Message.conversation)
+                .selectinload(Conversation.sg_member)
+                .selectinload(User.department),
+            )
+        )
+        result = await self.db_session.execute(stmt)
+        full_message = result.scalar_one()
+
+        await self.notification_service.notify_new_message(full_message)
+
+        # Use the fully loaded message for the response as well
+        return await self._build_message_response(full_message, user)
 
     async def mark_message_as_read(
         self, message: Message, user: tuple[dict, dict]
@@ -130,4 +155,3 @@ class MessageService:
 
         # Refetch the message with all relations to build the response
         return await self.get_message_by_id(message.id, user)
-

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from backend.core.database.models.sgotinish import Ticket, TicketAccess
+from backend.core.database.models.sgotinish import Ticket, TicketAccess, Message
 from backend.core.database.models.user import User
 from backend.modules.sgotinish.tickets import schemas
 
@@ -21,6 +21,10 @@ class AbstractNotificationService(ABC):
         """Notifies user about a ticket updated."""
         pass
 
+    @abstractmethod
+    async def notify_new_message(self, message: Message) -> None:
+        """Notifies user about a new message."""
+        pass
 
 class AbstractConversationService(ABC):
     @abstractmethod

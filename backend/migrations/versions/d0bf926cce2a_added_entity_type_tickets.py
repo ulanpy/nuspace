@@ -28,7 +28,7 @@ def upgrade() -> None:
     op.execute("ALTER TYPE userrole ADD VALUE 'boss'")
     op.execute("ALTER TYPE userrole ADD VALUE 'capo'")
     op.execute("ALTER TYPE userrole ADD VALUE 'soldier'")
-    
+    op.execute("ALTER TYPE entity_type ADD VALUE 'messages'")
     # ### end Alembic commands ###
 
 

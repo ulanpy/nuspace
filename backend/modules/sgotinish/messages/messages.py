@@ -4,11 +4,14 @@ from backend.common.dependencies import (
     get_creds_or_401,
     get_creds_or_guest,
     get_db_session,
+    get_infra,
 )
+from backend.common.schemas import Infra
 from backend.core.database.models.sgotinish import (
     Conversation,
     Message,
 )
+from backend.modules.notification.service import NotificationService
 from backend.modules.sgotinish.conversations.dependencies import (
     conversation_exists_or_404,
     get_conversation_from_body_or_404,
@@ -27,8 +30,10 @@ router = APIRouter(tags=["SGotinish Messages Routes"])
 
 def get_message_service(
     db_session: AsyncSession = Depends(get_db_session),
+    infra: Infra = Depends(get_infra),
 ) -> MessageService:
-    return MessageService(db_session)
+    notification_service = NotificationService(db_session, infra)
+    return MessageService(db_session, notification_service)
 
 
 # ============================================================================
@@ -48,8 +53,9 @@ async def create_message(
     Creates a new message in a conversation.
 
     **Access Policy:**
-    - Users can send messages in conversations for their tickets
-    - SG members can send messages in any conversation
+    - The author of the ticket can send messages.
+    - The SG member who created the conversation can send messages.
+    - Admins can always send messages.
 
     **Parameters:**
     - `message_data`: Message data including conversation_id, sender_sub, body
