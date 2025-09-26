@@ -43,11 +43,31 @@ class NotificationService(AbstractNotificationService):
         notifications_data = [
             RequestNotiification(
                 title=f"{access.granter.name} {access.granter.surname} has granted you access to a ticket",
-                message=f"Ticket: {ticket.title}\nPermission: {access.permission}",
+                message=f"Ticket: {ticket.title}\nPermission: {access.permission.value}",
                 notification_source=EntityType.tickets,
                 receiver_sub=access.user_sub,
                 type=NotificationType.info,
                 telegram_id=access.user.telegram_id,
+                url="https://sgotinish.org/tickets",
+            )
+        ]
+        if notifications_data:
+            await send(
+                infra=self.infra,
+                notification_data=notifications_data,
+                session=self.session,
+            )
+
+    async def notify_ticket_updated(self, ticket: Ticket):
+        """Notifies user about a ticket updated."""
+        notifications_data = [
+            RequestNotiification(
+                title="Your ticket status has been updated",
+                message=f"Ticket: {ticket.title}\nStatus: {ticket.status.value}",
+                notification_source=EntityType.tickets,
+                receiver_sub=ticket.author.sub,
+                type=NotificationType.info,
+                telegram_id=ticket.author.telegram_id,
                 url="https://sgotinish.org/tickets",
             )
         ]

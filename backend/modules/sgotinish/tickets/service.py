@@ -113,6 +113,7 @@ class TicketService:
             permissions=TicketPolicy(user).get_permissions(
                 ticket, access_map.get(ticket.id)
             ),
+            ticket_access=access_map.get(ticket.id)[0].permission if access_map.get(ticket.id) else None,
         )
 
     async def get_tickets(
@@ -253,7 +254,21 @@ class TicketService:
         self, ticket: Ticket, ticket_data: schemas.TicketUpdateDTO, user: tuple[dict, dict]
     ) -> schemas.TicketResponseDTO:
         qb = QueryBuilder(session=self.db_session, model=Ticket)
-        ticket: Ticket = await qb.update(instance=ticket, update_data=ticket_data)
+        ticket: Ticket = await qb.update(
+            instance=ticket, 
+            update_data=ticket_data, 
+            preload=[Ticket.author]
+        )
+        # Reload the ticket with all necessary relationships
+        ticket = await (
+            qb.blank(model=Ticket)
+            .base()
+            .filter(Ticket.id == ticket.id)
+            .eager(Ticket.author)
+            .option(selectinload(Ticket.conversations).selectinload(Conversation.sg_member))
+            .first()
+        )
+        await self.notification_service.notify_ticket_updated(ticket)
         return await self._build_ticket_response(ticket, user)
 
     async def get_ticket_by_id(
