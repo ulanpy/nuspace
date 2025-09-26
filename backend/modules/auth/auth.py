@@ -39,7 +39,7 @@ async def login(
     request: Request,
     state: str | None = None,
     return_to: str | None = None,
-    mock_user: str | None = "1",  # shorthand alias
+    mock_user: str | None = "3",  # shorthand alias
 ):
     kc: KeyCloakManager = request.app.state.kc_manager
     redis = request.app.state.redis
@@ -413,7 +413,6 @@ async def get_current_user(
         "role": app_principal.get("role"),  # Example from your AppTokenManager
         "communities": app_principal.get("communities"),
         "department_id": department_id,
-        
     }
 
     # under development

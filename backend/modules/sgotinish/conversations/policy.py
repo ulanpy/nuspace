@@ -1,12 +1,13 @@
+from backend.common.schemas import ResourcePermissions
 from backend.core.database.models.sgotinish import (
     Conversation,
+    PermissionType,
     Ticket,
     TicketAccess,
-    PermissionType,
 )
 from backend.modules.sgotinish.base import BasePolicy
-from backend.common.schemas import ResourcePermissions
-from fastapi import HTTPException, status as http_status
+from fastapi import HTTPException
+from fastapi import status as http_status
 
 
 class ConversationPolicy(BasePolicy):
@@ -16,6 +17,7 @@ class ConversationPolicy(BasePolicy):
         """
         Check if a user can create a new conversation for a ticket.
         Only users with assignment or delegation rights can initiate a conversation.
+        An SG member can only create one conversation per ticket.
         """
         if self.is_admin:
             return
@@ -25,6 +27,15 @@ class ConversationPolicy(BasePolicy):
             PermissionType.ASSIGN,
             PermissionType.DELEGATE,
         ]:
+            # Check if this SG member has already started a conversation for this ticket
+            if self.is_sg_member:
+                user_sub = self._get_user_sub()
+                for conv in ticket.conversations:
+                    if conv.sg_member_sub == user_sub:
+                        raise HTTPException(
+                            status_code=http_status.HTTP_409_CONFLICT,
+                            detail="You have already created a conversation for this ticket.",
+                        )
             return
 
         raise HTTPException(
