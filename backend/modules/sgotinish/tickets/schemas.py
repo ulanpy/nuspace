@@ -111,6 +111,8 @@ class TicketResponseDTO(BaseTicket):
         description="User permissions for this ticket",
     )
 
+    ticket_access: PermissionType | None = None
+
     unread_count: int = Field(
         default=0,
         description="Number of unread messages in this ticket",

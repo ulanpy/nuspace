@@ -16,6 +16,11 @@ class AbstractNotificationService(ABC):
         """Notifies user about a ticket access granted."""
         pass
 
+    @abstractmethod
+    async def notify_ticket_updated(self, ticket: Ticket) -> None:
+        """Notifies user about a ticket updated."""
+        pass
+
 
 class AbstractConversationService(ABC):
     @abstractmethod
@@ -24,3 +29,4 @@ class AbstractConversationService(ABC):
     ) -> dict[int, List[schemas.ConversationResponseDTO]]:
         """Gets conversation DTOs for a list of tickets."""
         pass
+
