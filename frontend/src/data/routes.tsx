@@ -103,7 +103,6 @@ export const ROUTES = {
       ROOT: buildPath(APPS, SGOTINISH),
       STUDENT: {
         ROOT: buildPath(APPS, SGOTINISH, STUDENT),
-        CREATE: buildPath(APPS, SGOTINISH, STUDENT, CREATE),
         TICKET: {
           DETAIL: buildPath(APPS, SGOTINISH, STUDENT, TICKET, ":id"),
           DETAIL_FN: (id: string) => buildPath(APPS, SGOTINISH, STUDENT, TICKET, id),
@@ -139,7 +138,6 @@ const LAZY_ROUTES_REL = {
     DORM_EATS: DORM_EATS,
     SGOTINISH: SGOTINISH,
     SGOTINISH_STUDENT_ROOT: `${SGOTINISH}/${STUDENT}`,
-    SGOTINISH_STUDENT_CREATE: `${SGOTINISH}/${STUDENT}/${CREATE}`,
     SGOTINISH_STUDENT_TICKET_DETAIL: `${SGOTINISH}/${STUDENT}/${TICKET}/:id`,
     SGOTINISH_SG_ROOT: `${SGOTINISH}/${SG}`,
     SGOTINISH_SG_TICKET_DETAIL: `${SGOTINISH}/${SG}/${TICKET}/:id`,
@@ -194,10 +192,6 @@ export const LazyRoutes = {
       {
         path: LAZY_ROUTES_REL.APPS.SGOTINISH_STUDENT_ROOT,
         Component: withSuspense(lazy(() => import("@/features/sgotinish/components/StudentDashboard"))),
-      },
-      {
-        path: LAZY_ROUTES_REL.APPS.SGOTINISH_STUDENT_CREATE,
-        Component: withSuspense(lazy(() => import("@/features/sgotinish/components/CreateTicket"))),
       },
       {
         path: LAZY_ROUTES_REL.APPS.SGOTINISH_STUDENT_TICKET_DETAIL,

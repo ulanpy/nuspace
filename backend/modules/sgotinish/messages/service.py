@@ -53,7 +53,7 @@ class MessageService:
                 selectinload(Message.read_statuses),
             )
             .paginate(size, page)
-            .order(Message.sent_at.desc())
+            .order(Message.sent_at.asc())
             .all()
         )
         count = (

@@ -67,7 +67,7 @@ jobs:
         with:
           tags: |
             type=sha,format=short
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest
 
       # --- Build FastAPI Image ---
       - name: Build and Push FastAPI Image

@@ -33,11 +33,10 @@ async def register_course(
     **Returns:**
     - Created course registration with course details
     """
-    student_sub = user[0].get("sub")
-    StudentCoursePolicy(user=user).check_create(student_sub=student_sub)
+    StudentCoursePolicy(user=user).check_create(student_sub=data.student_sub)
 
     service = StudentCourseService(db_session=db_session)
-    student_course = await service.register_course(data=data, student_sub=student_sub)
+    student_course = await service.register_course(data=data, student_sub=user[0].get("sub"))
 
     if not student_course:
         raise HTTPException(

@@ -1,12 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { GradeStatisticsCard } from "../components/GradeStatisticsCard";
 import { RegisteredCourseCard } from "../components/RegisteredCourseCard";
-import { GradeStatistics, BaseCourse, RegisteredCourse, CourseItemCreate, BaseCourseItem } from "../types";
+import {
+  GradeStatistics,
+  BaseCourse,
+  RegisteredCourse,
+  CourseItemCreate,
+  BaseCourseItem,
+  TemplateResponse,
+} from "../types";
 import { SearchableInfiniteList } from "@/components/virtual/SearchableInfiniteList";
 import { usePreSearchGrades } from "../api/hooks/usePreSearchGrades";
-import { BarChart3, Calculator, Plus, Search } from "lucide-react";
+import { BarChart3, Calculator, Plus, Search, UsersRound, Share2, RefreshCw } from "lucide-react";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { Card, CardContent } from "@/components/atoms/card";
 import { gradeStatisticsApi } from "../api/gradeStatisticsApi";
@@ -21,10 +28,24 @@ import { useEffect } from "react";
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/atoms/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/atoms/modal";
 import { ConfirmationModal } from "../components/ConfirmationModal";
 import { ToggleGroup, ToggleGroupItem } from "@/components/atoms/toggle-group";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/atoms/sheet";
+import { Skeleton } from "@/components/atoms/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar";
+import {
+  buildTemplateCreatePayload,
+  canShareTemplate,
+  calculateTemplateCoverage,
+  sortTemplatesByRecency,
+  calculateTemplateWeight,
+  buildTemplateUpdatePayload,
+  canUpdateTemplate,
+} from "../utils/templateUtils";
+import { useToast } from "@/hooks/use-toast";
 
 export default function GradeStatisticsPage() {
   const [selected, setSelected] = useState<GradeStatistics[]>([]);
@@ -55,6 +76,18 @@ export default function GradeStatisticsPage() {
   const [terms, setTerms] = useState<string[]>([]);
   const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
   const { user, login } = useUser();
+  const { toast } = useToast();
+  const [templateDrawerCourse, setTemplateDrawerCourse] = useState<RegisteredCourse | null>(null);
+  const [isTemplateDrawerOpen, setIsTemplateDrawerOpen] = useState(false);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templates, setTemplates] = useState<TemplateResponse[]>([]);
+  const [templatePage, setTemplatePage] = useState(1);
+  const [templateTotalPages, setTemplateTotalPages] = useState(1);
+  const [isTemplatesInitialFetch, setIsTemplatesInitialFetch] = useState(false);
+  const [importingTemplateId, setImportingTemplateId] = useState<number | null>(null);
+  const [sharingCourse, setSharingCourse] = useState<RegisteredCourse | null>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   const maxSelections = 8;
 
@@ -122,7 +155,10 @@ export default function GradeStatisticsPage() {
 
   const handleRegisterCourse = async (courseId: number) => {
     try {
-      const newRegisteredCourse = await gradeStatisticsApi.registerCourse({ course_id: courseId });
+      const newRegisteredCourse = await gradeStatisticsApi.registerCourse({ 
+        course_id: courseId,
+        student_sub: user?.sub || "me"
+      });
       setRegisteredCourses(prev => [...prev, newRegisteredCourse]);
       if (!selectedRegisteredCourse) {
         setSelectedRegisteredCourse(newRegisteredCourse);
@@ -197,25 +233,228 @@ export default function GradeStatisticsPage() {
     return Math.max(0, Math.min(100, value));
   };
 
+  const handleShareTemplate = async () => {
+    if (!sharingCourse) return;
+    try {
+      if (!canShareTemplate(sharingCourse)) {
+        toast({
+          variant: "warning",
+          title: "Add assignments first",
+          description: "Please add at least one item before sharing a template.",
+        });
+        return;
+      }
+      setIsSharing(true);
+      const payload = buildTemplateCreatePayload(sharingCourse);
+      let createdTemplate: TemplateResponse | null = null;
+      let createError: unknown = null;
+
+      try {
+        createdTemplate = await gradeStatisticsApi.createTemplate(payload);
+      } catch (err) {
+        createError = err;
+      }
+
+      if (!createdTemplate) {
+        const isConflict =
+          typeof createError === "object" &&
+          createError !== null &&
+          "response" in createError &&
+          (createError as { response?: Response }).response?.status === 409;
+
+        if (isConflict) {
+          // Validate that template_items is not empty before updating
+          if (!canUpdateTemplate(sharingCourse)) {
+            toast({
+              variant: "warning",
+              title: "Add assignments first",
+              description: "Please add at least one item before updating a template.",
+            });
+            return;
+          }
+
+          const updatePayload = buildTemplateUpdatePayload(sharingCourse);
+
+          const ensureTemplateId = async (): Promise<number | null> => {
+            const existing = templates.find((t) => t.template.course_id === sharingCourse.course.id);
+            if (existing) return existing.template.id;
+
+            const response = await gradeStatisticsApi.getTemplates({
+              course_id: sharingCourse.course.id,
+              page: 1,
+              size: 1,
+            });
+            return response.templates[0]?.template.id ?? null;
+          };
+
+          const templateId = await ensureTemplateId();
+          if (templateId) {
+            createdTemplate = await gradeStatisticsApi.updateTemplate(templateId, updatePayload);
+          } else {
+            throw createError;
+          }
+        } else if (createError) {
+          throw createError;
+        }
+      }
+
+      toast({
+        variant: "success",
+        title: "Template shared",
+        description: "Your course template is now available to peers.",
+      });
+      closeShareModal();
+      if (templateDrawerCourse?.id === sharingCourse.id) {
+        setTemplates([]);
+        setTemplateTotalPages(1);
+        setTemplatePage(1);
+        setIsTemplatesInitialFetch(true);
+        await loadTemplates(sharingCourse, 1, true);
+      }
+    } catch (error) {
+      console.error("Failed to share template", error);
+      toast({
+        variant: "destructive",
+        title: "Share failed",
+        description: "We couldn't share this template. Try again later.",
+      });
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const openShareModal = (course: RegisteredCourse) => {
+    setSharingCourse(course);
+    setIsShareModalOpen(true);
+  };
+
+  const closeShareModal = () => {
+    setIsShareModalOpen(false);
+    setSharingCourse(null);
+  };
+
+  const templatesPageSize = 10;
+
+  const loadTemplates = useCallback(
+    async (course: RegisteredCourse, page: number, replace = false) => {
+      setTemplatesLoading(true);
+      try {
+        const response = await gradeStatisticsApi.getTemplates({
+          course_id: course.course.id,
+          page,
+          size: templatesPageSize,
+        });
+        const sorted = sortTemplatesByRecency(response.templates);
+        setTemplates((prev) =>
+          replace
+            ? sorted
+            : [
+                ...prev,
+                ...sorted.filter((tmpl) => !prev.some((p) => p.template.id === tmpl.template.id)),
+              ],
+        );
+        setTemplateTotalPages(response.total_pages);
+        setTemplatePage(page);
+      } catch (error) {
+        console.error("Failed to load templates", error);
+        toast({
+          variant: "destructive",
+          title: "Failed to load",
+          description: "Unable to fetch templates for this course.",
+        });
+      } finally {
+        setTemplatesLoading(false);
+        setIsTemplatesInitialFetch(false);
+      }
+    },
+    [toast],
+  );
+
+  const handleOpenTemplates = useCallback(
+    async (course: RegisteredCourse) => {
+      setTemplateDrawerCourse(course);
+      setIsTemplateDrawerOpen(true);
+      setTemplates([]);
+      setTemplateTotalPages(1);
+      setTemplatePage(1);
+      setIsTemplatesInitialFetch(true);
+      await loadTemplates(course, 1, true);
+    },
+    [loadTemplates],
+  );
+
+  const handleLoadMoreTemplates = useCallback(async () => {
+    if (!templateDrawerCourse) return;
+    const nextPage = templatePage + 1;
+    if (nextPage > templateTotalPages) return;
+    await loadTemplates(templateDrawerCourse, nextPage);
+  }, [templateDrawerCourse, templatePage, templateTotalPages, loadTemplates]);
+
+  const closeTemplateDrawer = useCallback(() => {
+    setIsTemplateDrawerOpen(false);
+    setTemplateDrawerCourse(null);
+    setTemplates([]);
+    setTemplatePage(1);
+    setTemplateTotalPages(1);
+    setImportingTemplateId(null);
+  }, []);
+
+  const handleImportTemplate = useCallback(
+    async (template: TemplateResponse) => {
+      if (!templateDrawerCourse) return;
+      setImportingTemplateId(template.template.id);
+      try {
+        const response = await gradeStatisticsApi.importTemplate(
+          template.template.id,
+          templateDrawerCourse.id,
+        );
+        setRegisteredCourses((prev) =>
+          prev.map((course) =>
+            course.id === response.student_course_id
+              ? {
+                  ...course,
+                  items: response.items,
+                }
+              : course,
+          ),
+        );
+        toast({
+          variant: "success",
+          title: "Template imported",
+          description: `Imported ${template.template_items.length} items into your course.`,
+        });
+        closeTemplateDrawer();
+      } catch (error) {
+        console.error("Failed to import template", error);
+        toast({
+          variant: "destructive",
+          title: "Import failed",
+          description: "Unable to import this template. Please try again.",
+        });
+      } finally {
+        setImportingTemplateId(null);
+      }
+    },
+    [templateDrawerCourse, toast, closeTemplateDrawer],
+  );
+
   // Smart numeric input helpers (mobile-first): allow digits + one decimal, clamp 0..100
   const normalizeNumberInput = (raw: string): string => {
-    const replaced = raw.replace(/,/g, ".");
-    const filtered = replaced.replace(/[^0-9.]/g, "");
-    const firstDot = filtered.indexOf(".");
-    const singleDecimal = firstDot === -1
-      ? filtered
-      : filtered.slice(0, firstDot + 1) + filtered.slice(firstDot + 1).replace(/\./g, "");
-    if (singleDecimal === "" || singleDecimal === ".") return singleDecimal; // allow typing start
-    const num = Number(singleDecimal);
-    if (Number.isNaN(num)) return "";
-    const clamped = Math.max(0, Math.min(100, num));
-    return clamped.toString();
+    if (!raw) return "";
+    const cleaned = raw
+      .replace(/,/g, ".")
+      .replace(/[^0-9.]/g, "");
+    const dotIndex = cleaned.indexOf(".");
+    const normalized = dotIndex === -1
+      ? cleaned
+      : cleaned.slice(0, dotIndex + 1) + cleaned.slice(dotIndex + 1).replace(/\./g, "");
+    return normalized;
   };
 
   const parseInput = (raw: string): number | null => {
     if (!raw) return null;
     const v = Number(raw.replace(/,/g, "."));
-    return Number.isNaN(v) ? null : v;
+    return Number.isNaN(v) ? null : Math.min(100, Math.max(0, v));
   };
 
   // Keep obtained <= max in real-time
@@ -317,85 +556,92 @@ export default function GradeStatisticsPage() {
 
   return (
     <MotionWrapper>
-      <div className="w-full max-w-none">
+      <div className="w-full max-w-none space-y-6">
 
         {/* Tabs: Course Statistics vs Live GPA */}
         <Tabs defaultValue="live-gpa">
-          <TabsList className="w-full grid grid-cols-2 mb-4">
+          <TabsList className="mb-4 grid w-full grid-cols-2 rounded-full bg-muted/60 p-1">
             <TabsTrigger value="live-gpa">Your Live GPA</TabsTrigger>
             <TabsTrigger value="course-stats">Course Statistics</TabsTrigger>
           </TabsList>
 
           <TabsContent value="live-gpa">
             <div className="space-y-4">
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-2">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <Calculator className="h-5 w-5" />
-                  <h2 className="text-lg font-semibold">Live GPA Calculator</h2>
+                  <h2 className="text-base font-medium text-foreground">Live GPA overview</h2>
                 </div>
                 {user && (
                   <>
                     <Button size="sm" onClick={() => setIsAddCourseModalOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Course
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add course
                     </Button>
                     <Modal
                       isOpen={isAddCourseModalOpen}
                       onClose={() => setIsAddCourseModalOpen(false)}
-                      title="Find & Register Courses"
+                      title="Add course"
+                      className="max-w-lg"
+                      contentClassName="rounded-3xl"
                     >
-                      <div className="relative my-3">
-                        <label className="text-sm font-medium mb-2 block">Select Term</label>
-                        <select 
-                          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          value={selectedTerm || ''}
-                          onChange={(e) => setSelectedTerm(e.target.value || null)}
-                        >
-                          <option value="">Select a term...</option>
-                          {terms.map(term => (
-                            <option key={term} value={term}>{term}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="relative my-3">
-                        <Search className="h-4 w-4 absolute left-2 top-2.5 text-muted-foreground" />
-                        <Input
-                          className="pl-8"
-                          placeholder="Search course code, title or faculty..."
-                          value={courseSearch}
-                          onChange={(e) => setCourseSearch(e.target.value)}
-                          disabled={!selectedTerm}
-                        />
-                      </div>
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {availableCourses.map(course => (
-                          <div key={course.id} className="flex items-center justify-between p-2 border rounded-md">
-                            <div className="flex-1">
-                              <div className="text-sm font-medium">
-                                {course.course_code} {course.section ? `(${course.section})` : ''}
+                      <div className="space-y-4">
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-foreground">Term</label>
+                          <select
+                            className="flex h-11 w-full items-center rounded-xl border border-border/60 bg-muted/30 px-3 text-sm text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={selectedTerm || ''}
+                            onChange={(e) => setSelectedTerm(e.target.value || null)}
+                          >
+                            <option value="">Select a term…</option>
+                            {terms.map(term => (
+                              <option key={term} value={term}>{term}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            className="h-11 rounded-xl border-border/60 bg-background pl-9"
+                            placeholder="Search course code, title or faculty…"
+                            value={courseSearch}
+                            onChange={(e) => setCourseSearch(e.target.value)}
+                            disabled={!selectedTerm}
+                          />
+                        </div>
+                        <div className="max-h-72 space-y-3 overflow-y-auto rounded-2xl border border-border/60 bg-card/40 p-3">
+                          {availableCourses.map(course => (
+                            <div key={course.id} className="flex items-start gap-3 rounded-xl border border-border/40 bg-background/90 p-3">
+                              <div className="flex-1 space-y-1 text-sm">
+                                <p className="font-medium text-foreground">
+                                  {course.course_code} {course.section ? `(${course.section})` : ''}
+                                </p>
+                                {course.course_title && (
+                                  <p className="text-muted-foreground">{course.course_title}</p>
+                                )}
+                                <p className="text-xs text-muted-foreground">
+                                  {course.faculty} · {course.credits} credits · {course.term}
+                                </p>
                               </div>
-                              <div className="text-xs text-muted-foreground">
-                                {course.faculty} · {course.credits} credits · {course.term}
-                              </div>
+                              <Button
+                                size="sm"
+                                className="rounded-full px-4"
+                                onClick={() => handleRegisterCourse(course.id)}
+                              >
+                                Add
+                              </Button>
                             </div>
-                            <Button
-                              size="sm"
-                              onClick={() => handleRegisterCourse(course.id)}
-                              className="ml-2"
-                            >
-                              Add
-                            </Button>
-                          </div>
-                        ))}
-                        {availableCourses.length === 0 && (
-                          <div className="text-sm text-muted-foreground text-center py-4">
-                            {!selectedTerm
-                              ? 'Please select a term to begin'
-                              : courseSearch
-                                ? 'No matching courses found'
-                                : 'Start typing to search for courses.'}
-                          </div>
-                        )}
+                          ))}
+                          {availableCourses.length === 0 && (
+                            <div className="py-8 text-center text-sm text-muted-foreground">
+                              {!selectedTerm
+                                ? "Select a term to view courses"
+                                : courseSearch
+                                  ? "No matching courses"
+                                  : "Start typing to search for courses"}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </Modal>
                   </>
@@ -412,10 +658,12 @@ export default function GradeStatisticsPage() {
                     setNewItem({ item_name: "", total_weight_pct: null, obtained_score_pct: null, max_score: undefined });
                     setNewItemInput({ weight: "", max: "", obtained: "" });
                   }}
-                  title={`Add Item to ${selectedRegisteredCourse.course.course_code}`}
+                  title={itemToEdit ? "Edit assignment" : "Add assignment"}
+                  className="max-w-md"
+                  contentClassName="rounded-3xl"
                 >
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-3">
                       <div>
                         <label className="text-sm font-medium mb-2 block">Item Name</label>
                         <Input
@@ -498,7 +746,9 @@ export default function GradeStatisticsPage() {
                 isOpen={!!itemToDelete}
                 onClose={() => setItemToDelete(null)}
                 onConfirm={handleDeleteItemConfirm}
-                title="Delete Course Item"
+                title="Delete assignment"
+                className="max-w-sm"
+                contentClassName="rounded-3xl"
                 description={`Are you sure you want to delete "${itemToDelete?.item_name}"? This action cannot be undone.`}
                 confirmText="Delete"
               />
@@ -511,10 +761,12 @@ export default function GradeStatisticsPage() {
                     setNewItem({ item_name: "", total_weight_pct: null, obtained_score_pct: null, max_score: undefined });
                     setNewItemInput({ weight: "", max: "", obtained: "" });
                   }}
-                  title={`Edit Item: ${itemToEdit.item_name}`}
+                  title="Edit assignment"
+                  className="max-w-md"
+                  contentClassName="rounded-3xl"
                 >
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-3">
                       <div>
                         <label className="text-sm font-medium mb-2 block">Item Name</label>
                         <Input
@@ -541,19 +793,6 @@ export default function GradeStatisticsPage() {
                         )}
                       </div>
                       <div>
-                        <label className="text-sm font-medium mb-2 block">Obtained Score (%)</label>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="e.g., 85"
-                          value={newItemInput.obtained}
-                          onChange={(e) => setNewItemInput(v => ({ ...v, obtained: normalizeNumberInput(e.target.value) }))}
-                        />
-                        {!obtainedNumValid && (
-                          <p className="mt-1 text-xs text-red-600">Obtained must be 0–100 and ≤ Max.</p>
-                        )}
-                      </div>
-                      <div>
                         <label className="text-sm font-medium mb-2 block">Max Score</label>
                         <Input
                           type="text"
@@ -564,6 +803,19 @@ export default function GradeStatisticsPage() {
                         />
                         {!maxNumValid && (
                           <p className="mt-1 text-xs text-red-600">Max must be between 0 and 100.</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Obtained Score</label>
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="e.g., 85"
+                          value={newItemInput.obtained}
+                          onChange={(e) => setNewItemInput(v => ({ ...v, obtained: normalizeNumberInput(e.target.value) }))}
+                        />
+                        {!obtainedNumValid && (
+                          <p className="mt-1 text-xs text-red-600">Obtained must be 0–100 and ≤ Max.</p>
                         )}
                       </div>
                     </div>
@@ -583,69 +835,299 @@ export default function GradeStatisticsPage() {
                 </Modal>
               )}
 
+              {sharingCourse && (
+                <Modal
+                  isOpen={isShareModalOpen}
+                  onClose={closeShareModal}
+                  title="Share course template"
+                  className="max-w-md"
+                  contentClassName="rounded-3xl"
+                >
+                  <div className="space-y-5">
+                    <div className="space-y-1">
+                      <h3 className="text-base font-semibold text-foreground">
+                        {sharingCourse.course.course_code}
+                        {sharingCourse.course.section ? ` · ${sharingCourse.course.section}` : ""}
+                      </h3>
+                      {sharingCourse.course.course_title && (
+                        <p className="text-sm text-muted-foreground">
+                          {sharingCourse.course.course_title}
+                        </p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-center text-xs">
+                      <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Assignments</p>
+                        <p className="mt-1 text-lg font-semibold text-foreground">{sharingCourse.items.length}</p>
+                      </div>
+                      <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Coverage</p>
+                        <p className="mt-1 text-lg font-semibold text-foreground">
+                          {Math.min(100, Math.max(0, calculateTemplateCoverage(sharingCourse))).toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      Share your assignment names and weights (not your grades) so peers can set up their course structure.
+                    </p>
+
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-muted-foreground">Preview</p>
+                      {sharingCourse.items.length > 0 ? (
+                        <div className="space-y-2">
+                          {sharingCourse.items.slice(0, 5).map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between rounded-lg border border-border/40 bg-background/70 px-3 py-2"
+                            >
+                              <span className="text-sm font-medium text-foreground line-clamp-1">{item.item_name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {(item.total_weight_pct ?? 0).toFixed(1)}%
+                              </span>
+                            </div>
+                          ))}
+                          {sharingCourse.items.length > 5 && (
+                            <p className="text-xs text-muted-foreground">+
+                              {sharingCourse.items.length - 5} more assignments included
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-xs text-muted-foreground">
+                          Add at least one assignment to share a template.
+                        </div>
+                      )}
+                    </div>
+
+                    {calculateTemplateCoverage(sharingCourse) < 100 && (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                        <p className="font-medium">Heads up</p>
+                        <p>Your template covers less than 100% of the course weight. Peers can add missing items after importing.</p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={closeShareModal} disabled={isSharing}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleShareTemplate} disabled={isSharing || !canShareTemplate(sharingCourse)}>
+                        {isSharing ? "Sharing…" : "Share template"}
+                      </Button>
+                    </div>
+                  </div>
+                </Modal>
+              )}
+
+              <Sheet
+                open={isTemplateDrawerOpen}
+                onOpenChange={(open) => {
+                  if (!open) closeTemplateDrawer();
+                }}
+              >
+                <SheetContent
+                  side="right"
+                  className="w-full max-w-full overflow-y-auto bg-background/95 sm:max-w-md"
+                >
+                  <SheetHeader className="space-y-2">
+                    <SheetTitle className="text-left text-lg font-semibold">
+                      {templateDrawerCourse?.course.course_code}
+                      {templateDrawerCourse?.course.section ? ` · ${templateDrawerCourse?.course.section}` : ""}
+                    </SheetTitle>
+                    <SheetDescription className="text-left text-sm">
+                      Browse templates shared by peers and replace your course items with a single tap.
+                    </SheetDescription>
+                  </SheetHeader>
+
+                  <div className="mt-4 space-y-4">
+                    {templateDrawerCourse && (
+                      <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm">
+                        <div className="font-semibold text-foreground">
+                          {templateDrawerCourse.course.course_title || templateDrawerCourse.course.course_code}
+                        </div>
+                        <div className="mt-2 grid grid-cols-2 gap-3 text-center text-xs text-muted-foreground">
+                          <div className="rounded-xl border border-border/40 bg-background/60 p-3">
+                            <p className="text-[11px] uppercase tracking-wide">Assignments</p>
+                            <p className="mt-1 text-lg font-semibold text-foreground">
+                              {templateDrawerCourse.items.length}
+                            </p>
+                          </div>
+                          <div className="rounded-xl border border-border/40 bg-background/60 p-3">
+                            <p className="text-[11px] uppercase tracking-wide">Coverage</p>
+                            <p className="mt-1 text-lg font-semibold text-foreground">
+                              {Math.min(100, Math.max(0, calculateTemplateCoverage(templateDrawerCourse))).toFixed(1)}%
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {isTemplatesInitialFetch ? (
+                      <div className="space-y-3">
+                        {Array.from({ length: 3 }).map((_, index) => (
+                          <div key={index} className="space-y-3 rounded-2xl border border-border/60 bg-background/70 p-4">
+                            <Skeleton className="h-4 w-1/2" />
+                            <Skeleton className="h-3 w-32" />
+                            <Skeleton className="h-20 w-full" />
+                            <Skeleton className="h-9 w-full" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : templates.length > 0 ? (
+                      <div className="space-y-3">
+                        {!isTemplatesInitialFetch && templateDrawerCourse && (
+                          <div className="rounded-lg border border-border/40 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                            Importing a template will replace your current assignments for this course. You can always edit them afterwards.
+                          </div>
+                        )}
+                        {templates.map((template) => {
+                          const coverage = Math.min(100, Math.max(0, calculateTemplateWeight(template))).toFixed(1);
+                          const createdAt = new Date(template.template.created_at);
+                          const initials = `${template.student.name?.charAt(0) ?? ""}${template.student.surname?.charAt(0) ?? ""}`.toUpperCase() || "P";
+                          return (
+                            <div
+                              key={template.template.id}
+                              className="space-y-3 rounded-2xl border border-border/60 bg-background/85 p-4"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-10 w-10">
+                                    <AvatarImage
+                                      src={template.student.picture}
+                                      alt={`${template.student.name} ${template.student.surname}`}
+                                    />
+                                    <AvatarFallback>{initials}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="text-sm font-semibold text-foreground">
+                                      {template.student.name} {template.student.surname}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Shared on {createdAt.toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  className="flex items-center gap-2"
+                                  onClick={() => handleImportTemplate(template)}
+                                  disabled={importingTemplateId === template.template.id}
+                                >
+                                  {importingTemplateId === template.template.id ? (
+                                    <RefreshCw className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    "Import"
+                                  )}
+                                </Button>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-center text-xs text-muted-foreground">
+                                <div className="rounded-lg border border-border/40 bg-muted/20 p-2">
+                                  <p className="text-[10px] uppercase tracking-wide">Items</p>
+                                  <p className="mt-1 text-sm font-semibold text-foreground">
+                                    {template.template_items.length}
+                                  </p>
+                                </div>
+                                <div className="rounded-lg border border-border/40 bg-muted/20 p-2">
+                                  <p className="text-[10px] uppercase tracking-wide">Coverage</p>
+                                  <p className="mt-1 text-sm font-semibold text-foreground">{coverage}%</p>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <p className="text-xs font-semibold text-muted-foreground">Assignments preview</p>
+                                <div className="space-y-1">
+                                  {template.template_items.slice(0, 4).map((item) => (
+                                    <div
+                                      key={item.id}
+                                      className="flex items-center justify-between rounded-lg border border-border/40 bg-background/70 px-3 py-2"
+                                    >
+                                      <span className="text-sm font-medium text-foreground line-clamp-1">
+                                        {item.item_name}
+                                      </span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {(item.total_weight_pct ?? 0).toFixed(1)}%
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                                {template.template_items.length > 4 && (
+                                  <p className="text-xs text-muted-foreground">
+                                    +{template.template_items.length - 4} more items included
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {templatePage < templateTotalPages && (
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={handleLoadMoreTemplates}
+                            disabled={templatesLoading}
+                          >
+                            {templatesLoading ? "Loading…" : "Load more"}
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3 rounded-2xl border border-dashed border-border/60 bg-muted/15 p-6 text-center">
+                        <p className="text-sm font-medium text-foreground">No templates shared yet</p>
+                        <p className="text-xs text-muted-foreground">
+                          Be the first to share your course structure so your peers can start with a plan.
+                        </p>
+                      </div>
+                    )}
+
+                  </div>
+                </SheetContent>
+              </Sheet>
+
               {!user ? (
-                <div className="p-4 border rounded-md bg-muted/30 flex items-center justify-between gap-3">
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-muted/30 p-3">
                   <div className="text-sm text-muted-foreground">Login to track your course progress this semester.</div>
-                  <Button onClick={login} size="sm">Login</Button>
+                  <Button onClick={login} size="sm" className="h-8 rounded-full px-3 text-xs font-medium">Login</Button>
                 </div>
               ) : (
                 <>
-                  {/* Total GPA Display */}
-                  {registeredCourses.length > 0 && (
-                    <Card className="mb-6">
-                      <CardContent className="p-6">
-                        <div className="flex flex-col items-center gap-4">
-                          <div className="text-center">
-                            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                              {gpaMode === 'semester' ? 'Current Semester GPA' : gpaMode === 'maxPossible' ? 'Max Possible Semester GPA' : 'Projected Semester GPA'}
-                            </h3>
-                            <div className={`text-4xl font-bold ${getGPAColorClass(displayedGPA)}`}>
-                              {formatGPA(displayedGPA)}
-                            </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                              Based on {registeredCourses.length} registered course{registeredCourses.length !== 1 ? 's' : ''}
-                            </p>
-                          </div>
-                          <ToggleGroup 
-                            type="single" 
-                            value={gpaMode}
-                            onValueChange={(value) => {
-                              if (value) setGpaMode(value as 'semester' | 'maxPossible' | 'projected');
-                            }}
-                            className="w-full max-w-sm grid grid-cols-3"
-                          >
-                            <ToggleGroupItem value="semester" aria-label="Toggle semester GPA">
-                              Semester
-                            </ToggleGroupItem>
-                            <ToggleGroupItem value="maxPossible" aria-label="Toggle max possible semester GPA">
-                              Max
-                            </ToggleGroupItem>
-                            <ToggleGroupItem value="projected" aria-label="Toggle projected semester GPA">
-                              Projected
-                            </ToggleGroupItem>
-                          </ToggleGroup>
-                          <p className="text-xs text-center text-gray-500 max-w-md">
-                            {gpaMode === 'semester' 
-                              ? 'GPA using current contributions (treating missing items as zero).'
-                              : gpaMode === 'maxPossible'
-                                ? 'Maximum possible GPA if you ace all remaining course work (credit-weighted).'
-                                : 'Projected GPA assuming your average item score continues for remaining weight (credit-weighted).'}
-                          </p>
-                        </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Card className="rounded-2xl border border-border/50 bg-muted/40 p-4">
+                      <CardContent className="space-y-2 p-0">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">Total GPA</p>
+                        <p className={`text-3xl font-semibold ${getGPAColorClass(displayedGPA)}`}>{formatGPA(displayedGPA)}</p>
+                        <p className="text-xs text-muted-foreground">Across all registered courses</p>
                       </CardContent>
                     </Card>
-                  )}
+                    <Card className="rounded-2xl border border-border/50 bg-muted/40 p-4">
+                      <CardContent className="space-y-2 p-0">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">Max potential</p>
+                        <p className="text-3xl font-semibold text-foreground">
+                          {calculateMaxPossibleTotalGPA(registeredCourses).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">If you ace everything left</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="rounded-2xl border border-border/50 bg-muted/40 p-4">
+                      <CardContent className="space-y-2 p-0">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">Projected GPA</p>
+                        <p className="text-3xl font-semibold text-foreground">
+                          {calculateProjectedTotalGPA(registeredCourses).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Based on current trend</p>
+                      </CardContent>
+                    </Card>
+                  </div>
 
                   {/* Registered Courses */}
                   {registeredCourses.length > 0 ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {registeredCourses.map((registeredCourse) => (
                         <RegisteredCourseCard
                           key={registeredCourse.id}
                           registeredCourse={registeredCourse}
                           onDeleteCourse={handleUnregisterCourse}
                           onAddItem={(courseId) => {
-                            const course = registeredCourses.find(rc => rc.id === courseId);
+                            const course = registeredCourses.find((rc) => rc.id === courseId);
                             if (course) {
                               setSelectedRegisteredCourse(course);
                               setIsAddItemModalOpen(true);
@@ -653,13 +1135,15 @@ export default function GradeStatisticsPage() {
                           }}
                           onDeleteItem={handleDeleteItem}
                           onEditItem={handleEditItem}
+                          onShareTemplate={openShareModal}
+                          onOpenTemplates={handleOpenTemplates}
                         />
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-6 text-sm text-muted-foreground">
                       <Calculator className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No courses registered. Click "Add Course" to register courses and start tracking your GPA.</p>
+                      <p>No courses registered. Tap "Add course" to get started.</p>
                     </div>
                   )}
                 </>

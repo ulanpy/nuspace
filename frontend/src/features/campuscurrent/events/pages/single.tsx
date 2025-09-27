@@ -14,13 +14,11 @@ import { Button } from "@/components/atoms/button";
 import { Badge } from "@/components/atoms/badge";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/hooks/use-user";
 import { ROUTES } from "@/data/routes";
 import { useEvent } from "@/features/campuscurrent/events/hooks/useEvent";
 import { EventPolicy } from "@/features/campuscurrent/types/types";
 import { addToGoogleCalendar as addToGoogleCalendarUtil } from "@/features/campuscurrent/events/utils/calendar";
 import { EventModal } from "@/features/campuscurrent/events/components/EventModal";
-import { LoginModal } from "@/components/molecules/login-modal";
 import { CountdownBadge } from "@/features/campuscurrent/events/components/CountdownBadge";
 import { VerificationBadge } from "@/components/molecules/verification-badge";
 
@@ -57,22 +55,14 @@ const getPolicyColor = (policy: string) => {
 export default function EventDetailPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useUser();
   const { event, isLoading, isError } = useEvent();
 
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   const handleAddToCalendar = () => {
     if (!event) return;
-    if (!user) {
-      setPendingAction(() => handleAddToCalendar);
-      setShowLoginModal(true);
-      return;
-    }
     addToGoogleCalendarUtil(event);
     toast({
       title: "Success",
@@ -80,14 +70,6 @@ export default function EventDetailPage() {
     });
   };
 
-  const handleLoginSuccess = () => {
-    setShowLoginModal(false);
-    if (pendingAction) {
-      const action = pendingAction;
-      setPendingAction(null);
-      action();
-    }
-  };
 
   // Share event
   const shareEvent = () => {
@@ -447,13 +429,6 @@ export default function EventDetailPage() {
         permissions={event.permissions}
         event={event}
         isEditMode={true}
-      />
-      <LoginModal
-        isOpen={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        onSuccess={handleLoginSuccess}
-        title="Login Required"
-        message="You need to be logged in to add this event to your calendar."
       />
     </div>
   );

@@ -46,12 +46,24 @@ class TicketPolicy(BasePolicy):
             detail="You do not have permission to view this resource.",
         )
 
-    def check_read_list(self):
+    def check_read_list(self, author_sub: str | None = None):
         """
         Any authenticated user can attempt to list tickets.
         The service layer will filter the tickets based on the user's role and permissions.
         """
-        return
+        if self.is_admin:
+            return
+
+        if author_sub in ("me", self.user_sub):
+            return
+
+        if author_sub is None:
+            return
+
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this resource.",
+        )
 
     def check_read_one(self, ticket: Ticket, access: TicketAccess | None):
         """Check if user can read a specific ticket."""

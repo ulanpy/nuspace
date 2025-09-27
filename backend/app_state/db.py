@@ -8,7 +8,7 @@ async def setup_db(app: FastAPI):
     app.state.db_manager = AsyncDatabaseManager()
     # Avoid implicit schema creation in production – rely on Alembic migrations instead
 
-    # # === When modifying tables, comment this out! ===
+    # === When modifying tables, comment this out! ===
     if config.IS_DEBUG:
         await app.state.db_manager.create_all_tables()
 

@@ -35,7 +35,11 @@ async def validate_ticket_exists_or_404(
         HTTPException: 404 if ticket not found
     """
     qb = QueryBuilder(session=db_session, model=Ticket)
-    ticket = await qb.base().filter(Ticket.id == conversation_data.ticket_id).first()
+    ticket = (
+        await qb.base()
+        .filter(Ticket.id == conversation_data.ticket_id)
+        .eager(Ticket.conversations)
+        .first())
     
     if not ticket:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")

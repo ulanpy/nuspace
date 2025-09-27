@@ -9,15 +9,20 @@ import {
   TicketUpdatePayload,
   ConversationCreatePayload,
   MessageCreatePayload,
+  DelegateAccessPayload,
+  Department,
+  SGUser,
+  MessageListResponse,
 } from "../types";
 
 export const sgotinishApi = {
   // Tickets
-  getTickets: async (params?: { size?: number; page?: number; category?: string }): Promise<TicketListResponse> => {
+  getTickets: async (params?: { size?: number; page?: number; category?: string; author_sub?: string }): Promise<TicketListResponse> => {
     const qs = new URLSearchParams();
     if (params?.size) qs.set("size", String(params.size));
     if (params?.page) qs.set("page", String(params.page));
     if (params?.category) qs.set("category", params.category);
+    if (params?.author_sub) qs.set("author_sub", params.author_sub);
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
     return await apiCall(`/tickets${suffix}`);
   },
@@ -44,10 +49,16 @@ export const sgotinishApi = {
   },
 
   // Messages
-  getMessages: async (conversationId: number, params?: { size?: number; page?: number }): Promise<{ messages: Message[]; total_pages: number }> => {
-    const qs = new URLSearchParams({ conversation_id: String(conversationId) });
-    if (params?.size) qs.set("size", String(params.size));
+  getMessages: async (
+    conversationId: number,
+    params?: { page?: number; size?: number },
+  ): Promise<MessageListResponse> => {
+    const qs = new URLSearchParams({
+      conversation_id: String(conversationId),
+    });
     if (params?.page) qs.set("page", String(params.page));
+    if (params?.size) qs.set("size", String(params.size));
+    
     return await apiCall(`/messages?${qs.toString()}`);
   },
 
@@ -55,11 +66,20 @@ export const sgotinishApi = {
     return await apiCall(`/messages`, { method: "POST", json: payload });
   },
 
-  getMessageById: async (messageId: number): Promise<Message> => {
-    return await apiCall(`/messages/${messageId}`);
+  markMessageAsRead: async (messageId: number): Promise<Message> => {
+    return await apiCall(`/messages/${messageId}/read`, { method: "POST" });
   },
 
-  markAsRead: async (messageId: number): Promise<Message> => {
-    return await apiCall(`/messages/${messageId}/read`, { method: "POST" });
+  // Delegation
+  getDepartments: async (): Promise<Department[]> => {
+    return await apiCall(`/sg-delegation/departments`);
+  },
+
+  getSgUsers: async (departmentId: number): Promise<SGUser[]> => {
+    return await apiCall(`/sg-delegation/users?department_id=${departmentId}`);
+  },
+
+  delegateAccess: async (ticketId: number, payload: DelegateAccessPayload): Promise<void> => {
+    return await apiCall(`/tickets/${ticketId}/delegate`, { method: "POST", json: payload });
   },
 };

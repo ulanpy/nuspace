@@ -17,7 +17,14 @@ ENV TZ=UTC \
 WORKDIR /nuros
 ENV PATH="/root/.local/bin:${PATH}"
 
-RUN apk -u add build-base python3-dev libpq-dev \
+RUN apk -u add \
+    build-base \
+    python3-dev \
+    libpq-dev \
+    gcc \
+    g++ \
+    musl-dev \
+    linux-headers \
     && pip install --no-cache-dir poetry 
 
 

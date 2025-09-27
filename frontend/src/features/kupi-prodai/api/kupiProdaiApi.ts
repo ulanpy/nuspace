@@ -26,6 +26,7 @@ export const kupiProdaiApi = {
           method: "GET",
           credentials: "include",
         }),
+      retry: false, // Don't retry failed auth requests
     });
   },
   getProductsQueryOptions: ({

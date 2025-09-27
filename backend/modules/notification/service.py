@@ -89,12 +89,9 @@ class NotificationService(AbstractNotificationService):
                 return
 
             sender_name = f"{sender.name} {sender.surname}"
-            sender_details = f"{sender.role.value}, {sender.department.name}" if sender.department else sender.role.value
             title = f"New message from {sender_name}"
             message_body = (
                 f"Ticket: {ticket.title}\n"
-                f"Sender: {sender_name} ({sender_details})\n"
-                f"Message: {message.body}"
             )
         else:
             sender = ticket.author
