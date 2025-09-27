@@ -1,7 +1,5 @@
 from typing import Annotated
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.common.dependencies import get_creds_or_401
 from backend.core.database.models.sgotinish import (
     Ticket,
@@ -14,9 +12,7 @@ from backend.modules.sgotinish.tickets import schemas
 from backend.modules.sgotinish.tickets.policy import TicketPolicy
 from backend.modules.sgotinish.tickets.service import TicketService
 from fastapi import APIRouter, Depends, Query
-from backend.common.dependencies import get_db_session
-from backend.common.dependencies import get_infra
-from backend.common.schemas import Infra
+
 router = APIRouter(tags=["SGotinish Tickets Routes"])
 
 
@@ -64,6 +60,7 @@ async def get_tickets(
         20, ge=1, le=100, description="Number of tickets to return per page for pagination"
     ),
     page: int = Query(1, ge=1, description="Page number for ticket listing pagination"),
+    author_sub: str | None = Query(default=None, description="If 'me', returns the current user's tickets"),
     category: TicketCategory | None = Query(default=None),
 ) -> schemas.ListTicketDTO:
     """
@@ -77,16 +74,18 @@ async def get_tickets(
     - `size`: Number of tickets per page (default: 20, max: 100)
     - `page`: Page number (default: 1)
     - `category`: Filter by ticket category (optional)
-
+    - `author_sub`: Filter by ticket author (optional)
+        - If set to "me", returns the current user's tickets
     **Returns:**
     - List of tickets matching the criteria with pagination info
     """
-    TicketPolicy(user_tuple).check_read_list()
+    TicketPolicy(user_tuple).check_read_list(author_sub=author_sub)
     response: schemas.ListTicketDTO = await ticket_service.get_tickets(
         user=user_tuple,
         size=size,
         page=page,
         category=category,
+        author_sub=author_sub,
     )
 
     return response

@@ -1,14 +1,14 @@
 import { queryClient } from "@/utils/query-client";
 import { kupiProdaiApi } from "@/features/kupi-prodai/api/kupiProdaiApi";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 
 export const useUser = () => {
   const { isMiniApp, startParam } = useTelegramMiniApp();
   // diagnostics removed
   const {
-    data: user,
+    data: rawUser,
     isLoading,
     isSuccess,
     isError,
@@ -20,6 +20,18 @@ export const useUser = () => {
     gcTime: 1000 * 60 * 30,
     retry: false,
   });
+
+  const user = useMemo(() => {
+    if (!rawUser || !rawUser.user) return null;
+
+    // Backward compatible: keep nested `user` while also exposing flattened fields at top-level
+    // - Existing code that uses `user.user.sub` continues to work
+    // - New code can use `user.sub`, `user.role`, etc.
+    return {
+      ...rawUser,          // keeps `user` (nested) and `tg_id`
+      ...rawUser.user,     // flattens common fields like sub, given_name, role, etc.
+    } as any;
+  }, [rawUser]);
 
   const loginMutation = useMutation({
     mutationFn: async () => {
@@ -153,7 +165,7 @@ export const useUser = () => {
     logoutMutation.mutate();
   };
   return {
-    user: user ?? null,
+    user,
     isLoading,
     isError,
     isSuccess,

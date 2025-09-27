@@ -10,6 +10,9 @@ import { ArrowLeft, Send, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { ROUTES } from "@/data/routes";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { sgotinishApi } from "../api/sgotinishApi";
+import { TicketCategory } from "../types";
 
 interface CreateTicketProps {
   onBack?: () => void;
@@ -17,37 +20,35 @@ interface CreateTicketProps {
 
 export default function CreateTicket({ onBack }: CreateTicketProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     title: "",
-    category: "",
-    description: "",
-    isAnonymous: false,
+    category: "" as TicketCategory | "",
+    body: "",
+    is_anonymous: false,
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const categories = [
-    { value: "Academic", label: "Academic" },
-    { value: "Infrastructure", label: "Infrastructure" },
-    { value: "Events", label: "Events" },
-    { value: "Housing", label: "Housing" },
-    { value: "Other", label: "Other" },
-  ];
+  const createTicketMutation = useMutation({
+    mutationFn: sgotinishApi.createTicket,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      navigate(ROUTES.APPS.SGOTINISH.STUDENT.ROOT);
+    },
+    onError: (error) => {
+      console.error("Error creating ticket:", error);
+      // Here you could show a toast notification to the user
+    },
+  });
+
+  const categories = Object.values(TicketCategory).map(category => ({
+    value: category,
+    label: category.charAt(0).toUpperCase() + category.slice(1),
+  }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Navigate back to student dashboard
-      navigate(ROUTES.APPS.SGOTINISH.STUDENT.ROOT);
-    } catch (error) {
-      console.error("Error creating ticket:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    if (!formData.category) return;
+    createTicketMutation.mutate(formData);
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -91,15 +92,21 @@ export default function CreateTicket({ onBack }: CreateTicketProps) {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Title */}
                 <div className="space-y-2">
-                  <Label htmlFor="title" className="text-sm font-medium">
-                    Title *
-                  </Label>
+                  <div className="flex justify-between">
+                    <Label htmlFor="title" className="text-sm font-medium">
+                      Title *
+                    </Label>
+                    <span className="text-xs text-gray-500">
+                      {formData.title.length} / 200
+                    </span>
+                  </div>
                   <Input
                     id="title"
                     placeholder="Brief description of your appeal"
                     value={formData.title}
                     onChange={(e) => handleInputChange("title", e.target.value)}
                     required
+                    maxLength={200}
                     className="w-full"
                   />
                 </div>
@@ -125,15 +132,21 @@ export default function CreateTicket({ onBack }: CreateTicketProps) {
 
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="text-sm font-medium">
-                    Description *
-                  </Label>
+                  <div className="flex justify-between">
+                    <Label htmlFor="description" className="text-sm font-medium">
+                      Description *
+                    </Label>
+                    <span className="text-xs text-gray-500">
+                      {formData.body.length} / 5000
+                    </span>
+                  </div>
                   <Textarea
                     id="description"
                     placeholder="Provide detailed information about your appeal..."
-                    value={formData.description}
-                    onChange={(e) => handleInputChange("description", e.target.value)}
+                    value={formData.body}
+                    onChange={(e) => handleInputChange("body", e.target.value)}
                     required
+                    maxLength={5000}
                     rows={6}
                     className="w-full resize-none"
                   />
@@ -151,8 +164,8 @@ export default function CreateTicket({ onBack }: CreateTicketProps) {
                   </div>
                   <Switch
                     id="anonymous"
-                    checked={formData.isAnonymous}
-                    onCheckedChange={(checked) => handleInputChange("isAnonymous", checked)}
+                    checked={formData.is_anonymous}
+                    onCheckedChange={(checked) => handleInputChange("is_anonymous", checked)}
                   />
                 </div>
 
@@ -168,10 +181,10 @@ export default function CreateTicket({ onBack }: CreateTicketProps) {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isSubmitting || !formData.title || !formData.category || !formData.description}
+                    disabled={createTicketMutation.isPending || !formData.title || !formData.category || !formData.body}
                     className="flex-1"
                   >
-                    {isSubmitting ? (
+                    {createTicketMutation.isPending ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                         Submitting...

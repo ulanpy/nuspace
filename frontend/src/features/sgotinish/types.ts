@@ -1,8 +1,8 @@
 export interface ShortUserResponse {
     sub: string;
-    first_name?: string;
-    last_name?: string;
-    avatar_url?: string;
+    name: string;
+    surname: string;
+    picture: string;
 }
 
 export interface ResourcePermissions {
@@ -56,6 +56,7 @@ export interface Ticket {
     updated_at: string;
     author?: ShortUserResponse | null;
     permissions: ResourcePermissions;
+    ticket_access?: PermissionType | null;
     unread_count: number;
     conversations: Conversation[];
 }
@@ -117,4 +118,20 @@ export interface MessageCreatePayload {
     conversation_id: number;
     sender_sub?: "me" | string;
     body: string;
+}
+
+export interface DelegateAccessPayload {
+    target_user_sub: string;
+    permission: PermissionType;
+}
+
+export interface Department {
+    id: number;
+    name: string;
+}
+
+export interface SGUser {
+    user: ShortUserResponse;
+    department_name: string;
+    role: "boss" | "capo" | "soldier";
 }

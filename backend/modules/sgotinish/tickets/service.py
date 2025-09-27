@@ -2,7 +2,7 @@ from backend.core.database.models.sgotinish import Ticket, TicketAccess, Permiss
 from backend.core.database.models.user import User, UserRole
 from backend.common.cruds import QueryBuilder
 from backend.core.database.models.sgotinish import Conversation, TicketCategory
-from backend.common.schemas import ShortUserResponse, Infra
+from backend.common.schemas import ShortUserResponse
 from backend.common.utils import response_builder
 from backend.modules.sgotinish.tickets import schemas
 from backend.modules.sgotinish.tickets.policy import TicketPolicy
@@ -122,11 +122,14 @@ class TicketService:
         size: int,
         page: int,
         category: TicketCategory | None,
+        author_sub: str | None,
     ) -> schemas.ListTicketDTO:
         filters = []
         user_sub = user[0].get("sub")
         user_role = UserRole(user[1].get("role"))
         sg_roles = [UserRole.boss, UserRole.capo, UserRole.soldier]
+
+        if author_sub == "me": author_sub = user[0].get("sub")
 
         # Role-based filtering logic
         if user_role == UserRole.admin:
@@ -154,6 +157,9 @@ class TicketService:
 
         if category:
             filters.append(Ticket.category == category)
+
+        if author_sub:
+            filters.append(Ticket.author_sub == author_sub)
 
         qb = QueryBuilder(session=self.db_session, model=Ticket)
 

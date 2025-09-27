@@ -1,89 +1,81 @@
-import { Button } from "@/components/atoms/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/card";
-import { Shield, BookOpen } from "lucide-react";
+import { useState } from "react";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import StudentDashboard from "../components/StudentDashboard";
 import SGDashboard from "../components/SGDashboard";
-import { useState } from "react";
+import { useUser } from "@/hooks/use-user";
+import { Button } from "@/components/atoms/button";
+import { Shield } from "lucide-react";
+import { CreateAppealButton } from "../components/CreateAppealButton";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/data/routes";
 
+export default function SgotinishPage() {
+  const { user, isLoading, login } = useUser();
+  const navigate = useNavigate();
+  const [activeDashboard, setActiveDashboard] = useState<"student" | "sg">("student");
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-const SgotinishPage = () => {
-  const [currentView, setCurrentView] = useState<'selection' | 'student' | 'sg'>('selection');
+  const isSgMember = user && ["boss", "capo", "soldier"].includes(user.role);
 
-  // If a dashboard is selected, render it
-  if (currentView === 'student') {
-    return <StudentDashboard onBack={() => setCurrentView('selection')} />;
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
-  if (currentView === 'sg') {
-    return <SGDashboard onBack={() => setCurrentView('selection')} />;
+  const handleCreateAppeal = () => {
+    if (!user) {
+      setIsLoginModalOpen(true);
+    } else {
+      navigate(ROUTES.APPS.SGOTINISH.STUDENT.CREATE);
+    }
+  };
+
+  const handleLogin = () => {
+    login();
+    setIsLoginModalOpen(false);
+  };
+
+  const sgDashboardButton =
+    user && isSgMember ? (
+      <Button
+        variant="outline"
+        onClick={() => setActiveDashboard("sg")}
+        className="w-full sm:w-auto"
+      >
+        <Shield className="mr-2 h-4 w-4" />
+        <span className="hidden sm:inline">SG Dashboard</span>
+        <span className="sm:hidden">SG</span>
+      </Button>
+    ) : null;
+
+  if (activeDashboard === "sg") {
+    return <SGDashboard onBack={() => setActiveDashboard("student")} />;
   }
 
   return (
     <MotionWrapper>
       <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">SGotinish</h1>
-              <p className="text-gray-600 dark:text-gray-400">Modern student government appeal system</p>
+        <StudentDashboard
+          user={user}
+          sgDashboardButton={sgDashboardButton}
+          createAppealButton={<CreateAppealButton onClick={handleCreateAppeal} />}
+        />
+      </div>
+      {isLoginModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-6">
+            <h2 className="text-xl font-bold mb-4">Login Required</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">You need to be logged in to create an appeal.</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsLoginModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleLogin}>
+                Login
+              </Button>
             </div>
           </div>
         </div>
-
-        {/* Role Selection */}
-        <div className="grid gap-4 max-w-4xl mx-auto md:grid-cols-2">
-          {/* Student Card */}
-          <Card className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setCurrentView('student')}>
-            <CardHeader className="text-center pb-4">
-              <div className="mx-auto h-16 w-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
-                <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              </div>
-              <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">Student</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                Create appeals, track their status and communicate with SG representatives
-              </p>
-              <Button 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors"
-                onClick={() => setCurrentView('student')}
-              >
-                Access Student Dashboard
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* SG Member Card */}
-          <Card className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setCurrentView('sg')}>
-            <CardHeader className="text-center pb-4">
-              <div className="mx-auto h-16 w-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/50 transition-colors">
-                <Shield className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">SG Representative</CardTitle>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                Manage student appeals, track metrics and resolve issues efficiently
-              </p>
-              <Button 
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors"
-                onClick={() => setCurrentView('sg')}
-              >
-                Access SG Dashboard
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Footer Note */}
-        <div className="text-center text-gray-500 dark:text-gray-400 text-sm mt-12 py-4">
-          SGotinish • Integrated into Nuspace
-        </div>
-      </div>
+      )}
     </MotionWrapper>
   );
-};
-
-export default SgotinishPage;
+}

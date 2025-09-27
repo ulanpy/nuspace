@@ -29,9 +29,8 @@ class ConversationPolicy(BasePolicy):
         ]:
             # Check if this SG member has already started a conversation for this ticket
             if self.is_sg_member:
-                user_sub = self._get_user_sub()
                 for conv in ticket.conversations:
-                    if conv.sg_member_sub == user_sub:
+                    if conv.sg_member_sub == self.user_sub:
                         raise HTTPException(
                             status_code=http_status.HTTP_409_CONFLICT,
                             detail="You have already created a conversation for this ticket.",
