@@ -29,6 +29,10 @@ __all__ = [
     "Notification",
     "Course",
     "CourseItem",
+    "Ticket",
+    "Conversation",
+    "Message",
+    "MessageReadStatus",
 ]
 from .base import Base
 from .community import (
@@ -56,3 +60,4 @@ from .notification import Notification
 from .product import Product, ProductReport
 from .review import Review, ReviewReply
 from .user import User, UserRole, UserScope
+from .sgotinish import Ticket, Conversation, Message, MessageReadStatus

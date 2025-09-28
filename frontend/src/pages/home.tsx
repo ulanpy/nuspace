@@ -175,15 +175,15 @@ export default function HomePage() {
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">
             {isLoading ? (
               <span>Loading...</span>
-            ) : isSuccess && user?.user.given_name ? (
+            ) : isSuccess && user?.given_name ? (
               <div className="flex items-center gap-3 justify-center">
                 <img
-                  src={user.user.picture}
+                  src={user.picture}
                   alt=""
                   className="rounded-full w-[clamp(32px,6vw,48px)] h-[clamp(32px,6vw,48px)]"
                 />
                 <span className="text-[clamp(24px,5vw,42px)] font-bold">
-                  Welcome back, {user.user.given_name}!
+                  Welcome back, {user.given_name}!
                 </span>
                 {/* Mobile-only compact Telegram status */}
                 <div className="sm:hidden">
@@ -216,7 +216,7 @@ export default function HomePage() {
             )}
           </h1>
           {/* Desktop-only Telegram status below greeting */}
-          {isSuccess && user?.user.given_name && (
+          {isSuccess && user?.given_name && (
             <div className="hidden sm:flex justify-center mt-1">
               {user.tg_id ? (
                 <TelegramStatus isConnected={true} />

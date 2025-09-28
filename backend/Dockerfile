@@ -17,16 +17,25 @@ ENV TZ=UTC \
 WORKDIR /nuros
 ENV PATH="/root/.local/bin:${PATH}"
 
-RUN apk -u add build-base python3-dev libpq-dev \
+RUN apk -u add \
+    build-base \
+    python3-dev \
+    libpq-dev \
+    gcc \
+    g++ \
+    musl-dev \
+    linux-headers \
     && pip install --no-cache-dir poetry 
 
 
 COPY backend/pyproject.toml backend/poetry.lock ./
-COPY backend/start.sh /
 RUN poetry install --no-root --no-cache
 
 COPY .. .
 
+COPY backend/start.sh /
+RUN sed -i 's/\r$//' /start.sh 
 RUN chmod +x /start.sh
+RUN apk add --no-cache bash
 # Run the script to decide the server behavior based on IS_DEBUG
 CMD ["/start.sh"]

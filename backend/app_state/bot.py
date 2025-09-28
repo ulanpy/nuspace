@@ -7,8 +7,8 @@ from aiogram.types.web_app_info import WebAppInfo
 from fastapi import FastAPI
 
 from backend.core.configs.config import config
-from backend.routes.bot.middlewares import setup_middlewares
-from backend.routes.bot.routes import include_routers
+from backend.modules.bot.middlewares import setup_middlewares
+from backend.modules.bot.routes import include_routers
 
 
 async def setup_bot(
@@ -17,7 +17,6 @@ async def setup_bot(
 ):
     app.state.bot = Bot(token=token)
     app.state.dp = Dispatcher(storage=RedisStorage(app.state.redis))
-
     # Discover bot username dynamically (without @) to avoid hardcoding
     try:
         me = await app.state.bot.get_me()

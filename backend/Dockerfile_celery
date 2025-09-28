@@ -15,10 +15,15 @@ WORKDIR /nuros
 ENV PATH="/root/.local/bin:${PATH}"
 
 # Install system dependencies and build tools
-RUN apk -u add \ 
+RUN apk -u add \
+    build-base \
     python3-dev \
     libpq-dev \
     build-base \
+    gcc \
+    g++ \
+    musl-dev \
+    linux-headers \
     && pip install --no-cache-dir poetry
 
 # Copy dependency files first for better layer caching
