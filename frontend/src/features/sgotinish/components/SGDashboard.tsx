@@ -24,6 +24,7 @@ export default function SGDashboard({}: SGDashboardProps) {
       category: categoryFilter === "all" ? undefined : categoryFilter,
     }),
     enabled: !!user,
+    retry: false, // Don't retry if unauthorized
   });
 
   const handleTicketClick = (ticketId: number) => {

@@ -12,6 +12,7 @@ import {
   DelegateAccessPayload,
   Department,
   SGUser,
+  MessageListResponse,
 } from "../types";
 
 export const sgotinishApi = {
@@ -48,10 +49,16 @@ export const sgotinishApi = {
   },
 
   // Messages
-  getMessages: async (conversationId: number, params?: { size?: number; page?: number }): Promise<{ messages: Message[]; total_pages: number }> => {
-    const qs = new URLSearchParams({ conversation_id: String(conversationId) });
-    if (params?.size) qs.set("size", String(params.size));
+  getMessages: async (
+    conversationId: number,
+    params?: { page?: number; size?: number },
+  ): Promise<MessageListResponse> => {
+    const qs = new URLSearchParams({
+      conversation_id: String(conversationId),
+    });
     if (params?.page) qs.set("page", String(params.page));
+    if (params?.size) qs.set("size", String(params.size));
+    
     return await apiCall(`/messages?${qs.toString()}`);
   },
 
@@ -59,11 +66,7 @@ export const sgotinishApi = {
     return await apiCall(`/messages`, { method: "POST", json: payload });
   },
 
-  getMessageById: async (messageId: number): Promise<Message> => {
-    return await apiCall(`/messages/${messageId}`);
-  },
-
-  markAsRead: async (messageId: number): Promise<Message> => {
+  markMessageAsRead: async (messageId: number): Promise<Message> => {
     return await apiCall(`/messages/${messageId}/read`, { method: "POST" });
   },
 

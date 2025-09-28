@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Button } from "@/components/atoms/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
-import { Textarea } from "@/components/atoms/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
 import { Modal } from "@/components/atoms/modal";
 import { MessageCircle, Clock, User, Shield, Settings } from "lucide-react";
@@ -14,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sgotinishApi } from "../api/sgotinishApi";
 import { useUser } from "@/hooks/use-user";
 import { DelegateModal } from "./DelegateModal";
+import { Conversation } from "./Conversation";
 
 interface TicketDetailProps {
   onBack?: () => void;
@@ -43,8 +43,6 @@ export default function TicketDetail({}: TicketDetailProps) {
   const [isStatusEditOpen, setStatusEditOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("open");
 
-  const [newMessage, setNewMessage] = useState("");
-
   console.log("TicketDetail mounted with ticketId:", ticketId, "user:", user);
 
   const { data: ticket, isLoading, isError, error } = useQuery({
@@ -72,32 +70,26 @@ export default function TicketDetail({}: TicketDetailProps) {
     }
   }, [ticket?.status]);
 
-  const { data: messagesResponse, isLoading: isLoadingMessages } = useQuery({
-    queryKey: ["messages", ticket?.conversations[0]?.id],
-    queryFn: () => sgotinishApi.getMessages(ticket!.conversations[0].id),
-    enabled: !!ticket && ticket.conversations.length > 0,
-  });
-
-  const createMessageMutation = useMutation({
-    mutationFn: sgotinishApi.createMessage,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] });
-      setNewMessage("");
-    },
-  });
-
   const createConversationMutation = useMutation({
     mutationFn: sgotinishApi.createConversation,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] });
+      queryClient.invalidateQueries({
+        queryKey: ["ticket", ticketId]
+      });
     },
   });
 
   const updateTicketMutation = useMutation({
-    mutationFn: (status: string) => sgotinishApi.updateTicket(Number(ticketId), { status: status as any }),
+    mutationFn: (status: string) => sgotinishApi.updateTicket(Number(ticketId), {
+      status: status as any
+    }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ticket", ticketId] });
-      queryClient.invalidateQueries({ queryKey: ["sg-tickets"] });
+      queryClient.invalidateQueries({
+        queryKey: ["ticket", ticketId]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["sg-tickets"]
+      });
       setStatusEditOpen(false);
     },
   });
@@ -106,16 +98,6 @@ export default function TicketDetail({}: TicketDetailProps) {
     if (selectedStatus !== ticket?.status) {
       updateTicketMutation.mutate(selectedStatus);
     }
-  };
-
-  const handleSendMessage = async (e: React.FormEvent, conversationId: number) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    createMessageMutation.mutate({
-      conversation_id: conversationId,
-      body: newMessage,
-    });
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -240,100 +222,16 @@ export default function TicketDetail({}: TicketDetailProps) {
                 Conversation with {conversation.sg_member?.name} {conversation.sg_member?.surname}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {isLoadingMessages && <p>Loading messages...</p>}
-              {messagesResponse?.messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`p-3 rounded-lg ${
-                    message.is_from_sg_member
-                      ? "bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 dark:border-blue-400"
-                      : "bg-gray-50 dark:bg-gray-800/50"
-                  }`}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      {message.is_from_sg_member && conversation.sg_member ? (
-                        <>
-                          <img 
-                            src={conversation.sg_member.picture} 
-                            alt={`${conversation.sg_member.name} ${conversation.sg_member.surname}`}
-                            className="h-4 w-4 rounded-full flex-shrink-0"
-                          />
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {`${conversation.sg_member.name} ${conversation.sg_member.surname}`}
-                          </span>
-                        </>
-                      ) : !ticket.is_anonymous && ticket.author ? (
-                        <>
-                          <img 
-                            src={ticket.author.picture} 
-                            alt={`${ticket.author.name} ${ticket.author.surname}`}
-                            className="h-4 w-4 rounded-full flex-shrink-0"
-                          />
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {`${ticket.author.name} ${ticket.author.surname}`}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <User className="h-4 w-4 flex-shrink-0 text-gray-500" />
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {ticket.is_anonymous ? "Anonymous" : "Unknown User"}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatDistanceToNow(new Date(message.sent_at), { addSuffix: true, locale: enUS })}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{message.body}</p>
-                </div>
-              ))}
-              {messagesResponse?.messages.length === 0 && <p className="text-center text-gray-500">No messages yet.</p>}
-
-
-              {/* New Message Form - Only show if user can write to this conversation */}
-              {(() => {
-                // Check if current user can write to this conversation
-                const isTicketAuthor = !ticket.is_anonymous && ticket.author && user?.sub === ticket.author.sub;
-                const isConversationCreator = user?.sub === conversation.sg_member_sub;
-                const canWriteToConversation = isTicketAuthor || isConversationCreator;
-                
-                if (!canWriteToConversation) {
-                  return (
-                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                        You can only write to conversations you created or to your own tickets.
-                      </p>
-                    </div>
-                  );
-                }
-                
-                return (
-                  <form onSubmit={(e) => handleSendMessage(e, conversation.id)} className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="space-y-3">
-                      <Textarea
-                        placeholder="Type your message..."
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        rows={3}
-                        className="resize-none border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400"
-                      />
-                      <div className="flex justify-end">
-                        <Button
-                          type="submit"
-                          disabled={createMessageMutation.isPending || !newMessage.trim()}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors"
-                        >
-                          {createMessageMutation.isPending ? "Sending..." : "Send Message"}
-                        </Button>
-                      </div>
-                    </div>
-                  </form>
-                );
-              })()}
+            <CardContent>
+              <Conversation
+                conversationId={conversation.id}
+                ticket={{
+                  id: ticket.id,
+                  is_anonymous: ticket.is_anonymous,
+                  author: ticket.author
+                }}
+                sgMember={conversation.sg_member}
+              />
             </CardContent>
           </Card>
         ))}

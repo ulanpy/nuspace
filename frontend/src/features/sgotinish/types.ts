@@ -114,6 +114,11 @@ export interface Message {
     permissions: ResourcePermissions;
 }
 
+export interface MessageListResponse {
+    messages: Message[];
+    total_pages: number;
+}
+
 export interface MessageCreatePayload {
     conversation_id: number;
     sender_sub?: "me" | string;

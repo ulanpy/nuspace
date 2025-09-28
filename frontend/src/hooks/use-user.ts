@@ -1,12 +1,17 @@
 import { queryClient } from "@/utils/query-client";
 import { kupiProdaiApi } from "@/features/kupi-prodai/api/kupiProdaiApi";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
+
+// FUCK IT! GLOBAL VARIABLE TO SURVIVE RE-RENDERS
+let globalQueryEnabled = true;
 
 export const useUser = () => {
   const { isMiniApp, startParam } = useTelegramMiniApp();
-  // diagnostics removed
+  const [, forceUpdate] = useState(0); // Force re-render when needed
+  
+  
   const {
     data: rawUser,
     isLoading,
@@ -15,10 +20,26 @@ export const useUser = () => {
     refetch: refetchUser,
     isFetching,
   } = useQuery({
-    ...kupiProdaiApi.getUserQueryOptions(),
+    queryKey: ["user"],
+    queryFn: async () => {
+      try {
+        return await kupiProdaiApi.getUserQueryOptions().queryFn();
+      } catch (error: any) {
+        // If we get a 401, disable future queries
+        if (error?.status === 401 || error?.response?.status === 401) {
+          globalQueryEnabled = false;
+          forceUpdate(prev => prev + 1);
+        }
+        throw error;
+      }
+    },
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 30,
     retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchInterval: false,
+    enabled: globalQueryEnabled,
   });
 
   const user = useMemo(() => {
@@ -159,6 +180,8 @@ export const useUser = () => {
   }, [isMiniApp, startParam]);
 
   const login = () => {
+    globalQueryEnabled = true;
+    forceUpdate(prev => prev + 1);
     loginMutation.mutate();
   };
   const logout = () => {

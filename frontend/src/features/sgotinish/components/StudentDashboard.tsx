@@ -51,6 +51,7 @@ export default function StudentDashboard({ user, sgDashboardButton, createAppeal
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
+
   const { data: ticketsResponse, isLoading, isError } = useQuery({
     queryKey: ["tickets", { statusFilter, categoryFilter }],
     queryFn: () => sgotinishApi.getTickets({
@@ -58,6 +59,7 @@ export default function StudentDashboard({ user, sgDashboardButton, createAppeal
       author_sub: "me",
     }),
     enabled: !!user, // Only fetch tickets if user is logged in
+    retry: false, // Don't retry if unauthorized
   });
 
   const filteredTickets = ticketsResponse?.tickets.filter(ticket => {

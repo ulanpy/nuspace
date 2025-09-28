@@ -6,14 +6,14 @@ import { useUser } from "@/hooks/use-user";
 import { Button } from "@/components/atoms/button";
 import { Shield } from "lucide-react";
 import { CreateAppealButton } from "../components/CreateAppealButton";
-import { useNavigate } from "react-router-dom";
-import { ROUTES } from "@/data/routes";
+import CreateTicketModal from "../components/CreateTicketModal"; // Import the modal
+import { LoginModal } from "@/components/molecules/login-modal";
 
 export default function SgotinishPage() {
   const { user, isLoading, login } = useUser();
-  const navigate = useNavigate();
   const [activeDashboard, setActiveDashboard] = useState<"student" | "sg">("student");
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isCreateTicketModalOpen, setCreateTicketModalOpen] = useState(false); // State for the new modal
 
   const isSgMember = user && ["boss", "capo", "soldier"].includes(user.role);
 
@@ -25,7 +25,7 @@ export default function SgotinishPage() {
     if (!user) {
       setIsLoginModalOpen(true);
     } else {
-      navigate(ROUTES.APPS.SGOTINISH.STUDENT.CREATE);
+      setCreateTicketModalOpen(true); // Open the modal instead of navigating
     }
   };
 
@@ -60,22 +60,25 @@ export default function SgotinishPage() {
           createAppealButton={<CreateAppealButton onClick={handleCreateAppeal} />}
         />
       </div>
-      {isLoginModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full p-6">
-            <h2 className="text-xl font-bold mb-4">Login Required</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">You need to be logged in to create an appeal.</p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsLoginModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleLogin}>
-                Login
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      
+      {/* Render the Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSuccess={handleLogin}
+        title="Login Required"
+        message="You need to be logged in to create a new appeal."
+      />
+
+      {/* Render the Create Ticket Modal */}
+      <CreateTicketModal
+        isOpen={isCreateTicketModalOpen}
+        onClose={() => setCreateTicketModalOpen(false)}
+        onSuccess={() => {
+          setCreateTicketModalOpen(false);
+          // Optional: Show a success toast notification here
+        }}
+      />
     </MotionWrapper>
   );
 }
