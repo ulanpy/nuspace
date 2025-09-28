@@ -7,3 +7,4 @@
     Assigned: NO
 
 ## On hold
+- Requisite calculator
