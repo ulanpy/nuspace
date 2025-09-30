@@ -9,6 +9,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { formatDistanceToNow } from "date-fns";
 import { enUS } from "date-fns/locale";
+import { toLocalDate } from "../utils/date";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sgotinishApi } from "../api/sgotinishApi";
 import { useUser } from "@/hooks/use-user";
@@ -179,7 +180,7 @@ export default function TicketDetail({}: TicketDetailProps) {
                 {/* Time and Author info */}
                 <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                   <Clock className="h-3 w-3 flex-shrink-0" />
-                  <span className="text-xs">{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true, locale: enUS })}</span>
+                  <span className="text-xs">{formatDistanceToNow(toLocalDate(ticket.created_at), { addSuffix: true, locale: enUS })}</span>
                 </div>
                 
                 {!ticket.is_anonymous && ticket.author ? (
@@ -228,7 +229,9 @@ export default function TicketDetail({}: TicketDetailProps) {
                 ticket={{
                   id: ticket.id,
                   is_anonymous: ticket.is_anonymous,
-                  author: ticket.author
+                  author: ticket.author,
+                  author_sub: ticket.author_sub,
+                  permissions: ticket.permissions
                 }}
                 sgMember={conversation.sg_member}
               />

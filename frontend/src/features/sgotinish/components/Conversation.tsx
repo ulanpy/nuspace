@@ -26,6 +26,7 @@ const Message: React.FC<MessageProps> = ({ message, conversationPartner, isCurre
   });
   const { user } = useUser();
   const queryClient = useQueryClient();
+  const hasMarkedAsReadRef = useRef(false);
 
   const markAsReadMutation = useMutation({
     mutationFn: () => sgotinishApi.markMessageAsRead(message.id),
@@ -37,10 +38,11 @@ const Message: React.FC<MessageProps> = ({ message, conversationPartner, isCurre
 
   useEffect(() => {
     const hasRead = message.message_read_statuses.some(s => s.user_sub === user?.sub);
-    if (inView && !isCurrentUserMessage && !hasRead) {
+    if (inView && !isCurrentUserMessage && !hasRead && !hasMarkedAsReadRef.current && !markAsReadMutation.isPending) {
+      hasMarkedAsReadRef.current = true;
       markAsReadMutation.mutate();
     }
-  }, [inView, isCurrentUserMessage, message, user, markAsReadMutation]);
+  }, [inView, isCurrentUserMessage, message.id, user?.sub]);
 
   const isReadByPartner = conversationPartner && message.message_read_statuses.some(
     (status) => status.user_sub === conversationPartner.sub
@@ -108,10 +110,13 @@ const Message: React.FC<MessageProps> = ({ message, conversationPartner, isCurre
 interface ConversationProps {
     conversationId: number;
     sgMember: ShortUserResponse | null | undefined;
-    ticket: Pick<Ticket, "id" | "is_anonymous" | "author">;
+    ticket: Pick<Ticket, "id" | "is_anonymous" | "author" | "author_sub"> & {
+        permissions?: Ticket["permissions"];
+    };
+    canSendMessageOverride?: boolean;
 }
 
-export const Conversation: React.FC<ConversationProps> = ({ conversationId, sgMember, ticket }) => {
+export const Conversation: React.FC<ConversationProps> = ({ conversationId, sgMember, ticket, canSendMessageOverride }) => {
     const { user } = useUser();
     const [newMessage, setNewMessage] = React.useState("");
     const queryClient = useQueryClient();
@@ -163,19 +168,27 @@ export const Conversation: React.FC<ConversationProps> = ({ conversationId, sgMe
         if (!newMessage.trim()) return;
         createMessageMutation.mutate({
             conversation_id: conversationId,
+            sender_sub: "me",
             body: newMessage,
         });
     };
 
     const messages = data?.pages.flatMap((page) => page.messages) ?? [];
+    const ticketAuthorSub = ticket.author?.sub ?? ticket.author_sub ?? null;
     // The conversation partner is the other person in the conversation
     // If current user is ticket author, partner is SG member
     // If current user is SG member, partner is ticket author
-    const conversationPartner = user?.sub === ticket.author?.sub ? sgMember : ticket.author;
+    const conversationPartner = user?.sub === ticketAuthorSub ? sgMember : ticket.author;
 
-    const isTicketAuthor = !ticket.is_anonymous && ticket.author && user?.sub === ticket.author.sub;
+    const isTicketAuthor = ticketAuthorSub ? user?.sub === ticketAuthorSub : false;
     const isConversationCreator = user?.sub === sgMember?.sub;
-    const canWriteToConversation = isTicketAuthor || isConversationCreator;
+
+    const effectiveOverride = canSendMessageOverride ?? ticket.permissions?.can_edit ?? false;
+
+    const canWriteToConversation =
+        effectiveOverride ||
+        isTicketAuthor ||
+        isConversationCreator;
 
     return (
         <div className="space-y-4">
@@ -192,7 +205,7 @@ export const Conversation: React.FC<ConversationProps> = ({ conversationId, sgMe
                                 conversationPartner={conversationPartner}
                                 isCurrentUserMessage={
                                     (message.is_from_sg_member && user?.sub === sgMember?.sub) ||
-                                    (!message.is_from_sg_member && user?.sub === ticket.author?.sub)
+                                    (!message.is_from_sg_member && ticketAuthorSub !== null && user?.sub === ticketAuthorSub)
                                 }
                                 ticketAuthor={ticket.author}
                                 isTicketAnonymous={ticket.is_anonymous}

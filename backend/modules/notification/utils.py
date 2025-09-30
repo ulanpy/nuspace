@@ -35,6 +35,9 @@ async def send(
     """
     # Handle single notification
     if not isinstance(notification_data, list):
+        if notification_data.telegram_id is None:
+            return None
+
         qb: QueryBuilder = QueryBuilder(session=session, model=Notification)
         notification: Notification = await qb.add(data=notification_data)
 
@@ -55,6 +58,8 @@ async def send(
     # Convert schema objects to ORM model instances
     notification_instances = []
     for notification_schema in notification_data:
+        if notification_schema.telegram_id is None:
+            continue
         notification_instance = Notification(
             title=notification_schema.title,
             message=notification_schema.message,
@@ -66,6 +71,9 @@ async def send(
         )
         notification_instances.append(notification_instance)
     
+    if not notification_instances:
+        return []
+
     # Add instances to database (add_orm_list doesn't return the instances)
     await qb.add_orm_list(notification_instances)
     
@@ -73,6 +81,8 @@ async def send(
     
     # Process each notification schema for Redis check and publishing
     for notification_schema in notification_data:
+        if notification_schema.telegram_id is None:
+            continue
         switch: bool = not await infra.redis.exists(
             f"notification:{notification_schema.telegram_id}"
         )
@@ -95,4 +105,6 @@ async def send(
         )
         modified_notifications.append(modified_notification)
         await infra.broker.publish(modified_notification, queue="notifications")
+    
+    return modified_notifications
     
