@@ -8,6 +8,7 @@ import { ROUTES } from "@/data/routes";
 import { useUser } from "@/hooks/use-user";
 import { sgotinishApi } from "../api/sgotinishApi";
 import { useQuery } from "@tanstack/react-query";
+import { toLocalDate } from "../utils/date";
 
 interface SGDashboardProps {
   onBack?: () => void;
@@ -82,7 +83,7 @@ export default function SGDashboard({}: SGDashboardProps) {
                     title={ticket.title}
                     category={ticket.category}
                     status={ticket.status}
-                    createdAt={new Date(ticket.created_at)}
+                    createdAt={toLocalDate(ticket.created_at)}
                     messageCount={ticket.unread_count}
                     onClick={() => handleTicketClick(ticket.id)}
                     variant="flat"

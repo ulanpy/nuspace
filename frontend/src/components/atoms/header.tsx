@@ -57,20 +57,20 @@ export function Header({ left, center, right, showMainNav = false }: HeaderProps
         <div>{center}</div>
         <div className="flex items-center gap-4">
           {shouldShowNavItems && showMainNav && mainNavItems.length > 0 && (
-            <nav className="flex items-center gap-4">
+            <nav className="flex items-center gap-5">
               {mainNavItems.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   end={item.to === ROUTES.HOME}
                   className={({ isActive }) =>
-                    `flex items-center gap-1 text-sm font-medium transition-colors text-foreground ` +
+                    `flex items-center gap-2 text-base font-medium transition-colors text-foreground ` +
                     (isActive ? "text-primary" : "text-muted-foreground hover:text-foreground")
                   }
                 >
                   {({ isActive }) => (
                     <>
-                      {renderIcon(item.icon, isActive, 18)}
+                      {renderIcon(item.icon, isActive, 23)}
                     </>
                   )}
                 </NavLink>

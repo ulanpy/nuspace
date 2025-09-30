@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { sgotinishApi } from "../api/sgotinishApi";
 import { useUser } from "@/hooks/use-user";
 import { LoginModal } from "@/components/molecules/login-modal";
+import { toLocalDate } from "../utils/date";
 // Mock data
 const mockTickets = [
   {
@@ -144,7 +145,7 @@ export default function StudentDashboard({ user, sgDashboardButton, createAppeal
                 title={ticket.title}
                 category={ticket.category}
                 status={ticket.status}
-                createdAt={new Date(ticket.created_at)}
+                createdAt={toLocalDate(ticket.created_at)}
                 messageCount={ticket.unread_count}
                 onClick={() => handleTicketClick(ticket.id)}
               />

@@ -2,6 +2,7 @@ import { Badge } from "@/components/atoms/badge";
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import { formatDistanceToNow } from "date-fns";
 import { enUS } from "date-fns/locale";
+import { toLocalDate } from "../utils/date";
 import { MessageCircle, Clock } from "lucide-react";
 
 export interface TicketCardProps {
@@ -56,7 +57,7 @@ export function TicketCard({
           </span>
           <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
             <Clock className="h-3 w-3 flex-shrink-0" />
-            <span>{formatDistanceToNow(createdAt, { addSuffix: true, locale: enUS })}</span>
+            <span>{formatDistanceToNow(toLocalDate(createdAt), { addSuffix: true, locale: enUS })}</span>
           </span>
         </div>
       </div>

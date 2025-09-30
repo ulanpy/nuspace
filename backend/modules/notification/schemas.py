@@ -10,7 +10,7 @@ class RequestNotiification(BaseModel):
     message: str
     notification_source: EntityType
     receiver_sub: str
-    telegram_id: int
+    telegram_id: int | None = None
     type: NotificationType
     url: str | None = None
 
