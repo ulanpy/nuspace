@@ -1,8 +1,7 @@
-from fastapi import HTTPException
-from fastapi import status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException, status
 
-from backend.core.database.models.grade_report import CourseTemplate
+from backend.common.schemas import ResourcePermissions
+from backend.core.database.models.grade_report import CourseTemplate, StudentCourse
 from backend.core.database.models.user import UserRole
 from backend.modules.courses.templates import schemas
 
@@ -10,14 +9,13 @@ from backend.modules.courses.templates import schemas
 class BasePolicy:
     """Base policy with common user attributes."""
 
-    def __init__(self, user: tuple[dict, dict], db_session: AsyncSession):
+    def __init__(self, user: tuple[dict, dict]):
         if not user or not user[0] or not user[1]:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Authentication credentials were not provided",
             )
         self.user_tuple = user
-        self.db_session = db_session
         self.user_role = self.user_tuple[1].get("role")
         self.user_sub = self.user_tuple[0].get("sub")
         self.is_admin = self.user_role == UserRole.admin.value
@@ -34,11 +32,9 @@ class TemplatePolicy(BasePolicy):
         if self.is_admin:
             return
 
-        if template_data.student_sub != self.user_sub:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can only create templates for yourself."
-            )
+        # Users can only create templates for themselves
+        # The student_sub is automatically set to the current user in the service
+        pass
 
     def check_read_list(self, course_id: int | None = None):
         """Check if user can list templates."""
@@ -57,7 +53,7 @@ class TemplatePolicy(BasePolicy):
                 detail="Template not found"
             )
 
-    def check_update(self, template: CourseTemplate):
+    def check_update(self, template: CourseTemplate, template_data: schemas.TemplateUpdate):
         """Check if user can update a template."""
         if self.is_admin:
             return
@@ -78,3 +74,45 @@ class TemplatePolicy(BasePolicy):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Template not found"
             )
+
+    def check_import(self, template: CourseTemplate, student_course: StudentCourse):
+        """Check if user can import template into a student course."""
+        if self.is_admin:
+            return
+
+        if not self._is_owner(student_course.student_sub):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to import this template into the course.",
+            )
+        
+        if template.course_id != student_course.course_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Template course does not match the registered course.",
+            )
+
+    def get_permissions(self, template: CourseTemplate) -> ResourcePermissions:
+        """Determines template permissions for a user based on their role and the template state."""
+        permissions = ResourcePermissions()
+
+        if self.is_admin:
+            permissions.can_edit = True
+            permissions.can_delete = True
+            permissions.editable_fields = [
+                "course_id",
+                "template_items",
+            ]
+            return permissions
+
+        is_owner = self._is_owner(template.student_sub)
+
+        if is_owner:
+            permissions.can_edit = True
+            permissions.can_delete = True
+            permissions.editable_fields = [
+                "course_id",
+                "template_items",
+            ]
+
+        return permissions

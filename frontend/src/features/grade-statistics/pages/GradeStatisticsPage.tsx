@@ -1,12 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { GradeStatisticsCard } from "../components/GradeStatisticsCard";
 import { RegisteredCourseCard } from "../components/RegisteredCourseCard";
-import { GradeStatistics, BaseCourse, RegisteredCourse, CourseItemCreate, BaseCourseItem } from "../types";
+import {
+  GradeStatistics,
+  BaseCourse,
+  RegisteredCourse,
+  CourseItemCreate,
+  BaseCourseItem,
+  TemplateResponse,
+} from "../types";
 import { SearchableInfiniteList } from "@/components/virtual/SearchableInfiniteList";
 import { usePreSearchGrades } from "../api/hooks/usePreSearchGrades";
-import { BarChart3, Calculator, Plus, Search } from "lucide-react";
+import { BarChart3, Calculator, Plus, Search, UsersRound, Share2, RefreshCw } from "lucide-react";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { Card, CardContent } from "@/components/atoms/card";
 import { gradeStatisticsApi } from "../api/gradeStatisticsApi";
@@ -26,6 +33,17 @@ import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/atoms/modal";
 import { ConfirmationModal } from "../components/ConfirmationModal";
 import { ToggleGroup, ToggleGroupItem } from "@/components/atoms/toggle-group";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/atoms/sheet";
+import { Skeleton } from "@/components/atoms/skeleton";
+import {
+  buildTemplateCreatePayload,
+  canShareTemplate,
+  calculateTemplateCoverage,
+  sortTemplatesByRecency,
+  calculateTemplateWeight,
+  buildTemplateUpdatePayload,
+} from "../utils/templateUtils";
+import { useToast } from "@/hooks/use-toast";
 
 export default function GradeStatisticsPage() {
   const [selected, setSelected] = useState<GradeStatistics[]>([]);
@@ -56,6 +74,18 @@ export default function GradeStatisticsPage() {
   const [terms, setTerms] = useState<string[]>([]);
   const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
   const { user, login } = useUser();
+  const { toast } = useToast();
+  const [templateDrawerCourse, setTemplateDrawerCourse] = useState<RegisteredCourse | null>(null);
+  const [isTemplateDrawerOpen, setIsTemplateDrawerOpen] = useState(false);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templates, setTemplates] = useState<TemplateResponse[]>([]);
+  const [templatePage, setTemplatePage] = useState(1);
+  const [templateTotalPages, setTemplateTotalPages] = useState(1);
+  const [isTemplatesInitialFetch, setIsTemplatesInitialFetch] = useState(false);
+  const [importingTemplateId, setImportingTemplateId] = useState<number | null>(null);
+  const [sharingCourse, setSharingCourse] = useState<RegisteredCourse | null>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   const maxSelections = 8;
 
@@ -197,6 +227,201 @@ export default function GradeStatisticsPage() {
     if (value == null || Number.isNaN(value)) return null;
     return Math.max(0, Math.min(100, value));
   };
+
+  const handleShareTemplate = async () => {
+    if (!sharingCourse) return;
+    try {
+      if (!canShareTemplate(sharingCourse)) {
+        toast({
+          variant: "warning",
+          title: "Add assignments first",
+          description: "Please add at least one item before sharing a template.",
+        });
+        return;
+      }
+      setIsSharing(true);
+      const payload = buildTemplateCreatePayload(sharingCourse);
+      let createdTemplate: TemplateResponse | null = null;
+      let createError: unknown = null;
+
+      try {
+        createdTemplate = await gradeStatisticsApi.createTemplate(payload);
+      } catch (err) {
+        createError = err;
+      }
+
+      if (!createdTemplate) {
+        const isConflict =
+          typeof createError === "object" &&
+          createError !== null &&
+          "response" in createError &&
+          (createError as { response?: Response }).response?.status === 409;
+
+        if (isConflict) {
+          const updatePayload = buildTemplateUpdatePayload(sharingCourse);
+
+          const ensureTemplateId = async (): Promise<number | null> => {
+            const existing = templates.find((t) => t.template.course_id === sharingCourse.course.id);
+            if (existing) return existing.template.id;
+
+            const response = await gradeStatisticsApi.getTemplates({
+              course_id: sharingCourse.course.id,
+              page: 1,
+              size: 1,
+            });
+            return response.templates[0]?.template.id ?? null;
+          };
+
+          const templateId = await ensureTemplateId();
+          if (templateId) {
+            createdTemplate = await gradeStatisticsApi.updateTemplate(templateId, updatePayload);
+          } else {
+            throw createError;
+          }
+        } else if (createError) {
+          throw createError;
+        }
+      }
+
+      toast({
+        variant: "success",
+        title: "Template shared",
+        description: "Your course template is now available to peers.",
+      });
+      closeShareModal();
+      if (templateDrawerCourse?.id === sharingCourse.id) {
+        setTemplates([]);
+        setTemplateTotalPages(1);
+        setTemplatePage(1);
+        setIsTemplatesInitialFetch(true);
+        await loadTemplates(sharingCourse, 1, true);
+      }
+    } catch (error) {
+      console.error("Failed to share template", error);
+      toast({
+        variant: "destructive",
+        title: "Share failed",
+        description: "We couldn't share this template. Try again later.",
+      });
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const openShareModal = (course: RegisteredCourse) => {
+    setSharingCourse(course);
+    setIsShareModalOpen(true);
+  };
+
+  const closeShareModal = () => {
+    setIsShareModalOpen(false);
+    setSharingCourse(null);
+  };
+
+  const templatesPageSize = 10;
+
+  const loadTemplates = useCallback(
+    async (course: RegisteredCourse, page: number, replace = false) => {
+      setTemplatesLoading(true);
+      try {
+        const response = await gradeStatisticsApi.getTemplates({
+          course_id: course.course.id,
+          page,
+          size: templatesPageSize,
+        });
+        const sorted = sortTemplatesByRecency(response.templates);
+        setTemplates((prev) =>
+          replace
+            ? sorted
+            : [
+                ...prev,
+                ...sorted.filter((tmpl) => !prev.some((p) => p.template.id === tmpl.template.id)),
+              ],
+        );
+        setTemplateTotalPages(response.total_pages);
+        setTemplatePage(page);
+      } catch (error) {
+        console.error("Failed to load templates", error);
+        toast({
+          variant: "destructive",
+          title: "Failed to load",
+          description: "Unable to fetch templates for this course.",
+        });
+      } finally {
+        setTemplatesLoading(false);
+        setIsTemplatesInitialFetch(false);
+      }
+    },
+    [toast],
+  );
+
+  const handleOpenTemplates = useCallback(
+    async (course: RegisteredCourse) => {
+      setTemplateDrawerCourse(course);
+      setIsTemplateDrawerOpen(true);
+      setTemplates([]);
+      setTemplateTotalPages(1);
+      setTemplatePage(1);
+      setIsTemplatesInitialFetch(true);
+      await loadTemplates(course, 1, true);
+    },
+    [loadTemplates],
+  );
+
+  const handleLoadMoreTemplates = useCallback(async () => {
+    if (!templateDrawerCourse) return;
+    const nextPage = templatePage + 1;
+    if (nextPage > templateTotalPages) return;
+    await loadTemplates(templateDrawerCourse, nextPage);
+  }, [templateDrawerCourse, templatePage, templateTotalPages, loadTemplates]);
+
+  const closeTemplateDrawer = useCallback(() => {
+    setIsTemplateDrawerOpen(false);
+    setTemplateDrawerCourse(null);
+    setTemplates([]);
+    setTemplatePage(1);
+    setTemplateTotalPages(1);
+    setImportingTemplateId(null);
+  }, []);
+
+  const handleImportTemplate = useCallback(
+    async (template: TemplateResponse) => {
+      if (!templateDrawerCourse) return;
+      setImportingTemplateId(template.template.id);
+      try {
+        const response = await gradeStatisticsApi.importTemplate(
+          template.template.id,
+          templateDrawerCourse.id,
+        );
+        setRegisteredCourses((prev) =>
+          prev.map((course) =>
+            course.id === response.student_course_id
+              ? {
+                  ...course,
+                  items: response.items,
+                }
+              : course,
+          ),
+        );
+        toast({
+          variant: "success",
+          title: "Template imported",
+          description: `Imported ${template.template_items.length} items into your course.`,
+        });
+        closeTemplateDrawer();
+      } catch (error) {
+        console.error("Failed to import template", error);
+        toast({
+          variant: "destructive",
+          title: "Import failed",
+          description: "Unable to import this template. Please try again.",
+        });
+      } finally {
+        setImportingTemplateId(null);
+      }
+    },
+    [templateDrawerCourse, toast, closeTemplateDrawer],
+  );
 
   // Smart numeric input helpers (mobile-first): allow digits + one decimal, clamp 0..100
   const normalizeNumberInput = (raw: string): string => {
@@ -595,6 +820,254 @@ export default function GradeStatisticsPage() {
                 </Modal>
               )}
 
+              {sharingCourse && (
+                <Modal
+                  isOpen={isShareModalOpen}
+                  onClose={closeShareModal}
+                  title="Share course template"
+                  className="max-w-md"
+                  contentClassName="rounded-3xl"
+                >
+                  <div className="space-y-5">
+                    <div className="space-y-1">
+                      <h3 className="text-base font-semibold text-foreground">
+                        {sharingCourse.course.course_code}
+                        {sharingCourse.course.section ? ` · ${sharingCourse.course.section}` : ""}
+                      </h3>
+                      {sharingCourse.course.course_title && (
+                        <p className="text-sm text-muted-foreground">
+                          {sharingCourse.course.course_title}
+                        </p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-center text-xs">
+                      <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Assignments</p>
+                        <p className="mt-1 text-lg font-semibold text-foreground">{sharingCourse.items.length}</p>
+                      </div>
+                      <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Coverage</p>
+                        <p className="mt-1 text-lg font-semibold text-foreground">
+                          {Math.min(100, Math.max(0, calculateTemplateCoverage(sharingCourse))).toFixed(1)}%
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Credits</p>
+                        <p className="mt-1 text-lg font-semibold text-foreground">{sharingCourse.course.credits ?? "–"}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-muted-foreground">Preview</p>
+                      {sharingCourse.items.length > 0 ? (
+                        <div className="space-y-2">
+                          {sharingCourse.items.slice(0, 5).map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between rounded-lg border border-border/40 bg-background/70 px-3 py-2"
+                            >
+                              <span className="text-sm font-medium text-foreground line-clamp-1">{item.item_name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {(item.total_weight_pct ?? 0).toFixed(1)}%
+                              </span>
+                            </div>
+                          ))}
+                          {sharingCourse.items.length > 5 && (
+                            <p className="text-xs text-muted-foreground">+
+                              {sharingCourse.items.length - 5} more assignments included
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-xs text-muted-foreground">
+                          Add at least one assignment to share a template.
+                        </div>
+                      )}
+                    </div>
+
+                    {calculateTemplateCoverage(sharingCourse) < 100 && (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                        <p className="font-medium">Heads up</p>
+                        <p>Your template covers less than 100% of the course weight. Peers can add missing items after importing.</p>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={closeShareModal} disabled={isSharing}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleShareTemplate} disabled={isSharing || !canShareTemplate(sharingCourse)}>
+                        {isSharing ? "Sharing…" : "Share template"}
+                      </Button>
+                    </div>
+                  </div>
+                </Modal>
+              )}
+
+              <Sheet
+                open={isTemplateDrawerOpen}
+                onOpenChange={(open) => {
+                  if (!open) closeTemplateDrawer();
+                }}
+              >
+                <SheetContent
+                  side="right"
+                  className="w-full max-w-full overflow-y-auto bg-background/95 sm:max-w-md"
+                >
+                  <SheetHeader className="space-y-2">
+                    <SheetTitle className="text-left text-lg font-semibold">
+                      {templateDrawerCourse?.course.course_code}
+                      {templateDrawerCourse?.course.section ? ` · ${templateDrawerCourse?.course.section}` : ""}
+                    </SheetTitle>
+                    <SheetDescription className="text-left text-sm">
+                      Browse templates shared by peers and replace your course items with a single tap.
+                    </SheetDescription>
+                  </SheetHeader>
+
+                  <div className="mt-4 space-y-4">
+                    {templateDrawerCourse && (
+                      <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm">
+                        <div className="font-semibold text-foreground">
+                          {templateDrawerCourse.course.course_title || templateDrawerCourse.course.course_code}
+                        </div>
+                        <div className="mt-2 grid grid-cols-3 gap-3 text-center text-xs text-muted-foreground">
+                          <div className="rounded-xl border border-border/40 bg-background/60 p-3">
+                            <p className="text-[11px] uppercase tracking-wide">Assignments</p>
+                            <p className="mt-1 text-lg font-semibold text-foreground">
+                              {templateDrawerCourse.items.length}
+                            </p>
+                          </div>
+                          <div className="rounded-xl border border-border/40 bg-background/60 p-3">
+                            <p className="text-[11px] uppercase tracking-wide">Coverage</p>
+                            <p className="mt-1 text-lg font-semibold text-foreground">
+                              {Math.min(100, Math.max(0, calculateTemplateCoverage(templateDrawerCourse))).toFixed(1)}%
+                            </p>
+                          </div>
+                          <div className="rounded-xl border border-border/40 bg-background/60 p-3">
+                            <p className="text-[11px] uppercase tracking-wide">Credits</p>
+                            <p className="mt-1 text-lg font-semibold text-foreground">
+                              {templateDrawerCourse.course.credits ?? "–"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {isTemplatesInitialFetch ? (
+                      <div className="space-y-3">
+                        {Array.from({ length: 3 }).map((_, index) => (
+                          <div key={index} className="space-y-3 rounded-2xl border border-border/60 bg-background/70 p-4">
+                            <Skeleton className="h-4 w-1/2" />
+                            <Skeleton className="h-3 w-32" />
+                            <Skeleton className="h-20 w-full" />
+                            <Skeleton className="h-9 w-full" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : templates.length > 0 ? (
+                      <div className="space-y-3">
+                        {templates.map((template) => {
+                          const coverage = Math.min(100, Math.max(0, calculateTemplateWeight(template))).toFixed(1);
+                          const createdAt = new Date(template.template.created_at);
+                          return (
+                            <div
+                              key={template.template.id}
+                              className="space-y-3 rounded-2xl border border-border/60 bg-background/85 p-4"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-semibold text-foreground">
+                                    {template.student.name} {template.student.surname}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Shared on {createdAt.toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  className="flex items-center gap-2"
+                                  onClick={() => handleImportTemplate(template)}
+                                  disabled={importingTemplateId === template.template.id}
+                                >
+                                  {importingTemplateId === template.template.id ? (
+                                    <RefreshCw className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    "Import"
+                                  )}
+                                </Button>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground">
+                                <div className="rounded-lg border border-border/40 bg-muted/20 p-2">
+                                  <p className="text-[10px] uppercase tracking-wide">Items</p>
+                                  <p className="mt-1 text-sm font-semibold text-foreground">
+                                    {template.template_items.length}
+                                  </p>
+                                </div>
+                                <div className="rounded-lg border border-border/40 bg-muted/20 p-2">
+                                  <p className="text-[10px] uppercase tracking-wide">Coverage</p>
+                                  <p className="mt-1 text-sm font-semibold text-foreground">{coverage}%</p>
+                                </div>
+                                <div className="rounded-lg border border-border/40 bg-muted/20 p-2">
+                                  <p className="text-[10px] uppercase tracking-wide">Owner</p>
+                                  <p className="mt-1 text-sm font-semibold text-foreground">Peer</p>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <p className="text-xs font-semibold text-muted-foreground">Assignments preview</p>
+                                <div className="space-y-1">
+                                  {template.template_items.slice(0, 4).map((item) => (
+                                    <div
+                                      key={item.id}
+                                      className="flex items-center justify-between rounded-lg border border-border/40 bg-background/70 px-3 py-2"
+                                    >
+                                      <span className="text-sm font-medium text-foreground line-clamp-1">
+                                        {item.item_name}
+                                      </span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {(item.total_weight_pct ?? 0).toFixed(1)}%
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                                {template.template_items.length > 4 && (
+                                  <p className="text-xs text-muted-foreground">
+                                    +{template.template_items.length - 4} more items included
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {templatePage < templateTotalPages && (
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={handleLoadMoreTemplates}
+                            disabled={templatesLoading}
+                          >
+                            {templatesLoading ? "Loading…" : "Load more"}
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3 rounded-2xl border border-dashed border-border/60 bg-muted/15 p-6 text-center">
+                        <p className="text-sm font-medium text-foreground">No templates shared yet</p>
+                        <p className="text-xs text-muted-foreground">
+                          Be the first to share your course structure so your peers can start with a plan.
+                        </p>
+                      </div>
+                    )}
+
+                    {!isTemplatesInitialFetch && templateDrawerCourse && (
+                      <div className="rounded-lg border border-border/40 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                        Importing a template will replace your current assignments for this course. You can always edit them afterwards.
+                      </div>
+                    )}
+                  </div>
+                </SheetContent>
+              </Sheet>
+
               {!user ? (
                 <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-muted/30 p-3">
                   <div className="text-sm text-muted-foreground">Login to track your course progress this semester.</div>
@@ -607,7 +1080,7 @@ export default function GradeStatisticsPage() {
                       <CardContent className="space-y-2 p-0">
                         <p className="text-xs uppercase tracking-wide text-muted-foreground">Total GPA</p>
                         <p className={`text-3xl font-semibold ${getGPAColorClass(displayedGPA)}`}>{formatGPA(displayedGPA)}</p>
-                        <p className="text-xs text-muted-foreground">Across all registered courses.</p>
+                        <p className="text-xs text-muted-foreground">Across all registered courses</p>
                       </CardContent>
                     </Card>
                     <Card className="rounded-2xl border border-border/50 bg-muted/40 p-4">
@@ -616,7 +1089,7 @@ export default function GradeStatisticsPage() {
                         <p className="text-3xl font-semibold text-foreground">
                           {calculateMaxPossibleTotalGPA(registeredCourses).toFixed(2)}
                         </p>
-                        <p className="text-xs text-muted-foreground">If you ace everything left.</p>
+                        <p className="text-xs text-muted-foreground">If you ace everything left</p>
                       </CardContent>
                     </Card>
                     <Card className="rounded-2xl border border-border/50 bg-muted/40 p-4">
@@ -625,7 +1098,7 @@ export default function GradeStatisticsPage() {
                         <p className="text-3xl font-semibold text-foreground">
                           {calculateProjectedTotalGPA(registeredCourses).toFixed(2)}
                         </p>
-                        <p className="text-xs text-muted-foreground">Based on current trend.</p>
+                        <p className="text-xs text-muted-foreground">Based on current trend</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -639,7 +1112,7 @@ export default function GradeStatisticsPage() {
                           registeredCourse={registeredCourse}
                           onDeleteCourse={handleUnregisterCourse}
                           onAddItem={(courseId) => {
-                            const course = registeredCourses.find(rc => rc.id === courseId);
+                            const course = registeredCourses.find((rc) => rc.id === courseId);
                             if (course) {
                               setSelectedRegisteredCourse(course);
                               setIsAddItemModalOpen(true);
@@ -647,6 +1120,8 @@ export default function GradeStatisticsPage() {
                           }}
                           onDeleteItem={handleDeleteItem}
                           onEditItem={handleEditItem}
+                          onShareTemplate={openShareModal}
+                          onOpenTemplates={handleOpenTemplates}
                         />
                       ))}
                     </div>

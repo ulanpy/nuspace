@@ -173,7 +173,7 @@ class CourseTemplate(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
-
+    student = relationship("User", back_populates="templates")
 
 class TemplateItem(Base):
     __tablename__ = "template_items"

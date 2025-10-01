@@ -1,56 +1,60 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { TicketCard } from "./TicketCard";
 import { Button } from "@/components/atoms/button";
-import { Input } from "@/components/atoms/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
-import { Plus, Search, Filter, ArrowLeft, Shield, FileText } from "lucide-react";
+import { ChevronDown, Filter, Folder, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { ROUTES } from "@/data/routes";
 import { useQuery } from "@tanstack/react-query";
 import { sgotinishApi } from "../api/sgotinishApi";
-import { useUser } from "@/hooks/use-user";
-import { LoginModal } from "@/components/molecules/login-modal";
 import { toLocalDate } from "../utils/date";
-// Mock data
-const mockTickets = [
-  {
-    id: "1",
-    title: "Class schedule issue",
-    category: "Academic",
-    status: "open" as const,
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    messageCount: 0,
-  },
-  {
-    id: "2", 
-    title: "Wi-Fi not working in dormitory",
-    category: "Infrastructure",
-    status: "in_progress" as const,
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    messageCount: 3,
-  },
-  {
-    id: "3",
-    title: "Event organization question",
-    category: "Events", 
-    status: "resolved" as const,
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    messageCount: 5,
-  },
-];
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/atoms/dropdown-menu";
+import { TicketCategory, TicketStatus } from "../types";
 
 interface StudentDashboardProps {
   user: any;
-  sgDashboardButton?: React.ReactNode;
   createAppealButton: React.ReactNode;
 }
 
-export default function StudentDashboard({ user, sgDashboardButton, createAppealButton }: StudentDashboardProps) {
+type StatusFilterValue = TicketStatus | "all";
+type CategoryFilterValue = TicketCategory | "all";
+
+export default function StudentDashboard({ user, createAppealButton }: StudentDashboardProps) {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilterValue>("all");
+
+  const statusOptions = useMemo(
+    () => [
+      { value: "all" as StatusFilterValue, label: "All statuses", mobileLabel: "All" },
+      { value: TicketStatus.open as StatusFilterValue, label: "Pending", mobileLabel: "Pending" },
+      { value: TicketStatus.in_progress as StatusFilterValue, label: "In Progress", mobileLabel: "In Progress" },
+      { value: TicketStatus.resolved as StatusFilterValue, label: "Resolved", mobileLabel: "Resolved" },
+      { value: TicketStatus.closed as StatusFilterValue, label: "Closed", mobileLabel: "Closed" },
+    ],
+    [],
+  );
+
+  const categoryOptions = useMemo(
+    () => [
+      { value: "all" as CategoryFilterValue, label: "All categories", mobileLabel: "All" },
+      { value: TicketCategory.academic as CategoryFilterValue, label: "Academic", mobileLabel: "Academic" },
+      { value: TicketCategory.administrative as CategoryFilterValue, label: "Administrative", mobileLabel: "Administrative" },
+      { value: TicketCategory.technical as CategoryFilterValue, label: "Technical", mobileLabel: "Technical" },
+      { value: TicketCategory.complaint as CategoryFilterValue, label: "Complaint", mobileLabel: "Complaint" },
+      { value: TicketCategory.suggestion as CategoryFilterValue, label: "Suggestion", mobileLabel: "Suggestion" },
+      { value: TicketCategory.other as CategoryFilterValue, label: "Other", mobileLabel: "Other" },
+    ],
+    [],
+  );
+
+  const activeStatusOption = statusOptions.find((option) => option.value === statusFilter) ?? statusOptions[0];
+  const activeCategoryOption = categoryOptions.find((option) => option.value === categoryFilter) ?? categoryOptions[0];
 
 
   const { data: ticketsResponse, isLoading, isError } = useQuery({
@@ -63,10 +67,10 @@ export default function StudentDashboard({ user, sgDashboardButton, createAppeal
     retry: false, // Don't retry if unauthorized
   });
 
-  const filteredTickets = ticketsResponse?.tickets.filter(ticket => {
-    const matchesSearch = ticket.title.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredTickets = ticketsResponse?.tickets.filter((ticket) => {
     const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesCategory = categoryFilter === "all" || ticket.category === categoryFilter;
+    return matchesStatus && matchesCategory;
   }) || [];
 
   const handleTicketClick = (ticketId: number) => {
@@ -85,51 +89,75 @@ export default function StudentDashboard({ user, sgDashboardButton, createAppeal
               <p className="text-gray-600 dark:text-gray-400">Track and manage your student appeals</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 items-center">
-              {sgDashboardButton}
               {createAppealButton}
             </div>
           </div>
         </div>
         
-        {/* Search and Filters */}
+        {/* Filters */}
         <div className="mb-6">
-          <div className="mb-4">
-            <Input
-              type="text"
-              placeholder="Search appeals..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          
-          {/* Filters */}
           <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700">
-                <Filter className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="open">Pending</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="resolved">Resolved</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
-                <SelectItem value="Academic">Academic</SelectItem>
-                <SelectItem value="Infrastructure">Infrastructure</SelectItem>
-                <SelectItem value="Events">Events</SelectItem>
-              </SelectContent>
-            </Select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm justify-between bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">{activeStatusOption.label}</span>
+                    <span className="sm:hidden">{activeStatusOption.mobileLabel}</span>
+                  </div>
+                  <ChevronDown className="h-3 w-3 ml-1 sm:h-4 sm:w-4 sm:ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-48 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" align="start">
+                {statusOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => setStatusFilter(option.value)}
+                    className={`
+                      text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700
+                      ${statusFilter === option.value ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" : ""}
+                    `}
+                  >
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm justify-between bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <div className="flex items-center gap-2">
+                    <Folder className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">{activeCategoryOption.label}</span>
+                    <span className="sm:hidden">{activeCategoryOption.mobileLabel}</span>
+                  </div>
+                  <ChevronDown className="h-3 w-3 ml-1 sm:h-4 sm:w-4 sm:ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" align="start">
+                {categoryOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => setCategoryFilter(option.value)}
+                    className={`
+                      text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700
+                      ${categoryFilter === option.value ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" : ""}
+                    `}
+                  >
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

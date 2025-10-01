@@ -290,29 +290,51 @@ class QueryBuilder:
     # —— MUTATIONS —— #
     async def add(
         self,
-        data: BaseModel,
+        data: Union[BaseModel, List[BaseModel]],
         preload: Optional[List[InstrumentedAttribute]] = None,
-    ) -> DeclarativeBase:
+    ) -> Union[DeclarativeBase, List[DeclarativeBase]]:
         """
-        Adds a new record to the database from a Pydantic model.
+        Adds new record(s) to the database from Pydantic model(s).
 
-        @param data - The Pydantic model instance containing the data.
-        @param preload - A list of relationships to eagerly load on the new instance.
-        @return The newly created SQLAlchemy model instance.
+        @param data - The Pydantic model instance or list of instances containing the data.
+        @param preload - A list of relationships to eagerly load on the new instance(s).
+        @return The newly created SQLAlchemy model instance(s).
         """
-        instance = self.model(**data.model_dump())
-        self.session.add(instance)
-        await self.session.commit()
-        await self.session.refresh(instance)
+        if isinstance(data, list):
+            # Handle list of BaseModel instances
+            instances = [self.model(**item.model_dump()) for item in data]
+            self.session.add_all(instances)
+            await self.session.commit()
+            
+            # Refresh all instances to get their IDs
+            for instance in instances:
+                await self.session.refresh(instance)
+            
+            # If preload is specified, reload instances with relationships
+            if preload and instances:
+                pk = list(self.model.__table__.primary_key)[0]
+                instance_ids = [getattr(instance, pk.name) for instance in instances]
+                stmt = select(self.model).where(pk.in_(instance_ids))
+                for rel in preload:
+                    stmt = stmt.options(selectinload(rel))
+                result = await self.session.execute(stmt)
+                instances = result.scalars().all()
+            return instances
+        else:
+            # Handle single BaseModel instance (backward compatibility)
+            instance = self.model(**data.model_dump())
+            self.session.add(instance)
+            await self.session.commit()
+            await self.session.refresh(instance)
 
-        if preload:
-            pk = list(self.model.__table__.primary_key)[0]
-            stmt = select(self.model).where(pk == getattr(instance, pk.name))
-            for rel in preload:
-                stmt = stmt.options(selectinload(rel))
-            result = await self.session.execute(stmt)
-            instance = result.scalars().first()
-        return instance
+            if preload:
+                pk = list(self.model.__table__.primary_key)[0]
+                stmt = select(self.model).where(pk == getattr(instance, pk.name))
+                for rel in preload:
+                    stmt = stmt.options(selectinload(rel))
+                result = await self.session.execute(stmt)
+                instance = result.scalars().first()
+            return instance
 
     async def add_orm_list(
         self, 

@@ -13,7 +13,7 @@ import {
   getGPAColorClass,
 } from "../utils/gradeUtils";
 import { RegisteredCourseItem } from "./RegisteredCourseItem";
-import { BookOpen, Info, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Info, Plus, Trash2, Share2, UsersRound } from "lucide-react";
 
 interface RegisteredCourseCardProps {
   registeredCourse: RegisteredCourse;
@@ -21,6 +21,8 @@ interface RegisteredCourseCardProps {
   onAddItem?: (courseId: number) => void;
   onDeleteItem?: (item: BaseCourseItem) => void;
   onEditItem?: (item: BaseCourseItem) => void;
+  onShareTemplate?: (course: RegisteredCourse) => void;
+  onOpenTemplates?: (course: RegisteredCourse) => void;
 }
 
 export function RegisteredCourseCard({
@@ -29,6 +31,8 @@ export function RegisteredCourseCard({
   onAddItem,
   onDeleteItem,
   onEditItem,
+  onShareTemplate,
+  onOpenTemplates,
 }: RegisteredCourseCardProps) {
   const [showAssignments, setShowAssignments] = useState(false);
   const [showClassAverageModal, setShowClassAverageModal] = useState(false);
@@ -161,6 +165,28 @@ export function RegisteredCourseCard({
               <Plus className="h-3.5 w-3.5" />
               <span className="sm:hidden">Add</span>
               <span className="hidden sm:inline">Add assignment</span>
+            </Button>
+          )}
+          {onShareTemplate && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onShareTemplate(registeredCourse)}
+              className="flex-shrink-0 h-8 gap-1.5 rounded-full border border-border/60 bg-background px-3 text-xs font-medium text-foreground hover:bg-muted"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              Share template
+            </Button>
+          )}
+          {onOpenTemplates && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onOpenTemplates(registeredCourse)}
+              className="flex-shrink-0 h-8 gap-1.5 rounded-full border border-border/60 bg-background px-3 text-xs font-medium text-foreground hover:bg-muted"
+            >
+              <UsersRound className="h-3.5 w-3.5" />
+              Browse templates
             </Button>
           )}
           <Button

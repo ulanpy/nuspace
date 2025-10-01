@@ -10,7 +10,7 @@ class StudentCoursePolicy(BasePolicy):
     def check_create(self, student_sub: str):
         if self.is_admin:
             return
-        if self.user_sub != student_sub:
+        if self.user_sub != student_sub and student_sub != "me":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You can only register courses for yourself.",
@@ -19,7 +19,7 @@ class StudentCoursePolicy(BasePolicy):
     def check_read_list(self, student_sub: str):
         if self.is_admin:
             return
-        if self.user_sub != student_sub:
+        if self.user_sub != student_sub and student_sub != "me":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You can only view your own registered courses.",

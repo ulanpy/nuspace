@@ -30,6 +30,11 @@ declare global {
           onClick?: (cb: () => void) => void;
           offClick?: (cb: () => void) => void;
         };
+        safeAreaInsets?: { top: string };
+        safeAreaInset?: { top: string };
+        onEvent?: (event: string, callback: (data: any) => void) => void;
+        offEvent?: (event: string, callback: (data: any) => void) => void;
+        isFullscreen?: boolean;
       };
     };
     // Telegram script loading state
@@ -54,6 +59,21 @@ export function useTelegramMiniApp() {
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
   useEffect(() => {
+    const applyOffsets = (tg: any) => {
+      try {
+        const safeTop = Number((tg?.safeAreaInsets?.top ?? tg?.safeAreaInset?.top ?? 0));
+        const platform = tg?.platform ?? (navigator.userAgent.includes("Android") ? "android" : "ios");
+        const fallbackTop = platform === "ios" ? 32 : platform === "android" ? 28 : 20;
+        const headerOffset = Math.max(0, Math.round(safeTop || fallbackTop));
+        document.documentElement.style.setProperty("--tg-header-offset", `${headerOffset}px`);
+        document.documentElement.dataset.tgHeaderOffset = String(headerOffset);
+      } catch (error) {
+        console.error("Failed to set Telegram header offset", error);
+      }
+    };
+
+    let detachViewportHandler: (() => void) | undefined;
+
     // Subscribe early to global readiness to avoid local fallback firing
     const onGlobalReady = (e: any) => {
       try {
@@ -166,10 +186,13 @@ export function useTelegramMiniApp() {
                     // Apply styling after successful initialization
                     document.documentElement.classList.add("tg-miniapp");
                     document.documentElement.style.setProperty("--bottom-nav-height", "64px");
-                    
-                    const platform = tg.platform ?? "android";
-                    const headerOffsetPx = 24; // Android-specific offset
-                    document.documentElement.style.setProperty("--tg-header-offset", `${headerOffsetPx}px`);
+                    applyOffsets(tg);
+
+                    const handleViewportChange = () => applyOffsets(tg);
+                    try {
+                      tg?.onEvent?.("viewportChanged", handleViewportChange);
+                      detachViewportHandler = () => tg?.offEvent?.("viewportChanged", handleViewportChange);
+                    } catch {}
                   } catch (error) {
                     console.error('Android Telegram step 3 failed:', error);
                   }
@@ -242,6 +265,13 @@ export function useTelegramMiniApp() {
               const platform = tg.platform ?? "web";
               const headerOffsetPx = platform === "ios" ? 28 : 20;
               document.documentElement.style.setProperty("--tg-header-offset", `${headerOffsetPx}px`);
+              applyOffsets(tg);
+
+              const handleViewportChange = () => applyOffsets(tg);
+              try {
+                tg?.onEvent?.("viewportChanged", handleViewportChange);
+                detachViewportHandler = () => tg?.offEvent?.("viewportChanged", handleViewportChange);
+              } catch {}
               
               console.log('Standard Telegram initialization completed');
             }, 150);
@@ -323,6 +353,7 @@ export function useTelegramMiniApp() {
       // Do NOT remove global listeners here; other hook consumers rely on them
       document.documentElement.classList.remove("tg-miniapp");
       document.documentElement.style.removeProperty("--tg-header-offset");
+      detachViewportHandler?.();
       window.removeEventListener('tgMiniAppReady', onGlobalReady);
     };
   }, []);
