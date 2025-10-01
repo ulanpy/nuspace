@@ -17,6 +17,7 @@ interface ModalProps {
   description?: string;
   children?: React.ReactNode;
   className?: string;
+  contentClassName?: string;
 }
 
 export function Modal({
@@ -26,6 +27,7 @@ export function Modal({
   description,
   children,
   className = "max-w-md",
+  contentClassName,
 }: ModalProps) {
   
   const backNav = useMaybeBackNavigation();
@@ -112,7 +114,7 @@ export function Modal({
     animate={{ scale: 1, opacity: 1 }}
     exit={{ scale: 0.95, opacity: 0 }}
     transition={{ duration: 0.2, ease: "easeIn" }}
-    className="relative bg-background rounded-lg shadow-lg w-full overflow-hidden"
+    className="relative flex h-full w-full"
   >
     <div
       className="fixed inset-0 z-[10000] grid place-items-center px-4"
@@ -129,9 +131,15 @@ export function Modal({
       />
       <div
         className={cn(
-          "relative bg-background rounded-lg shadow-lg w-full overflow-hidden",
+          "relative flex w-full flex-col overflow-y-auto rounded-lg bg-background shadow-lg",
+          "max-h-[calc(100dvh-4rem)]",
           className,
+          contentClassName,
         )}
+        style={{
+          maxHeight:
+            "min(calc(100dvh - (env(safe-area-inset-top, 0px) + var(--tg-header-offset, 0px) + env(safe-area-inset-bottom, 0px) + 3rem)), calc(100vh - (env(safe-area-inset-top, 0px) + var(--tg-header-offset, 0px) + env(safe-area-inset-bottom, 0px) + 3rem)))",
+        }}
       >
         <div className="sticky top-0 z-10 flex justify-between items-center p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
           <div className="flex items-center gap-2">
@@ -146,7 +154,7 @@ export function Modal({
             </Button>
           </div>
         </div>
-        <div className="p-4">{children}</div>
+        <div className="p-4 flex-1 overflow-y-auto">{children}</div>
       </div>
     </div>
   </motion.div>

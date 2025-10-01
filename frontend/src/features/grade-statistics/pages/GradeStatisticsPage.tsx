@@ -21,6 +21,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/atoms/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/atoms/modal";
 import { ConfirmationModal } from "../components/ConfirmationModal";
@@ -199,23 +200,21 @@ export default function GradeStatisticsPage() {
 
   // Smart numeric input helpers (mobile-first): allow digits + one decimal, clamp 0..100
   const normalizeNumberInput = (raw: string): string => {
-    const replaced = raw.replace(/,/g, ".");
-    const filtered = replaced.replace(/[^0-9.]/g, "");
-    const firstDot = filtered.indexOf(".");
-    const singleDecimal = firstDot === -1
-      ? filtered
-      : filtered.slice(0, firstDot + 1) + filtered.slice(firstDot + 1).replace(/\./g, "");
-    if (singleDecimal === "" || singleDecimal === ".") return singleDecimal; // allow typing start
-    const num = Number(singleDecimal);
-    if (Number.isNaN(num)) return "";
-    const clamped = Math.max(0, Math.min(100, num));
-    return clamped.toString();
+    if (!raw) return "";
+    const cleaned = raw
+      .replace(/,/g, ".")
+      .replace(/[^0-9.]/g, "");
+    const dotIndex = cleaned.indexOf(".");
+    const normalized = dotIndex === -1
+      ? cleaned
+      : cleaned.slice(0, dotIndex + 1) + cleaned.slice(dotIndex + 1).replace(/\./g, "");
+    return normalized;
   };
 
   const parseInput = (raw: string): number | null => {
     if (!raw) return null;
     const v = Number(raw.replace(/,/g, "."));
-    return Number.isNaN(v) ? null : v;
+    return Number.isNaN(v) ? null : Math.min(100, Math.max(0, v));
   };
 
   // Keep obtained <= max in real-time
@@ -317,85 +316,92 @@ export default function GradeStatisticsPage() {
 
   return (
     <MotionWrapper>
-      <div className="w-full max-w-none">
+      <div className="w-full max-w-none space-y-6">
 
         {/* Tabs: Course Statistics vs Live GPA */}
         <Tabs defaultValue="live-gpa">
-          <TabsList className="w-full grid grid-cols-2 mb-4">
+          <TabsList className="mb-4 grid w-full grid-cols-2 rounded-full bg-muted/60 p-1">
             <TabsTrigger value="live-gpa">Your Live GPA</TabsTrigger>
             <TabsTrigger value="course-stats">Course Statistics</TabsTrigger>
           </TabsList>
 
           <TabsContent value="live-gpa">
             <div className="space-y-4">
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-2">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <Calculator className="h-5 w-5" />
-                  <h2 className="text-lg font-semibold">Live GPA Calculator</h2>
+                  <h2 className="text-base font-medium text-foreground">Live GPA overview</h2>
                 </div>
                 {user && (
                   <>
                     <Button size="sm" onClick={() => setIsAddCourseModalOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Course
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add course
                     </Button>
                     <Modal
                       isOpen={isAddCourseModalOpen}
                       onClose={() => setIsAddCourseModalOpen(false)}
-                      title="Find & Register Courses"
+                      title="Add course"
+                      className="max-w-lg"
+                      contentClassName="rounded-3xl"
                     >
-                      <div className="relative my-3">
-                        <label className="text-sm font-medium mb-2 block">Select Term</label>
-                        <select 
-                          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          value={selectedTerm || ''}
-                          onChange={(e) => setSelectedTerm(e.target.value || null)}
-                        >
-                          <option value="">Select a term...</option>
-                          {terms.map(term => (
-                            <option key={term} value={term}>{term}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="relative my-3">
-                        <Search className="h-4 w-4 absolute left-2 top-2.5 text-muted-foreground" />
-                        <Input
-                          className="pl-8"
-                          placeholder="Search course code, title or faculty..."
-                          value={courseSearch}
-                          onChange={(e) => setCourseSearch(e.target.value)}
-                          disabled={!selectedTerm}
-                        />
-                      </div>
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {availableCourses.map(course => (
-                          <div key={course.id} className="flex items-center justify-between p-2 border rounded-md">
-                            <div className="flex-1">
-                              <div className="text-sm font-medium">
-                                {course.course_code} {course.section ? `(${course.section})` : ''}
+                      <div className="space-y-4">
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-foreground">Term</label>
+                          <select
+                            className="flex h-11 w-full items-center rounded-xl border border-border/60 bg-muted/30 px-3 text-sm text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={selectedTerm || ''}
+                            onChange={(e) => setSelectedTerm(e.target.value || null)}
+                          >
+                            <option value="">Select a term…</option>
+                            {terms.map(term => (
+                              <option key={term} value={term}>{term}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            className="h-11 rounded-xl border-border/60 bg-background pl-9"
+                            placeholder="Search course code, title or faculty…"
+                            value={courseSearch}
+                            onChange={(e) => setCourseSearch(e.target.value)}
+                            disabled={!selectedTerm}
+                          />
+                        </div>
+                        <div className="max-h-72 space-y-3 overflow-y-auto rounded-2xl border border-border/60 bg-card/40 p-3">
+                          {availableCourses.map(course => (
+                            <div key={course.id} className="flex items-start gap-3 rounded-xl border border-border/40 bg-background/90 p-3">
+                              <div className="flex-1 space-y-1 text-sm">
+                                <p className="font-medium text-foreground">
+                                  {course.course_code} {course.section ? `(${course.section})` : ''}
+                                </p>
+                                {course.course_title && (
+                                  <p className="text-muted-foreground">{course.course_title}</p>
+                                )}
+                                <p className="text-xs text-muted-foreground">
+                                  {course.faculty} · {course.credits} credits · {course.term}
+                                </p>
                               </div>
-                              <div className="text-xs text-muted-foreground">
-                                {course.faculty} · {course.credits} credits · {course.term}
-                              </div>
+                              <Button
+                                size="sm"
+                                className="rounded-full px-4"
+                                onClick={() => handleRegisterCourse(course.id)}
+                              >
+                                Add
+                              </Button>
                             </div>
-                            <Button
-                              size="sm"
-                              onClick={() => handleRegisterCourse(course.id)}
-                              className="ml-2"
-                            >
-                              Add
-                            </Button>
-                          </div>
-                        ))}
-                        {availableCourses.length === 0 && (
-                          <div className="text-sm text-muted-foreground text-center py-4">
-                            {!selectedTerm
-                              ? 'Please select a term to begin'
-                              : courseSearch
-                                ? 'No matching courses found'
-                                : 'Start typing to search for courses.'}
-                          </div>
-                        )}
+                          ))}
+                          {availableCourses.length === 0 && (
+                            <div className="py-8 text-center text-sm text-muted-foreground">
+                              {!selectedTerm
+                                ? "Select a term to view courses"
+                                : courseSearch
+                                  ? "No matching courses"
+                                  : "Start typing to search for courses"}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </Modal>
                   </>
@@ -412,10 +418,12 @@ export default function GradeStatisticsPage() {
                     setNewItem({ item_name: "", total_weight_pct: null, obtained_score_pct: null, max_score: undefined });
                     setNewItemInput({ weight: "", max: "", obtained: "" });
                   }}
-                  title={`Add Item to ${selectedRegisteredCourse.course.course_code}`}
+                  title={itemToEdit ? "Edit assignment" : "Add assignment"}
+                  className="max-w-md"
+                  contentClassName="rounded-3xl"
                 >
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-3">
                       <div>
                         <label className="text-sm font-medium mb-2 block">Item Name</label>
                         <Input
@@ -498,7 +506,9 @@ export default function GradeStatisticsPage() {
                 isOpen={!!itemToDelete}
                 onClose={() => setItemToDelete(null)}
                 onConfirm={handleDeleteItemConfirm}
-                title="Delete Course Item"
+                title="Delete assignment"
+                className="max-w-sm"
+                contentClassName="rounded-3xl"
                 description={`Are you sure you want to delete "${itemToDelete?.item_name}"? This action cannot be undone.`}
                 confirmText="Delete"
               />
@@ -511,10 +521,12 @@ export default function GradeStatisticsPage() {
                     setNewItem({ item_name: "", total_weight_pct: null, obtained_score_pct: null, max_score: undefined });
                     setNewItemInput({ weight: "", max: "", obtained: "" });
                   }}
-                  title={`Edit Item: ${itemToEdit.item_name}`}
+                  title="Edit assignment"
+                  className="max-w-md"
+                  contentClassName="rounded-3xl"
                 >
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-3">
                       <div>
                         <label className="text-sm font-medium mb-2 block">Item Name</label>
                         <Input
@@ -541,19 +553,6 @@ export default function GradeStatisticsPage() {
                         )}
                       </div>
                       <div>
-                        <label className="text-sm font-medium mb-2 block">Obtained Score (%)</label>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="e.g., 85"
-                          value={newItemInput.obtained}
-                          onChange={(e) => setNewItemInput(v => ({ ...v, obtained: normalizeNumberInput(e.target.value) }))}
-                        />
-                        {!obtainedNumValid && (
-                          <p className="mt-1 text-xs text-red-600">Obtained must be 0–100 and ≤ Max.</p>
-                        )}
-                      </div>
-                      <div>
                         <label className="text-sm font-medium mb-2 block">Max Score</label>
                         <Input
                           type="text"
@@ -564,6 +563,19 @@ export default function GradeStatisticsPage() {
                         />
                         {!maxNumValid && (
                           <p className="mt-1 text-xs text-red-600">Max must be between 0 and 100.</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Obtained Score</label>
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="e.g., 85"
+                          value={newItemInput.obtained}
+                          onChange={(e) => setNewItemInput(v => ({ ...v, obtained: normalizeNumberInput(e.target.value) }))}
+                        />
+                        {!obtainedNumValid && (
+                          <p className="mt-1 text-xs text-red-600">Obtained must be 0–100 and ≤ Max.</p>
                         )}
                       </div>
                     </div>
@@ -584,61 +596,43 @@ export default function GradeStatisticsPage() {
               )}
 
               {!user ? (
-                <div className="p-4 border rounded-md bg-muted/30 flex items-center justify-between gap-3">
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-muted/30 p-3">
                   <div className="text-sm text-muted-foreground">Login to track your course progress this semester.</div>
-                  <Button onClick={login} size="sm">Login</Button>
+                  <Button onClick={login} size="sm" className="h-8 rounded-full px-3 text-xs font-medium">Login</Button>
                 </div>
               ) : (
                 <>
-                  {/* Total GPA Display */}
-                  {registeredCourses.length > 0 && (
-                    <Card className="mb-6">
-                      <CardContent className="p-6">
-                        <div className="flex flex-col items-center gap-4">
-                          <div className="text-center">
-                            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                              {gpaMode === 'semester' ? 'Current Semester GPA' : gpaMode === 'maxPossible' ? 'Max Possible Semester GPA' : 'Projected Semester GPA'}
-                            </h3>
-                            <div className={`text-4xl font-bold ${getGPAColorClass(displayedGPA)}`}>
-                              {formatGPA(displayedGPA)}
-                            </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                              Based on {registeredCourses.length} registered course{registeredCourses.length !== 1 ? 's' : ''}
-                            </p>
-                          </div>
-                          <ToggleGroup 
-                            type="single" 
-                            value={gpaMode}
-                            onValueChange={(value) => {
-                              if (value) setGpaMode(value as 'semester' | 'maxPossible' | 'projected');
-                            }}
-                            className="w-full max-w-sm grid grid-cols-3"
-                          >
-                            <ToggleGroupItem value="semester" aria-label="Toggle semester GPA">
-                              Semester
-                            </ToggleGroupItem>
-                            <ToggleGroupItem value="maxPossible" aria-label="Toggle max possible semester GPA">
-                              Max
-                            </ToggleGroupItem>
-                            <ToggleGroupItem value="projected" aria-label="Toggle projected semester GPA">
-                              Projected
-                            </ToggleGroupItem>
-                          </ToggleGroup>
-                          <p className="text-xs text-center text-gray-500 max-w-md">
-                            {gpaMode === 'semester' 
-                              ? 'GPA using current contributions (treating missing items as zero).'
-                              : gpaMode === 'maxPossible'
-                                ? 'Maximum possible GPA if you ace all remaining course work (credit-weighted).'
-                                : 'Projected GPA assuming your average item score continues for remaining weight (credit-weighted).'}
-                          </p>
-                        </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <Card className="rounded-2xl border border-border/50 bg-muted/40 p-4">
+                      <CardContent className="space-y-2 p-0">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">Total GPA</p>
+                        <p className={`text-3xl font-semibold ${getGPAColorClass(displayedGPA)}`}>{formatGPA(displayedGPA)}</p>
+                        <p className="text-xs text-muted-foreground">Across all registered courses.</p>
                       </CardContent>
                     </Card>
-                  )}
+                    <Card className="rounded-2xl border border-border/50 bg-muted/40 p-4">
+                      <CardContent className="space-y-2 p-0">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">Max potential</p>
+                        <p className="text-3xl font-semibold text-foreground">
+                          {calculateMaxPossibleTotalGPA(registeredCourses).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">If you ace everything left.</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="rounded-2xl border border-border/50 bg-muted/40 p-4">
+                      <CardContent className="space-y-2 p-0">
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">Projected GPA</p>
+                        <p className="text-3xl font-semibold text-foreground">
+                          {calculateProjectedTotalGPA(registeredCourses).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Based on current trend.</p>
+                      </CardContent>
+                    </Card>
+                  </div>
 
                   {/* Registered Courses */}
                   {registeredCourses.length > 0 ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {registeredCourses.map((registeredCourse) => (
                         <RegisteredCourseCard
                           key={registeredCourse.id}
@@ -657,9 +651,9 @@ export default function GradeStatisticsPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-6 text-sm text-muted-foreground">
                       <Calculator className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No courses registered. Click "Add Course" to register courses and start tracking your GPA.</p>
+                      <p>No courses registered. Tap "Add course" to get started.</p>
                     </div>
                   )}
                 </>
