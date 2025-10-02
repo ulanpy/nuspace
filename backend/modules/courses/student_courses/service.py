@@ -18,7 +18,8 @@ class StudentCourseService:
     async def register_course(
         self, data: schemas.RegisteredCourseCreate, student_sub: str
     ) -> StudentCourse:
-        data.student_sub = student_sub
+        if data.student_sub == "me":
+            data.student_sub = student_sub
         qb = QueryBuilder(session=self.db_session, model=StudentCourse)
 
         existing_registration = (

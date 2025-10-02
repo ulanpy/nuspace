@@ -3,11 +3,12 @@ import MotionWrapper from "@/components/atoms/motion-wrapper";
 import StudentDashboard from "../components/StudentDashboard";
 import SGDashboard from "../components/SGDashboard";
 import { useUser } from "@/hooks/use-user";
-import { Button } from "@/components/atoms/button";
-import { Shield } from "lucide-react";
+import { Shield, GraduationCap } from "lucide-react";
 import { CreateAppealButton } from "../components/CreateAppealButton";
 import CreateTicketModal from "../components/CreateTicketModal"; // Import the modal
 import { LoginModal } from "@/components/molecules/login-modal";
+import { TelegramConnectCard } from "../components/TelegramConnectCard";
+import { Tabs, TabsList, TabsTrigger } from "@/components/atoms/tabs";
 
 export default function SgotinishPage() {
   const { user, isLoading, login } = useUser();
@@ -34,31 +35,40 @@ export default function SgotinishPage() {
     setIsLoginModalOpen(false);
   };
 
-  const sgDashboardButton =
-    user && isSgMember ? (
-      <Button
-        variant="outline"
-        onClick={() => setActiveDashboard("sg")}
-        className="w-full sm:w-auto"
-      >
-        <Shield className="mr-2 h-4 w-4" />
-        <span className="hidden sm:inline">SG Dashboard</span>
-        <span className="sm:hidden">SG</span>
-      </Button>
-    ) : null;
+  const effectiveDashboard = isSgMember ? activeDashboard : "student";
 
-  if (activeDashboard === "sg") {
-    return <SGDashboard onBack={() => setActiveDashboard("student")} />;
-  }
+  const dashboardContent = effectiveDashboard === "sg"
+    ? <SGDashboard onBack={() => setActiveDashboard("student")} />
+    : (
+      <StudentDashboard
+        user={user}
+        createAppealButton={<CreateAppealButton onClick={handleCreateAppeal} />}
+      />
+    );
 
   return (
     <MotionWrapper>
       <div className="container mx-auto px-4 py-8">
-        <StudentDashboard
-          user={user}
-          sgDashboardButton={sgDashboardButton}
-          createAppealButton={<CreateAppealButton onClick={handleCreateAppeal} />}
-        />
+        <TelegramConnectCard user={user ?? null} className="mb-6" />
+        {isSgMember && (
+          <Tabs
+            value={effectiveDashboard}
+            onValueChange={(value) => setActiveDashboard((value as "student" | "sg"))}
+            className="mb-6"
+          >
+            <TabsList className="grid w-full max-w-sm grid-cols-2 bg-muted/60">
+              <TabsTrigger value="student" className="gap-2">
+                <GraduationCap className="h-4 w-4" />
+                <span>Student</span>
+              </TabsTrigger>
+              <TabsTrigger value="sg" className="gap-2">
+                <Shield className="h-4 w-4" />
+                <span>SG</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
+        {dashboardContent}
       </div>
       
       {/* Render the Login Modal */}

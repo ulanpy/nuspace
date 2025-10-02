@@ -51,3 +51,4 @@ class User(Base):
     events = relationship("Event", back_populates="creator")
     posts = relationship("CommunityPost", back_populates="user")
     communities = relationship("CommunityMember", back_populates="user")
+    templates = relationship("CourseTemplate", back_populates="student")
