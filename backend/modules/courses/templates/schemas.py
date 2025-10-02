@@ -36,8 +36,8 @@ class TemplateItemCreate(BaseModel):
     total_weight_pct: float | None
 
 class TemplateItemUpdate(BaseModel):
-    item_name: str | None = None
-    total_weight_pct: float | None = None
+    item_name: str
+    total_weight_pct: float
 
 
 # === template of the course ===
@@ -54,11 +54,10 @@ class _TemplateCreateData(BaseModel):
 
 class _TemplateItemCreateData(TemplateItemCreate):
     template_id: int
-    course_item_id: int
 
 
 class TemplateUpdate(BaseModel):
-    template_items: List[TemplateItemUpdate | None] = []
+    template_items: List[TemplateItemUpdate]
 
 
 class TemplateResponse(BaseModel):

@@ -137,12 +137,6 @@ class CourseItem(Base):
 
     # ORM relationships
     student_course = relationship("StudentCourse", back_populates="items")
-    template_items = relationship(
-        "TemplateItem",
-        back_populates="course_item",
-        cascade="all, delete-orphan",
-        passive_deletes=True,
-    )
 
 
 class CourseTemplate(Base):
@@ -183,9 +177,6 @@ class TemplateItem(Base):
     template_id: Mapped[int] = mapped_column(
         ForeignKey("course_templates.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    course_item_id: Mapped[int] = mapped_column(
-        ForeignKey("course_items.id", ondelete="CASCADE"), nullable=False, index=True
-    )
 
     item_name: Mapped[str] = mapped_column(String(256), nullable=False)
     total_weight_pct: Mapped[float] = mapped_column(Numeric(5, 2), nullable=True
@@ -196,4 +187,3 @@ class TemplateItem(Base):
 
     # ORM relationships
     template = relationship("CourseTemplate", back_populates="items")
-    course_item = relationship("CourseItem", back_populates="template_items")

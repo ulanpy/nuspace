@@ -35,7 +35,6 @@ class TemplateService:
         for item in payload.template_items:
             item_data = item.model_dump()
             item_data["template_id"] = template.id
-            item_data["course_item_id"] = payload.course_id  # TODO: This should be a proper course_item_id
             items_with_template_id.append(schemas._TemplateItemCreateData(**item_data))
         
         await qb.blank(model=TemplateItem).add(data=items_with_template_id)
@@ -74,7 +73,6 @@ class TemplateService:
             for item in payload.template_items:
                 item_data = item.model_dump()
                 item_data["template_id"] = template.id
-                item_data["course_item_id"] = template.course_id  # Use course_id from existing template
                 created_items.append(schemas._TemplateItemCreateData(**item_data))
 
             await qb.blank(model=TemplateItem).add(data=created_items)
@@ -168,9 +166,8 @@ class TemplateService:
     async def get_templates(
         self, user: tuple[dict, dict], course_id: int | None, page: int, size: int
     ) -> schemas.ListTemplateDTO:
-        student_sub = user[0].get("sub")
 
-        filters = [CourseTemplate.student_sub == student_sub]
+        filters = []
         if course_id is not None:
             filters.append(CourseTemplate.course_id == course_id)
 

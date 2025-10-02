@@ -42,6 +42,7 @@ import {
   sortTemplatesByRecency,
   calculateTemplateWeight,
   buildTemplateUpdatePayload,
+  canUpdateTemplate,
 } from "../utils/templateUtils";
 import { useToast } from "@/hooks/use-toast";
 
@@ -153,7 +154,10 @@ export default function GradeStatisticsPage() {
 
   const handleRegisterCourse = async (courseId: number) => {
     try {
-      const newRegisteredCourse = await gradeStatisticsApi.registerCourse({ course_id: courseId });
+      const newRegisteredCourse = await gradeStatisticsApi.registerCourse({ 
+        course_id: courseId,
+        student_sub: user?.sub || "me"
+      });
       setRegisteredCourses(prev => [...prev, newRegisteredCourse]);
       if (!selectedRegisteredCourse) {
         setSelectedRegisteredCourse(newRegisteredCourse);
@@ -258,6 +262,16 @@ export default function GradeStatisticsPage() {
           (createError as { response?: Response }).response?.status === 409;
 
         if (isConflict) {
+          // Validate that template_items is not empty before updating
+          if (!canUpdateTemplate(sharingCourse)) {
+            toast({
+              variant: "warning",
+              title: "Add assignments first",
+              description: "Please add at least one item before updating a template.",
+            });
+            return;
+          }
+
           const updatePayload = buildTemplateUpdatePayload(sharingCourse);
 
           const ensureTemplateId = async (): Promise<number | null> => {

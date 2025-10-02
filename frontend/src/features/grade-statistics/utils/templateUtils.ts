@@ -40,6 +40,11 @@ export const buildTemplateUpdatePayload = (registeredCourse: RegisteredCourse): 
   };
 };
 
+export const canUpdateTemplate = (registeredCourse: RegisteredCourse): boolean => {
+  const payload = buildTemplateUpdatePayload(registeredCourse);
+  return payload.template_items.length > 0;
+};
+
 export const calculateTemplateCoverage = (registeredCourse: RegisteredCourse): number => {
   return registeredCourse.items.reduce((acc, item) => acc + (item.total_weight_pct || 0), 0);
 };

@@ -114,6 +114,7 @@ export interface CourseItemUpdate {
 
 export interface RegisteredCourseCreate {
   course_id: number;
+  student_sub?: string;
 }
 
 // ==== Templates ====
