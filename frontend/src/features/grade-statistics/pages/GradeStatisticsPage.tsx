@@ -35,6 +35,7 @@ import { ConfirmationModal } from "../components/ConfirmationModal";
 import { ToggleGroup, ToggleGroupItem } from "@/components/atoms/toggle-group";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/atoms/sheet";
 import { Skeleton } from "@/components/atoms/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar";
 import {
   buildTemplateCreatePayload,
   canShareTemplate,
@@ -854,7 +855,7 @@ export default function GradeStatisticsPage() {
                         </p>
                       )}
                     </div>
-                    <div className="grid grid-cols-3 gap-3 text-center text-xs">
+                    <div className="grid grid-cols-2 gap-3 text-center text-xs">
                       <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
                         <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Assignments</p>
                         <p className="mt-1 text-lg font-semibold text-foreground">{sharingCourse.items.length}</p>
@@ -865,11 +866,11 @@ export default function GradeStatisticsPage() {
                           {Math.min(100, Math.max(0, calculateTemplateCoverage(sharingCourse))).toFixed(1)}%
                         </p>
                       </div>
-                      <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
-                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Credits</p>
-                        <p className="mt-1 text-lg font-semibold text-foreground">{sharingCourse.course.credits ?? "–"}</p>
-                      </div>
                     </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      Share your assignment names and weights (not your grades) so peers can set up their course structure.
+                    </p>
 
                     <div className="space-y-2">
                       <p className="text-xs font-semibold text-muted-foreground">Preview</p>
@@ -944,7 +945,7 @@ export default function GradeStatisticsPage() {
                         <div className="font-semibold text-foreground">
                           {templateDrawerCourse.course.course_title || templateDrawerCourse.course.course_code}
                         </div>
-                        <div className="mt-2 grid grid-cols-3 gap-3 text-center text-xs text-muted-foreground">
+                        <div className="mt-2 grid grid-cols-2 gap-3 text-center text-xs text-muted-foreground">
                           <div className="rounded-xl border border-border/40 bg-background/60 p-3">
                             <p className="text-[11px] uppercase tracking-wide">Assignments</p>
                             <p className="mt-1 text-lg font-semibold text-foreground">
@@ -955,12 +956,6 @@ export default function GradeStatisticsPage() {
                             <p className="text-[11px] uppercase tracking-wide">Coverage</p>
                             <p className="mt-1 text-lg font-semibold text-foreground">
                               {Math.min(100, Math.max(0, calculateTemplateCoverage(templateDrawerCourse))).toFixed(1)}%
-                            </p>
-                          </div>
-                          <div className="rounded-xl border border-border/40 bg-background/60 p-3">
-                            <p className="text-[11px] uppercase tracking-wide">Credits</p>
-                            <p className="mt-1 text-lg font-semibold text-foreground">
-                              {templateDrawerCourse.course.credits ?? "–"}
                             </p>
                           </div>
                         </div>
@@ -980,22 +975,37 @@ export default function GradeStatisticsPage() {
                       </div>
                     ) : templates.length > 0 ? (
                       <div className="space-y-3">
+                        {!isTemplatesInitialFetch && templateDrawerCourse && (
+                          <div className="rounded-lg border border-border/40 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                            Importing a template will replace your current assignments for this course. You can always edit them afterwards.
+                          </div>
+                        )}
                         {templates.map((template) => {
                           const coverage = Math.min(100, Math.max(0, calculateTemplateWeight(template))).toFixed(1);
                           const createdAt = new Date(template.template.created_at);
+                          const initials = `${template.student.name?.charAt(0) ?? ""}${template.student.surname?.charAt(0) ?? ""}`.toUpperCase() || "P";
                           return (
                             <div
                               key={template.template.id}
                               className="space-y-3 rounded-2xl border border-border/60 bg-background/85 p-4"
                             >
                               <div className="flex items-start justify-between gap-3">
-                                <div>
-                                  <p className="text-sm font-semibold text-foreground">
-                                    {template.student.name} {template.student.surname}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    Shared on {createdAt.toLocaleDateString()}
-                                  </p>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-10 w-10">
+                                    <AvatarImage
+                                      src={template.student.picture}
+                                      alt={`${template.student.name} ${template.student.surname}`}
+                                    />
+                                    <AvatarFallback>{initials}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="text-sm font-semibold text-foreground">
+                                      {template.student.name} {template.student.surname}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Shared on {createdAt.toLocaleDateString()}
+                                    </p>
+                                  </div>
                                 </div>
                                 <Button
                                   size="sm"
@@ -1010,7 +1020,7 @@ export default function GradeStatisticsPage() {
                                   )}
                                 </Button>
                               </div>
-                              <div className="grid grid-cols-3 gap-2 text-center text-xs text-muted-foreground">
+                              <div className="grid grid-cols-2 gap-2 text-center text-xs text-muted-foreground">
                                 <div className="rounded-lg border border-border/40 bg-muted/20 p-2">
                                   <p className="text-[10px] uppercase tracking-wide">Items</p>
                                   <p className="mt-1 text-sm font-semibold text-foreground">
@@ -1020,10 +1030,6 @@ export default function GradeStatisticsPage() {
                                 <div className="rounded-lg border border-border/40 bg-muted/20 p-2">
                                   <p className="text-[10px] uppercase tracking-wide">Coverage</p>
                                   <p className="mt-1 text-sm font-semibold text-foreground">{coverage}%</p>
-                                </div>
-                                <div className="rounded-lg border border-border/40 bg-muted/20 p-2">
-                                  <p className="text-[10px] uppercase tracking-wide">Owner</p>
-                                  <p className="mt-1 text-sm font-semibold text-foreground">Peer</p>
                                 </div>
                               </div>
                               <div className="space-y-2">
@@ -1073,11 +1079,6 @@ export default function GradeStatisticsPage() {
                       </div>
                     )}
 
-                    {!isTemplatesInitialFetch && templateDrawerCourse && (
-                      <div className="rounded-lg border border-border/40 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-                        Importing a template will replace your current assignments for this course. You can always edit them afterwards.
-                      </div>
-                    )}
                   </div>
                 </SheetContent>
               </Sheet>

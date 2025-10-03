@@ -69,7 +69,7 @@ export function DelegateModal({ isOpen, onClose, ticketId, onSuccess }: Delegate
             <SelectTrigger id="department">
               <SelectValue placeholder="Select a department" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[10001]">
               {isLoadingDepartments ? (
                 <SelectItem value="loading" disabled>Loading...</SelectItem>
               ) : (
@@ -89,7 +89,7 @@ export function DelegateModal({ isOpen, onClose, ticketId, onSuccess }: Delegate
               <SelectTrigger id="user">
                 <SelectValue placeholder="Select a user" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[10001]">
                 {isLoadingUsers ? (
                   <SelectItem value="loading" disabled>Loading...</SelectItem>
                 ) : (
@@ -121,7 +121,7 @@ export function DelegateModal({ isOpen, onClose, ticketId, onSuccess }: Delegate
               <SelectTrigger id="permission">
                 <SelectValue placeholder="Select a permission level" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[10001]">
                 <SelectItem value={PermissionType.VIEW}>View Ticket</SelectItem>
                 <SelectItem value={PermissionType.ASSIGN}>Start Conversation</SelectItem>
                 <SelectItem value={PermissionType.DELEGATE}>Grant Access</SelectItem>

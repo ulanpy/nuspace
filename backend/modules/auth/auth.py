@@ -39,7 +39,7 @@ async def login(
     request: Request,
     state: str | None = None,
     return_to: str | None = None,
-    mock_user: str | None = "1",  # shorthand alias
+    mock_user: str | None = "2",  # shorthand alias
 ):
     kc: KeyCloakManager = request.app.state.kc_manager
     redis = request.app.state.redis

@@ -100,7 +100,7 @@ export default function CreateTicketModal({ isOpen, onClose, onSuccess }: Create
               <SelectTrigger>
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[10001]">
                 {categories.map((category) => (
                   <SelectItem key={category.value} value={category.value}>
                     {category.label}
