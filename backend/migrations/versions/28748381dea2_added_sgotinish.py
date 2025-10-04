@@ -40,10 +40,10 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['author_sub'], ['users.sub'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_tickets_author_sub'), 'tickets', ['author_sub'], unique=False)
-    op.create_index(op.f('ix_tickets_category'), 'tickets', ['category'], unique=False)
-    op.create_index(op.f('ix_tickets_created_at'), 'tickets', ['created_at'], unique=False)
-    op.create_index(op.f('ix_tickets_status'), 'tickets', ['status'], unique=False)
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_tickets_author_sub ON tickets (author_sub)'))
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_tickets_category ON tickets (category)'))
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_tickets_created_at ON tickets (created_at)'))
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_tickets_status ON tickets (status)'))
     op.create_table('conversations',
     sa.Column('id', sa.BigInteger(), nullable=False),
     sa.Column('ticket_id', sa.BigInteger(), nullable=False),
@@ -54,10 +54,10 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['ticket_id'], ['tickets.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_conversations_created_at'), 'conversations', ['created_at'], unique=False)
-    op.create_index(op.f('ix_conversations_sg_member_sub'), 'conversations', ['sg_member_sub'], unique=False)
-    op.create_index(op.f('ix_conversations_status'), 'conversations', ['status'], unique=False)
-    op.create_index(op.f('ix_conversations_ticket_id'), 'conversations', ['ticket_id'], unique=False)
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_conversations_created_at ON conversations (created_at)'))
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_conversations_sg_member_sub ON conversations (sg_member_sub)'))
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_conversations_status ON conversations (status)'))
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_conversations_ticket_id ON conversations (ticket_id)'))
     op.create_table('ticket_access',
     sa.Column('ticket_id', sa.BigInteger(), nullable=False),
     sa.Column('user_sub', sa.String(), nullable=False),
@@ -80,9 +80,9 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['sender_sub'], ['users.sub'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_messages_conversation_id'), 'messages', ['conversation_id'], unique=False)
-    op.create_index(op.f('ix_messages_sender_sub'), 'messages', ['sender_sub'], unique=False)
-    op.create_index(op.f('ix_messages_sent_at'), 'messages', ['sent_at'], unique=False)
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_messages_conversation_id ON messages (conversation_id)'))
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_messages_sender_sub ON messages (sender_sub)'))
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_messages_sent_at ON messages (sent_at)'))
     op.create_table('message_read_status',
     sa.Column('message_id', sa.BigInteger(), nullable=False),
     sa.Column('user_sub', sa.String(), nullable=False),
@@ -91,7 +91,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_sub'], ['users.sub'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('message_id', 'user_sub')
     )
-    op.create_index(op.f('ix_message_read_status_read_at'), 'message_read_status', ['read_at'], unique=False)
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_message_read_status_read_at ON message_read_status (read_at)'))
     op.alter_column('communities', 'verified',
                existing_type=sa.BOOLEAN(),
                server_default=None,
@@ -112,25 +112,25 @@ def upgrade() -> None:
                existing_type=sa.INTEGER(),
                server_default=None,
                existing_nullable=False)
-    op.create_index(op.f('ix_media_entity_id'), 'media', ['entity_id'], unique=False)
-    op.create_index(op.f('ix_media_name'), 'media', ['name'], unique=True)
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_media_entity_id ON media (entity_id)'))
+    op.execute(sa.text('CREATE UNIQUE INDEX IF NOT EXISTS ix_media_name ON media (name)'))
     op.alter_column('product_reports', 'text',
                existing_type=sa.VARCHAR(),
                nullable=False)
     op.alter_column('products', 'description',
                existing_type=sa.VARCHAR(),
                nullable=False)
-    op.create_index(op.f('ix_products_name'), 'products', ['name'], unique=False)
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_products_name ON products (name)'))
     op.alter_column('review_replies', 'content',
                existing_type=sa.TEXT(),
                nullable=False)
-    op.create_index(op.f('ix_reviews_entity_id'), 'reviews', ['entity_id'], unique=False)
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_reviews_entity_id ON reviews (entity_id)'))
     op.add_column('users', sa.Column('department_id', sa.BigInteger(), nullable=True))
-    op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
-    op.create_index(op.f('ix_users_name'), 'users', ['name'], unique=False)
-    op.create_index(op.f('ix_users_sub'), 'users', ['sub'], unique=True)
-    op.create_index(op.f('ix_users_surname'), 'users', ['surname'], unique=False)
-    op.create_index(op.f('ix_users_telegram_id'), 'users', ['telegram_id'], unique=True)
+    op.execute(sa.text('CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email)'))
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_users_name ON users (name)'))
+    op.execute(sa.text('CREATE UNIQUE INDEX IF NOT EXISTS ix_users_sub ON users (sub)'))
+    op.execute(sa.text('CREATE INDEX IF NOT EXISTS ix_users_surname ON users (surname)'))
+    op.execute(sa.text('CREATE UNIQUE INDEX IF NOT EXISTS ix_users_telegram_id ON users (telegram_id)'))
     op.create_foreign_key(None, 'users', 'departments', ['department_id'], ['id'], ondelete='SET NULL')
     # ### end Alembic commands ###
 
@@ -139,25 +139,25 @@ def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_constraint(None, 'users', type_='foreignkey')
-    op.drop_index(op.f('ix_users_telegram_id'), table_name='users')
-    op.drop_index(op.f('ix_users_surname'), table_name='users')
-    op.drop_index(op.f('ix_users_sub'), table_name='users')
-    op.drop_index(op.f('ix_users_name'), table_name='users')
-    op.drop_index(op.f('ix_users_email'), table_name='users')
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_users_telegram_id'))
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_users_surname'))
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_users_sub'))
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_users_name'))
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_users_email'))
     op.drop_column('users', 'department_id')
-    op.drop_index(op.f('ix_reviews_entity_id'), table_name='reviews')
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_reviews_entity_id'))
     op.alter_column('review_replies', 'content',
                existing_type=sa.TEXT(),
                nullable=True)
-    op.drop_index(op.f('ix_products_name'), table_name='products')
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_products_name'))
     op.alter_column('products', 'description',
                existing_type=sa.VARCHAR(),
                nullable=True)
     op.alter_column('product_reports', 'text',
                existing_type=sa.VARCHAR(),
                nullable=True)
-    op.drop_index(op.f('ix_media_name'), table_name='media')
-    op.drop_index(op.f('ix_media_entity_id'), table_name='media')
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_media_name'))
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_media_entity_id'))
     op.alter_column('media', 'media_order',
                existing_type=sa.INTEGER(),
                server_default=sa.text('0'),
@@ -178,22 +178,22 @@ def downgrade() -> None:
                existing_type=sa.BOOLEAN(),
                server_default=sa.text('false'),
                existing_nullable=False)
-    op.drop_index(op.f('ix_message_read_status_read_at'), table_name='message_read_status')
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_message_read_status_read_at'))
     op.drop_table('message_read_status')
-    op.drop_index(op.f('ix_messages_sent_at'), table_name='messages')
-    op.drop_index(op.f('ix_messages_sender_sub'), table_name='messages')
-    op.drop_index(op.f('ix_messages_conversation_id'), table_name='messages')
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_messages_sent_at'))
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_messages_sender_sub'))
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_messages_conversation_id'))
     op.drop_table('messages')
     op.drop_table('ticket_access')
-    op.drop_index(op.f('ix_conversations_ticket_id'), table_name='conversations')
-    op.drop_index(op.f('ix_conversations_status'), table_name='conversations')
-    op.drop_index(op.f('ix_conversations_sg_member_sub'), table_name='conversations')
-    op.drop_index(op.f('ix_conversations_created_at'), table_name='conversations')
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_conversations_ticket_id'))
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_conversations_status'))
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_conversations_sg_member_sub'))
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_conversations_created_at'))
     op.drop_table('conversations')
-    op.drop_index(op.f('ix_tickets_status'), table_name='tickets')
-    op.drop_index(op.f('ix_tickets_created_at'), table_name='tickets')
-    op.drop_index(op.f('ix_tickets_category'), table_name='tickets')
-    op.drop_index(op.f('ix_tickets_author_sub'), table_name='tickets')
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_tickets_status'))
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_tickets_created_at'))
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_tickets_category'))
+    op.execute(sa.text('DROP INDEX IF EXISTS ix_tickets_author_sub'))
     op.drop_table('tickets')
     op.drop_table('departments')
     # ### end Alembic commands ###
