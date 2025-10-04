@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingBag, Calendar, Coffee, BookOpen } from "lucide-react";
+import { ShoppingBag, Calendar, Coffee, BookOpen, Users, ShieldQuestion } from "lucide-react";
 import { AppButton } from "../molecules/buttons/app-button";
 import { ROUTES } from "@/data/routes";
 
@@ -18,7 +18,7 @@ export function AppGrid() {
   const apps: AppButtonProps[] = [
     {
       icon: <ShoppingBag className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
-      title: "Kupi&Prodai",
+      title: "Marketplace",
       href: ROUTES.APPS.KUPI_PRODAI.ROOT,
       gradient:
         "radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(37,99,235,0.15) 50%, rgba(29,78,216,0) 100%)",
@@ -27,7 +27,7 @@ export function AppGrid() {
     },
     {
       icon: <Calendar className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
-      title: "Campus Current",
+      title: "Events",
       href: ROUTES.APPS.CAMPUS_CURRENT.ROOT,
       gradient:
         "radial-gradient(circle, rgba(249,115,22,0.3) 0%, rgba(234,88,12,0.15) 50%, rgba(194,65,12,0) 100%)",
@@ -43,6 +43,15 @@ export function AppGrid() {
       iconColor: "text-purple-500",
       delay: 0.3,
     },
+    {
+      icon: <Users className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
+      title: "Communities",
+      href: ROUTES.APPS.COMMUNITIES.ROOT,
+      gradient:
+        "radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(37,99,235,0.15) 50%, rgba(29,78,216,0) 100%)",
+      iconColor: "text-blue-500",
+      delay: 0.35,
+    },
     
     // {
     //   icon: <ShieldAlert className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
@@ -53,16 +62,15 @@ export function AppGrid() {
     //   iconColor: "text-rose-500",
     //   delay: 0.35,
     // },
-    {
-      icon: <Coffee className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
-      title: "Dorm Eats",
-      href: ROUTES.APPS.DORM_EATS.ROOT,
-      gradient:
-        "radial-gradient(circle, rgba(34,197,94,0.3) 0%, rgba(22,163,74,0.15) 50%, rgba(21,128,61,0) 100%)",
-      iconColor: "text-green-500",
-      delay: 0.4,
-      comingSoon: true,
-    },
+    // {
+    //   icon: <ShieldQuestion className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
+    //   title: "SGotinish",
+    //   href: ROUTES.APPS.SGOTINISH.ROOT,
+    //   gradient:
+    //     "radial-gradient(circle, rgba(197, 194, 34, 0.3) 0%, rgba(163, 163, 22, 0.15) 50%, rgba(126, 128, 21, 0) 100%)",
+    //   iconColor: "text-green-500",
+    //   delay: 0.5,
+    // },
   ];
 
   return (

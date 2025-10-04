@@ -14,7 +14,7 @@ from backend.core.database.models import (
     Course,
     Event,
     GradeReport,
-    Product,
+    Product
 )
 
 
@@ -102,7 +102,7 @@ async def setup_meilisearch(app: FastAPI):
             searchable_columns=[Course.course_code, Course.faculty, Course.term],
             filterable_attributes=[Course.term],
             primary_key=Course.id,  # Explicitly specify primary key
-        ),
+        )
     ]
 
     # Import data for each configured index

@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Text, UniqueConstraint
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -77,6 +78,7 @@ class Course(Base):
 
     # ORM relationships
     student_courses = relationship("StudentCourse", back_populates="course")
+    templates = relationship("CourseTemplate", back_populates="course")
 
 
 class StudentCourse(Base):
@@ -135,3 +137,53 @@ class CourseItem(Base):
 
     # ORM relationships
     student_course = relationship("StudentCourse", back_populates="items")
+
+
+class CourseTemplate(Base):
+    __tablename__ = "course_templates"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+
+    course_id: Mapped[int] = mapped_column(
+        ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    student_sub: Mapped[str] = mapped_column(
+        ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("course_id", "student_sub", name="uq_course_templates_course_student"),
+    )
+
+    # ORM relationships
+    course = relationship("Course", back_populates="templates")
+    items = relationship(
+        "TemplateItem",
+        back_populates="template",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    student = relationship("User", back_populates="templates")
+
+class TemplateItem(Base):
+    __tablename__ = "template_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+
+    template_id: Mapped[int] = mapped_column(
+        ForeignKey("course_templates.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    item_name: Mapped[str] = mapped_column(String(256), nullable=False)
+    total_weight_pct: Mapped[float] = mapped_column(Numeric(5, 2), nullable=True
+    )
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # ORM relationships
+    template = relationship("CourseTemplate", back_populates="items")

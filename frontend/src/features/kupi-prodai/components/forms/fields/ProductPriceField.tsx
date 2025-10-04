@@ -1,5 +1,4 @@
 import { Input } from "@/components/atoms/input";
-import { motion, AnimatePresence } from "framer-motion";
 import { DollarSign } from "lucide-react";
 import { AnimatedFormField } from "@/components/organisms/animations/AnimatedFormField";
 import { useFormAnimations } from "@/hooks/useFormAnimations";
@@ -47,34 +46,20 @@ export function ProductPriceField({
         focusColor="green-500"
       >
         <Input
-          type="number"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           id="price"
           name="price"
           value={value === 0 ? "" : value}
           onChange={onChange}
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
-          min="0"
-          step="1"
           required={required}
-          className="transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="transition-colors duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
           placeholder={placeholder}
         />
       </AnimatedFormField>
-      
-      {/* Animated currency indicator */}
-      <AnimatePresence>
-        {isFieldFocused('price') && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground"
-          >
-            {currency}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

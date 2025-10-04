@@ -1,19 +1,48 @@
 from typing import Annotated, AsyncGenerator
 
+from backend.common.schemas import Infra
 from backend.core.configs.config import config
 from backend.core.database.manager import AsyncDatabaseManager
 from backend.core.database.models import User, UserRole
-from backend.routes.auth.app_token import AppTokenManager
-from backend.routes.auth.keycloak_manager import KeyCloakManager
-from backend.routes.auth.utils import (
+from backend.modules.auth.app_token import AppTokenManager
+from backend.modules.auth.keycloak_manager import KeyCloakManager
+from backend.modules.auth.utils import (
     get_mock_user_by_sub,  # dev-only helper
     set_kc_auth_cookies,
 )
-from backend.routes.notification import tasks
+from backend.modules.google_bucket.utils import get_signing_credentials
 from fastapi import Cookie, Depends, HTTPException, Request, Response, status
 from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+
+async def get_infra(request: Request) -> Infra:
+    """Dependency to get infrastructure dependencies with automatic credential refresh."""
+    # Get fresh credentials if not in emulator mode
+    signing_credentials = None
+    if not config.USE_GCS_EMULATOR:
+        current_credentials = request.app.state.signing_credentials
+
+        if current_credentials is None or (
+            hasattr(current_credentials, "expired") and current_credentials.expired
+        ):
+            # Create fresh credentials and update global state
+            signing_credentials = get_signing_credentials(
+                request.app.state.config.VM_SERVICE_ACCOUNT_EMAIL
+            )
+            request.app.state.signing_credentials = signing_credentials
+        else:
+            signing_credentials = current_credentials
+
+    return Infra(
+        meilisearch_client=request.app.state.meilisearch_client,
+        storage_client=request.app.state.storage_client,
+        config=request.app.state.config,
+        signing_credentials=signing_credentials,
+        redis=request.app.state.redis,
+        broker=request.app.state.broker,
+    )
 
 
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
@@ -23,7 +52,7 @@ async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]
         yield session
 
 
-async def get_current_principals(
+async def get_creds_or_401(
     request: Request,
     response: Response,
     db_session: AsyncSession = Depends(get_db_session),
@@ -177,7 +206,7 @@ async def get_current_principals(
     return kc_principal, app_principal
 
 
-async def get_optional_principals(
+async def get_creds_or_guest(
     request: Request,
     response: Response,
     db_session: AsyncSession = Depends(get_db_session),
@@ -186,10 +215,10 @@ async def get_optional_principals(
     app_token_cookie: Annotated[str | None, Cookie(alias=config.COOKIE_APP_NAME)] = None,
 ) -> tuple[dict, dict]:
     """
-    Like get_current_principals, but returns a safe "guest" principal when unauthenticated
+    Like get_creds_or_401, but returns a safe "guest" principal when unauthenticated
     or when token validation fails, instead of raising.
 
-    Returns a tuple (kc_principal, app_principal).
+    Returns a tuple (kc_principal, app_principal)
     """
     guest_kc = {"sub": "guest"}
     guest_app = {"role": UserRole.default.value, "communities": [], "is_guest": True}
@@ -200,7 +229,7 @@ async def get_optional_principals(
 
     # Try to resolve authenticated principals; on any failure, fall back to guest
     try:
-        return await get_current_principals(
+        return await get_creds_or_401(
             request=request,
             response=response,
             db_session=db_session,
@@ -213,7 +242,7 @@ async def get_optional_principals(
 
 
 async def check_tg(
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> bool:
     sub = user[0].get("sub")
@@ -226,7 +255,7 @@ async def check_tg(
 
 
 async def check_role(
-    user: Annotated[dict, Depends(get_current_principals)],
+    user: Annotated[dict, Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> UserRole:
     sub = user[0].get("sub")
@@ -235,7 +264,3 @@ async def check_role(
     if not role:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not found")
     return role
-
-
-def broker():
-    return tasks.broker

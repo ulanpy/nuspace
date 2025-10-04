@@ -44,12 +44,13 @@ export function LastCommitBadge() {
   const lastUpdated = dateIso
     ? formatDistanceToNow(new Date(dateIso), { addSuffix: true })
     : null;
-  const actorLogin = data?.committer?.login || data?.author?.login || null;
+  // Prioritize author over committer to show original contributor for merged PRs
+  const actorLogin = data?.author?.login || data?.committer?.login || null;
   const actorNameFallback =
-    data?.commit?.committer?.name || data?.commit?.author?.name || null;
+    data?.commit?.author?.name || data?.commit?.committer?.name || null;
   const actorName = actorLogin || actorNameFallback;
-  const actorUrl = data?.committer?.html_url || data?.author?.html_url || undefined;
-  const actorAvatar = data?.committer?.avatar_url || data?.author?.avatar_url || undefined;
+  const actorUrl = data?.author?.html_url || data?.committer?.html_url || undefined;
+  const actorAvatar = data?.author?.avatar_url || data?.committer?.avatar_url || undefined;
   const commitMessage = data?.commit?.message || undefined;
 
   return (
@@ -126,12 +127,13 @@ export function LastCommitInline({ rightElement }: { rightElement?: React.ReactN
   const lastUpdated = dateIso
     ? formatDistanceToNow(new Date(dateIso), { addSuffix: true })
     : null;
-  const actorLogin = data?.committer?.login || data?.author?.login || null;
+  // Prioritize author over committer to show original contributor for merged PRs
+  const actorLogin = data?.author?.login || data?.committer?.login || null;
   const actorNameFallback =
-    data?.commit?.committer?.name || data?.commit?.author?.name || null;
+    data?.commit?.author?.name || data?.commit?.committer?.name || null;
   const actorName = actorLogin || actorNameFallback;
-  const actorUrl = data?.committer?.html_url || data?.author?.html_url || undefined;
-  const actorAvatar = data?.committer?.avatar_url || data?.author?.avatar_url || undefined;
+  const actorUrl = data?.author?.html_url || data?.committer?.html_url || undefined;
+  const actorAvatar = data?.author?.avatar_url || data?.committer?.avatar_url || undefined;
   const commitMessage = data?.commit?.message || undefined;
 
   return (

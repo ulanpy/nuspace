@@ -3,12 +3,34 @@
 import { Badge } from "@/components/atoms/badge";
 import { Clock } from "lucide-react";
 import { formatDateWithContext, formatRelativeTime } from "@/utils/date-formatter";
-import { Product } from "@/features/kupi-prodai/types";
+import { Product, Status } from "@/features/kupi-prodai/types";
 import { ProductPageActions } from "./ProductPageActions";
 import { useUser } from "@/hooks/use-user";
 import { Button } from "@/components/atoms/button";
 
-export function ProductDetails({ product, initiateContactWithSeller, isContactLoading, setShowReportModal }: { product: Product, initiateContactWithSeller: () => void, isContactLoading: boolean, setShowReportModal: (show: boolean) => void }) {
+export function ProductDetails({ 
+    product, 
+    initiateContactWithSeller, 
+    isContactLoading, 
+    setShowReportModal,
+    onEdit,
+    onDelete,
+    isDeleting,
+    currentStatus,
+    onToggleStatus,
+    isToggling
+}: { 
+    product: Product, 
+    initiateContactWithSeller: () => void, 
+    isContactLoading: boolean, 
+    setShowReportModal: (show: boolean) => void,
+    onEdit?: () => void,
+    onDelete?: () => void,
+    isDeleting?: boolean,
+    currentStatus?: Status,
+    onToggleStatus?: () => void,
+    isToggling?: boolean
+}) {
     const { user, login } = useUser();
 
     const getConditionDisplay = (condition: string) => {
@@ -77,8 +99,7 @@ export function ProductDetails({ product, initiateContactWithSeller, isContactLo
                     </div>
                 ) : (
                     <div className="flex flex-col gap-2">
-                        <p className="text-sm text-muted-foreground">Login to see the seller and contact details.</p>
-                        <Button size="sm" onClick={login}>Login to view seller</Button>
+                        <p className="text-sm text-muted-foreground">Login to connect with the seller.</p>
                     </div>
                 )}
 
@@ -88,6 +109,13 @@ export function ProductDetails({ product, initiateContactWithSeller, isContactLo
                         isContactLoading={isContactLoading}
                         setShowReportModal={setShowReportModal}
                         isContactAllowed={true}
+                        permissions={product.permissions}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        isDeleting={isDeleting}
+                        currentStatus={currentStatus}
+                        onToggleStatus={onToggleStatus}
+                        isToggling={isToggling}
                     />
                 )}
                 {!user && (
@@ -97,6 +125,13 @@ export function ProductDetails({ product, initiateContactWithSeller, isContactLo
                         setShowReportModal={setShowReportModal}
                         isContactAllowed={false}
                         onRequireLogin={login}
+                        permissions={product.permissions}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        isDeleting={isDeleting}
+                        currentStatus={currentStatus}
+                        onToggleStatus={onToggleStatus}
+                        isToggling={isToggling}
                     />
                 )}
             </div>

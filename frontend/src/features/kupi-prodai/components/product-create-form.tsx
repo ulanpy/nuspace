@@ -56,7 +56,7 @@ export const ProductCreateForm = ({
       onPriceFocus={handlePriceInputFocus}
       onPriceBlur={handlePriceInputBlur}
       showLoadingSkeleton={true}
-      loadingDuration={1500}
+      loadingDuration={100}
     />
   );
 };

@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { useEffect, MouseEvent } from "react";
 import { useMaybeBackNavigation } from "@/context/BackNavigationContext";
 import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
+// Removed framer-motion to avoid transformed ancestors affecting fixed elements on Safari
 
 interface ModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface ModalProps {
   description?: string;
   children?: React.ReactNode;
   className?: string;
+  contentClassName?: string;
 }
 
 export function Modal({
@@ -25,7 +27,9 @@ export function Modal({
   description,
   children,
   className = "max-w-md",
+  contentClassName,
 }: ModalProps) {
+  
   const backNav = useMaybeBackNavigation();
   const { isMiniApp } = useTelegramMiniApp();
   useEffect(() => {
@@ -97,39 +101,49 @@ export function Modal({
 
   // Use portal to render modal at the document root level
   return createPortal(
-    <div
-      className="fixed inset-0 z-[10000] grid place-items-center px-4"
-      style={{
-        paddingTop: "calc(env(safe-area-inset-top, 0px) + var(--tg-header-offset, 0px) + 2rem)",
-        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
-      }}
-      onWheel={(e) => e.stopPropagation()}
-      onTouchMove={(e) => e.stopPropagation()}
-    >
+    <div className="fixed inset-0 z-[10000]">
+      {/* Backdrop without blur to avoid Safari rendering glitches */}
+      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+
+      {/* Centered container. Keep it non-transformed (no scale/opacity animations) */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div
-        className={cn(
-          "relative bg-background rounded-lg shadow-lg w-full overflow-hidden",
-          className,
-        )}
+        className="fixed inset-0 grid place-items-center px-4"
+        style={{
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + var(--tg-header-offset, 0px) + 2rem)",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
+        }}
+        onWheel={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 z-10 flex justify-between items-center p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-          <div className="flex items-center gap-2">
-            {title && <h2 className="text-lg font-semibold">{title}</h2>}
-            {description && (
-              <p className="text-sm text-muted-foreground">{description}</p>
-            )}
+        <div
+          className={cn(
+            "relative flex w-full flex-col overflow-y-auto rounded-lg bg-background shadow-lg",
+            "max-h-[calc(100dvh-4rem)]",
+            className,
+            contentClassName,
+          )}
+          style={{
+            // Use 100dvh to include iOS dynamic viewport, with fallback to 100vh
+            maxHeight:
+              "min(calc(100dvh - (env(safe-area-inset-top, 0px) + var(--tg-header-offset, 0px) + env(safe-area-inset-bottom, 0px) + 3rem)), calc(100vh - (env(safe-area-inset-top, 0px) + var(--tg-header-offset, 0px) + env(safe-area-inset-bottom, 0px) + 3rem)))",
+          }}
+        >
+          {/* Sticky header without backdrop blur (Safari bug with overflow containers) */}
+          <div className="sticky top-0 z-10 flex justify-between items-center p-4 border-b bg-background">
+            <div className="flex items-center gap-2">
+              {title && <h2 className="text-lg font-semibold">{title}</h2>}
+              {description && (
+                <p className="text-sm text-muted-foreground">{description}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <div className="p-4 flex-1 overflow-y-auto">{children}</div>
         </div>
-        <div className="p-4">{children}</div>
       </div>
     </div>,
     document.body,

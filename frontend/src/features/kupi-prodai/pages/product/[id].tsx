@@ -11,8 +11,11 @@ import { ROUTES } from "@/data/routes";
 import { ProductImageCarousel } from "@/features/kupi-prodai/components/product-detail-page/ProductImageCarousel";
 import { ProductDetails } from "@/features/kupi-prodai/components/product-detail-page/ProductDetails";
 import { ReportListingModal } from "@/features/kupi-prodai/components/product-detail-page/ReportListingModal";
-import { ContactSellerModal } from "@/features/kupi-prodai/components/product-detail-page/ContactSellerModal";
 import { ImageViewerModal } from "@/features/kupi-prodai/components/product-detail-page/ImageViewerModal";
+import { UnifiedEditListingModal } from "@/features/kupi-prodai/components/main-page/my-listings/UnifiedEditListingModal";
+import { useDeleteProduct } from "@/features/kupi-prodai/api/hooks/useDeleteProduct";
+import { useToggleProduct } from "@/features/kupi-prodai/api/hooks/useToggleProduct";
+import { useEditModal } from "@/features/kupi-prodai/hooks/useEditModal";
 
 export default function ProductDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -20,12 +23,53 @@ export default function ProductDetailPage() {
     const { product, isLoading, isError } = useProduct();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showReportModal, setShowReportModal] = useState(false);
-    const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-    const [telegramLink, setTelegramLink] = useState("");
     const [isContactLoading, setIsContactLoading] = useState(false);
     const [showImageModal, setShowImageModal] = useState(false);
 
     const { toast } = useToast();
+    
+    // Edit and delete functionality
+    const { handleEditListing } = useEditModal();
+    const { handleDelete, getIsPendingDeleteMutation } = useDeleteProduct();
+    const { handleToggleProductStatus, getIsPendingToggleMutation } = useToggleProduct();
+    
+    const isDeleting = product ? getIsPendingDeleteMutation(product.id) : false;
+    const isToggling = product ? getIsPendingToggleMutation(product.id) : false;
+
+    // Handle edit product
+    const handleEdit = () => {
+        if (product) {
+            handleEditListing(product);
+        }
+    };
+
+    // Handle delete product
+    const handleDeleteProduct = async () => {
+        if (product) {
+            try {
+                await handleDelete(product.id);
+                toast({
+                    title: "Success",
+                    description: "Product deleted successfully",
+                });
+                // Navigate back to marketplace after successful deletion
+                navigate(ROUTES.APPS.KUPI_PRODAI.ROOT);
+            } catch (error) {
+                toast({
+                    title: "Error",
+                    description: "Failed to delete product. Please try again.",
+                    variant: "destructive",
+                });
+            }
+        }
+    };
+
+    // Handle toggle status (Mark as Sold/Available)
+    const handleToggleStatus = () => {
+        if (product) {
+            handleToggleProductStatus(product.id, product.status);
+        }
+    };
 
     const initiateContactWithSeller = async () => {
         if (!id) return;
@@ -42,8 +86,8 @@ export default function ProductDetailPage() {
             }
 
             const telegramUrl = await response.json();
-            setTelegramLink(telegramUrl);
-            setIsContactModalOpen(true);
+            // Directly open the Telegram link
+            window.open(telegramUrl, "_blank");
         } catch (error) {
             toast({
                 title: "Error",
@@ -103,10 +147,17 @@ export default function ProductDetailPage() {
                     nextImage={nextImage}
                 />
                 <div>
-                    <ProductDetails product={product}
+                    <ProductDetails 
+                        product={product}
                         initiateContactWithSeller={initiateContactWithSeller}
                         isContactLoading={isContactLoading}
                         setShowReportModal={setShowReportModal}
+                        onEdit={handleEdit}
+                        onDelete={handleDeleteProduct}
+                        isDeleting={isDeleting}
+                        currentStatus={product.status}
+                        onToggleStatus={handleToggleStatus}
+                        isToggling={isToggling}
                     />
                 </div>
             </div>
@@ -115,12 +166,6 @@ export default function ProductDetailPage() {
                 isOpen={showReportModal}
                 onClose={() => setShowReportModal(false)}
                 productId={product.id}
-            />
-
-            <ContactSellerModal
-                isOpen={isContactModalOpen}
-                onClose={() => setIsContactModalOpen(false)}
-                telegramLink={telegramLink}
             />
 
             <ImageViewerModal
@@ -132,6 +177,8 @@ export default function ProductDetailPage() {
                 nextImage={nextImage}
                 productName={product.name}
             />
+
+            <UnifiedEditListingModal />
         </div>
     );
 }

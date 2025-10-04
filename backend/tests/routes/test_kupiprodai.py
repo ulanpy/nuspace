@@ -25,8 +25,8 @@ def mock_db_session():
 
 
 @pytest.fixture
-def mock_get_current_principals():
-    with patch("backend.routes.kupiprodai.product.get_current_principals") as mock:
+def mock_get_creds_or_401():
+    with patch("backend.routes.kupiprodai.product.get_creds_or_401") as mock:
         mock.return_value = (MOCK_USER[0], MOCK_USER[1])
         yield mock
 
@@ -202,7 +202,7 @@ def test_add_product_unauthorized(client):
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
-def test_get_product_not_found(client, mock_get_current_principals):
+def test_get_product_not_found(client, mock_get_creds_or_401):
     # Act
     response = client.get("/products/999")
 

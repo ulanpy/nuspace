@@ -1,8 +1,9 @@
 from typing import List, Sequence, Type, TypeVar
 
-from backend.common.schemas import MediaResponse
+from backend.common.dependencies import get_infra
+from backend.common.schemas import Infra, MediaResponse
 from backend.core.database.models.media import Media
-from backend.routes.google_bucket.utils import generate_batch_download_urls
+from backend.modules.google_bucket.utils import generate_batch_download_urls
 from fastapi import Request
 from pydantic import BaseModel
 from sqlalchemy.ext.declarative import DeclarativeMeta
@@ -28,11 +29,16 @@ async def build_media_responses(
     if not media_objects:
         return []
 
+    # Get infra with fresh credentials
+    infra = await get_infra(request)
+
     # Extract all filenames for batch URL generation
     filenames = [media.name for media in media_objects]
 
     # Generate all signed URLs in one batch operation
-    url_data_list = await generate_batch_download_urls(request, filenames)
+    url_data_list = await generate_batch_download_urls(
+        infra.storage_client, infra.config, infra.signing_credentials, filenames
+    )
 
     # Build MediaResponse objects with the generated URLs
     return [
@@ -101,7 +107,7 @@ def build_schema(schema_class: Type[BaseModel], *models: BaseModel, **extra_fiel
 
 
 async def map_media_to_resources(
-    request: Request,
+    infra: Infra,
     media_objects: List[Media],
     resources: Sequence[T],
     resource_id_field: str = "id",
@@ -111,7 +117,7 @@ async def map_media_to_resources(
     Optimized version that uses batch signed URL generation for maximum performance.
 
     Args:
-        request: The FastAPI request object
+        infra: The infrastructure object
         media_objects: List of media objects to map
         resources: Sequence of resources (e.g. events, communities) to map media to
         resource_id_field: Name of the primary key field in the resource (default: "id")
@@ -132,7 +138,9 @@ async def map_media_to_resources(
 
     # Generate signed URLs for ALL media objects in one batch operation
     all_filenames = [media.name for media in media_objects]
-    all_url_data = await generate_batch_download_urls(request, all_filenames)
+    all_url_data = await generate_batch_download_urls(
+        infra.storage_client, infra.config, infra.signing_credentials, all_filenames
+    )
 
     # Create a mapping from media object to its signed URL
     media_to_url = {

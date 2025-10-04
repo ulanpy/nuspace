@@ -114,5 +114,74 @@ export interface CourseItemUpdate {
 
 export interface RegisteredCourseCreate {
   course_id: number;
+  student_sub?: string;
+}
+
+// ==== Templates ====
+
+export interface TemplateItem {
+  id: number;
+  template_id: number;
+  item_name: string;
+  total_weight_pct: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TemplateCourseInfo {
+  id: number;
+  course_id: number;
+  student_sub: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TemplateStudentInfo {
+  sub: string;
+  name: string;
+  surname: string;
+  picture: string;
+}
+
+export interface TemplateResponse {
+  template: TemplateCourseInfo;
+  template_items: TemplateItem[];
+  student: TemplateStudentInfo;
+}
+
+export interface TemplateListResponse {
+  templates: TemplateResponse[];
+  total_pages: number;
+}
+
+export interface TemplateFilters {
+  course_id?: number;
+  page?: number;
+  size?: number;
+}
+
+export interface TemplateItemCreatePayload {
+  item_name: string;
+  total_weight_pct: number | null;
+}
+
+export interface TemplateItemUpdatePayload {
+  item_name?: string | null;
+  total_weight_pct?: number | null;
+}
+
+export interface TemplateCreatePayload {
+  course_id: number;
+  student_sub: string;
+  template_items: TemplateItemCreatePayload[];
+}
+
+export interface TemplateUpdatePayload {
+  template_items: TemplateItemUpdatePayload[];
+}
+
+export interface TemplateImportResponse {
+  student_course_id: number;
+  items: BaseCourseItem[];
 }
 

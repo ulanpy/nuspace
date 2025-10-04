@@ -82,7 +82,7 @@ export function BackNavigationProvider({ children }: { children: React.ReactNode
         return ROUTES.HOME;
       }
 
-      // Kupi&Prodai
+      // Marketplace
       const PRODUCT_DETAIL_PREFIX = ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL.replace(
         ":id",
         "",

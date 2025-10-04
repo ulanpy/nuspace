@@ -1,4 +1,3 @@
-import type React from "react";
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { PiHouse, PiHouseFill, PiUserCircle, PiUserCircleFill, PiChatCircle, PiChatCircleFill } from "react-icons/pi";
@@ -14,7 +13,7 @@ interface BottomNavItem {
 function buildNavItems(): BottomNavItem[] {
   return [
     { to: ROUTES.HOME, label: "Home", icon: "home" },
-    { to: ROUTES.APPS.CAMPUS_CURRENT.POSTS, label: "SubSpace", icon: "subspace" },
+    { to: ROUTES.APPS.CAMPUS_CURRENT.POSTS, label: "Subspace", icon: "subspace" },
     { to: ROUTES.APPS.PROFILE, label: "Profile", icon: "profile" },
   ];
 }
@@ -22,9 +21,13 @@ function buildNavItems(): BottomNavItem[] {
 export function MobileBottomNav() {
   const { isMiniApp, platform } = useTelegramMiniApp();
   const responsiveVisibility = isMiniApp ? "" : "md:hidden";
-  const [iconSize, setIconSize] = useState<number>(isMiniApp ? 44 : 20);
-  const [navHeight, setNavHeight] = useState<string>(isMiniApp ? "84px" : "56px");
-  const [labelFontPx, setLabelFontPx] = useState<number>(isMiniApp ? 13 : 12);
+  const baseIconSize = isMiniApp ? 44 : 20;
+  const baseNavHeight = isMiniApp ? 84 : 56;
+  const baseLabelFont = isMiniApp ? 13 : 12;
+
+  const [iconSize, setIconSize] = useState<number>(baseIconSize);
+  const [navHeight, setNavHeight] = useState<number>(baseNavHeight);
+  const [labelFontPx, setLabelFontPx] = useState<number>(baseLabelFont);
   const labelTextClass = isMiniApp ? "font-medium tracking-tight" : "text-xs";
 
   useEffect(() => {
@@ -46,7 +49,7 @@ export function MobileBottomNav() {
         Math.max(12, Math.min(14, baseLabel * factor)),
       );
       setIconSize(computedIcon);
-      setNavHeight(`${computedNav}px`);
+      setNavHeight(computedNav);
       setLabelFontPx(computedLabel);
     };
     computeSizes();
@@ -61,12 +64,22 @@ export function MobileBottomNav() {
 
   const NAV_ITEMS = buildNavItems();
 
+  const navHeightPx = `${navHeight}px`;
+  const navTotalHeight = `calc(${navHeightPx} + env(safe-area-inset-bottom, 0px))`;
+
   return (
     <nav
-      className={`mobile-bottom-nav fixed bottom-0 inset-x-0 z-50 ${isMiniApp ? "border-t-2" : "border-t"} bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm safe-area-inset-bottom ${responsiveVisibility}`}
-      style={{ paddingBottom: "env(safe-area-inset-bottom)", height: navHeight }}
+      className={`mobile-bottom-nav fixed bottom-0 inset-x-0 z-50 ${isMiniApp ? "border-t-2" : "border-t"} bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm ${responsiveVisibility}`}
+      style={{
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        height: navTotalHeight,
+        minHeight: navHeightPx,
+      }}
     >
-      <ul className={`flex items-stretch justify-around h-full px-2 ${isMiniApp ? "pt-1" : ""}`}>
+      <ul
+        className={`flex items-stretch justify-around h-full px-2 ${isMiniApp ? "pt-1" : ""}`}
+        style={{ height: navHeightPx }}
+      >
         {NAV_ITEMS.map((item) => {
           return (
             <li key={item.to} className="flex-1">

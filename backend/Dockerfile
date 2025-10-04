@@ -1,5 +1,5 @@
 # Use official Python 3.12 slim image
-FROM python:3.12-slim-bookworm
+FROM python:3.12-alpine3.22
 
 # Set build arguments
 ARG IS_DEBUG=true
@@ -17,26 +17,25 @@ ENV TZ=UTC \
 WORKDIR /nuros
 ENV PATH="/root/.local/bin:${PATH}"
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
+RUN apk -u add \
+    build-base \
     python3-dev \
     libpq-dev \
-    && pip install --no-cache-dir poetry \
-    && rm -rf /var/lib/apt/lists/*
+    gcc \
+    g++ \
+    musl-dev \
+    linux-headers \
+    && pip install --no-cache-dir poetry 
+
 
 COPY backend/pyproject.toml backend/poetry.lock ./
 RUN poetry install --no-root --no-cache
 
 COPY .. .
 
-# Create a simple entrypoint shell script to conditionally run Uvicorn or Gunicorn
-RUN echo '#!/bin/sh \n\
-if [ "$IS_DEBUG" = "false" ]; then \n\
-    gunicorn -w $(( $(nproc) * 2 + 1 )) -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 backend.main:app; \n\
-else \n\
-    uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload; \n\
-fi' > /start.sh \
-    && chmod +x /start.sh
-
+COPY backend/start.sh /
+RUN sed -i 's/\r$//' /start.sh 
+RUN chmod +x /start.sh
+RUN apk add --no-cache bash
 # Run the script to decide the server behavior based on IS_DEBUG
 CMD ["/start.sh"]
