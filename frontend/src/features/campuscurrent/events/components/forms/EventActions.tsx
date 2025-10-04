@@ -56,30 +56,33 @@ export function EventActions({
   });
 
   return (
-    <div className="flex justify-between pt-4 border-t">
-      <div>
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-6 border-t">
+      <div className="flex gap-2 order-2 sm:order-1 w-full sm:w-auto">
         {isEditMode && permissions?.can_delete && (
           <Button 
             variant="destructive"
             onClick={onDelete}
             disabled={isProcessing || showDeleteConfirm}
+            className="w-full sm:w-auto"
           >
             Delete Event
           </Button>
         )}
-      </div>
-      
-      <div className="flex gap-3">
         <Button 
           variant="outline" 
           onClick={onClose}
           disabled={isProcessing}
+          className="w-full sm:w-auto"
         >
           Cancel
         </Button>
+      </div>
+      
+      <div className="flex gap-2 justify-end order-1 sm:order-2 w-full sm:w-auto">
         <Button 
           onClick={onSubmit} 
           disabled={isSubmitDisabled}
+          className="min-w-[160px]"
         >
           {isProcessing ? 
             (isEditMode ? "Updating..." : "Creating...") : 

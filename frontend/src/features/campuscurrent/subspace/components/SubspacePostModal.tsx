@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
-import { Card } from "@/components/atoms/card";
 import { useCreatePost } from "@/features/campuscurrent/subspace/api/hooks/useCreatePost";
 import { CommunitySelectionModal } from "@/features/campuscurrent/communities/components/CommunitySelectionModal";
+import { Modal } from "@/components/atoms/modal";
 import { useUser } from "@/hooks/use-user";
 import { LoginModal } from "@/components/molecules/login-modal";
 import { useToast } from "@/hooks/use-toast";
@@ -88,45 +88,21 @@ export function SubspacePostModal({ isOpen, onClose }: SubspacePostModalProps) {
 
   return (
     <>
-      {/* Backdrop */}
-      <div 
-        className={`fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={handleClose}
-      />
-      
-      {/* Modal Content */}
-      <div 
-        className={`fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300 ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+      <Modal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title="Create Post"
+        className="max-w-2xl"
       >
-        <div className="bg-background rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] sm:max-h-[85vh] flex flex-col animate-in fade-in-50 zoom-in-95">
-          {/* Header */}
-          <div className="flex justify-between items-center p-6 border-b border-border flex-shrink-0">
-            <h2 className="text-xl font-semibold">Create Post</h2>
-            <Button variant="ghost" size="icon" onClick={handleClose} className="h-8 w-8">
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          {/* Content */}
-          <div className="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1">
-            {/* Media Upload */}
-            {/* <div className="space-y-2">
-              <label className="text-base font-medium text-foreground">Images (optional)</label>
-              <SubspaceMediaUpload onMediaChange={handleMediaChange} />
-            </div> */}
-
-            {/* Unified User → Community Selection */}
-            <div className="space-y-2">
-              <label className="text-base font-medium text-foreground">Posting to</label>
-              <Button
-                variant="outline"
-                onClick={() => setShowCommunityModal(true)}
-                className="w-full justify-start h-12 p-3"
-              >
+        <div className="space-y-6">
+          {/* Unified User → Community Selection */}
+          <div className="space-y-2">
+            <label className="text-base font-medium text-foreground">Posting to</label>
+            <Button
+              variant="outline"
+              onClick={() => setShowCommunityModal(true)}
+              className="w-full justify-start h-12 p-3"
+            >
                 {selectedCommunity ? (
                   <div className="flex items-center gap-3 w-full">
                     {/* User Info */}
@@ -200,48 +176,46 @@ export function SubspacePostModal({ isOpen, onClose }: SubspacePostModalProps) {
                     <span className="text-muted-foreground text-sm">Select a community</span>
                   </div>
                 )}
-              </Button>
-            </div>
+            </Button>
+          </div>
 
-            {/* Title */}
-            <div className="space-y-2">
-              <label className="text-base font-medium text-foreground">Title (optional)</label>
-              <Input
-                placeholder="Add a short title for your post..."
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="h-10"
-              />
-            </div>
+          {/* Title */}
+          <div className="space-y-2">
+            <label className="text-base font-medium text-foreground">Title (optional)</label>
+            <Input
+              placeholder="Add a short title for your post..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="h-10"
+            />
+          </div>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <label className="text-base font-medium text-foreground">Post content</label>
-              <textarea
-                placeholder="Share what's happening..."
-                className="w-full min-h-32 p-3 bg-background rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border border-input text-base leading-relaxed"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
+          {/* Description */}
+          <div className="space-y-2">
+            <label className="text-base font-medium text-foreground">Post content</label>
+            <textarea
+              placeholder="Share what's happening..."
+              className="w-full min-h-32 p-3 bg-background rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border border-input text-base leading-relaxed"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
 
-            {/* Actions */}
-            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 pb-2 sm:pb-0">
-              <Button variant="outline" onClick={handleClose} className="order-2 sm:order-1">
-                Cancel
-              </Button>
-              <Button 
-                disabled={!canPost || isPending} 
-                onClick={handleSubmit}
-                size="lg"
-                className="order-1 sm:order-2"
-              >
-                {isPending ? "Creating..." : "Post"}
-              </Button>
-            </div>
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+            <Button variant="outline" onClick={handleClose} className="order-2 sm:order-1">
+              Cancel
+            </Button>
+            <Button 
+              disabled={!canPost || isPending} 
+              onClick={handleSubmit}
+              className="order-1 sm:order-2 min-w-[120px]"
+            >
+              {isPending ? "Creating..." : "Create"}
+            </Button>
           </div>
         </div>
-      </div>
+      </Modal>
 
       {/* Community Selection Modal */}
       <CommunitySelectionModal

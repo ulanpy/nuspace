@@ -221,13 +221,12 @@ async def get_posts(
     # Generate signed URLs once for all media
     if all_media_objs:
         filenames = [m.name for m in all_media_objs]
-        url_data_list, signing_credentials = await generate_batch_download_urls(
+        url_data_list = await generate_batch_download_urls(
             request.app.state.storage_client,
             request.app.state.config,
             request.app.state.signing_credentials,
             filenames,
         )
-        request.app.state.signing_credentials = signing_credentials
         media_to_url = {m: u["signed_url"] for m, u in zip(all_media_objs, url_data_list)}
     else:
         media_to_url = {}

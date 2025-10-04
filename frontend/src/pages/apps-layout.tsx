@@ -57,6 +57,7 @@ export default function AppsLayout() {
               <LoginButton />
             </div>
           ) : undefined}
+          titleClassName={isMiniApp ? "text-gradient-primary" : undefined}
           showMainNav={!isMiniApp}
         />
         <main className="flex-1 container py-4 sm:py-6 px-3 sm:px-4">

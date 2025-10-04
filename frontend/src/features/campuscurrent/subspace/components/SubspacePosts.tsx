@@ -5,24 +5,21 @@ import { SubspacePost } from '@/features/campuscurrent/subspace/types';
 import * as Routes from '@/data/routes';
 import { SubspacePostCard } from './SubspacePostCard';
 import { SubspaceEditModal } from './SubspaceEditModal';
-import { SubspacePostModal } from './SubspacePostModal';
-import { Users, Filter, X } from 'lucide-react';
+import { Users, Filter, X, PenSquare } from 'lucide-react';
 import { usePreSearchPosts } from '@/features/campuscurrent/subspace/api/hooks/usePreSearchPosts';
 import { CommunitySelectionModal } from '@/features/campuscurrent/communities/components/CommunitySelectionModal';
 import { useCommunities } from '@/features/campuscurrent/communities/hooks/use-communities';
 import { Community } from '@/features/campuscurrent/types/types';
+import { Button } from '@/components/atoms/button';
 
-export const SubspacePosts = ({ 
-  onCreatePost: _onCreatePost,
-  onModalStateChange
-}: { 
+interface SubspacePostsProps {
   onCreatePost: () => void;
-  onModalStateChange?: (isModalOpen: boolean) => void;
-}) => {
+}
+
+export const SubspacePosts = ({ onCreatePost }: SubspacePostsProps) => {
   const { mutate: deletePost } = useDeletePost();
 
   const [editingPost, setEditingPost] = useState<SubspacePost | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCommunityId, setSelectedCommunityId] = useState<number | null>(null);
   const [showCommunityModal, setShowCommunityModal] = useState(false);
@@ -30,15 +27,9 @@ export const SubspacePosts = ({
   // Get communities for the filter
   const { communities } = useCommunities();
 
-  // Notify parent when modal state changes
-  const notifyModalStateChange = (isOpen: boolean) => {
-    onModalStateChange?.(isOpen);
-  };
-
   const handleEditClick = (post: SubspacePost) => {
     setEditingPost(post);
     setShowEditModal(true);
-    notifyModalStateChange(true);
   };
 
   const handleDeleteClick = (postId: number) => {
@@ -49,7 +40,6 @@ export const SubspacePosts = ({
   const handleCommunitySelect = (community: Community) => {
     setSelectedCommunityId(community.id);
     setShowCommunityModal(false);
-    notifyModalStateChange(false);
   };
 
   // Handle community filter removal
@@ -84,38 +74,56 @@ export const SubspacePosts = ({
 
   return (
     <div className="w-full">
-      {/* Production Ready Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-foreground">SubSpace</h1>
-            <div className="flex items-center gap-2">
-              {selectedCommunity ? (
-                // Show selected community with remove button
-                <div className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg max-w-[200px]">
-                  <span className="text-blue-700 dark:text-blue-300 font-medium truncate">
-                    {selectedCommunity.name}
-                  </span>
-                  <button
-                    onClick={handleRemoveCommunityFilter}
-                    className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 transition-colors flex-shrink-0"
-                    title="Remove filter"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                // Show filter button when no community selected
-                <button
-                  onClick={() => setShowCommunityModal(true)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm border rounded-lg hover:bg-muted transition-colors"
-                >
-                  <Filter className="h-4 w-4" />
-                  <span className="hidden sm:inline">Filter by Community</span>
-                </button>
-              )}
-            </div>
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Subspace</h1>
+            <p className="text-gray-600 dark:text-gray-400">Share updates and conversations across NU communities</p>
           </div>
+          <Button
+            onClick={onCreatePost}
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2"
+          >
+            <PenSquare className="h-4 w-4" />
+            <span className="hidden sm:inline">Create Post</span>
+            <span className="sm:hidden">Create</span>
+          </Button>
+        </div>
+
+        <div className="mt-4">
+          <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible">
+            <Button
+              variant={selectedCommunity ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowCommunityModal(true)}
+              className={`
+                flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm gap-1 sm:gap-2
+                ${selectedCommunity
+                  ? "bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm"
+                  : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"}
+              `}
+            >
+              <Filter className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">{selectedCommunity ? selectedCommunity.name : "Community"}</span>
+              <span className="sm:hidden">{selectedCommunity ? selectedCommunity.name.slice(0, 8) + (selectedCommunity.name.length > 8 ? "…" : "") : "Community"}</span>
+            </Button>
+          </div>
+
+          {selectedCommunity && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-xs">
+                <Users className="h-3 w-3" />
+                <span className="max-w-24 truncate">{selectedCommunity.name}</span>
+                <button
+                  onClick={handleRemoveCommunityFilter}
+                  className="ml-1 hover:text-blue-600 dark:hover:text-blue-300"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -133,22 +141,12 @@ export const SubspacePosts = ({
         usePreSearch={usePreSearchPosts}
       />
 
-      {/* Create Post Modal */}
-      <SubspacePostModal
-        isOpen={showCreateModal}
-        onClose={() => {
-          setShowCreateModal(false);
-          notifyModalStateChange(false);
-        }}
-      />
-
       {/* Edit Post Modal */}
       <SubspaceEditModal
         isOpen={showEditModal}
         onClose={() => {
           setShowEditModal(false);
           setEditingPost(null);
-          notifyModalStateChange(false);
         }}
         post={editingPost}
       />
@@ -158,7 +156,6 @@ export const SubspacePosts = ({
         isOpen={showCommunityModal}
         onClose={() => {
           setShowCommunityModal(false);
-          notifyModalStateChange(false);
         }}
         onSelect={handleCommunitySelect}
         selectedCommunityId={selectedCommunityId ?? undefined}

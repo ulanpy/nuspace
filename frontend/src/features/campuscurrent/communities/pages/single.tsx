@@ -266,9 +266,13 @@ export default function CommunityDetailPage() {
 
                 {/* Profile Info */}
                 <div className="flex-grow text-center md:text-left min-w-0 pt-0 md:pt-1">
-                  <h1 className="text-3xl md:text-4xl font-bold text-foreground leading-tight break-words mb-3 md:mb-2 flex items-center gap-2 justify-center md:justify-start">
-                    <span className="truncate">{community.name}</span>
-                    {community.verified && <VerificationBadge size={14} />}
+                  <h1 className="text-3xl md:text-4xl font-bold text-foreground leading-tight break-words mb-3 md:mb-2 flex flex-col md:flex-row md:items-center md:gap-2">
+                    <span className="w-full md:w-auto break-words" title={community.name}>
+                      {community.name}
+                    </span>
+                    {community.verified && (
+                      <VerificationBadge size={14} className="mt-2 md:mt-0 md:flex-shrink-0" />
+                    )}
                   </h1>
                   
                   {/* Tags */}
