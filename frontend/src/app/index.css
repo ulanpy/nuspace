@@ -81,6 +81,27 @@
   .backface-hidden {
     backface-visibility: hidden;
   }
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #ef5a2e, #fdae3d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  /* Prevent iOS/Android webview zoom on input focus by enforcing >=16px font-size */
+  @media (max-width: 768px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+      line-height: 1.4;
+    }
+  }
 }
 
 /* Smooth transitions */

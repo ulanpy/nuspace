@@ -41,7 +41,7 @@ class ProductRequest(ProductBase):
     )
     price: int = Field(
         ...,
-        ge=1,
+        ge=0,
         le=10_000_000_000,
         description="Price of the product in whole currency units",
         examples=[999],
