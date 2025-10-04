@@ -13,7 +13,7 @@ import {
   getGPAColorClass,
 } from "../utils/gradeUtils";
 import { RegisteredCourseItem } from "./RegisteredCourseItem";
-import { BookOpen, Info, Plus, Trash2, Share2, UsersRound } from "lucide-react";
+import { BookOpen, Info, Plus, Trash2, Share2, UsersRound, CircleSlash2 } from "lucide-react";
 
 interface RegisteredCourseCardProps {
   registeredCourse: RegisteredCourse;
@@ -23,6 +23,8 @@ interface RegisteredCourseCardProps {
   onEditItem?: (item: BaseCourseItem) => void;
   onShareTemplate?: (course: RegisteredCourse) => void;
   onOpenTemplates?: (course: RegisteredCourse) => void;
+  isWithdrawn?: boolean;
+  onToggleWithdraw?: (courseId: number) => void;
 }
 
 export function RegisteredCourseCard({
@@ -33,6 +35,8 @@ export function RegisteredCourseCard({
   onEditItem,
   onShareTemplate,
   onOpenTemplates,
+  isWithdrawn = false,
+  onToggleWithdraw,
 }: RegisteredCourseCardProps) {
   const [showAssignments, setShowAssignments] = useState(false);
   const [showClassAverageModal, setShowClassAverageModal] = useState(false);
@@ -107,7 +111,11 @@ export function RegisteredCourseCard({
     .join(" • ");
 
   return (
-    <Card className="w-full rounded-2xl border border-border/50 bg-background shadow-none">
+    <Card
+      className={`w-full rounded-2xl border border-border/50 bg-background shadow-none transition ${
+        isWithdrawn ? "border-amber-500/50 bg-amber-50/70 dark:bg-amber-500/10" : ""
+      }`}
+    >
       <CardHeader className="relative gap-2 pb-4 pr-12">
         {onDeleteCourse && (
           <Button
@@ -119,6 +127,16 @@ export function RegisteredCourseCard({
           >
             <Trash2 className="h-4 w-4" />
           </Button>
+        )}
+
+        {isWithdrawn && (
+          <Badge
+            variant="secondary"
+            className="absolute right-2 top-2 flex items-center gap-1 rounded-full border border-amber-500/50 bg-amber-100 text-amber-900 shadow-sm dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100"
+          >
+            <CircleSlash2 className="h-3.5 w-3.5" />
+            Withdrawn
+          </Badge>
         )}
 
         <div className="flex flex-col gap-2">
@@ -161,6 +179,7 @@ export function RegisteredCourseCard({
               size="sm"
               onClick={() => onAddItem(registeredCourse.id)}
               className="flex-shrink-0 h-8 gap-1.5 rounded-full border border-border/60 bg-background px-3 text-xs font-medium text-foreground hover:bg-muted"
+              disabled={isWithdrawn}
             >
               <Plus className="h-3.5 w-3.5" />
               <span className="sm:hidden">Add</span>
@@ -173,6 +192,7 @@ export function RegisteredCourseCard({
               size="sm"
               onClick={() => onShareTemplate(registeredCourse)}
               className="flex-shrink-0 h-8 gap-1.5 rounded-full border border-border/60 bg-background px-3 text-xs font-medium text-foreground hover:bg-muted"
+              disabled={isWithdrawn}
             >
               <Share2 className="h-3.5 w-3.5" />
               Share template
@@ -184,6 +204,7 @@ export function RegisteredCourseCard({
               size="sm"
               onClick={() => onOpenTemplates(registeredCourse)}
               className="flex-shrink-0 h-8 gap-1.5 rounded-full border border-border/60 bg-background px-3 text-xs font-medium text-foreground hover:bg-muted"
+              disabled={isWithdrawn}
             >
               <UsersRound className="h-3.5 w-3.5" />
               Browse templates
@@ -194,6 +215,7 @@ export function RegisteredCourseCard({
             size="sm"
             onClick={() => setShowAssignments(!showAssignments)}
             className="flex-shrink-0 h-8 justify-center gap-1.5 rounded-full border border-border/60 bg-background px-3 text-xs font-medium text-foreground hover:bg-muted"
+            disabled={isWithdrawn}
           >
             <BookOpen className="h-3.5 w-3.5" />
             {showAssignments ? "Hide" : "Assignments"} ({registeredCourse.items.length})
@@ -204,64 +226,79 @@ export function RegisteredCourseCard({
               size="sm"
               onClick={() => setShowClassAverageModal(true)}
               className="flex-shrink-0 h-8 justify-center gap-1.5 rounded-full border border-border/60 bg-background px-3 text-xs font-medium text-foreground hover:bg-muted"
+              disabled={isWithdrawn}
             >
               <Info className="h-3.5 w-3.5" />
               Avg
             </Button>
           )}
+          <Button
+            variant={isWithdrawn ? "default" : "outline"}
+            size="sm"
+            onClick={() => onToggleWithdraw?.(registeredCourse.id)}
+            className={`flex-shrink-0 h-8 gap-1.5 rounded-full px-3 text-xs font-medium transition ${
+              isWithdrawn
+                ? "bg-amber-500/90 text-amber-50 hover:bg-amber-500"
+                : "border border-border/60 bg-background text-foreground hover:bg-muted"
+            }`}
+          >
+            <CircleSlash2 className="h-3.5 w-3.5" />
+            {isWithdrawn ? "Undo Withdraw" : "Try Withdraw"}
+          </Button>
         </div>
-
-        {showAssignments && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <h4 className="font-semibold text-foreground">Assignments</h4>
-              <span className="text-muted-foreground">{registeredCourse.items.length} total</span>
-            </div>
-            {registeredCourse.items.length > 0 ? (
-              <div className="space-y-2.5">
-                {registeredCourse.items.map((item) => (
-                  <RegisteredCourseItem
-                    key={item.id}
-                    item={item}
-                    onDelete={onDeleteItem ? () => onDeleteItem(item) : undefined}
-                    onEdit={onEditItem ? () => onEditItem(item) : undefined}
-                  />
-                ))}
+        <div className={`${isWithdrawn ? "opacity-40 pointer-events-none" : ""}`}>
+          {showAssignments && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <h4 className="font-semibold text-foreground">Assignments</h4>
+                <span className="text-muted-foreground">{registeredCourse.items.length} total</span>
               </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-5 text-center text-xs text-muted-foreground">
-                <BookOpen className="mx-auto mb-2 h-5 w-5 text-muted-foreground/80" />
-                No assignments yet
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="space-y-2">
-          <span className="text-xs font-semibold text-muted-foreground">Course metrics</span>
-          <div className="space-y-2 text-xs">
-            {metricGroupsOrder.map(({ key, label }) => (
-              <div
-                key={key}
-                className="rounded-xl border border-border/50 bg-muted/15 px-3 py-3"
-              >
-                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
-                <div className="mt-2 grid grid-cols-3 gap-2">
-                  {metricGroups[key].map((metric) => (
-                    <div key={`${key}-${metric.label}`} className="px-2 py-1 text-center">
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        {metric.label}
-                      </p>
-                      <p
-                        className={`text-base font-semibold text-foreground ${metric.tone ?? ""}`}
-                      >
-                        {metric.value}
-                      </p>
-                    </div>
+              {registeredCourse.items.length > 0 ? (
+                <div className="space-y-2.5">
+                  {registeredCourse.items.map((item) => (
+                    <RegisteredCourseItem
+                      key={item.id}
+                      item={item}
+                      onDelete={onDeleteItem && !isWithdrawn ? () => onDeleteItem(item) : undefined}
+                      onEdit={onEditItem && !isWithdrawn ? () => onEditItem(item) : undefined}
+                    />
                   ))}
                 </div>
-              </div>
-            ))}
+              ) : (
+                <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-5 text-center text-xs text-muted-foreground">
+                  <BookOpen className="mx-auto mb-2 h-5 w-5 text-muted-foreground/80" />
+                  No assignments yet
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="mt-4 space-y-2">
+            <span className="text-xs font-semibold text-muted-foreground">Course metrics</span>
+            <div className="space-y-2 text-xs">
+              {metricGroupsOrder.map(({ key, label }) => (
+                <div
+                  key={key}
+                  className="rounded-xl border border-border/50 bg-muted/15 px-3 py-3"
+                >
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {metricGroups[key].map((metric) => (
+                      <div key={`${key}-${metric.label}`} className="px-2 py-1 text-center">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                          {metric.label}
+                        </p>
+                        <p
+                          className={`text-base font-semibold text-foreground ${metric.tone ?? ""}`}
+                        >
+                          {metric.value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </CardContent>

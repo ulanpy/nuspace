@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { GradeStatisticsCard } from "../components/GradeStatisticsCard";
 import { RegisteredCourseCard } from "../components/RegisteredCourseCard";
 import {
@@ -17,14 +17,13 @@ import { BarChart3, Calculator, Plus, Search, UsersRound, Share2, RefreshCw } fr
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { Card, CardContent } from "@/components/atoms/card";
 import { gradeStatisticsApi } from "../api/gradeStatisticsApi";
-import { 
-  calculateTotalGPA, 
+import {
+  calculateTotalGPA,
   calculateMaxPossibleTotalGPA,
   calculateProjectedTotalGPA,
-  formatGPA, 
-  getGPAColorClass 
+  formatGPA,
+  getGPAColorClass,
 } from "../utils/gradeUtils";
-import { useEffect } from "react";
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/atoms/tabs";
@@ -88,6 +87,7 @@ export default function GradeStatisticsPage() {
   const [sharingCourse, setSharingCourse] = useState<RegisteredCourse | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [withdrawnCourseIds, setWithdrawnCourseIds] = useState<Set<number>>(new Set());
 
   const maxSelections = 8;
 
@@ -121,6 +121,15 @@ export default function GradeStatisticsPage() {
       (async () => {
         const registered = await gradeStatisticsApi.getRegisteredCourses();
         setRegisteredCourses(registered);
+        setWithdrawnCourseIds(prev => {
+          if (prev.size === 0) return prev;
+          const valid = new Set(registered.map(course => course.id));
+          const next = new Set<number>();
+          prev.forEach(id => {
+            if (valid.has(id)) next.add(id);
+          });
+          return next;
+        });
         const termData = await gradeStatisticsApi.getTerms();
         setTerms(termData);
         setHasFetched(true);
@@ -130,6 +139,7 @@ export default function GradeStatisticsPage() {
       setRegisteredCourses([]);
       setSelectedRegisteredCourse(null);
       setHasFetched(false);
+      setWithdrawnCourseIds(new Set());
     }
   }, [user, hasFetched]);
 
@@ -218,15 +228,44 @@ export default function GradeStatisticsPage() {
   };
 
   // Calculate total GPA across all registered courses
+  const filteredCourses = useMemo(() => {
+    if (withdrawnCourseIds.size === 0) {
+      return registeredCourses;
+    }
+    return registeredCourses.filter((course) => !withdrawnCourseIds.has(course.id));
+  }, [registeredCourses, withdrawnCourseIds]);
+
+  const totalGPA = useMemo(() => calculateTotalGPA(filteredCourses), [filteredCourses]);
+  const maxPotentialGPA = useMemo(
+    () => calculateMaxPossibleTotalGPA(filteredCourses),
+    [filteredCourses],
+  );
+  const projectedGPA = useMemo(
+    () => calculateProjectedTotalGPA(filteredCourses),
+    [filteredCourses],
+  );
+
   const displayedGPA = useMemo(() => {
     if (gpaMode === 'semester') {
-      return calculateTotalGPA(registeredCourses);
+      return totalGPA;
     }
     if (gpaMode === 'maxPossible') {
-      return calculateMaxPossibleTotalGPA(registeredCourses);
+      return maxPotentialGPA;
     }
-    return calculateProjectedTotalGPA(registeredCourses);
-  }, [registeredCourses, gpaMode]);
+    return projectedGPA;
+  }, [gpaMode, maxPotentialGPA, projectedGPA, totalGPA]);
+
+  const handleToggleWithdraw = useCallback((courseId: number) => {
+    setWithdrawnCourseIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(courseId)) {
+        next.delete(courseId);
+      } else {
+        next.add(courseId);
+      }
+      return next;
+    });
+  }, []);
 
   const clamp0to100 = (value: number | null | undefined): number | null => {
     if (value == null || Number.isNaN(value)) return null;
@@ -1102,7 +1141,7 @@ export default function GradeStatisticsPage() {
                       <CardContent className="space-y-2 p-0">
                         <p className="text-xs uppercase tracking-wide text-muted-foreground">Max potential</p>
                         <p className="text-3xl font-semibold text-foreground">
-                          {calculateMaxPossibleTotalGPA(registeredCourses).toFixed(2)}
+                          {maxPotentialGPA.toFixed(2)}
                         </p>
                         <p className="text-xs text-muted-foreground">If you ace everything left</p>
                       </CardContent>
@@ -1111,7 +1150,7 @@ export default function GradeStatisticsPage() {
                       <CardContent className="space-y-2 p-0">
                         <p className="text-xs uppercase tracking-wide text-muted-foreground">Projected GPA</p>
                         <p className="text-3xl font-semibold text-foreground">
-                          {calculateProjectedTotalGPA(registeredCourses).toFixed(2)}
+                          {projectedGPA.toFixed(2)}
                         </p>
                         <p className="text-xs text-muted-foreground">Based on current trend</p>
                       </CardContent>
@@ -1137,6 +1176,8 @@ export default function GradeStatisticsPage() {
                           onEditItem={handleEditItem}
                           onShareTemplate={openShareModal}
                           onOpenTemplates={handleOpenTemplates}
+                          isWithdrawn={withdrawnCourseIds.has(registeredCourse.id)}
+                          onToggleWithdraw={handleToggleWithdraw}
                         />
                       ))}
                     </div>

@@ -48,8 +48,8 @@ export function AppGrid() {
       title: "Communities",
       href: ROUTES.APPS.COMMUNITIES.ROOT,
       gradient:
-        "radial-gradient(circle, rgba(16,185,129,0.3) 0%, rgba(5,150,105,0.15) 50%, rgba(4,120,87,0) 100%)",
-      iconColor: "text-emerald-500",
+        "radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(37,99,235,0.15) 50%, rgba(29,78,216,0) 100%)",
+      iconColor: "text-blue-500",
       delay: 0.35,
     },
     
@@ -62,16 +62,6 @@ export function AppGrid() {
     //   iconColor: "text-rose-500",
     //   delay: 0.35,
     // },
-    {
-      icon: <Coffee className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
-      title: "Dorm Eats",
-      href: ROUTES.APPS.DORM_EATS.ROOT,
-      gradient:
-        "radial-gradient(circle, rgba(34,197,94,0.3) 0%, rgba(22,163,74,0.15) 50%, rgba(21,128,61,0) 100%)",
-      iconColor: "text-green-500",
-      delay: 0.5,
-      comingSoon: true,
-    },
     {
       icon: <ShieldQuestion className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
       title: "SGotinish",
