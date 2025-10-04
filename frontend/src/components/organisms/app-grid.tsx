@@ -62,15 +62,15 @@ export function AppGrid() {
     //   iconColor: "text-rose-500",
     //   delay: 0.35,
     // },
-    {
-      icon: <ShieldQuestion className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
-      title: "SGotinish",
-      href: ROUTES.APPS.SGOTINISH.ROOT,
-      gradient:
-        "radial-gradient(circle, rgba(197, 194, 34, 0.3) 0%, rgba(163, 163, 22, 0.15) 50%, rgba(126, 128, 21, 0) 100%)",
-      iconColor: "text-green-500",
-      delay: 0.5,
-    },
+    // {
+    //   icon: <ShieldQuestion className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
+    //   title: "SGotinish",
+    //   href: ROUTES.APPS.SGOTINISH.ROOT,
+    //   gradient:
+    //     "radial-gradient(circle, rgba(197, 194, 34, 0.3) 0%, rgba(163, 163, 22, 0.15) 50%, rgba(126, 128, 21, 0) 100%)",
+    //   iconColor: "text-green-500",
+    //   delay: 0.5,
+    // },
   ];
 
   return (
