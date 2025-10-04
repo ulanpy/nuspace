@@ -4,55 +4,56 @@ import { useTelegramBottomButtons } from "@/hooks/useTelegramBottomButtons";
 
 interface CommunityActionsProps {
   isProcessing: boolean;
-  showDeleteConfirm: boolean;
-  onClose: () => void;
+  onCancel: () => void;
   onSubmit: () => void;
-  onDelete: () => void;
 }
 
 export function CommunityActions({
   isProcessing,
-  showDeleteConfirm,
-  onClose,
+  onCancel,
   onSubmit,
-  onDelete,
 }: CommunityActionsProps) {
-  const { isEditMode } = useCommunityForm();
+  const {
+    permissions,
+    isEditMode,
+  } = useCommunityForm();
 
-  // Telegram Mini App bottom button integration
+  const primaryLabel = isProcessing
+    ? (isEditMode ? "Updating…" : "Creating…")
+    : (isEditMode ? "Update Community" : "Create Community");
+
+  const isPrimaryDisabled = isProcessing || (!permissions?.can_create && !isEditMode);
+
   useTelegramBottomButtons({
-    enabled: false,
-    text: isProcessing ? (isEditMode ? 'Saving…' : 'Creating…') : (isEditMode ? 'Save Changes' : 'Create'),
-    disabled: true,
-    show: false,
+    enabled: true,
+    text: primaryLabel,
+    disabled: isPrimaryDisabled,
+    show: true,
     showProgress: true,
     onClick: onSubmit,
   });
 
   return (
-    <div className="flex justify-end space-x-4">
-      <Button
-        variant="outline"
-        onClick={onClose}
-        disabled={isProcessing || showDeleteConfirm}
-      >
-        Cancel
-      </Button>
-      {isEditMode && (
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-6 border-t">
+      <div className="flex gap-2 order-2 sm:order-1 w-full sm:w-auto">
         <Button
-          variant="destructive"
-          onClick={onDelete}
-          disabled={isProcessing || showDeleteConfirm}
+          variant="outline"
+          onClick={onCancel}
+          disabled={isProcessing}
+          className="w-full sm:w-auto"
         >
-          Delete
+          Cancel
         </Button>
-      )}
-      <Button
-        onClick={onSubmit}
-        disabled={isProcessing || showDeleteConfirm}
-      >
-        {isProcessing ? "Processing..." : isEditMode ? "Save Changes" : "Create"}
-      </Button>
+      </div>
+      <div className="flex gap-2 justify-end order-1 sm:order-2 w-full sm:w-auto">
+        <Button
+          onClick={onSubmit}
+          disabled={isPrimaryDisabled}
+          className="min-w-[140px]"
+        >
+          {primaryLabel}
+        </Button>
+      </div>
     </div>
   );
 }
