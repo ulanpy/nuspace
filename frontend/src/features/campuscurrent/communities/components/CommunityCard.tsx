@@ -1,14 +1,9 @@
 import { Link } from "react-router-dom";
-import { Users, Calendar, MapPin } from "lucide-react";
+import { Users, Calendar } from "lucide-react";
 
 import { ROUTES } from "@/data/routes";
 import { Community } from "@/features/campuscurrent/types/types";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/atoms/card";
+import { Card } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 import { VerificationBadge } from "@/components/molecules/verification-badge";
@@ -60,7 +55,7 @@ export function CommunityCard({ community }: { community: Community }) {
           </div>
         </div>
 
-        <CardContent className="pt-8 px-4 pb-4 flex-1">
+        <div className="pt-8 px-4 pb-4 flex-1">
           {/* Name and verification */}
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-1 min-w-0 flex-1">
@@ -105,17 +100,7 @@ export function CommunityCard({ community }: { community: Community }) {
               </Badge>
             )}
           </div>
-        </CardContent>
-
-        <CardFooter className="px-4 pb-4 pt-0">
-          <div className="w-full">
-            <div className="flex items-center justify-end text-xs text-muted-foreground">
-              {community.telegram_url && (
-                <span className="text-blue-600 dark:text-blue-400">Telegram</span>
-              )}
-            </div>
-          </div>
-        </CardFooter>
+        </div>
       </Card>
     </Link>
   );
