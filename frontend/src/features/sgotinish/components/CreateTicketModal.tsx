@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
 import { Textarea } from "@/components/atoms/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
+import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/atoms/select";
 import { Label } from "@/components/atoms/label";
 import { Switch } from "@/components/atoms/switch";
-import { Send, FileText } from "lucide-react";
+import { Send, GraduationCap, Building2, Wrench, AlertTriangle, Lightbulb, HelpCircle, Check } from "lucide-react";
+import * as RadixSelect from "@radix-ui/react-select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { sgotinishApi } from "../api/sgotinishApi";
 import { TicketCategory } from "../types";
@@ -47,10 +48,71 @@ export default function CreateTicketModal({ isOpen, onClose, onSuccess }: Create
     },
   });
 
-  const categories = Object.values(TicketCategory).map(category => ({
-    value: category,
-    label: category.charAt(0).toUpperCase() + category.slice(1),
-  }));
+  const categories = [
+    {
+      value: TicketCategory.academic,
+      label: "Academic",
+      description: "Course-related issues, grades, academic policies",
+      icon: <GraduationCap className="h-4 w-4" />
+    },
+    {
+      value: TicketCategory.administrative,
+      label: "Administrative", 
+      description: "Registration, documents, university procedures",
+      icon: <Building2 className="h-4 w-4" />
+    },
+    {
+      value: TicketCategory.technical,
+      label: "Technical",
+      description: "IT issues, system problems, technical support",
+      icon: <Wrench className="h-4 w-4" />
+    },
+    {
+      value: TicketCategory.complaint,
+      label: "Complaint",
+      description: "Report issues, concerns, or problems",
+      icon: <AlertTriangle className="h-4 w-4" />
+    },
+    {
+      value: TicketCategory.suggestion,
+      label: "Suggestion",
+      description: "Ideas for improvement, feedback, recommendations",
+      icon: <Lightbulb className="h-4 w-4" />
+    },
+    {
+      value: TicketCategory.other,
+      label: "Other",
+      description: "Any other matter not covered above",
+      icon: <HelpCircle className="h-4 w-4" />
+    }
+  ];
+
+  function CategorySelectItem({
+    category,
+  }: {
+    category: (typeof categories)[number];
+  }) {
+    return (
+      <RadixSelect.Item
+        key={category.value}
+        value={category.value}
+        className="relative flex w-full cursor-default select-none items-start gap-3 rounded-sm px-2 py-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+      >
+        <span className="absolute left-2 top-2 flex h-3.5 w-3.5 items-center justify-center">
+          <RadixSelect.ItemIndicator>
+            <Check className="h-4 w-4" />
+          </RadixSelect.ItemIndicator>
+        </span>
+        <span className="ml-6 mt-0.5 text-muted-foreground">{category.icon}</span>
+        <div className="flex flex-col">
+          <RadixSelect.ItemText asChild>
+            <span className="font-medium text-foreground">{category.label}</span>
+          </RadixSelect.ItemText>
+          <span className="text-xs text-muted-foreground">{category.description}</span>
+        </div>
+      </RadixSelect.Item>
+    );
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,18 +155,30 @@ export default function CreateTicketModal({ isOpen, onClose, onSuccess }: Create
 
           {/* Category */}
           <div className="space-y-2">
-            <Label htmlFor="category" className="text-sm font-medium">
-              Category *
-            </Label>
+            <div className="space-y-1">
+              <Label htmlFor="category" className="text-sm font-medium">
+                Category *
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Choose the category that best describes your appeal to help us route it to the right department.
+              </p>
+            </div>
             <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
-              <SelectContent className="z-[10001]">
+              <SelectContent
+                className="z-[10001] max-h-72 max-w-[calc(100vw-1rem)] overflow-auto"
+                position="popper"
+                side="bottom"
+                sideOffset={8}
+                align="start"
+                collisionPadding={16}
+                avoidCollisions={true}
+                collisionBoundary="viewport"
+              >
                 {categories.map((category) => (
-                  <SelectItem key={category.value} value={category.value}>
-                    {category.label}
-                  </SelectItem>
+                  <CategorySelectItem key={category.value} category={category} />
                 ))}
               </SelectContent>
             </Select>

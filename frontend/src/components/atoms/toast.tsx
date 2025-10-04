@@ -8,7 +8,7 @@ export function Toasts() {
   const { toasts, dismissToast } = useToast();
 
   return (
-    <div className="fixed bottom-0 right-0 z-50 p-4 space-y-2 max-w-md w-full pointer-events-none">
+    <div className="fixed bottom-0 right-0 z-[11000] p-4 space-y-2 max-w-md w-full pointer-events-none">
       <AnimatePresence>
         {toasts.map((toast) => (
           <motion.div

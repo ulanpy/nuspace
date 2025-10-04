@@ -32,12 +32,10 @@ export function EventScopeSelector({ onCommunityModalOpen }: EventScopeSelectorP
             <span className={`text-sm ${!isCommunityEvent ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
               Personal
             </span>
-            <input
-              type="checkbox"
+            <Switch
               checked={isCommunityEvent}
-              onChange={(e) => handleCommunityToggle(e.target.checked)}
+              onCheckedChange={handleCommunityToggle}
               disabled={communityId != null}
-              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
             <span className={`text-sm ${isCommunityEvent ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
               Community
