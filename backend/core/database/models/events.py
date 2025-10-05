@@ -51,7 +51,7 @@ class CollaboratorType(PyEnum):
 class EventCollaborator(Base):
     __tablename__ = "event_collaborators"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
     event_id: Mapped[int] = mapped_column(
         ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True
     )
@@ -73,7 +73,7 @@ class EventCollaborator(Base):
 
 class Event(Base):
     __tablename__ = "events"
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
     community_id: Mapped[int] = mapped_column(
         ForeignKey("communities.id", ondelete="CASCADE"), nullable=True, unique=False, index=True
     )
@@ -119,7 +119,7 @@ class Event(Base):
 # class EventAttendee(Base):
 #     __tablename__ = "event_attendees"
 
-#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
 #     event_id: Mapped[int] = mapped_column(
 #         ForeignKey("events.id", ondelete="CASCADE"), nullable=False
 #     )

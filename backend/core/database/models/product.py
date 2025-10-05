@@ -38,7 +38,7 @@ class ProductStatus(Enum):
 
 class Product(Base):
     __tablename__ = "products"
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, index=True, nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
     name: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
     description: Mapped[str] = mapped_column(String)
     price: Mapped[int] = mapped_column(BigInteger, nullable=False)

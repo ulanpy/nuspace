@@ -52,9 +52,16 @@ class StudentCourseService:
         student_scores_subquery = (
             select(
                 StudentCourse.course_id,
-                func.sum((CourseItem.obtained_score_pct / 100.0) * CourseItem.total_weight_pct).label(
-                    "student_total_score"
-                ),
+                func.sum(
+                    case(
+                        (
+                            func.coalesce(CourseItem.max_score, 0) != 0,
+                            (CourseItem.obtained_score / func.nullif(CourseItem.max_score, 0))
+                            * CourseItem.total_weight_pct,
+                        ),
+                        else_=0,
+                    )
+                ).label("student_total_score"),
             )
             .join(CourseItem, StudentCourse.id == CourseItem.student_course_id)
             .where(StudentCourse.course_id.in_(course_ids))
