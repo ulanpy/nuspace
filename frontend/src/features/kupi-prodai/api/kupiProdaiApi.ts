@@ -25,6 +25,11 @@ export const kupiProdaiApi = {
         apiCall<Types.User>("/me", {
           method: "GET",
           credentials: "include",
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
+          },
         }),
       retry: false, // Don't retry failed auth requests
     });
