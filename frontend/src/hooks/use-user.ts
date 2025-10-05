@@ -91,6 +91,7 @@ export const useUser = () => {
     },
     onSuccess: () => {
       // Refetch user after cookies are set
+      sessionStorage.removeItem("__miniapp_login_poll_done__");
       queryClient.invalidateQueries({ queryKey: kupiProdaiApi.getUserQueryOptions().queryKey });
     },
   });
@@ -130,6 +131,20 @@ export const useUser = () => {
   };
 
   useEffect(() => {
+    const handleMiniAppLoginSuccess = () => {
+      globalQueryEnabled = true;
+      queryClient.invalidateQueries({ queryKey: ["user"] });
+      refetchUser();
+    };
+
+    window.addEventListener("miniapp-login-success", handleMiniAppLoginSuccess);
+
+    return () => {
+      window.removeEventListener("miniapp-login-success", handleMiniAppLoginSuccess);
+    };
+  }, [refetchUser]);
+
+  useEffect(() => {
     // Auto-exchange if the Mini App was re-opened with start_param
     if (isMiniApp && startParam) {
       const doneKey = `miniapp_login_done:${startParam}`;
@@ -149,7 +164,9 @@ export const useUser = () => {
             });
             if (res.ok) {
               sessionStorage.setItem(doneKey, "1");
+              sessionStorage.setItem("__miniapp_login_poll_done__", "1");
               queryClient.invalidateQueries({ queryKey: kupiProdaiApi.getUserQueryOptions().queryKey });
+              window.dispatchEvent(new Event("miniapp-login-success"));
               break;
             }
           } catch {
@@ -181,6 +198,7 @@ export const useUser = () => {
 
   const login = () => {
     globalQueryEnabled = true;
+    sessionStorage.removeItem("__miniapp_login_poll_done__");
     forceUpdate(prev => prev + 1);
     loginMutation.mutate();
   };
