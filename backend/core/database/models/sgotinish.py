@@ -32,7 +32,7 @@ class ConversationStatus(PyEnum):
 class Ticket(Base):
     __tablename__ = "tickets"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, index=True, nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
 
     author_sub: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, index=True
@@ -56,7 +56,7 @@ class Ticket(Base):
 class Conversation(Base):
     __tablename__ = "conversations"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, index=True, nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
 
     ticket_id: Mapped[int] = mapped_column(
         ForeignKey("tickets.id", ondelete="CASCADE"), nullable=False, index=True
@@ -77,7 +77,7 @@ class Conversation(Base):
 class Message(Base):
     __tablename__ = "messages"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, index=True, nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
 
     conversation_id: Mapped[int] = mapped_column(
         ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True

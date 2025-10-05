@@ -7,6 +7,9 @@ import { RegisteredCourse, BaseCourseItem } from "../types";
 import {
   calculateCourseGPA,
   calculateCourseScore,
+  calculateMaxPossibleCourseScore,
+  calculateProjectedCourseScore,
+  hasCompleteScore,
   scoreToGPA,
   scoreToGrade,
   formatGPA,
@@ -41,8 +44,8 @@ export function RegisteredCourseCard({
   const [showAssignments, setShowAssignments] = useState(false);
   const [showClassAverageModal, setShowClassAverageModal] = useState(false);
   const { course } = registeredCourse;
-  const courseGPA = calculateCourseGPA(registeredCourse.items);
   const courseScore = calculateCourseScore(registeredCourse.items);
+  const courseGPA = calculateCourseGPA(registeredCourse.items);
   const courseGrade = scoreToGrade(courseScore);
   const credits = course.credits || 0;
   const courseDetails = [
@@ -57,26 +60,14 @@ export function RegisteredCourseCard({
     .map((s) => s.trim())
     .filter(Boolean);
 
-  const totalWeight = registeredCourse.items.reduce(
-    (acc, it) => acc + (it.total_weight_pct || 0),
-    0,
-  );
-  const remainingWeight = Math.max(0, 100 - totalWeight);
-  const maxPossibleScore = Math.min(100, courseScore + remainingWeight);
+  const maxPossibleScore = calculateMaxPossibleCourseScore(registeredCourse.items);
+  const scoredItems = registeredCourse.items.filter(hasCompleteScore);
+  const totalWeight = scoredItems.reduce((acc, it) => acc + (it.total_weight_pct || 0), 0);
+  const remainingWeight = scoredItems.length > 0 ? Math.max(0, 100 - totalWeight) : 0;
   const maxPossibleGrade = scoreToGrade(maxPossibleScore);
   const maxPossibleGPA = scoreToGPA(maxPossibleScore);
 
-  const obtainedScores = registeredCourse.items
-    .map((it) => it.obtained_score_pct)
-    .filter((s): s is number => s !== null && s !== undefined);
-  const meanItemScore =
-    obtainedScores.length > 0
-      ? obtainedScores.reduce((acc, s) => acc + s, 0) / obtainedScores.length
-      : 0;
-  const projectedScore = Math.min(
-    100,
-    courseScore + (meanItemScore / 100) * remainingWeight,
-  );
+  const projectedScore = calculateProjectedCourseScore(registeredCourse.items);
   const projectedGrade = scoreToGrade(projectedScore);
   const projectedGPA = scoreToGPA(projectedScore);
 

@@ -21,7 +21,7 @@ class OwnerType(Enum):
 class Review(Base):
     __tablename__ = "reviews"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True, index=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     reviewable_type: Mapped[ReviewableType] = mapped_column(
         SQLEnum(ReviewableType, name="reviewable_type"), nullable=False
     )
@@ -45,7 +45,7 @@ class Review(Base):
 class ReviewReply(Base):
     __tablename__ = "review_replies"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True, index=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     review_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("reviews.id"), unique=True, nullable=False
     )

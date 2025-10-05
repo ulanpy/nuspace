@@ -74,7 +74,9 @@ export interface BaseCourseItem {
   student_course_id: number;
   item_name: string;
   total_weight_pct: number | null; // e.g., 20.00 for 20%
-  obtained_score_pct: number | null; // e.g., 16.00 for 16%
+  obtained_score: number | null;
+  max_score: number | null;
+  isIncludedInGPA?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -92,6 +94,10 @@ export interface RegisteredCourse {
   course: BaseCourse;
   items: BaseCourseItem[];
   class_average?: number | null;
+  gpaCoverage?: {
+    currentIncluded: number;
+    currentExcluded: number;
+  };
 }
 
 export interface CourseWithItems {
@@ -103,13 +109,15 @@ export interface CourseItemCreate {
   student_course_id: number;
   item_name: string;
   total_weight_pct?: number | null;
-  obtained_score_pct?: number | null;
+  obtained_score?: number | null;
+  max_score?: number | null;
 }
 
 export interface CourseItemUpdate {
   item_name?: string;
   total_weight_pct?: number | null;
-  obtained_score_pct?: number | null;
+  obtained_score?: number | null;
+  max_score?: number | null;
 }
 
 export interface RegisteredCourseCreate {

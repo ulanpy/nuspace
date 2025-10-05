@@ -18,7 +18,7 @@ class MediaFormat(PyEnum):
 # Mapped[dtype] defaults parameters: nullable=False, unique=True, primary_key=False
 class Media(Base):
     __tablename__ = "media"
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True, index=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(nullable=False, index=True, unique=True)
     mime_type: Mapped[str] = mapped_column(nullable=False, unique=False)
     entity_type: Mapped[EntityType] = mapped_column(
