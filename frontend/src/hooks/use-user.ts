@@ -9,6 +9,25 @@ let globalQueryEnabled = true;
 
 export const useUser = () => {
   const { isMiniApp, startParam } = useTelegramMiniApp();
+  const isMiniAppContext = useMemo(() => {
+    if (!isMiniApp || typeof window === "undefined") return false;
+
+    try {
+      const tg: any = (window as any)?.Telegram?.WebApp;
+      if (!tg) return false;
+
+      const hasInitDataString = typeof tg?.initData === "string" && tg.initData.length > 0;
+      const initDataUnsafe = tg?.initDataUnsafe as any;
+      const hasUnsafeHash = typeof initDataUnsafe?.hash === "string" && initDataUnsafe.hash.length > 0;
+      const hasUnsafeStartParam = typeof initDataUnsafe?.start_param === "string" && initDataUnsafe.start_param.length > 0;
+      const hasHookStartParam = typeof startParam === "string" && startParam.length > 0;
+
+      return hasInitDataString || hasUnsafeHash || hasUnsafeStartParam || hasHookStartParam;
+    } catch (error) {
+      console.warn("[useUser] Failed to evaluate mini app context", error);
+      return false;
+    }
+  }, [isMiniApp, startParam]);
   const [, forceUpdate] = useState(0); // Force re-render when needed
   
   
@@ -57,7 +76,7 @@ export const useUser = () => {
   const loginMutation = useMutation({
     mutationFn: async () => {
       const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-      if (!isMiniApp) {
+      if (!isMiniAppContext) {
         const url = `/api/login?return_to=${encodeURIComponent(returnTo)}`;
         window.location.href = url;
         return null;

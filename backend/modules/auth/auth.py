@@ -1,5 +1,4 @@
 import json
-import logging
 import random
 import secrets
 from typing import Annotated
@@ -30,7 +29,6 @@ from .utils import (
 )
 
 router = APIRouter(tags=["Auth Routes"])
-logger = logging.getLogger(__name__)
 
 
 # /login: always pass a state
@@ -240,12 +238,6 @@ async def miniapp_login_exchange(
         try:
             client_ip = request.client.host if getattr(request, "client", None) else "unknown"
             ua = request.headers.get("user-agent", "")
-            logger.info(
-                "miniapp_login_exchange: not ready yet (code=%s, ip=%s, ua=%s)",
-                code,
-                client_ip,
-                ua,
-            )
         except Exception:
             pass
         raise HTTPException(

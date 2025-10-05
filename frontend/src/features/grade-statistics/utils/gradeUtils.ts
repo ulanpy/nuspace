@@ -114,40 +114,70 @@ export const scoreToGrade = (score: number): string => {
   return "F";
 };
 
-export const calculateSemesterCourseScore = (items: Array<{ total_weight_pct: number | null; obtained_score_pct: number | null }>): number => {
+export type CourseItemScore = {
+  total_weight_pct: number | null;
+  obtained_score: number | null;
+  max_score: number | null;
+};
+
+type CompleteCourseItemScore = CourseItemScore & {
+  obtained_score: number;
+  max_score: number;
+};
+
+export const hasCompleteScore = (item: CourseItemScore): item is CompleteCourseItemScore =>
+  item.obtained_score != null && item.max_score != null && item.max_score > 0;
+
+const getScoredItems = (items: CourseItemScore[]): CompleteCourseItemScore[] =>
+  items.filter(hasCompleteScore);
+
+export const calculateSemesterCourseScore = (items: CourseItemScore[]): number => {
   if (!items || items.length === 0) {
     return 0;
   }
+
+  const scoredItems = getScoredItems(items);
+
+  if (scoredItems.length === 0) {
+    return 0;
+  }
+
   // This calculates the student's current total score out of 100 for the course,
-  // assuming a score of 0 for any assignments not yet entered.
-  return items.reduce((acc, item) => {
+  // considering only items that have both obtained and max scores recorded.
+  return scoredItems.reduce((acc, item) => {
     const weight = item.total_weight_pct || 0;
-    const score = item.obtained_score_pct || 0;
+    const score = (item.obtained_score / item.max_score) * 100;
     return acc + (score / 100) * weight;
   }, 0);
 };
 
 // Back-compat: alias for semester-based total course score (0-100)
 export const calculateCourseScore = (
-  items: Array<{ total_weight_pct: number | null; obtained_score_pct: number | null }>
+  items: CourseItemScore[]
 ): number => {
   return calculateSemesterCourseScore(items);
 };
 
-export const calculatePointInTimeCourseScore = (items: Array<{ total_weight_pct: number | null; obtained_score_pct: number | null }>): number => {
+export const calculatePointInTimeCourseScore = (items: CourseItemScore[]): number => {
   if (!items || items.length === 0) {
     return 0;
   }
-  
-  const totalWeightSubmitted = items.reduce((acc, item) => acc + (item.total_weight_pct || 0), 0);
-  
+
+  const scoredItems = getScoredItems(items);
+
+  if (scoredItems.length === 0) {
+    return 0;
+  }
+
+  const totalWeightSubmitted = scoredItems.reduce((acc, item) => acc + (item.total_weight_pct || 0), 0);
+
   if (totalWeightSubmitted === 0) {
     return 0;
   }
 
-  const totalContribution = items.reduce((acc, item) => {
+  const totalContribution = scoredItems.reduce((acc, item) => {
     const weight = item.total_weight_pct || 0;
-    const score = item.obtained_score_pct || 0;
+    const score = (item.obtained_score / item.max_score) * 100;
     return acc + (score / 100) * weight;
   }, 0);
 
@@ -155,29 +185,46 @@ export const calculatePointInTimeCourseScore = (items: Array<{ total_weight_pct:
 };
 
 
-export const calculateCourseGPA = (items: Array<{ total_weight_pct: number | null; obtained_score_pct: number | null }>): number => {
-  const finalPercentage = calculateSemesterCourseScore(items);
+export const calculateCourseGPA = (items: CourseItemScore[]): number => {
+  const scoredItems = getScoredItems(items);
+
+  if (scoredItems.length === 0) {
+    return 0;
+  }
+
+  const finalPercentage = calculateSemesterCourseScore(scoredItems);
   return scoreToGPA(finalPercentage);
 };
 
 // Maximum possible course score if acing all remaining weight
 export const calculateMaxPossibleCourseScore = (
-  items: Array<{ total_weight_pct: number | null; obtained_score_pct: number | null }>
+  items: CourseItemScore[]
 ): number => {
-  const current = calculateSemesterCourseScore(items);
-  const totalWeight = items.reduce((acc, it) => acc + (it.total_weight_pct || 0), 0);
+  const scoredItems = getScoredItems(items);
+
+  if (scoredItems.length === 0) {
+    return 0;
+  }
+
+  const current = calculateSemesterCourseScore(scoredItems);
+  const totalWeight = scoredItems.reduce((acc, it) => acc + (it.total_weight_pct || 0), 0);
   const remaining = Math.max(0, 100 - totalWeight);
   return Math.min(100, current + remaining);
 };
 
-export const calculateTotalGPA = (courses: Array<{ course: { credits: number | null }; items: Array<{ total_weight_pct: number | null; obtained_score_pct: number | null }> }>): number => {
+export const calculateTotalGPA = (courses: Array<{ course: { credits: number | null }; items: CourseItemScore[] }>): number => {
   if (!courses || courses.length === 0) return 0;
   
   let totalWeightedGPA = 0;
   let totalCredits = 0;
   
   for (const registeredCourse of courses) {
-    const courseGPA = calculateCourseGPA(registeredCourse.items);
+    const scoredItems = getScoredItems(registeredCourse.items);
+    if (scoredItems.length === 0) {
+      continue;
+    }
+
+    const courseGPA = calculateCourseGPA(scoredItems);
     const credits = registeredCourse.course.credits || 0;
     
     if (credits > 0) {
@@ -189,14 +236,19 @@ export const calculateTotalGPA = (courses: Array<{ course: { credits: number | n
   return totalCredits > 0 ? totalWeightedGPA / totalCredits : 0;
 };
 
-export const calculatePointInTimeTotalGPA = (courses: Array<{ course: { credits: number | null }; items: Array<{ total_weight_pct: number | null; obtained_score_pct: number | null }> }>): number => {
+export const calculatePointInTimeTotalGPA = (courses: Array<{ course: { credits: number | null }; items: CourseItemScore[] }>): number => {
   if (!courses || courses.length === 0) return 0;
   
   let totalWeightedGPA = 0;
   let totalCredits = 0;
   
   for (const registeredCourse of courses) {
-    const courseScore = calculatePointInTimeCourseScore(registeredCourse.items);
+    const scoredItems = getScoredItems(registeredCourse.items);
+    if (scoredItems.length === 0) {
+      continue;
+    }
+
+    const courseScore = calculatePointInTimeCourseScore(scoredItems);
     const courseGPA = scoreToGPA(courseScore);
     const credits = registeredCourse.course.credits || 0;
     
@@ -210,12 +262,17 @@ export const calculatePointInTimeTotalGPA = (courses: Array<{ course: { credits:
 };
 
 // Maximum possible total GPA across courses if acing remaining work (credit-weighted)
-export const calculateMaxPossibleTotalGPA = (courses: Array<{ course: { credits: number | null }; items: Array<{ total_weight_pct: number | null; obtained_score_pct: number | null }> }>): number => {
+export const calculateMaxPossibleTotalGPA = (courses: Array<{ course: { credits: number | null }; items: CourseItemScore[] }>): number => {
   if (!courses || courses.length === 0) return 0;
   let totalWeightedGPA = 0;
   let totalCredits = 0;
   for (const registeredCourse of courses) {
-    const maxScore = calculateMaxPossibleCourseScore(registeredCourse.items);
+    const scoredItems = getScoredItems(registeredCourse.items);
+    if (scoredItems.length === 0) {
+      continue;
+    }
+
+    const maxScore = calculateMaxPossibleCourseScore(scoredItems);
     const courseGPA = scoreToGPA(maxScore);
     const credits = registeredCourse.course.credits || 0;
     if (credits > 0) {
@@ -227,15 +284,19 @@ export const calculateMaxPossibleTotalGPA = (courses: Array<{ course: { credits:
 };
 
 // Projected score for a course based on mean of entered item scores
-export const calculateProjectedCourseScore = (
-  items: Array<{ total_weight_pct: number | null; obtained_score_pct: number | null }>
-): number => {
-  const currentScore = calculateSemesterCourseScore(items);
-  const totalWeight = items.reduce((acc, it) => acc + (it.total_weight_pct || 0), 0);
+export const calculateProjectedCourseScore = (items: CourseItemScore[]): number => {
+  const scoredItems = getScoredItems(items);
+
+  if (scoredItems.length === 0) {
+    return 0;
+  }
+
+  const currentScore = calculateSemesterCourseScore(scoredItems);
+  const totalWeight = scoredItems.reduce((acc, it) => acc + (it.total_weight_pct || 0), 0);
   const remainingWeight = Math.max(0, 100 - totalWeight);
-  const obtainedScores = items
-    .map((it) => it.obtained_score_pct)
-    .filter((s): s is number => s !== null && s !== undefined);
+  const obtainedScores = scoredItems
+    .map((it) => (it.obtained_score / it.max_score) * 100)
+    .filter((s): s is number => Number.isFinite(s) && s >= 0);
   const meanScore = obtainedScores.length > 0
     ? obtainedScores.reduce((acc, s) => acc + s, 0) / obtainedScores.length
     : 0;
@@ -244,12 +305,17 @@ export const calculateProjectedCourseScore = (
 };
 
 // Credit-weighted projected total GPA across courses
-export const calculateProjectedTotalGPA = (courses: Array<{ course: { credits: number | null }; items: Array<{ total_weight_pct: number | null; obtained_score_pct: number | null }> }>): number => {
+export const calculateProjectedTotalGPA = (courses: Array<{ course: { credits: number | null }; items: CourseItemScore[] }>): number => {
   if (!courses || courses.length === 0) return 0;
   let totalWeightedGPA = 0;
   let totalCredits = 0;
   for (const registeredCourse of courses) {
-    const projectedScore = calculateProjectedCourseScore(registeredCourse.items);
+    const scoredItems = getScoredItems(registeredCourse.items);
+    if (scoredItems.length === 0) {
+      continue;
+    }
+
+    const projectedScore = calculateProjectedCourseScore(scoredItems);
     const courseGPA = scoreToGPA(projectedScore);
     const credits = registeredCourse.course.credits || 0;
     if (credits > 0) {

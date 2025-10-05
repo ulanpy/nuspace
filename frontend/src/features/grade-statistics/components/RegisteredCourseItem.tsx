@@ -1,6 +1,7 @@
 import { Button } from "@/components/atoms/button";
 import { Trash2, Pencil } from "lucide-react";
 import { BaseCourseItem } from "../types";
+import { hasCompleteScore } from "../utils/gradeUtils";
 
 interface RegisteredCourseItemProps {
   item: BaseCourseItem;
@@ -10,7 +11,10 @@ interface RegisteredCourseItemProps {
 
 export function RegisteredCourseItem({ item, onDelete, onEdit }: RegisteredCourseItemProps) {
   const weight = item.total_weight_pct || 0;
-  const contribution = ((item.obtained_score_pct || 0) / 100) * weight;
+  const included = hasCompleteScore(item);
+  const contribution = included
+    ? ((item.obtained_score / item.max_score) * weight)
+    : 0;
 
   return (
     <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background px-3 py-2 text-sm">
@@ -18,7 +22,14 @@ export function RegisteredCourseItem({ item, onDelete, onEdit }: RegisteredCours
         <span className="font-medium text-foreground" title={item.item_name}>
           {item.item_name}
         </span>
-        <span className="text-xs text-muted-foreground">+{contribution.toFixed(2)}% contribution</span>
+        <div className="text-xs text-muted-foreground">
+          <span>Weight: {weight.toFixed(1)}%</span>
+          {included ? (
+            <span className="ml-2">Contribution: +{contribution.toFixed(2)}%</span>
+          ) : (
+            <span className="ml-2 text-amber-600">Missing scores; excluded from GPA</span>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-2">
         {onEdit && (

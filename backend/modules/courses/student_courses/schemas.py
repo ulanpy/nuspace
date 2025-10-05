@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 
 from fastapi import Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from backend.core.database.models.grade_report import LevelType, SchoolType
 
@@ -28,7 +28,8 @@ class BaseCourseItem(BaseModel):
     student_course_id: int
     item_name: str
     total_weight_pct: float | None
-    obtained_score_pct: float | None
+    obtained_score: float | None
+    max_score: float | None
     created_at: datetime
     updated_at: datetime
 
@@ -63,10 +64,17 @@ class CourseItemCreate(BaseModel):
         le=100,
         description="Weight must be between 0-100%",
     )
-    obtained_score_pct: float = Field(
+    obtained_score: float | None = Field(
         ge=0,
-        le=100,
-        description="Score must be between 0-100%",
+        le=99999.99,
+        description="Score must be between 0 and 99999.99",
+        default=None,
+    )
+    max_score: float | None = Field(
+        ge=0,
+        le=99999.99,
+        description="Score must be between 0 and 99999.99",
+        default=None,
     )
 
 
@@ -82,10 +90,16 @@ class CourseItemUpdate(BaseModel):
         description="Weight must be between 0-100%",
         default=None,
     )
-    obtained_score_pct: float | None = Field(
+    obtained_score: float | None = Field(
         ge=0,
-        le=100,
-        description="Score must be between 0-100%",
+        le=99999.99,
+        description="Score must be between 0 and 99999.99",
+        default=None,
+    )
+    max_score: float | None = Field(
+        ge=0,
+        le=99999.99,
+        description="Score must be between 0 and 99999.99",
         default=None,
     )
 

@@ -21,6 +21,7 @@ import {
   calculateTotalGPA,
   calculateMaxPossibleTotalGPA,
   calculateProjectedTotalGPA,
+  hasCompleteScore,
   formatGPA,
   getGPAColorClass,
 } from "../utils/gradeUtils";
@@ -59,11 +60,11 @@ export default function GradeStatisticsPage() {
   const [itemToEdit, setItemToEdit] = useState<BaseCourseItem | null>(null);
   const [gpaMode, setGpaMode] = useState<'semester' | 'maxPossible' | 'projected'>('semester');
   const [hasFetched, setHasFetched] = useState(false);
-  const [newItem, setNewItem] = useState<Partial<CourseItemCreate> & { max_score?: number }>({ 
-    item_name: "", 
-    total_weight_pct: null, 
-    obtained_score_pct: null, 
-    max_score: undefined 
+  const [newItem, setNewItem] = useState<Partial<CourseItemCreate>>({
+    item_name: "",
+    total_weight_pct: null,
+    obtained_score: null,
+    max_score: null,
   });
   const [newItemInput, setNewItemInput] = useState<{ weight: string; max: string; obtained: string }>({
     weight: "",
@@ -203,13 +204,13 @@ export default function GradeStatisticsPage() {
     setNewItem({
       item_name: item.item_name,
       total_weight_pct: item.total_weight_pct,
-      obtained_score_pct: item.obtained_score_pct,
-      max_score: undefined,
+      obtained_score: item.obtained_score,
+      max_score: item.max_score,
     });
     setNewItemInput({
       weight: item.total_weight_pct != null ? String(item.total_weight_pct) : "",
-      max: "",
-      obtained: item.obtained_score_pct != null ? String(item.obtained_score_pct) : "",
+      max: item.max_score != null ? String(item.max_score) : "",
+      obtained: item.obtained_score != null ? String(item.obtained_score) : "",
     });
   };
 
@@ -229,10 +230,28 @@ export default function GradeStatisticsPage() {
 
   // Calculate total GPA across all registered courses
   const filteredCourses = useMemo(() => {
-    if (withdrawnCourseIds.size === 0) {
-      return registeredCourses;
-    }
-    return registeredCourses.filter((course) => !withdrawnCourseIds.has(course.id));
+    const coursesNotWithdrawn = withdrawnCourseIds.size === 0
+      ? registeredCourses
+      : registeredCourses.filter((course) => !withdrawnCourseIds.has(course.id));
+
+    return coursesNotWithdrawn.map((course) => ({
+      gpaCoverage: course.items.reduce(
+        (acc, item) => {
+          if (hasCompleteScore(item)) {
+            acc.currentIncluded += 1;
+          } else {
+            acc.currentExcluded += 1;
+          }
+          return acc;
+        },
+        { currentIncluded: 0, currentExcluded: 0 },
+      ),
+      ...course,
+      items: course.items.map((item) => ({
+        ...item,
+        isIncludedInGPA: hasCompleteScore(item),
+      })),
+    }));
   }, [registeredCourses, withdrawnCourseIds]);
 
   const totalGPA = useMemo(() => calculateTotalGPA(filteredCourses), [filteredCourses]);
@@ -267,9 +286,9 @@ export default function GradeStatisticsPage() {
     });
   }, []);
 
-  const clamp0to100 = (value: number | null | undefined): number | null => {
+  const sanitizeNonNegative = (value: number | null | undefined): number | null => {
     if (value == null || Number.isNaN(value)) return null;
-    return Math.max(0, Math.min(100, value));
+    return Math.max(0, value);
   };
 
   const handleShareTemplate = async () => {
@@ -493,7 +512,7 @@ export default function GradeStatisticsPage() {
   const parseInput = (raw: string): number | null => {
     if (!raw) return null;
     const v = Number(raw.replace(/,/g, "."));
-    return Number.isNaN(v) ? null : Math.min(100, Math.max(0, v));
+    return Number.isNaN(v) ? null : Math.max(0, v);
   };
 
   // Keep obtained <= max in real-time
@@ -513,13 +532,14 @@ export default function GradeStatisticsPage() {
   })();
   const maxNumValid = (() => {
     const n = parseInput(newItemInput.max);
-    return newItemInput.max === "" || (n != null && n >= 0 && n <= 100);
+    return newItemInput.max === "" || (n != null && n >= 0 && n <= 99999.99);
   })();
   const obtainedNumValid = (() => {
     const o = parseInput(newItemInput.obtained);
     const m = parseInput(newItemInput.max);
     if (newItemInput.obtained === "") return true;
-    if (o == null || o < 0 || o > 100) return false;
+    if (o == null || o < 0) return false;
+    if (o > 99999.99) return false;
     if (m != null && o > m) return false;
     return true;
   })();
@@ -531,21 +551,18 @@ export default function GradeStatisticsPage() {
     const weightNumRaw = newItemInput.weight ? Number(newItemInput.weight.replace(/,/g, '.')) : null;
     const maxScoreNumRaw = newItemInput.max ? Number(newItemInput.max.replace(/,/g, '.')) : undefined;
     const obtainedRawRaw = newItemInput.obtained ? Number(newItemInput.obtained.replace(/,/g, '.')) : null;
-    const weightNum = clamp0to100(weightNumRaw);
-    const maxScoreNum = typeof maxScoreNumRaw === 'number' ? clamp0to100(maxScoreNumRaw) ?? undefined : undefined;
-    const obtainedRaw = clamp0to100(obtainedRawRaw);
-    // Convert raw scores to percentage of the item (max -> 100%)
-    let obtainedPct = Number(obtainedRaw ?? 0);
-    const maxScore = typeof maxScoreNum === 'number' ? maxScoreNum : null;
-    if (maxScore && maxScore > 0) {
-      obtainedPct = Math.min(100, (Number(obtainedRaw ?? 0) / maxScore) * 100);
-    }
+    const weightNum = sanitizeNonNegative(weightNumRaw);
+    const maxScore = typeof maxScoreNumRaw === "number" ? sanitizeNonNegative(maxScoreNumRaw) : null;
+    const obtained = sanitizeNonNegative(obtainedRawRaw);
+    const resolvedMaxScore = maxScore != null && maxScore > 0 ? maxScore : null;
+    const resolvedObtained = obtained != null ? (resolvedMaxScore == null ? obtained : Math.min(obtained, resolvedMaxScore)) : null;
 
     const payload: CourseItemCreate = {
       student_course_id: selectedRegisteredCourse.id,
       item_name: newItem.item_name!,
       total_weight_pct: weightNum,
-      obtained_score_pct: obtainedPct,
+      max_score: resolvedMaxScore,
+      obtained_score: resolvedObtained,
     };
     
     try {
@@ -556,7 +573,7 @@ export default function GradeStatisticsPage() {
           ? { ...rc, items: [...rc.items, newItem] }
           : rc
       ));
-      setNewItem({ item_name: "", total_weight_pct: null, obtained_score_pct: null, max_score: undefined });
+    setNewItem({ item_name: "", total_weight_pct: null, obtained_score: null, max_score: null });
       setNewItemInput({ weight: "", max: "", obtained: "" });
       setIsAddItemModalOpen(false);
       setSelectedRegisteredCourse(null);
@@ -567,26 +584,24 @@ export default function GradeStatisticsPage() {
 
   const handleUpdateItem = async () => {
     if (!itemToEdit) return;
-    const weightNum = clamp0to100(newItemInput.weight ? Number(newItemInput.weight.replace(/,/g, '.')) : null);
-    const obtainedRaw = clamp0to100(newItemInput.obtained ? Number(newItemInput.obtained.replace(/,/g, '.')) : null);
-    const maxScoreNumRaw = newItemInput.max ? Number(newItemInput.max.replace(/,/g, '.')) : undefined;
-    const maxScoreNum = typeof maxScoreNumRaw === 'number' ? clamp0to100(maxScoreNumRaw) ?? undefined : undefined;
-    let obtainedPct: number | null = obtainedRaw;
-    if (maxScoreNum && maxScoreNum > 0 && obtainedRaw != null) {
-      obtainedPct = Math.min(100, (obtainedRaw / maxScoreNum) * 100);
-    }
+    const weightNum = sanitizeNonNegative(newItemInput.weight ? Number(newItemInput.weight.replace(/,/g, '.')) : null);
+    const obtainedRaw = sanitizeNonNegative(newItemInput.obtained ? Number(newItemInput.obtained.replace(/,/g, '.')) : null);
+    const maxScoreRaw = sanitizeNonNegative(newItemInput.max ? Number(newItemInput.max.replace(/,/g, '.')) : null);
+    const resolvedMaxScore = maxScoreRaw != null && maxScoreRaw > 0 ? maxScoreRaw : null;
+    const resolvedObtained = obtainedRaw != null ? (resolvedMaxScore == null ? obtainedRaw : Math.min(obtainedRaw, resolvedMaxScore)) : null;
     try {
       const updated = await gradeStatisticsApi.updateCourseItem(itemToEdit.id, {
         item_name: newItem.item_name || itemToEdit.item_name,
         total_weight_pct: weightNum,
-        obtained_score_pct: obtainedPct,
+        max_score: resolvedMaxScore,
+        obtained_score: resolvedObtained,
       });
       setRegisteredCourses(prev => prev.map(rc => ({
         ...rc,
         items: rc.items.map(it => it.id === updated.id ? updated : it)
       })));
       setItemToEdit(null);
-      setNewItem({ item_name: "", total_weight_pct: null, obtained_score_pct: null, max_score: undefined });
+    setNewItem({ item_name: "", total_weight_pct: null, obtained_score: null, max_score: null });
       setNewItemInput({ weight: "", max: "", obtained: "" });
     } catch (error) {
       console.error('Failed to update course item:', error);
@@ -694,7 +709,7 @@ export default function GradeStatisticsPage() {
                   onClose={() => {
                     setIsAddItemModalOpen(false);
                     setSelectedRegisteredCourse(null);
-                    setNewItem({ item_name: "", total_weight_pct: null, obtained_score_pct: null, max_score: undefined });
+                    setNewItem({ item_name: "", total_weight_pct: null, obtained_score: null, max_score: null });
                     setNewItemInput({ weight: "", max: "", obtained: "" });
                   }}
                   title={itemToEdit ? "Edit assignment" : "Add assignment"}
@@ -728,7 +743,7 @@ export default function GradeStatisticsPage() {
                           <p className="mt-1 text-xs text-red-600">Weight must be between 0 and 100.</p>
                         )}
                       </div>
-                      <div>
+                      <div className="space-y-1">
                         <label className="text-sm font-medium mb-2 block">Max Score</label>
                         <Input
                           type="text"
@@ -738,10 +753,13 @@ export default function GradeStatisticsPage() {
                           onChange={(e) => setNewItemInput(v => ({ ...v, max: normalizeNumberInput(e.target.value) }))}
                         />
                         {!maxNumValid && (
-                          <p className="mt-1 text-xs text-red-600">Max must be between 0 and 100.</p>
+                          <p className="mt-1 text-xs text-red-600">Max must be between 0 and 99999.99.</p>
+                        )}
+                        {maxNumValid && parseInput(newItemInput.max) != null && parseInput(newItemInput.obtained) == null && (
+                          <p className="text-xs text-muted-foreground">Add an obtained score for this item to appear in GPA.</p>
                         )}
                       </div>
-                      <div>
+                      <div className="space-y-1">
                         <label className="text-sm font-medium mb-2 block">Obtained Score</label>
                         <Input
                           type="text"
@@ -751,15 +769,29 @@ export default function GradeStatisticsPage() {
                           onChange={(e) => setNewItemInput(v => ({ ...v, obtained: normalizeNumberInput(e.target.value) }))}
                         />
                         {!obtainedNumValid && (
-                          <p className="mt-1 text-xs text-red-600">Obtained must be 0–100 and ≤ Max.</p>
+                          <p className="mt-1 text-xs text-red-600">Obtained must be between 0 and 99999.99 and ≤ Max.</p>
+                        )}
+                        {obtainedNumValid && parseInput(newItemInput.obtained) != null && parseInput(newItemInput.max) == null && (
+                          <p className="text-xs text-muted-foreground">Add a max score so this item counts toward GPA.</p>
                         )}
                       </div>
                     </div>
+                    {parseInput(newItemInput.max) != null && parseInput(newItemInput.obtained) != null ? (
+                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                        <p className="font-semibold">Ready for GPA</p>
+                        <p>This assignment will be included in all GPA calculations.</p>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                        <p className="font-semibold">Heads up</p>
+                        <p>Add both max and obtained scores for this assignment to count toward GPA.</p>
+                      </div>
+                    )}
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={() => {
                         setIsAddItemModalOpen(false);
                         setSelectedRegisteredCourse(null);
-                        setNewItem({ item_name: "", total_weight_pct: null, obtained_score_pct: null, max_score: undefined });
+                        setNewItem({ item_name: "", total_weight_pct: null, obtained_score: null, max_score: null });
                         setNewItemInput({ weight: "", max: "", obtained: "" });
                       }}>
                         Cancel
@@ -797,7 +829,7 @@ export default function GradeStatisticsPage() {
                   isOpen={!!itemToEdit}
                   onClose={() => {
                     setItemToEdit(null);
-                    setNewItem({ item_name: "", total_weight_pct: null, obtained_score_pct: null, max_score: undefined });
+                    setNewItem({ item_name: "", total_weight_pct: null, obtained_score: null, max_score: null });
                     setNewItemInput({ weight: "", max: "", obtained: "" });
                   }}
                   title="Edit assignment"
@@ -831,7 +863,7 @@ export default function GradeStatisticsPage() {
                           <p className="mt-1 text-xs text-red-600">Weight must be between 0 and 100.</p>
                         )}
                       </div>
-                      <div>
+                      <div className="space-y-1">
                         <label className="text-sm font-medium mb-2 block">Max Score</label>
                         <Input
                           type="text"
@@ -841,10 +873,13 @@ export default function GradeStatisticsPage() {
                           onChange={(e) => setNewItemInput(v => ({ ...v, max: normalizeNumberInput(e.target.value) }))}
                         />
                         {!maxNumValid && (
-                          <p className="mt-1 text-xs text-red-600">Max must be between 0 and 100.</p>
+                          <p className="mt-1 text-xs text-red-600">Max must be between 0 and 99999.99.</p>
+                        )}
+                        {maxNumValid && parseInput(newItemInput.max) != null && parseInput(newItemInput.obtained) == null && (
+                          <p className="text-xs text-muted-foreground">Add an obtained score for this item to appear in GPA.</p>
                         )}
                       </div>
-                      <div>
+                      <div className="space-y-1">
                         <label className="text-sm font-medium mb-2 block">Obtained Score</label>
                         <Input
                           type="text"
@@ -854,14 +889,28 @@ export default function GradeStatisticsPage() {
                           onChange={(e) => setNewItemInput(v => ({ ...v, obtained: normalizeNumberInput(e.target.value) }))}
                         />
                         {!obtainedNumValid && (
-                          <p className="mt-1 text-xs text-red-600">Obtained must be 0–100 and ≤ Max.</p>
+                          <p className="mt-1 text-xs text-red-600">Obtained must be between 0 and 99999.99 and ≤ Max.</p>
+                        )}
+                        {obtainedNumValid && parseInput(newItemInput.obtained) != null && parseInput(newItemInput.max) == null && (
+                          <p className="text-xs text-muted-foreground">Add a max score so this item counts toward GPA.</p>
                         )}
                       </div>
                     </div>
+                    {parseInput(newItemInput.max) != null && parseInput(newItemInput.obtained) != null ? (
+                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                        <p className="font-semibold">Ready for GPA</p>
+                        <p>This assignment will be included in all GPA calculations.</p>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                        <p className="font-semibold">Heads up</p>
+                        <p>Add both max and obtained scores for this assignment to count toward GPA.</p>
+                      </div>
+                    )}
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={() => {
                         setItemToEdit(null);
-                        setNewItem({ item_name: "", total_weight_pct: null, obtained_score_pct: null, max_score: undefined });
+                        setNewItem({ item_name: "", total_weight_pct: null, obtained_score: null, max_score: null });
                         setNewItemInput({ weight: "", max: "", obtained: "" });
                       }}>
                         Cancel

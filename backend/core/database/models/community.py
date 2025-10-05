@@ -32,7 +32,7 @@ class CommunityRecruitmentStatus(PyEnum):
 
 class Community(Base):
     __tablename__ = "communities"
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
     name: Mapped[str] = mapped_column(nullable=False, unique=False, index=True)
     type: Mapped[CommunityType] = mapped_column(
         SQLEnum(CommunityType, name="community_type"), nullable=False, index=True
@@ -68,7 +68,7 @@ class Community(Base):
 
 class CommunityPostTag(Base):
     __tablename__ = "community_post_tags"
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
     community_id: Mapped[int] = mapped_column(
         ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, unique=False
     )
@@ -81,7 +81,7 @@ class CommunityPostTag(Base):
 
 class CommunityPost(Base):
     __tablename__ = "community_posts"
-    id: Mapped[BigInteger] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+    id: Mapped[BigInteger] = mapped_column(BigInteger, primary_key=True, nullable=False)
     community_id: Mapped[int] = mapped_column(
         ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, unique=False, index=True
     )
@@ -107,7 +107,7 @@ class CommunityPost(Base):
 
 class CommunityMember(Base):
     __tablename__ = "community_members"
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
     community_id: Mapped[int] = mapped_column(
         ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, unique=False
     )
@@ -123,7 +123,7 @@ class CommunityMember(Base):
 
 class CommunityComment(Base):
     __tablename__ = "community_comments"
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False, index=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
     post_id: Mapped[int] = mapped_column(
         ForeignKey("community_posts.id", ondelete="CASCADE"),
         nullable=False,

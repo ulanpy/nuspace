@@ -127,7 +127,8 @@ class TemplateService:
                     total_weight_pct=float(item.total_weight_pct)
                     if item.total_weight_pct is not None
                     else None,
-                    obtained_score_pct=0.0,
+                    obtained_score=None,
+                    max_score=None,
                 )
             )
 

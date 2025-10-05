@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String
-from sqlalchemy import Text, UniqueConstraint
+from sqlalchemy import UniqueConstraint
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -127,10 +127,8 @@ class CourseItem(Base):
     total_weight_pct: Mapped[float] = mapped_column(
         Numeric(5, 2), nullable=True
     )  # e.g., 20.00 for 20%
-    obtained_score_pct: Mapped[float] = mapped_column(
-        Numeric(5, 2), nullable=True
-    )  # e.g., 16.00 for 16%
-
+    max_score: Mapped[float] = mapped_column(Numeric(7, 2), nullable=True)
+    obtained_score: Mapped[float] = mapped_column(Numeric(7, 2), nullable=True)
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
