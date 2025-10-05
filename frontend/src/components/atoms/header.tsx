@@ -5,14 +5,14 @@ import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 import { useState, useEffect } from "react";
 
 interface HeaderProps {
-    left?: JSX.Element;   
-    center?: JSX.Element; 
-    right?: JSX.Element;
-    showMainNav?: boolean;
+  left?: JSX.Element;
+  center?: JSX.Element;
+  right?: JSX.Element;
+  showMainNav?: boolean;
 }
 
 export function Header({ left, center, right, showMainNav = false }: HeaderProps) {
-  const { isMiniApp } = useTelegramMiniApp();
+  const { isMiniApp, headerOffset } = useTelegramMiniApp();
   const [isMobileBrowser, setIsMobileBrowser] = useState(false);
   
   // Check if we're in a mobile browser (not just mini app)
@@ -49,8 +49,13 @@ export function Header({ left, center, right, showMainNav = false }: HeaderProps
 
   return (
     <header
-      className="w-full sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-lg safe-area-inset-top"
-      style={{ paddingTop: "calc(env(safe-area-inset-top) + var(--tg-header-offset, 0px))" }}
+      className="w-full sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-lg"
+      style={{
+        paddingTop: headerOffset > 0
+          ? `${headerOffset}px`
+          : "calc(env(safe-area-inset-top, 0px) + var(--tg-header-offset, 0px))",
+      }}
+      data-tg-header-adjusted={headerOffset > 0 ? "true" : undefined}
     >
       <div className="flex justify-between items-center px-4 py-2">
         <div>{left}</div>

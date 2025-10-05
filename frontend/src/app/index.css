@@ -75,6 +75,10 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  html.tg-miniapp body {
+    padding-top: var(--tg-header-padding, env(safe-area-inset-top, 0px));
+  }
 }
 
 @layer utilities {

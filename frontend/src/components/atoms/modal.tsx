@@ -31,7 +31,7 @@ export function Modal({
 }: ModalProps) {
   
   const backNav = useMaybeBackNavigation();
-  const { isMiniApp } = useTelegramMiniApp();
+  const { isMiniApp, headerOffset } = useTelegramMiniApp();
   useEffect(() => {
     if (!isOpen || !backNav) return;
     // Register modal close to back stack
@@ -109,7 +109,7 @@ export function Modal({
       <div
         className="fixed inset-0 grid place-items-center px-4"
         style={{
-          paddingTop: "calc(env(safe-area-inset-top, 0px) + var(--tg-header-offset, 0px) + 2rem)",
+          paddingTop: `calc(env(safe-area-inset-top, 0px) + ${Math.max(headerOffset, 0)}px + 2rem)`,
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
         }}
         onWheel={(e) => e.stopPropagation()}
@@ -125,7 +125,7 @@ export function Modal({
           style={{
             // Use 100dvh to include iOS dynamic viewport, with fallback to 100vh
             maxHeight:
-              "min(calc(100dvh - (env(safe-area-inset-top, 0px) + var(--tg-header-offset, 0px) + env(safe-area-inset-bottom, 0px) + 3rem)), calc(100vh - (env(safe-area-inset-top, 0px) + var(--tg-header-offset, 0px) + env(safe-area-inset-bottom, 0px) + 3rem)))",
+              `min(calc(100dvh - (${Math.max(headerOffset, 0)}px + env(safe-area-inset-bottom, 0px) + 3rem)), calc(100vh - (${Math.max(headerOffset, 0)}px + env(safe-area-inset-bottom, 0px) + 3rem)))`,
           }}
         >
           {/* Sticky header without backdrop blur (Safari bug with overflow containers) */}
