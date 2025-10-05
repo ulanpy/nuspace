@@ -130,7 +130,7 @@ export function MobileBottomNav() {
                     {(() => {
                       switch (item.icon) {
                         case "home":
-                          return <NuSpaceLogoIcon size={iconSize} isActive={isActive} />;
+                          return <NuSpaceLogoIcon size={Math.round(iconSize * 0.8)} isActive={isActive} />;
                         case "profile":
                           return isActive ? <PiUserCircleFill size={iconSize} /> : <PiUserCircle size={iconSize} />;
                         case "subspace":

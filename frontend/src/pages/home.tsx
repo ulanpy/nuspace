@@ -126,14 +126,14 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4 pb-[calc(56px+env(safe-area-inset-bottom))]">
       {/* Header with main navigation */}
-      <Header 
-        right={!isMiniApp? (
+      <Header
+        right={!isMiniApp ? (
           <div className="flex gap-2">
             <ThemeToggle />
             <LoginButton />
           </div>
         ) : undefined}
-        showMainNav={!isMiniApp} 
+        showMainNav={!isMiniApp}
       />
       {/* Beta banner - visible on all viewports with last commit inline */}
       <div className="w-full mb-6">
