@@ -15,10 +15,38 @@ resource "google_service_account" "signing_service_account" {
   description  = "Dedicated service account for signing GCS URLs"
 }
 
+locals {
+  push_auth_service_account_id = var.push_auth_service_account_email != "" ? "projects/${var.project_id}/serviceAccounts/${var.push_auth_service_account_email}" : google_service_account.vm_service_account.name
+}
+
 resource "google_project_iam_member" "signing_service_account_storage_object_admin" {
   project = var.project_id
   role    = "roles/storage.objectAdmin"
   member  = "serviceAccount:${google_service_account.signing_service_account.email}"
+}
+
+resource "google_storage_bucket_iam_member" "signing_service_account_bucket_admin" {
+  bucket = google_storage_bucket.media_bucket_target.name
+  role   = "roles/storage.legacyBucketOwner"
+  member = "serviceAccount:${google_service_account.signing_service_account.email}"
+}
+
+resource "google_project_iam_member" "signing_service_account_pubsub_editor" {
+  project = var.project_id
+  role    = "roles/pubsub.editor"
+  member  = "serviceAccount:${google_service_account.signing_service_account.email}"
+}
+
+resource "google_service_account_iam_member" "push_auth_token_creator" {
+  service_account_id = local.push_auth_service_account_id
+  role               = "roles/iam.serviceAccountTokenCreator"
+  member             = "serviceAccount:${google_service_account.signing_service_account.email}"
+}
+
+resource "google_service_account_iam_member" "push_auth_act_as" {
+  service_account_id = local.push_auth_service_account_id
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.signing_service_account.email}"
 }
 
 # Grant the VM service account Storage Admin role for bucket management (CORS, policies, etc.)
