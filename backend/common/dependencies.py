@@ -10,7 +10,6 @@ from backend.modules.auth.utils import (
     get_mock_user_by_sub,  # dev-only helper
     set_kc_auth_cookies,
 )
-from backend.modules.google_bucket.utils import load_signing_credentials_from_info
 from fastapi import Cookie, Depends, HTTPException, Request, Response, status
 from jose import JWTError, jwt
 from sqlalchemy import select
@@ -20,28 +19,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 async def get_infra(request: Request) -> Infra:
     """Dependency to get infrastructure dependencies with automatic credential refresh."""
     # Get fresh credentials if not in emulator mode
-    signing_credentials = None
-    if not config.USE_GCS_EMULATOR:
-        current_credentials = request.app.state.signing_credentials
-
-        if current_credentials is None or (
-            hasattr(current_credentials, "expired") and current_credentials.expired
-        ):
-            if config.SIGNING_SERVICE_ACCOUNT_INFO:
-                signing_credentials = load_signing_credentials_from_info(
-                    config.SIGNING_SERVICE_ACCOUNT_INFO
-                )
-                request.app.state.signing_credentials = signing_credentials
-            else:
-                signing_credentials = None
-        else:
-            signing_credentials = current_credentials
-
     return Infra(
         meilisearch_client=request.app.state.meilisearch_client,
         storage_client=request.app.state.storage_client,
         config=request.app.state.config,
-        signing_credentials=signing_credentials,
+        signing_credentials=request.app.state.signing_credentials,
         redis=request.app.state.redis,
         broker=request.app.state.broker,
     )
