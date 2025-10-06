@@ -86,28 +86,22 @@ export function InfiniteList<T>({
   gridLayout,
   itemCountPlaceholder = "Items",
 }: InfiniteListProps<T>) {
-  const [searchKeyword, setSearchKeyword] = React.useState(keyword);
-
-  // Use infinite scroll hook
   const {
     items,
     isLoading,
     isError,
     isFetchingNextPage,
-    keyword: hookKeyword,
     setKeyword: setHookKeyword,
   } = useInfiniteScroll<T>({
     queryKey,
     apiEndpoint,
     size,
-    keyword: keyword, // Use the keyword prop directly
+    keyword,
     additionalParams,
     transformResponse,
   });
 
-  // Handle search changes
   const handleSearchChange = (value: string) => {
-    setSearchKeyword(value);
     setHookKeyword(value);
     onSearchChange?.(value);
   };
@@ -171,12 +165,12 @@ export function InfiniteList<T>({
             <span className="flex items-center gap-2 border border-input bg-background rounded-md">
               <Search className="w-4 h-4 ml-2" />
               <input
-              type="text"
-              value={searchKeyword}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="w-full h-10 px-3 py-2 bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            />
+                type="text"
+                value={keyword}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder={searchPlaceholder}
+                className="w-full h-10 px-3 py-2 bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
             </span>
           </div>
         )}

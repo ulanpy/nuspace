@@ -1,6 +1,7 @@
 import asyncio
 from datetime import timedelta
 from typing import List, Optional
+import time
 
 import google.auth
 import google.auth.transport.requests
@@ -18,6 +19,8 @@ async def generate_batch_download_urls(
     signing_credentials: Credentials,
     filenames: List[str],
 ) -> List[dict]:
+    overall_start = time.perf_counter()
+    print("[generate_batch_download_urls] start")
     """
     Generates download URLs for multiple files in batch for optimal performance.
     - In production: signed URLs valid for 15 minutes (GET only)
@@ -35,16 +38,27 @@ async def generate_batch_download_urls(
         List of dicts with signed_url keys, in the same order as input filenames
     """
     if not filenames:
+        print("[generate_batch_download_urls] no filenames provided")
         return []
 
     if config.USE_GCS_EMULATOR:
         # Use backend proxy to avoid nginx /gcs path issues during local dev
         base_url = f"{config.HOME_URL}/api/bucket/local-download/{config.BUCKET_NAME}"
-        return [{"signed_url": f"{base_url}/{filename}"} for filename in filenames]
+        urls = [{"signed_url": f"{base_url}/{filename}"} for filename in filenames]
+        elapsed = time.perf_counter() - overall_start
+        print(
+            f"[generate_batch_download_urls] emulator path took {elapsed:.3f}s for {len(filenames)} files"
+        )
+        return urls
 
     # Prepare all blobs
+    segment_start = time.perf_counter()
     bucket = storage_client.bucket(config.BUCKET_NAME)
     blobs = [bucket.blob(filename) for filename in filenames]
+    after_blob = time.perf_counter()
+    print(
+        f"[generate_batch_download_urls] prepared {len(blobs)} blobs in {after_blob - segment_start:.3f}s"
+    )
 
     # Move all synchronous signing operations to threads and execute in parallel
 
@@ -58,9 +72,19 @@ async def generate_batch_download_urls(
         )
 
     # Execute all signing operations in parallel
+    segment_start = time.perf_counter()
     signed_urls = await asyncio.gather(*[sign_single_blob(blob) for blob in blobs])
+    after_sign = time.perf_counter()
+    print(
+        f"[generate_batch_download_urls] signing took {after_sign - segment_start:.3f}s"
+    )
 
-    return [{"signed_url": url} for url in signed_urls]
+    result = [{"signed_url": url} for url in signed_urls]
+    total_elapsed = time.perf_counter() - overall_start
+    print(
+        f"[generate_batch_download_urls] total elapsed {total_elapsed:.3f}s for {len(result)} files"
+    )
+    return result
 
 
 async def delete_bucket_object(

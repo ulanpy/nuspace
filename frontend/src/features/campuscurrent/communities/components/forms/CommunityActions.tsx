@@ -6,12 +6,16 @@ interface CommunityActionsProps {
   isProcessing: boolean;
   onCancel: () => void;
   onSubmit: () => void;
+  isValid: boolean;
+  onDelete?: () => void;
 }
 
 export function CommunityActions({
   isProcessing,
   onCancel,
   onSubmit,
+  isValid,
+  onDelete,
 }: CommunityActionsProps) {
   const {
     permissions,
@@ -22,7 +26,12 @@ export function CommunityActions({
     ? (isEditMode ? "Updating…" : "Creating…")
     : (isEditMode ? "Update Community" : "Create Community");
 
-  const isPrimaryDisabled = isProcessing || (!permissions?.can_create && !isEditMode);
+  const lacksRequiredPermission = isEditMode
+    ? permissions?.can_edit === false
+    : false;
+
+  const isPrimaryDisabled =
+    isProcessing || lacksRequiredPermission || !isValid;
 
   useTelegramBottomButtons({
     enabled: true,
@@ -46,6 +55,16 @@ export function CommunityActions({
         </Button>
       </div>
       <div className="flex gap-2 justify-end order-1 sm:order-2 w-full sm:w-auto">
+        {isEditMode && permissions?.can_delete && onDelete && (
+          <Button
+            variant="destructive"
+            onClick={onDelete}
+            disabled={isProcessing}
+            className="min-w-[140px]"
+          >
+            Delete Community
+          </Button>
+        )}
         <Button
           onClick={onSubmit}
           disabled={isPrimaryDisabled}

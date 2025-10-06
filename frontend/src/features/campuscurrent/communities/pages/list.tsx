@@ -17,6 +17,7 @@ import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
 import { CommunityModal } from "@/features/campuscurrent/communities/components/CommunityModal";
+import { useDebounce } from "@/hooks/useDebounce";
 
 // import { useLocation } from "react-router-dom";
 // import { useUser } from "@/hooks/use-user";
@@ -31,6 +32,7 @@ export default function CommunitiesPage() {
     useState<string>("All");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const debouncedKeyword = useDebounce(searchKeyword, 300);
 
   // Open-only filter toggle
   const [isWifiFilterActive, setIsWifiFilterActive] = useState<boolean>(false);
@@ -247,11 +249,11 @@ export default function CommunitiesPage() {
 
           {/* Communities List with Search */}
           <div className="w-full overflow-x-hidden" id="communities-section">
-            <InfiniteList
-              queryKey={["campusCurrent", "communities", searchKeyword, selectedCategoryParam ?? "", isWifiFilterActive.toString()]}
-              apiEndpoint="/communities"
-              size={12}
-              keyword={searchKeyword}
+          <InfiniteList
+            queryKey={["campusCurrent", "communities", debouncedKeyword, selectedCategoryParam ?? "", isWifiFilterActive.toString()]}
+            apiEndpoint="/communities"
+            size={12}
+            keyword={debouncedKeyword}
               additionalParams={{
                 community_category: selectedCategoryParam,
                 recruitment_status: isWifiFilterActive ? 'open' : null,
