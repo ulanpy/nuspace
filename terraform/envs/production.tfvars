@@ -33,6 +33,7 @@ push_auth_audience              = "https://nuspace.kz"
 # Service accounts (IDs)
 vm_account_id      = "nuspace-vm-sa"
 ansible_account_id = "nuspace-ansible-sa"
+signing_account_id = "nuspace-signing-sa"
 
 media_migration_region      = "europe-central2"
 
