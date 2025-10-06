@@ -10,15 +10,32 @@ import {
 
 export const campuscurrentAPI = {
   getCommunitiesQueryOptions: (params: { page?: number; size?: number; keyword?: string | null; category?: string | null; recruitment_status?: string | null } = {}) => {
+    const normalizedParams = {
+      page: params.page ?? 1,
+      size: params.size ?? 12,
+      keyword: params.keyword ?? null,
+      category: params.category ?? null,
+      recruitment_status: params.recruitment_status ?? null,
+    } as const;
+
     const queryParams = new URLSearchParams();
-    queryParams.set("page", String(params.page ?? 1));
-    queryParams.set("size", String(params.size ?? 12));
-    if (params.keyword) queryParams.set("keyword", String(params.keyword));
-    if (params.category) queryParams.set("community_category", String(params.category));
-    if (params.recruitment_status) queryParams.set("recruitment_status", String(params.recruitment_status));
+    queryParams.set("page", String(normalizedParams.page));
+    queryParams.set("size", String(normalizedParams.size));
+    if (normalizedParams.keyword) queryParams.set("keyword", String(normalizedParams.keyword));
+    if (normalizedParams.category) queryParams.set("community_category", String(normalizedParams.category));
+    if (normalizedParams.recruitment_status)
+      queryParams.set("recruitment_status", String(normalizedParams.recruitment_status));
 
     return {
-      queryKey: ["campusCurrent", "communities", params],
+      queryKey: [
+        "campusCurrent",
+        "communities",
+        normalizedParams.page,
+        normalizedParams.size,
+        normalizedParams.keyword ?? "",
+        normalizedParams.category ?? "",
+        normalizedParams.recruitment_status ?? "",
+      ] as const,
       queryFn: async () => {
         const res = await apiCall<any>(
           `/` + Routes.COMMUNITIES + `?` + queryParams.toString()

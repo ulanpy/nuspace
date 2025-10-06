@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Modal } from "@/components/atoms/modal";
 import { useCreateCommunity } from "@/features/campuscurrent/communities/hooks/useCreateCommunity";
 import { useUpdateCommunity } from "@/features/campuscurrent/communities/hooks/useUpdateCommunity";
@@ -305,7 +305,6 @@ export function CommunityModal({
           {/* Actions */}
           <CommunityActionsWrapper
             isProcessing={isProcessing}
-            showDeleteConfirm={showDeleteConfirm}
             onClose={onClose}
             onSubmit={handleSubmit}
             onDelete={handleDeleteClick}
@@ -319,13 +318,11 @@ export function CommunityModal({
 // Wrapper component to handle form context within CommunityActions
 function CommunityActionsWrapper({
   isProcessing,
-  showDeleteConfirm,
   onClose,
   onSubmit,
   onDelete,
 }: {
   isProcessing: boolean;
-  showDeleteConfirm: boolean;
   onClose: () => void;
   onSubmit: (
     formData: CreateCommunityData | EditCommunityData,
@@ -335,7 +332,13 @@ function CommunityActionsWrapper({
 }) {
   const formContext = useCommunityForm();
   const { formData, resetForm, validateForm } = formContext;
+  const [isFormValid, setIsFormValid] = useState<boolean>(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const validation = validateForm();
+    setIsFormValid(validation.isValid);
+  }, [formData, validateForm]);
 
   const handleSubmit = () => {
     const validation = validateForm();
@@ -353,9 +356,9 @@ function CommunityActionsWrapper({
   return (
     <CommunityActions
       isProcessing={isProcessing}
-      showDeleteConfirm={showDeleteConfirm}
-      onClose={onClose}
+      onCancel={onClose}
       onSubmit={handleSubmit}
+      isValid={isFormValid}
       onDelete={onDelete}
     />
   );

@@ -12,7 +12,7 @@ export const useSearchCommunities = (params?: { keyword?: string; size?: number 
       size,
       keyword: keyword || null,
       category: null,
-    }),
+    })
   );
 
   return {
