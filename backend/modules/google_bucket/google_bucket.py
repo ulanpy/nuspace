@@ -121,10 +121,11 @@ async def generate_upload_url(
             if signing_credentials is None or (
                 hasattr(signing_credentials, "expired") and signing_credentials.expired
             ):
-                from backend.modules.google_bucket.utils import get_signing_credentials
+                from backend.modules.google_bucket.utils import load_signing_credentials_from_info
 
-                signing_credentials = get_signing_credentials(config.VM_SERVICE_ACCOUNT_EMAIL)
-                # Update the cache with fresh credentials
+                signing_credentials = load_signing_credentials_from_info(
+                    config.SIGNING_SERVICE_ACCOUNT_INFO
+                )
                 request.app.state.signing_credentials = signing_credentials
 
             # Offload synchronous signing to a thread to avoid blocking the async event loop
