@@ -118,15 +118,6 @@ async def generate_upload_url(
         else:
             # Generate signed URL using impersonated credentials to avoid private key requirement
             signing_credentials = request.app.state.signing_credentials
-            if signing_credentials is None or (
-                hasattr(signing_credentials, "expired") and signing_credentials.expired
-            ):
-                from backend.modules.google_bucket.utils import load_signing_credentials_from_info
-
-                signing_credentials = load_signing_credentials_from_info(
-                    config.SIGNING_SERVICE_ACCOUNT_INFO
-                )
-                request.app.state.signing_credentials = signing_credentials
 
             # Offload synchronous signing to a thread to avoid blocking the async event loop
             import asyncio
