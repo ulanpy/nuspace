@@ -1,0 +1,3 @@
+bucket      = "nuspace-terraform-state"
+credentials = "./creds/staging.json"
+

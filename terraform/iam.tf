@@ -2,10 +2,23 @@
 
 # Create a service account for the VM with bucket access permissions
 resource "google_service_account" "vm_service_account" {
-  depends_on = [google_project_service.iam_api]
+  depends_on   = [google_project_service.iam_api]
   account_id   = var.vm_account_id
   display_name = "Nuspace VM Service Account"
   description  = "Service account for VM with bucket access and CORS management permissions"
+}
+
+resource "google_service_account" "signing_service_account" {
+  depends_on   = [google_project_service.iam_api]
+  account_id   = var.signing_account_id
+  display_name = "Nuspace Signing Service Account"
+  description  = "Dedicated service account for signing GCS URLs"
+}
+
+resource "google_project_iam_member" "signing_service_account_storage_object_admin" {
+  project = var.project_id
+  role    = "roles/storage.objectAdmin"
+  member  = "serviceAccount:${google_service_account.signing_service_account.email}"
 }
 
 # Grant the VM service account Storage Admin role for bucket management (CORS, policies, etc.)
@@ -149,4 +162,8 @@ resource "google_service_account_iam_member" "vm_sa_act_as_self" {
   service_account_id = google_service_account.vm_service_account.name
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${google_service_account.vm_service_account.email}"
+}
+
+resource "google_service_account_key" "signing_service_account_key" {
+  service_account_id = google_service_account.signing_service_account.name
 }

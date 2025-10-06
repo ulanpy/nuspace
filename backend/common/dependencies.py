@@ -10,7 +10,7 @@ from backend.modules.auth.utils import (
     get_mock_user_by_sub,  # dev-only helper
     set_kc_auth_cookies,
 )
-from backend.modules.google_bucket.utils import get_signing_credentials
+from backend.modules.google_bucket.utils import load_signing_credentials_from_info
 from fastapi import Cookie, Depends, HTTPException, Request, Response, status
 from jose import JWTError, jwt
 from sqlalchemy import select
@@ -27,11 +27,13 @@ async def get_infra(request: Request) -> Infra:
         if current_credentials is None or (
             hasattr(current_credentials, "expired") and current_credentials.expired
         ):
-            # Create fresh credentials and update global state
-            signing_credentials = get_signing_credentials(
-                request.app.state.config.VM_SERVICE_ACCOUNT_EMAIL
-            )
-            request.app.state.signing_credentials = signing_credentials
+            if config.SIGNING_SERVICE_ACCOUNT_INFO:
+                signing_credentials = load_signing_credentials_from_info(
+                    config.SIGNING_SERVICE_ACCOUNT_INFO
+                )
+                request.app.state.signing_credentials = signing_credentials
+            else:
+                signing_credentials = None
         else:
             signing_credentials = current_credentials
 

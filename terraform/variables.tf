@@ -87,6 +87,11 @@ variable "ansible_account_id" {
   type        = string
 }
 
+variable "signing_account_id" {
+  description = "Service account ID for signing GCS URLs"
+  type        = string
+}
+
 variable "topic_name" {
   description = "Topic name"
   type        = string

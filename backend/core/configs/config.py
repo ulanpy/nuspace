@@ -6,7 +6,6 @@ from typing import List
 
 import requests
 from dotenv import load_dotenv
-from google.oauth2 import service_account
 from pydantic_settings import BaseSettings
 
 ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
@@ -42,6 +41,7 @@ class Config(BaseSettings):
     PUSH_AUTH_SERVICE_ACCOUNT: str
     PUSH_AUTH_AUDIENCE: str
     VM_SERVICE_ACCOUNT_EMAIL: str
+    GCP_SIGNING_SERVICE_ACCOUNT_KEY_JSON: str | None = None
     ORIGINS: List[str] = ["*"]
     MOCK_KEYCLOAK: bool  # always set True in local dev
     USE_GCS_EMULATOR: bool  # keep True for local dev; For staging/prod .env will have it False
@@ -81,6 +81,12 @@ class Config(BaseSettings):
     @cached_property
     def COOKIE_APP_NAME(self) -> str:
         return self._COOKIE_APP_NAME if not self.IS_DEBUG else "app_token"
+
+    @cached_property
+    def SIGNING_SERVICE_ACCOUNT_INFO(self) -> dict | None:
+        if not self.GCP_SIGNING_SERVICE_ACCOUNT_KEY_JSON:
+            return None
+        return json.loads(self.GCP_SIGNING_SERVICE_ACCOUNT_KEY_JSON)
 
     @cached_property
     def HOME_URL(self) -> str:
