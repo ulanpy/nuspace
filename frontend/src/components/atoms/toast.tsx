@@ -8,7 +8,7 @@ export function Toasts() {
   const { toasts, dismissToast } = useToast();
 
   return (
-    <div className="fixed bottom-0 right-0 z-[11000] p-4 space-y-2 max-w-md w-full pointer-events-none">
+    <div className="fixed bottom-20 right-0 z-[11000] p-4 space-y-2 max-w-md w-full pointer-events-none">
       <AnimatePresence>
         {toasts.map((toast) => (
           <motion.div
@@ -19,13 +19,13 @@ export function Toasts() {
             className="pointer-events-auto"
           >
             <div
-              className={`rounded-md border p-4 shadow-md ${
+              className={`rounded-md border p-4 shadow-md backdrop-blur-sm ${
                 toast.variant === "destructive"
                   ? "bg-destructive text-destructive-foreground border-destructive/30"
                   : toast.variant === "success"
-                    ? "bg-green-50 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-900"
+                    ? "bg-green-50 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-400 dark:border-green-900"
                     : toast.variant === "warning"
-                      ? "bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-900"
+                      ? "bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-400 dark:border-yellow-900"
                       : "bg-background text-foreground"
               }`}
             >

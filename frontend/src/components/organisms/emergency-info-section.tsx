@@ -18,6 +18,8 @@ import {
   MessageCircle,
   FileText,
 } from "lucide-react";
+import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
+import { useToast } from "@/hooks/use-toast";
 
 type ContactType = "phone" | "email" | "web" | "location" | "hours";
 
@@ -25,6 +27,7 @@ interface ContactInfo {
   type: ContactType;
   label?: string;
   value: string;
+  extraInfo?: string;
 }
 
 interface ServiceItem {
@@ -176,44 +179,51 @@ const SERVICES: ServiceItem[] = [
     contacts: [
       {
         type: "phone",
-        label: "Blocks 11-19 - Amina Amangeldinova",
+        label: "Amina Amangeldinova",
         value: "+7 (7172) 70-58-34",
+        extraInfo: "Blocks 11-19 (D1-D3)",
       },
-
       {
         type: "phone",
-        label: "Block 20 - Nailya Bulekpayeva",
+        label: "Nailya Bulekpayeva",
         value: "+7 (7172) 70-64-10",
+        extraInfo: "Block 20 (D4)",
       },
       {
         type: "phone",
-        label: "Block 22 - Gulmira Yerkeblankyzy",
+        label: "Gulmira Yerkeblankyzy",
         value: "+7 (7172) 69-49-08",
+        extraInfo: "Block 22 (D5)",
       },
       {
         type: "phone",
-        label: "Block 23 - Zhanna Kopeyeva",
+        label: "Zhanna Kopeyeva",
         value: "+7 (7172) 70-66-51",
+        extraInfo: "Block 23 (D6)",
       },
       {
         type: "phone",
-        label: "Block 24 - Irina Temchenko",
+        label: "Irina Temchenko",
         value: "+7 (7172) 69-26-55",
+        extraInfo: "Block 24 (D7)",
       },
       {
         type: "phone",
-        label: "Block 25 - Sandugash Turlybayeva",
+        label: "Sandugash Turlybayeva",
         value: "+7 (7172) 70-65-71",
+        extraInfo: "Block 25 (D8)",
       },
       {
         type: "phone",
-        label: "Block 26 - Salidat Baidauletova",
+        label: "Salidat Baidauletova",
         value: "+7 (7172) 70-64-61",
+        extraInfo: "Block 26 (D9)",
       },
       {
         type: "phone",
-        label: "Block 27 - Dina Kast",
+        label: "Dina Kast",
         value: "+7 (7172) 69-46-73",
+        extraInfo: "Block 27 (D10)",
       }
     ],
     icon: <Building2 className="h-5 w-5" />,
@@ -248,6 +258,9 @@ function contactToHref(type: ContactType, value: string): string | undefined {
 }
 
 function ContactChip({ info }: { info: ContactInfo }) {
+  const { isMiniApp } = useTelegramMiniApp();
+  const { toast } = useToast();
+
   const icon = {
     phone: <Phone className="h-4 w-4" />,
     email: <Mail className="h-4 w-4" />,
@@ -266,12 +279,7 @@ function ContactChip({ info }: { info: ContactInfo }) {
   const isDesktop = typeof window !== 'undefined' && window.innerWidth > 768;
   
   const labelText = info.label || info.type;
-  const displayText =
-    info.type === "phone" && isDesktop
-      ? info.label
-        ? `${info.label}: ${info.value}`
-        : info.value
-      : labelText;
+  const displayText = info.type === "phone" ? `${labelText} (${info.value})` : labelText;
 
   const textClasses =
     info.type === "phone" && isDesktop
@@ -279,17 +287,82 @@ function ContactChip({ info }: { info: ContactInfo }) {
       : "truncate";
 
   const content = (
-    <span className="inline-flex items-start gap-1.5 text-xs">
+    <span className="inline-flex items-start gap-1.5 text-xs text-left">
       {icon}
       <span className={textClasses}>{displayText}</span>
     </span>
   );
 
   // For phone numbers on desktop, show as plain text
-  if (info.type === "phone" && isDesktop) {
+  const handleClick = async (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
+    if (info.type === "phone") {
+      e.preventDefault();
+      try {
+        await navigator.clipboard.writeText(info.value);
+        toast({
+          title: "Number copied",
+          description: `${info.value} copied to clipboard`,
+          variant: "success",
+          duration: 2000,
+        });
+      } catch {
+        toast({
+          title: "Copy failed",
+          description: "Couldn't copy number. Please copy manually.",
+          variant: "error",
+          duration: 2500,
+        });
+      }
+      return;
+    }
+
+    // Handle email clicks in MiniApp - copy to clipboard instead of mailto
+    if (info.type === "email" && isMiniApp) {
+      e.preventDefault();
+      try {
+        await navigator.clipboard.writeText(info.value);
+        toast({
+          title: "Email copied",
+          description: `${info.value} copied to clipboard`,
+          variant: "success",
+          duration: 2000,
+        });
+      } catch {
+        toast({
+          title: "Copy failed",
+          description: "Couldn't copy email. Please copy manually.",
+          variant: "error",
+          duration: 2500,
+        });
+      }
+      return;
+    }
+
+    if (!href || info.type === "hours") {
+      e.preventDefault();
+      if (info.type === "hours") {
+        toast({
+          title: info.label || "Hours",
+          description: info.value,
+          duration: 2000,
+        });
+      }
+    }
+  };
+
+  if (info.type === "phone") {
     return (
-      <div className="px-2 py-1 rounded-md bg-muted text-foreground/90 border border-border/50">
-        {content}
+      <div className="flex flex-col gap-1">
+        {info.extraInfo && (
+          <div className="text-xs text-muted-foreground">{info.extraInfo}</div>
+        )}
+        <button
+          type="button"
+          onClick={handleClick}
+          className="px-2 py-1 rounded-md bg-muted hover:bg-muted/80 text-foreground/90 border border-border/50 transition-colors"
+        >
+          {content}
+        </button>
       </div>
     );
   }
@@ -307,6 +380,7 @@ function ContactChip({ info }: { info: ContactInfo }) {
       href={href}
       target={info.type === "web" ? "_blank" : undefined}
       rel={info.type === "web" ? "noopener noreferrer" : undefined}
+      onClick={handleClick}
       className="px-2 py-1 rounded-md bg-muted hover:bg-muted/80 text-foreground/90 border border-border/50 transition-colors"
     >
       {content}
