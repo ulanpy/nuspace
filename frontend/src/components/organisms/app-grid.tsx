@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingBag, Calendar, Coffee, BookOpen, Users, ShieldQuestion } from "lucide-react";
+import { ShoppingBag, Calendar, BookOpen, Users, ShieldAlert } from "lucide-react";
 import { AppButton } from "../molecules/buttons/app-button";
 import { ROUTES } from "@/data/routes";
 
@@ -52,25 +52,15 @@ export function AppGrid() {
       iconColor: "text-blue-500",
       delay: 0.35,
     },
-    
-    // {
-    //   icon: <ShieldAlert className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
-    //   title: "Emergency",
-    //   href: ROUTES.APPS.EMERGENCY.ROOT,
-    //   gradient:
-    //     "radial-gradient(circle, rgba(244,63,94,0.3) 0%, rgba(225,29,72,0.15) 50%, rgba(190,24,60,0) 100%)",
-    //   iconColor: "text-rose-500",
-    //   delay: 0.35,
-    // },
-    // {
-    //   icon: <ShieldQuestion className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
-    //   title: "SGotinish",
-    //   href: ROUTES.APPS.SGOTINISH.ROOT,
-    //   gradient:
-    //     "radial-gradient(circle, rgba(197, 194, 34, 0.3) 0%, rgba(163, 163, 22, 0.15) 50%, rgba(126, 128, 21, 0) 100%)",
-    //   iconColor: "text-green-500",
-    //   delay: 0.5,
-    // },
+    {
+      icon: <ShieldAlert className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
+      title: "Emergency",
+      href: ROUTES.APPS.EMERGENCY.ROOT,
+      gradient:
+        "radial-gradient(circle, rgba(244,63,94,0.3) 0%, rgba(225,29,72,0.15) 50%, rgba(190,24,60,0) 100%)",
+      iconColor: "text-rose-500",
+      delay: 0.45,
+    },
   ];
 
   return (
