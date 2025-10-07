@@ -10,7 +10,7 @@ import { ChannelButton } from "@/components/molecules/buttons/channel-button";
 import { TelegramStatus } from "@/components/molecules/telegram-status";
 import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
 import welcomeNuSpace from "@/assets/images/welcome-nu-space.jpg";
-import miniapp from "@/assets/images/miniapp.webp";
+import miniapp from "@/assets/images/miniapp-resized.webp";
 import { FlaskConical } from "lucide-react";
 import { FaTelegram } from "react-icons/fa";
 import { Link as LinkIcon } from "lucide-react";
