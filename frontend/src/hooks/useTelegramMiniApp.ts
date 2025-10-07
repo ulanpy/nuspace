@@ -1,3 +1,17 @@
+    const markNotMiniApp = (reason: string) => {
+      markMiniAppReady(reason, false);
+      try {
+        const g = window as any;
+        g.__tgInit = {
+          isMiniApp: false,
+          isReady: true,
+          platform: "web",
+          startParam: null,
+        };
+        window.dispatchEvent(new CustomEvent('tgMiniAppReady', { detail: g.__tgInit }));
+      } catch {}
+    };
+
 /*
   Minimal Telegram Mini App detector and initializer.
   - Detects the presence of window.Telegram.WebApp
@@ -126,7 +140,7 @@ export function useTelegramMiniApp() {
       }
     };
 
-    const markMiniAppReady = (reason: string) => {
+    const markMiniAppReady = (reason: string, miniAppState?: boolean) => {
       const wasReady = readyRef.current;
       readyRef.current = true;
       ensureFallbackCleared();
@@ -136,8 +150,25 @@ export function useTelegramMiniApp() {
           payloadOffset: payloadOffsetRef.current,
         });
       }
-      setIsMiniApp((prev) => (prev ? prev : true));
+      setIsMiniApp((prev) => {
+        if (typeof miniAppState === "boolean") return miniAppState;
+        return prev ? prev : true;
+      });
       setIsReady((prev) => (prev ? prev : true));
+    };
+
+    const markNotMiniApp = (reason: string) => {
+      markMiniAppReady(reason, false);
+      try {
+        const g = window as any;
+        g.__tgInit = {
+          isMiniApp: false,
+          isReady: true,
+          platform: "web",
+          startParam: null,
+        };
+        window.dispatchEvent(new CustomEvent('tgMiniAppReady', { detail: g.__tgInit }));
+      } catch {}
     };
 
     const updateHeaderOffset = (tg: any, context: string, payload?: any) => {
@@ -314,6 +345,12 @@ export function useTelegramMiniApp() {
       
       const tg = window?.Telegram?.WebApp;
       if (!tg) {
+        if (!retryTimeout) {
+          fallbackTimeoutRef.current = setTimeout(() => {
+            console.warn('[MiniApp] Initialization timeout, falling back to regular mode');
+            markNotMiniApp('timeout-fallback-before-object');
+          }, 2500);
+        }
         console.log('Telegram WebApp not available, retrying...');
         // Retry if Telegram object not available yet (especially important for Android)
         retryTimeout = setTimeout(initTelegram, isAndroid ? 1000 : 500);
@@ -503,9 +540,7 @@ export function useTelegramMiniApp() {
         } catch (error) {
           console.error('Telegram initialization failed:', error);
           // Fallback: treat as regular web app
-          setIsMiniApp((prev) => (prev ? prev : false));
-          setIsReady(true);
-          markMiniAppReady('init-failed');
+        markNotMiniApp('init-failed');
           try {
             const g = window as any;
             if (!g.__tgInit?.isMiniApp) {
@@ -522,9 +557,7 @@ export function useTelegramMiniApp() {
       } else {
         // Not a real Mini App environment
         console.log('Not a real Mini App environment, treating as regular browser');
-        setIsMiniApp((prev) => (prev ? prev : false));
-        setIsReady(true);
-        markMiniAppReady('not-real-mini-app');
+        markNotMiniApp('not-real-mini-app');
         try {
           const g = window as any;
           g.__tgInit = {
@@ -593,9 +626,7 @@ export function useTelegramMiniApp() {
           isReady,
           readyRefCurrent: readyRef.current,
         });
-        setIsMiniApp((prev) => (prev ? prev : false));
-        setIsReady(true);
-        markMiniAppReady('timeout-fallback');
+        markNotMiniApp('timeout-fallback');
         document.documentElement.classList.remove("tg-miniapp");
         document.documentElement.style.removeProperty("--tg-header-offset");
         document.documentElement.dataset.tgHeaderOffset = "0";
