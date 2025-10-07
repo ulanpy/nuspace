@@ -15,6 +15,8 @@ import {
   Building2,
   Wrench,
   Users2,
+  MessageCircle,
+  FileText,
 } from "lucide-react";
 
 type ContactType = "phone" | "email" | "web" | "location" | "hours";
@@ -58,8 +60,7 @@ const SERVICES: ServiceItem[] = [
     description:
       "Confidential psychological support and counseling coordination through PCS.",
     contacts: [
-      { type: "phone", label: "Telegram hotline", value: "+7 (775) 759-38-44" },
-      { type: "web", label: "@pcs_nu", value: "https://t.me/pcs_nu" },
+      { type: "web", label: "Telegram @pcs_nu", value: "https://t.me/pcs_nu" },
     ],
     icon: <LifeBuoy className="h-5 w-5" />,
     accent: "from-sky-500/20",
@@ -250,7 +251,11 @@ function ContactChip({ info }: { info: ContactInfo }) {
   const icon = {
     phone: <Phone className="h-4 w-4" />,
     email: <Mail className="h-4 w-4" />,
-    web: <Globe className="h-4 w-4" />,
+    web: info.value.includes("t.me") 
+      ? <MessageCircle className="h-4 w-4" /> 
+      : info.value.includes("docs.google.com/forms") 
+        ? <FileText className="h-4 w-4" />
+        : <Globe className="h-4 w-4" />,
     location: <MapPin className="h-4 w-4" />,
     hours: <Clock className="h-4 w-4" />,
   }[info.type];
