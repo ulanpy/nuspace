@@ -17,6 +17,8 @@ RUN npm install
 # Copy the rest of the project files
 COPY frontend .
 
+RUN npm run build
+
 # Script to resolve quick tunnel URL from cloudflared metrics and export for Vite
 RUN printf '%s\n' '#!/bin/sh' \
   'set -e' \
@@ -30,7 +32,7 @@ RUN printf '%s\n' '#!/bin/sh' \
   'if [ -z "$URL" ]; then URL="http://localhost:5173"; fi' \
   'export CLOUDFLARED_TUNNEL_URL="$URL"' \
   'echo "Using CLOUDFLARED_TUNNEL_URL=$CLOUDFLARED_TUNNEL_URL"' \
-  'exec npm run dev -- --host' > /usr/local/bin/start-frontend.sh \
+  'exec npm run preview -- --host' > /usr/local/bin/start-frontend.sh \
   && chmod +x /usr/local/bin/start-frontend.sh
 
 # Start the Vite development server
