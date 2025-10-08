@@ -21,7 +21,7 @@ def setup_middlewares(
     middlewares = [
         DatabaseMiddleware(db_manager),
         RedisMiddleware(redis),
-        UrlMiddleware(url),
+        UrlMiddleware("https://t.me/NUspaceBot/app"),
         I18N(),
         BucketClientMiddleware(storage_client),
     ]
