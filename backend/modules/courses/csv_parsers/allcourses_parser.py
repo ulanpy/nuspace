@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from backend.core.database.manager import AsyncDatabaseManager
-from backend.core.database.models.grade_report import Course, LevelType, SchoolType
+from backend.core.database.models.grade_report import Course
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,8 @@ def _convert_to_enum(enum_cls: Any, value: str) -> Any:
 
 
 def csv_row_to_course(row: Dict[str, str]) -> Course:
-    school = _convert_to_enum(SchoolType, row.get("School", ""))
-    level = _convert_to_enum(LevelType, row.get("Level", ""))
+    school = row.get("School", "")
+    level = row.get("Level", "UG")
     course_code = (row.get("Course Abbr", "") or "").strip()
     section = (row.get("S/T", "") or "").strip() or None
     faculty = (row.get("Faculty", "") or "").strip() or None

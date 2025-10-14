@@ -16,7 +16,7 @@ import {
   getGPAColorClass,
 } from "../utils/gradeUtils";
 import { RegisteredCourseItem } from "./RegisteredCourseItem";
-import { BookOpen, Info, Plus, Trash2, Share2, UsersRound, CircleSlash2 } from "lucide-react";
+import { BookOpen, Info, Plus, Trash2, Share2, UsersRound, CircleSlash2, HelpCircle } from "lucide-react";
 
 interface RegisteredCourseCardProps {
   registeredCourse: RegisteredCourse;
@@ -43,22 +43,13 @@ export function RegisteredCourseCard({
 }: RegisteredCourseCardProps) {
   const [showAssignments, setShowAssignments] = useState(false);
   const [showClassAverageModal, setShowClassAverageModal] = useState(false);
+  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const { course } = registeredCourse;
   const courseScore = calculateCourseScore(registeredCourse.items);
   const courseGPA = calculateCourseGPA(registeredCourse.items);
   const courseGrade = scoreToGrade(courseScore);
   const credits = course.credits || 0;
-  const courseDetails = [
-    course.section ? `Section ${course.section}` : null,
-    course.term,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
-  const facultyList = (course.faculty || "")
-    .split(/[;,|&\/]+/g)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const courseDetails = [course.term].filter(Boolean).join(" · ");
 
   const maxPossibleScore = calculateMaxPossibleCourseScore(registeredCourse.items);
   const scoredItems = registeredCourse.items.filter(hasCompleteScore);
@@ -97,9 +88,10 @@ export function RegisteredCourseCard({
     { key: "projected", label: "Projected" },
   ];
 
-  const infoLine = [courseDetails, facultyList.join(" · ")]
-    .filter(Boolean)
-    .join(" • ");
+  const infoLineParts = [courseDetails];
+  if (course.department) infoLineParts.push(course.department);
+  if (course.level) infoLineParts.push(course.level);
+  const infoLine = infoLineParts.filter(Boolean).join(" • ");
 
   return (
     <Card
@@ -135,15 +127,21 @@ export function RegisteredCourseCard({
             <CardTitle className="text-base font-semibold leading-tight text-foreground">
               {course.course_code}
             </CardTitle>
+            {course.description && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                onClick={() => setShowDescriptionModal(true)}
+                aria-label="Course description"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </Button>
+            )}
             <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
               {course.school && (
                 <Badge variant="outline" className="rounded-full border-border/60 bg-transparent">
                   {course.school}
-                </Badge>
-              )}
-              {course.level && (
-                <Badge variant="secondary" className="rounded-full">
-                  {course.level}
                 </Badge>
               )}
               <Badge variant="outline" className="rounded-full border-border/60 bg-transparent">
@@ -151,9 +149,9 @@ export function RegisteredCourseCard({
               </Badge>
             </div>
           </div>
-          {course.course_title && (
+          {course.title && (
             <p className="text-sm text-muted-foreground line-clamp-2 leading-tight">
-              {course.course_title}
+              {course.title}
             </p>
           )}
           {infoLine && (
@@ -163,7 +161,7 @@ export function RegisteredCourseCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-nowrap items-center gap-2 overflow-x-auto pb-2">
           {onAddItem && (
             <Button
               variant="outline"
@@ -305,7 +303,7 @@ export function RegisteredCourseCard({
             <p className="text-3xl font-semibold text-foreground">
               {registeredCourse.class_average?.toFixed(1)}%
             </p>
-            <p className="text-sm text-muted-foreground">Average score across the class</p>
+            <p className="text-sm text-muted-foreground">Average score across the class. Missing scores are excluded from the average.</p>
           </div>
           <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Keep perspective</p>
@@ -315,6 +313,21 @@ export function RegisteredCourseCard({
           </div>
         </div>
       </Modal>
+
+      {course.description && (
+        <Modal
+          isOpen={showDescriptionModal}
+          onClose={() => setShowDescriptionModal(false)}
+          title="Course description"
+          className="max-w-lg"
+        >
+          <div className="space-y-2">
+            <p className="text-sm leading-6 text-muted-foreground whitespace-pre-line">
+              {course.description}
+            </p>
+          </div>
+        </Modal>
+      )}
     </Card>
   );
 }

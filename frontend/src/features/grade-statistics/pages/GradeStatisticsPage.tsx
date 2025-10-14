@@ -668,13 +668,10 @@ export default function GradeStatisticsPage() {
                             <div key={course.id} className="flex items-start gap-3 rounded-xl border border-border/40 bg-background/90 p-3">
                               <div className="flex-1 space-y-1 text-sm">
                                 <p className="font-medium text-foreground">
-                                  {course.course_code} {course.section ? `(${course.section})` : ''}
+                                  {course.course_code}
                                 </p>
-                                {course.course_title && (
-                                  <p className="text-muted-foreground">{course.course_title}</p>
-                                )}
                                 <p className="text-xs text-muted-foreground">
-                                  {course.faculty} · {course.credits} credits · {course.term}
+                                  {[course.title, course.department, course.term].filter(Boolean).join(' · ')}
                                 </p>
                               </div>
                               <Button
@@ -937,9 +934,9 @@ export default function GradeStatisticsPage() {
                         {sharingCourse.course.course_code}
                         {sharingCourse.course.section ? ` · ${sharingCourse.course.section}` : ""}
                       </h3>
-                      {sharingCourse.course.course_title && (
+                      {sharingCourse.course.title && (
                         <p className="text-sm text-muted-foreground">
-                          {sharingCourse.course.course_title}
+                          {sharingCourse.course.title}
                         </p>
                       )}
                     </div>
@@ -1031,7 +1028,7 @@ export default function GradeStatisticsPage() {
                     {templateDrawerCourse && (
                       <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm">
                         <div className="font-semibold text-foreground">
-                          {templateDrawerCourse.course.course_title || templateDrawerCourse.course.course_code}
+                    {templateDrawerCourse.course.title || templateDrawerCourse.course.course_code}
                         </div>
                         <div className="mt-2 grid grid-cols-2 gap-3 text-center text-xs text-muted-foreground">
                           <div className="rounded-xl border border-border/40 bg-background/60 p-3">
