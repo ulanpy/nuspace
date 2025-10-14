@@ -452,6 +452,20 @@ def upgrade() -> None:
     op.drop_index(op.f('ix_course_templates_new_course_id'), table_name='course_templates')
     op.alter_column('course_templates', 'new_course_id', new_column_name='course_id')
     op.alter_column('course_templates', 'course_id', existing_type=sa.Integer(), nullable=False)
+
+    bind.execute(sa.text(
+        """
+        WITH ranked AS (
+            SELECT id,
+                   ROW_NUMBER() OVER (PARTITION BY course_id, student_sub ORDER BY id) AS rn
+            FROM course_templates
+            WHERE course_id IS NOT NULL
+        )
+        DELETE FROM course_templates
+        WHERE id IN (SELECT id FROM ranked WHERE rn > 1)
+        """
+    ))
+
     op.create_index(op.f('ix_course_templates_course_id'), 'course_templates', ['course_id'], unique=False)
     op.create_unique_constraint(
         op.f('uq_course_templates_course_student'),
