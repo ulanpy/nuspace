@@ -12,6 +12,7 @@ from .campuscurrent.posts import posts
 from .campuscurrent.profile import profile
 from .campuscurrent.tags import tags
 from .google_bucket import google_bucket
+from .courses.crashed import crashed
 from .courses.student_courses import student_courses
 from .courses.statistics import statistics
 from .courses.templates import templates
@@ -38,6 +39,7 @@ routers: List[APIRouter] = [
     web_router,
     review.router,
     reply.router,
+    crashed.router,
     student_courses.router,
     statistics.router,
     templates.router,

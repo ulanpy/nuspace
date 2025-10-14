@@ -56,15 +56,22 @@ class StudentCourseService:
                     case(
                         (
                             func.coalesce(CourseItem.max_score, 0) != 0,
-                            (CourseItem.obtained_score / func.nullif(CourseItem.max_score, 0))
-                            * CourseItem.total_weight_pct,
+                            func.coalesce(CourseItem.obtained_score, 0)
+                            / func.nullif(CourseItem.max_score, 0)
+                            * func.coalesce(CourseItem.total_weight_pct, 0),
                         ),
                         else_=0,
                     )
                 ).label("student_total_score"),
             )
             .join(CourseItem, StudentCourse.id == CourseItem.student_course_id)
-            .where(StudentCourse.course_id.in_(course_ids))
+            .where(
+                StudentCourse.course_id.in_(course_ids),
+                CourseItem.obtained_score.is_not(None),
+                CourseItem.max_score.is_not(None),
+                CourseItem.total_weight_pct.is_not(None),
+                CourseItem.max_score != 0,
+            )
             .group_by(StudentCourse.course_id, StudentCourse.id)
             .subquery()
         )

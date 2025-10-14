@@ -235,15 +235,11 @@ class EventService:
     async def get_events(
         self, user: tuple[dict, dict], event_filter: schemas.EventFilter, infra: Infra
     ) -> schemas.ListEventResponse:
-        overall_start = time.perf_counter()
-        segment_start = overall_start
-        print("[EventService.get_events] start")
         creator_sub = (
             user[0].get("sub") if event_filter.creator_sub == "me" else event_filter.creator_sub
         )
 
         if event_filter.keyword:
-            print("[EventService.get_events] executing Meilisearch query")
             meili_result: dict = await meilisearch.get(
                 client=infra.meilisearch_client,
                 storage_name=EntityType.community_events.value,
@@ -252,18 +248,10 @@ class EventService:
                 size=event_filter.size,
                 filters=None,
             )
-            after_meili = time.perf_counter()
-            print(
-                f"[EventService.get_events] Meilisearch query took {after_meili - segment_start:.3f}s"
-            )
-            segment_start = after_meili
+
             event_ids: List[int] = [item["id"] for item in meili_result["hits"]]
 
             if not event_ids:
-                total_elapsed = time.perf_counter() - overall_start
-                print(
-                    f"[EventService.get_events] early return (no hits). elapsed {total_elapsed:.3f}s"
-                )
                 return schemas.ListEventResponse(events=[], total_pages=1)
 
         filters = []
@@ -294,7 +282,6 @@ class EventService:
 
         qb = QueryBuilder(session=self.db_session, model=Event)
 
-        print("[EventService.get_events] executing DB query")
         events: List[Event] = (
             await qb.base()
             .filter(*filters)
@@ -306,31 +293,15 @@ class EventService:
             .order(Event.start_datetime.asc())
             .all()
         )
-        after_db = time.perf_counter()
-        print(f"[EventService.get_events] DB query took {after_db - segment_start:.3f}s")
-        segment_start = after_db
 
         event_responses: List[schemas.EventResponse] = await self._build_event_responses(
             events, infra, user
         )
-        after_build = time.perf_counter()
-        print(
-            f"[EventService.get_events] build_event_responses took {after_build - segment_start:.3f}s"
-        )
-        segment_start = after_build
 
         if event_filter.keyword:
             count = meili_result.get("estimatedTotalHits", 0)
         else:
-            print("[EventService.get_events] executing count query")
             count: int = await qb.blank(model=Event).base(count=True).filter(*filters).count()
-            after_count = time.perf_counter()
-            print(
-                f"[EventService.get_events] count query took {after_count - segment_start:.3f}s"
-            )
-            segment_start = after_count
 
         total_pages: int = response_builder.calculate_pages(count=count, size=event_filter.size)
-        total_elapsed = time.perf_counter() - overall_start
-        print(f"[EventService.get_events] total elapsed {total_elapsed:.3f}s")
         return schemas.ListEventResponse(events=event_responses, total_pages=total_pages)

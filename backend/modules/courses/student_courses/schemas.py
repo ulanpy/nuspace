@@ -2,20 +2,24 @@ from datetime import datetime
 from typing import List
 
 from fastapi import Query
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
-from backend.core.database.models.grade_report import LevelType, SchoolType
 
 
 class BaseCourseSchema(BaseModel):
     id: int
-    school: SchoolType
-    level: LevelType
+    registrar_id: int
     course_code: str
-    section: str
-    credits: int
-    term: str
-    faculty: str
+    pre_req: str | None
+    anti_req: str | None
+    co_req: str | None
+    level: str
+    school: str
+    description: str | None
+    department: str | None
+    title: str | None
+    credits: int | None
+    term: str | None
     created_at: datetime
     updated_at: datetime
 

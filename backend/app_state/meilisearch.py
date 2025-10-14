@@ -99,7 +99,7 @@ async def setup_meilisearch(app: FastAPI):
         ),
         MeilisearchIndexConfig(
             model=Course,
-            searchable_columns=[Course.course_code, Course.faculty, Course.term],
+            searchable_columns=[Course.course_code, Course.term],
             filterable_attributes=[Course.term],
             primary_key=Course.id,  # Explicitly specify primary key
         )

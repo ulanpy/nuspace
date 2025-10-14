@@ -46,13 +46,18 @@ export interface GradeDistribution {
 // ==== Live GPA / Courses types ====
 export interface BaseCourse {
   id: number;
-  school: string; // Backend returns enum string
-  level: string; // Backend returns enum string
+  registrar_id: number;
   course_code: string;
-  section: string | null;
+  pre_req: string | null;
+  anti_req: string | null;
+  co_req: string | null;
+  level: string;
+  school: string;
+  description: string | null;
+  department: string | null;
+  title: string | null;
   credits: number | null;
   term: string | null;
-  faculty: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -192,4 +197,3 @@ export interface TemplateImportResponse {
   student_course_id: number;
   items: BaseCourseItem[];
 }
-

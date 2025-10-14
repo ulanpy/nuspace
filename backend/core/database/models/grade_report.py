@@ -1,30 +1,9 @@
 from datetime import datetime
-from enum import Enum as PyEnum
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String
-from sqlalchemy import UniqueConstraint
-from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
-
-
-class LevelType(PyEnum):
-    GrM = "GrM"
-    ND = "ND"
-    PhD = "PhD"
-    UG = "UG"
-
-
-class SchoolType(PyEnum):
-    GSB = "GSB"
-    GSE = "GSE"
-    GSPP = "GSPP"
-    SEDS = "SEDS"
-    SMG = "SMG"
-    SoM = "SoM"
-    SSH = "SSH"
-    Other = "Other"
 
 
 class GradeReport(Base):
@@ -61,16 +40,21 @@ class GradeReport(Base):
 class Course(Base):
     __tablename__ = "courses"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    school: Mapped[SchoolType] = mapped_column(
-        SQLEnum(SchoolType, name="school_type"), nullable=False, index=True
-    )
-    level: Mapped[LevelType] = mapped_column(
-        SQLEnum(LevelType, name="level_type"), nullable=False, index=True
-    )
+    id: Mapped[int] = mapped_column(primary_key=True)
+    registrar_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     course_code: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
-    section: Mapped[str] = mapped_column(String(64), nullable=True)
-    faculty: Mapped[str] = mapped_column(String(512), nullable=True, index=True)
+    pre_req: Mapped[str] = mapped_column(String(2048), nullable=True)
+    anti_req: Mapped[str] = mapped_column(String(2048), nullable=True)
+    co_req: Mapped[str] = mapped_column(String(2048), nullable=True)
+    level: Mapped[str] = mapped_column(
+        String(128), nullable=False, index=True
+    )
+    school: Mapped[str] = mapped_column(
+        String(128), nullable=False, index=True
+    )
+    description: Mapped[str] = mapped_column(String(4096), nullable=True)
+    department: Mapped[str] = mapped_column(String(512), nullable=True)
+    title: Mapped[str] = mapped_column(String(512), nullable=True)
     credits: Mapped[int] = mapped_column(Integer, nullable=True)
     term: Mapped[str] = mapped_column(String(32), nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -153,9 +137,7 @@ class CourseTemplate(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    __table_args__ = (
-        UniqueConstraint("course_id", "student_sub", name="uq_course_templates_course_student"),
-    )
+    
 
     # ORM relationships
     course = relationship("Course", back_populates="templates")
@@ -166,6 +148,7 @@ class CourseTemplate(Base):
         passive_deletes=True,
     )
     student = relationship("User", back_populates="templates")
+
 
 class TemplateItem(Base):
     __tablename__ = "template_items"
