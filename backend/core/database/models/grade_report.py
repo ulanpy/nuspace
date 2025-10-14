@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -67,6 +67,9 @@ class Course(Base):
 
 class StudentCourse(Base):
     __tablename__ = "student_courses"
+    __table_args__ = (
+        UniqueConstraint("student_sub", "course_id", name="uq_student_courses_student_course_unique"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     student_sub: Mapped[str] = mapped_column(
@@ -123,6 +126,9 @@ class CourseItem(Base):
 
 class CourseTemplate(Base):
     __tablename__ = "course_templates"
+    __table_args__ = (
+        UniqueConstraint("course_id", "student_sub", name="uq_course_templates_course_student"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
