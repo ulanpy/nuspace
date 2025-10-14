@@ -189,6 +189,29 @@ jobs:
           echo "::add-mask::$DOCKER_PASSWORD"
           echo "DOCKER_PASSWORD=$DOCKER_PASSWORD" >> $GITHUB_OUTPUT
 
+      - name: Configure persistent OS Login SSH key
+        env:
+          PRIVATE_KEY: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY }}
+          PUBLIC_KEY: ${{ secrets.ANSIBLE_SSH_PUBLIC_KEY }}
+          GCP_PROJECT: ${{ env.GCP_PROJECT }}
+        run: |
+          if [ -z "$PRIVATE_KEY" ] || [ -z "$PUBLIC_KEY" ]; then
+            echo "Missing ANSIBLE_SSH_PRIVATE_KEY or ANSIBLE_SSH_PUBLIC_KEY secrets" >&2
+            exit 1
+          fi
+
+          mkdir -p ~/.ssh
+          umask 077
+          printf '%s\n' "$PRIVATE_KEY" > ~/.ssh/google_compute_engine
+          printf '%s\n' "$PUBLIC_KEY" > ~/.ssh/google_compute_engine.pub
+          chmod 600 ~/.ssh/google_compute_engine
+          chmod 644 ~/.ssh/google_compute_engine.pub
+
+          gcloud compute os-login ssh-keys add \
+            --project "$GCP_PROJECT" \
+            --key-file ~/.ssh/google_compute_engine.pub \
+            --ttl=12h
+
       - name: Check if containers are running on VM
         id: container_check
         run: |
