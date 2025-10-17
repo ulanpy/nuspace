@@ -198,8 +198,31 @@ export interface TemplateImportResponse {
   items: BaseCourseItem[];
 }
 
+export interface TemplateListItem {
+  template: TemplateCourseInfo;
+  student: TemplateStudentInfo;
+  template_items: TemplateItem[];
+}
+
+export interface TemplateListResponse {
+  templates: TemplateListItem[];
+  total_pages: number;
+}
+
 // ==== Semester types ====
 export interface SemesterOption {
   label: string;
   value: string;
+}
+
+export interface RegisteredCourseResponse extends RegisteredCourse {
+  class_average: number | null;
+}
+
+export interface RegistrarSyncResponse {
+  synced_courses: RegisteredCourse[];
+  total_synced: number;
+  added_count: number;
+  deleted_count: number;
+  kept_count: number;
 }

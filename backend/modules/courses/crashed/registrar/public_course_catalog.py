@@ -109,7 +109,7 @@ class PublicCourseCatalogClient:
 
     async def search(
         self,
-        query: str | None,
+        course_code: str | None,
         term: str,
         level: str | None = None,
         page: int = 1,
@@ -120,7 +120,7 @@ class PublicCourseCatalogClient:
             "searchParams[limit]": self._limit,
             "searchParams[page]": page,
             "searchParams[start]": 0,
-            "searchParams[quickSearch]": query if query else "",
+            "searchParams[quickSearch]": course_code if course_code else "",
             "searchParams[sortField]": -1,
             "searchParams[sortDescending]": -1,
             "searchParams[semester]": term if term else "",
@@ -170,26 +170,6 @@ class PublicCourseCatalogClient:
         if has_next_page:
             payload["cursor"] = page + 1
         return payload
-
-    async def get_course(self, course_id: str) -> Dict[str, Any]:
-        data = await self._request(
-            "getCourseDescription",
-            params={"courseid": course_id},
-        )
-        return {
-            "registrar_id": data.get("COURSEID", ""),
-            "course_code": data.get("ABBR", ""),
-            "pre_req": data.get("PREREQ", ""),
-            "anti_req": data.get("ANTIREQ", ""),
-            "co_req": data.get("COREQ", ""),
-            "level": data.get("ACADEMICLEVEL", ""),
-            "school": data.get("SCHOOLABBR", ""),
-            "description": data.get("SHORTDESC") or None,
-            "department": data.get("DEPARTMENT", ""),
-            "title": data.get("TITLE", ""),
-            "credits": data.get("CRECTS", ""),
-            "term": data.get("TERMNAME", ""),
-        }
 
     async def get_schedules(self, course_id: str, term: str) -> List[Dict[str, Any]]:
         schedules = await self._request(

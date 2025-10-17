@@ -1,4 +1,5 @@
 from typing import List
+from datetime import datetime
 
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +10,9 @@ from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.grade_report import Course, CourseItem, StudentCourse
 from backend.modules.courses.student_courses import schemas
+from backend.modules.courses.crashed.service import RegistrarService
+from backend.modules.courses.crashed.schemas import CourseSearchRequest, SemesterOption
+from backend.modules.courses.crashed.schemas import ScheduleResponse
 
 
 class StudentCourseService:
@@ -116,10 +120,6 @@ class StudentCourseService:
         await qb.delete(target=registration)
         return True
 
-    async def get_terms(self) -> List[str]:
-        qb = QueryBuilder(session=self.db_session, model=Course)
-        terms: List[str] = await qb.base().distinct(Course.term).all()
-        return terms
 
     async def get_courses(
         self,
@@ -213,3 +213,246 @@ class StudentCourseService:
     async def delete_course_item(self, item: CourseItem):
         qb = QueryBuilder(session=self.db_session, model=CourseItem)
         await qb.delete(target=item)
+
+    def _determine_current_semester(self, semesters: List[dict], current_date: datetime) -> str | None:
+        """
+        Determine current semester based on current date.
+        Mapping:
+        - Spring: Jan-May (months 1-5)
+        - Summer: June-July (months 6-7)
+        - Fall: August-Nov (months 8-11)
+        - December: next year's Spring (month 12)
+        """
+        month = current_date.month
+        year = current_date.year
+        
+        if 1 <= month <= 5:
+            season = "Spring"
+        elif 6 <= month <= 7:
+            season = "Summer"
+        elif 8 <= month <= 11:
+            season = "Fall"
+        else:  # December
+            season = "Spring"
+            year = year + 1
+        
+        # Find matching semester
+        target_label = f"{season} {year}"
+        for semester in semesters:
+            if semester["label"] == target_label:
+                return semester["value"]
+        
+        return None
+
+    async def _get_or_create_course(
+        self, 
+        course_code: str, 
+        term_value: str,
+        term_label: str,
+        registrar_service: RegistrarService
+    ) -> Course | None:
+        """
+        Get course from database or fetch from registrar and create it.
+        
+        Args:
+            course_code: Course code like "PHYS 161"
+            term_value: Term value like "822" (used for registrar API)
+            term_label: Term label like "Fall 2025" (stored in database)
+            registrar_service: Service to query registrar API
+            
+        Returns:
+            Course object or None if not found
+        """
+        # First, try to find in local database (using term label)
+        qb = QueryBuilder(session=self.db_session, model=Course)
+        course = await (
+            qb.base()
+            .filter(Course.course_code == course_code, Course.term == term_label)
+            .first()
+        )
+        
+        if course:
+            return course
+        
+        # If not found, query registrar (using term value)
+        search_request = CourseSearchRequest(
+            course_code=course_code,
+            term=term_value,
+            level=None,
+            page=1
+        )
+        search_response = await registrar_service.search_courses(search_request)
+        
+        # Find first matching course by course_code
+        # (all results are already filtered by term from registrar)
+        matching_course = None
+        for item in search_response.items:
+            if item.course_code == course_code:
+                matching_course = item
+                break
+        
+        if not matching_course:
+            return None
+        
+        # Insert course into database (using term label from response)
+        try:
+            registrar_id = int(matching_course.registrar_id)
+        except (ValueError, TypeError):
+            return None
+            
+        course_data = schemas.CourseCreate(
+            registrar_id=registrar_id,
+            course_code=matching_course.course_code,
+            pre_req=matching_course.pre_req,
+            anti_req=matching_course.anti_req,
+            co_req=matching_course.co_req,
+            level=matching_course.level,
+            school=matching_course.school,
+            description=matching_course.description,
+            department=matching_course.department,
+            title=matching_course.title,
+            credits=int(matching_course.credits) if matching_course.credits else None,
+            term=matching_course.term,  # Use term from registrar response
+        )
+        
+        course: Course | None = await qb.add(data=course_data)
+        return course
+
+    async def sync_courses_from_registrar(
+        self, 
+        student_sub: str, 
+        password: str, 
+        username: str,
+        registrar_service: RegistrarService
+    ) -> schemas.RegistrarSyncResponse:
+        """
+        Sync courses from registrar for a student.
+        
+        Resync behavior:
+        - Keeps courses that are still in the schedule
+        - Adds new courses from the schedule
+        - Deletes student_courses that are no longer in the schedule
+        
+        Args:
+            student_sub: Student's subject identifier
+            password: Student's registrar password
+            username: Student's registrar username
+            registrar_service: Service to query registrar API
+            
+        Returns:
+            RegistrarSyncResponse containing course list and sync statistics
+        """
+        # Get student's schedule from registrar
+        schedule_response: ScheduleResponse = await registrar_service.sync_schedule(
+            username=username,
+            password=password
+        )
+        
+        # Get semesters to determine current term
+        semesters: list[SemesterOption] = await registrar_service.list_semesters()
+        semesters_dict = [{"label": s.label, "value": s.value} for s in semesters]
+        current_term_value = self._determine_current_semester(
+            semesters=semesters_dict,
+            current_date=datetime.now()
+        )
+        
+        if not current_term_value:
+            return schemas.RegistrarSyncResponse(synced_courses=[], total_synced=0, added_count=0, deleted_count=0, kept_count=0)
+        
+        # Get current term label
+        current_term_label = None
+        for sem in semesters_dict:
+            if sem["value"] == current_term_value:
+                current_term_label = sem["label"]
+                break
+        
+        if not current_term_label:
+            return schemas.RegistrarSyncResponse(synced_courses=[], total_synced=0, added_count=0, deleted_count=0, kept_count=0)
+        
+        # Extract unique course codes from schedule
+        schedule_course_codes = set()
+        for day_schedule in schedule_response.data:
+            for item in day_schedule:
+                schedule_course_codes.add(item.course_code)
+        
+        # Get all existing student courses for this student
+        qb = QueryBuilder(session=self.db_session, model=StudentCourse)
+        existing_registrations = await (
+            qb.base()
+            .filter(StudentCourse.student_sub == student_sub)
+            .eager(StudentCourse.course, StudentCourse.items)
+            .all()
+        )
+        
+        # Map existing courses: course_code -> (StudentCourse, Course)
+        existing_courses_map = {}
+        for reg in existing_registrations:
+            existing_courses_map[reg.course.course_code] = (reg, reg.course)
+        
+        # Determine which courses to add and which to keep/delete
+        courses_to_add = schedule_course_codes - set(existing_courses_map.keys())
+        courses_to_keep = schedule_course_codes & set(existing_courses_map.keys())
+        courses_to_delete = set(existing_courses_map.keys()) - schedule_course_codes
+        
+        # Delete courses no longer in schedule
+        for course_code in courses_to_delete:
+            student_course, _ = existing_courses_map[course_code]
+            await qb.delete(target=student_course)
+        
+        # Add new courses from schedule
+        added_courses = []
+        for course_code in courses_to_add:
+            # Get or create course
+            course = await self._get_or_create_course(
+                course_code=course_code,
+                term_value=current_term_value,
+                term_label=current_term_label,
+                registrar_service=registrar_service
+            )
+            
+            if not course:
+                continue
+            
+            # Create student course registration
+            registration_data = schemas.RegisteredCourseCreate(
+                course_id=course.id,
+                student_sub=student_sub
+            )
+            student_course = await qb.add(
+                data=registration_data,
+                preload=[StudentCourse.course]
+            )
+            
+            added_courses.append(student_course)
+        
+        # Build response with all current courses
+        all_current_courses = []
+        
+        # Add kept courses
+        for course_code in courses_to_keep:
+            student_course, course = existing_courses_map[course_code]
+            all_current_courses.append(
+                schemas.RegisteredCourseResponse(
+                    id=student_course.id,
+                    course=schemas.BaseCourseSchema.model_validate(course),
+                    items=[schemas.BaseCourseItem.model_validate(item) for item in student_course.items]
+                )
+            )
+        
+        # Add newly added courses
+        for student_course in added_courses:
+            all_current_courses.append(
+                schemas.RegisteredCourseResponse(
+                    id=student_course.id,
+                    course=schemas.BaseCourseSchema.model_validate(student_course.course),
+                    items=[]
+                )
+            )
+        
+        return schemas.RegistrarSyncResponse(
+            synced_courses=all_current_courses,
+            total_synced=len(all_current_courses),
+            added_count=len(courses_to_add),
+            deleted_count=len(courses_to_delete),
+            kept_count=len(courses_to_keep),
+        )

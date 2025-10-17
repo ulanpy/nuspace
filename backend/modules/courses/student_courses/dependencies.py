@@ -4,7 +4,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import get_db_session
 from backend.core.database.models.grade_report import CourseItem, StudentCourse
+from backend.modules.courses.student_courses.service import StudentCourseService
 
+async def get_student_course_service(
+    db_session: AsyncSession = Depends(get_db_session),
+) -> StudentCourseService:
+    return StudentCourseService(db_session=db_session)
 
 async def course_item_exists_or_404(
     item_id: int = Path(..., description="The ID of the course item"),
