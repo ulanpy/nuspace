@@ -10,6 +10,7 @@ import {
   CourseItemCreate,
   BaseCourseItem,
   TemplateResponse,
+  SemesterOption,
 } from "../types";
 import { SearchableInfiniteList } from "@/components/virtual/SearchableInfiniteList";
 import { usePreSearchGrades } from "../api/hooks/usePreSearchGrades";
@@ -73,8 +74,8 @@ export default function GradeStatisticsPage() {
   });
   const [courseSearch, setCourseSearch] = useState<string>("");
   const [debouncedCourseSearch, setDebouncedCourseSearch] = useState<string>("");
-  const [terms, setTerms] = useState<string[]>([]);
-  const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
+  const [semesters, setSemesters] = useState<SemesterOption[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState<string | null>(null);
   const { user, login } = useUser();
   const { toast } = useToast();
   const [templateDrawerCourse, setTemplateDrawerCourse] = useState<RegisteredCourse | null>(null);
@@ -131,8 +132,8 @@ export default function GradeStatisticsPage() {
           });
           return next;
         });
-        const termData = await gradeStatisticsApi.getTerms();
-        setTerms(termData);
+        const semesterData = await gradeStatisticsApi.getSemesters();
+        setSemesters(semesterData);
         setHasFetched(true);
       })();
     } else if (!user) {
@@ -146,7 +147,7 @@ export default function GradeStatisticsPage() {
 
   // Fetch courses for searching when search term changes
   useEffect(() => {
-    if (!selectedTerm) {
+    if (!selectedSemester) {
       setCourses([]);
       return;
     };
@@ -155,11 +156,11 @@ export default function GradeStatisticsPage() {
         page: 1, 
         size: 50, 
         keyword: debouncedCourseSearch || undefined,
-        term: selectedTerm,
+        term: selectedSemester,
       });
       setCourses(courseList.courses);
     })();
-  }, [debouncedCourseSearch, selectedTerm]);
+  }, [debouncedCourseSearch, selectedSemester]);
 
   const registeredCourseIds = useMemo(() => new Set(registeredCourses.map(rc => rc.course.id)), [registeredCourses]);
   const availableCourses = useMemo(() => courses.filter(c => !registeredCourseIds.has(c.id)), [courses, registeredCourseIds]);
@@ -641,15 +642,15 @@ export default function GradeStatisticsPage() {
                     >
                       <div className="space-y-4">
                         <div>
-                          <label className="mb-2 block text-sm font-medium text-foreground">Term</label>
+                          <label className="mb-2 block text-sm font-medium text-foreground">Semester</label>
                           <select
                             className="flex h-11 w-full items-center rounded-xl border border-border/60 bg-muted/30 px-3 text-sm text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            value={selectedTerm || ''}
-                            onChange={(e) => setSelectedTerm(e.target.value || null)}
+                            value={selectedSemester || ''}
+                            onChange={(e) => setSelectedSemester(e.target.value || null)}
                           >
-                            <option value="">Select a term…</option>
-                            {terms.map(term => (
-                              <option key={term} value={term}>{term}</option>
+                            <option value="">Select a semester…</option>
+                            {semesters.map(semester => (
+                              <option key={semester.value} value={semester.value}>{semester.label}</option>
                             ))}
                           </select>
                         </div>
@@ -660,7 +661,7 @@ export default function GradeStatisticsPage() {
                             placeholder="Search course code, title or faculty…"
                             value={courseSearch}
                             onChange={(e) => setCourseSearch(e.target.value)}
-                            disabled={!selectedTerm}
+                            disabled={!selectedSemester}
                           />
                         </div>
                         <div className="max-h-72 space-y-3 overflow-y-auto rounded-2xl border border-border/60 bg-card/40 p-3">
@@ -685,8 +686,8 @@ export default function GradeStatisticsPage() {
                           ))}
                           {availableCourses.length === 0 && (
                             <div className="py-8 text-center text-sm text-muted-foreground">
-                              {!selectedTerm
-                                ? "Select a term to view courses"
+                              {!selectedSemester
+                                ? "Select a semester to view courses"
                                 : courseSearch
                                   ? "No matching courses"
                                   : "Start typing to search for courses"}

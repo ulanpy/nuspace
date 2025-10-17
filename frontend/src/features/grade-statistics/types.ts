@@ -197,3 +197,9 @@ export interface TemplateImportResponse {
   student_course_id: number;
   items: BaseCourseItem[];
 }
+
+// ==== Semester types ====
+export interface SemesterOption {
+  label: string;
+  value: string;
+}

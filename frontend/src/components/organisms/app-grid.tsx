@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingBag, Calendar, BookOpen, Users, ShieldAlert } from "lucide-react";
+import { ShoppingBag, Calendar, BookOpen, Users, ShieldAlert, Shield } from "lucide-react";
 import { AppButton } from "../molecules/buttons/app-button";
 import { ROUTES } from "@/data/routes";
 
@@ -53,13 +53,22 @@ export function AppGrid() {
       delay: 0.35,
     },
     {
+      icon: <Shield className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
+      title: "Sgotinish",
+      href: ROUTES.APPS.SGOTINISH.ROOT,
+      gradient:
+        "radial-gradient(circle, rgba(16,185,129,0.3) 0%, rgba(5,150,105,0.15) 50%, rgba(4,120,87,0) 100%)",
+      iconColor: "text-emerald-500",
+      delay: 0.4,
+    },
+    {
       icon: <ShieldAlert className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
       title: "Emergency",
       href: ROUTES.APPS.EMERGENCY.ROOT,
       gradient:
         "radial-gradient(circle, rgba(244,63,94,0.3) 0%, rgba(225,29,72,0.15) 50%, rgba(190,24,60,0) 100%)",
       iconColor: "text-rose-500",
-      delay: 0.45,
+      delay: 0.5,
     },
   ];
 

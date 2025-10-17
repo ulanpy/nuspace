@@ -110,12 +110,10 @@ class PublicCourseCatalogClient:
     async def search(
         self,
         query: str | None,
-        term: str | None,
+        term: str,
         level: str | None = None,
         page: int = 1,
     ) -> Dict[str, Any]:
-        if term is None:
-            term = await self._get_default_term()
 
         params: Dict[str, Any] = {
             "searchParams[formSimple]": "false",
