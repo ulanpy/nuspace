@@ -50,7 +50,7 @@ async def list_semesters(
 
 @router.get("/search", response_model=CourseSearchResponse)
 async def search_courses(
-    term: str | None = None,
+    term: str,
     query: str | None = None,
     level: Optional[str] = None,
     page: int = Query(default=1, ge=1),

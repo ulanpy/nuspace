@@ -63,7 +63,7 @@ class CourseSearchResponse(BaseModel):
 
 class CourseSearchRequest(BaseModel):
     query: str | None = None
-    term: str | None = None
+    term: str
     level: Optional[str] = None
     page: int = Field(default=1, ge=1)
 

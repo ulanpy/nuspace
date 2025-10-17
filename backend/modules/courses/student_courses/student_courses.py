@@ -204,23 +204,6 @@ async def delete_course_item(
     return
 
 
-@router.get("/terms", response_model=List[str])
-async def get_terms(
-    db_session: AsyncSession = Depends(get_db_session),
-):
-    """
-    Retrieves a list of all unique terms from the courses table.
-
-    **Access Policy:**
-    - Anyone can view terms (no authentication required)
-
-    **Returns:**
-    - List of unique terms available in the system
-    """
-    service = StudentCourseService(db_session=db_session)
-    return await service.get_terms()
-
-
 @router.get("/courses", response_model=schemas.ListBaseCourseResponse)
 async def get_courses(
     infra: Infra = Depends(get_infra),
