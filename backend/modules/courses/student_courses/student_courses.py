@@ -10,6 +10,8 @@ from backend.modules.courses.student_courses import dependencies as deps
 from backend.modules.courses.student_courses import schemas
 from backend.modules.courses.student_courses.policy import CourseItemPolicy, StudentCoursePolicy
 from backend.modules.courses.student_courses.service import StudentCourseService
+from backend.modules.courses.crashed.service import RegistrarService
+from backend.modules.courses.crashed.dependencies import get_registrar_service
 
 router = APIRouter(tags=["Grades"])
 
@@ -47,6 +49,46 @@ async def register_course(
     return schemas.RegisteredCourseResponse(
         id=student_course.id, course=student_course.course, items=[]
     )
+
+
+@router.post("/registered_courses/sync", response_model=schemas.RegistrarSyncResponse)
+async def sync_courses_from_registrar(
+    data: schemas.RegistrarSyncRequest,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    db_session: AsyncSession = Depends(get_db_session),
+    registrar_service: RegistrarService = Depends(get_registrar_service),
+):
+    """
+    Syncs courses from the university registrar for the authenticated student.
+
+    **Access Policy:**
+    - Students can only sync their own courses
+
+    **Parameters:**
+    - `data`: Registrar credentials (password)
+
+    **Returns:**
+    - List of synced courses with total count
+
+    **Process:**
+    1. Fetches student's schedule from registrar
+    2. Determines current semester based on current date
+    3. For each course in the schedule:
+       - Checks if course exists in local database
+       - If not, fetches course details from registrar and creates it
+       - Creates StudentCourse registration if not already registered
+    """
+    student_sub = user[0].get("sub")
+    student_username = user[0].get("email").split("@")[0] #e.g. ulan.sharipov
+    service = StudentCourseService(db_session=db_session)
+    sync_result = await service.sync_courses_from_registrar(
+        student_sub=student_sub,
+        password=data.password,
+        username=student_username,
+        registrar_service=registrar_service,
+    )
+
+    return sync_result
 
 
 @router.get("/registered_courses", response_model=List[schemas.RegisteredCourseResponse])

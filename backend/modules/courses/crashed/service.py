@@ -50,7 +50,7 @@ class RegistrarService:
         try:
             async with self.public_client_factory() as client:
                 data = await client.search(
-                    query=request.query,
+                    course_code=request.course_code,
                     term=request.term,
                     level=request.level,
                     page=request.page,
@@ -58,14 +58,6 @@ class RegistrarService:
         except ValueError as exc:  # registrar returned non-JSON payload
             raise HTTPException(status_code=502, detail=str(exc)) from exc
         return CourseSearchResponse(**data)
-
-    async def get_course(self, course_id: str) -> CourseDetailResponse:
-        try:
-            async with self.public_client_factory() as client:
-                data = await client.get_course(course_id)
-        except ValueError as exc:
-            raise HTTPException(status_code=502, detail=str(exc)) from exc
-        return CourseDetailResponse(**data)
 
     async def get_course_schedules(
         self, request: CourseSchedulesRequest

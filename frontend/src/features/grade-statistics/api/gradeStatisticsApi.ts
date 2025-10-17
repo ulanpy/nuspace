@@ -8,7 +8,6 @@ import {
   RegisteredCourse,
   CourseItemCreate,
   CourseItemUpdate,
-  RegisteredCourseCreate,
   TemplateCreatePayload,
   TemplateFilters,
   TemplateListResponse,
@@ -16,6 +15,7 @@ import {
   TemplateResponse,
   TemplateUpdatePayload,
   SemesterOption,
+  RegistrarSyncResponse,
 } from "../types";
 
 export const gradeStatisticsApi = {
@@ -45,13 +45,9 @@ export const gradeStatisticsApi = {
   getRegisteredCourses: async (): Promise<RegisteredCourse[]> => {
     return await apiCall(`/registered_courses`);
   },
-  
-  registerCourse: async (payload: RegisteredCourseCreate): Promise<RegisteredCourse> => {
-    return await apiCall(`/registered_courses`, { method: 'POST', json: payload });
-  },
-  
-  unregisterCourse: async (studentCourseId: number): Promise<void> => {
-    await apiCall(`/registered_courses/${studentCourseId}`, { method: 'DELETE' });
+
+  syncRegistrarCourses: async (payload: { password: string }): Promise<RegistrarSyncResponse> => {
+    return await apiCall(`/registered_courses/sync`, { method: 'POST', json: payload });
   },
   
   // ==== Course Items APIs ====

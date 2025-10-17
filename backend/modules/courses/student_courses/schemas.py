@@ -6,6 +6,21 @@ from pydantic import BaseModel, Field
 
 
 
+class CourseCreate(BaseModel):
+    registrar_id: int
+    course_code: str
+    pre_req: str | None = None
+    anti_req: str | None = None
+    co_req: str | None = None
+    level: str
+    school: str
+    description: str | None = None
+    department: str | None = None
+    title: str | None = None
+    credits: int | None = None
+    term: str | None = None
+
+
 class BaseCourseSchema(BaseModel):
     id: int
     registrar_id: int
@@ -114,4 +129,16 @@ class ListBaseCourseResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class RegistrarSyncRequest(BaseModel):
+    password: str = Field(min_length=1, description="Registrar password")
+
+
+class RegistrarSyncResponse(BaseModel):
+    synced_courses: List[RegisteredCourseResponse]
+    total_synced: int
+    added_count: int
+    deleted_count: int
+    kept_count: int
 

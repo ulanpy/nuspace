@@ -5,16 +5,16 @@ import { GradeStatisticsCard } from "../components/GradeStatisticsCard";
 import { RegisteredCourseCard } from "../components/RegisteredCourseCard";
 import {
   GradeStatistics,
-  BaseCourse,
   RegisteredCourse,
   CourseItemCreate,
   BaseCourseItem,
   TemplateResponse,
   SemesterOption,
+  RegistrarSyncResponse,
 } from "../types";
 import { SearchableInfiniteList } from "@/components/virtual/SearchableInfiniteList";
 import { usePreSearchGrades } from "../api/hooks/usePreSearchGrades";
-import { BarChart3, Calculator, Plus, Search, UsersRound, Share2, RefreshCw } from "lucide-react";
+import { BarChart3, Calculator, RefreshCw, Plus } from "lucide-react";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { Card, CardContent } from "@/components/atoms/card";
 import { gradeStatisticsApi } from "../api/gradeStatisticsApi";
@@ -29,7 +29,6 @@ import {
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/atoms/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
 import { useUser } from "@/hooks/use-user";
 import { Modal } from "@/components/atoms/modal";
 import { ConfirmationModal } from "../components/ConfirmationModal";
@@ -47,16 +46,14 @@ import {
   canUpdateTemplate,
 } from "../utils/templateUtils";
 import { useToast } from "@/hooks/use-toast";
+import { SynchronizeCoursesControl } from "../components/SynchronizeCoursesControl";
 
 export default function GradeStatisticsPage() {
   const [selected, setSelected] = useState<GradeStatistics[]>([]);
   // Live GPA state
-  const [courses, setCourses] = useState<BaseCourse[]>([]);
   const [registeredCourses, setRegisteredCourses] = useState<RegisteredCourse[]>([]);
   const [selectedRegisteredCourse, setSelectedRegisteredCourse] = useState<RegisteredCourse | null>(null);
-  const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
-  const [courseToDelete, setCourseToDelete] = useState<RegisteredCourse | null>(null);
   const [itemToDelete, setItemToDelete] = useState<BaseCourseItem | null>(null);
   const [itemToEdit, setItemToEdit] = useState<BaseCourseItem | null>(null);
   const [gpaMode, setGpaMode] = useState<'semester' | 'maxPossible' | 'projected'>('semester');
@@ -72,10 +69,7 @@ export default function GradeStatisticsPage() {
     max: "",
     obtained: "",
   });
-  const [courseSearch, setCourseSearch] = useState<string>("");
-  const [debouncedCourseSearch, setDebouncedCourseSearch] = useState<string>("");
   const [semesters, setSemesters] = useState<SemesterOption[]>([]);
-  const [selectedSemester, setSelectedSemester] = useState<string | null>(null);
   const { user, login } = useUser();
   const { toast } = useToast();
   const [templateDrawerCourse, setTemplateDrawerCourse] = useState<RegisteredCourse | null>(null);
@@ -111,12 +105,6 @@ export default function GradeStatisticsPage() {
     });
   };
 
-  // Debounce course search
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedCourseSearch(courseSearch.trim()), 250);
-    return () => clearTimeout(t);
-  }, [courseSearch]);
-
   // Fetch registered courses once on mount or when user changes
   useEffect(() => {
     if (user && !hasFetched) {
@@ -145,56 +133,13 @@ export default function GradeStatisticsPage() {
     }
   }, [user, hasFetched]);
 
-  // Fetch courses for searching when search term changes
-  useEffect(() => {
-    if (!selectedSemester) {
-      setCourses([]);
-      return;
-    };
-    (async () => {
-      const courseList = await gradeStatisticsApi.getCourses({ 
-        page: 1, 
-        size: 50, 
-        keyword: debouncedCourseSearch || undefined,
-        term: selectedSemester,
-      });
-      setCourses(courseList.courses);
-    })();
-  }, [debouncedCourseSearch, selectedSemester]);
-
-  const registeredCourseIds = useMemo(() => new Set(registeredCourses.map(rc => rc.course.id)), [registeredCourses]);
-  const availableCourses = useMemo(() => courses.filter(c => !registeredCourseIds.has(c.id)), [courses, registeredCourseIds]);
-
-  const handleRegisterCourse = async (courseId: number) => {
-    try {
-      const newRegisteredCourse = await gradeStatisticsApi.registerCourse({ 
-        course_id: courseId,
-        student_sub: user?.sub || "me"
-      });
-      setRegisteredCourses(prev => [...prev, newRegisteredCourse]);
-      if (!selectedRegisteredCourse) {
-        setSelectedRegisteredCourse(newRegisteredCourse);
-      }
-      setIsAddCourseModalOpen(false); // Close modal after successful registration
-    } catch (error) {
-      console.error('Failed to register course:', error);
-    }
-  };
-
-  const handleUnregisterCourse = async (studentCourseId: number) => {
-    const course = registeredCourses.find(rc => rc.id === studentCourseId);
-    if (course) setCourseToDelete(course);
-  };
-
-  const handleUnregisterCourseConfirm = async () => {
-    if (!courseToDelete) return;
-    try {
-      await gradeStatisticsApi.unregisterCourse(courseToDelete.id);
-      setRegisteredCourses(prev => prev.filter(rc => rc.id !== courseToDelete.id));
-    } catch (error) {
-      console.error('Failed to unregister course:', error);
-    }
-  };
+  const handleSyncCourses = useCallback(
+    async (password: string): Promise<RegistrarSyncResponse> => {
+      const result = await gradeStatisticsApi.syncRegistrarCourses({ password });
+      setRegisteredCourses(result.synced_courses);
+      return result;
+    },
+  []);
 
   const handleDeleteItem = (item: BaseCourseItem) => {
     setItemToDelete(item);
@@ -628,75 +573,10 @@ export default function GradeStatisticsPage() {
                   <h2 className="text-base font-medium text-foreground">Live GPA overview</h2>
                 </div>
                 {user && (
-                  <>
-                    <Button size="sm" onClick={() => setIsAddCourseModalOpen(true)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add course
-                    </Button>
-                    <Modal
-                      isOpen={isAddCourseModalOpen}
-                      onClose={() => setIsAddCourseModalOpen(false)}
-                      title="Add course"
-                      className="max-w-lg"
-                      contentClassName="rounded-3xl"
-                    >
-                      <div className="space-y-4">
-                        <div>
-                          <label className="mb-2 block text-sm font-medium text-foreground">Semester</label>
-                          <select
-                            className="flex h-11 w-full items-center rounded-xl border border-border/60 bg-muted/30 px-3 text-sm text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            value={selectedSemester || ''}
-                            onChange={(e) => setSelectedSemester(e.target.value || null)}
-                          >
-                            <option value="">Select a semester…</option>
-                            {semesters.map(semester => (
-                              <option key={semester.value} value={semester.value}>{semester.label}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            className="h-11 rounded-xl border-border/60 bg-background pl-9"
-                            placeholder="Search course code, title or faculty…"
-                            value={courseSearch}
-                            onChange={(e) => setCourseSearch(e.target.value)}
-                            disabled={!selectedSemester}
-                          />
-                        </div>
-                        <div className="max-h-72 space-y-3 overflow-y-auto rounded-2xl border border-border/60 bg-card/40 p-3">
-                          {availableCourses.map(course => (
-                            <div key={course.id} className="flex items-start gap-3 rounded-xl border border-border/40 bg-background/90 p-3">
-                              <div className="flex-1 space-y-1 text-sm">
-                                <p className="font-medium text-foreground">
-                                  {course.course_code}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {[course.title, course.department, course.term].filter(Boolean).join(' · ')}
-                                </p>
-                              </div>
-                              <Button
-                                size="sm"
-                                className="rounded-full px-4"
-                                onClick={() => handleRegisterCourse(course.id)}
-                              >
-                                Add
-                              </Button>
-                            </div>
-                          ))}
-                          {availableCourses.length === 0 && (
-                            <div className="py-8 text-center text-sm text-muted-foreground">
-                              {!selectedSemester
-                                ? "Select a semester to view courses"
-                                : courseSearch
-                                  ? "No matching courses"
-                                  : "Start typing to search for courses"}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </Modal>
-                  </>
+                  <SynchronizeCoursesControl
+                    onSync={handleSyncCourses}
+                    userEmail={user.email ?? ""}
+                  />
                 )}
               </div>
 
@@ -803,14 +683,6 @@ export default function GradeStatisticsPage() {
               )}
 
               {/* Confirmation Modals */}
-              <ConfirmationModal
-                isOpen={!!courseToDelete}
-                onClose={() => setCourseToDelete(null)}
-                onConfirm={handleUnregisterCourseConfirm}
-                title="Delete Course Registration"
-                description={`Are you sure you want to remove "${courseToDelete?.course.course_code}" from your registered courses? All associated items will be deleted.`}
-                confirmText="Delete"
-              />
               <ConfirmationModal
                 isOpen={!!itemToDelete}
                 onClose={() => setItemToDelete(null)}
@@ -1211,7 +1083,6 @@ export default function GradeStatisticsPage() {
                         <RegisteredCourseCard
                           key={registeredCourse.id}
                           registeredCourse={registeredCourse}
-                          onDeleteCourse={handleUnregisterCourse}
                           onAddItem={(courseId) => {
                             const course = registeredCourses.find((rc) => rc.id === courseId);
                             if (course) {
@@ -1231,7 +1102,7 @@ export default function GradeStatisticsPage() {
                   ) : (
                     <div className="text-center py-6 text-sm text-muted-foreground">
                       <Calculator className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No courses registered. Tap "Add course" to get started.</p>
+                      <p>No courses registered yet. Use the Synchronize button to import your schedule.</p>
                     </div>
                   )}
                 </>

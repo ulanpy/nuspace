@@ -16,11 +16,10 @@ import {
   getGPAColorClass,
 } from "../utils/gradeUtils";
 import { RegisteredCourseItem } from "./RegisteredCourseItem";
-import { BookOpen, Info, Plus, Trash2, Share2, UsersRound, CircleSlash2, HelpCircle } from "lucide-react";
+import { BookOpen, Info, Plus, Share2, UsersRound, CircleSlash2, HelpCircle } from "lucide-react";
 
 interface RegisteredCourseCardProps {
   registeredCourse: RegisteredCourse;
-  onDeleteCourse?: (courseId: number) => void;
   onAddItem?: (courseId: number) => void;
   onDeleteItem?: (item: BaseCourseItem) => void;
   onEditItem?: (item: BaseCourseItem) => void;
@@ -32,7 +31,6 @@ interface RegisteredCourseCardProps {
 
 export function RegisteredCourseCard({
   registeredCourse,
-  onDeleteCourse,
   onAddItem,
   onDeleteItem,
   onEditItem,
@@ -100,18 +98,6 @@ export function RegisteredCourseCard({
       }`}
     >
       <CardHeader className="relative gap-2 pb-4 pr-12">
-        {onDeleteCourse && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onDeleteCourse(registeredCourse.id)}
-            className="absolute right-2 top-2 text-muted-foreground hover:text-destructive"
-            aria-label="Remove course"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        )}
-
         {isWithdrawn && (
           <Badge
             variant="secondary"
