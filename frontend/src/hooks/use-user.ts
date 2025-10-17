@@ -4,8 +4,17 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 
+// Session storage key for tracking auth failures
+const AUTH_FAILURE_KEY = "__auth_query_disabled__";
+
+// Check if queries should be enabled based on previous auth failures
+const getInitialQueryEnabled = (): boolean => {
+  if (typeof window === "undefined") return true;
+  return sessionStorage.getItem(AUTH_FAILURE_KEY) !== "true";
+};
+
 // FUCK IT! GLOBAL VARIABLE TO SURVIVE RE-RENDERS
-let globalQueryEnabled = true;
+let globalQueryEnabled = getInitialQueryEnabled();
 
 export const useUser = () => {
   const { isMiniApp, startParam } = useTelegramMiniApp();
@@ -44,9 +53,10 @@ export const useUser = () => {
       try {
         return await kupiProdaiApi.getUserQueryOptions().queryFn();
       } catch (error: any) {
-        // If we get a 401, disable future queries
+        // If we get a 401, disable future queries and persist this state
         if (error?.status === 401 || error?.response?.status === 401) {
           globalQueryEnabled = false;
+          sessionStorage.setItem(AUTH_FAILURE_KEY, "true");
           forceUpdate(prev => prev + 1);
         }
         throw error;
@@ -109,8 +119,9 @@ export const useUser = () => {
       return null;
     },
     onSuccess: () => {
-      // Refetch user after cookies are set
+      // Refetch user after cookies are set and clear auth failure state
       sessionStorage.removeItem("__miniapp_login_poll_done__");
+      sessionStorage.removeItem(AUTH_FAILURE_KEY);
       queryClient.invalidateQueries({ queryKey: kupiProdaiApi.getUserQueryOptions().queryKey });
     },
   });
@@ -152,6 +163,7 @@ export const useUser = () => {
   useEffect(() => {
     const handleMiniAppLoginSuccess = () => {
       globalQueryEnabled = true;
+      sessionStorage.removeItem(AUTH_FAILURE_KEY);
       queryClient.invalidateQueries({ queryKey: ["user"] });
       refetchUser();
     };
@@ -184,6 +196,8 @@ export const useUser = () => {
             if (res.ok) {
               sessionStorage.setItem(doneKey, "1");
               sessionStorage.setItem("__miniapp_login_poll_done__", "1");
+              sessionStorage.removeItem(AUTH_FAILURE_KEY);
+              globalQueryEnabled = true;
               queryClient.invalidateQueries({ queryKey: kupiProdaiApi.getUserQueryOptions().queryKey });
               window.dispatchEvent(new Event("miniapp-login-success"));
               break;
@@ -218,6 +232,7 @@ export const useUser = () => {
   const login = () => {
     globalQueryEnabled = true;
     sessionStorage.removeItem("__miniapp_login_poll_done__");
+    sessionStorage.removeItem(AUTH_FAILURE_KEY);
     forceUpdate(prev => prev + 1);
     loginMutation.mutate();
   };
