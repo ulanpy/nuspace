@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TicketCard } from "./TicketCard";
 import { Button } from "@/components/atoms/button";
 import { ChevronDown, Filter, Folder, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { ROUTES } from "@/data/routes";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { sgotinishApi } from "../api/sgotinishApi";
 import { toLocalDate } from "../utils/date";
 import {
@@ -57,25 +57,106 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
   const activeCategoryOption = categoryOptions.find((option) => option.value === categoryFilter) ?? categoryOptions[0];
 
 
-  const { data: ticketsResponse, isLoading, isError } = useQuery({
-    queryKey: ["tickets", { statusFilter, categoryFilter }],
-    queryFn: () => sgotinishApi.getTickets({
-      category: categoryFilter === "all" ? undefined : categoryFilter,
-      author_sub: "me",
-    }),
-    enabled: !!user, // Only fetch tickets if user is logged in
-    retry: false, // Don't retry if unauthorized
+  const PAGE_SIZE = 12;
+
+  const {
+    data,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: [
+      "tickets",
+      {
+        statusFilter,
+        categoryFilter,
+        userSub: user?.sub ?? null,
+      },
+    ],
+    queryFn: ({ pageParam = 1 }) =>
+      sgotinishApi.getTickets({
+        page: pageParam,
+        size: PAGE_SIZE,
+        category: categoryFilter === "all" ? undefined : categoryFilter,
+        author_sub: "me",
+      }),
+    getNextPageParam: (lastPage, allPages) => {
+      const nextPage = allPages.length + 1;
+      return nextPage <= (lastPage?.total_pages ?? 0) ? nextPage : undefined;
+    },
+    initialPageParam: 1,
+    enabled: !!user,
+    retry: false,
   });
 
-  const filteredTickets = ticketsResponse?.tickets.filter((ticket) => {
+  useEffect(() => {
+    if (!user) return;
+    refetch();
+  }, [user, refetch]);
+
+  const allTickets = useMemo(
+    () => data?.pages.flatMap((page) => page.tickets) ?? [],
+    [data?.pages],
+  );
+
+  useEffect(() => {
+    if (
+      !isLoading &&
+      !isFetchingNextPage &&
+      hasNextPage &&
+      allTickets.length === 0
+    ) {
+      fetchNextPage();
+    }
+  }, [allTickets.length, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading]);
+
+  const filteredTickets = allTickets.filter((ticket) => {
     const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
     const matchesCategory = categoryFilter === "all" || ticket.category === categoryFilter;
     return matchesStatus && matchesCategory;
-  }) || [];
+  });
+
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  const loadMoreRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+
+      if (!node || !hasNextPage) {
+        return;
+      }
+
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+          }
+        },
+        { rootMargin: "200px" },
+      );
+
+      observerRef.current.observe(node);
+    },
+    [fetchNextPage, hasNextPage, isFetchingNextPage],
+  );
+
+  useEffect(() => () => observerRef.current?.disconnect(), []);
 
   const handleTicketClick = (ticketId: number) => {
     navigate(ROUTES.APPS.SGOTINISH.STUDENT.TICKET.DETAIL_FN(String(ticketId)));
   };
+
+  const showEmptyState =
+    !isLoading &&
+    !isError &&
+    filteredTickets.length === 0 &&
+    !hasNextPage &&
+    !isFetchingNextPage;
 
   return (
     <MotionWrapper>
@@ -86,7 +167,7 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
           <div className="flex items-center justify-between mb-2">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">My Appeals</h1>
-              <p className="text-gray-600 dark:text-gray-400">Track and manage your student appeals</p>
+              <p className="text-gray-600 dark:text-gray-400">Adress your concerns directly to the Student Government</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 items-center">
               {createAppealButton}
@@ -178,8 +259,17 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
                 onClick={() => handleTicketClick(ticket.id)}
               />
             ))}
+            <div ref={loadMoreRef} />
           </div>
-        ) : !isLoading && (
+        ) : null}
+
+        {isFetchingNextPage && (
+          <div className="flex justify-center py-4 text-sm text-gray-500 dark:text-gray-400">
+            Loading more appeals...
+          </div>
+        )}
+
+        {showEmptyState && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Search className="h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">

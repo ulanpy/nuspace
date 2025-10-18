@@ -62,9 +62,10 @@ class ConversationService(AbstractConversationService):
     async def create_conversation(
         self, conversation_data: schemas.ConversationCreateDTO, user: tuple[dict, dict]
     ) -> schemas.ConversationResponseDTO:
-        if conversation_data.sg_member_sub == "me":
-            conversation_data.sg_member_sub = user[0].get("sub")
-
+    
+        user_sub = user[0].get("sub")
+        conversation_data = schemas._ConversationCreateDTO(**conversation_data.model_dump(), sg_member_sub=user_sub)
+        
         qb = QueryBuilder(session=self.db_session, model=Conversation)
         conversation: Conversation = await qb.add(
             data=conversation_data,

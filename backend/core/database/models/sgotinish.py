@@ -119,7 +119,7 @@ class Department(Base):
 
 
 class PermissionType(PyEnum):
-    VIEW = "view"
+    VIEW = "view" 
     ASSIGN = "assign"
     DELEGATE = "delegate"
 

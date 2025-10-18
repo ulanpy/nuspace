@@ -5,7 +5,7 @@ import { Textarea } from "@/components/atoms/textarea";
 import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/atoms/select";
 import { Label } from "@/components/atoms/label";
 import { Switch } from "@/components/atoms/switch";
-import { Send, GraduationCap, Building2, Wrench, AlertTriangle, Lightbulb, HelpCircle, Check } from "lucide-react";
+import { Send, GraduationCap, Building2, Wrench, AlertTriangle, Lightbulb, HelpCircle, Check, Lock } from "lucide-react";
 import * as RadixSelect from "@radix-ui/react-select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { sgotinishApi } from "../api/sgotinishApi";
@@ -132,6 +132,17 @@ export default function CreateTicketModal({ isOpen, onClose, onSuccess }: Create
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Create New Appeal">
+        <div className="mb-4 flex gap-3 rounded-lg border border-blue-100 bg-blue-50/60 p-4 text-sm text-slate-600 dark:border-blue-900/40 dark:bg-blue-900/20 dark:text-slate-300">
+          <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white text-blue-600 shadow-sm dark:bg-slate-900 dark:text-blue-300">
+            <Lock className="h-4 w-4" />
+          </span>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Private line to the Student Government</p>
+            <p className="text-sm leading-snug">
+              Create an appeal, even anonymously. It will be delivered directly to the right SG members.
+            </p>
+          </div>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title */}
           <div className="space-y-2">

@@ -169,9 +169,10 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center">
-        {/* Greeting */}
-        <div className="text-center mb-[clamp(0px,3vw,24px)]">
+      <div className="flex-1 w-full overflow-y-auto">
+        <div className="flex flex-col items-center pb-[calc(96px+env(safe-area-inset-bottom))]">
+          {/* Greeting */}
+          <div className="text-center mb-[clamp(0px,3vw,24px)]">
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">
             {isLoading ? (
               <span>Loading...</span>
@@ -227,20 +228,20 @@ export default function HomePage() {
               )}
             </div>
           )}
-        </div>
+          </div>
 
-        {/* Carousel - properly positioned */}
-        <div className="w-full max-w-3xl mb-12">
-          <GlowCarouselWithImage items={homeCarouselItems} />
-        </div>
+          {/* Carousel - properly positioned */}
+          <div className="w-full max-w-3xl mb-12">
+            <GlowCarouselWithImage items={homeCarouselItems} />
+          </div>
 
-        <div className="flex flex-col items-center gap-8 sm:gap-12 w-full">
-          <AppGrid />
+          <div className="flex flex-col items-center gap-8 sm:gap-12 w-full">
+            <AppGrid />
+          </div>
         </div>
-
-        {/* Emergency info moved to its own page reachable from AppGrid */}
       </div>
-
+      
+      {/* Emergency info moved to its own page reachable from AppGrid */}
     </div>
   );
 }

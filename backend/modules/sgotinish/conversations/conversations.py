@@ -36,7 +36,7 @@ async def create_conversation(
 
     **Access Policy:**
     - An SG member with at least ASSIGN access can create a conversation.
-    - Each SG member can create only one conversation per ticket.
+    - For all SG members, only one conversation per ticket.
     - Admins can always create conversations.
 
     **Parameters:**

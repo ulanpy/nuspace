@@ -25,13 +25,13 @@ export function TelegramConnectCard({ user, className }: TelegramConnectCardProp
       data-bind-telegram
     >
       <div className="flex flex-1 items-start gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/60 dark:text-blue-300">
+        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/60 dark:text-blue-300">
           <FaTelegram className="h-5 w-5" />
         </div>
         <div className="space-y-1">
           <h2 className="text-base font-semibold">Connect Telegram to stay updated</h2>
           <p className="text-sm text-blue-900/80 dark:text-blue-100/80">
-            Link your Telegram account to receive updates about your appeals directly from our bot.
+            Link your Telegram account to receive updates about your appeals directly from nuspacebot
           </p>
         </div>
       </div>

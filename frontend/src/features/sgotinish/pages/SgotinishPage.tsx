@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import StudentDashboard from "../components/StudentDashboard";
 import SGDashboard from "../components/SGDashboard";
@@ -12,7 +13,10 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/atoms/tabs";
 
 export default function SgotinishPage() {
   const { user, isLoading, login } = useUser();
-  const [activeDashboard, setActiveDashboard] = useState<"student" | "sg">("student");
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = (searchParams.get("tab") as "student" | "sg") ?? "student";
+  const [activeDashboard, setActiveDashboard] = useState<"student" | "sg">(initialTab);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isCreateTicketModalOpen, setCreateTicketModalOpen] = useState(false); // State for the new modal
 
@@ -37,14 +41,33 @@ export default function SgotinishPage() {
 
   const effectiveDashboard = isSgMember ? activeDashboard : "student";
 
-  const dashboardContent = effectiveDashboard === "sg"
-    ? <SGDashboard onBack={() => setActiveDashboard("student")} />
-    : (
+  const dashboardContent = useMemo(() => {
+    if (effectiveDashboard === "sg") {
+      return <SGDashboard />;
+    }
+    return (
       <StudentDashboard
         user={user}
         createAppealButton={<CreateAppealButton onClick={handleCreateAppeal} />}
       />
     );
+  }, [effectiveDashboard, user]);
+
+  useEffect(() => {
+    if (!isSgMember) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (activeDashboard === "student") {
+          next.delete("tab");
+        } else {
+          next.set("tab", activeDashboard);
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  }, [activeDashboard, isSgMember, setSearchParams]);
 
   return (
     <MotionWrapper>

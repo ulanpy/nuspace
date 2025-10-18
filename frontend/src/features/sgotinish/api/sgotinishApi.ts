@@ -39,7 +39,7 @@ export const sgotinishApi = {
     return await apiCall(`/tickets/${ticketId}`, { method: "PATCH", json: payload });
   },
 
-  // Conversations (no list endpoint)
+  // Conversations
   createConversation: async (payload: ConversationCreatePayload): Promise<Conversation> => {
     return await apiCall(`/conversations`, { method: "POST", json: payload });
   },
