@@ -82,6 +82,23 @@ export function BackNavigationProvider({ children }: { children: React.ReactNode
         return ROUTES.HOME;
       }
 
+      // SGotinish
+      const SG_STUDENT_DETAIL_PREFIX = ROUTES.APPS.SGOTINISH.STUDENT.TICKET.DETAIL.replace(
+        ":id",
+        "",
+      );
+      if (path.startsWith(SG_STUDENT_DETAIL_PREFIX)) {
+        return `${ROUTES.APPS.SGOTINISH.ROOT}?tab=student`;
+      }
+
+      const SG_MEMBER_DETAIL_PREFIX = ROUTES.APPS.SGOTINISH.SG.TICKET.DETAIL.replace(
+        ":id",
+        "",
+      );
+      if (path.startsWith(SG_MEMBER_DETAIL_PREFIX)) {
+        return `${ROUTES.APPS.SGOTINISH.ROOT}?tab=sg`;
+      }
+
       // Marketplace
       const PRODUCT_DETAIL_PREFIX = ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL.replace(
         ":id",

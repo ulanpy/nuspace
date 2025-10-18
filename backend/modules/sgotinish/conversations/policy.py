@@ -17,30 +17,25 @@ class ConversationPolicy(BasePolicy):
         """
         Check if a user can create a new conversation for a ticket.
         Only users with assignment or delegation rights can initiate a conversation.
-        An SG member can only create one conversation per ticket.
+        Only one conversation per ticket is possible.
         """
+        if ticket.conversations:
+            raise HTTPException(status_code=http_status.HTTP_409_CONFLICT, detail="Conversation already exists")
+
         if self.is_admin:
             return
 
-        # Check for explicit ASSIGN or DELEGATE access grant on the parent ticket
         if access and access.permission in [
             PermissionType.ASSIGN,
             PermissionType.DELEGATE,
         ]:
-            # Check if this SG member has already started a conversation for this ticket
-            if self.is_sg_member:
-                for conv in ticket.conversations:
-                    if conv.sg_member_sub == self.user_sub:
-                        raise HTTPException(
-                            status_code=http_status.HTTP_409_CONFLICT,
-                            detail="You have already created a conversation for this ticket.",
-                        )
             return
 
         raise HTTPException(
             status_code=http_status.HTTP_403_FORBIDDEN,
             detail="You must have ASSIGN or DELEGATE permission to create a conversation.",
         )
+
 
     def check_update(self, access: TicketAccess | None):
         """Check if user can update a conversation."""

@@ -8,6 +8,7 @@ import { sgotinishApi } from "../api/sgotinishApi";
 import { Department, SGUser, PermissionType } from "../types";
 import { mapRoleToDisplayName } from "../utils/roleMapping";
 import { HelpCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface DelegateModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export function DelegateModal({ isOpen, onClose, ticketId, onSuccess }: Delegate
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedPermission, setSelectedPermission] = useState<PermissionType | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const { toast } = useToast();
 
   const { data: departments, isLoading: isLoadingDepartments } = useQuery({
     queryKey: ["departments"],
@@ -36,7 +38,26 @@ export function DelegateModal({ isOpen, onClose, ticketId, onSuccess }: Delegate
   const delegateMutation = useMutation({
     mutationFn: (payload: { ticketId: number; target_user_sub: string; permission: PermissionType }) => 
       sgotinishApi.delegateAccess(payload.ticketId, { target_user_sub: payload.target_user_sub, permission: payload.permission }),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Find the user details for the toast
+      const targetUser = sgUsers?.find(user => user.user.sub === variables.target_user_sub);
+      const department = departments?.find(dept => dept.id === selectedDepartment);
+      
+      if (targetUser && department) {
+        const permissionText = {
+          [PermissionType.VIEW]: "View Ticket",
+          [PermissionType.ASSIGN]: "Chat in Conversation", 
+          [PermissionType.DELEGATE]: "Assign Access"
+        }[variables.permission];
+
+        toast({
+          title: "Access Granted Successfully",
+          description: `Granted ${permissionText} permission to ${targetUser.user.name} ${targetUser.user.surname} (${mapRoleToDisplayName(targetUser.role)}) from ${department.name}`,
+          variant: "success",
+          duration: 6000,
+        });
+      }
+      
       onSuccess();
       onClose();
     },
@@ -123,8 +144,8 @@ export function DelegateModal({ isOpen, onClose, ticketId, onSuccess }: Delegate
               </SelectTrigger>
               <SelectContent className="z-[10001]">
                 <SelectItem value={PermissionType.VIEW}>View Ticket</SelectItem>
-                <SelectItem value={PermissionType.ASSIGN}>Start Conversation</SelectItem>
-                <SelectItem value={PermissionType.DELEGATE}>Grant Access</SelectItem>
+                <SelectItem value={PermissionType.ASSIGN}>Chat in Conversation</SelectItem>
+                <SelectItem value={PermissionType.DELEGATE}>Assign Access</SelectItem>
               </SelectContent>
             </Select>
             {showHelp && (
@@ -135,12 +156,12 @@ export function DelegateModal({ isOpen, onClose, ticketId, onSuccess }: Delegate
                     <span className="text-blue-700 dark:text-blue-300"> - gives access to view ticket information and its conversation</span>
                   </div>
                   <div>
-                    <span className="font-medium text-blue-900 dark:text-blue-100">Start Conversation</span>
+                    <span className="font-medium text-blue-900 dark:text-blue-100">Chat in Conversation</span>
                     <span className="text-blue-700 dark:text-blue-300"> - gives access to start 1-to-1 conversation with student and chat</span>
                   </div>
                   <div>
-                    <span className="font-medium text-blue-900 dark:text-blue-100">Grant Access</span>
-                    <span className="text-blue-700 dark:text-blue-300"> - allows to pass any permission type downstream. Head could delegate to anyone, Executive can grant access to any member of its department. Soldier can not grant access further</span>
+                    <span className="font-medium text-blue-900 dark:text-blue-100">Assign Access</span>
+                    <span className="text-blue-700 dark:text-blue-300"> - allows to pass any permission type downstream. Head could delegate to anyone, Executive can assign access to any member of its department. Soldier can not assign access further</span>
                   </div>
                 </div>
               </div>
@@ -151,7 +172,7 @@ export function DelegateModal({ isOpen, onClose, ticketId, onSuccess }: Delegate
       <div className="flex justify-end gap-2 mt-4">
         <Button variant="outline" onClick={onClose}>Cancel</Button>
         <Button onClick={handleSubmit} disabled={!selectedUser || !selectedPermission || delegateMutation.isPending}>
-          {delegateMutation.isPending ? "Granting..." : "Grant Access"}
+          {delegateMutation.isPending ? "Assigning..." : "Assign Access"}
         </Button>
       </div>
     </Modal>

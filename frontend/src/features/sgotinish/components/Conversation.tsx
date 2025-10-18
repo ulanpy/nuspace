@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sgotinishApi } from "../api/sgotinishApi";
-import { Message as MessageType, ShortUserResponse, Ticket } from "../types";
+import { Message as MessageType, PermissionType, ShortUserResponse, Ticket, SGUserResponse } from "../types";
 import { useUser } from "@/hooks/use-user";
 import { format } from "date-fns";
 import { enUS } from "date-fns/locale";
@@ -9,17 +9,18 @@ import { Check, CheckCheck, User } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { Textarea } from "@/components/atoms/textarea";
 import { Button } from "@/components/atoms/button";
+import { mapRoleToDisplayName } from "../utils/roleMapping";
 
 interface MessageProps {
   message: MessageType;
-  conversationPartner: ShortUserResponse | null | undefined;
   isCurrentUserMessage: boolean;
   ticketAuthor: ShortUserResponse | null | undefined;
   isTicketAnonymous: boolean;
-  sgMember: ShortUserResponse | null | undefined;
+  participantsMap: Record<string, ShortUserResponse>;
+  currentUserSub?: string;
 }
 
-const Message: React.FC<MessageProps> = ({ message, conversationPartner, isCurrentUserMessage, ticketAuthor, isTicketAnonymous, sgMember }) => {
+const Message: React.FC<MessageProps> = ({ message, isCurrentUserMessage, ticketAuthor, isTicketAnonymous, participantsMap, currentUserSub }) => {
   const { ref, inView } = useInView({
     threshold: 0.5,
     triggerOnce: true,
@@ -44,19 +45,84 @@ const Message: React.FC<MessageProps> = ({ message, conversationPartner, isCurre
     }
   }, [inView, isCurrentUserMessage, message.id, user?.sub]);
 
-  const isReadByPartner = conversationPartner && message.message_read_statuses.some(
-    (status) => status.user_sub === conversationPartner.sub
-  );
+  const isReadByOthers = message.message_read_statuses.some((status) => {
+    if (currentUserSub && status.user_sub === currentUserSub) return false;
+    if (message.sender_sub && status.user_sub === message.sender_sub) return false;
+    return true;
+  });
 
   const getSenderInfo = () => {
-    if (message.is_from_sg_member) {
-      // Message from SG member - show SG member info
-      return sgMember ? (
+    if (message.sender) {
+      if ("user" in message.sender) {
+        const sgSender = message.sender as SGUserResponse;
+        const { user: sgUser, department_name, role } = sgSender;
+        return (
+          <>
+            {sgUser.picture ? (
+              <img
+                src={sgUser.picture}
+                alt={`${sgUser.name} ${sgUser.surname}`}
+                className="h-4 w-4 rounded-full flex-shrink-0"
+              />
+            ) : (
+              <User className="h-4 w-4 flex-shrink-0 text-gray-500" />
+            )}
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                {`${sgUser.name} ${sgUser.surname}`}
+              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {department_name} • {mapRoleToDisplayName(role)}
+              </span>
+            </div>
+          </>
+        );
+      }
+
+      const shortSender = message.sender as ShortUserResponse;
+      return (
         <>
-          <img src={sgMember.picture} alt={`${sgMember.name} ${sgMember.surname}`} className="h-4 w-4 rounded-full flex-shrink-0" />
-          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{`${sgMember.name} ${sgMember.surname}`}</span>
+          {shortSender.picture ? (
+            <img
+              src={shortSender.picture}
+              alt={`${shortSender.name} ${shortSender.surname}`}
+              className="h-4 w-4 rounded-full flex-shrink-0"
+            />
+          ) : (
+            <User className="h-4 w-4 flex-shrink-0 text-gray-500" />
+          )}
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            {`${shortSender.name} ${shortSender.surname}`}
+          </span>
         </>
-      ) : null;
+      );
+    }
+
+    if (message.is_from_sg_member) {
+      const senderSub = message.sender_sub ?? "";
+      const sgParticipant = participantsMap[senderSub];
+      if (sgParticipant) {
+        return (
+          <>
+            {sgParticipant.picture ? (
+              <img
+                src={sgParticipant.picture}
+                alt={`${sgParticipant.name} ${sgParticipant.surname}`}
+                className="h-4 w-4 rounded-full flex-shrink-0"
+              />
+            ) : (
+              <User className="h-4 w-4 flex-shrink-0 text-gray-500" />
+            )}
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{`${sgParticipant.name} ${sgParticipant.surname}`}</span>
+          </>
+        );
+      }
+      return (
+        <>
+          <User className="h-4 w-4 flex-shrink-0 text-gray-500" />
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Support Member</span>
+        </>
+      );
     } else {
       // Message from ticket author - show ticket author info
       if (!isTicketAnonymous && ticketAuthor) {
@@ -95,7 +161,7 @@ const Message: React.FC<MessageProps> = ({ message, conversationPartner, isCurre
       <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">{message.body}</p>
       {isCurrentUserMessage && (
         <div className="flex justify-end mt-1">
-          {isReadByPartner ? (
+          {isReadByOthers ? (
             <CheckCheck className="h-4 w-4 text-blue-500" />
           ) : (
             <Check className="h-4 w-4 text-gray-400" />
@@ -109,14 +175,14 @@ const Message: React.FC<MessageProps> = ({ message, conversationPartner, isCurre
 
 interface ConversationProps {
     conversationId: number;
-    sgMember: ShortUserResponse | null | undefined;
-    ticket: Pick<Ticket, "id" | "is_anonymous" | "author" | "author_sub"> & {
+    participants: ShortUserResponse[];
+    ticket: Pick<Ticket, "id" | "is_anonymous" | "author" | "author_sub" | "ticket_access"> & {
         permissions?: Ticket["permissions"];
     };
     canSendMessageOverride?: boolean;
 }
 
-export const Conversation: React.FC<ConversationProps> = ({ conversationId, sgMember, ticket, canSendMessageOverride }) => {
+export const Conversation: React.FC<ConversationProps> = ({ conversationId, participants, ticket, canSendMessageOverride }) => {
     const { user } = useUser();
     const [newMessage, setNewMessage] = React.useState("");
     const queryClient = useQueryClient();
@@ -168,27 +234,36 @@ export const Conversation: React.FC<ConversationProps> = ({ conversationId, sgMe
         if (!newMessage.trim()) return;
         createMessageMutation.mutate({
             conversation_id: conversationId,
-            sender_sub: "me",
             body: newMessage,
         });
     };
 
     const messages = data?.pages.flatMap((page) => page.messages) ?? [];
     const ticketAuthorSub = ticket.author?.sub ?? ticket.author_sub ?? null;
-    // The conversation partner is the other person in the conversation
-    // If current user is ticket author, partner is SG member
-    // If current user is SG member, partner is ticket author
-    const conversationPartner = user?.sub === ticketAuthorSub ? sgMember : ticket.author;
+
+    const participantsMap = React.useMemo(() => {
+        const map: Record<string, ShortUserResponse> = {};
+        participants.forEach((participant) => {
+            map[participant.sub] = participant;
+        });
+        if (ticket.author && ticket.author.sub) {
+            map[ticket.author.sub] = ticket.author;
+        }
+        return map;
+    }, [participants, ticket.author]);
 
     const isTicketAuthor = ticketAuthorSub ? user?.sub === ticketAuthorSub : false;
-    const isConversationCreator = user?.sub === sgMember?.sub;
+    const userRole = user?.role;
+    const isSgMember = userRole ? ["boss", "capo", "soldier"].includes(userRole) : false;
+    const hasSgMessagingPermission =
+        userRole === "admin" ||
+        (isSgMember &&
+            (ticket.ticket_access === PermissionType.ASSIGN ||
+                ticket.ticket_access === PermissionType.DELEGATE));
 
     const effectiveOverride = canSendMessageOverride ?? ticket.permissions?.can_edit ?? false;
 
-    const canWriteToConversation =
-        effectiveOverride ||
-        isTicketAuthor ||
-        isConversationCreator;
+    const canWriteToConversation = effectiveOverride || isTicketAuthor || hasSgMessagingPermission;
 
     return (
         <div className="space-y-4">
@@ -198,18 +273,24 @@ export const Conversation: React.FC<ConversationProps> = ({ conversationId, sgMe
             <div className="space-y-4">
                 {messages.map((message, index) => {
                     const isLastMessage = index === messages.length - 1;
+                    const isCurrentUserMessage = (() => {
+                        if (message.sender_sub && user?.sub) {
+                            return message.sender_sub === user.sub;
+                        }
+                        if (!message.sender_sub && !message.is_from_sg_member && ticketAuthorSub && user?.sub) {
+                            return ticketAuthorSub === user.sub;
+                        }
+                        return false;
+                    })();
                     return (
                         <div ref={isLastMessage ? lastMessageRef : null} key={message.id}>
                             <Message
                                 message={message}
-                                conversationPartner={conversationPartner}
-                                isCurrentUserMessage={
-                                    (message.is_from_sg_member && user?.sub === sgMember?.sub) ||
-                                    (!message.is_from_sg_member && ticketAuthorSub !== null && user?.sub === ticketAuthorSub)
-                                }
+                                isCurrentUserMessage={isCurrentUserMessage}
                                 ticketAuthor={ticket.author}
                                 isTicketAnonymous={ticket.is_anonymous}
-                                sgMember={sgMember}
+                                participantsMap={participantsMap}
+                                currentUserSub={user?.sub}
                             />
                         </div>
                     );

@@ -1,13 +1,13 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TicketCard } from "./TicketCard";
 import { Button } from "@/components/atoms/button";
-import { ArrowLeft, Filter, Folder, CheckCircle, ChevronDown } from "lucide-react";
+import { Filter, Folder, CheckCircle, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { ROUTES } from "@/data/routes";
 import { useUser } from "@/hooks/use-user";
 import { sgotinishApi } from "../api/sgotinishApi";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { toLocalDate } from "../utils/date";
 import {
   DropdownMenu,
@@ -17,14 +17,10 @@ import {
 } from "@/components/atoms/dropdown-menu";
 import { TicketCategory, TicketStatus } from "../types";
 
-interface SGDashboardProps {
-  onBack?: () => void;
-}
-
 type StatusFilterValue = TicketStatus | "all";
 type CategoryFilterValue = TicketCategory | "all";
 
-export default function SGDashboard({ onBack }: SGDashboardProps) {
+export default function SGDashboard() {
   const navigate = useNavigate();
   const { user } = useUser();
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
@@ -57,24 +53,98 @@ export default function SGDashboard({ onBack }: SGDashboardProps) {
   const activeStatusOption = statusOptions.find((option) => option.value === statusFilter) ?? statusOptions[0];
   const activeCategoryOption = categoryOptions.find((option) => option.value === categoryFilter) ?? categoryOptions[0];
 
-  const { data: ticketsResponse, isLoading, isError } = useQuery({
-    queryKey: ["sg-tickets", { statusFilter, categoryFilter }],
-    queryFn: () => sgotinishApi.getTickets({
-      category: categoryFilter === "all" ? undefined : categoryFilter,
-    }),
+  const PAGE_SIZE = 20;
+
+  const {
+    data,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: [
+      "sg-tickets",
+      {
+        statusFilter,
+        categoryFilter,
+        userSub: user?.sub ?? null,
+      },
+    ],
+    queryFn: ({ pageParam = 1 }) =>
+      sgotinishApi.getTickets({
+        page: pageParam,
+        size: PAGE_SIZE,
+        category: categoryFilter === "all" ? undefined : categoryFilter,
+      }),
+    getNextPageParam: (lastPage, allPages) => {
+      const nextPage = allPages.length + 1;
+      return nextPage <= (lastPage?.total_pages ?? 0) ? nextPage : undefined;
+    },
+    initialPageParam: 1,
     enabled: !!user,
-    retry: false, // Don't retry if unauthorized
+    retry: false,
   });
 
-  const handleTicketClick = (ticketId: number) => {
-    navigate(ROUTES.APPS.SGOTINISH.SG.TICKET.DETAIL_FN(String(ticketId)));
-  };
+  useEffect(() => {
+    if (!user) return;
+    refetch();
+  }, [user, refetch]);
 
-  const filteredTickets = ticketsResponse?.tickets.filter((ticket) => {
+  const allTickets = useMemo(
+    () => data?.pages.flatMap((page) => page.tickets) ?? [],
+    [data?.pages],
+  );
+
+  useEffect(() => {
+    if (
+      !isLoading &&
+      !isFetchingNextPage &&
+      hasNextPage &&
+      allTickets.length === 0
+    ) {
+      fetchNextPage();
+    }
+  }, [allTickets.length, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading]);
+
+  const filteredTickets = allTickets.filter((ticket) => {
     const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
     const matchesCategory = categoryFilter === "all" || ticket.category === categoryFilter;
     return matchesStatus && matchesCategory;
   }) || [];
+
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  const loadMoreRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+
+      if (!node || !hasNextPage) {
+        return;
+      }
+
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+          }
+        },
+        { rootMargin: "200px" },
+      );
+
+      observerRef.current.observe(node);
+    },
+    [fetchNextPage, hasNextPage, isFetchingNextPage],
+  );
+
+  useEffect(() => () => observerRef.current?.disconnect(), []);
+
+  const handleTicketClick = (ticketId: number) => {
+    navigate(ROUTES.APPS.SGOTINISH.SG.TICKET.DETAIL_FN(String(ticketId)));
+  };
 
   return (
     <MotionWrapper>
@@ -87,17 +157,6 @@ export default function SGDashboard({ onBack }: SGDashboardProps) {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">SG Dashboard</h1>
               <p className="text-gray-600 dark:text-gray-400">Manage student appeals and track metrics</p>
             </div>
-            {onBack && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="self-start"
-                onClick={onBack}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Student
-              </Button>
-            )}
           </div>
         </div>
         
@@ -174,7 +233,7 @@ export default function SGDashboard({ onBack }: SGDashboardProps) {
           {isLoading && <p>Loading...</p>}
           {isError && <p>Error loading tickets.</p>}
 
-          {!isLoading && !isError && (
+          {!isLoading && !isError && filteredTickets.length > 0 && (
             <div className="divide-y divide-gray-200 dark:divide-gray-800">
               {filteredTickets.map((ticket) => (
                 <div key={ticket.id}>
@@ -190,10 +249,17 @@ export default function SGDashboard({ onBack }: SGDashboardProps) {
                   />
                 </div>
               ))}
+              <div ref={loadMoreRef} />
             </div>
           )}
 
-          {!isLoading && !isError && filteredTickets.length === 0 && (
+          {isFetchingNextPage && (
+            <div className="py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+              Loading more tickets...
+            </div>
+          )}
+
+          {!isLoading && !isError && filteredTickets.length === 0 && !isFetchingNextPage && (
             <div className="text-center py-8">
               <CheckCircle className="mx-auto h-8 w-8 text-gray-400 dark:text-gray-500 mb-2" />
               <p className="text-sm text-gray-500 dark:text-gray-400">No tickets found</p>

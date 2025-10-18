@@ -54,11 +54,14 @@ class ListConversationDTO(BaseModel):
             raise ValueError("Number of pages should be positive")
         return value
 
-
 class ConversationCreateDTO(BaseModel):
-    """Schema for creating a new conversation."""
+    """Public schema for creating a new conversation."""
 
     ticket_id: int = Field(..., description="ID of the ticket this conversation belongs to")
+
+class _ConversationCreateDTO(ConversationCreateDTO):
+    """Internal schema for creating a new conversation."""
+
     sg_member_sub: str = Field(
         default="me",
         description="SG member identifier. Use 'me' for current user",
