@@ -4,10 +4,13 @@ from backend.common.cruds import QueryBuilder
 from backend.common.utils import response_builder
 from backend.core.database.models.sgotinish import Conversation, Message, MessageReadStatus, Ticket
 from backend.core.database.models.user import User, UserRole
+from backend.common.schemas import ShortUserResponse
+from backend.modules.sgotinish.tickets.schemas import SGUserResponse
+from backend.core.database.models.user import UserRole
 from backend.modules.sgotinish.messages import schemas
 from backend.modules.sgotinish.messages.policy import MessagePolicy
 from backend.modules.sgotinish.tickets.interfaces import AbstractNotificationService
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -26,42 +29,73 @@ class MessageService:
     ) -> schemas.MessageResponseDTO:
         """Helper to build a message response, applying anonymity rules."""
         # Eager loading in the main query ensures this access is efficient
-        ticket_is_anonymous = message.conversation.ticket.is_anonymous
+        ticket = message.conversation.ticket
+        ticket_is_anonymous = bool(ticket and ticket.is_anonymous)
+        ticket_author_sub = ticket.author_sub if ticket else None
+        is_ticket_author_sender = (
+            ticket_author_sub is not None and message.sender_sub == ticket_author_sub
+        )
+        hide_ticket_author_identity = ticket_is_anonymous and is_ticket_author_sender
         dto = schemas.MessageResponseDTO.model_validate(message)
 
         if not message.is_from_sg_member and ticket_is_anonymous:
             dto.sender_sub = None
 
+        if hide_ticket_author_identity:
+            dto.sender_sub = None
+
+        read_statuses = message.read_statuses
+        if ticket_is_anonymous and ticket_author_sub:
+            read_statuses = [
+                rs for rs in read_statuses if rs.user_sub != ticket_author_sub
+            ]
+
+        sender_response = None
+        if not hide_ticket_author_identity and message.sender:
+            if message.sender.role in {UserRole.boss, UserRole.capo, UserRole.soldier, UserRole.admin}:
+                sender_response = SGUserResponse(
+                    user=ShortUserResponse.model_validate(message.sender),
+                    department_name=message.sender.department.name if message.sender.department else "N/A",
+                    role=message.sender.role,
+                )
+            else:
+                sender_response = ShortUserResponse.model_validate(message.sender)
+
         return response_builder.build_schema(
             schemas.MessageResponseDTO,
             dto,
             message_read_statuses=[
-                schemas.BaseMessageReadStatus.model_validate(rs) for rs in message.read_statuses
+                schemas.BaseMessageReadStatus.model_validate(rs) for rs in read_statuses
             ],
+            sender=sender_response,
             permissions=MessagePolicy(user).get_permissions(message),
         )
 
     async def get_messages(
         self, conversation_id: int, size: int, page: int, user: tuple[dict, dict]
     ) -> schemas.ListMessageDTO:
-        qb = QueryBuilder(session=self.db_session, model=Message)
-        messages: List[Message] = (
-            await qb.base()
-            .filter(Message.conversation_id == conversation_id)
-            .option(
+        stmt = (
+            select(Message)
+            .where(Message.conversation_id == conversation_id)
+            .options(
                 selectinload(Message.conversation).selectinload(Conversation.ticket),
                 selectinload(Message.read_statuses),
+                selectinload(Message.sender).selectinload(User.department),
             )
-            .paginate(size, page)
-            .order(Message.sent_at.asc())
-            .all()
+            .order_by(Message.sent_at.asc())
+            .offset((page - 1) * size)
+            .limit(size)
         )
-        count = (
-            await qb.blank()
-            .base(count=True)
-            .filter(Message.conversation_id == conversation_id)
-            .count()
+        result = await self.db_session.execute(stmt)
+        messages: List[Message] = result.scalars().all()
+
+        count_stmt = (
+            select(func.count())
+            .select_from(Message)
+            .where(Message.conversation_id == conversation_id)
         )
+        count_result = await self.db_session.execute(count_stmt)
+        count = count_result.scalar_one()
 
         message_responses = [await self._build_message_response(m, user) for m in messages]
         total_pages = response_builder.calculate_pages(count=count, size=size)
@@ -70,16 +104,17 @@ class MessageService:
     async def get_message_by_id(
         self, message_id: int, user: tuple[dict, dict]
     ) -> schemas.MessageResponseDTO:
-        message = await (
-            QueryBuilder(self.db_session, Message)
-            .base()
-            .filter(Message.id == message_id)
-            .option(
+        stmt = (
+            select(Message)
+            .where(Message.id == message_id)
+            .options(
                 selectinload(Message.conversation).selectinload(Conversation.ticket),
                 selectinload(Message.read_statuses),
+                selectinload(Message.sender).selectinload(User.department),
             )
-            .first()
         )
+        result = await self.db_session.execute(stmt)
+        message = result.scalars().first()
         return await self._build_message_response(message, user)
 
     async def create_message(
@@ -88,15 +123,13 @@ class MessageService:
         user_sub = user[0].get("sub")
         user_role = UserRole(user[1].get("role"))
 
-        if message_data.sender_sub == "me":
-            message_data.sender_sub = user_sub
-
         sg_roles = [UserRole.boss, UserRole.capo, UserRole.soldier, UserRole.admin]
         is_from_sg = user_role in sg_roles
 
         internal_message_data = schemas._InternalMessageCreateDTO(
             **message_data.model_dump(),
             is_from_sg_member=is_from_sg,
+            sender_sub=user_sub,
         )
 
         qb = QueryBuilder(self.db_session, Message)
@@ -122,6 +155,7 @@ class MessageService:
                 selectinload(Message.conversation)
                 .selectinload(Conversation.sg_member)
                 .selectinload(User.department),
+                selectinload(Message.sender).selectinload(User.department),
             )
         )
         result = await self.db_session.execute(stmt)

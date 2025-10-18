@@ -26,7 +26,7 @@ class NotificationService(AbstractNotificationService):
                 receiver_sub=boss.sub,
                 type=NotificationType.info,
                 telegram_id=boss.telegram_id,
-                url="https://sgotinish.org/tickets",
+                url=f"https://t.me/NUspaceBot/app",
             )
             for boss in bosses
             if boss.telegram_id
@@ -48,7 +48,7 @@ class NotificationService(AbstractNotificationService):
                 receiver_sub=access.user_sub,
                 type=NotificationType.info,
                 telegram_id=access.user.telegram_id,
-                url="https://sgotinish.org/tickets",
+                url=f"https://t.me/NUspaceBot/app",
             )
         ]
         if notifications_data:
@@ -68,7 +68,7 @@ class NotificationService(AbstractNotificationService):
                 receiver_sub=ticket.author.sub,
                 type=NotificationType.info,
                 telegram_id=ticket.author.telegram_id,
-                url="https://sgotinish.org/tickets",
+                url=f"https://t.me/NUspaceBot/app",
             )
         ]
         if notifications_data:
@@ -88,20 +88,15 @@ class NotificationService(AbstractNotificationService):
             if not (recipient and recipient.telegram_id and sender):
                 return
 
-            sender_name = f"{sender.name} {sender.surname}"
-            title = f"New message from {sender_name}"
-            message_body = (
-                f"Ticket: {ticket.title}\n"
-            )
+
         else:
             sender = ticket.author
             recipient = message.conversation.sg_member
             if not (recipient and recipient.telegram_id and sender):
                 return
 
-            sender_name = f"{sender.name} {sender.surname}"
-            title = f"New message from {sender_name}"
-            message_body = f"Ticket: {ticket.title}\nMessage: {message.body}"
+        title = "New message received"
+        message_body = f"Ticket: {ticket.title}"
 
         notifications_data = [
             RequestNotiification(
@@ -111,7 +106,7 @@ class NotificationService(AbstractNotificationService):
                 receiver_sub=recipient.sub,
                 type=NotificationType.info,
                 telegram_id=recipient.telegram_id,
-                url=f"https://sgotinish.org/tickets/{ticket.id}",
+                url=f"https://t.me/NUspaceBot/app",
             )
         ]
         if notifications_data:

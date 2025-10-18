@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict, field_validator
-from backend.common.schemas import ResourcePermissions
+from backend.common.schemas import ResourcePermissions, ShortUserResponse
+from backend.modules.sgotinish.tickets.schemas import SGUserResponse
 
 
 
@@ -33,11 +34,7 @@ class MessageCreateDTO(BaseModel):
     conversation_id: int = Field(
         ..., description="ID of the conversation this message belongs to"
     )
-    sender_sub: str = Field(
-        default="me",
-        description="Sender identifier. Use 'me' for current user",
-        examples=["me"],
-    )
+
     body: str = Field(
         ...,
         description="Content of the message",
@@ -54,10 +51,13 @@ class MessageCreateDTO(BaseModel):
         return value
 
 
-
 class _InternalMessageCreateDTO(MessageCreateDTO):
     """Internal schema for creating a message, including server-set fields."""
-
+    sender_sub: str = Field(
+        default="me",
+        description="Sender identifier. Use 'me' for current user",
+        examples=["me"],
+    )
     is_from_sg_member: bool
 
 
@@ -94,6 +94,10 @@ class MessageResponseDTO(BaseMessage):
     message_read_statuses: List[BaseMessageReadStatus] = Field(
         default=None,
         description="Message read status",
+    )
+    sender: Optional[ShortUserResponse | SGUserResponse] = Field(
+        default=None,
+        description="Sender of the message",
     )
     permissions: ResourcePermissions = Field(
         default=ResourcePermissions(),

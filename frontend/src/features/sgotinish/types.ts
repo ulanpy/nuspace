@@ -58,7 +58,8 @@ export interface Ticket {
     permissions: ResourcePermissions;
     ticket_access?: PermissionType | null;
     unread_count: number;
-    conversations: Conversation[];
+    conversation: Conversation | null;
+    conversations?: LegacyConversation[]; // legacy support until backend returns single conversation
 }
 
 export interface TicketListResponse{
@@ -81,6 +82,16 @@ export interface TicketUpdatePayload {
 export interface Conversation {
     id: number;
     ticket_id: number;
+    status: ConversationStatus;
+    created_at: string;
+    messages_count: number;
+    permissions: ResourcePermissions;
+    participants: ShortUserResponse[];
+}
+
+export interface LegacyConversation {
+    id: number;
+    ticket_id: number;
     sg_member_sub?: string | null;
     status: ConversationStatus;
     created_at: string;
@@ -89,14 +100,8 @@ export interface Conversation {
     permissions: ResourcePermissions;
 }
 
-export interface ConversationListResponse {
-    conversations: Conversation;
-    total_pages: number;
-}
-
 export type ConversationCreatePayload = {
     ticket_id: number;
-    sg_member_sub?: "me" | string;
 };
 
 export interface ConversationUpdatePayload {
@@ -112,6 +117,7 @@ export interface Message {
     sent_at: string;
     message_read_statuses: BaseMessageReadStatus[];
     permissions: ResourcePermissions;
+    sender: ShortUserResponse | SGUserResponse | null;
 }
 
 export interface MessageListResponse {
@@ -121,7 +127,6 @@ export interface MessageListResponse {
 
 export interface MessageCreatePayload {
     conversation_id: number;
-    sender_sub?: "me" | string;
     body: string;
 }
 
@@ -135,8 +140,8 @@ export interface Department {
     name: string;
 }
 
-export interface SGUser {
+export interface SGUserResponse {
     user: ShortUserResponse;
     department_name: string;
-    role: "boss" | "capo" | "soldier";
+    role: "boss" | "capo" | "soldier" | "admin";
 }

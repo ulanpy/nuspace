@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { Button } from "@/components/atoms/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
 import { Modal } from "@/components/atoms/modal";
-import { MessageCircle, Clock, User, Shield, Settings } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { MessageCircle, Clock, User, Shield, Settings, ShieldCheck, Info, MessageSquare } from "lucide-react";
+import { useParams } from "react-router-dom";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { formatDistanceToNow } from "date-fns";
 import { enUS } from "date-fns/locale";
@@ -15,10 +15,6 @@ import { sgotinishApi } from "../api/sgotinishApi";
 import { useUser } from "@/hooks/use-user";
 import { DelegateModal } from "./DelegateModal";
 import { Conversation } from "./Conversation";
-
-interface TicketDetailProps {
-  onBack?: () => void;
-}
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -35,8 +31,22 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-export default function TicketDetail({}: TicketDetailProps) {
-  const navigate = useNavigate();
+const getStatusDefinition = (status: string) => {
+  switch (status) {
+    case "open":
+      return "SG members will soon start working on your appeal";
+    case "in_progress":
+      return "SG members are working on your appeal. You can expect updates through the conversation.";
+    case "resolved":
+      return "Your appeal has been resolved. You can still continue the conversation if needed.";
+    case "closed":
+      return "This appeal has been closed. No further action is expected.";
+    default:
+      return "Status information is not available.";
+  }
+};
+
+export default function TicketDetail() {
   const { id: ticketId } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { user } = useUser();
@@ -110,26 +120,82 @@ export default function TicketDetail({}: TicketDetailProps) {
         <p className="text-sm text-gray-500 mb-4">
           {error?.message || "Failed to load ticket details"}
         </p>
-        <Button onClick={() => navigate(-1)} variant="outline">
+        <Button onClick={() => window.history.back()} variant="outline">
           Go Back
         </Button>
       </div>
     );
   }
 
-  const canDelegate = ticket.ticket_access === 'delegate';
+  const canDelegate = ticket.ticket_access === "delegate";
   const isSgMember = user && ["boss", "capo", "soldier"].includes(user.role);
-  const canUpdateStatus = isSgMember && (ticket.ticket_access === 'assign' || ticket.ticket_access === 'delegate');
+  const canUpdateStatus =
+    isSgMember &&
+    (ticket.ticket_access === "assign" || ticket.ticket_access === "delegate");
+  const conversationParticipants = ticket.conversation?.participants ?? [];
+  const participantNames = conversationParticipants
+    .map((participant) => `${participant.name} ${participant.surname}`)
+    .join(", ");
 
   return (
     <MotionWrapper>
       <div className="container mx-auto px-4 py-8 max-w-4xl">
 
+        {/* Status Definition Tip */}
+        <div className="mb-6 flex items-start gap-2 rounded-md border border-amber-100 bg-amber-50/70 p-3 text-xs text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+          <p className="leading-snug">
+            {getStatusDefinition(ticket.status)}
+          </p>
+        </div>
+
         {/* Ticket Header */}
-        <Card className="mb-6 hover:shadow-md transition-shadow relative">
-          <CardHeader className="relative pt-12">
-            {/* Action buttons - Absolute positioned top right */}
-            <div className="absolute top-2 right-2 flex gap-1 z-10">
+        <Card className="mb-6 hover:shadow-md transition-shadow">
+          <CardHeader className="space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 leading-tight">
+                    {ticket.title}
+                  </CardTitle>
+                  <div className="flex-shrink-0">{getStatusBadge(ticket.status)}</div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200">
+                    {ticket.category}
+                  </span>
+                  <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                    <Clock className="h-3 w-3 flex-shrink-0" />
+                    <span>{formatDistanceToNow(toLocalDate(ticket.created_at), { addSuffix: true, locale: enUS })}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              {!ticket.is_anonymous && ticket.author ? (
+                <div className="flex items-center gap-2">
+                  <img 
+                    src={ticket.author.picture} 
+                    alt={`${ticket.author.name} ${ticket.author.surname}`}
+                    className="h-6 w-6 rounded-full flex-shrink-0"
+                  />
+                  <span className="truncate">{`${ticket.author.name} ${ticket.author.surname}`}</span>
+                </div>
+              ) : ticket.is_anonymous ? (
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 flex-shrink-0" />
+                  <span>Anonymous</span>
+                </div>
+              ) : null}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+              {ticket.body}
+            </p>
+          </CardContent>
+          {(canUpdateStatus || (isSgMember && canDelegate)) && (
+            <CardFooter className="flex flex-row gap-2 border-t border-muted pt-4 items-center justify-end">
               {canUpdateStatus && (
                 <Button
                   size="sm"
@@ -138,126 +204,119 @@ export default function TicketDetail({}: TicketDetailProps) {
                     setSelectedStatus(ticket.status);
                     setStatusEditOpen(true);
                   }}
-                  className="flex items-center gap-1 text-xs h-8 px-2"
+                  className="flex items-center gap-2 h-8"
                 >
                   <Settings className="h-4 w-4" />
-                  <span className="hidden sm:inline">Edit</span>
+                  Edit Status
                 </Button>
               )}
               {isSgMember && canDelegate && (
                 <Button 
                   size="sm" 
-                  className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-1 text-xs h-8 px-2"
+                  className="flex items-center gap-2 h-8 bg-purple-600 hover:bg-purple-700 text-white"
                   onClick={() => setDelegateModalOpen(true)}
                 >
                   <Shield className="h-4 w-4" />
-                  <span className="sm:inline">Access</span>
+                  Assign Access
                 </Button>
               )}
-            </div>
-            
-            {/* Title - Full width */}
-            <CardTitle className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
-              {ticket.title}
-            </CardTitle>
-            
-            {/* Meta Info */}
-            <div className="space-y-3 mt-3">
-              
-              {/* Compact badges and info row - Mobile optimized */}
-              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                {/* Status and Category badges together */}
-                <div className="flex items-center gap-1.5">
-                  {getStatusBadge(ticket.status)}
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 h-5">
-                    {ticket.category}
-                  </span>
-                </div>
-                
-                {/* Separator dot */}
-                <span className="text-gray-400 dark:text-gray-500">•</span>
-                
-                {/* Time and Author info */}
-                <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                  <Clock className="h-3 w-3 flex-shrink-0" />
-                  <span className="text-xs">{formatDistanceToNow(toLocalDate(ticket.created_at), { addSuffix: true, locale: enUS })}</span>
-                </div>
-                
-                {!ticket.is_anonymous && ticket.author ? (
-                  <>
-                    <span className="text-gray-400 dark:text-gray-500">•</span>
-                    <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                      <img 
-                        src={ticket.author.picture} 
-                        alt={`${ticket.author.name} ${ticket.author.surname}`}
-                        className="h-3 w-3 rounded-full flex-shrink-0"
-                      />
-                      <span className="text-xs truncate">{`${ticket.author.name} ${ticket.author.surname}`}</span>
-                    </div>
-                  </>
-                ) : ticket.is_anonymous ? (
-                  <>
-                    <span className="text-gray-400 dark:text-gray-500">•</span>
-                    <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                      <User className="h-3 w-3 flex-shrink-0" />
-                      <span className="text-xs">Anonymous</span>
-                    </div>
-                  </>
-                ) : null}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-              {ticket.body}
-            </p>
-          </CardContent>
+            </CardFooter>
+          )}
         </Card>
 
-        {/* Conversations */}
-        {ticket.conversations.map(conversation => (
-          <Card key={conversation.id} className="mb-6 hover:shadow-md transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100">
-                <MessageCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                Conversation with {conversation.sg_member?.name} {conversation.sg_member?.surname}
-              </CardTitle>
+        {/* Conversation */}
+        {ticket.conversation ? (
+          <Card className="mb-6 hover:shadow-md transition-shadow">
+            <CardHeader className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Conversation
+                  </CardTitle>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <ShieldCheck className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+                  <span className="leading-snug">
+                    Only assigned SG members can see these messages. {ticket.is_anonymous ? "Your identity stays hidden unless you share it." : "Share sensitive concerns without posting publicly."}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                <span className="inline-flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-blue-500" />
+                  {participantNames || "Anonymous Student"}
+                </span>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               <Conversation
-                conversationId={conversation.id}
+                conversationId={ticket.conversation.id}
+                participants={conversationParticipants}
                 ticket={{
                   id: ticket.id,
                   is_anonymous: ticket.is_anonymous,
                   author: ticket.author,
                   author_sub: ticket.author_sub,
-                  permissions: ticket.permissions
+                  permissions: ticket.permissions,
+                  ticket_access: ticket.ticket_access,
                 }}
-                sgMember={conversation.sg_member}
               />
             </CardContent>
           </Card>
-        ))}
+        ) : null}
 
-        {isSgMember && ticket.conversations.length === 0 && (ticket.ticket_access === 'assign' || ticket.ticket_access === 'delegate') && (
-          <Card className="mb-6">
-            <CardContent className="p-6 text-center">
-              <p className="text-gray-600 dark:text-gray-400 mb-4">No conversations started yet.</p>
-              <Button
-                onClick={() => {
-                  createConversationMutation.mutate({
-                    ticket_id: ticket.id,
-                    sg_member_sub: "me",
-                  });
-                }}
-                disabled={createConversationMutation.isPending}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors"
-              >
-                {createConversationMutation.isPending ? "Creating..." : "Create Conversation"}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        {/* Legacy: support old conversation list if still returned by backend */}
+        {!ticket.conversation && ticket.conversations?.length ? (
+          ticket.conversations.map((legacyConversation) => (
+            <Card key={legacyConversation.id} className="mb-6 hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100">
+                  <MessageCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  Private conversation with SG support
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Conversation
+                  conversationId={legacyConversation.id}
+                  participants={legacyConversation.sg_member ? [legacyConversation.sg_member] : []}
+                  ticket={{
+                    id: ticket.id,
+                    is_anonymous: ticket.is_anonymous,
+                    author: ticket.author,
+                    author_sub: ticket.author_sub,
+                    permissions: ticket.permissions,
+                    ticket_access: ticket.ticket_access,
+                  }}
+                />
+              </CardContent>
+            </Card>
+          ))
+        ) : null}
+
+        {isSgMember && !ticket.conversation && !ticket.conversations?.length &&
+          (ticket.ticket_access === "assign" || ticket.ticket_access === "delegate") && (
+            <Card className="mb-6">
+              <CardContent className="p-6 text-center">
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  No conversation started yet for this ticket.
+                </p>
+                <Button
+                  onClick={() => {
+                    createConversationMutation.mutate({
+                      ticket_id: ticket.id,
+                    });
+                  }}
+                  disabled={createConversationMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors"
+                >
+                  {createConversationMutation.isPending
+                    ? "Creating..."
+                    : "Chat in Conversation"}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
       </div>
       <DelegateModal
         isOpen={isDelegateModalOpen}

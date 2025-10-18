@@ -54,7 +54,7 @@ async def create_message(
 
     **Access Policy:**
     - The author of the ticket can send messages.
-    - The SG member who created the conversation can send messages.
+    - SG member with Assign or Delegate permission can send messages.
     - Admins can always send messages.
 
     **Parameters:**
@@ -65,8 +65,8 @@ async def create_message(
     """
     # Get ticket access for permission checking
     access = await ticket_service.get_user_ticket_access(conversation.ticket, user_tuple)
-
-    MessagePolicy(user_tuple).check_create(message_data, conversation, access)
+    
+    MessagePolicy(user_tuple).check_create(conversation, access)
     return await service.create_message(message_data=message_data, user=user_tuple)
 
 
