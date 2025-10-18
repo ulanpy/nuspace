@@ -107,7 +107,7 @@ export function Modal({
 
       {/* Centered container. Keep it non-transformed (no scale/opacity animations) */}
       <div
-        className="fixed inset-0 grid place-items-center px-4"
+        className="fixed inset-0 grid place-items-start md:place-items-center px-4"
         style={{
           paddingTop: `calc(env(safe-area-inset-top, 0px) + ${Math.max(headerOffset, 0)}px + 2rem)`,
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",

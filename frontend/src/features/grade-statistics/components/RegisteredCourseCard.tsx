@@ -161,30 +161,6 @@ export function RegisteredCourseCard({
               <span className="hidden sm:inline">Add assignment</span>
             </Button>
           )}
-          {onShareTemplate && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onShareTemplate(registeredCourse)}
-              className="flex-shrink-0 h-8 gap-1.5 rounded-full border border-border/60 bg-background px-3 text-xs font-medium text-foreground hover:bg-muted"
-              disabled={isWithdrawn}
-            >
-              <Share2 className="h-3.5 w-3.5" />
-              Share template
-            </Button>
-          )}
-          {onOpenTemplates && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenTemplates(registeredCourse)}
-              className="flex-shrink-0 h-8 gap-1.5 rounded-full border border-border/60 bg-background px-3 text-xs font-medium text-foreground hover:bg-muted"
-              disabled={isWithdrawn}
-            >
-              <UsersRound className="h-3.5 w-3.5" />
-              Browse templates
-            </Button>
-          )}
           <Button
             variant="outline"
             size="sm"
@@ -205,6 +181,30 @@ export function RegisteredCourseCard({
             >
               <Info className="h-3.5 w-3.5" />
               Avg
+            </Button>
+          )}
+          {onOpenTemplates && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onOpenTemplates(registeredCourse)}
+              className="flex-shrink-0 h-8 gap-1.5 rounded-full border border-border/60 bg-background px-3 text-xs font-medium text-foreground hover:bg-muted"
+              disabled={isWithdrawn}
+            >
+              <UsersRound className="h-3.5 w-3.5" />
+              Browse templates
+            </Button>
+          )}
+          {onShareTemplate && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onShareTemplate(registeredCourse)}
+              className="flex-shrink-0 h-8 gap-1.5 rounded-full border border-border/60 bg-background px-3 text-xs font-medium text-foreground hover:bg-muted"
+              disabled={isWithdrawn}
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              Share template
             </Button>
           )}
           <Button
