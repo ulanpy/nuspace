@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import type { PointerEvent as ReactPointerEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Button } from "@/components/atoms/button";
 import { Modal } from "@/components/atoms/modal";
 import { Input } from "@/components/atoms/input";
@@ -53,10 +54,33 @@ export function SynchronizeCoursesControl({
       const result = await onSync(password.trim());
       setSyncResult(result);
     } catch (err) {
-      console.error("Failed to synchronize courses", err);
-      setError("Failed to synchronize courses. Please double-check your password and try again. If the problem persists, please contact us");
+      console.error("Failed to sync courses", err);
+      setError("Failed to sync courses. Please double-check your password and try again. If the problem persists, please contact us");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleRevealPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setShowPassword(true);
+  };
+
+  const handleRevealPointerUp = () => {
+    setShowPassword(false);
+  };
+
+  const handleRevealKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === " " || event.key === "Enter") {
+      event.preventDefault();
+      setShowPassword(true);
+    }
+  };
+
+  const handleRevealKeyUp = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === " " || event.key === "Enter") {
+      event.preventDefault();
+      setShowPassword(false);
     }
   };
 
@@ -64,13 +88,13 @@ export function SynchronizeCoursesControl({
     <>
       <Button size="sm" onClick={handleOpen} className="gap-2">
         <RefreshCcw className="h-4 w-4" />
-        Synchronize
+        Sync
       </Button>
 
       <Modal
         isOpen={isModalOpen}
         onClose={handleClose}
-        title="Synchronize Nuspace with Registrar"
+        title="Sync Nuspace with Registrar"
         className="max-w-lg"
         contentClassName="rounded-3xl"
       >
@@ -104,9 +128,13 @@ export function SynchronizeCoursesControl({
                 variant="ghost"
                 size="icon"
                 className="absolute right-1 top-1 h-9 w-9 text-muted-foreground hover:text-foreground"
-                onMouseDown={() => setShowPassword(true)}
-                onMouseUp={() => setShowPassword(false)}
-                onMouseLeave={() => setShowPassword(false)}
+                onPointerDown={handleRevealPointerDown}
+                onPointerUp={handleRevealPointerUp}
+                onPointerLeave={handleRevealPointerUp}
+                onPointerCancel={handleRevealPointerUp}
+                onBlur={handleRevealPointerUp}
+                onKeyDown={handleRevealKeyDown}
+                onKeyUp={handleRevealKeyUp}
                 disabled={isSubmitting}
               >
                 {showPassword ? (
@@ -171,7 +199,7 @@ export function SynchronizeCoursesControl({
               className="gap-2"
             >
               <RefreshCcw className={`h-4 w-4 ${isSubmitting ? "animate-spin" : ""}`} />
-              {isSubmitting ? "Synchronizing…" : "Synchronize"}
+              {isSubmitting ? "Syncing…" : "Sync"}
             </Button>
           </div>
         </div>
