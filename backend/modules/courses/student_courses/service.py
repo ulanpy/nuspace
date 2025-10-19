@@ -8,11 +8,21 @@ from backend.common.cruds import QueryBuilder
 from backend.common.schemas import Infra
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.grade_report import Course, CourseItem, StudentCourse
+from backend.core.database.models.grade_report import (
+    Course,
+    CourseItem,
+    StudentCourse,
+    StudentSchedule,
+)
 from backend.modules.courses.student_courses import schemas
 from backend.modules.courses.crashed.service import RegistrarService
-from backend.modules.courses.crashed.schemas import CourseSearchRequest, SemesterOption
-from backend.modules.courses.crashed.schemas import ScheduleResponse
+from backend.modules.courses.crashed.schemas import (
+    CourseSearchRequest,
+    SchedulePreferences,
+    ScheduleResponse,
+    SemesterOption,
+    UserScheduleItem,
+)
 
 
 class StudentCourseService:
@@ -357,7 +367,17 @@ class StudentCourseService:
         )
         
         if not current_term_value:
-            return schemas.RegistrarSyncResponse(synced_courses=[], total_synced=0, added_count=0, deleted_count=0, kept_count=0)
+            return schemas.RegistrarSyncResponse(
+                synced_courses=[],
+                total_synced=0,
+                added_count=0,
+                deleted_count=0,
+                kept_count=0,
+                schedule=None,
+                term_label=None,
+                term_value=None,
+                last_synced_at=None,
+            )
         
         # Get current term label
         current_term_label = None
@@ -367,7 +387,17 @@ class StudentCourseService:
                 break
         
         if not current_term_label:
-            return schemas.RegistrarSyncResponse(synced_courses=[], total_synced=0, added_count=0, deleted_count=0, kept_count=0)
+            return schemas.RegistrarSyncResponse(
+                synced_courses=[],
+                total_synced=0,
+                added_count=0,
+                deleted_count=0,
+                kept_count=0,
+                schedule=None,
+                term_label=None,
+                term_value=None,
+                last_synced_at=None,
+            )
         
         # Extract unique course codes from schedule
         schedule_course_codes = set()
@@ -449,10 +479,96 @@ class StudentCourseService:
                 )
             )
         
+        # Upsert schedule snapshot
+        schedule_qb = QueryBuilder(session=self.db_session, model=StudentSchedule)
+        existing_schedule = await (
+            schedule_qb.base()
+            .filter(
+                StudentSchedule.student_sub == student_sub,
+                StudentSchedule.term_value == current_term_value,
+            )
+            .first()
+        )
+
+        schedule_entries = [
+            [item.model_dump() for item in day]
+            for day in schedule_response.data
+        ]
+        preferences = schedule_response.preferences.model_dump()
+
+        schedule_payload = schemas.StudentScheduleCreate(
+            student_sub=student_sub,
+            term_label=current_term_label,
+            term_value=current_term_value,
+            schedule_data=schedule_entries,
+            preferences=preferences,
+        )
+
+        if existing_schedule:
+            update_data = schemas.StudentScheduleUpdate(
+                schedule_data=schedule_entries,
+                preferences=preferences,
+                last_synced_at=datetime.utcnow(),
+            )
+            await schedule_qb.update(instance=existing_schedule, update_data=update_data)
+        else:
+            await schedule_qb.add(data=schedule_payload)
+
+        synced_at = datetime.utcnow()
+
         return schemas.RegistrarSyncResponse(
             synced_courses=all_current_courses,
             total_synced=len(all_current_courses),
             added_count=len(courses_to_add),
             deleted_count=len(courses_to_delete),
             kept_count=len(courses_to_keep),
+            schedule=schedule_response,
+            term_label=current_term_label,
+            term_value=current_term_value,
+            last_synced_at=synced_at,
+        )
+
+    async def get_latest_schedule(
+        self,
+        student_sub: str,
+    ) -> schemas.StudentScheduleResponse | None:
+        qb = QueryBuilder(session=self.db_session, model=StudentSchedule)
+        schedule_record = await (
+            qb.base()
+            .filter(StudentSchedule.student_sub == student_sub)
+            .order(StudentSchedule.last_synced_at.desc())
+            .first()
+        )
+
+        if not schedule_record:
+            return None
+
+        # Ensure week structure is a list of 7 days
+        raw_week = schedule_record.schedule_data or []
+        normalized_week = []
+        for day in raw_week:
+            day_items = []
+            if isinstance(day, list):
+                for item in day:
+                    if isinstance(item, dict):
+                        try:
+                            day_items.append(UserScheduleItem(**item))
+                        except Exception:
+                            continue
+            normalized_week.append(day_items)
+
+        # Pad to 7 days if registrar returned fewer entries
+        while len(normalized_week) < 7:
+            normalized_week.append([])
+
+        schedule = ScheduleResponse(
+            data=normalized_week,
+            preferences=SchedulePreferences(**(schedule_record.preferences or {})),
+        )
+
+        return schemas.StudentScheduleResponse(
+            term_label=schedule_record.term_label,
+            term_value=schedule_record.term_value,
+            last_synced_at=schedule_record.last_synced_at,
+            schedule=schedule,
         )
