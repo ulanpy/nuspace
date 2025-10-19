@@ -113,6 +113,18 @@ async def get_registered_courses(
     return await service.get_registered_courses(student_sub=student_sub)
 
 
+@router.get("/registered_courses/schedule", response_model=schemas.StudentScheduleResponse | None)
+async def get_registered_courses_schedule(
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    student_sub = user[0].get("sub")
+    StudentCoursePolicy(user=user).check_read_list(student_sub=student_sub)
+
+    service = StudentCourseService(db_session=db_session)
+    return await service.get_latest_schedule(student_sub=student_sub)
+
+
 @router.delete("/registered_courses/{student_course_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def unregister_course(
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],

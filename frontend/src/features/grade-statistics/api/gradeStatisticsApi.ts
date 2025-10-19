@@ -1,21 +1,22 @@
 import { apiCall } from "@/utils/api";
 import {
-  GradeStatisticsResponse,
-  GradeStatisticsFilters,
   BaseCourseFilters,
-  BaseCourseListResponse,
   BaseCourseItem,
-  RegisteredCourse,
+  BaseCourseListResponse,
   CourseItemCreate,
   CourseItemUpdate,
+  GradeStatisticsFilters,
+  GradeStatisticsResponse,
+  RegistrarSyncResponse,
+  RegisteredCourse,
+  StudentScheduleResponse,
   TemplateCreatePayload,
   TemplateFilters,
-  TemplateListResponse,
   TemplateImportResponse,
+  TemplateListResponse,
   TemplateResponse,
   TemplateUpdatePayload,
   SemesterOption,
-  RegistrarSyncResponse,
 } from "../types";
 
 export const gradeStatisticsApi = {
@@ -48,6 +49,11 @@ export const gradeStatisticsApi = {
 
   syncRegistrarCourses: async (payload: { password: string }): Promise<RegistrarSyncResponse> => {
     return await apiCall(`/registered_courses/sync`, { method: 'POST', json: payload });
+  },
+
+  getSchedule: async (): Promise<StudentScheduleResponse | null> => {
+    const response = await apiCall<StudentScheduleResponse | null>(`/registered_courses/schedule`);
+    return response ?? null;
   },
   
   // ==== Course Items APIs ====

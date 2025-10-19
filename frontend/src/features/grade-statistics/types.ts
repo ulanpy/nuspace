@@ -219,10 +219,52 @@ export interface RegisteredCourseResponse extends RegisteredCourse {
   class_average: number | null;
 }
 
+export interface ScheduleTime {
+  start: {
+    hh: number;
+    mm: number;
+  };
+  end: {
+    hh: number;
+    mm: number;
+  };
+}
+
+export interface UserScheduleItem {
+  label: string;
+  title: string;
+  info: string;
+  teacher: string;
+  cab: string;
+  course_code: string;
+  time: ScheduleTime;
+}
+
+export interface SchedulePreferences {
+  classes: string[];
+  colors: Record<string, string>;
+}
+
+export interface ScheduleResponse {
+  data: UserScheduleItem[][];
+  preferences: SchedulePreferences;
+}
+
 export interface RegistrarSyncResponse {
   synced_courses: RegisteredCourse[];
   total_synced: number;
   added_count: number;
   deleted_count: number;
   kept_count: number;
+  schedule?: ScheduleResponse | null;
+  term_label?: string | null;
+  term_value?: string | null;
+  last_synced_at?: string | null;
+}
+
+export interface StudentScheduleResponse {
+  term_label: string | null;
+  term_value: string | null;
+  last_synced_at: string | null;
+  schedule: ScheduleResponse;
 }

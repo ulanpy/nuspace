@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import Base
 
@@ -63,6 +64,27 @@ class Course(Base):
     # ORM relationships
     student_courses = relationship("StudentCourse", back_populates="course")
     templates = relationship("CourseTemplate", back_populates="course")
+
+
+class StudentSchedule(Base):
+    __tablename__ = "student_schedules"
+    __table_args__ = (
+        UniqueConstraint("student_sub", "term_value", name="uq_student_schedule_student_term"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    student_sub: Mapped[str] = mapped_column(
+        ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
+    )
+    term_label: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    term_value: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    schedule_data: Mapped[list] = mapped_column(JSONB, nullable=False)
+    preferences: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    last_synced_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    student = relationship("User", back_populates="student_schedules")
 
 
 class StudentCourse(Base):

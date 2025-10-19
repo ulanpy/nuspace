@@ -13,11 +13,14 @@ from backend.modules.courses.crashed.schemas import (
     CourseSearchRequest,
     CourseSearchResponse,
     SemesterOption,
+    ScheduleResponse,
+    SyncRequest,
 )
 from backend.modules.courses.crashed.service import RegistrarService
 
 
 router = APIRouter(prefix="/registrar", tags=["Registrar"])
+
 
 @router.get("/semesters", response_model=list[SemesterOption])
 async def list_semesters(

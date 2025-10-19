@@ -1,9 +1,14 @@
 from datetime import datetime
-from typing import List
+from typing import Any, List
 
 from fastapi import Query
 from pydantic import BaseModel, Field
 
+from backend.modules.courses.crashed.schemas import (
+    SchedulePreferences,
+    ScheduleResponse,
+    UserScheduleItem,
+)
 
 
 class CourseCreate(BaseModel):
@@ -141,4 +146,29 @@ class RegistrarSyncResponse(BaseModel):
     added_count: int
     deleted_count: int
     kept_count: int
+    schedule: ScheduleResponse | None = None
+    term_label: str | None = None
+    term_value: str | None = None
+    last_synced_at: datetime | None = None
+
+
+class StudentScheduleCreate(BaseModel):
+    student_sub: str
+    term_label: str | None = None
+    term_value: str | None = None
+    schedule_data: List[List[UserScheduleItem]]
+    preferences: SchedulePreferences | dict[str, Any]
+
+
+class StudentScheduleUpdate(BaseModel):
+    schedule_data: List[List[UserScheduleItem]] | None = None
+    preferences: dict[str, Any] | SchedulePreferences | None = None
+    last_synced_at: datetime | None = None
+
+
+class StudentScheduleResponse(BaseModel):
+    term_label: str | None
+    term_value: str | None
+    last_synced_at: datetime | None
+    schedule: ScheduleResponse
 

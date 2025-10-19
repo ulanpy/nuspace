@@ -1,22 +1,36 @@
 "use client";
 
 import { useMemo, useState, useCallback, useEffect } from "react";
+import { cn } from "@/utils/utils";
 import { GradeStatisticsCard } from "../components/GradeStatisticsCard";
 import { RegisteredCourseCard } from "../components/RegisteredCourseCard";
 import {
+  BaseCourseItem,
+  CourseItemCreate,
   GradeStatistics,
   RegisteredCourse,
-  CourseItemCreate,
-  BaseCourseItem,
-  TemplateResponse,
-  SemesterOption,
   RegistrarSyncResponse,
+  ScheduleResponse,
+  SemesterOption,
+  StudentScheduleResponse,
+  TemplateResponse,
 } from "../types";
 import { SearchableInfiniteList } from "@/components/virtual/SearchableInfiniteList";
 import { usePreSearchGrades } from "../api/hooks/usePreSearchGrades";
-import { BarChart3, Calculator, RefreshCw, Plus } from "lucide-react";
+import {
+  BarChart3,
+  CalendarClock,
+  CalendarDays,
+  Calculator,
+  ChevronLeft,
+  ChevronRight,
+  Info,
+  Plus,
+  RefreshCw,
+  X,
+} from "lucide-react";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
-import { Card, CardContent } from "@/components/atoms/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/card";
 import { gradeStatisticsApi } from "../api/gradeStatisticsApi";
 import {
   calculateTotalGPA,
@@ -47,6 +61,8 @@ import {
 } from "../utils/templateUtils";
 import { useToast } from "@/hooks/use-toast";
 import { SynchronizeCoursesControl } from "../components/SynchronizeCoursesControl";
+import { ScheduleDialog } from "../components/ScheduleDialog";
+import { formatDistanceToNow, parseISO } from "date-fns";
 
 export default function GradeStatisticsPage() {
   const [selected, setSelected] = useState<GradeStatistics[]>([]);
@@ -84,6 +100,22 @@ export default function GradeStatisticsPage() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [withdrawnCourseIds, setWithdrawnCourseIds] = useState<Set<number>>(new Set());
+  const [scheduleData, setScheduleData] = useState<ScheduleResponse | null>(null);
+  const [scheduleMeta, setScheduleMeta] = useState<
+    Pick<StudentScheduleResponse, "term_label" | "term_value" | "last_synced_at">
+    | null
+  >(null);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+
+  const scheduleLastSyncedText = useMemo(() => {
+    if (!scheduleMeta?.last_synced_at) return null;
+    try {
+      return formatDistanceToNow(parseISO(scheduleMeta.last_synced_at), { addSuffix: true });
+    } catch (error) {
+      return null;
+    }
+  }, [scheduleMeta?.last_synced_at]);
 
   const maxSelections = 8;
 
@@ -108,36 +140,94 @@ export default function GradeStatisticsPage() {
   // Fetch registered courses once on mount or when user changes
   useEffect(() => {
     if (user && !hasFetched) {
+      let cancelled = false;
       (async () => {
-        const registered = await gradeStatisticsApi.getRegisteredCourses();
-        setRegisteredCourses(registered);
-        setWithdrawnCourseIds(prev => {
-          if (prev.size === 0) return prev;
-          const valid = new Set(registered.map(course => course.id));
-          const next = new Set<number>();
-          prev.forEach(id => {
-            if (valid.has(id)) next.add(id);
+        setScheduleLoading(true);
+        try {
+          const registered = await gradeStatisticsApi.getRegisteredCourses();
+          if (cancelled) return;
+          setRegisteredCourses(registered);
+          setWithdrawnCourseIds(prev => {
+            if (cancelled || prev.size === 0) return prev;
+            const valid = new Set(registered.map(course => course.id));
+            const next = new Set<number>();
+            prev.forEach(id => {
+              if (valid.has(id)) next.add(id);
+            });
+            return next;
           });
-          return next;
-        });
-        const semesterData = await gradeStatisticsApi.getSemesters();
-        setSemesters(semesterData);
-        setHasFetched(true);
+
+          const semesterData = await gradeStatisticsApi.getSemesters();
+          if (cancelled) return;
+          setSemesters(semesterData);
+
+          try {
+            const latestSchedule = await gradeStatisticsApi.getSchedule();
+            if (cancelled) return;
+            if (latestSchedule) {
+              setScheduleData(latestSchedule.schedule);
+              setScheduleMeta({
+                term_label: latestSchedule.term_label,
+                term_value: latestSchedule.term_value,
+                last_synced_at: latestSchedule.last_synced_at,
+              });
+            } else {
+              setScheduleData(null);
+              setScheduleMeta(null);
+            }
+          } catch (error) {
+            if (!cancelled) {
+              console.error("Failed to fetch schedule", error);
+              setScheduleData(null);
+              setScheduleMeta(null);
+            }
+          }
+        } catch (error) {
+          if (!cancelled) {
+            console.error("Failed to load registrar data", error);
+          }
+        } finally {
+          if (!cancelled) {
+            setScheduleLoading(false);
+            setHasFetched(true);
+          }
+        }
       })();
+
+      return () => {
+        cancelled = true;
+      };
     } else if (!user) {
       // Clear data on logout
       setRegisteredCourses([]);
       setSelectedRegisteredCourse(null);
       setHasFetched(false);
       setWithdrawnCourseIds(new Set());
+      setScheduleData(null);
+      setScheduleMeta(null);
+      setScheduleLoading(false);
+      setIsScheduleOpen(false);
     }
   }, [user, hasFetched]);
 
   const handleSyncCourses = useCallback(
     async (password: string): Promise<RegistrarSyncResponse> => {
-      const result = await gradeStatisticsApi.syncRegistrarCourses({ password });
-      setRegisteredCourses(result.synced_courses);
-      return result;
+      setScheduleLoading(true);
+      try {
+        const result = await gradeStatisticsApi.syncRegistrarCourses({ password });
+        setRegisteredCourses(result.synced_courses);
+        if (result.schedule) {
+          setScheduleData(result.schedule);
+          setScheduleMeta(prev => ({
+            term_label: result.term_label ?? prev?.term_label ?? null,
+            term_value: result.term_value ?? prev?.term_value ?? null,
+            last_synced_at: result.last_synced_at ?? new Date().toISOString(),
+          }));
+        }
+        return result;
+      } finally {
+        setScheduleLoading(false);
+      }
     },
   []);
 
@@ -557,28 +647,70 @@ export default function GradeStatisticsPage() {
   return (
     <MotionWrapper>
       <div className="w-full max-w-none space-y-6">
-
         {/* Tabs: Course Statistics vs Live GPA */}
         <Tabs defaultValue="live-gpa">
           <TabsList className="mb-4 grid w-full grid-cols-2 rounded-full bg-muted/60 p-1">
-            <TabsTrigger value="live-gpa">Your Live GPA</TabsTrigger>
+            <TabsTrigger value="live-gpa">My Courses</TabsTrigger>
             <TabsTrigger value="course-stats">Course Statistics</TabsTrigger>
           </TabsList>
 
           <TabsContent value="live-gpa">
-            <div className="space-y-4">
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calculator className="h-5 w-5" />
-                  <h2 className="text-base font-medium text-foreground">Live GPA overview</h2>
+            <div className="space-y-6">
+              {/* My Courses Header */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">My Courses</h1>
+                    <p className="text-gray-600 dark:text-gray-400">Track your academic progress and manage your course schedule</p>
+                  </div>
+                  {user && (
+                    <SynchronizeCoursesControl
+                      onSync={handleSyncCourses}
+                      userEmail={user.email ?? ""}
+                    />
+                  )}
                 </div>
-                {user && (
-                  <SynchronizeCoursesControl
-                    onSync={handleSyncCourses}
-                    userEmail={user.email ?? ""}
-                  />
-                )}
               </div>
+
+
+                {user && (
+                <Card className="rounded-2xl border border-border/50 bg-muted/30">
+                  <CardHeader className="flex flex-row items-start justify-between gap-4 pb-1">
+                    <div className="space-y-1">
+                      <CardTitle className="text-base font-semibold text-foreground">Weekly timetable</CardTitle>
+                    </div>
+                    <CalendarClock className="h-5 w-5 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <span>
+                        {scheduleMeta?.term_label ? `Current term: ${scheduleMeta.term_label}` : "No schedule synced yet"}
+                      </span>
+                      {scheduleMeta?.last_synced_at && (
+                        <span>Last synced {new Date(scheduleMeta.last_synced_at + 'Z').toLocaleString()}</span>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                      onClick={() => setIsScheduleOpen(true)}
+                      disabled={scheduleLoading}
+                    >
+                      <CalendarDays className="h-4 w-4" />
+                      {scheduleLoading ? "Loading schedule…" : "View schedule"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              <ScheduleDialog
+                open={isScheduleOpen}
+                onClose={() => setIsScheduleOpen(false)}
+                schedule={scheduleData}
+                meta={scheduleMeta}
+                isLoading={scheduleLoading}
+              />
 
               {/* Add Course Item Modal */}
               {selectedRegisteredCourse && (

@@ -52,3 +52,4 @@ class User(Base):
     posts = relationship("CommunityPost", back_populates="user")
     communities = relationship("CommunityMember", back_populates="user")
     templates = relationship("CourseTemplate", back_populates="student")
+    student_schedules = relationship("StudentSchedule", back_populates="student", cascade="all, delete-orphan")
