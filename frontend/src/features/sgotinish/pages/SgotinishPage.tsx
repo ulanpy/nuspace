@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import StudentDashboard from "../components/StudentDashboard";
@@ -41,7 +41,7 @@ export default function SgotinishPage() {
 
   const effectiveDashboard = isSgMember ? activeDashboard : "student";
 
-  const dashboardContent = useMemo(() => {
+  const renderDashboardContent = () => {
     if (effectiveDashboard === "sg") {
       return <SGDashboard />;
     }
@@ -51,7 +51,7 @@ export default function SgotinishPage() {
         createAppealButton={<CreateAppealButton onClick={handleCreateAppeal} />}
       />
     );
-  }, [effectiveDashboard, user]);
+  };
 
   useEffect(() => {
     if (!isSgMember) return;
@@ -91,7 +91,7 @@ export default function SgotinishPage() {
             </TabsList>
           </Tabs>
         )}
-        {dashboardContent}
+        {renderDashboardContent()}
       </div>
       
       {/* Render the Login Modal */}
