@@ -90,7 +90,6 @@ export function SynchronizeCoursesControl({
         <RefreshCcw className="h-4 w-4" />
         Sync
       </Button>
-
       <Modal
         isOpen={isModalOpen}
         onClose={handleClose}
@@ -107,47 +106,48 @@ export function SynchronizeCoursesControl({
             </AlertDescription>
           </Alert>
 
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-foreground">Registrar username</label>
-            <Input value={username} readOnly className="cursor-not-allowed bg-muted/60" />
-          </div>
+          <form action="/registered_courses/sync" method="POST" onSubmit={(ev) => {ev.preventDefault(); handleSubmit()}}>
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground">Registrar username</label>
+                <Input value={username} readOnly className="cursor-not-allowed bg-muted/60" />
+              </div>
 
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-foreground">Registrar password</label>
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Enter your registrar password"
-                className="h-11 rounded-xl pr-10"
-                disabled={isSubmitting}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1 h-9 w-9 text-muted-foreground hover:text-foreground"
-                onPointerDown={handleRevealPointerDown}
-                onPointerUp={handleRevealPointerUp}
-                onPointerLeave={handleRevealPointerUp}
-                onPointerCancel={handleRevealPointerUp}
-                onBlur={handleRevealPointerUp}
-                onKeyDown={handleRevealKeyDown}
-                onKeyUp={handleRevealKeyUp}
-                disabled={isSubmitting}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground">Registrar password</label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Enter your registrar password"
+                    className="h-11 rounded-xl pr-10"
+                    disabled={isSubmitting}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1 h-9 w-9 text-muted-foreground hover:text-foreground"
+                    onPointerDown={handleRevealPointerDown}
+                    onPointerUp={handleRevealPointerUp}
+                    onPointerLeave={handleRevealPointerUp}
+                    onPointerCancel={handleRevealPointerUp}
+                    onBlur={handleRevealPointerUp}
+                    onKeyDown={handleRevealKeyDown}
+                    onKeyUp={handleRevealKeyUp}
+                    disabled={isSubmitting}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
 
           {error && (
-            <Alert variant="destructive" className="border-destructive/50 bg-destructive/10 text-destructive">
+            <Alert variant="destructive" className="my-2 border-destructive/50 bg-destructive/10 text-destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle className="text-sm font-semibold">Synchronization failed</AlertTitle>
               <AlertDescription className="text-xs">
@@ -191,17 +191,18 @@ export function SynchronizeCoursesControl({
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 my-2">
             <Button
               size="sm"
-              onClick={handleSubmit}
+              // onClick={}
               disabled={isSubmitting || !password.trim()}
               className="gap-2"
             >
+              <input type="submit" value={isSubmitting ? "Syncing…" : "Sync"} />
               <RefreshCcw className={`h-4 w-4 ${isSubmitting ? "animate-spin" : ""}`} />
-              {isSubmitting ? "Syncing…" : "Sync"}
             </Button>
-          </div>
+            </div>
+          </form>
         </div>
       </Modal>
     </>
