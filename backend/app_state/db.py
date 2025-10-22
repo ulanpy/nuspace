@@ -9,8 +9,8 @@ async def setup_db(app: FastAPI):
     # Avoid implicit schema creation in production – rely on Alembic migrations instead
 
     # === When modifying tables, comment this out! ===
-    # if config.IS_DEBUG:
-    #     await app.state.db_manager.create_all_tables()
+    if config.IS_DEBUG:
+        await app.state.db_manager.create_all_tables()
 
 
 async def cleanup_db(app: FastAPI):

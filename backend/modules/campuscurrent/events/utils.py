@@ -22,8 +22,10 @@ class EventEnrichmentService:
         scope = EventScope.community if event_data.community_id else EventScope.personal
 
         if scope == EventScope.community:
-            # Determine status based on user role and community membership
-            status = await self._determine_event_status(event_data)
+            # DEPRECATED: Determine status based on user role and community membership
+            # now all events are approved by default
+            #status = await self._determine_event_status(event_data)
+            status = EventStatus.approved
         else:
             # don't set status for personal events
             status = EventStatus.approved
