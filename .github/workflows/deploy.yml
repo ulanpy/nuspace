@@ -168,82 +168,42 @@ jobs:
           
           # Remove stale OS Login entries via API to prevent login profile overflow
           ACCESS_TOKEN=$(gcloud auth print-access-token)
-          export ACCESS_TOKEN WIF_SERVICE_ACCOUNT
-          python - <<'PY'
-import json
-import os
-import sys
-import urllib.error
-import urllib.parse
-import urllib.request
+          PRINCIPAL="serviceAccount:$WIF_SERVICE_ACCOUNT"
+          ENCODED_PRINCIPAL=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$PRINCIPAL")
+          PROFILE_URL="https://oslogin.googleapis.com/v1/users/$ENCODED_PRINCIPAL?view=FULL"
+          PROFILE_JSON=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" "$PROFILE_URL" || echo '{}')
 
-principal = f"serviceAccount:{os.environ['WIF_SERVICE_ACCOUNT']}"
-encoded_user = urllib.parse.quote(principal, safe='')
-token = os.environ['ACCESS_TOKEN']
-headers = {
-    "Authorization": f"Bearer {token}",
-    "Accept": "application/json"
-}
+          SSH_KEYS=$(echo "$PROFILE_JSON" | jq -r '.sshPublicKeys | keys[]?' 2>/dev/null || true)
+          if [ -n "$SSH_KEYS" ]; then
+            printf '%s\n' "$SSH_KEYS" | while IFS= read -r KEY_NAME; do
+              [ -z "$KEY_NAME" ] && continue
+              ENCODED_KEY_NAME=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe='/'))" "$KEY_NAME")
+              if curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "https://oslogin.googleapis.com/v1/$ENCODED_KEY_NAME" >/dev/null; then
+                echo "Deleted OS Login SSH key: $KEY_NAME"
+              else
+                echo "Failed to delete SSH key: $KEY_NAME" >&2
+              fi
+            done
+          else
+            echo "No existing OS Login SSH keys found via OS Login API."
+          fi
 
-def api_request(url: str, method: str = "GET"):
-    req = urllib.request.Request(url, headers=headers, method=method)
-    with urllib.request.urlopen(req) as resp:
-        body = resp.read()
-        if not body:
-            return None
-        return json.loads(body)
+          POSIX_NAMES=$(echo "$PROFILE_JSON" | jq -r '.posixAccounts[]?.name' 2>/dev/null || true)
+          if [ -n "$POSIX_NAMES" ]; then
+            printf '%s\n' "$POSIX_NAMES" | while IFS= read -r POSIX_NAME; do
+              [ -z "$POSIX_NAME" ] && continue
+              ENCODED_POSIX_NAME=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe='/'))" "$POSIX_NAME")
+              if curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "https://oslogin.googleapis.com/v1/$ENCODED_POSIX_NAME" >/dev/null; then
+                echo "Deleted OS Login POSIX account: $POSIX_NAME"
+              else
+                echo "Failed to delete POSIX account: $POSIX_NAME" >&2
+              fi
+            done
+          else
+            echo "No POSIX accounts found to remove."
+          fi
 
-profile_url = f"https://oslogin.googleapis.com/v1/users/{encoded_user}?view=FULL"
-try:
-    profile = api_request(profile_url) or {}
-except urllib.error.HTTPError as exc:
-    print(f"Failed to fetch OS Login profile: {exc}", file=sys.stderr)
-    profile = {}
-except urllib.error.URLError as exc:
-    print(f"Failed to reach OS Login API: {exc}", file=sys.stderr)
-    profile = {}
-
-ssh_keys = profile.get("sshPublicKeys", {})
-if ssh_keys:
-    for name in list(ssh_keys.keys()):
-        delete_url = "https://oslogin.googleapis.com/v1/" + urllib.parse.quote(name, safe='/')
-        try:
-            api_request(delete_url, method="DELETE")
-            print(f"Deleted OS Login SSH key: {name}")
-        except urllib.error.HTTPError as exc:
-            print(f"Failed to delete SSH key {name}: {exc}", file=sys.stderr)
-        except urllib.error.URLError as exc:
-            print(f"Network error removing SSH key {name}: {exc}", file=sys.stderr)
-else:
-    print("No existing OS Login SSH keys found via OS Login API.")
-
-posix_accounts = profile.get("posixAccounts", [])
-kept_projects = set()
-removed_posix = 0
-for entry in posix_accounts:
-    name = entry.get("name")
-    project_id = entry.get("projectId")
-    if not name:
-        continue
-    if project_id and project_id not in kept_projects:
-        kept_projects.add(project_id)
-        continue
-    delete_url = "https://oslogin.googleapis.com/v1/" + urllib.parse.quote(name, safe='/')
-    try:
-        api_request(delete_url, method="DELETE")
-        removed_posix += 1
-        print(f"Deleted stale OS Login POSIX account: {name}")
-    except urllib.error.HTTPError as exc:
-        print(f"Failed to delete POSIX account {name}: {exc}", file=sys.stderr)
-    except urllib.error.URLError as exc:
-        print(f"Network error removing POSIX account {name}: {exc}", file=sys.stderr)
-
-if removed_posix == 0:
-    print("No stale POSIX accounts removed.")
-else:
-    print(f"Removed {removed_posix} stale POSIX account entries.")
-PY
-          unset ACCESS_TOKEN WIF_SERVICE_ACCOUNT
+          unset ACCESS_TOKEN
 
           # Get VM instance details using the service account
           VM_IP=$(gcloud compute instances describe nuspace-instance --zone=europe-central2-a --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
@@ -346,7 +306,7 @@ PY
           if [ -f "$HOME/.ssh/google_compute_engine.pub" ]; then
             echo "Removing OS Login SSH key for $WIF_SERVICE_ACCOUNT"
             ACCESS_TOKEN=$(gcloud auth print-access-token)
-            export ACCESS_TOKEN WIF_SERVICE_ACCOUNT PUB_KEY_PATH="$HOME/.ssh/google_compute_engine.pub"
+            export ACCESS_TOKEN WIF_SERVICE_ACCOUNT
             python - <<'PY'
 import os
 import sys
@@ -356,15 +316,17 @@ import urllib.request
 
 principal = f"serviceAccount:{os.environ['WIF_SERVICE_ACCOUNT']}"
 token = os.environ['ACCESS_TOKEN']
-pub_key_path = os.environ['PUB_KEY_PATH']
+pub_key_path = os.path.expanduser('~/.ssh/google_compute_engine.pub')
 
 with open(pub_key_path, 'r', encoding='utf-8') as fh:
     key_contents = fh.read().strip()
 
+encoded_user = urllib.parse.quote(principal, safe='')
 encoded_key = urllib.parse.quote(key_contents, safe='')
+
 url = (
     "https://oslogin.googleapis.com/v1/users/"
-    + urllib.parse.quote(principal, safe='')
+    + encoded_user
     + f"/sshPublicKeys/{encoded_key}"
 )
 
@@ -385,9 +347,8 @@ except urllib.error.HTTPError as exc:
 except urllib.error.URLError as exc:
     print(f"Network error removing OS Login key: {exc}", file=sys.stderr)
 PY
-            unset ACCESS_TOKEN WIF_SERVICE_ACCOUNT PUB_KEY_PATH
+            unset ACCESS_TOKEN WIF_SERVICE_ACCOUNT
           else
             echo "No local SSH public key found for cleanup."
           fi
-          rm -f "$HOME/.ssh/google_compute_engine" "$HOME/.ssh/google_compute_engine-cert.pub"
-          rm -f "$HOME/.ssh/google_compute_engine.pub"
+          rm -f "$HOME/.ssh/google_compute_engine" "$HOME/.ssh/google_compute_engine-cert.pub" "$HOME/.ssh/google_compute_engine.pub"
