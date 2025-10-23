@@ -166,6 +166,49 @@ jobs:
           # Explicitly set the account to use for gcloud commands
           gcloud config set account "$WIF_SERVICE_ACCOUNT"
           
+          # Remove stale OS Login entries via API to prevent login profile overflow
+          ACCESS_TOKEN=$(gcloud auth print-access-token)
+          PRINCIPAL="serviceAccount:$WIF_SERVICE_ACCOUNT"
+          ENCODED_PRINCIPAL=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$PRINCIPAL")
+          PROFILE_URL="https://oslogin.googleapis.com/v1/users/$ENCODED_PRINCIPAL?view=FULL"
+          PROFILE_JSON=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" "$PROFILE_URL" || echo '{}')
+
+          TMP_KEYS=$(mktemp)
+          printf '%s' "$PROFILE_JSON" | jq -r '.sshPublicKeys | keys[]?' 2>/dev/null > "$TMP_KEYS" || true
+          if [ -s "$TMP_KEYS" ]; then
+            while IFS= read -r KEY_NAME; do
+              [ -z "$KEY_NAME" ] && continue
+              ENCODED_KEY_NAME=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe='/'))" "$KEY_NAME")
+              if curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "https://oslogin.googleapis.com/v1/$ENCODED_KEY_NAME" >/dev/null; then
+                echo "Deleted OS Login SSH key: $KEY_NAME"
+              else
+                echo "Failed to delete SSH key: $KEY_NAME" >&2
+              fi
+            done < "$TMP_KEYS"
+          else
+            echo "No existing OS Login SSH keys found via OS Login API."
+          fi
+          rm -f "$TMP_KEYS"
+
+          TMP_POSIX=$(mktemp)
+          printf '%s' "$PROFILE_JSON" | jq -r '.posixAccounts[]?.name' 2>/dev/null > "$TMP_POSIX" || true
+          if [ -s "$TMP_POSIX" ]; then
+            while IFS= read -r POSIX_NAME; do
+              [ -z "$POSIX_NAME" ] && continue
+              ENCODED_POSIX_NAME=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe='/'))" "$POSIX_NAME")
+              if curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "https://oslogin.googleapis.com/v1/$ENCODED_POSIX_NAME" >/dev/null; then
+                echo "Deleted OS Login POSIX account: $POSIX_NAME"
+              else
+                echo "Failed to delete POSIX account: $POSIX_NAME" >&2
+              fi
+            done < "$TMP_POSIX"
+          else
+            echo "No POSIX accounts found to remove."
+          fi
+          rm -f "$TMP_POSIX"
+
+          unset ACCESS_TOKEN
+
           # Get VM instance details using the service account
           VM_IP=$(gcloud compute instances describe nuspace-instance --zone=europe-central2-a --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
           VM_NAME="nuspace-instance"
@@ -179,7 +222,7 @@ jobs:
           echo "Using OS Login username: $SA_USERNAME"
           
           # Prime OS Login SSH certificate and verify access
-          gcloud compute ssh "$VM_NAME" --zone=europe-central2-a --command="true" --ssh-flag="-o ConnectTimeout=10" --quiet || { echo "OS Login SSH failed. Ensure oslogin API is enabled and roles/compute.osAdminLogin is granted to $WIF_SERVICE_ACCOUNT" >&2; exit 1; }
+          gcloud compute ssh "$VM_NAME" --zone=europe-central2-a --command="true" --ssh-flag="-o ConnectTimeout=10" --ssh-key-expire-after=1h --quiet || { echo "OS Login SSH failed. Ensure oslogin API is enabled and roles/compute.osAdminLogin is granted to $WIF_SERVICE_ACCOUNT" >&2; exit 1; }
           DOCKER_USERNAME=$(gcloud secrets versions access latest --secret="docker-username")
           DOCKER_PASSWORD=$(gcloud secrets versions access latest --secret="docker-password")
           echo "ANSIBLE_HOST=$VM_IP" >> $GITHUB_OUTPUT
@@ -258,3 +301,39 @@ jobs:
           cd ansible && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook playbook.yml \
             --inventory inventory.yml \
             --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ steps.secrets.outputs.ANSIBLE_USER }} docker_user=${{ steps.secrets.outputs.DOCKER_USERNAME }} docker_pass=${{ steps.secrets.outputs.DOCKER_PASSWORD }} gcp_project=${{ env.GCP_PROJECT }} github_ref_name=${{ github.ref_name }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} meilisearch_changed=${{ steps.changes.outputs.meilisearch }} compose_changed=${{ steps.changes.outputs.compose }} force_frontend_build=true"
+
+      - name: Cleanup OS Login SSH key
+        if: always()
+        run: |
+          gcloud config set project "$GCP_PROJECT"
+          gcloud config set account "$WIF_SERVICE_ACCOUNT"
+          if [ -f "$HOME/.ssh/google_compute_engine.pub" ]; then
+            echo "Removing OS Login SSH key for $WIF_SERVICE_ACCOUNT"
+            ACCESS_TOKEN=$(gcloud auth print-access-token)
+            PRINCIPAL="serviceAccount:$WIF_SERVICE_ACCOUNT"
+            ENCODED_PRINCIPAL=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$PRINCIPAL")
+            PROFILE_URL="https://oslogin.googleapis.com/v1/users/$ENCODED_PRINCIPAL?view=FULL"
+            PROFILE_JSON=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" "$PROFILE_URL" || echo '{}')
+            PUB_KEY=$(cat "$HOME/.ssh/google_compute_engine.pub")
+            MATCHING_FPS=$(echo "$PROFILE_JSON" | jq -r --arg KEY "$PUB_KEY" '.sshPublicKeys | to_entries[]? | select(.value.key==$KEY) | .key' 2>/dev/null || true)
+            TMP_MATCH=$(mktemp)
+            printf '%s' "$MATCHING_FPS" > "$TMP_MATCH"
+            if [ -s "$TMP_MATCH" ]; then
+              while IFS= read -r FINGERPRINT; do
+                [ -z "$FINGERPRINT" ] && continue
+                ENCODED_FP=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe='/'))" "$FINGERPRINT")
+                if curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "https://oslogin.googleapis.com/v1/$ENCODED_FP" >/dev/null; then
+                  echo "Deleted OS Login SSH key fingerprint: $FINGERPRINT"
+                else
+                  echo "Failed to delete OS Login key fingerprint: $FINGERPRINT" >&2
+                fi
+              done < "$TMP_MATCH"
+            else
+              echo "No matching OS Login SSH key found to remove."
+            fi
+            rm -f "$TMP_MATCH"
+            unset ACCESS_TOKEN
+          else
+            echo "No local SSH public key found for cleanup."
+          fi
+          rm -f "$HOME/.ssh/google_compute_engine" "$HOME/.ssh/google_compute_engine-cert.pub" "$HOME/.ssh/google_compute_engine.pub"
