@@ -173,9 +173,10 @@ jobs:
           PROFILE_URL="https://oslogin.googleapis.com/v1/users/$ENCODED_PRINCIPAL?view=FULL"
           PROFILE_JSON=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" "$PROFILE_URL" || echo '{}')
 
-          SSH_KEYS=$(echo "$PROFILE_JSON" | jq -r '.sshPublicKeys | keys[]?' 2>/dev/null || true)
-          if [ -n "$SSH_KEYS" ]; then
-            printf '%s\n' "$SSH_KEYS" | while IFS= read -r KEY_NAME; do
+          TMP_KEYS=$(mktemp)
+          printf '%s' "$PROFILE_JSON" | jq -r '.sshPublicKeys | keys[]?' 2>/dev/null > "$TMP_KEYS" || true
+          if [ -s "$TMP_KEYS" ]; then
+            while IFS= read -r KEY_NAME; do
               [ -z "$KEY_NAME" ] && continue
               ENCODED_KEY_NAME=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe='/'))" "$KEY_NAME")
               if curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "https://oslogin.googleapis.com/v1/$ENCODED_KEY_NAME" >/dev/null; then
@@ -183,14 +184,16 @@ jobs:
               else
                 echo "Failed to delete SSH key: $KEY_NAME" >&2
               fi
-            done
+            done < "$TMP_KEYS"
           else
             echo "No existing OS Login SSH keys found via OS Login API."
           fi
+          rm -f "$TMP_KEYS"
 
-          POSIX_NAMES=$(echo "$PROFILE_JSON" | jq -r '.posixAccounts[]?.name' 2>/dev/null || true)
-          if [ -n "$POSIX_NAMES" ]; then
-            printf '%s\n' "$POSIX_NAMES" | while IFS= read -r POSIX_NAME; do
+          TMP_POSIX=$(mktemp)
+          printf '%s' "$PROFILE_JSON" | jq -r '.posixAccounts[]?.name' 2>/dev/null > "$TMP_POSIX" || true
+          if [ -s "$TMP_POSIX" ]; then
+            while IFS= read -r POSIX_NAME; do
               [ -z "$POSIX_NAME" ] && continue
               ENCODED_POSIX_NAME=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe='/'))" "$POSIX_NAME")
               if curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "https://oslogin.googleapis.com/v1/$ENCODED_POSIX_NAME" >/dev/null; then
@@ -198,10 +201,11 @@ jobs:
               else
                 echo "Failed to delete POSIX account: $POSIX_NAME" >&2
               fi
-            done
+            done < "$TMP_POSIX"
           else
             echo "No POSIX accounts found to remove."
           fi
+          rm -f "$TMP_POSIX"
 
           unset ACCESS_TOKEN
 
@@ -312,8 +316,10 @@ jobs:
             PROFILE_JSON=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" "$PROFILE_URL" || echo '{}')
             PUB_KEY=$(cat "$HOME/.ssh/google_compute_engine.pub")
             MATCHING_FPS=$(echo "$PROFILE_JSON" | jq -r --arg KEY "$PUB_KEY" '.sshPublicKeys | to_entries[]? | select(.value.key==$KEY) | .key' 2>/dev/null || true)
-            if [ -n "$MATCHING_FPS" ]; then
-              printf '%s\n' "$MATCHING_FPS" | while IFS= read -r FINGERPRINT; do
+            TMP_MATCH=$(mktemp)
+            printf '%s' "$MATCHING_FPS" > "$TMP_MATCH"
+            if [ -s "$TMP_MATCH" ]; then
+              while IFS= read -r FINGERPRINT; do
                 [ -z "$FINGERPRINT" ] && continue
                 ENCODED_FP=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe='/'))" "$FINGERPRINT")
                 if curl -s -X DELETE -H "Authorization: Bearer $ACCESS_TOKEN" "https://oslogin.googleapis.com/v1/$ENCODED_FP" >/dev/null; then
@@ -321,10 +327,11 @@ jobs:
                 else
                   echo "Failed to delete OS Login key fingerprint: $FINGERPRINT" >&2
                 fi
-              done
+              done < "$TMP_MATCH"
             else
               echo "No matching OS Login SSH key found to remove."
             fi
+            rm -f "$TMP_MATCH"
             unset ACCESS_TOKEN
           else
             echo "No local SSH public key found for cleanup."
