@@ -166,6 +166,20 @@ jobs:
           # Explicitly set the account to use for gcloud commands
           gcloud config set account "$WIF_SERVICE_ACCOUNT"
           
+          # Remove stale OS Login keys to prevent login profile overflow
+          EXISTING_KEYS=$(gcloud compute os-login ssh-keys list --project "$GCP_PROJECT" --format="value(fingerprint)" || true)
+          if [ -n "$EXISTING_KEYS" ]; then
+            echo "Removing existing OS Login SSH keys for $WIF_SERVICE_ACCOUNT"
+            while IFS= read -r FINGERPRINT; do
+              if [ -n "$FINGERPRINT" ]; then
+                echo "Removing key fingerprint: $FINGERPRINT"
+                gcloud compute os-login ssh-keys remove --project "$GCP_PROJECT" --fingerprint="$FINGERPRINT" || true
+              fi
+            done <<< "$EXISTING_KEYS"
+          else
+            echo "No existing OS Login SSH keys to remove."
+          fi
+
           # Get VM instance details using the service account
           VM_IP=$(gcloud compute instances describe nuspace-instance --zone=europe-central2-a --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
           VM_NAME="nuspace-instance"
@@ -179,7 +193,7 @@ jobs:
           echo "Using OS Login username: $SA_USERNAME"
           
           # Prime OS Login SSH certificate and verify access
-          gcloud compute ssh "$VM_NAME" --zone=europe-central2-a --command="true" --ssh-flag="-o ConnectTimeout=10" --quiet || { echo "OS Login SSH failed. Ensure oslogin API is enabled and roles/compute.osAdminLogin is granted to $WIF_SERVICE_ACCOUNT" >&2; exit 1; }
+          gcloud compute ssh "$VM_NAME" --zone=europe-central2-a --command="true" --ssh-flag="-o ConnectTimeout=10" --ssh-key-expire-after=1h --quiet || { echo "OS Login SSH failed. Ensure oslogin API is enabled and roles/compute.osAdminLogin is granted to $WIF_SERVICE_ACCOUNT" >&2; exit 1; }
           DOCKER_USERNAME=$(gcloud secrets versions access latest --secret="docker-username")
           DOCKER_PASSWORD=$(gcloud secrets versions access latest --secret="docker-password")
           echo "ANSIBLE_HOST=$VM_IP" >> $GITHUB_OUTPUT
@@ -258,3 +272,16 @@ jobs:
           cd ansible && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook playbook.yml \
             --inventory inventory.yml \
             --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ steps.secrets.outputs.ANSIBLE_USER }} docker_user=${{ steps.secrets.outputs.DOCKER_USERNAME }} docker_pass=${{ steps.secrets.outputs.DOCKER_PASSWORD }} gcp_project=${{ env.GCP_PROJECT }} github_ref_name=${{ github.ref_name }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} meilisearch_changed=${{ steps.changes.outputs.meilisearch }} compose_changed=${{ steps.changes.outputs.compose }} force_frontend_build=true"
+
+      - name: Cleanup OS Login SSH key
+        if: always()
+        run: |
+          gcloud config set project "$GCP_PROJECT"
+          gcloud config set account "$WIF_SERVICE_ACCOUNT"
+          if [ -f "$HOME/.ssh/google_compute_engine.pub" ]; then
+            echo "Removing OS Login SSH key for $WIF_SERVICE_ACCOUNT"
+            gcloud compute os-login ssh-keys remove --project "$GCP_PROJECT" --key-file="$HOME/.ssh/google_compute_engine.pub" || echo "No matching OS Login key found to remove."
+          else
+            echo "No local SSH public key found for cleanup."
+          fi
+          rm -f "$HOME/.ssh/google_compute_engine" "$HOME/.ssh/google_compute_engine.pub" "$HOME/.ssh/google_compute_engine-cert.pub"
