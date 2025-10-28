@@ -263,6 +263,7 @@ export default function EventDetailPage() {
                 {formatEventDate(event.start_datetime)}
               </span>
             </div>
+            
             <div className="flex items-center gap-3">
               <Clock className="h-5 w-5 flex-shrink-0" />
               <span className="text-base">
@@ -272,12 +273,22 @@ export default function EventDetailPage() {
                   const durationMs = endTime.getTime() - startTime.getTime();
                   const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
                   const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+                  const durationDays = Math.floor(durationHours / 24);
                   
-                  if (durationHours > 0) {
+                  if (durationDays > 0) {
+                    return `${durationDays}d ${durationHours-24*durationDays}h ${durationHours > 0 ? `${durationMinutes}m` : ''}`;
+                  } else if (durationHours > 0) {
                     return `${durationHours}h ${durationMinutes > 0 ? `${durationMinutes}m` : ''}`;
                   } else {
                     return `${durationMinutes}m`;
                   }
+                  
+                  /*if (durationHours > 0) {
+                    return `${durationHours}h ${durationMinutes > 0 ? `${durationMinutes}m` : ''}`;
+                  } else {
+                    return `${durationMinutes}m`;
+                  }*/
+
                 })()}
               </span>
             </div>
