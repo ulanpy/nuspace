@@ -17,6 +17,7 @@ import {
   Users2,
   MessageCircle,
   FileText,
+  Stethoscope,
 } from "lucide-react";
 import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 import { useToast } from "@/hooks/use-toast";
@@ -53,6 +54,11 @@ const SERVICES: ServiceItem[] = [
         value:
           "https://docs.google.com/forms/d/e/1FAIpQLSe7ANcHNvVAc0DDygHLYxG1N7716iJ1NJqQyw7_Upi0XABsfg/viewform",
       },
+      {
+        type: "web",
+        label: "Campus access form",
+        value: "https://forms.gle/WdG6Piik6tSThyKc7",
+      },
     ],
     icon: <ShieldAlert className="h-5 w-5" />,
     accent: "from-red-500/20",
@@ -64,9 +70,70 @@ const SERVICES: ServiceItem[] = [
       "Confidential psychological support and counseling coordination through PCS.",
     contacts: [
       { type: "web", label: "Telegram @pcs_nu", value: "https://t.me/pcs_nu" },
+      {
+        type: "phone",
+        label: "City Mental Health Center",
+        value: "+7 (7172) 27-38-28",
+        extraInfo: "Alt: +7 (7172) 54-76-03",
+      },
+      {
+        type: "phone",
+        label: "National Hotline (Domestic Violence, Bullying)",
+        value: "111",
+      },
+      {
+        type: "phone",
+        label: "Unified Psychological Service (24/7)",
+        value: "150",
+        extraInfo: "WhatsApp: +7 708 10 608 10",
+      },
+      {
+        type: "web",
+        label: "Unified Psychological Service (WhatsApp)",
+        value: "https://wa.me/77081060810",
+      },
     ],
     icon: <LifeBuoy className="h-5 w-5" />,
     accent: "from-sky-500/20",
+  },
+  {
+    id: "university-health-center",
+    name: "University Health Center (UHC)",
+    description:
+      "Medical appointments, on-duty doctor support, and psychological services through the UHC.",
+    contacts: [
+      { type: "phone", label: "UHC Appointment", value: "+7 (7172) 69-26-06" },
+      { type: "phone", label: "UHC Appointment", value: "+7 (7172) 69-26-16" },
+      {
+        type: "phone",
+        label: "UHC Appointment",
+        value: "+7 (7172) 69-26-08",
+        extraInfo: "Hours: Mon-Fri 8:00-20:00, Sat 9:00-13:00",
+      },
+      {
+        type: "phone",
+        label: "On-duty Doctor",
+        value: "+7 702 853 61 30",
+        extraInfo: "Block D3 (19), room 19201 | When UHC is closed",
+      },
+      {
+        type: "phone",
+        label: "UHC Psychologist/Psychiatrist",
+        value: "+7 (7172) 70-26-16",
+      },
+      {
+        type: "phone",
+        label: "UHC Psychologist/Psychiatrist",
+        value: "+7 (7172) 70-26-08",
+      },
+      {
+        type: "phone",
+        label: "UHC Psychologist/Psychiatrist",
+        value: "+7 (7172) 70-26-06",
+      },
+    ],
+    icon: <Stethoscope className="h-5 w-5" />,
+    accent: "from-emerald-500/20",
   },
   {
     id: "fire-and-safety",
@@ -169,6 +236,11 @@ const SERVICES: ServiceItem[] = [
     description: "Report issues with furniture, plumbing, or electrical systems.",
     contacts: [
       { type: "email", label: "Service desk", value: "servicedesk@nu.edu.kz" },
+      {
+        type: "email",
+        label: "Roof and Toilet Leaks",
+        value: "usmcomments@nu.edu.kz",
+      },
     ],
     icon: <Wrench className="h-5 w-5" />,
     accent: "from-amber-500/20",
@@ -265,9 +337,9 @@ function ContactChip({ info }: { info: ContactInfo }) {
   const icon = {
     phone: <Phone className="h-4 w-4" />,
     email: <Mail className="h-4 w-4" />,
-    web: info.value.includes("t.me") 
-      ? <MessageCircle className="h-4 w-4" /> 
-      : info.value.includes("docs.google.com/forms") 
+    web: info.value.includes("t.me")
+      ? <MessageCircle className="h-4 w-4" />
+      : info.value.includes("docs.google.com/forms")
         ? <FileText className="h-4 w-4" />
         : <Globe className="h-4 w-4" />,
     location: <MapPin className="h-4 w-4" />,
@@ -275,38 +347,47 @@ function ContactChip({ info }: { info: ContactInfo }) {
   }[info.type];
 
   const href = contactToHref(info.type, info.value);
-  
-  // Check if it's a desktop interface (screen width > 768px)
-  const isDesktop = typeof window !== 'undefined' && window.innerWidth > 768;
-  
-  const labelText = info.label || info.type;
-  const displayText = info.type === "phone" ? `${labelText} (${info.value})` : labelText;
 
-  const textClasses =
-    info.type === "phone" && isDesktop
-      ? "whitespace-normal break-words text-left"
-      : "truncate";
+  const labelText = info.label ?? info.type;
+  const secondaryText =
+    info.type === "hours"
+      ? undefined
+      : info.type === "web"
+        ? info.value.replace(/^https?:\/\//, "")
+        : info.value;
 
-  const content = (
-    <span className="inline-flex items-start gap-1.5 text-xs text-left">
+  const baseButtonClasses =
+    "flex w-full min-h-[64px] items-start gap-3 rounded-lg border border-border/50 bg-muted px-3 py-2 text-left text-xs text-foreground/90 shadow-sm transition-colors";
+  const interactiveStates =
+    "hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 disabled:cursor-default disabled:bg-muted";
+
+  const iconWrapper = (
+    <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-background/60 text-muted-foreground">
       {icon}
-      <span className={textClasses}>{displayText}</span>
     </span>
   );
 
-  // For phone numbers on desktop, show as plain text
-  const handleClick = async (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
+  const handleClick = async () => {
     if (info.type === "phone") {
-      e.preventDefault();
-      try {
-        await navigator.clipboard.writeText(info.value);
-        toast({
-          title: "Number copied",
-          description: `${info.value} copied to clipboard`,
-          variant: "success",
-          duration: 2000,
-        });
-      } catch {
+      const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
+      if (clipboard?.writeText) {
+        try {
+          await clipboard.writeText(info.value);
+          toast({
+            title: "Number copied",
+            description: `${info.value} copied to clipboard`,
+            variant: "success",
+            duration: 2000,
+          });
+        } catch {
+          toast({
+            title: "Copy failed",
+            description: "Couldn't copy number. Please copy manually.",
+            variant: "error",
+            duration: 2500,
+          });
+        }
+      } else {
         toast({
           title: "Copy failed",
           description: "Couldn't copy number. Please copy manually.",
@@ -317,75 +398,105 @@ function ContactChip({ info }: { info: ContactInfo }) {
       return;
     }
 
-    // Handle email clicks in MiniApp - copy to clipboard instead of mailto
-    if (info.type === "email" && isMiniApp) {
-      e.preventDefault();
-      try {
-        await navigator.clipboard.writeText(info.value);
-        toast({
-          title: "Email copied",
-          description: `${info.value} copied to clipboard`,
-          variant: "success",
-          duration: 2000,
-        });
-      } catch {
-        toast({
-          title: "Copy failed",
-          description: "Couldn't copy email. Please copy manually.",
-          variant: "error",
-          duration: 2500,
-        });
+    if (info.type === "email") {
+      if (isMiniApp) {
+        const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
+        if (clipboard?.writeText) {
+          try {
+            await clipboard.writeText(info.value);
+            toast({
+              title: "Email copied",
+              description: `${info.value} copied to clipboard`,
+              variant: "success",
+              duration: 2000,
+            });
+          } catch {
+            toast({
+              title: "Copy failed",
+              description: "Couldn't copy email. Please copy manually.",
+              variant: "error",
+              duration: 2500,
+            });
+          }
+        } else {
+          toast({
+            title: "Copy failed",
+            description: "Couldn't copy email. Please copy manually.",
+            variant: "error",
+            duration: 2500,
+          });
+        }
+        return;
+      }
+
+      if (href && typeof window !== "undefined") {
+        window.location.href = href;
       }
       return;
     }
 
-    if (!href || info.type === "hours") {
-      e.preventDefault();
-      if (info.type === "hours") {
-        toast({
-          title: info.label || "Hours",
-          description: info.value,
-          duration: 2000,
-        });
-      }
+    if (info.type === "web" && href && typeof window !== "undefined") {
+      window.open(href, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    if (info.type === "hours") {
+      toast({
+        title: labelText,
+        description: info.value,
+        duration: 2000,
+      });
+      return;
+    }
+
+    if (href && typeof window !== "undefined") {
+      window.open(href, "_blank", "noopener,noreferrer");
     }
   };
 
-  if (info.type === "phone") {
-    return (
-      <div className="flex flex-col gap-1">
+  const ButtonContent = (
+    <span className="flex min-w-0 flex-1 items-start gap-3">
+      {iconWrapper}
+      <span className="flex min-w-0 flex-col gap-1">
         {info.extraInfo && (
-          <div className="text-xs text-muted-foreground">{info.extraInfo}</div>
+          <span className="break-words text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {info.extraInfo}
+          </span>
         )}
-        <button
-          type="button"
-          onClick={handleClick}
-          className="px-2 py-1 rounded-md bg-muted hover:bg-muted/80 text-foreground/90 border border-border/50 transition-colors"
-        >
-          {content}
-        </button>
-      </div>
-    );
-  }
+        <span className="break-words text-sm font-medium leading-tight text-foreground">
+          {labelText}
+        </span>
+        {secondaryText && (
+          <span
+            className={`text-xs leading-snug text-muted-foreground break-words ${
+              info.type === "web" ? "break-all" : ""
+            }`}
+          >
+            {secondaryText}
+          </span>
+        )}
+      </span>
+    </span>
+  );
 
-  if (!href || info.type === "hours") {
-    return (
-      <div className="px-2 py-1 rounded-md bg-muted text-foreground/90 border border-border/50">
-        {content}
-      </div>
-    );
-  }
+  const buttonProps = {
+    type: "button" as const,
+    className: `${baseButtonClasses} ${interactiveStates}`,
+    onClick: handleClick,
+  };
+
+  const isPassive = info.type === "location";
 
   return (
-    <a
-      href={href}
-      target={info.type === "web" ? "_blank" : undefined}
-      rel={info.type === "web" ? "noopener noreferrer" : undefined}
-      onClick={handleClick}
-      className="px-2 py-1 rounded-md bg-muted hover:bg-muted/80 text-foreground/90 border border-border/50 transition-colors"
-    >
-      {content}
-    </a>
+    <div className="flex w-full flex-col">
+      <button
+        {...buttonProps}
+        className={`${buttonProps.className} ${isPassive ? "hover:bg-muted" : ""}`}
+        disabled={isPassive}
+      >
+        {ButtonContent}
+      </button>
+    </div>
   );
 }
 
@@ -419,7 +530,7 @@ export function EmergencyInfoSection() {
                 </h3>
               </div>
               <p className="text-sm text-muted-foreground">{service.description}</p>
-              <div className="flex flex-wrap gap-2 mt-1">
+              <div className="mt-2 grid gap-2 md:grid-cols-2">
                 {service.contacts.map((c, idx) => (
                   <ContactChip key={`${service.id}-${c.type}-${idx}`} info={c} />
                 ))}
