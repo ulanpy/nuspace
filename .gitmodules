@@ -1,3 +1,3 @@
 [submodule "prbot"]
-	path = prbot
+	path = backend/modules/bot/prbot
 	url = git@github.com:mciiee/nuspace-prtelebot.git
