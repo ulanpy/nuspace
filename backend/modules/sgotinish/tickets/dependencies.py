@@ -6,6 +6,7 @@ from backend.common.schemas import Infra
 from backend.core.database.models.sgotinish import Ticket
 from backend.core.database.models.user import User
 from backend.modules.notification.service import NotificationService
+from backend.modules.notion.service import NotionService
 from backend.modules.sgotinish.conversations.service import ConversationService
 from backend.modules.sgotinish.tickets import schemas
 from backend.modules.sgotinish.tickets.service import TicketService
@@ -20,11 +21,13 @@ def get_ticket_service(
     # This is the Composition Root. It knows about the concrete implementations.
     notification_service = NotificationService(db_session, infra)
     conversation_service = ConversationService(db_session)
+    notion_service = NotionService(db_session, infra)
 
     return TicketService(
         db_session=db_session,
         conversation_service=conversation_service,
         notification_service=notification_service,
+        notion_service=notion_service,
     )
 
 

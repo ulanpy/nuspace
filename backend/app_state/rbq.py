@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from faststream.rabbit import RabbitBroker
 
 from backend.modules.notification import tasks
+from backend.modules.notion import tasks as notion_tasks  # noqa: F401 (register subscribers)
 
 
 async def setup_rbq(app: FastAPI):

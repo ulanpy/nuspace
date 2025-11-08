@@ -1,3 +1,5 @@
+import logging
+
 from backend.core.database.models.sgotinish import Ticket, TicketAccess, PermissionType
 from backend.core.database.models.user import User, UserRole
 from backend.common.cruds import QueryBuilder
@@ -14,7 +16,9 @@ from typing import List
 from backend.modules.sgotinish.tickets.interfaces import (
     AbstractConversationService,
     AbstractNotificationService,
+    AbstractNotionService,
 )
+logger = logging.getLogger(__name__)
 from backend.core.database.models.sgotinish import Department
 
 
@@ -24,10 +28,12 @@ class TicketService:
         db_session: AsyncSession,
         conversation_service: AbstractConversationService,
         notification_service: AbstractNotificationService,
+        notion_service: AbstractNotionService | None = None,
     ):
         self.db_session = db_session
         self.conversation_service = conversation_service
         self.notification_service = notification_service
+        self.notion_service = notion_service
 
     async def get_departments(self) -> List[schemas.DepartmentResponseDTO]:
         """Retrieves all departments from the database."""
@@ -252,6 +258,11 @@ class TicketService:
             await self.notification_service.notify_new_ticket_to_bosses(
                 ticket, bosses
             )
+        # sending ticket details to notion page of Student Government
+        try:
+            await self.notion_service.notify_ticket_created(ticket)
+        except Exception:
+            logger.exception("Failed to enqueue Notion sync for ticket %s", ticket.id)
 
         response_dto = await self._build_ticket_response(ticket, user)
         return response_dto
