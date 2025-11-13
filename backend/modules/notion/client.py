@@ -1,29 +1,15 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
-from datetime import datetime
 from typing import Any, Dict, Iterable
 
 import httpx
-
-from backend.core.configs.config import config
 from backend.modules.notion import schemas
+from backend.modules.notion.schemas import DatabaseSchema
 
+from backend.modules.notion.consts import (
+    NOTION_API_BASE_URL,
+    NOTION_API_VERSION,
+    DEFAULT_TIMEOUT
+)
 
-NOTION_API_BASE_URL = "https://api.notion.com/v1"
-NOTION_API_VERSION = "2025-09-03"  # Modern API version - uses data_sources for schema
-DEFAULT_TIMEOUT = 15.0
-
-DEFAULT_PROPERTY_MAP: Dict[str, str] = {
-    "status": "Status",
-    "category": "Category",
-    "author_sub": "Author",
-    "ticket_id": "Ticket ID",
-    "is_anonymous": "Anonymous",
-    "created_at": "Created At",
-    "updated_at": "Updated At",
-    "ticket_url": "Ticket URL",
-}
 
 
 class NotionClientError(Exception):
@@ -31,12 +17,6 @@ class NotionClientError(Exception):
         super().__init__(message)
         self.status_code = status_code
         self.retryable = retryable
-
-
-@dataclass(frozen=True)
-class DatabaseSchema:
-    title_property: str
-    properties: Dict[str, Dict[str, Any]]
 
 
 class NotionClient:
@@ -50,15 +30,10 @@ class NotionClient:
         token: str,
         timeout: float = DEFAULT_TIMEOUT,
         notion_version: str = NOTION_API_VERSION,
-        property_map: Dict[str, str] | None = None,
     ) -> None:
         self.token = token
         self.timeout = timeout
         self.notion_version = notion_version
-        custom_map = property_map or getattr(config, "NOTION_TICKET_PROPERTY_MAP", {})
-        if not isinstance(custom_map, dict):
-            custom_map = {}
-        self.property_map = {**DEFAULT_PROPERTY_MAP, **custom_map}
 
         self._client: httpx.AsyncClient | None = None
         self._schema_cache: Dict[str, DatabaseSchema] = {}
@@ -91,7 +66,7 @@ class NotionClient:
 
     async def create_ticket_entry(self, payload: schemas.NotionTicketMessage) -> dict[str, Any]:
         client = await self._ensure_client()
-        schema = await self._get_database_schema(payload.database_id, client=client)
+        schema: DatabaseSchema = await self._get_database_schema(payload.database_id, client=client)
         properties = self._build_properties(payload, schema)
         children = self._build_children(payload)
 
@@ -106,6 +81,144 @@ class NotionClient:
         if response.status_code >= 400:
             self._handle_response_error(response)
         return response.json()
+
+    async def update_ticket_entry(
+        self, page_id: str, payload: schemas.NotionTicketMessage
+    ) -> dict[str, Any]:
+        """
+        Update an existing Notion page with new ticket data.
+        
+        Args:
+            page_id: The Notion page ID to update (32 character identifier)
+            payload: Updated ticket data
+            
+        Returns:
+            Updated page data from Notion API
+        """
+        client = await self._ensure_client()
+        schema: DatabaseSchema = await self._get_database_schema(payload.database_id, client=client)
+        properties = self._build_properties(payload, schema)
+
+        # Update page properties
+        request_body = {"properties": properties}
+        response = await client.patch(f"/pages/{page_id}", json=request_body)
+        if response.status_code >= 400:
+            self._handle_response_error(response)
+
+        # Update page content (children blocks)
+        updated_block_id = await self._update_page_children(
+            page_id, payload, payload.notion_block_id, client=client
+        )
+        
+        # Return response with block ID for storage
+        result = response.json()
+        if updated_block_id:
+            result["_block_id"] = updated_block_id
+        return result
+
+    async def _update_page_children(
+        self,
+        page_id: str,
+        payload: schemas.NotionTicketMessage,
+        block_id: str | None,
+        *,
+        client: httpx.AsyncClient,
+    ) -> str | None:
+        """
+        Update a specific block containing ticket content.
+        
+        Args:
+            page_id: The Notion page ID
+            payload: Updated ticket data
+            block_id: The block ID to update (if None, will find the first paragraph block)
+            client: HTTP client
+            
+        Returns:
+            The block ID that was updated (for storage)
+        """
+        # If block_id is provided, use it; otherwise find the first paragraph block
+        target_block_id = block_id
+        if not target_block_id:
+            target_block_id = await self._find_ticket_block(page_id, client=client)
+        
+        if not target_block_id:
+            # Fallback: create a new block if we can't find the existing one
+            children = self._build_children(payload)
+            if children:
+                append_body = {"children": children}
+                response = await client.patch(
+                    f"/blocks/{page_id}/children", json=append_body
+                )
+                if response.status_code >= 400:
+                    self._handle_response_error(response)
+                # Return the first block ID from the response
+                response_data = response.json()
+                results = response_data.get("results", [])
+                return results[0].get("id") if results else None
+            return None
+
+        # Update the specific block
+        children = self._build_children(payload)
+        if not children:
+            return target_block_id
+        
+        # Update the block content
+        block_content = children[0]  # We only have one block now
+        update_body = {
+            "paragraph": block_content.get("paragraph", {})
+        }
+        
+        response = await client.patch(f"/blocks/{target_block_id}", json=update_body)
+        if response.status_code >= 400:
+            self._handle_response_error(response)
+        
+        return target_block_id
+
+    async def _find_ticket_block(
+        self,
+        page_id: str,
+        *,
+        client: httpx.AsyncClient,
+    ) -> str | None:
+        """
+        Find the first paragraph block that contains ticket content.
+        Looks for blocks containing "Ticket #" pattern.
+        """
+        cursor = None
+        
+        while True:
+            params = {}
+            if cursor:
+                params["start_cursor"] = cursor
+            
+            response = await client.get(f"/blocks/{page_id}/children", params=params)
+            if response.status_code >= 400:
+                self._handle_response_error(response)
+            
+            data = response.json()
+            results = data.get("results", [])
+            
+            # Look for the first paragraph block (our ticket content block)
+            for block in results:
+                if block.get("type") == "paragraph":
+                    # Check if it contains ticket content
+                    paragraph = block.get("paragraph", {})
+                    rich_text = paragraph.get("rich_text", [])
+                    content = "".join(
+                        item.get("plain_text", "")
+                        for item in rich_text
+                    )
+                    if "Ticket #" in content:
+                        return block["id"]
+                    # If it's the first paragraph block, use it anyway
+                    if not cursor:  # First page of results
+                        return block["id"]
+            
+            if not data.get("has_more"):
+                break
+            cursor = data.get("next_cursor")
+        
+        return None
 
     async def _get_database_schema(
         self,
@@ -171,64 +284,44 @@ class NotionClient:
     ) -> Dict[str, Any]:
         properties: Dict[str, Any] = {
             schema.title_property: {
-                "title": [{"text": {"content": payload.title[:2000]}}],
+                "title": [{"type": "text", "text": {"content": payload.title[:2000]}}],
             }
         }
 
-        mapped_fields = {
-            "status": payload.status,
-            "category": payload.category,
-            "author_sub": payload.author_sub if not payload.is_anonymous else "Anonymous",
-            "ticket_id": payload.ticket_id,
-            "is_anonymous": payload.is_anonymous,
-            "created_at": payload.created_at,
-            "updated_at": payload.updated_at,
-            "ticket_url": payload.ticket_url,
-        }
-
-        for field_name, value in mapped_fields.items():
-            if value is None:
-                continue
-
-            property_name = self.property_map.get(field_name)
-            if not property_name:
-                continue
-
-            meta = schema.properties.get(property_name)
-            if not meta:
-                continue
-
-            property_payload = self._build_property_value(meta, value)
-            if property_payload is not None:
-                properties[property_name] = property_payload
+        properties["Status"] = {"status": {"name": "SGotinish"}}
 
         return properties
 
     def _build_children(self, payload: schemas.NotionTicketMessage) -> list[dict[str, Any]]:
-        children: list[dict[str, Any]] = []
+        def _format_enum(value: Any) -> str:
+            if hasattr(value, "value"):
+                value = value.value
+            return str(value).replace("_", " ").title()
 
-        metadata_lines: list[str] = []
-        metadata_lines.append(f"Ticket ID: {payload.ticket_id}")
-        if payload.status:
-            metadata_lines.append(f"Status: {payload.status}")
-        if payload.category:
-            metadata_lines.append(f"Category: {payload.category}")
-        metadata_lines.append(f"Anonymous: {'Yes' if payload.is_anonymous else 'No'}")
-        if payload.author_sub and not payload.is_anonymous:
-            metadata_lines.append(f"Author: {payload.author_sub}")
-        metadata_lines.append(f"Created At: {payload.created_at.isoformat()}")
-        metadata_lines.append(f"Updated At: {payload.updated_at.isoformat()}")
+        content_lines = [
+            f"Category: {_format_enum(payload.category)}",
+            f"Status: {_format_enum(payload.ticket_status)}",
+            f"Created: {payload.created_at:%Y-%m-%d %H:%M}",
+        ]
         if payload.ticket_url:
-            metadata_lines.append(f"Ticket URL: {payload.ticket_url}")
-
-        for line in metadata_lines:
-            children.append(self._paragraph_block(line))
-
+            content_lines.append(f"Ticket URL: {payload.ticket_url}")
+        
+        content_lines.append("")  # Empty line separator
+        
+        if payload.is_anonymous:
+            content_lines.append("Reporter")
+            content_lines.append("• Anonymous ticket")
+        else:
+            content_lines.append("Reporter")
+            content_lines.append(f"• Name: {payload.reporter_name or 'Unknown'}")
+            content_lines.append(f"• Email: {payload.reporter_email or '—'}")
+        
         if payload.body:
-            for paragraph in self._chunk_text(payload.body):
-                children.append(self._paragraph_block(paragraph))
+            content_lines.append("")  # Empty line separator
+            content_lines.append("Description")
+            content_lines.append(payload.body)
 
-        return children
+        return [self._paragraph_block("\n".join(content_lines))]
 
     @staticmethod
     def _chunk_text(text: str, chunk_size: int = 1800) -> Iterable[str]:
@@ -250,48 +343,6 @@ class NotionClient:
             "type": "paragraph",
             "paragraph": {"rich_text": rich_text},
         }
-
-    @staticmethod
-    def _build_property_value(meta: Dict[str, Any], value: Any) -> Dict[str, Any] | None:
-        property_type = meta.get("type")
-        if property_type == "select":
-            if not value:
-                return None
-            return {"select": {"name": str(value)}}
-        if property_type == "multi_select":
-            if not value:
-                return None
-            if isinstance(value, (list, tuple, set)):
-                options = [{"name": str(item)} for item in value]
-            else:
-                options = [{"name": str(value)}]
-            return {"multi_select": options}
-        if property_type == "rich_text":
-            if value is None:
-                return None
-            return {"rich_text": [{"text": {"content": str(value)[:2000]}}]}
-        if property_type == "checkbox":
-            return {"checkbox": bool(value)}
-        if property_type == "number":
-            if value is None:
-                return None
-            try:
-                return {"number": float(value)}
-            except (TypeError, ValueError):
-                return None
-        if property_type == "date":
-            if value is None:
-                return None
-            if isinstance(value, datetime):
-                start = value.isoformat()
-            else:
-                start = str(value)
-            return {"date": {"start": start}}
-        if property_type == "url":
-            if not value:
-                return None
-            return {"url": str(value)}
-        return None
 
     @staticmethod
     def _handle_response_error(response: httpx.Response) -> None:

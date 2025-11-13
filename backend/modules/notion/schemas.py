@@ -1,12 +1,12 @@
 from datetime import datetime
+from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field, field_validator
 
+from backend.modules.sgotinish.tickets.schemas import TicketCategory, TicketStatus
+
 
 def normalize_notion_id(value: str) -> str:
-    if not isinstance(value, str):
-        raise TypeError("Notion identifier must be a string")
-
     cleaned = value.strip()
     if not cleaned:
         raise ValueError("Notion identifier cannot be empty")
@@ -32,22 +32,25 @@ class NotionTicketMessage(BaseModel):
 
     ticket_id: int = Field(..., description="Unique identifier of the ticket")
     title: str = Field(..., description="Ticket title")
-    body: str | None = Field(None, description="Detailed ticket description")
-    category: str | None = Field(None, description="Ticket category name")
-    status: str | None = Field(None, description="Ticket status")
-    author_sub: str | None = Field(None, description="Author identifier")
+    body: str = Field(..., description="Detailed ticket description")
+    category: TicketCategory = Field(..., description="Ticket category name")
+    ticket_status: TicketStatus = Field(..., description="Original ticket status in NU Space")
+    reporter_name: str | None = Field(None, description="Reporter full name")
+    reporter_email: str | None = Field(None, description="Reporter email")
+    reporter_department: str | None = Field(None, description="Reporter department name")
     is_anonymous: bool = Field(..., description="Whether the ticket was created anonymously")
     created_at: datetime = Field(..., description="Ticket creation timestamp")
     updated_at: datetime = Field(..., description="Ticket last update timestamp")
     database_id: str = Field(..., description="Target Notion database identifier")
     ticket_url: str | None = Field(None, description="Link back to the ticket inside NU Space")
+    operation: str = Field(default="create", description="Operation type: 'create' or 'update'")
+    notion_page_id: str | None = Field(None, description="Notion page ID for update operations")
+    notion_block_id: str | None = Field(None, description="Notion block ID for update operations")
+
 
     @field_validator("database_id", mode="before")
     @classmethod
     def sanitize_database_id(cls, value: str) -> str:
-        if not isinstance(value, str):
-            raise TypeError("database_id must be a string")
-
         trimmed = value.strip()
         if not trimmed:
             raise ValueError("database_id cannot be empty")
@@ -58,3 +61,11 @@ class NotionTicketMessage(BaseModel):
 
         return normalized
 
+
+class DatabaseSchema(BaseModel):
+    """
+    Schema representing the structure of a Notion database.
+    """
+
+    title_property: str
+    properties: Dict[str, Dict[str, Any]]

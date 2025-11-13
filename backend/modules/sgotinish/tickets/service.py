@@ -258,11 +258,6 @@ class TicketService:
             await self.notification_service.notify_new_ticket_to_bosses(
                 ticket, bosses
             )
-        # sending ticket details to notion page of Student Government
-        try:
-            await self.notion_service.notify_ticket_created(ticket)
-        except Exception:
-            logger.exception("Failed to enqueue Notion sync for ticket %s", ticket.id)
 
         response_dto = await self._build_ticket_response(ticket, user)
         return response_dto
@@ -285,7 +280,16 @@ class TicketService:
             .option(selectinload(Ticket.conversations).selectinload(Conversation.sg_member))
             .first()
         )
+
         await self.notification_service.notify_ticket_updated(ticket)
+        
+        try:
+            await self.notion_service.update_notion(ticket)
+        except Exception:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.exception("Failed to enqueue Notion update for ticket %s", ticket.id)
+    
         return await self._build_ticket_response(ticket, user)
 
     async def get_ticket_by_id(
@@ -350,5 +354,6 @@ class TicketService:
         
         await access_qb.add_orm_list([new_access], [TicketAccess.user, TicketAccess.granter])
         await self.notification_service.notify_ticket_access_granted(ticket, new_access)
+        await self.notion_service.notify_notion(ticket)
         return new_access
 

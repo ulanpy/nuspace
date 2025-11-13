@@ -47,7 +47,6 @@ class Config(BaseSettings):
     USE_GCS_EMULATOR: bool  # keep True for local dev; For staging/prod .env will have it False
     GCS_EMULATOR_HOST: str
     INTEGRATION_SECRET: str
-    NOTION_TICKET_DATABASE_ID: str
     # Header mapping for easy reference when setting values
     GCS_METADATA_HEADERS: dict = {
         "filename": "x-goog-meta-filename",

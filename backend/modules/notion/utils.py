@@ -4,9 +4,8 @@ from typing import Iterable, Union
 
 from backend.common.schemas import Infra
 from backend.modules.notion import schemas
+from backend.modules.notion.consts import NOTION_QUEUE_NAME
 
-
-NOTION_QUEUE_NAME = "notion.tickets"
 
 
 async def send(

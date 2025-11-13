@@ -29,8 +29,13 @@ class AbstractNotificationService(ABC):
 
 class AbstractNotionService(ABC):
     @abstractmethod
-    async def notify_ticket_created(self, ticket: Ticket) -> None:
+    async def notify_notion(self, ticket: Ticket) -> None:
         """Syncs newly created ticket with Notion page of Student Government."""
+        pass
+
+    @abstractmethod
+    async def update_notion(self, ticket: Ticket) -> None:
+        """Updates existing Notion page when ticket is modified."""
         pass
 
 class AbstractConversationService(ABC):
