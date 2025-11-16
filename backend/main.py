@@ -10,7 +10,7 @@ from backend.lifespan import lifespan
 from backend.middlewares.prometheus_metrics import instrument_app, metrics_app
 
 app = FastAPI(
-    debug=config.IS_DEBUG,
+    debug=True,
     lifespan=lifespan,
     default_response_class=ORJSONResponse, # for performance
     root_path="/api",
