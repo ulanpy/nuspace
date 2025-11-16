@@ -1,5 +1,6 @@
 from datetime import UTC, datetime, timedelta
 from typing import List
+import logging
 
 import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.common.cruds import QueryBuilder
 from backend.core.configs.config import config
 from backend.core.database.models import Community, User, UserRole
+
+logger = logging.getLogger(__name__)
 
 
 class AppTokenManager:
@@ -22,13 +25,17 @@ class AppTokenManager:
         """
         # Get application-specific info
         qb = QueryBuilder(db_session, User)
-        user: User = await qb.filter(User.sub == user_sub).first()
+        user: User | None = await qb.filter(User.sub == user_sub).first()
+        if not user:
+            logger.error("App token creation failed: user %s not found", user_sub)
+            raise RuntimeError(f"User {user_sub} not found while creating app token")
+
         user_role: UserRole = user.role
         headed_communities: List[Community] = (
             await qb.blank(Community).filter(Community.head == user_sub).all()
         )
 
-        tg_id = (await qb.blank().filter(User.sub == user_sub).first()).telegram_id
+        tg_id = user.telegram_id
 
         claims = {
             "sub": user_sub,

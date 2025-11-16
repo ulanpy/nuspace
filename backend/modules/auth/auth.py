@@ -1,6 +1,7 @@
 import json
 import random
 import secrets
+import logging
 from typing import Annotated
 
 from aiogram import Bot
@@ -9,6 +10,7 @@ from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
+from redis.asyncio import Redis
 
 from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_creds_or_401, get_db_session
@@ -29,6 +31,7 @@ from .utils import (
 )
 
 router = APIRouter(tags=["Auth Routes"])
+logger = logging.getLogger(__name__)
 
 
 # /login: always pass a state
@@ -40,7 +43,7 @@ async def login(
     mock_user: str | None = "2",  # shorthand alias
 ):
     kc: KeyCloakManager = request.app.state.kc_manager
-    redis = request.app.state.redis
+    redis: Redis = request.app.state.redis
 
     # If no state provided (normal web), create CSRF state
     if not state:
@@ -78,7 +81,7 @@ async def auth_callback(
 
     kc_manager: KeyCloakManager = request.app.state.kc_manager
     app_token_manager: AppTokenManager = request.app.state.app_token_manager
-    redis = request.app.state.redis
+    redis: Redis = request.app.state.redis
 
     # Validate Keycloak token from the fresh exchange (skip in mock mode)
     if not config.MOCK_KEYCLOAK:
@@ -90,9 +93,29 @@ async def auth_callback(
             )
 
     # Upsert user and mint app token
-    user_schema: UserSchema = await create_user_schema(creds)
-    user: User = await upsert_user(db_session, user_schema)
-    app_token_str, _claims = await app_token_manager.create_app_token(user.sub, db_session)
+    try:
+        user_schema: UserSchema = await create_user_schema(creds)
+        logger.debug(
+            "User schema prepared",
+            extra={"state": state, "sub": user_schema.sub, "email": user_schema.email},
+        )
+    except Exception:
+        logger.exception("Failed to build user schema", extra={"state": state})
+        raise
+
+    try:
+        user: User = await upsert_user(db_session, user_schema)
+        logger.info("User upserted", extra={"state": state, "sub": user.sub})
+    except Exception:
+        logger.exception("Failed to upsert user", extra={"state": state, "sub": user_schema.sub})
+        raise
+
+    try:
+        app_token_str, _claims = await app_token_manager.create_app_token(user.sub, db_session)
+        logger.info("App token created", extra={"state": state, "sub": user.sub})
+    except Exception:
+        logger.exception("Failed to create app token", extra={"state": state, "sub": user.sub})
+        raise
 
     # Prepare base redirect and cookies
     redirect_response = RedirectResponse(url=config.HOME_URL, status_code=303)
@@ -111,6 +134,7 @@ async def auth_callback(
     creds_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}creds:{state}"
     miniapp_exists = await redis.get(miniapp_state_key)
     if miniapp_exists:
+        logger.info("Miniapp state matched", extra={"state": state})
         try:
             # Store minimal creds needed; TTL prevents long exposure
             await redis.setex(
@@ -126,6 +150,9 @@ async def auth_callback(
                     }
                 ),
             )
+        except Exception:
+            logger.exception("Failed to cache miniapp credentials", extra={"state": state})
+            raise
         finally:
             await redis.delete(miniapp_state_key)
 
@@ -137,11 +164,13 @@ async def auth_callback(
     csrf_key = f"csrf:{state}"
     csrf_return_to = await redis.get(csrf_key)
     if csrf_return_to is not None:
+        logger.info("CSRF state matched", extra={"state": state})
         await redis.delete(csrf_key)
         # Optional: validate return_to against a whitelist to prevent open redirects
         return redirect_response
 
     # 3) Neither MiniApp nor CSRF state is valid → reject
+    logger.warning("Invalid or expired state during auth callback", extra={"state": state})
     raise HTTPException(status_code=400, detail="Invalid or expired state")
 
 
@@ -165,7 +194,7 @@ async def miniapp_login_init(
     the external login URL that must be opened in a system browser.
     """
     code = secrets.token_urlsafe(24)
-    redis = request.app.state.redis
+    redis: Redis = request.app.state.redis
     state_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}{code}"
     try:
         await redis.setex(state_key, 300, return_to or "/")
@@ -213,7 +242,7 @@ async def miniapp_login_exchange(
     a fresh app token. Intended to be called from the Mini App webview with credentials included.
     Returns 200 when cookies are set.
     """
-    redis = request.app.state.redis
+    redis: Redis = request.app.state.redis
     try:
         payload = await request.json()
     except Exception:
