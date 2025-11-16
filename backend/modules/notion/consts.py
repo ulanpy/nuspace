@@ -6,7 +6,7 @@ NOTION_API_BASE_URL = "https://api.notion.com/v1"
 NOTION_API_VERSION = "2025-09-03"  # Modern API version - uses data_sources for schema
 DEFAULT_TIMEOUT = 15.0
 
-# temporary lock (deleted after consumption by faststream). 
+# temporary lock (deleted after consumption by faststream broker). 
 # Used by NotionService to decide whether to send message to broker or not.
 NOTION_SYNC_REDIS_PREFIX = "notion:ticket-sync"
 NOTION_SYNC_TTL_SECONDS = 60 * 60 * 24 * 15  # 15 days
