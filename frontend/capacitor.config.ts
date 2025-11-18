@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'nuspace',
   webDir: 'dist',
   server: {
-    url: process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://nuspace.kz',
+    url: process.env.CAPACITOR_SERVER ?? 'https://nuspace.kz',
     cleartext: true
   },
 };
