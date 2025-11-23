@@ -98,6 +98,7 @@ export interface RegisteredCourse {
   id: number;
   course: BaseCourse;
   items: BaseCourseItem[];
+  section?: string | null;
   class_average?: number | null;
   gpaCoverage?: {
     currentIncluded: number;

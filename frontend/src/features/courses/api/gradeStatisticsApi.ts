@@ -16,7 +16,6 @@ import {
   TemplateListResponse,
   TemplateResponse,
   TemplateUpdatePayload,
-  SemesterOption,
 } from "../types";
 
 export const gradeStatisticsApi = {
@@ -38,10 +37,6 @@ export const gradeStatisticsApi = {
     if (filters?.term) params.append('term', filters.term);
     return await apiCall(`/courses?${params.toString()}`);
   },
-  getSemesters: async (): Promise<SemesterOption[]> => {
-    return await apiCall('/registrar/semesters');
-  },
-  
   // ==== Registered Courses APIs ====
   getRegisteredCourses: async (): Promise<RegisteredCourse[]> => {
     return await apiCall(`/registered_courses`);
