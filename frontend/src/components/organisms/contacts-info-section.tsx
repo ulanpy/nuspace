@@ -21,6 +21,12 @@ import {
 } from "lucide-react";
 import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/atoms/accordion";
 
 type ContactType = "phone" | "email" | "web" | "location" | "hours";
 
@@ -357,7 +363,7 @@ function ContactChip({ info }: { info: ContactInfo }) {
         : info.value;
 
   const baseButtonClasses =
-    "flex w-full min-h-[64px] items-start gap-3 rounded-lg border border-border/50 bg-muted px-3 py-2 text-left text-xs text-foreground/90 shadow-sm transition-colors";
+    "flex w-full min-h-[56px] items-start gap-3 rounded-lg border border-border/50 bg-muted/70 px-3 py-2 text-left text-xs text-foreground/90 shadow-sm transition-colors";
   const interactiveStates =
     "hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 disabled:cursor-default disabled:bg-muted";
 
@@ -500,49 +506,57 @@ function ContactChip({ info }: { info: ContactInfo }) {
   );
 }
 
-export function EmergencyInfoSection() {
+export function ContactsInfoSection() {
   return (
     <section className="w-full max-w-5xl mx-auto">
       <div className="w-full mb-4">
-        <h2 className="text-2xl sm:text-3xl font-semibold">Emergency & Essential Services</h2>
+        <h2 className="text-2xl sm:text-3xl font-semibold">Contacts & Essential Services</h2>
         <p className="text-muted-foreground mt-1 text-sm sm:text-base">
           Save these contacts. In an emergency, call campus security or local services immediately.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <Accordion
+        type="single"
+        collapsible
+        className="divide-y rounded-2xl border border-border/70 bg-background/70 backdrop-blur-sm shadow-sm"
+      >
         {SERVICES.map((service) => (
-          <article
-            key={service.id}
-            className="relative rounded-xl border border-border/60 bg-background/60 backdrop-blur-sm shadow-sm overflow-hidden h-fit"
-          >
-            <div
-              className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${service.accent ?? "from-primary/10"} to-transparent opacity-70`}
-              aria-hidden
-            />
-            <div className="relative p-4 flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-background/80 border border-border/50 shadow-sm">
+          <AccordionItem key={service.id} value={service.id} className="px-3">
+            <AccordionTrigger className="py-4">
+              <div className="flex flex-1 items-center gap-3 text-left">
+                <div
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border/40 bg-gradient-to-br ${
+                    service.accent ?? "from-primary/15"
+                  } to-transparent`}
+                >
                   {service.icon}
                 </div>
-                <h3 className="text-base sm:text-lg font-medium leading-none">
-                  {service.name}
-                </h3>
+                <div className="flex flex-col text-left">
+                  <span className="text-base font-medium leading-tight">{service.name}</span>
+                  <span className="text-xs text-muted-foreground hidden sm:block">
+                    {service.description}
+                  </span>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">{service.description}</p>
-              <div className="mt-2 grid gap-2 md:grid-cols-2">
-                {service.contacts.map((c, idx) => (
-                  <ContactChip key={`${service.id}-${c.type}-${idx}`} info={c} />
-                ))}
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="px-2 pb-4 space-y-3">
+                <p className="text-sm text-muted-foreground sm:hidden">{service.description}</p>
+                <div className="grid gap-2 md:grid-cols-2">
+                  {service.contacts.map((c, idx) => (
+                    <ContactChip key={`${service.id}-${c.type}-${idx}`} info={c} />
+                  ))}
+                </div>
               </div>
-            </div>
-          </article>
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
+      </Accordion>
     </section>
   );
 }
 
-export default EmergencyInfoSection;
+export default ContactsInfoSection;
 
 

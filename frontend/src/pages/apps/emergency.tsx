@@ -1,11 +1,11 @@
 "use client";
 
-import { EmergencyInfoSection } from "@/components/organisms/emergency-info-section";
+import { ContactsInfoSection } from "@/components/organisms/contacts-info-section";
 
-export default function EmergencyPage() {
+export default function ContactsPage() {
   return (
     <div className="flex flex-col gap-6">
-      <EmergencyInfoSection />
+      <ContactsInfoSection />
     </div>
   );
 }
