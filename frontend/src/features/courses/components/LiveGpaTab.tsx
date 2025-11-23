@@ -5,7 +5,7 @@ import { ConfirmationModal } from "./ConfirmationModal";
 import { ScheduleDialog } from "./ScheduleDialog";
 import { SynchronizeCoursesControl } from "./SynchronizeCoursesControl";
 import type { LiveGpaViewModel } from "../hooks/useLiveGpaViewModel";
-import { ScheduleCard } from "./live-gpa/ScheduleCard";
+import { ScheduleButton } from "./live-gpa/ScheduleButton";
 import { SummaryCards } from "./live-gpa/SummaryCards";
 import { RegisteredCourseList } from "./live-gpa/RegisteredCourseList";
 import { ShareTemplateModal } from "./live-gpa/ShareTemplateModal";
@@ -49,7 +49,12 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
         </div>
       </header>
 
-      {user && <ScheduleCard schedule={schedule} />}
+      {user && (
+        <>
+          <SummaryCards metrics={metrics} />
+          <ScheduleButton schedule={schedule} />
+        </>
+      )}
 
       <ScheduleDialog
         open={schedule.isOpen}
@@ -139,7 +144,6 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
         </div>
       ) : (
         <>
-          <SummaryCards metrics={metrics} />
           {registeredCourses.length > 0 ? (
             <RegisteredCourseList
               courses={registeredCourses}

@@ -27,6 +27,8 @@ interface RegisteredCourseCardProps {
   onOpenTemplates?: (course: RegisteredCourse) => void;
   isWithdrawn?: boolean;
   onToggleWithdraw?: (courseId: number) => void;
+  showHeader?: boolean;
+  className?: string;
 }
 
 export function RegisteredCourseCard({
@@ -38,6 +40,8 @@ export function RegisteredCourseCard({
   onOpenTemplates,
   isWithdrawn = false,
   onToggleWithdraw,
+  showHeader = true,
+  className = "",
 }: RegisteredCourseCardProps) {
   const [showAssignments, setShowAssignments] = useState(false);
   const [showClassAverageModal, setShowClassAverageModal] = useState(false);
@@ -95,58 +99,60 @@ export function RegisteredCourseCard({
     <Card
       className={`w-full rounded-2xl border border-border/50 bg-background shadow-none transition ${
         isWithdrawn ? "border-amber-500/50 bg-amber-50/70 dark:bg-amber-500/10" : ""
-      }`}
+      } ${className}`}
     >
-      <CardHeader className="relative gap-2 pb-4 pr-12">
-        {isWithdrawn && (
-          <Badge
-            variant="secondary"
-            className="absolute right-2 top-2 flex items-center gap-1 rounded-full border border-amber-500/50 bg-amber-100 text-amber-900 shadow-sm dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100"
-          >
-            <CircleSlash2 className="h-3.5 w-3.5" />
-            Withdrawn
-          </Badge>
-        )}
+      {showHeader && (
+        <CardHeader className="relative gap-2 pb-4 pr-12">
+          {isWithdrawn && (
+            <Badge
+              variant="secondary"
+              className="absolute right-2 top-2 flex items-center gap-1 rounded-full border border-amber-500/50 bg-amber-100 text-amber-900 shadow-sm dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-100"
+            >
+              <CircleSlash2 className="h-3.5 w-3.5" />
+              Withdrawn
+            </Badge>
+          )}
 
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <CardTitle className="text-base font-semibold leading-tight text-foreground">
-              {course.course_code}
-            </CardTitle>
-            {course.description && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                onClick={() => setShowDescriptionModal(true)}
-                aria-label="Course description"
-              >
-                <HelpCircle className="h-4 w-4" />
-              </Button>
-            )}
-            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-              {course.school && (
-                <Badge variant="outline" className="rounded-full border-border/60 bg-transparent">
-                  {course.school}
-                </Badge>
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <CardTitle className="text-base font-semibold leading-tight text-foreground">
+                {course.course_code}
+              </CardTitle>
+              {course.description && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowDescriptionModal(true)}
+                  aria-label="Course description"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                </Button>
               )}
-              <Badge variant="outline" className="rounded-full border-border/60 bg-transparent">
-                {credits} Cr
-              </Badge>
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                {course.school && (
+                  <Badge variant="outline" className="rounded-full border-border/60 bg-transparent">
+                    {course.school}
+                  </Badge>
+                )}
+                <Badge variant="outline" className="rounded-full border-border/60 bg-transparent">
+                  {credits} Cr
+                </Badge>
+              </div>
             </div>
+            {course.title && (
+              <p className="text-sm text-muted-foreground line-clamp-2 leading-tight">
+                {course.title}
+              </p>
+            )}
+            {infoLine && (
+              <p className="text-xs text-muted-foreground line-clamp-2">{infoLine}</p>
+            )}
           </div>
-          {course.title && (
-            <p className="text-sm text-muted-foreground line-clamp-2 leading-tight">
-              {course.title}
-            </p>
-          )}
-          {infoLine && (
-            <p className="text-xs text-muted-foreground line-clamp-2">{infoLine}</p>
-          )}
-        </div>
-      </CardHeader>
+        </CardHeader>
+      )}
 
-      <CardContent className="space-y-4">
+      <CardContent className={`space-y-4 ${showHeader ? "" : "pt-4"}`}>
         <div className="flex w-full flex-nowrap items-center gap-2 overflow-x-auto pb-2">
           {onAddItem && (
             <Button

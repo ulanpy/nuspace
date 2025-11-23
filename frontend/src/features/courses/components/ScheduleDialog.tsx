@@ -1,11 +1,9 @@
 import { useMemo } from "react";
 import { Modal } from "@/components/atoms/modal";
 import { Badge } from "@/components/atoms/badge";
-import { Button } from "@/components/atoms/button";
 import { Skeleton } from "@/components/atoms/skeleton";
 import { cn } from "@/utils/utils";
 import { formatDistanceToNow, parseISO } from "date-fns";
-import { Download } from "lucide-react";
 import { ScheduleResponse } from "../types";
 
 interface ScheduleDialogProps {
@@ -29,10 +27,22 @@ const WEEKDAYS = [
   { label: "Saturday", index: 5 },
 ];
 
+const ROW_HEIGHT_PX = 96;
+
 function formatTime(hh: number, mm: number) {
   const hours = hh.toString().padStart(2, "0");
   const minutes = mm.toString().padStart(2, "0");
   return `${hours}:${minutes}`;
+}
+
+function formatSlotLabel(totalMinutes: number) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return formatTime(hours, minutes);
+}
+
+function toMinutes(time: { hh: number; mm: number }) {
+  return time.hh * 60 + time.mm;
 }
 
 export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: ScheduleDialogProps) {
@@ -70,6 +80,48 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
   }, [schedule]);
 
   const hasItems = timetable.some((day) => day.items.length > 0);
+
+  const timeSlots = useMemo(() => {
+    const MIN_TIME = 6 * 60;
+    const MAX_TIME = 22 * 60;
+    const DEFAULT_START = 8 * 60;
+    const DEFAULT_END = 18 * 60;
+
+    let earliest = Infinity;
+    let latest = -Infinity;
+
+    timetable.forEach((day) => {
+      day.items.forEach((item) => {
+        const start = toMinutes(item.time.start);
+        const end = toMinutes(item.time.end);
+        if (start < earliest) earliest = start;
+        if (end > latest) latest = end;
+      });
+    });
+
+    if (!Number.isFinite(earliest) || !Number.isFinite(latest)) {
+      earliest = DEFAULT_START;
+      latest = DEFAULT_END;
+    }
+
+    const start = Math.max(MIN_TIME, Math.floor(earliest / 60) * 60);
+    const end = Math.max(
+      start + 60,
+      Math.min(MAX_TIME, Math.ceil(latest / 60) * 60),
+    );
+
+    const slots: number[] = [];
+    for (let current = start; current < end; current += 60) {
+      slots.push(current);
+    }
+
+    return slots.length > 0 ? slots : [DEFAULT_START];
+  }, [timetable]);
+
+  const columnTemplate = useMemo(
+    () => `96px repeat(${timetable.length || WEEKDAYS.length}, minmax(240px, 1fr))`,
+    [timetable.length],
+  );
 
   const lastSyncedText = useMemo(() => {
     if (!meta?.last_synced_at) return null;
@@ -175,60 +227,135 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
             ))}
           </div>
         ) : hasItems ? (
-          <div className="grid grid-cols-1 gap-3 xl:grid-cols-6">
-            {timetable.map(({ label, index: dayIndex, items }) => (
+          <div className="overflow-x-auto rounded-3xl border border-border/60 bg-muted/15">
+            <div className="min-w-[960px] divide-y divide-border/30 text-sm">
               <div
-                key={label}
-                className="space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-4"
+                className="grid border-b border-border/30 bg-background/80 text-xs uppercase tracking-wide text-muted-foreground"
+                style={{ gridTemplateColumns: columnTemplate }}
               >
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-foreground">{label}</p>
-                  <span className="text-xs text-muted-foreground">{items.length} classes</span>
-                </div>
-                <div className="space-y-3">
-                  {items.map((item, index) => {
-                    const color = schedule?.preferences?.colors?.[item.course_code] ?? "#6366f1";
-                    return (
-                      <div
-                        key={`${item.course_code}-${index}-${formatTime(item.time.start.hh, item.time.start.mm)}`}
-                        className="space-y-3 rounded-xl border border-transparent bg-background/80 p-3 shadow-sm"
-                        style={{ borderColor: `${color}33`, backgroundColor: `${color}1A` }}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <Badge
-                            variant="outline"
-                            className={cn("border-[1.5px] text-xs font-semibold", "bg-background/80")}
-                            style={{ borderColor: color, color }}
-                          >
-                            {item.course_code}
-                          </Badge>
-                          <span className="text-xs font-medium text-muted-foreground">
-                            {formatTime(item.time.start.hh, item.time.start.mm)} — {formatTime(item.time.end.hh, item.time.end.mm)}
-                          </span>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm font-semibold text-foreground line-clamp-2">
-                            {item.label || item.title}
-                          </p>
-                          {item.info && (
-                            <p className="text-xs text-muted-foreground line-clamp-2">{item.info}</p>
-                          )}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                          {item.teacher && <span>{item.teacher}</span>}
-                          {item.cab && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-background/70 px-2 py-1">
-                              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
-                              {item.cab}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <div className="px-4 py-3 text-[11px] font-semibold">Time</div>
+                {timetable.map(({ label, items }) => (
+                  <div key={`${label}-header`} className="border-l border-border/15 px-4 py-3 text-left">
+                    <p className="text-sm font-semibold text-foreground">{label}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {items.length ? `${items.length} classes` : "—"}
+                    </p>
+                  </div>
+                ))}
               </div>
-            ))}
+
+              <div
+                className="grid bg-background/50"
+                style={{ gridTemplateColumns: columnTemplate }}
+              >
+                <div className="border-r border-border/20 bg-background/60">
+                  {timeSlots.map((slot, slotIndex) => (
+                    <div
+                      key={`time-${slot}`}
+                      className={cn(
+                        "flex items-center px-4 py-2",
+                        slotIndex !== timeSlots.length - 1 && "border-b border-border/15",
+                      )}
+                      style={{ height: ROW_HEIGHT_PX }}
+                    >
+                      <span className="text-xs font-semibold text-muted-foreground">{formatSlotLabel(slot)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {timetable.map((day, dayIdx) => {
+                  const timelineStart = timeSlots[0];
+                  const totalTimelineMinutes = timeSlots.length * 60;
+                  const timelineEnd = timelineStart + totalTimelineMinutes;
+
+                  return (
+                    <div
+                      key={`${day.label}-timeline`}
+                      className={cn(
+                        "relative bg-background/40",
+                        dayIdx !== timetable.length - 1 && "border-r border-border/20",
+                      )}
+                      style={{ height: ROW_HEIGHT_PX * timeSlots.length }}
+                    >
+                      <div className="absolute inset-0">
+                        {timeSlots.map((slot, index) => (
+                          <div
+                            key={`${day.label}-grid-${slot}`}
+                            className={cn(
+                              "border-border/15",
+                              index !== timeSlots.length - 1 ? "border-b border-dashed" : "",
+                            )}
+                            style={{ height: ROW_HEIGHT_PX }}
+                          />
+                        ))}
+                      </div>
+
+                      <div className="absolute inset-0 w-full h-full px-3">
+                        {day.items.map((item, index) => {
+                          const color = schedule?.preferences?.colors?.[item.course_code] ?? "#6366f1";
+                          const originalStart = toMinutes(item.time.start);
+                          const originalEnd = toMinutes(item.time.end);
+                          const clampedStart = Math.max(timelineStart, Math.min(originalStart, timelineEnd));
+                          const clampedEnd = Math.max(clampedStart + 15, Math.min(originalEnd, timelineEnd));
+                          const offsetMinutes = clampedStart - timelineStart;
+                          const durationMinutes = Math.max(clampedEnd - clampedStart, 30);
+                          const topPercent = (offsetMinutes / totalTimelineMinutes) * 100;
+                          const heightPercent = Math.max(
+                            (durationMinutes / totalTimelineMinutes) * 100,
+                            (45 / totalTimelineMinutes) * 100,
+                          );
+
+                          return (
+                            <div
+                              key={`${item.course_code}-${index}-${clampedStart}`}
+                              className="absolute left-3 right-3 space-y-1 overflow-hidden rounded-2xl border bg-background/80 p-3 text-xs shadow-sm"
+                              style={{
+                                top: `${topPercent}%`,
+                                height: `calc(${heightPercent}% - 6px)`,
+                                borderColor: `${color}40`,
+                                backgroundColor: `${color}1a`,
+                              }}
+                            >
+                              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "w-fit border-[1.5px] px-3 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                                    "bg-background/80",
+                                  )}
+                                  style={{ borderColor: color, color }}
+                                >
+                                  {item.course_code}
+                                </Badge>
+                                <span className="text-[10px] font-medium text-muted-foreground sm:text-right">
+                                  {formatTime(item.time.start.hh, item.time.start.mm)} —{" "}
+                                  {formatTime(item.time.end.hh, item.time.end.mm)}
+                                </span>
+                              </div>
+                              <p className="text-[10px] font-semibold text-foreground line-clamp-3 break-words">
+                                {item.label || item.title}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-2 text-[9px] text-muted-foreground">
+                                {item.teacher && <span className="truncate">{item.teacher}</span>}
+                                {item.cab && (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-background/70 px-2 py-0.5">
+                                    <span
+                                      className="h-1.5 w-1.5 rounded-full"
+                                      style={{ backgroundColor: color }}
+                                    />
+                                    {item.cab}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         ) : (
           <div className="space-y-3 rounded-2xl border border-dashed border-border/60 bg-muted/20 p-12 text-center">
