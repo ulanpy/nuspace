@@ -20,19 +20,19 @@ export default function AppsLayout() {
   const { isMiniApp } = useTelegramMiniApp();
 
   // Check if the current path is for Marketplace
-  const isKupiProdaiPath = location.pathname.includes(
-    ROUTES.APPS.KUPI_PRODAI.ROOT,
+  const isMarketplacePath = location.pathname.includes(
+    ROUTES.APPS.MARKETPLACE.ROOT,
   );
 
   // Show login modal ONLY when trying to create/sell (not for browsing or viewing)
   useEffect(() => {
-    if (!user && !isLoading && isKupiProdaiPath) {
+    if (!user && !isLoading && isMarketplacePath) {
       const isCreatePath = location.pathname.includes("/create");
       setShowLoginModal(isCreatePath);
     } else {
       setShowLoginModal(false);
     }
-  }, [user, isKupiProdaiPath, isLoading, location.pathname]);
+  }, [user, isMarketplacePath, isLoading, location.pathname]);
 
   // Handle login from the modal
   const handleLogin = () => {

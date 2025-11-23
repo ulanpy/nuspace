@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { PiUserCircle, PiUserCircleFill, PiChatCircle, PiChatCircleFill } from "react-icons/pi";
+import { PiUserCircle, PiUserCircleFill } from "react-icons/pi";
 import { ROUTES } from "@/data/routes";
 import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 import { useState, useEffect } from "react";
@@ -31,17 +31,14 @@ export function Header({ left, center, right, showMainNav = false }: HeaderProps
   // since they are available in the mobile bottom navbar
   const shouldShowNavItems = !isMiniApp && !isMobileBrowser;
   
-  const mainNavItems = shouldShowNavItems ? [
-    { to: ROUTES.APPS.CAMPUS_CURRENT.POSTS, icon: "subspace" },
-    { to: ROUTES.APPS.PROFILE, icon: "profile" },
-  ] : [];
+  const mainNavItems = shouldShowNavItems
+    ? [{ to: ROUTES.APPS.PROFILE, icon: "profile" }]
+    : [];
 
   const renderIcon = (icon: string, isActive: boolean, size: number = 20) => {
     switch (icon) {
       case "profile":
         return isActive ? <PiUserCircleFill size={size} /> : <PiUserCircle size={size} />;
-      case "subspace":
-        return isActive ? <PiChatCircleFill size={size} /> : <PiChatCircle size={size} />;
       default:
         return null;
     }

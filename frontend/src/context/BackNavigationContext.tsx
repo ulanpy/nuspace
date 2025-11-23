@@ -100,18 +100,18 @@ export function BackNavigationProvider({ children }: { children: React.ReactNode
       }
 
       // Marketplace
-      const PRODUCT_DETAIL_PREFIX = ROUTES.APPS.KUPI_PRODAI.PRODUCT.DETAIL.replace(
+      const PRODUCT_DETAIL_PREFIX = ROUTES.APPS.MARKETPLACE.PRODUCT.DETAIL.replace(
         ":id",
         "",
       );
       if (path.startsWith(PRODUCT_DETAIL_PREFIX)) {
-        return ROUTES.APPS.KUPI_PRODAI.ROOT;
+        return ROUTES.APPS.MARKETPLACE.ROOT;
       }
 
-      if (path.startsWith(ROUTES.APPS.KUPI_PRODAI.CREATE)) {
-        return ROUTES.APPS.KUPI_PRODAI.ROOT;
+      if (path.startsWith(ROUTES.APPS.MARKETPLACE.CREATE)) {
+        return ROUTES.APPS.MARKETPLACE.ROOT;
       }
-      if (path.startsWith(ROUTES.APPS.KUPI_PRODAI.ROOT)) {
+      if (path.startsWith(ROUTES.APPS.MARKETPLACE.ROOT)) {
         return ROUTES.HOME;
       }
 

@@ -2,11 +2,11 @@
 
 import {
   defaultSize,
-} from "@/features/kupi-prodai/api/kupiProdaiApi";
+} from "@/features/marketplace/api/marketplaceApi";
 import React, { createContext, useContext, useState } from "react";
-import { Product } from "@/features/kupi-prodai/types";
-import { NewProductRequest } from "@/features/kupi-prodai/types";
-import { ActiveTab } from "@/features/kupi-prodai/types";
+import { Product } from "@/features/marketplace/types";
+import { NewProductRequest } from "@/features/marketplace/types";
+import { ActiveTab } from "@/features/marketplace/types";
 
 type ListingContextType = {
   newListing: NewProductRequest;

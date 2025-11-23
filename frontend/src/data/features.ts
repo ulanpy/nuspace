@@ -2,11 +2,11 @@ import { MdSell, MdEvent, MdRestaurantMenu } from "react-icons/md";
 import { ROUTES } from "./routes";
 export const features = [
   {
-    title: "Kupi-Prodai",
+    title: "Marketplace",
     description:
       "Here students have the opportunity to sell, buy or exchange their belongings.",
     icon: MdSell,
-    link: ROUTES.APPS.KUPI_PRODAI.ROOT,
+    link: ROUTES.APPS.MARKETPLACE.ROOT,
   },
   {
     title: "Events",

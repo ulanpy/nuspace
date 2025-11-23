@@ -18,7 +18,7 @@ import { Header } from "@/components/atoms/header";
 import { LastCommitInline } from "@/components/molecules/last-commit";
 import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 import { useMemo } from "react";
-import { useEvents } from "@/features/campuscurrent/events/hooks/useEvents";
+import { useEvents } from "@/features/events/hooks/useEvents";
 import { Link } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
 import { ThemeToggle } from "@/components/molecules/theme-toggle";
@@ -241,7 +241,7 @@ export default function HomePage() {
         </div>
       </div>
       
-      {/* Emergency info moved to its own page reachable from AppGrid */}
+      {/* Contacts info lives on its own page reachable from AppGrid */}
     </div>
   );
 }

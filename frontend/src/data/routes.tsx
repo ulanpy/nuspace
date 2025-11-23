@@ -9,11 +9,11 @@ export const PRODUCTS = "products";
 export const USERS = "users";
 export const PRODUCT = "product";
 export const USER = "user";
-export const KUPI_PRODAI = "kupi-prodai";
+export const MARKETPLACE = "marketplace";
 export const CAMPUS_CURRENT = "campuscurrent";
-export const GRADE_STATISTICS = "grade-statistics";
+export const COURSES = "courses";
 export const DORM_EATS = "dorm-eats";
-export const EMERGENCY = "emergency";
+export const CONTACTS = "contacts";
 export const POSTS = "posts";
 export const PROFILE = "profile";
 export const ABOUT = "about";
@@ -59,16 +59,16 @@ export const ROUTES = {
     ROOT: buildPath(APPS),
     ABOUT: buildPath(APPS, ABOUT),
     PROFILE: buildPath(APPS, PROFILE),
-    EMERGENCY: {
-      ROOT: buildPath(APPS, EMERGENCY),
+    CONTACTS: {
+      ROOT: buildPath(APPS, CONTACTS),
     },
-    KUPI_PRODAI: {
-      ROOT: buildPath(APPS, KUPI_PRODAI),
-      CREATE: buildPath(APPS, KUPI_PRODAI, CREATE),
+    MARKETPLACE: {
+      ROOT: buildPath(APPS, MARKETPLACE),
+      CREATE: buildPath(APPS, MARKETPLACE, CREATE),
       PRODUCT: {
-        DETAIL: buildPath(APPS, KUPI_PRODAI, PRODUCT, ":id"),
+        DETAIL: buildPath(APPS, MARKETPLACE, PRODUCT, ":id"),
         DETAIL_FN: (id: string) =>
-          buildPath(APPS, KUPI_PRODAI, PRODUCT, id),
+          buildPath(APPS, MARKETPLACE, PRODUCT, id),
       },
     },
     CAMPUS_CURRENT: {
@@ -93,8 +93,8 @@ export const ROUTES = {
         DETAIL_FN: (id: string) => buildPath(APPS, COMMUNITIES, COMMUNITY, id),
       },
     },
-    GRADE_STATISTICS: {
-      ROOT: buildPath(APPS, GRADE_STATISTICS),
+    COURSES: {
+      ROOT: buildPath(APPS, COURSES),
     },
     DORM_EATS: {
       ROOT: buildPath(APPS, DORM_EATS),
@@ -129,12 +129,12 @@ const LAZY_ROUTES_REL = {
   },
   APPS: {
     PROFILE: PROFILE,
-    EMERGENCY: EMERGENCY,
-    KUPI_PRODAI_ROOT: KUPI_PRODAI,
-    KUPI_PRODAI_CREATE: `${KUPI_PRODAI}/${CREATE}`,
-    KUPI_PRODAI_PRODUCT_DETAIL: `${KUPI_PRODAI}/${PRODUCT}/:id`,
+    CONTACTS: CONTACTS,
+    MARKETPLACE_ROOT: MARKETPLACE,
+    MARKETPLACE_CREATE: `${MARKETPLACE}/${CREATE}`,
+    MARKETPLACE_PRODUCT_DETAIL: `${MARKETPLACE}/${PRODUCT}/:id`,
     ABOUT: ABOUT,
-    GRADE_STATISTICS: GRADE_STATISTICS,
+    COURSES: COURSES,
     DORM_EATS: DORM_EATS,
     SGOTINISH: SGOTINISH,
     SGOTINISH_STUDENT_ROOT: `${SGOTINISH}/${STUDENT}`,
@@ -155,14 +155,14 @@ export const LazyRoutes = {
   APPS: {
     BASIC: [
       {
-        path: LAZY_ROUTES_REL.APPS.KUPI_PRODAI_ROOT,
-        Component: withSuspense(lazy(() => import("@/features/kupi-prodai/pages/home"))),
+        path: LAZY_ROUTES_REL.APPS.MARKETPLACE_ROOT,
+        Component: withSuspense(lazy(() => import("@/features/marketplace/pages/home"))),
       },
 
       {
-        path: LAZY_ROUTES_REL.APPS.KUPI_PRODAI_PRODUCT_DETAIL,
+        path: LAZY_ROUTES_REL.APPS.MARKETPLACE_PRODUCT_DETAIL,
         Component: withSuspense(
-          lazy(() => import("@/features/kupi-prodai/pages/product/[id]")),
+          lazy(() => import("@/features/marketplace/pages/product/[id]")),
         ),
       },
       {
@@ -174,16 +174,16 @@ export const LazyRoutes = {
         Component: withSuspense(lazy(() => import("@/pages/profile"))),
       },
       {
-        path: LAZY_ROUTES_REL.APPS.GRADE_STATISTICS,
-        Component: withSuspense(lazy(() => import("@/features/grade-statistics/pages/GradeStatisticsPage"))),
+        path: LAZY_ROUTES_REL.APPS.COURSES,
+        Component: withSuspense(lazy(() => import("@/features/courses/pages/GradeStatisticsPage"))),
       },
       {
         path: LAZY_ROUTES_REL.APPS.DORM_EATS,
         Component: withSuspense(lazy(() => import("@/pages/apps/dorm-eats"))),
       },
       {
-        path: LAZY_ROUTES_REL.APPS.EMERGENCY,
-        Component: withSuspense(lazy(() => import("@/pages/apps/emergency"))),
+        path: LAZY_ROUTES_REL.APPS.CONTACTS,
+        Component: withSuspense(lazy(() => import("@/pages/apps/contacts"))),
       },
       {
         path: LAZY_ROUTES_REL.APPS.SGOTINISH,
@@ -208,19 +208,19 @@ export const LazyRoutes = {
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_POSTS,
         Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/subspace/pages/list")),
+          lazy(() => import("@/features/subspace/pages/list")),
         ),
       },
       {
         path: LAZY_ROUTES_REL.APPS.COMMUNITIES_ROOT,
         Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/communities/pages/list")),
+          lazy(() => import("@/features/communities/pages/list")),
         ),
       },
       {
         path: LAZY_ROUTES_REL.APPS.COMMUNITIES_COMMUNITY_DETAIL,
         Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/communities/pages/single")),
+          lazy(() => import("@/features/communities/pages/single")),
         ),
       },
     ],
@@ -228,31 +228,31 @@ export const LazyRoutes = {
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_EVENTS,
         Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/events/pages/list")),
+          lazy(() => import("@/features/events/pages/list")),
         ),
       },
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_EVENT_DETAIL,
         Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/events/pages/single")),
+          lazy(() => import("@/features/events/pages/single")),
         ),
       },
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_COMMUNITY_DETAIL,
         Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/communities/pages/single")),
+          lazy(() => import("@/features/communities/pages/single")),
         ),
       },
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_COMMUNITIES,
         Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/communities/pages/list")),
+          lazy(() => import("@/features/communities/pages/list")),
         ),
       },
       {
         path: LAZY_ROUTES_REL.APPS.CAMPUS_CURRENT_COMMUNITIES,
         Component: withSuspense(
-          lazy(() => import("@/features/campuscurrent/communities/pages/list")),
+          lazy(() => import("@/features/communities/pages/list")),
         ),
       },
     ],

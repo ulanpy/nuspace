@@ -174,7 +174,7 @@ export function EventMediaUpload() {
 }
 ```
 
-### Kupi-prodai Products
+### Marketplace Products
 ```tsx
 import { MediaUploadZone } from '@/components/organisms/media';
 
@@ -260,8 +260,8 @@ The media system works seamlessly with existing hooks:
 #### Before (Campus Current)
 ```tsx
 // Multiple imports and manual composition
-import { MediaDropZone } from '@/features/kupi-prodai/components/media/MediaDropZone';
-import { MediaGallery } from '@/features/kupi-prodai/components/media/MediaGallery';
+import { MediaDropZone } from '@/features/marketplace/components/media/MediaDropZone';
+import { MediaGallery } from '@/features/marketplace/components/media/MediaGallery';
 
 return (
   <div className="space-y-4">

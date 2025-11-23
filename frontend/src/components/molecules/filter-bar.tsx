@@ -24,7 +24,7 @@ import {
 } from "@/components/atoms/sheet";
 import { Button } from "../atoms/button";
 import { Input } from "../atoms/input";
-import { eventCategories } from "@/features/campuscurrent/types/events/event-categories";
+const eventCategories = ["Academic", "Cultural", "Sports", "Social"];
 
 
 

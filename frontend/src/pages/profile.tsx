@@ -1,4 +1,4 @@
-export { default } from "@/features/campuscurrent/pages/profile";
+export { default } from "@/features/profile/ProfilePage";
 
 
 

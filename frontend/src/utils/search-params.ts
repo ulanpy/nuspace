@@ -1,4 +1,4 @@
-import { defaultPage } from "@/features/kupi-prodai/api/kupiProdaiApi";
+import { defaultPage } from "@/features/marketplace/api/marketplaceApi";
 
 export const getSearchTextFromURL = (query: string) => {
   const params = new URLSearchParams(query);

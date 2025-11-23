@@ -33,10 +33,10 @@
 //         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
 //           {!sidebarCollapsed && (
 //             <Link
-//               to={ROUTES.APPS.KUPI_PRODAI.ROOT}
+//               to={ROUTES.APPS.MARKETPLACE.ROOT}
 //               className="font-bold text-lg text-blue-600"
 //             >
-//               Kupi&Prodai
+//               Marketplace
 //             </Link>
 //           )}
 //           <Button

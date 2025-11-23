@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { PiUserCircle, PiUserCircleFill, PiChatCircle, PiChatCircleFill } from "react-icons/pi";
+import { PiUserCircle, PiUserCircleFill } from "react-icons/pi";
 import { ROUTES } from "@/data/routes";
 import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 
@@ -41,13 +41,12 @@ function NuSpaceLogoIcon({ size, isActive }: { size: number; isActive: boolean }
 interface BottomNavItem {
   to: string;
   label: string;
-  icon: "home" | "profile" | "subspace";
+  icon: "home" | "profile";
 }
 
 function buildNavItems(): BottomNavItem[] {
   return [
     { to: ROUTES.HOME, label: "Home", icon: "home" },
-    { to: ROUTES.APPS.CAMPUS_CURRENT.POSTS, label: "Subspace", icon: "subspace" },
     { to: ROUTES.APPS.PROFILE, label: "Profile", icon: "profile" },
   ];
 }
@@ -133,8 +132,6 @@ export function MobileBottomNav() {
                           return <NuSpaceLogoIcon size={Math.round(iconSize * 0.8)} isActive={isActive} />;
                         case "profile":
                           return isActive ? <PiUserCircleFill size={iconSize} /> : <PiUserCircle size={iconSize} />;
-                        case "subspace":
-                          return isActive ? <PiChatCircleFill size={iconSize} /> : <PiChatCircle size={iconSize} />;
                         default:
                           return null;
                       }

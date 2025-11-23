@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useUser } from '@/hooks/use-user';
-import { CreateEventData, EditEventData, EventPolicy, EventType, Event, EventPermissions, EventEditableFields, Community } from '@/features/campuscurrent/types/types';
+import { CreateEventData, EditEventData, EventPolicy, EventType, Event, EventPermissions, EventEditableFields, Community } from '@/features/shared/campus/types';
 
 interface EventFormContextType {
   // Form data

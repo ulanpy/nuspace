@@ -1,3 +1,4 @@
+import type { ComponentType } from "react";
 import { LazyRoutes, ROUTES } from "../data/routes";
 // import AdminLayout from "../pages/admin/admin-layout";
 // import AdminPage from "../pages/admin/admin-page";
@@ -8,10 +9,7 @@ import { Toasts } from "../components/atoms/toast";
 import { ListingProvider } from "../context/ListingContext";
 import { MediaUploadProvider } from "../context/MediaUploadContext";
 import { MediaEditProvider } from "../context/MediaEditContext";
-import { Layout } from "../features/campuscurrent/pages/layout";
-
-
-import { Footer } from "@/components/ui/footer";
+import { CampusLayout } from "../components/CampusLayout";
 import { MobileBottomNav } from "@/components/molecules/MobileBottomNav";
 
 function App() {
@@ -29,14 +27,16 @@ function App() {
             {/* </Route> */}
             <Route path={ROUTES.APPS.ROOT} element={<AppsLayout />}>
               <Route index element={<Navigate to={ROUTES.HOME} replace />} />
-              {LazyRoutes.APPS.BASIC.map(({ path, Component }) => (
-                <Route key={path} path={path} element={<Component />} />
-              ))}
+              {LazyRoutes.APPS.BASIC.map(({ path, Component }) => {
+                const Screen = Component as ComponentType<any>;
+                return <Route key={path} path={path} element={<Screen />} />;
+              })}
               <Route path={ROUTES.APPS.CAMPUS_CURRENT.ROOT} element={<Navigate to={ROUTES.APPS.CAMPUS_CURRENT.EVENTS} replace />} />
-              <Route element={<Layout />}>
-                {LazyRoutes.APPS.EVENTS.map(({ path, Component }) => (
-                  <Route key={path} path={path} element={<Component />} />
-                ))}
+              <Route element={<CampusLayout />}>
+                {LazyRoutes.APPS.EVENTS.map(({ path, Component }) => {
+                  const Screen = Component as ComponentType<any>;
+                  return <Route key={path} path={path} element={<Screen />} />;
+                })}
               </Route>
             </Route>
           </Routes>

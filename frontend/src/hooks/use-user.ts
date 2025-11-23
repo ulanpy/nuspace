@@ -1,5 +1,5 @@
 import { queryClient } from "@/utils/query-client";
-import { kupiProdaiApi } from "@/features/kupi-prodai/api/kupiProdaiApi";
+import { marketplaceApi } from "@/features/marketplace/api/marketplaceApi";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
@@ -51,7 +51,7 @@ export const useUser = () => {
     queryKey: ["user"],
     queryFn: async () => {
       try {
-        return await kupiProdaiApi.getUserQueryOptions().queryFn();
+        return await marketplaceApi.getUserQueryOptions().queryFn();
       } catch (error: any) {
         // If we get a 401, disable future queries and persist this state
         if (error?.status === 401 || error?.response?.status === 401) {
@@ -122,7 +122,7 @@ export const useUser = () => {
       // Refetch user after cookies are set and clear auth failure state
       sessionStorage.removeItem("__miniapp_login_poll_done__");
       sessionStorage.removeItem(AUTH_FAILURE_KEY);
-      queryClient.invalidateQueries({ queryKey: kupiProdaiApi.getUserQueryOptions().queryKey });
+      queryClient.invalidateQueries({ queryKey: marketplaceApi.getUserQueryOptions().queryKey });
     },
   });
 
@@ -140,10 +140,10 @@ export const useUser = () => {
     },
     onSuccess: () => {
       queryClient.removeQueries({
-        queryKey: kupiProdaiApi.getUserQueryOptions().queryKey,
+        queryKey: marketplaceApi.getUserQueryOptions().queryKey,
       });
       queryClient.removeQueries({
-        queryKey: kupiProdaiApi.getUserProductsQueryOptions().queryKey,
+        queryKey: marketplaceApi.getUserProductsQueryOptions().queryKey,
       });
       window.location.href = "/";
     },
@@ -198,7 +198,7 @@ export const useUser = () => {
               sessionStorage.setItem("__miniapp_login_poll_done__", "1");
               sessionStorage.removeItem(AUTH_FAILURE_KEY);
               globalQueryEnabled = true;
-              queryClient.invalidateQueries({ queryKey: kupiProdaiApi.getUserQueryOptions().queryKey });
+              queryClient.invalidateQueries({ queryKey: marketplaceApi.getUserQueryOptions().queryKey });
               window.dispatchEvent(new Event("miniapp-login-success"));
               break;
             }

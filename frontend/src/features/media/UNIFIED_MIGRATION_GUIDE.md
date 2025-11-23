@@ -303,10 +303,10 @@ const {
 
 ### Phase 4: Cleanup
 - [ ] Remove old components:
-  - `src/features/kupi-prodai/components/media/MediaDropZone.tsx`
-  - `src/features/kupi-prodai/components/media/MediaGallery.tsx`
-  - `src/features/kupi-prodai/components/media/UploadProgressIndicator.tsx`
-  - `src/features/kupi-prodai/components/forms/sections/MediaUploadSection.tsx`
+  - `src/features/marketplace/components/media/MediaDropZone.tsx`
+  - `src/features/marketplace/components/media/MediaGallery.tsx`
+  - `src/features/marketplace/components/media/UploadProgressIndicator.tsx`
+  - `src/features/marketplace/components/forms/sections/MediaUploadSection.tsx`
   - `src/features/campuscurrent/components/forms/UploadProgress.tsx`
 - [ ] Update context dependencies
 - [ ] Remove unused imports
@@ -367,7 +367,7 @@ test('should integrate with legacy contexts', () => {
 ### Migration Timeline
 - **Phase 1** (Week 1): Install unified system alongside existing
 - **Phase 2** (Week 2): Migrate CampusCurrent features
-- **Phase 3** (Week 3): Migrate Kupi-Prodai features  
+- **Phase 3** (Week 3): Migrate Marketplace features  
 - **Phase 4** (Week 4): Remove deprecated components
 - **Phase 5** (Week 5): Performance optimization and testing
 

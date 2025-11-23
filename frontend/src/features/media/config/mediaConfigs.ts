@@ -17,8 +17,8 @@ export const MEDIA_CONFIGS = {
     recommendedNote: "Portrait poster fits best on event cards.",
   } as MediaConfig,
 
-  // Kupi-Prodai Products
-  kupiProdaiProducts: {
+  // Marketplace Products
+  marketplaceProducts: {
     entityType: EntityType.products,
     mediaFormat: MediaFormat.carousel,
     maxFiles: 5,

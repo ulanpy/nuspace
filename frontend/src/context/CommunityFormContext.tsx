@@ -9,7 +9,7 @@ import {
   CommunityRecruitmentStatus,
   CommunityEditableFields,
   CommunityPermissions,
-} from "@/features/campuscurrent/types/types";
+} from "@/features/shared/campus/types";
 
 interface CommunityFormContextType {
   formData: CreateCommunityData | EditCommunityData;

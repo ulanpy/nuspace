@@ -16,7 +16,7 @@
 // } from "@/components/atoms/select";
 // import { Search } from "lucide-react";
 // import { mockProducts } from "@/data/temporary";
-// import { ProductsTable } from "@/features/kupi-prodai/components/tables/products-table";
+// import { ProductsTable } from "@/features/marketplace/components/tables/products-table";
 
 // const ProductsPage = () => {
 //   const [searchTerm, setSearchTerm] = useState("");
