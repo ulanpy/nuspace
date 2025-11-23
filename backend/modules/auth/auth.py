@@ -1,7 +1,6 @@
 import json
 import random
 import secrets
-import logging
 from typing import Annotated
 
 from aiogram import Bot
@@ -13,7 +12,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from redis.asyncio import Redis
 
 from backend.common.cruds import QueryBuilder
-from backend.common.dependencies import get_creds_or_401, get_db_session
+from backend.common.dependencies import (
+    get_creds_or_401,
+    get_db_session,
+    get_infra, #TODO use this dependecy instead raw request.app.state
+)
 from backend.core.configs.config import config
 from backend.modules.auth.app_token import AppTokenManager
 from backend.modules.auth.keycloak_manager import KeyCloakManager
@@ -31,7 +34,6 @@ from .utils import (
 )
 
 router = APIRouter(tags=["Auth Routes"])
-logger = logging.getLogger(__name__)
 
 
 # /login: always pass a state
@@ -95,26 +97,17 @@ async def auth_callback(
     # Upsert user and mint app token
     try:
         user_schema: UserSchema = await create_user_schema(creds)
-        logger.debug(
-            "User schema prepared",
-            extra={"state": state, "sub": user_schema.sub, "email": user_schema.email},
-        )
     except Exception:
-        logger.exception("Failed to build user schema", extra={"state": state})
         raise
 
     try:
         user: User = await upsert_user(db_session, user_schema)
-        logger.info("User upserted", extra={"state": state, "sub": user.sub})
     except Exception:
-        logger.exception("Failed to upsert user", extra={"state": state, "sub": user_schema.sub})
         raise
 
     try:
         app_token_str, _claims = await app_token_manager.create_app_token(user.sub, db_session)
-        logger.info("App token created", extra={"state": state, "sub": user.sub})
     except Exception:
-        logger.exception("Failed to create app token", extra={"state": state, "sub": user.sub})
         raise
 
     # Prepare base redirect and cookies
@@ -134,7 +127,6 @@ async def auth_callback(
     creds_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}creds:{state}"
     miniapp_exists = await redis.get(miniapp_state_key)
     if miniapp_exists:
-        logger.info("Miniapp state matched", extra={"state": state})
         try:
             # Store minimal creds needed; TTL prevents long exposure
             await redis.setex(
@@ -151,7 +143,6 @@ async def auth_callback(
                 ),
             )
         except Exception:
-            logger.exception("Failed to cache miniapp credentials", extra={"state": state})
             raise
         finally:
             await redis.delete(miniapp_state_key)
@@ -164,13 +155,11 @@ async def auth_callback(
     csrf_key = f"csrf:{state}"
     csrf_return_to = await redis.get(csrf_key)
     if csrf_return_to is not None:
-        logger.info("CSRF state matched", extra={"state": state})
         await redis.delete(csrf_key)
         # Optional: validate return_to against a whitelist to prevent open redirects
         return redirect_response
 
     # 3) Neither MiniApp nor CSRF state is valid → reject
-    logger.warning("Invalid or expired state during auth callback", extra={"state": state})
     raise HTTPException(status_code=400, detail="Invalid or expired state")
 
 

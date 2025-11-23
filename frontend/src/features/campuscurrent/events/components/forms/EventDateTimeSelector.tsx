@@ -1,9 +1,6 @@
 
-import { Calendar } from 'lucide-react';
-import { format } from 'date-fns';
 import { Label } from '@/components/atoms/label';
 import { Input } from '@/components/atoms/input';
-import { Button } from '@/components/atoms/button';
 import { useEventForm } from '../../../../../context/EventFormContext';
 
 export function EventDateTimeSelector() {
@@ -17,24 +14,13 @@ export function EventDateTimeSelector() {
     endTime,
     setEndTime,
     isFieldEditable,
-    isEditMode,
   } = useEventForm();
 
   const isStartDateTimeEditable = isFieldEditable('start_datetime');
   const isEndDateTimeEditable = isFieldEditable('end_datetime');
 
-  // Debug logging
-  console.log('EventDateTimeSelector Debug:', {
-    isEditMode,
-    isStartDateTimeEditable,
-    isEndDateTimeEditable,
-    startDate,
-    endDate
-  });
-
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const dateValue = e.target.value;
-    console.log('Start date input changed:', dateValue);
     if (dateValue) {
       setStartDate(new Date(dateValue));
     } else {
@@ -44,7 +30,6 @@ export function EventDateTimeSelector() {
 
   const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const dateValue = e.target.value;
-    console.log('End date input changed:', dateValue);
     if (dateValue) {
       setEndDate(new Date(dateValue));
     } else {
@@ -62,7 +47,7 @@ export function EventDateTimeSelector() {
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Event Date & Time</h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
         {/* Start Date and Time */}
         <div className="space-y-4">
           <div className="space-y-2">
@@ -74,6 +59,7 @@ export function EventDateTimeSelector() {
               value={formatDateForInput(startDate)}
               onChange={handleStartDateChange}
               className="w-full"
+              disabled={!isStartDateTimeEditable}
             />
           </div>
 
@@ -85,6 +71,8 @@ export function EventDateTimeSelector() {
               type="time" 
               value={startTime} 
               onChange={(e) => setStartTime(e.target.value)}
+              className="w-full"
+              disabled={!isStartDateTimeEditable}
             />
           </div>
         </div>
@@ -100,6 +88,7 @@ export function EventDateTimeSelector() {
               value={formatDateForInput(endDate)}
               onChange={handleEndDateChange}
               className="w-full"
+              disabled={!isEndDateTimeEditable}
             />
           </div>
 
@@ -111,6 +100,8 @@ export function EventDateTimeSelector() {
               type="time" 
               value={endTime} 
               onChange={(e) => setEndTime(e.target.value)}
+              className="w-full"
+              disabled={!isEndDateTimeEditable}
             />
           </div>
         </div>

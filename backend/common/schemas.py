@@ -38,7 +38,7 @@ class ResourcePermissions(BaseModel):
 
 
 class Infra(BaseModel):
-    """Infrastructure dependencies for event operations."""
+    """Infrastructure dependencies for FastAPI instance"""
 
     meilisearch_client: AsyncClient
     storage_client: storage.Client

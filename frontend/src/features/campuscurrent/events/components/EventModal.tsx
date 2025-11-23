@@ -202,9 +202,9 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
         isOpen={isOpen}
         onClose={onClose}
         title={isEditMode ? "Edit Event" : "Create Event"}
-        className="max-w-4xl max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-4xl"
       >
-        <div className="space-y-6">
+        <div className="flex w-full flex-col gap-6">
 
         {/* Info: Create Your Own Event */}
         <div className="rounded-lg border border-amber-200/60 dark:border-amber-700/30 bg-gradient-to-r from-amber-50 to-pink-50 dark:from-amber-900/20 dark:to-pink-900/10 p-4">
@@ -265,7 +265,6 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
           <EventActionsWrapper
             isProcessing={isProcessing}
             showDeleteConfirm={showDeleteConfirm}
-            onClose={onClose}
             onSubmit={handleSubmit}
             onDelete={handleDeleteClick}
           />
@@ -313,13 +312,11 @@ function CommunitySelectionWrapper({
 function EventActionsWrapper({
   isProcessing,
   showDeleteConfirm,
-  onClose,
   onSubmit,
   onDelete,
 }: {
   isProcessing: boolean;
   showDeleteConfirm: boolean;
-  onClose: () => void;
   onSubmit: (
     formData: CreateEventData | EditEventData,
     startDate: Date | undefined,
@@ -352,7 +349,6 @@ function EventActionsWrapper({
     <EventActions
       isProcessing={isProcessing}
       showDeleteConfirm={showDeleteConfirm}
-      onClose={onClose}
       onSubmit={handleSubmit}
       onDelete={onDelete}
     />

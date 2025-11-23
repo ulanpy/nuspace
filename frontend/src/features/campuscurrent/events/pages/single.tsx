@@ -1,5 +1,9 @@
 import { useState } from "react";
+import type { ComponentPropsWithoutRef } from "react";
 import { useNavigate } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Calendar,
   Clock,
@@ -28,6 +32,11 @@ const formatEventDate = (dateString: string) => {
   return format(date, "d MMMM");
 };
 
+const formatEventTime = (dateString: string) => {
+  const date = new Date(dateString);
+  return format(date, "p");
+};
+
 // Helper function to get policy display text
 const getPolicyDisplay = (policy: string) => {
   switch (policy) {
@@ -50,6 +59,93 @@ const getPolicyColor = (policy: string) => {
     default:
       return "bg-gray-100 text-gray-900 border-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700";
   }
+};
+
+type MarkdownElementProps<T extends keyof JSX.IntrinsicElements> =
+  ComponentPropsWithoutRef<T> & { node?: unknown };
+
+const combineClassNames = (...classes: (string | undefined)[]) =>
+  classes.filter(Boolean).join(" ");
+
+const markdownComponents: Components = {
+  p({ className, ...props }: MarkdownElementProps<"p">) {
+    return (
+      <p
+        {...props}
+        className={combineClassNames(
+          "text-muted-foreground text-base leading-relaxed whitespace-pre-line break-words",
+          className
+        )}
+      />
+    );
+  },
+  a({ className, ...props }: MarkdownElementProps<"a">) {
+    return (
+      <a
+        {...props}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={combineClassNames("text-primary underline break-words", className)}
+      />
+    );
+  },
+  ul({ className, ...props }: MarkdownElementProps<"ul">) {
+    return (
+      <ul
+        {...props}
+        className={combineClassNames(
+          "list-disc pl-5 text-muted-foreground space-y-1 leading-relaxed",
+          className
+        )}
+      />
+    );
+  },
+  ol({ className, ...props }: MarkdownElementProps<"ol">) {
+    return (
+      <ol
+        {...props}
+        className={combineClassNames(
+          "list-decimal pl-5 text-muted-foreground space-y-1 leading-relaxed",
+          className
+        )}
+      />
+    );
+  },
+  li({ className, ...props }: MarkdownElementProps<"li">) {
+    return (
+      <li
+        {...props}
+        className={combineClassNames("break-words", className)}
+      />
+    );
+  },
+  strong({ className, ...props }: MarkdownElementProps<"strong">) {
+    return (
+      <strong
+        {...props}
+        className={combineClassNames("font-semibold text-foreground", className)}
+      />
+    );
+  },
+  em({ className, ...props }: MarkdownElementProps<"em">) {
+    return (
+      <em
+        {...props}
+        className={combineClassNames("italic text-foreground", className)}
+      />
+    );
+  },
+  blockquote({ className, ...props }: MarkdownElementProps<"blockquote">) {
+    return (
+      <blockquote
+        {...props}
+        className={combineClassNames(
+          "border-l-4 pl-4 text-muted-foreground italic",
+          className
+        )}
+      />
+    );
+  },
 };
 
 export default function EventDetailPage() {
@@ -172,7 +268,7 @@ export default function EventDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
         {/* Event Image - Left Column on Large Screens */}
         <div className="lg:sticky lg:top-6 lg:self-start">
-          <div className="relative h-80 sm:h-96 lg:h-[600px] w-full rounded-xl overflow-hidden bg-muted shadow-sm">
+          <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-muted shadow-sm lg:max-h-[600px]">
             {event.media && event.media.length > 0 && !imageError ? (
               <>
                 {!imageLoaded && (
@@ -185,7 +281,7 @@ export default function EventDetailPage() {
                 <img
                   src={event.media[0].url || "/placeholder.svg"}
                   alt={event.name}
-                  className={`w-full h-full object-cover sm:object-contain object-center transition-opacity duration-300 ${
+                  className={`w-full h-full object-contain object-center transition-opacity duration-300 ${
                     imageLoaded ? "opacity-100" : "opacity-0"
                   }`}
                   onLoad={() => setImageLoaded(true)}
@@ -266,55 +362,24 @@ export default function EventDetailPage() {
             
             <div className="flex items-center gap-3">
               <Clock className="h-5 w-5 flex-shrink-0" />
-              <span className="text-base">
-                {(() => {
-                  const startTime = new Date(event.start_datetime);
-                  const endTime = new Date(event.end_datetime);
-                  const durationMs = endTime.getTime() - startTime.getTime();
-                  const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
-                  const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
-                  const durationDays = Math.floor(durationHours / 24);
-                  
-                  if (durationDays > 0) {
-                    return `${durationDays}d ${durationHours-24*durationDays}h ${durationHours > 0 ? `${durationMinutes}m` : ''}`;
-                  } else if (durationHours > 0) {
-                    return `${durationHours}h ${durationMinutes > 0 ? `${durationMinutes}m` : ''}`;
-                  } else {
-                    return `${durationMinutes}m`;
-                  }
-                  
-                  /*if (durationHours > 0) {
-                    return `${durationHours}h ${durationMinutes > 0 ? `${durationMinutes}m` : ''}`;
-                  } else {
-                    return `${durationMinutes}m`;
-                  }*/
-
-                })()}
-              </span>
+              <span className="text-base">{formatEventTime(event.start_datetime)}</span>
             </div>
             <div className="flex items-center gap-3">
               <MapPin className="h-5 w-5 flex-shrink-0" />
               <span className="text-base">{event.place}</span>
             </div>
-            {event.community && (
-              <div className="flex items-center gap-3">
-                <Users className="h-5 w-5 flex-shrink-0" />
-                <span className="text-base inline-flex items-center gap-1">
-                  Organized by {event.community.name}
-                  {event.community.verified && (
-                    <VerificationBadge className="ml-1" size={12} />
-                  )}
-                </span>
-              </div>
-            )}
           </div>
 
           {/* Description */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">About this event</h2>
-            <p className="text-muted-foreground text-base leading-relaxed whitespace-pre-line break-words">
-              {event.description}
-            </p>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={markdownComponents}
+              className="space-y-4"
+            >
+              {event.description || "No description provided."}
+            </ReactMarkdown>
           </div>
 
           {/* Action Buttons */}

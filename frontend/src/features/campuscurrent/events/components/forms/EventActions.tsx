@@ -5,7 +5,6 @@ import { useTelegramBottomButtons } from '@/hooks/useTelegramBottomButtons';
 interface EventActionsProps {
   isProcessing: boolean;
   showDeleteConfirm: boolean;
-  onClose: () => void;
   onSubmit: () => void;
   onDelete: () => void;
 }
@@ -13,7 +12,6 @@ interface EventActionsProps {
 export function EventActions({
   isProcessing,
   showDeleteConfirm,
-  onClose,
   onSubmit,
   onDelete,
 }: EventActionsProps) {
@@ -56,40 +54,28 @@ export function EventActions({
   });
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-6 border-t">
-      <div className="flex gap-2 order-2 sm:order-1 w-full sm:w-auto">
-        {isEditMode && permissions?.can_delete && (
-          <Button 
-            variant="destructive"
-            onClick={onDelete}
-            disabled={isProcessing || showDeleteConfirm}
-            className="w-full sm:w-auto"
-          >
-            Delete Event
-          </Button>
-        )}
-        <Button 
-          variant="outline" 
-          onClick={onClose}
-          disabled={isProcessing}
+    <div className="flex flex-col gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
+      {isEditMode && permissions?.can_delete && (
+        <Button
+          variant="destructive"
+          onClick={onDelete}
+          disabled={isProcessing || showDeleteConfirm}
           className="w-full sm:w-auto"
         >
-          Cancel
+          Delete Event
         </Button>
-      </div>
-      
-      <div className="flex gap-2 justify-end order-1 sm:order-2 w-full sm:w-auto">
-        <Button 
-          onClick={onSubmit} 
-          disabled={isSubmitDisabled}
-          className="min-w-[160px]"
-        >
+      )}
+
+      <Button 
+        onClick={onSubmit} 
+        disabled={isSubmitDisabled}
+        className="w-full min-w-[160px] sm:w-auto"
+      >
           {isProcessing ? 
             (isEditMode ? "Updating..." : "Creating...") : 
             (isEditMode ? "Update Event" : "Create Event")
           }
-        </Button>
-      </div>
+      </Button>
     </div>
   );
 }

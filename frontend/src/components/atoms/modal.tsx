@@ -117,7 +117,7 @@ export function Modal({
       >
         <div
           className={cn(
-            "relative flex w-full flex-col overflow-y-auto rounded-lg bg-background shadow-lg",
+            "relative flex w-full flex-col overflow-hidden rounded-lg bg-background shadow-lg",
             "max-h-[calc(100dvh-4rem)]",
             className,
             contentClassName,
@@ -142,7 +142,7 @@ export function Modal({
               </Button>
             </div>
           </div>
-          <div className="p-4 flex-1 overflow-y-auto">{children}</div>
+          <div className="p-4 flex-1 overflow-y-auto overflow-x-hidden">{children}</div>
         </div>
       </div>
     </div>,
