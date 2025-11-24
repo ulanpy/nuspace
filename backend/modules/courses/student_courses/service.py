@@ -1,5 +1,6 @@
-from typing import List
 from datetime import datetime
+import re
+from typing import List
 
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -254,9 +255,40 @@ class StudentCourseService:
         
         return None
 
+    @staticmethod
+    def _normalize_course_code(course_code: str | None) -> str:
+        if not course_code:
+            return ""
+        normalized = re.sub(r"\s+", " ", course_code).strip().upper()
+        normalized = re.sub(r"\s*/\s*", "/", normalized)
+        normalized = re.sub(r"/{2,}", "/", normalized)
+        normalized = normalized.strip("/")
+        return normalized
+
+    @classmethod
+    def _expand_course_code_aliases(cls, course_code: str | None) -> list[str]:
+        normalized = cls._normalize_course_code(course_code)
+        if not normalized:
+            return []
+        aliases = [normalized]
+        if "/" in normalized:
+            parts = [
+                cls._normalize_course_code(part)
+                for part in normalized.split("/")
+                if cls._normalize_course_code(part)
+            ]
+            if len(parts) >= 2:
+                reversed_code = "/".join(reversed(parts))
+                if reversed_code and reversed_code not in aliases:
+                    aliases.append(reversed_code)
+            for part in parts:
+                if part not in aliases:
+                    aliases.append(part)
+        return aliases
+
     async def _get_or_create_course(
         self, 
-        course_code: str, 
+        course_code_aliases: List[str], 
         term_value: str,
         term_label: str,
         registrar_service: RegistrarService
@@ -273,37 +305,48 @@ class StudentCourseService:
         Returns:
             Course object or None if not found
         """
+        alias_candidates: List[str] = []
+        for alias in course_code_aliases:
+            normalized = self._normalize_course_code(alias)
+            if normalized and normalized not in alias_candidates:
+                alias_candidates.append(normalized)
+
+        if not alias_candidates:
+            return None
+
         # First, try to find in local database (using term label)
-        qb = QueryBuilder(session=self.db_session, model=Course)
+        select_qb = QueryBuilder(session=self.db_session, model=Course)
         course = await (
-            qb.base()
-            .filter(Course.course_code == course_code, Course.term == term_label)
+            select_qb.base()
+            .filter(Course.course_code.in_(alias_candidates), Course.term == term_label)
             .first()
         )
-        
+
         if course:
             return course
-        
-        # If not found, query registrar (using term value)
-        search_request = CourseSearchRequest(
-            course_code=course_code,
-            term=term_value,
-            level=None,
-            page=1
-        )
-        search_response = await registrar_service.search_courses(search_request)
-        
-        # Find first matching course by course_code
-        # (all results are already filtered by term from registrar)
+
         matching_course = None
-        for item in search_response.items:
-            if item.course_code == course_code:
-                matching_course = item
+        for alias in alias_candidates:
+            search_request = CourseSearchRequest(
+                course_code=alias,
+                term=term_value,
+                level=None,
+                page=1,
+            )
+            search_response = await registrar_service.search_courses(search_request)
+
+            for item in search_response.items:
+                normalized_item_code = self._normalize_course_code(item.course_code)
+                if normalized_item_code == alias:
+                    matching_course = item
+                    break
+
+            if matching_course:
                 break
-        
+
         if not matching_course:
             return None
-        
+
         # Insert course into database (using term label from response)
         try:
             registrar_id = int(matching_course.registrar_id)
@@ -312,7 +355,7 @@ class StudentCourseService:
             
         course_data = schemas.CourseCreate(
             registrar_id=registrar_id,
-            course_code=matching_course.course_code,
+            course_code=self._normalize_course_code(matching_course.course_code),
             pre_req=matching_course.pre_req,
             anti_req=matching_course.anti_req,
             co_req=matching_course.co_req,
@@ -325,7 +368,8 @@ class StudentCourseService:
             term=matching_course.term,  # Use term from registrar response
         )
         
-        course: Course | None = await qb.add(data=course_data)
+        insert_qb = QueryBuilder(session=self.db_session, model=Course)
+        course: Course | None = await insert_qb.add(data=course_data)
         return course
 
     async def sync_courses_from_registrar(
@@ -399,11 +443,17 @@ class StudentCourseService:
                 last_synced_at=None,
             )
         
-        # Extract unique course codes from schedule
-        schedule_course_codes = set()
+        # Extract unique course codes from schedule (with alias support)
+        schedule_course_aliases: dict[str, list[str]] = {}
         for day_schedule in schedule_response.data:
             for item in day_schedule:
-                schedule_course_codes.add(item.course_code)
+                normalized_code = self._normalize_course_code(item.course_code)
+                if not normalized_code:
+                    continue
+                if normalized_code not in schedule_course_aliases:
+                    schedule_course_aliases[normalized_code] = self._expand_course_code_aliases(
+                        item.course_code
+                    )
         
         # Get all existing student courses for this student
         qb = QueryBuilder(session=self.db_session, model=StudentCourse)
@@ -417,12 +467,28 @@ class StudentCourseService:
         # Map existing courses: course_code -> (StudentCourse, Course)
         existing_courses_map = {}
         for reg in existing_registrations:
-            existing_courses_map[reg.course.course_code] = (reg, reg.course)
+            normalized_code = self._normalize_course_code(reg.course.course_code)
+            if not normalized_code:
+                continue
+            existing_courses_map[normalized_code] = (reg, reg.course)
         
         # Determine which courses to add and which to keep/delete
-        courses_to_add = schedule_course_codes - set(existing_courses_map.keys())
-        courses_to_keep = schedule_course_codes & set(existing_courses_map.keys())
-        courses_to_delete = set(existing_courses_map.keys()) - schedule_course_codes
+        matched_existing_codes: set[str] = set()
+        courses_to_add: list[str] = []
+        courses_to_keep: list[str] = []
+
+        for schedule_code, aliases in schedule_course_aliases.items():
+            matched_alias = next(
+                (alias for alias in aliases if alias in existing_courses_map),
+                None,
+            )
+            if matched_alias:
+                courses_to_keep.append(matched_alias)
+                matched_existing_codes.add(matched_alias)
+            else:
+                courses_to_add.append(schedule_code)
+
+        courses_to_delete = set(existing_courses_map.keys()) - matched_existing_codes
         
         # Delete courses no longer in schedule
         for course_code in courses_to_delete:
@@ -434,7 +500,7 @@ class StudentCourseService:
         for course_code in courses_to_add:
             # Get or create course
             course = await self._get_or_create_course(
-                course_code=course_code,
+                course_code_aliases=schedule_course_aliases.get(course_code, [course_code]),
                 term_value=current_term_value,
                 term_label=current_term_label,
                 registrar_service=registrar_service

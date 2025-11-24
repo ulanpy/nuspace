@@ -101,7 +101,6 @@ class RegistrarClient:
             },
         )
         response.raise_for_status()
-        print(response.json())
         return response.json()
 
     async def fetch_schedule(self, username: str, password: str) -> dict[str, Any]:

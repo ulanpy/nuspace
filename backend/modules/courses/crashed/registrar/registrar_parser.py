@@ -52,6 +52,9 @@ def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
     br_pattern = re.compile(r"<\s*br\s*/?\s*>", re.IGNORECASE)
     tag_pattern = re.compile(r"<[^>]+>")
     whitespace_pattern = re.compile(r"\s+")
+    course_code_pattern = re.compile(
+        r"^(?P<codes>[A-Z]{2,}\s*\d{2,}[A-Z]?(?:\s*/\s*[A-Z]{2,}\s*\d{2,}[A-Z]?)*)(?:\s+|$)"
+    )
 
     def parse_time_block(block: str) -> dict[str, Any]:
         match = re.search(r"(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})", block)
@@ -82,13 +85,26 @@ def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
             raise ValueError("Unable to extract content from schedule entry")
 
         header = lines[0]
-        course_match = re.match(r"([A-Z]{2,}\s*\d{2,}[A-Z]?)\s*(.*)", header)
-        if course_match:
-            course_code = course_match.group(1)
-            label = course_match.group(2).strip()
+        header_stripped = header.strip()
+        course_code = ""
+        label = header
+
+        code_match = course_code_pattern.match(header_stripped)
+        course_match = None
+        if code_match:
+            raw_code = code_match.group("codes")
+            normalized_code = re.sub(r"\s*/\s*", "/", raw_code)
+            normalized_code = whitespace_pattern.sub(" ", normalized_code).strip()
+            course_code = normalized_code
+            label = header_stripped[code_match.end():].strip()
         else:
-            course_code = re.sub(r"\W+", "_", header).strip("_")
-            label = header
+            course_match = re.match(r"([A-Z]{2,}\s*\d{2,}[A-Z]?)\s*(.*)", header_stripped)
+            if course_match:
+                course_code = whitespace_pattern.sub(" ", course_match.group(1)).strip()
+                label = course_match.group(2).strip()
+            else:
+                course_code = re.sub(r"\W+", "_", header_stripped).strip("_").upper()
+                label = header_stripped
 
         time_line = next((line for line in lines[1:] if re.search(r"\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}", line)), "")
         if not time_line:

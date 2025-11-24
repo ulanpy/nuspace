@@ -22,7 +22,6 @@ async def full_search(
     filters = (
         [f"status = {ProductStatus.active.value}"] if storage_name == EntityType.products else None
     )
-    print(storage_name.value)
     try:
         result = await meilisearch.get(
             client=request.app.state.meilisearch_client,
@@ -32,7 +31,6 @@ async def full_search(
             size=size,
             filters=filters,
         )
-        print(result)
         return result["hits"]  # Return full entity details
     except HTTPError:
         # Error handling similar to pre_search
