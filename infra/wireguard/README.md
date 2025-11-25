@@ -119,17 +119,24 @@ server {
 ```bash
 # POST_UP_SCRIPT
 sysctl -w net.ipv4.ip_forward=1
-iptables -t nat -A POSTROUTING -s 10.13.13.0/24 -m addrtype --dst-type LOCAL -j RETURN
+PUBLIC_IP=$(getent hosts vpn.nuspace.kz | awk 'NR==1 {print $1}')
+if [ -n "$PUBLIC_IP" ]; then
+  iptables -t nat -A POSTROUTING -s 10.13.13.0/24 -d $PUBLIC_IP -j RETURN
+fi
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 iptables -t nat -A POSTROUTING -s 172.28.0.0/24 -o wg0 -j MASQUERADE
 
 # POST_DOWN_SCRIPT
+PUBLIC_IP=$(getent hosts vpn.nuspace.kz | awk 'NR==1 {print $1}')
+if [ -n "$PUBLIC_IP" ]; then
+  iptables -t nat -D POSTROUTING -s 10.13.13.0/24 -d $PUBLIC_IP -j RETURN
+fi
 iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
 iptables -t nat -D POSTROUTING -s 172.28.0.0/24 -o wg0 -j MASQUERADE
 ```
 
 #### NAT rule intent
-- `-A POSTROUTING -s 10.13.13.0/24 -m addrtype --dst-type LOCAL -j RETURN`: skip masquerading whenever a VPN client talks to an address that belongs to the host itself (including services published via Docker). This preserves the client’s original 10.13.13.x IP for Nginx and other local consumers.
+- `PUBLIC_IP=$(getent hosts vpn.nuspace.kz ...) ... -A POSTROUTING -s 10.13.13.0/24 -d $PUBLIC_IP -j RETURN`: dynamically resolve the VPN endpoint’s current public IP and skip masquerading whenever a WireGuard client connects to that address. This keeps the original 10.13.13.x source visible to Nginx even if the VM IP changes.
 - `-A POSTROUTING -o eth0 -j MASQUERADE`: when VPN users head out to the public internet, their traffic is NATed to the VM’s public IP so upstream networks know where to return packets.
 - `-A POSTROUTING -s 172.28.0.0/24 -o wg0 -j MASQUERADE`: when Docker containers initiate traffic to VPN clients, responses are NATed to the WireGuard interface to keep routing symmetric inside the tunnel.
 
