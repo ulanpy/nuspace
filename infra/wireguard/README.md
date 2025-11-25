@@ -58,7 +58,7 @@ server {
 
     # IP Restrictions - Only VPN and server access
     allow 172.28.0.0/24; # Docker network (all containers)
-    allow 34.133.121.60; # Public IP of the server
+    allow 10.13.13.0/24; # WireGuard clients
     deny all;
 
     # Monitoring Services Proxy
@@ -126,6 +126,10 @@ iptables -t nat -A POSTROUTING -s 172.28.0.0/24 -o wg0 -j MASQUERADE
 iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
 iptables -t nat -D POSTROUTING -s 172.28.0.0/24 -o wg0 -j MASQUERADE
 ```
+
+#### NAT rule intent
+- `-A POSTROUTING -o eth0 -j MASQUERADE`: VPN users retain their 10.13.13.x address inside the Docker network, but when they exit to the public internet through the host’s `eth0`, their packets are NATed to the VM’s public IP. This keeps outbound browsing working without exposing private subnet routes upstream.
+- `-A POSTROUTING -s 172.28.0.0/24 -o wg0 -j MASQUERADE`: when a Docker container initiates a connection to a VPN client (for example, health checks or admin tooling), return traffic is NATed to the WireGuard interface so replies go back through the tunnel cleanly. This prevents asymmetric routing between the bridge network and VPN peers.
 
 ## VPN Services Access
 

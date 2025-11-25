@@ -180,3 +180,17 @@ resource "google_compute_firewall" "allow_https_ipv6" {
   source_ranges = concat(local.cloudflare_ipv6_ranges)
   target_tags   = var.vm_instance_tags
 }
+
+# Firewall rule to allow WireGuard VPN traffic (UDP 51820) from clients
+resource "google_compute_firewall" "allow_wireguard" {
+  name    = "allow-wireguard-ingress"
+  network = "default"
+
+  allow {
+    protocol = "udp"
+    ports    = ["51820"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = var.vm_instance_tags
+}
