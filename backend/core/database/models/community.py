@@ -60,49 +60,7 @@ class Community(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     head_user = relationship("User", back_populates="communities_led")
-    tags = relationship(
-        "CommunityPostTag", back_populates="community", cascade="all, delete-orphan"
-    )
     events = relationship("Event", back_populates="community", cascade="all, delete-orphan")
-
-
-class CommunityPostTag(Base):
-    __tablename__ = "community_post_tags"
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
-    community_id: Mapped[int] = mapped_column(
-        ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, unique=False
-    )
-    name: Mapped[str] = mapped_column(nullable=False, unique=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-
-    community = relationship("Community", back_populates="tags")
-
-
-class CommunityPost(Base):
-    __tablename__ = "community_posts"
-    id: Mapped[BigInteger] = mapped_column(BigInteger, primary_key=True, nullable=False)
-    community_id: Mapped[int] = mapped_column(
-        ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, unique=False, index=True
-    )
-    user_sub: Mapped[str] = mapped_column(
-        ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, unique=False, index=True
-    )
-    title: Mapped[str] = mapped_column(nullable=False, unique=False)
-    description: Mapped[str] = mapped_column(nullable=False, unique=False)
-    tag_id: Mapped[int] = mapped_column(
-        ForeignKey("community_post_tags.id", ondelete="SET NULL"),
-        nullable=True,
-        unique=False,
-        index=True,
-    )
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    from_community: Mapped[bool] = mapped_column(nullable=False, default=False)
-
-    user = relationship("User", back_populates="posts")
-    community = relationship("Community")
-    tag = relationship("CommunityPostTag")
 
 
 class CommunityMember(Base):
@@ -120,32 +78,3 @@ class CommunityMember(Base):
     community = relationship("Community")
     user = relationship("User", back_populates="communities")
 
-
-class CommunityComment(Base):
-    __tablename__ = "community_comments"
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
-    post_id: Mapped[int] = mapped_column(
-        ForeignKey("community_posts.id", ondelete="CASCADE"),
-        nullable=False,
-        unique=False,
-        index=True,
-    )
-    parent_id: Mapped[int] = mapped_column(
-        ForeignKey("community_comments.id", ondelete="CASCADE"),
-        nullable=True,
-        unique=False,
-        index=True,
-    )
-    user_sub: Mapped[str] = mapped_column(
-        ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, unique=False, index=True
-    )
-    content: Mapped[str] = mapped_column(nullable=False, unique=False)
-    created_at: Mapped[DateTime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False, index=True
-    )
-    updated_at: Mapped[DateTime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
-    deleted_at: Mapped[DateTime] = mapped_column(DateTime, nullable=True, index=True)
-
-    user = relationship("User")

@@ -14,12 +14,8 @@ class EntityType(str, PyEnum):
     Alembic cannot auto-detect enum value changes, so manual migration is required!
     """
 
-    products = "products"
     community_events = "community_events"
     communities = "communities"
-    community_posts = "community_posts"
-    reviews = "reviews"
-    community_comments = "community_comments"
     grade_reports = "grade_reports"
     courses = "courses"
     tickets = "tickets"

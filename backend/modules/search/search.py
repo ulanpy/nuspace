@@ -3,7 +3,6 @@ from httpx import HTTPError
 
 from backend.common.utils import meilisearch
 from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.product import ProductStatus
 
 router = APIRouter(tags=["Search Routes"])
 
@@ -20,7 +19,7 @@ async def full_search(
     Full search implementation returning complete entity details
     """
     filters = (
-        [f"status = {ProductStatus.active.value}"] if storage_name == EntityType.products else None
+        []
     )
     try:
         result = await meilisearch.get(

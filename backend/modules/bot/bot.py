@@ -7,8 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import get_creds_or_401, get_db_session
 from backend.core.configs.config import config
-from backend.core.database.models import Product
-from backend.modules.bot.cruds import find_product
 
 web_router = APIRouter(tags=["Bot Routes"])
 

@@ -7,12 +7,9 @@ from aiogram.utils.deep_linking import decode_payload
 from google.cloud import storage
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database.models import Media, Product
 from backend.modules.bot.cruds import (
     check_existance_by_sub,
-    check_user_by_telegram_id,
-    find_media,
-    find_product,
+    check_user_by_telegram_id,  
     get_telegram_id,
 )
 from backend.modules.bot.filters import EncodedDeepLinkFilter
@@ -20,39 +17,6 @@ from backend.modules.bot.keyboards.kb import kb_confirmation, user_profile_butto
 from backend.modules.bot.utils.google_bucket import generate_download_url
 
 router = Router()
-
-
-@router.message(CommandStart(deep_link=True), EncodedDeepLinkFilter("contact"))
-async def get_contact_seller(
-    m: Message,
-    command: CommandObject,
-    db_session: AsyncSession,
-    _: Callable[[str], str],
-    storage_client: storage.Client,
-):
-    payload: str = decode_payload(command.args)
-    _prefix, product_id = payload.split("&")
-
-    media: Media | None = await find_media(db_session, int(product_id))
-    product: Product | None = await find_product(db_session, int(product_id))
-
-    if not product:
-        return await m.answer("Error: Not Found, missing product")
-    elif product and media:
-        filename: str = media.name
-        url: str = await generate_download_url(storage_client, filename)
-        caption: str = f"{product.name}"
-        seller_user_id: int = await get_telegram_id(db_session, product.user_sub)
-        await m.bot.send_photo(
-            m.chat.id,
-            photo=url,
-            caption=caption,
-            reply_markup=user_profile_button(seller_user_id, _),
-        )
-    elif product:
-        caption: str = f"{product.name}"
-        seller_user_id: int = await get_telegram_id(db_session, product.user_sub)
-        await m.answer(caption, reply_markup=user_profile_button(seller_user_id, _))
 
 
 @router.message(CommandStart(deep_link=True))

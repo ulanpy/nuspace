@@ -44,12 +44,7 @@ class User(Base):
     department = relationship("Department", back_populates="users", foreign_keys=[department_id])
 
     communities_led = relationship("Community", back_populates="head_user")
-    products = relationship("Product", back_populates="user")
-    product_reports = relationship("ProductReport", back_populates="user")
-    reviews = relationship("Review", back_populates="user")
-    review_responses = relationship("ReviewReply", back_populates="user")
     events = relationship("Event", back_populates="creator")
-    posts = relationship("CommunityPost", back_populates="user")
     communities = relationship("CommunityMember", back_populates="user")
     templates = relationship("CourseTemplate", back_populates="student")
     student_schedules = relationship("StudentSchedule", back_populates="student", cascade="all, delete-orphan")

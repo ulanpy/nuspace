@@ -4,7 +4,6 @@ from sqlalchemy.orm import selectinload
 
 from backend.core.database.models import Media, User
 from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.product import Product, ProductStatus
 
 
 async def get_telegram_id(session: AsyncSession, sub: str) -> int | None:
@@ -32,29 +31,3 @@ async def check_user_by_telegram_id(session: AsyncSession, user_id: int) -> bool
     user_email = result.scalars().first()
     return bool(user_email)
 
-
-async def find_media(
-    session: AsyncSession,
-    product_id: int,
-    media_order: int = 0,
-    entity_type: EntityType = EntityType.products,
-) -> Media | None:
-    query = select(Media).filter(
-        Media.entity_id == product_id,
-        Media.media_order == media_order,
-        Media.entity_type == entity_type,
-    )
-    result = await session.execute(query)
-    media = result.scalars().first()
-    return media
-
-
-async def find_product(session: AsyncSession, product_id: int) -> Product | None:
-    query = (
-        select(Product)
-        .options(selectinload(Product.user))
-        .filter(Product.id == product_id, Product.status == ProductStatus.active.value)
-    )
-    result = await session.execute(query)
-    product = result.scalars().first()
-    return product

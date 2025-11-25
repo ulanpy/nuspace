@@ -3,8 +3,6 @@
 __all__ = [
     "Base",
     "Community",
-    "CommunityPost",
-    "CommunityComment",
     "Event",
     "EventTag",
     "EventStatus",
@@ -12,15 +10,10 @@ __all__ = [
     "EventType",
     "RegistrationPolicy",
     "CommunityMember",
-    "CommunityPostTag",
     "CommunityRecruitmentStatus",
     "CommunityType",
     "CommunityCategory",
     "Media",
-    "Product",
-    "ProductReport",
-    "ReviewReply",
-    "Review",
     "User",
     "UserRole",
     "UserScope",
@@ -38,10 +31,7 @@ from .base import Base
 from .community import (
     Community,
     CommunityCategory,
-    CommunityComment,
     CommunityMember,
-    CommunityPost,
-    CommunityPostTag,
     CommunityRecruitmentStatus,
     CommunityType,
 )
@@ -57,7 +47,5 @@ from .events import (
 from .grade_report import Course, CourseItem, GradeReport
 from .media import Media
 from .notification import Notification
-from .product import Product, ProductReport
-from .review import Review, ReviewReply
 from .user import User, UserRole, UserScope
 from .sgotinish import Ticket, Conversation, Message, MessageReadStatus

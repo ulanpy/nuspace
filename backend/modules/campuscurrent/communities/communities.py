@@ -18,8 +18,6 @@ from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import (
     Community,
     CommunityCategory,
-    CommunityComment,
-    CommunityPost,
     CommunityRecruitmentStatus,
     CommunityType,
 )
@@ -392,8 +390,8 @@ async def delete_community(
     - `community_id`: The ID of the community to delete
 
     **Process:**
-    - Deletes all media files (community, posts, comments) from storage
-    - Deletes the community entry from the database (cascades to posts, comments)
+    - Deletes all media files (community) from storage
+    - Deletes the community entry from the database
     - Removes the community from the Meilisearch index
 
     **Returns:**
@@ -408,57 +406,6 @@ async def delete_community(
         action=ResourceAction.DELETE, community=community
     )
 
-    # Initialize query builder
-    qb = QueryBuilder(session=db_session, model=CommunityPost)
-
-    # 1. Get all posts in the community
-    post_ids: List[int] = await (
-        qb.base()
-        .filter(CommunityPost.community_id == community_id)
-        .attributes(CommunityPost.id)
-        .all()
-    )
-
-    # 2. Handle comments and their media
-    if post_ids:
-        # Get all comments
-        comment_ids: List[int] = await (
-            qb.blank(model=CommunityComment)
-            .base()
-            .attributes(CommunityComment.id)
-            .filter(CommunityComment.post_id.in_(post_ids))
-            .all()
-        )
-
-        # Get and delete comment media
-        comment_media_objects: List[Media] = await (
-            qb.blank(model=Media)
-            .base()
-            .filter(
-                Media.entity_id.in_(comment_ids), Media.entity_type == EntityType.community_comments
-            )
-            .all()
-        )
-        await batch_delete_blobs(
-            request.app.state.storage_client,
-            request.app.state.config,
-            media_objects=comment_media_objects,
-        )
-        await qb.blank(Media).delete(target=comment_media_objects)
-
-    # 3. Handle post media
-    post_media_objects: List[Media] = await (
-        qb.blank(model=Media)
-        .base()
-        .filter(Media.entity_id.in_(post_ids), Media.entity_type == EntityType.community_posts)
-        .all()
-    )
-    await batch_delete_blobs(
-        request.app.state.storage_client,
-        request.app.state.config,
-        media_objects=post_media_objects,
-    )
-    await qb.blank(Media).delete(target=post_media_objects)
     # 4. Handle community media
     community_media_objects: List[Media] = await (
         qb.blank(model=Media)

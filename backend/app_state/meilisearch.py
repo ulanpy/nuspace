@@ -10,11 +10,9 @@ from backend.common.utils import meilisearch
 from backend.core.configs.config import config
 from backend.core.database.models import (
     Community,
-    CommunityPost,
     Course,
     Event,
     GradeReport,
-    Product
 )
 
 
@@ -64,12 +62,6 @@ async def setup_meilisearch(app: FastAPI):
     # Define index configurations directly
     index_configs = [
         MeilisearchIndexConfig(
-            model=Product,
-            searchable_columns=[Product.name, Product.status, Product.category],
-            filterable_attributes=[Product.status],
-            primary_key=Product.id,  # Explicitly specify primary key
-        ),
-        MeilisearchIndexConfig(
             model=Event,
             searchable_columns=[Event.name, Event.description],
             filterable_attributes=None,
@@ -80,12 +72,6 @@ async def setup_meilisearch(app: FastAPI):
             searchable_columns=[Community.name, Community.description],
             filterable_attributes=None,
             primary_key=Community.id,  # Explicitly specify primary key
-        ),
-        MeilisearchIndexConfig(
-            model=CommunityPost,
-            searchable_columns=[CommunityPost.title, CommunityPost.description],
-            filterable_attributes=None,
-            primary_key=CommunityPost.id,  # Explicitly specify primary key
         ),
         MeilisearchIndexConfig(
             model=GradeReport,
