@@ -119,6 +119,7 @@ server {
 ```bash
 # POST_UP_SCRIPT
 sysctl -w net.ipv4.ip_forward=1
+iptables -t nat -A POSTROUTING -s 10.13.13.0/24 -m addrtype --dst-type LOCAL -j RETURN
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 iptables -t nat -A POSTROUTING -s 172.28.0.0/24 -o wg0 -j MASQUERADE
 
@@ -128,8 +129,9 @@ iptables -t nat -D POSTROUTING -s 172.28.0.0/24 -o wg0 -j MASQUERADE
 ```
 
 #### NAT rule intent
-- `-A POSTROUTING -o eth0 -j MASQUERADE`: VPN users retain their 10.13.13.x address inside the Docker network, but when they exit to the public internet through the host’s `eth0`, their packets are NATed to the VM’s public IP. This keeps outbound browsing working without exposing private subnet routes upstream.
-- `-A POSTROUTING -s 172.28.0.0/24 -o wg0 -j MASQUERADE`: when a Docker container initiates a connection to a VPN client (for example, health checks or admin tooling), return traffic is NATed to the WireGuard interface so replies go back through the tunnel cleanly. This prevents asymmetric routing between the bridge network and VPN peers.
+- `-A POSTROUTING -s 10.13.13.0/24 -m addrtype --dst-type LOCAL -j RETURN`: skip masquerading whenever a VPN client talks to an address that belongs to the host itself (including services published via Docker). This preserves the client’s original 10.13.13.x IP for Nginx and other local consumers.
+- `-A POSTROUTING -o eth0 -j MASQUERADE`: when VPN users head out to the public internet, their traffic is NATed to the VM’s public IP so upstream networks know where to return packets.
+- `-A POSTROUTING -s 172.28.0.0/24 -o wg0 -j MASQUERADE`: when Docker containers initiate traffic to VPN clients, responses are NATed to the WireGuard interface to keep routing symmetric inside the tunnel.
 
 ## VPN Services Access
 
