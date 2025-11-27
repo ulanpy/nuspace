@@ -16,7 +16,6 @@ import { FaTelegram } from "react-icons/fa";
 import { Link as LinkIcon } from "lucide-react";
 import { Header } from "@/components/atoms/header";
 import { LastCommitInline } from "@/components/molecules/last-commit";
-import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 import { useMemo } from "react";
 import { useEvents } from "@/features/events/hooks/useEvents";
 import { Link } from "react-router-dom";
@@ -68,7 +67,6 @@ const staticSlides = [
 
 export default function HomePage() {
   const { user, isLoading, isSuccess } = useUser();
-  const { isMiniApp } = useTelegramMiniApp();
   // Fetch first upcoming event for the leading carousel item
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
   const { events: eventsData } = useEvents({ start_date: todayStr, size: 1 });
@@ -124,52 +122,52 @@ export default function HomePage() {
     return eventSlide ? [eventSlide, ...staticSlides] : staticSlides;
   }, [eventSlide]);
   return (
-    <div className="min-h-screen bg-background flex flex-col p-3 sm:p-4 pb-[calc(56px+env(safe-area-inset-bottom))]">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header with main navigation */}
       <Header
-        right={!isMiniApp ? (
+        right={
           <div className="flex gap-2">
             <ThemeToggle />
             <LoginButton />
           </div>
-        ) : undefined}
-        showMainNav={!isMiniApp}
+        }
+        showMainNav
       />
-      {/* Beta banner - visible on all viewports with last commit inline */}
-      <div className="w-full mb-6">
-        <div className="w-full rounded-lg border border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-100 px-3 py-2 sm:px-4 sm:py-3">
-          <div className="w-full flex flex-col gap-2 sm:gap-3">
-            <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
-              <FlaskConical className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 sm:mt-0" />
-              <p className="text-xs sm:text-sm leading-snug">
-                <span className="font-semibold">Public Beta.</span> We're actively improving Nuspace and truly value your feedback.
-              </p>
-            </div>
-            
-            {/* 
-              Mobile-first responsive layout: 
-              - On mobile: commit info and buttons stack vertically for better readability
-              - On larger screens: commit info and buttons are side-by-side
-              - Commit info takes available space, buttons maintain their natural width
-            */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              {/* Commit info - takes full width on mobile, flex-1 on larger screens */}
-              <div className="flex-1 min-w-0">
-                <LastCommitInline />
+      <div className="flex-1 w-full overflow-y-auto p-3 sm:p-4 pb-[calc(56px+env(safe-area-inset-bottom))]">
+        {/* Beta banner - visible on all viewports with last commit inline */}
+        <div className="w-full mb-6">
+          <div className="w-full rounded-lg border border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-100 px-3 py-2 sm:px-4 sm:py-3">
+            <div className="w-full flex flex-col gap-2 sm:gap-3">
+              <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                <FlaskConical className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 sm:mt-0" />
+                <p className="text-xs sm:text-sm leading-snug">
+                  <span className="font-semibold">Public Beta.</span> We're actively improving Nuspace and truly value your feedback.
+                </p>
               </div>
               
-              {/* Action buttons - full width on mobile, auto width on larger screens */}
-              <div className="flex gap-2 sm:flex-shrink-0">
-                <DonateButton />
-                <ChannelButton />
-                <ReportButton />
+              {/* 
+                Mobile-first responsive layout: 
+                - On mobile: commit info and buttons stack vertically for better readability
+                - On larger screens: commit info and buttons are side-by-side
+                - Commit info takes available space, buttons maintain their natural width
+              */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                {/* Commit info - takes full width on mobile, flex-1 on larger screens */}
+                <div className="flex-1 min-w-0">
+                  <LastCommitInline />
+                </div>
+                
+                {/* Action buttons - full width on mobile, auto width on larger screens */}
+                <div className="flex gap-2 sm:flex-shrink-0">
+                  <DonateButton />
+                  <ChannelButton />
+                  <ReportButton />
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex-1 w-full overflow-y-auto">
         <div className="flex flex-col items-center pb-[calc(96px+env(safe-area-inset-bottom))]">
           {/* Greeting */}
           <div className="text-center mb-[clamp(0px,3vw,24px)]">

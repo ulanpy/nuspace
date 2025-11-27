@@ -10,14 +10,12 @@ import { ROUTES } from "@/data/routes";
 import { BackNavigationProvider } from "@/context/BackNavigationContext";
 import { BackButton } from "@/components/molecules/BackButton";
 import { Header } from "@/components/atoms/header";
-import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 
 export default function AppsLayout() {
   const { user, login, isLoading } = useUser();
   const location = useLocation();
   const navigate = useNavigate();
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const { isMiniApp } = useTelegramMiniApp();
 
   // Check if the current path is for Marketplace
   const isMarketplacePath = location.pathname.includes(
@@ -50,14 +48,14 @@ export default function AppsLayout() {
     <BackNavigationProvider>
       <div className="min-h-screen bg-background flex flex-col pb-[calc(56px+env(safe-area-inset-bottom))]">
         <Header
-          left={!isMiniApp ? <BackButton label={location.pathname === ROUTES.HOME ? "Close" : "Back"} /> : undefined}
-          right={!isMiniApp ? (
+          left={<BackButton label={location.pathname === ROUTES.HOME ? "Close" : "Back"} />}
+          right={
             <div className="flex gap-2">
               <ThemeToggle />
               <LoginButton />
             </div>
-          ) : undefined}
-          showMainNav={!isMiniApp}
+          }
+          showMainNav
         />
         <main className="flex-1 container py-4 sm:py-6 px-3 sm:px-4">
           <Outlet />

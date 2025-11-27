@@ -19,7 +19,6 @@ import {
   FileText,
   Stethoscope,
 } from "lucide-react";
-import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 import { useToast } from "@/hooks/use-toast";
 import {
   Accordion,
@@ -337,7 +336,6 @@ function contactToHref(type: ContactType, value: string): string | undefined {
 }
 
 function ContactChip({ info }: { info: ContactInfo }) {
-  const { isMiniApp } = useTelegramMiniApp();
   const { toast } = useToast();
 
   const icon = {
@@ -405,36 +403,6 @@ function ContactChip({ info }: { info: ContactInfo }) {
     }
 
     if (info.type === "email") {
-      if (isMiniApp) {
-        const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : undefined;
-        if (clipboard?.writeText) {
-          try {
-            await clipboard.writeText(info.value);
-            toast({
-              title: "Email copied",
-              description: `${info.value} copied to clipboard`,
-              variant: "success",
-              duration: 2000,
-            });
-          } catch {
-            toast({
-              title: "Copy failed",
-              description: "Couldn't copy email. Please copy manually.",
-              variant: "error",
-              duration: 2500,
-            });
-          }
-        } else {
-          toast({
-            title: "Copy failed",
-            description: "Couldn't copy email. Please copy manually.",
-            variant: "error",
-            duration: 2500,
-          });
-        }
-        return;
-      }
-
       if (href && typeof window !== "undefined") {
         window.location.href = href;
       }

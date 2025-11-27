@@ -7,7 +7,6 @@ import { cn } from "../../utils/utils";
 import { createPortal } from "react-dom";
 import { useEffect, MouseEvent } from "react";
 import { useMaybeBackNavigation } from "@/context/BackNavigationContext";
-import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 // Removed framer-motion to avoid transformed ancestors affecting fixed elements on Safari
 
 interface ModalProps {
@@ -31,7 +30,6 @@ export function Modal({
 }: ModalProps) {
   
   const backNav = useMaybeBackNavigation();
-  const { isMiniApp, headerOffset } = useTelegramMiniApp();
   useEffect(() => {
     if (!isOpen || !backNav) return;
     // Register modal close to back stack
@@ -77,26 +75,6 @@ export function Modal({
     };
   }, [isOpen, onClose]);
 
-  // Hide Telegram MainButton/BottomButton while any modal is open
-  React.useEffect(() => {
-    if (!isOpen) return;
-    try {
-      const w: any = window as any;
-      w.__modalOpenCount = (w.__modalOpenCount || 0) + 1;
-      const tg: any = w?.Telegram?.WebApp;
-      const main: any = tg?.MainButton ?? tg?.BottomButton;
-      if (main) {
-        if (typeof main.hide === "function") main.hide();
-        if (typeof main.setParams === "function") main.setParams({ is_visible: false });
-      }
-      return () => {
-        w.__modalOpenCount = Math.max(0, (w.__modalOpenCount || 1) - 1);
-      };
-    } catch {
-      // ignore
-    }
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
   // Use portal to render modal at the document root level
@@ -109,7 +87,7 @@ export function Modal({
       <div
         className="fixed inset-0 grid place-items-start md:place-items-center px-4"
         style={{
-          paddingTop: `calc(env(safe-area-inset-top, 0px) + ${Math.max(headerOffset, 0)}px + 2rem)`,
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 2rem)",
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
         }}
         onWheel={(e) => e.stopPropagation()}
@@ -125,7 +103,7 @@ export function Modal({
           style={{
             // Use 100dvh to include iOS dynamic viewport, with fallback to 100vh
             maxHeight:
-              `min(calc(100dvh - (${Math.max(headerOffset, 0)}px + env(safe-area-inset-bottom, 0px) + 3rem)), calc(100vh - (${Math.max(headerOffset, 0)}px + env(safe-area-inset-bottom, 0px) + 3rem)))`,
+              "min(calc(100dvh - (env(safe-area-inset-bottom, 0px) + 3rem)), calc(100vh - (env(safe-area-inset-bottom, 0px) + 3rem)))",
           }}
         >
           {/* Sticky header without backdrop blur (Safari bug with overflow containers) */}

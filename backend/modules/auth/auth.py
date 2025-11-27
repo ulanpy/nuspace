@@ -25,8 +25,6 @@ from backend.modules.auth.schemas import CurrentUserResponse, Sub
 from .cruds import User, upsert_user
 from .schemas import UserSchema
 from .utils import (
-    _select_mock_user,
-    build_mock_creds,
     create_user_schema,
     exchange_code_for_credentials,
     set_kc_auth_cookies,
@@ -122,36 +120,6 @@ async def auth_callback(
         max_age=app_token_manager.token_expiry.total_seconds(),
     )
 
-    # 1) MiniApp flow: state must exist in MiniApp space
-    miniapp_state_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}{state}"
-    creds_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}creds:{state}"
-    miniapp_exists = await redis.get(miniapp_state_key)
-    if miniapp_exists:
-        try:
-            # Store minimal creds needed; TTL prevents long exposure
-            await redis.setex(
-                creds_key,
-                300,
-                json.dumps(
-                    {
-                        "access_token": creds.get("access_token"),
-                        "refresh_token": creds.get("refresh_token"),
-                        "id_token": creds.get("id_token"),
-                        # Include userinfo so /miniapp/login/exchange can upsert the user
-                        "userinfo": creds.get("userinfo"),
-                    }
-                ),
-            )
-        except Exception:
-            raise
-        finally:
-            await redis.delete(miniapp_state_key)
-
-        bot_username = request.app.state.bot_username
-        tme_url = f"https://t.me/{bot_username}?startapp={state}"
-        return RedirectResponse(url=tme_url, status_code=303)
-
-    # 2) Web flow: validate CSRF state and consume it
     csrf_key = f"csrf:{state}"
     csrf_return_to = await redis.get(csrf_key)
     if csrf_return_to is not None:
@@ -159,7 +127,6 @@ async def auth_callback(
         # Optional: validate return_to against a whitelist to prevent open redirects
         return redirect_response
 
-    # 3) Neither MiniApp nor CSRF state is valid → reject
     raise HTTPException(status_code=400, detail="Invalid or expired state")
 
 
@@ -170,151 +137,6 @@ async def bind_tg(request: Request, sub_param: Sub):
     correct_number = random.randrange(1, 10)
     link = await create_start_link(bot, f"{sub_value}&{correct_number}", encode=True)
     return {"link": link, "correct_number": correct_number, "sub": sub_value}
-
-
-@router.get("/miniapp/login/init")
-async def miniapp_login_init(
-    request: Request,
-    return_to: str | None = None,
-    mock_user: str | None = "1",
-):
-    """
-    Initialize a Mini App login by generating a one-time state code and returning
-    the external login URL that must be opened in a system browser.
-    """
-    code = secrets.token_urlsafe(24)
-    redis: Redis = request.app.state.redis
-    state_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}{code}"
-    try:
-        await redis.setex(state_key, 300, return_to or "/")
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Could not initialize miniapp login",
-        )
-
-    # Dev-only: pre-mint mock credentials so exchange can succeed without Keycloak
-    if config.MOCK_KEYCLOAK:
-        try:
-            userinfo = _select_mock_user(mock_user)
-            creds = build_mock_creds(userinfo)
-            creds_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}creds:{code}"
-            await redis.setex(
-                creds_key,
-                300,
-                json.dumps(
-                    {
-                        "access_token": creds.get("access_token"),
-                        "refresh_token": creds.get("refresh_token"),
-                        "id_token": creds.get("id_token"),
-                        # Include userinfo for the exchange step
-                        "userinfo": creds.get("userinfo"),
-                    }
-                ),
-            )
-        except Exception:
-            # Non-fatal in dev; exchange can still proceed if real login happens
-            pass
-
-    login_url = f"{config.HOME_URL}/api/login?state={code}"
-    return {"code": code, "login_url": login_url}
-
-
-@router.post("/miniapp/login/exchange")
-async def miniapp_login_exchange(
-    request: Request,
-    response: Response,
-    db_session: AsyncSession = Depends(get_db_session),
-):
-    """
-    Exchange a Mini App one-time code for cookies. Sets Keycloak cookies and issues
-    a fresh app token. Intended to be called from the Mini App webview with credentials included.
-    Returns 200 when cookies are set.
-    """
-    redis: Redis = request.app.state.redis
-    try:
-        payload = await request.json()
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid JSON body",
-            headers={"X-MiniApp-Exchange": "invalid-json"},
-        )
-
-    code = (payload or {}).get("code")
-    if not code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Missing code",
-            headers={"X-MiniApp-Exchange": "missing-code"},
-        )
-
-    creds_key = f"{config.TG_APP_LOGIN_STATE_REDIS_PREFIX}creds:{code}"
-    raw_creds = await redis.get(creds_key)
-    if not raw_creds:
-        # Not ready yet — add explicit trace and header so 404s can be attributed
-        try:
-            client_ip = request.client.host if getattr(request, "client", None) else "unknown"
-            ua = request.headers.get("user-agent", "")
-        except Exception:
-            pass
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Not ready",
-            headers={"X-MiniApp-Exchange": "not-ready"},
-        )
-
-    try:
-        creds = json.loads(raw_creds)
-    except Exception:
-        await redis.delete(creds_key)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Corrupted credentials",
-            headers={"X-MiniApp-Exchange": "corrupted-creds"},
-        )
-
-    kc_manager: KeyCloakManager = request.app.state.kc_manager
-    app_token_manager: AppTokenManager = request.app.state.app_token_manager
-
-    # Validate KC token (skip in mock mode)
-    if not config.MOCK_KEYCLOAK:
-        try:
-            await kc_manager.validate_keycloak_token(creds["access_token"])
-        except JWTError as e:
-            await redis.delete(creds_key)
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Invalid Keycloak token: {str(e)}",
-                headers={"X-MiniApp-Exchange": "invalid-kc-token"},
-            )
-
-    # Upsert user and set cookies
-    user_schema: UserSchema = await create_user_schema(creds)
-    user: User = await upsert_user(db_session, user_schema)
-
-    # Set KC cookies
-    set_kc_auth_cookies(response, creds)
-
-    # Issue app token
-    new_app_token_str, _claims = await app_token_manager.create_app_token(user.sub, db_session)
-    response.set_cookie(
-        key=config.COOKIE_APP_NAME,
-        value=new_app_token_str,
-        httponly=True,
-        secure=not config.IS_DEBUG,
-        samesite="Lax",
-        max_age=app_token_manager.token_expiry.total_seconds(),
-    )
-
-    # Invalidate the one-time creds
-    await redis.delete(creds_key)
-
-    try:
-        response.headers["X-MiniApp-Exchange"] = "ok"
-    except Exception:
-        pass
-    return {"ok": True}
 
 
 @router.post("/refresh-token", response_description="Refresh token")

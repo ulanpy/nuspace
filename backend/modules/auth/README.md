@@ -65,13 +65,6 @@ Main authentication endpoint handler with the following flows:
 4. Validates tokens and sets cookies
 5. Redirects to home page
 
-#### Telegram Mini App Flow
-1. Mini App calls `/api/miniapp/login/init`
-2. Returns one-time code and external login URL
-3. User completes OAuth in system browser
-4. Mini App calls `/api/miniapp/login/exchange`
-5. Sets cookies in Mini App context
-
 ## Authentication Flows
 
 ### Web Browser Authentication
@@ -101,27 +94,7 @@ sequenceDiagram
 - Token validation using JWKS
 - Secure cookie configuration
 
-### Telegram Mini App Authentication
 
-```mermaid
-sequenceDiagram
-    participant MA as Mini App
-    participant B as Backend
-    participant U as User
-    participant K as Keycloak
-    participant R as Redis
-
-    MA->>B: POST /api/miniapp/login/init
-    B->>R: Store one-time code
-    B->>MA: Return code & login URL
-    MA->>U: Open external browser
-    U->>K: Complete OAuth
-    K->>B: /api/auth/callback
-    B->>R: Store credentials
-    B->>U: Redirect to Telegram
-    MA->>B: POST /api/miniapp/login/exchange
-    B->>MA: Set cookies
-```
 
 **Security Features:**
 - One-time codes with 5-minute TTL
@@ -178,8 +151,6 @@ max_age=token_expiry     # Automatic expiration
 |----------|--------|-------------|------|
 | `/api/login` | GET | Initiate login | Web |
 | `/api/auth/callback` | GET | OAuth callback | Web |
-| `/api/miniapp/login/init` | GET | Mini App login init | Mini App |
-| `/api/miniapp/login/exchange` | POST | Mini App token exchange | Mini App |
 | `/api/refresh-token` | POST | Refresh tokens | Both |
 | `/api/me` | GET | Get current user | Both |
 | `/api/logout` | GET | Logout user | Both |
@@ -276,21 +247,3 @@ if (response.ok) {
 }
 ```
 
-### Frontend Integration (Mini App)
-```javascript
-// Initialize Mini App login
-const initResponse = await fetch('/api/miniapp/login/init');
-const { code, login_url } = await initResponse.json();
-
-// Open external browser for OAuth
-window.open(login_url, '_blank');
-
-// Exchange code for cookies
-const exchangeResponse = await fetch('/api/miniapp/login/exchange', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code })
-});
-```
-
-This authentication system provides a robust, secure foundation for user authentication across multiple platforms while maintaining flexibility for different use cases and development scenarios.

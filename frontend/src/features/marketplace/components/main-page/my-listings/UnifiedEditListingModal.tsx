@@ -14,8 +14,6 @@ import { useMediaEditContext } from "@/context/MediaEditContext";
 import { useMediaUploadContext } from "@/context/MediaUploadContext";
 import { EditListingForm } from "./EditListingForm";
 import { useProductForm } from "@/features/marketplace/hooks/useProductForm";
-import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
-import { cn } from "@/utils/utils";
 // import { Progress } from "@/components/atoms/progress";
 
 // Bridge component to connect unified system with legacy contexts
@@ -82,33 +80,9 @@ export function UnifiedEditListingModal() {
     const { closeEditModal } = useEditModal();
     const { newListing, showEditModal, uploadProgress } = useListingState();
     const { conditions, categories, handleInputChange, handlePriceInputBlur, handlePriceInputFocus, handleSelectChange } = useProductForm();
-    const { isMiniApp } = useTelegramMiniApp();
     const displayConditions = ["All Conditions", "New", "Used"];
 
     const config = getMediaConfig('marketplaceProducts');
-
-    React.useEffect(() => {
-        if (!showEditModal) return;
-        try {
-            const w: any = window;
-            w.__modalOpenCount = (w.__modalOpenCount || 0) + 1;
-            const tg: any = w?.Telegram?.WebApp;
-            const main: any = tg?.MainButton ?? tg?.BottomButton;
-            if (main) {
-                if (typeof main.hide === "function") main.hide();
-                if (typeof main.setParams === "function") main.setParams({ is_visible: false });
-            }
-            return () => {
-                const newCount = Math.max(0, (w.__modalOpenCount || 1) - 1);
-                w.__modalOpenCount = newCount;
-                if (newCount === 0 && main && typeof main.show === "function") {
-                    main.show();
-                }
-            };
-        } catch {
-            // ignore
-        }
-    }, [showEditModal]);
 
     if (!showEditModal) {
         return null;
@@ -118,11 +92,6 @@ export function UnifiedEditListingModal() {
         <div className="fixed inset-0 z-[11000] overflow-y-auto">
             <div
                 className="flex items-center justify-center min-h-screen px-4 py-6 text-center"
-                style={{
-                    paddingBottom: isMiniApp
-                        ? "calc(env(safe-area-inset-bottom, 0px) + 4.5rem)"
-                        : undefined,
-                }}
             >
                 <div
                     className="fixed inset-0 transition-opacity"
@@ -132,10 +101,7 @@ export function UnifiedEditListingModal() {
                 </div>
 
                 <div
-                    className={cn([
-                        "inline-block w-full max-w-4xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-background rounded-lg shadow-xl",
-                        isMiniApp && "pb-6"
-                    ])}
+                    className="inline-block w-full max-w-4xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-background rounded-lg shadow-xl"
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="modal-headline"
@@ -151,10 +117,7 @@ export function UnifiedEditListingModal() {
 
                     <form
                         onSubmit={handleUpdateListing}
-                        className={cn([
-                            "space-y-6",
-                            isMiniApp && "pb-0"
-                        ])}
+                        className="space-y-6"
                     >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <EditListingForm
@@ -174,15 +137,7 @@ export function UnifiedEditListingModal() {
                         </div>
                         
                         <div
-                            className={cn([
-                                "flex justify-end gap-2 pt-4 border-t",
-                                isMiniApp && "sticky bottom-0 left-0 right-0 bg-background/95 supports-[backdrop-filter]:bg-background/80 backdrop-blur border-t px-6 -mx-6 pb-4"
-                            ])}
-                            style={{
-                                paddingBottom: isMiniApp
-                                    ? "calc(env(safe-area-inset-bottom, 0px) + 1rem)"
-                                    : undefined,
-                            }}
+                            className="flex justify-end gap-2 pt-4 border-t"
                         >
                             <Button
                                 type="button"

@@ -1,8 +1,6 @@
-import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { PiUserCircle, PiUserCircleFill } from "react-icons/pi";
 import { ROUTES } from "@/data/routes";
-import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 
 function NuSpaceLogoIcon({ size, isActive }: { size: number; isActive: boolean }) {
   return (
@@ -52,57 +50,16 @@ function buildNavItems(): BottomNavItem[] {
 }
 
 export function MobileBottomNav() {
-  const { isMiniApp, platform } = useTelegramMiniApp();
-  const responsiveVisibility = isMiniApp ? "" : "md:hidden";
-  const baseIconSize = isMiniApp ? 24 : 20;
-  const baseNavHeight = 48;
-  const baseLabelFont = isMiniApp ? 11 : 12;
-
-  const [iconSize, setIconSize] = useState<number>(baseIconSize);
-  const [navHeight, setNavHeight] = useState<number>(baseNavHeight);
-  const [labelFontPx, setLabelFontPx] = useState<number>(baseLabelFont);
-  const labelTextClass = isMiniApp ? "font-medium tracking-tight" : "text-xs";
-
-  useEffect(() => {
-    if (!isMiniApp) return;
-    const computeSizes = () => {
-      const width = Math.max(320, Math.min(window.innerWidth || 375, 540));
-      const baseWidth = 375; // iPhone X baseline
-      const factor = Math.max(0.9, Math.min(width / baseWidth, 1.05));
-      const baseIcon = 24;
-      const computedIcon = Math.round(
-        Math.max(22, Math.min(30, baseIcon * factor)),
-      );
-      const baseNav = 48;
-      const computedNav = Math.round(
-        Math.max(46, Math.min(52, baseNav * factor)),
-      );
-      const baseLabel = 11;
-      const computedLabel = Math.round(
-        Math.max(10, Math.min(11, baseLabel * factor)),
-      );
-      setIconSize(computedIcon);
-      setNavHeight(computedNav);
-      setLabelFontPx(computedLabel);
-    };
-    computeSizes();
-    const onResize = () => computeSizes();
-    window.addEventListener("resize", onResize);
-    window.addEventListener("orientationchange", onResize);
-    return () => {
-      window.removeEventListener("resize", onResize);
-      window.removeEventListener("orientationchange", onResize);
-    };
-  }, [isMiniApp, platform]);
-
   const NAV_ITEMS = buildNavItems();
-
+  const iconSize = 20;
+  const navHeight = 48;
   const navHeightPx = `${navHeight}px`;
   const navTotalHeight = `calc(${navHeightPx} + env(safe-area-inset-bottom, 0px))`;
+  const labelClass = "text-xs";
 
   return (
     <nav
-      className={`mobile-bottom-nav fixed bottom-0 inset-x-0 z-50 ${isMiniApp ? "border-t-2" : "border-t"} bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm ${responsiveVisibility}`}
+      className="mobile-bottom-nav fixed bottom-0 inset-x-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 shadow-sm md:hidden"
       style={{
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
         height: navTotalHeight,
@@ -110,7 +67,7 @@ export function MobileBottomNav() {
       }}
     >
       <ul
-        className={`flex items-stretch justify-around h-full px-2 ${isMiniApp ? "pt-1" : ""}`}
+        className="flex items-stretch justify-around h-full px-2"
         style={{ height: navHeightPx }}
       >
         {NAV_ITEMS.map((item) => {
@@ -120,7 +77,7 @@ export function MobileBottomNav() {
                 to={item.to}
                 end={item.to === ROUTES.HOME}
                 className={({ isActive }) =>
-                  `flex flex-col items-center justify-center gap-1 h-full ${labelTextClass} ` +
+                  `flex flex-col items-center justify-center gap-1 h-full ${labelClass} ` +
                   (isActive ? "text-primary" : "text-muted-foreground hover:text-foreground")
                 }
               >
@@ -136,7 +93,7 @@ export function MobileBottomNav() {
                           return null;
                       }
                     })()}
-                    <span style={isMiniApp ? { fontSize: `${labelFontPx}px`, lineHeight: 1.1 } : undefined}>{item.label}</span>
+                    <span className="text-xs">{item.label}</span>
                   </>
                 )}
               </NavLink>

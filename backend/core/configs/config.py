@@ -62,8 +62,6 @@ class Config(BaseSettings):
     _COOKIE_REFRESH_NAME: str = "refresh_token"
     _COOKIE_APP_NAME: str = "app_token"
     APP_TOKEN_EXPIRY_MINUTES: int = 5
-    # Telegram Mini App integration
-    TG_APP_LOGIN_STATE_REDIS_PREFIX: str = "miniapp:login:state:"
 
     class Config:
         env_file = os.path.join(ENV_DIR, "infra/.env")

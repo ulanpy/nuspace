@@ -38,7 +38,6 @@ export function BackNavigationProvider({ children }: { children: React.ReactNode
       return;
     }
     
-    // If on Home, close the MiniApp instead of navigating
     if (location.pathname === ROUTES.HOME) {
       const tg = (window as any)?.Telegram?.WebApp;
       try {

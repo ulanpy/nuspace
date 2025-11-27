@@ -1,7 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { PiUserCircle, PiUserCircleFill } from "react-icons/pi";
 import { ROUTES } from "@/data/routes";
-import { useTelegramMiniApp } from "@/hooks/useTelegramMiniApp";
 import { useState, useEffect } from "react";
 
 interface HeaderProps {
@@ -12,7 +11,6 @@ interface HeaderProps {
 }
 
 export function Header({ left, center, right, showMainNav = false }: HeaderProps) {
-  const { isMiniApp, headerOffset } = useTelegramMiniApp();
   const [isMobileBrowser, setIsMobileBrowser] = useState(false);
   
   // Check if we're in a mobile browser (not just mini app)
@@ -27,9 +25,8 @@ export function Header({ left, center, right, showMainNav = false }: HeaderProps
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
-  // Hide Profile and Subspace from header when in mobile browser or mini app
-  // since they are available in the mobile bottom navbar
-  const shouldShowNavItems = !isMiniApp && !isMobileBrowser;
+  // Hide Profile from header when in mobile browser since it lives in the mobile bottom navbar
+  const shouldShowNavItems = !isMobileBrowser;
   
   const mainNavItems = shouldShowNavItems
     ? [{ to: ROUTES.APPS.PROFILE, icon: "profile" }]
@@ -47,12 +44,7 @@ export function Header({ left, center, right, showMainNav = false }: HeaderProps
   return (
     <header
       className="w-full sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-lg"
-      style={{
-        paddingTop: headerOffset > 0
-          ? `${headerOffset}px`
-          : "calc(env(safe-area-inset-top, 0px) + var(--tg-header-offset, 0px))",
-      }}
-      data-tg-header-adjusted={headerOffset > 0 ? "true" : undefined}
+      style={{ paddingTop: "calc(env(safe-area-inset-top, 0px))" }}
     >
       <div className="flex justify-between items-center px-4 py-2">
         <div>{left}</div>
