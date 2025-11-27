@@ -1,4 +1,4 @@
-import { defaultPage } from "@/features/marketplace/api/marketplaceApi";
+const DEFAULT_PAGE = 1;
 
 export const getSearchTextFromURL = (query: string) => {
   const params = new URLSearchParams(query);
@@ -15,7 +15,7 @@ export const getSearchParamFromURL = (
 
 export const getSeachPageFromURL = (query: string) => {
   const params = new URLSearchParams(query);
-  return Number(params.get("page")) || defaultPage;
+  return Number(params.get("page")) || DEFAULT_PAGE;
 };
 
 export const getSearchCategoryFromURL = (query: string) => {

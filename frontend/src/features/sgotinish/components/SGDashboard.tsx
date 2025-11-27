@@ -143,7 +143,7 @@ export default function SGDashboard() {
   useEffect(() => () => observerRef.current?.disconnect(), []);
 
   const handleTicketClick = (ticketId: number) => {
-    navigate(ROUTES.APPS.SGOTINISH.SG.TICKET.DETAIL_FN(String(ticketId)));
+    navigate(ROUTES.SGOTINISH.SG.TICKET.DETAIL_FN(String(ticketId)));
   };
 
   return (

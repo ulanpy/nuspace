@@ -4,7 +4,6 @@ import type React from "react";
 
 import { useLocation, Link } from "react-router-dom";
 import { cn } from "@/utils/utils";
-import { ROUTES } from "@/data/routes";
 
 interface Tab {
   name: string;
@@ -24,11 +23,16 @@ export const NavTabs = ({ tabs }: NavTabsProps) => {
     <nav className="border-b">
       <ul className="flex px-4">
         {tabs.map((tab) => {
+          const normalized = tab.path === "/"
+            ? "/"
+            : tab.path.endsWith("/")
+              ? tab.path.slice(0, -1)
+              : tab.path;
           const isActive =
-            (tab.path === ROUTES.APPS.CAMPUS_CURRENT.ROOT &&
-              currentPath === ROUTES.APPS.CAMPUS_CURRENT.ROOT) ||
-            (tab.path !== ROUTES.APPS.CAMPUS_CURRENT.ROOT &&
-              currentPath.startsWith(tab.path));
+            normalized === "/"
+              ? currentPath === "/"
+              : currentPath === normalized ||
+                currentPath.startsWith(`${normalized}/`);
           return (
             <li key={tab.name}>
               <Link

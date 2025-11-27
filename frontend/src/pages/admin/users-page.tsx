@@ -29,7 +29,7 @@
 //         <CardHeader>
 //           <CardTitle>User Management</CardTitle>
 //           <CardDescription>
-//             View and manage marketplace users and their products.
+//             View and manage users and their products.
 //           </CardDescription>
 //         </CardHeader>
 //         <CardContent>

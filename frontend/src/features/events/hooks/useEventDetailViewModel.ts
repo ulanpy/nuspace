@@ -77,15 +77,13 @@ export const useEventDetailViewModel = () => {
   }, [event, toast]);
 
   const goToEventsRoot = useCallback(() => {
-    navigate(ROUTES.APPS.CAMPUS_CURRENT.ROOT);
+    navigate(ROUTES.EVENTS.ROOT);
   }, [navigate]);
 
   const communityId = event?.community?.id;
   const goToCommunity = useCallback(() => {
     if (!communityId) return;
-    navigate(
-      ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(String(communityId))
-    );
+    navigate(ROUTES.COMMUNITIES.DETAIL_FN(String(communityId)));
   }, [communityId, navigate]);
 
   const openEditModal = useCallback(() => setShowEditModal(true), []);

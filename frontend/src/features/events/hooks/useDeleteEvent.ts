@@ -20,7 +20,7 @@ export function useDeleteEvent() {
       });
 
       // Redirect to events list page after successful deletion
-      navigate(ROUTES.APPS.CAMPUS_CURRENT.EVENTS, { replace: true });
+      navigate(ROUTES.EVENTS.ROOT, { replace: true });
     },
     onError: (error) => {
       console.error("Event deletion failed:", error);

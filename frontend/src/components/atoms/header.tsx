@@ -29,7 +29,7 @@ export function Header({ left, center, right, showMainNav = false }: HeaderProps
   const shouldShowNavItems = !isMobileBrowser;
   
   const mainNavItems = shouldShowNavItems
-    ? [{ to: ROUTES.APPS.PROFILE, icon: "profile" }]
+    ? [{ to: ROUTES.PROFILE, icon: "profile" }]
     : [];
 
   const renderIcon = (icon: string, isActive: boolean, size: number = 20) => {

@@ -1,7 +1,5 @@
 // import { Button } from "@/components/atoms/button";
 // import { ArrowLeft } from "lucide-react";
-// import { ProductForm } from "@/features/marketplace/components/product-form";
-// import { useProductForm } from "@/features/marketplace/hooks/useProductForm";
 // import { useNavigate, useParams } from "react-router-dom";
 // import { ROUTES } from "@/data/routes";
 

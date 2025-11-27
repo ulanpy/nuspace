@@ -302,12 +302,7 @@ const {
 - [ ] Test edge cases
 
 ### Phase 4: Cleanup
-- [ ] Remove old components:
-  - `src/features/marketplace/components/media/MediaDropZone.tsx`
-  - `src/features/marketplace/components/media/MediaGallery.tsx`
-  - `src/features/marketplace/components/media/UploadProgressIndicator.tsx`
-  - `src/features/marketplace/components/forms/sections/MediaUploadSection.tsx`
-  - `src/features/campuscurrent/components/forms/UploadProgress.tsx`
+- [ ] Remove any legacy feature-specific upload components (old drop zones, galleries, or upload sections that duplicated the shared system)
 - [ ] Update context dependencies
 - [ ] Remove unused imports
 - [ ] Run tests and verify functionality

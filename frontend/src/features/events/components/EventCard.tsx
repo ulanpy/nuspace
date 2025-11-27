@@ -6,6 +6,7 @@ import { Badge } from "@/components/atoms/badge";
 import { Event } from "@/features/shared/campus/types";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 import { CountdownHeaderBar } from "./CountdownHeaderBar";
+import { ROUTES } from "@/data/routes";
 
 interface EventCardProps extends Event {
   compact?: boolean;
@@ -81,7 +82,7 @@ export function EventCard(props: EventCardProps) {
   return (
     <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
       <CountdownHeaderBar eventDateIso={start_datetime} durationMinutes={durationMinutes} />
-      <Link to={`/apps/campuscurrent/event/${id}`}>
+      <Link to={ROUTES.EVENTS.DETAIL_FN(String(id))}>
         <div className="aspect-[3/4] relative overflow-hidden bg-muted">
           {media && media.length > 0 && media[0]?.url && !imageError ? (
             <img
@@ -151,7 +152,7 @@ export function EventCard(props: EventCardProps) {
       <CardHeader className="p-3 pb-2 flex-shrink-0">
         <div className="space-y-1">
           <Link
-            to={`/apps/campuscurrent/event/${id}`}
+            to={ROUTES.EVENTS.DETAIL_FN(String(id))}
             className="hover:underline"
           >
             <h3 className="text-base font-semibold line-clamp-2 leading-tight">{name}</h3>

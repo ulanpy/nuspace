@@ -50,81 +50,47 @@ export function BackNavigationProvider({ children }: { children: React.ReactNode
     const path = location.pathname;
 
     const parent = (() => {
-      // CampusCurrent
-      const EVENT_DETAIL_PREFIX = ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL.replace(
-        ":id",
-        "",
-      );
+      const EVENT_DETAIL_PREFIX = ROUTES.EVENTS.DETAIL.replace(":id", "");
       if (path.startsWith(EVENT_DETAIL_PREFIX)) {
-        return ROUTES.APPS.CAMPUS_CURRENT.EVENTS;
+        return ROUTES.EVENTS.ROOT;
+      }
+      if (path.startsWith(ROUTES.EVENTS.ROOT)) {
+        return ROUTES.HOME;
       }
 
-      const COMMUNITY_DETAIL_PREFIX = ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL.replace(
-        ":id",
-        "",
-      );
+      const COMMUNITY_DETAIL_PREFIX = ROUTES.COMMUNITIES.DETAIL.replace(":id", "");
       if (path.startsWith(COMMUNITY_DETAIL_PREFIX)) {
-        return ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES;
+        return ROUTES.COMMUNITIES.ROOT;
+      }
+      if (path.startsWith(ROUTES.COMMUNITIES.ROOT)) {
+        return ROUTES.HOME;
+      }
+
+      const SG_STUDENT_DETAIL_PREFIX = ROUTES.SGOTINISH.STUDENT.TICKET.DETAIL.replace(":id", "");
+      if (path.startsWith(SG_STUDENT_DETAIL_PREFIX)) {
+        return ROUTES.SGOTINISH.STUDENT.ROOT;
+      }
+      const SG_MEMBER_DETAIL_PREFIX = ROUTES.SGOTINISH.SG.TICKET.DETAIL.replace(":id", "");
+      if (path.startsWith(SG_MEMBER_DETAIL_PREFIX)) {
+        return ROUTES.SGOTINISH.SG.ROOT;
+      }
+      if (path.startsWith(ROUTES.SGOTINISH.STUDENT.ROOT) || path.startsWith(ROUTES.SGOTINISH.SG.ROOT)) {
+        return ROUTES.SGOTINISH.ROOT;
+      }
+      if (path.startsWith(ROUTES.SGOTINISH.ROOT)) {
+        return ROUTES.HOME;
       }
 
       if (
-        path.startsWith(ROUTES.APPS.CAMPUS_CURRENT.EVENTS) ||
-        path.startsWith(ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES) ||
-        path.startsWith(ROUTES.APPS.CAMPUS_CURRENT.POSTS) ||
-        path.startsWith(ROUTES.APPS.CAMPUS_CURRENT.PROFILE)
+        path.startsWith(ROUTES.DORM_EATS) ||
+        path.startsWith(ROUTES.COURSES) ||
+        path.startsWith(ROUTES.CONTACTS) ||
+        path.startsWith(ROUTES.PROFILE) ||
+        path.startsWith(ROUTES.ABOUT)
       ) {
-        // From any sub-section, jump back to Home directly
         return ROUTES.HOME;
       }
 
-      if (path.startsWith(ROUTES.APPS.CAMPUS_CURRENT.ROOT)) {
-        return ROUTES.HOME;
-      }
-
-      // SGotinish
-      const SG_STUDENT_DETAIL_PREFIX = ROUTES.APPS.SGOTINISH.STUDENT.TICKET.DETAIL.replace(
-        ":id",
-        "",
-      );
-      if (path.startsWith(SG_STUDENT_DETAIL_PREFIX)) {
-        return `${ROUTES.APPS.SGOTINISH.ROOT}?tab=student`;
-      }
-
-      const SG_MEMBER_DETAIL_PREFIX = ROUTES.APPS.SGOTINISH.SG.TICKET.DETAIL.replace(
-        ":id",
-        "",
-      );
-      if (path.startsWith(SG_MEMBER_DETAIL_PREFIX)) {
-        return `${ROUTES.APPS.SGOTINISH.ROOT}?tab=sg`;
-      }
-
-      // Marketplace
-      const PRODUCT_DETAIL_PREFIX = ROUTES.APPS.MARKETPLACE.PRODUCT.DETAIL.replace(
-        ":id",
-        "",
-      );
-      if (path.startsWith(PRODUCT_DETAIL_PREFIX)) {
-        return ROUTES.APPS.MARKETPLACE.ROOT;
-      }
-
-      if (path.startsWith(ROUTES.APPS.MARKETPLACE.CREATE)) {
-        return ROUTES.APPS.MARKETPLACE.ROOT;
-      }
-      if (path.startsWith(ROUTES.APPS.MARKETPLACE.ROOT)) {
-        return ROUTES.HOME;
-      }
-
-      // Dorm Eats and other apps
-      if (path.startsWith(ROUTES.APPS.DORM_EATS.ROOT)) {
-        return ROUTES.HOME;
-      }
-
-      // Apps root -> Home
-      if (path.startsWith(ROUTES.APPS.ROOT)) {
-        return ROUTES.HOME;
-      }
-
-      // Default -> Home
       return ROUTES.HOME;
     })();
 

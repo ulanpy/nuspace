@@ -17,21 +17,6 @@ export const MEDIA_CONFIGS = {
     recommendedNote: "Portrait poster fits best on event cards.",
   } as MediaConfig,
 
-  // Marketplace Products
-  marketplaceProducts: {
-    entityType: EntityType.products,
-    mediaFormat: MediaFormat.carousel,
-    maxFiles: 5,
-    maxFileSize: 10, // MB
-    allowedTypes: ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'],
-    enableMainSelection: true,
-    enablePreview: true,
-    enableReordering: true,
-    recommendedAspectRatio: "1:1",
-    recommendedDimensions: "min 1080x1080",
-    recommendedNote: "Square images look best in product grid and detail.",
-  } as MediaConfig,
-
   // Community Profile Images
   communityProfiles: {
     entityType: EntityType.communities,

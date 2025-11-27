@@ -1,5 +1,5 @@
 import { queryClient } from "@/utils/query-client";
-import { marketplaceApi } from "@/features/marketplace/api/marketplaceApi";
+import { apiCall } from "@/utils/api";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -17,8 +17,18 @@ let globalQueryEnabled = getInitialQueryEnabled();
 
 export const useUser = () => {
   const [, forceUpdate] = useState(0); // Force re-render when needed
-  
-  
+  const fetchUser = useCallback(async () => {
+    return apiCall<any>("/me", {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+      },
+    });
+  }, []);
+
   const {
     data: rawUser,
     isLoading,
@@ -30,7 +40,7 @@ export const useUser = () => {
     queryKey: ["user"],
     queryFn: async () => {
       try {
-        return await marketplaceApi.getUserQueryOptions().queryFn();
+        return await fetchUser();
       } catch (error: any) {
         // If we get a 401, disable future queries and persist this state
         if (error?.status === 401 || error?.response?.status === 401) {
@@ -71,7 +81,7 @@ export const useUser = () => {
     },
     onSuccess: () => {
       sessionStorage.removeItem(AUTH_FAILURE_KEY);
-      queryClient.invalidateQueries({ queryKey: marketplaceApi.getUserQueryOptions().queryKey });
+      queryClient.invalidateQueries({ queryKey: ["user"] });
     },
   });
 
@@ -89,10 +99,7 @@ export const useUser = () => {
     },
     onSuccess: () => {
       queryClient.removeQueries({
-        queryKey: marketplaceApi.getUserQueryOptions().queryKey,
-      });
-      queryClient.removeQueries({
-        queryKey: marketplaceApi.getUserProductsQueryOptions().queryKey,
+        queryKey: ["user"],
       });
       window.location.href = "/";
     },

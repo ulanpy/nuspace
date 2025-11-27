@@ -8,8 +8,8 @@ This document shows how to migrate existing feature-specific media components to
 ```tsx
 // src/features/campuscurrent/components/forms/EventMediaUpload.tsx
 import { Label } from '@/components/atoms/label';
-import { MediaDropZone } from '@/features/marketplace/components/media/MediaDropZone';
-import { MediaGallery } from '@/features/marketplace/components/media/MediaGallery';
+import { MediaDropZone } from '@/components/organisms/media/MediaDropZone';
+import { MediaGallery } from '@/components/organisms/media/MediaGallery';
 import { useMediaSelection } from '@/features/media/hooks/useMediaSelection';
 import { useMediaUploadContext } from '@/context/MediaUploadContext';
 import { useMediaEdit } from '@/features/media/hooks/useMediaEdit';
@@ -169,7 +169,7 @@ import { UploadProgressIndicator } from './media/UploadProgressIndicator';
 
 ### After: New ProductMediaUpload.tsx
 ```tsx
-// src/features/marketplace/components/forms/ProductMediaUpload.tsx
+// src/legacy/components/forms/ProductMediaUpload.tsx
 import { MediaUploadZone } from '@/components/organisms/media';
 import { useMediaSelection } from '@/features/media/hooks/useMediaSelection';
 import { useMediaUploadContext } from '@/context/MediaUploadContext';

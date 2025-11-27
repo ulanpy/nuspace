@@ -33,7 +33,6 @@ import { useUser } from "@/hooks/use-user";
 import { CommunityModal } from "@/features/communities/components/CommunityModal";
 import { EventModal } from "@/features/events/components/EventModal";
 import { MediaFormat } from "@/features/media/types/types";
-import { SubspacePosts } from "../../subspace/components/SubspacePosts";
 
 // Helpers
 const getUserInitials = (name?: string, surname?: string) => {
@@ -408,7 +407,6 @@ export default function CommunityDetailPage() {
                         ? [{ value: "requests", label: "Requests", icon: "📝" }]
                         : []),
                       { value: "events", label: "Events", icon: "🎉" },
-                      { value: "community", label: "Subspace", icon: "💬" },
                       { value: "gallery", label: "Gallery", icon: "🖼️" },
                     ] as const
                   ).map((item) => (
@@ -637,20 +635,6 @@ export default function CommunityDetailPage() {
                       Create Event
                     </Button>
                   </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="community" className="mt-0">
-                <Card className="p-0 overflow-hidden">
-                  <div className="p-6 border-b">
-                    <h2 className="text-2xl font-bold">Subspace</h2>
-                  </div>
-                  <div className="p-6 text-center">
-                    <div className="py-12">
-                      <div className="text-6xl mb-4">🚧</div>
-                      {/* <SubspacePosts/> */}
-                    </div>
-                  </div>
                 </Card>
               </TabsContent>
 

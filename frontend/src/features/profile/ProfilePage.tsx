@@ -99,7 +99,7 @@ export default function ProfilePage() {
                                                     variant="ghost"
                                                     size="sm"
                                                     className="w-full justify-start text-left h-auto py-2"
-                                                    onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(community.id.toString()))}
+                                                    onClick={() => navigate(ROUTES.COMMUNITIES.DETAIL_FN(community.id.toString()))}
                                                 >
                                                     <div className="w-6 h-6 rounded-full overflow-hidden mr-2 flex-shrink-0 bg-muted flex items-center justify-center">
                                                         {profile?.url ? (
@@ -129,7 +129,7 @@ export default function ProfilePage() {
                                                 variant="outline"
                                                 size="sm"
                                                 className="w-full"
-                                                onClick={() => navigate(ROUTES.APPS.CAMPUS_CURRENT.COMMUNITIES)}
+                                                onClick={() => navigate(ROUTES.COMMUNITIES.ROOT)}
                                             >
                                                 View all {communities.length} communities
                                             </Button>

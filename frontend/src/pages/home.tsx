@@ -85,7 +85,7 @@ export default function HomePage() {
       id: `event-${e.id}`,
       content: (
         <Link
-          to={ROUTES.APPS.CAMPUS_CURRENT.EVENT.DETAIL_FN(String(e.id))}
+          to={ROUTES.EVENTS.DETAIL_FN(String(e.id))}
           className="block w-full h-full"
           data-full-bleed
         >

@@ -45,7 +45,7 @@ interface BottomNavItem {
 function buildNavItems(): BottomNavItem[] {
   return [
     { to: ROUTES.HOME, label: "Home", icon: "home" },
-    { to: ROUTES.APPS.PROFILE, label: "Profile", icon: "profile" },
+    { to: ROUTES.PROFILE, label: "Profile", icon: "profile" },
   ];
 }
 

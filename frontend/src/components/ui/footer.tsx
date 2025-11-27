@@ -8,7 +8,7 @@ interface FooterProps {
 export function Footer({ note }: FooterProps) {
   return (
     <footer className="text-center text-sm text-muted-foreground mt-12 py-4 border-t">
-      <Link to={ROUTES.APPS.ABOUT} className="hover:underline">
+      <Link to={ROUTES.ABOUT} className="hover:underline">
         {note}
       </Link>
     </footer>

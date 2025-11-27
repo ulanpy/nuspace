@@ -148,7 +148,7 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
   useEffect(() => () => observerRef.current?.disconnect(), []);
 
   const handleTicketClick = (ticketId: number) => {
-    navigate(ROUTES.APPS.SGOTINISH.STUDENT.TICKET.DETAIL_FN(String(ticketId)));
+    navigate(ROUTES.SGOTINISH.STUDENT.TICKET.DETAIL_FN(String(ticketId)));
   };
 
   const showEmptyState =

@@ -25,7 +25,7 @@ export function CommunityCard({ community }: { community: Community }) {
 
   return (
     <Link
-      to={ROUTES.APPS.CAMPUS_CURRENT.COMMUNITY.DETAIL_FN(
+      to={ROUTES.COMMUNITIES.DETAIL_FN(
         community.id.toString()
       )}
       className="block h-full"

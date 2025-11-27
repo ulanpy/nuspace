@@ -16,7 +16,6 @@
 // } from "@/components/atoms/select";
 // import { Search } from "lucide-react";
 // import { mockProducts } from "@/data/temporary";
-// import { ProductsTable } from "@/features/marketplace/components/tables/products-table";
 
 // const ProductsPage = () => {
 //   const [searchTerm, setSearchTerm] = useState("");
@@ -44,8 +43,7 @@
 //         <CardHeader>
 //           <CardTitle>Product Management</CardTitle>
 //           <CardDescription>
-//             Manage all marketplace products here. You can edit, delete, or add
-//             new products.
+//             Manage all products here. You can edit, delete, or add new entries.
 //           </CardDescription>
 //         </CardHeader>
 //         <CardContent>
