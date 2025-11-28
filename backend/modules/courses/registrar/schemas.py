@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
@@ -30,11 +30,6 @@ class SchedulePreferences(BaseModel):
 class ScheduleResponse(BaseModel):
     data: List[List[UserScheduleItem]]
     preferences: SchedulePreferences
-
-
-class SyncRequest(BaseModel):
-    password: str = Field(min_length=1)
-
 
 class SemesterOption(BaseModel):
     label: str
@@ -68,27 +63,4 @@ class CourseSearchRequest(BaseModel):
     page: int = Field(default=1, ge=1)
 
 
-class CourseDetailResponse(CourseSummary):
-    pass
-
-
-class CourseSchedule(BaseModel):
-    capacity: str
-    days: str
-    enr: int
-    faculty: str
-    final_exam: bool
-    id: str
-    room: str
-    st: str
-    times: str
-
-
-class CourseSchedulesResponse(BaseModel):
-    schedules: Dict[str, List[CourseSchedule]]
-
-
-class CourseSchedulesRequest(BaseModel):
-    course_ids: List[str] = Field(default_factory=list, min_items=1)
-    term: str
 

@@ -1,18 +1,14 @@
 from fastapi import HTTPException
 
-from backend.modules.courses.crashed.schemas import (
-    CourseDetailResponse,
-    CourseSchedule,
-    CourseSchedulesRequest,
-    CourseSchedulesResponse,
+from backend.modules.courses.registrar.schemas import (
     CourseSearchRequest,
     CourseSearchResponse,
     ScheduleResponse,
     SemesterOption,
 )
-from backend.modules.courses.crashed.registrar.registrar_client import RegistrarClient
-from backend.modules.courses.crashed.registrar.registrar_parser import parse_schedule
-from backend.modules.courses.crashed.registrar.public_course_catalog import (
+from backend.modules.courses.registrar.clients.registrar_client import RegistrarClient
+from backend.modules.courses.registrar.parsers.registrar_parser import parse_schedule
+from backend.modules.courses.registrar.clients.public_course_catalog import (
     PublicCourseCatalogClient,
 )
 
@@ -58,21 +54,4 @@ class RegistrarService:
         except ValueError as exc:  # registrar returned non-JSON payload
             raise HTTPException(status_code=502, detail=str(exc)) from exc
         return CourseSearchResponse(**data)
-
-    async def get_course_schedules(
-        self, request: CourseSchedulesRequest
-    ) -> CourseSchedulesResponse:
-        try:
-            async with self.public_client_factory() as client:
-                schedules = await client.get_schedules_for_ids(
-                    request.course_ids, request.term
-                )
-        except ValueError as exc:
-            raise HTTPException(status_code=502, detail=str(exc)) from exc
-
-        formatted = {
-            course_id: [CourseSchedule(**item) for item in items]
-            for course_id, items in schedules.items()
-        }
-        return CourseSchedulesResponse(schedules=formatted)
 

@@ -1,5 +1,5 @@
 from typing import Any
-from backend.modules.courses.crashed.schemas import ScheduleResponse
+from backend.modules.courses.registrar.schemas import ScheduleResponse
 import re
 from html import unescape
 

@@ -4,7 +4,7 @@ from typing import Any, List
 from fastapi import Query
 from pydantic import BaseModel, Field
 
-from backend.modules.courses.crashed.schemas import (
+from backend.modules.courses.registrar.schemas import (
     SchedulePreferences,
     ScheduleResponse,
     UserScheduleItem,

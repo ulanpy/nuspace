@@ -12,7 +12,7 @@ from backend.common.utils import meilisearch
 from backend.core.database.models.common_enums import EntityType
 
 
-router = APIRouter()
+router = APIRouter(tags=["Grade Statistics"])
 
 @router.get("/grades", response_model=schemas.ListGradeReportResponse)
 async def get_grades(
@@ -25,7 +25,7 @@ async def get_grades(
     db_session: AsyncSession = Depends(get_db_session),
 ) -> schemas.ListGradeReportResponse:
     """
-    Retrieves a paginated list of grade reports with optional keyword search.
+    Retrieves a paginated list of grade reports statistics with optional keyword search.
 
     **Access Policy:**
     - Anyone can view grade reports

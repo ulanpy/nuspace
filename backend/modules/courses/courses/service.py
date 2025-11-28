@@ -15,9 +15,9 @@ from backend.core.database.models.grade_report import (
     StudentCourse,
     StudentSchedule,
 )
-from backend.modules.courses.student_courses import schemas
-from backend.modules.courses.crashed.service import RegistrarService
-from backend.modules.courses.crashed.schemas import (
+from backend.modules.courses.courses import schemas
+from backend.modules.courses.registrar.service import RegistrarService
+from backend.modules.courses.registrar.schemas import (
     CourseSearchRequest,
     SchedulePreferences,
     ScheduleResponse,
@@ -30,24 +30,6 @@ class StudentCourseService:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def register_course(
-        self, data: schemas.RegisteredCourseCreate, student_sub: str
-    ) -> StudentCourse:
-        if data.student_sub == "me":
-            data.student_sub = student_sub
-        qb = QueryBuilder(session=self.db_session, model=StudentCourse)
-
-        existing_registration = (
-            await qb.base()
-            .filter(StudentCourse.student_sub == student_sub, StudentCourse.course_id == data.course_id)
-            .first()
-        )
-
-        if existing_registration:
-            return None
-
-        student_course = await qb.add(data=data, preload=[StudentCourse.course])
-        return student_course
 
     async def get_registered_courses(self, student_sub: str) -> List[schemas.RegisteredCourseResponse]:
         qb = QueryBuilder(session=self.db_session, model=StudentCourse)
@@ -116,20 +98,6 @@ class StudentCourseService:
 
         return result
 
-    async def unregister_course(self, student_course_id: int, student_sub: str) -> bool:
-        qb = QueryBuilder(session=self.db_session, model=StudentCourse)
-
-        registration = (
-            await qb.base()
-            .filter(StudentCourse.id == student_course_id, StudentCourse.student_sub == student_sub)
-            .first()
-        )
-
-        if not registration:
-            return False
-
-        await qb.delete(target=registration)
-        return True
 
 
     async def get_courses(

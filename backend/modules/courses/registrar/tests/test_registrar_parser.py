@@ -1,4 +1,4 @@
-from backend.modules.courses.crashed.registrar.registrar_parser import parse_schedule
+from backend.modules.courses.registrar.parsers.registrar_parser import parse_schedule
 
 
 def build_entry(header: str) -> list[dict[str, str]]:
