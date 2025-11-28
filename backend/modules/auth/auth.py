@@ -5,6 +5,7 @@ from typing import Annotated
 
 from aiogram import Bot
 from aiogram.utils.deep_linking import create_start_link
+from authlib.integrations.base_client.errors import MismatchingStateError, OAuthError
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
 from jose import JWTError
@@ -73,7 +74,6 @@ async def login(
 async def auth_callback(
     request: Request,
     db_session: AsyncSession = Depends(get_db_session),
-    creds: dict = Depends(exchange_code_for_credentials),
     state: str | None = None,
 ):
     if not state:
@@ -82,6 +82,37 @@ async def auth_callback(
     kc_manager: KeyCloakManager = request.app.state.kc_manager
     app_token_manager: AppTokenManager = request.app.state.app_token_manager
     redis: Redis = request.app.state.redis
+    code = request.query_params.get("code") or ""
+
+    csrf_key = f"csrf:{state}"
+    csrf_return_to = await redis.get(csrf_key)
+    if csrf_return_to is None:
+        raise HTTPException(status_code=400, detail="Invalid or expired state")
+
+    code_key: str | None = None
+    if code:
+        code_key = f"kc_code:{code}"
+        if await redis.exists(code_key):
+            await redis.delete(csrf_key)
+            return RedirectResponse(url=config.HOME_URL, status_code=303)
+
+    try:
+        creds = await exchange_code_for_credentials(request)
+    except MismatchingStateError as exc:
+        await redis.delete(csrf_key)
+        raise HTTPException(
+            status_code=400, detail="Login session expired. Please try again."
+        ) from exc
+    except OAuthError as exc:
+        await redis.delete(csrf_key)
+        raise HTTPException(
+            status_code=400, detail=f"Authorization failed: {exc.error}"
+        ) from exc
+    except Exception as exc:
+        await redis.delete(csrf_key)
+        raise HTTPException(
+            status_code=502, detail="Unexpected error while contacting identity provider."
+        ) from exc
 
     # Validate Keycloak token from the fresh exchange (skip in mock mode)
     if not config.MOCK_KEYCLOAK:
@@ -120,14 +151,11 @@ async def auth_callback(
         max_age=app_token_manager.token_expiry.total_seconds(),
     )
 
-    csrf_key = f"csrf:{state}"
-    csrf_return_to = await redis.get(csrf_key)
-    if csrf_return_to is not None:
-        await redis.delete(csrf_key)
-        # Optional: validate return_to against a whitelist to prevent open redirects
-        return redirect_response
-
-    raise HTTPException(status_code=400, detail="Invalid or expired state")
+    if code_key:
+        await redis.setex(code_key, 300, "used")
+    await redis.delete(csrf_key)
+    # Optional: validate return_to against a whitelist to prevent open redirects
+    return redirect_response
 
 
 @router.post("/connect-tg")
