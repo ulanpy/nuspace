@@ -51,13 +51,13 @@ async def sync_courses_from_registrar(
        - Creates StudentCourse registration if not already registered
     """
     student_sub = user[0].get("sub")
-    student_username = "ulan.sharipov" #user[0].get("email").split("@")[0] #e.g. ulan.sharipov
+    student_username = user[0].get("email").split("@")[0] #e.g. ulan.sharipov
     service = StudentCourseService(db_session=db_session)
     sync_result = await service.sync_courses_from_registrar(
         student_sub=student_sub,
         password=data.password,
         username=student_username,
-        registrar_service=registrar_service,
+        registrar_service=registrar_service
     )
 
     return sync_result
