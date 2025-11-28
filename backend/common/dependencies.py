@@ -12,6 +12,7 @@ from backend.modules.auth.utils import (
 )
 from fastapi import Cookie, Depends, HTTPException, Request, Response, status
 from jose import JWTError, jwt
+from jwt import ExpiredSignatureError as PyJWTExpiredSignatureError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -149,7 +150,7 @@ async def get_creds_or_401(
             # Check if app token's subject matches Keycloak principal's subject
             if app_principal.get("sub") != kc_principal.get("sub"):
                 issue_new_app_token = True  # Subject mismatch, re-issue
-        except jwt.ExpiredSignatureError:
+        except PyJWTExpiredSignatureError:
             issue_new_app_token = True  # App token expired
         except JWTError:
             issue_new_app_token = True  # App token invalid for other reasons

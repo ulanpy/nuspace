@@ -50,6 +50,7 @@ class PublicCourseCatalogClient:
         return self._client
 
     async def _request(self, method: str, params: Optional[Dict[str, Any]] = None) -> Any:
+        """Helper function to send requests to the public course catalog endpoint."""
         client = await self._ensure_client()
         if params is not None:
             payload = {

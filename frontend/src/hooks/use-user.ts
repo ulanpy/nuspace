@@ -1,7 +1,7 @@
 import { queryClient } from "@/utils/query-client";
 import { apiCall } from "@/utils/api";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 // Session storage key for tracking auth failures
 const AUTH_FAILURE_KEY = "__auth_query_disabled__";
@@ -105,33 +105,18 @@ export const useUser = () => {
     },
   });
 
-  const refreshToken = useCallback(async () => {
+  const refreshSession = useCallback(async () => {
+    // Manual recovery hook (e.g. “Retry session” button) without background polling
     try {
       await fetch("/api/refresh-token", {
         method: "POST",
-        credentials: "include", // Important for cookies
+        credentials: "include",
       });
+      queryClient.invalidateQueries({ queryKey: ["user"] });
     } catch (error) {
       console.error("Error refreshing token:", error);
     }
   }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const w: any = window;
-    const REFRESH_TIMER_KEY = "__auth_refresh_timer__";
-    let refreshInterval: ReturnType<typeof window.setInterval> | null = null;
-    if (!w[REFRESH_TIMER_KEY]) {
-      refreshInterval = window.setInterval(refreshToken, 1000 * 60 * 4);
-      w[REFRESH_TIMER_KEY] = refreshInterval;
-    }
-    return () => {
-      if (refreshInterval != null && w[REFRESH_TIMER_KEY] === refreshInterval) {
-        clearInterval(refreshInterval);
-        delete w[REFRESH_TIMER_KEY];
-      }
-    };
-  }, [refreshToken]);
 
   const login = () => {
     globalQueryEnabled = true;
@@ -152,5 +137,6 @@ export const useUser = () => {
     login,
     logout,
     isLoggingOut: logoutMutation.isPending,
+    refreshSession,
   };
 };
