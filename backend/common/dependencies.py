@@ -96,7 +96,7 @@ async def get_creds_or_401(
                 detail=f"Failed to refresh Keycloak token: {str(e)}",
             )
 
-    if config.MOCK_KEYCLOAK and access_token.startswith("mock_access_"):
+    if config.MOCK_KEYCLOAK:
         sub = access_token.removeprefix("mock_access_")
         u = get_mock_user_by_sub(sub)
         kc_principal = {

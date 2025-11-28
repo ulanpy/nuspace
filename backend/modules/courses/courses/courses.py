@@ -1,3 +1,11 @@
+"""
+This module is as a tribute to the creator 
+of crashed.nu — @superhooman.
+GitHub: https://github.com/superhooman/crashed.nu
+"""
+
+
+
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -5,51 +13,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import get_creds_or_401, get_db_session, get_infra
 from backend.common.schemas import Infra
-from backend.core.database.models.grade_report import CourseItem, StudentCourse
-from backend.modules.courses.student_courses import dependencies as deps
-from backend.modules.courses.student_courses import schemas
-from backend.modules.courses.student_courses.policy import CourseItemPolicy, StudentCoursePolicy
-from backend.modules.courses.student_courses.service import StudentCourseService
-from backend.modules.courses.crashed.service import RegistrarService
-from backend.modules.courses.crashed.dependencies import get_registrar_service
+from backend.core.database.models.grade_report import CourseItem
+from backend.modules.courses.courses import dependencies as deps
+from backend.modules.courses.courses import schemas
+from backend.modules.courses.courses.policy import CourseItemPolicy, StudentCoursePolicy
+from backend.modules.courses.courses.service import StudentCourseService
+from backend.modules.courses.registrar.service import RegistrarService
+from backend.modules.courses.registrar.dependencies import get_registrar_service
 
-router = APIRouter(tags=["Grades"])
-
-
-@router.post("/registered_courses", response_model=schemas.RegisteredCourseResponse)
-async def register_course(
-    data: schemas.RegisteredCourseCreate,
-    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
-):
-    """
-    Registers a student for a specific course.
-
-    **Access Policy:**
-    - Students can only register courses for themselves
-    - Admin can register courses for any student
-
-    **Parameters:**
-    - `data`: Course registration data including course_id
-
-    **Returns:**
-    - Created course registration with course details
-    """
-    StudentCoursePolicy(user=user).check_create(student_sub=data.student_sub)
-
-    service = StudentCourseService(db_session=db_session)
-    student_course = await service.register_course(data=data, student_sub=user[0].get("sub"))
-
-    if not student_course:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Course already registered for this student.",
-        )
-
-    return schemas.RegisteredCourseResponse(
-        id=student_course.id, course=student_course.course, items=[]
-    )
-
+router = APIRouter(tags=["Courses"])
 
 @router.post("/registered_courses/sync", response_model=schemas.RegistrarSyncResponse)
 async def sync_courses_from_registrar(
@@ -79,7 +51,7 @@ async def sync_courses_from_registrar(
        - Creates StudentCourse registration if not already registered
     """
     student_sub = user[0].get("sub")
-    student_username = user[0].get("email").split("@")[0] #e.g. ulan.sharipov
+    student_username = "ulan.sharipov" #user[0].get("email").split("@")[0] #e.g. ulan.sharipov
     service = StudentCourseService(db_session=db_session)
     sync_result = await service.sync_courses_from_registrar(
         student_sub=student_sub,
@@ -118,43 +90,14 @@ async def get_registered_courses_schedule(
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
 ):
+    """
+    Return the most recently synced registrar schedule for the authenticated user.
+    """
     student_sub = user[0].get("sub")
     StudentCoursePolicy(user=user).check_read_list(student_sub=student_sub)
 
     service = StudentCourseService(db_session=db_session)
     return await service.get_latest_schedule(student_sub=student_sub)
-
-
-@router.delete("/registered_courses/{student_course_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def unregister_course(
-    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
-    student_course: StudentCourse = Depends(deps.student_course_exists_or_404),
-):
-    """
-    Unregisters a student from a specific course.
-
-    **Access Policy:**
-    - Students can only unregister from their own courses
-    - Admin can unregister any student from any course
-
-    **Parameters:**
-    - `student_course_id`: ID of the course registration to remove
-
-    **Returns:**
-    - HTTP 204 No Content on successful unregistration
-    """
-    student_sub = user[0].get("sub")
-    service = StudentCourseService(db_session=db_session)
-
-    StudentCoursePolicy(user=user).check_delete(student_course=student_course)
-
-    success = await service.unregister_course(
-        student_course_id=student_course.id, student_sub=student_sub
-    )
-
-    if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Registration not found.")
 
 
 @router.post("/course_items", response_model=schemas.BaseCourseItem)

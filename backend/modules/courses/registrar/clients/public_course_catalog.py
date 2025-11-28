@@ -77,19 +77,6 @@ class PublicCourseCatalogClient:
                 f"Registrar returned non-JSON payload for method '{method}': {snippet}"
             ) from exc
 
-    @staticmethod
-    def _merge_schedules(schedules: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        merged: Dict[str, Dict[str, Any]] = {}
-        for schedule in schedules:
-            key = schedule["st"]
-            existing = merged.get(key)
-            if existing is None:
-                merged[key] = schedule
-                continue
-            existing["days"] += schedule["days"]
-            if schedule["room"] and schedule["room"] not in existing["room"]:
-                existing["room"] = f"{existing['room']} / {schedule['room']}".strip()
-        return list(merged.values())
 
     async def get_semesters(self) -> List[Dict[str, str]]:
         semesters = await self._request("getSemesters")
@@ -98,15 +85,6 @@ class PublicCourseCatalogClient:
             for entry in semesters
         ]
 
-    async def _get_default_term(self) -> str | None:
-        if self._default_term is not None:
-            return self._default_term
-
-        semesters = await self.get_semesters()
-        if not semesters:
-            return None
-        self._default_term = semesters[0]["value"]
-        return self._default_term
 
     async def search(
         self,
@@ -172,35 +150,4 @@ class PublicCourseCatalogClient:
             payload["cursor"] = page + 1
         return payload
 
-    async def get_schedules(self, course_id: str, term: str) -> List[Dict[str, Any]]:
-        schedules = await self._request(
-            "getSchedule",
-            params={
-                "termId": term,
-                "courseId": course_id,
-            },
-        )
-
-        processed = [
-            {
-                "capacity": schedule.get("CAPACITY", ""),
-                "days": schedule.get("DAYS", ""),
-                "enr": schedule.get("ENR", 0),
-                "faculty": (schedule.get("FACULTY", "") or "").replace("<br>", "; "),
-                "final_exam": schedule.get("FINALEXAM", False),
-                "id": schedule.get("INSTANCEID", ""),
-                "room": schedule.get("ROOM", ""),
-                "st": schedule.get("ST", ""),
-                "times": schedule.get("TIMES", ""),
-            }
-            for schedule in schedules
-        ]
-
-        return self._merge_schedules(processed)
-
-    async def get_schedules_for_ids(self, course_ids: Iterable[str], term: str) -> Dict[str, List[Dict[str, Any]]]:
-        results: Dict[str, List[Dict[str, Any]]] = {}
-        for course_id in course_ids:
-            results[course_id] = await self.get_schedules(course_id, term)
-        return results
-
+ 

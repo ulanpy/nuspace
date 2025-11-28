@@ -1,4 +1,4 @@
-from backend.modules.courses.student_courses.service import StudentCourseService
+from backend.modules.courses.courses.service import StudentCourseService
 
 
 def test_normalize_course_code_trims_and_uppercases() -> None:

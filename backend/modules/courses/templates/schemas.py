@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import Query
 
 from backend.common.schemas import ShortUserResponse
-from backend.modules.courses.student_courses.schemas import BaseCourseItem
+from backend.modules.courses.courses.schemas import BaseCourseItem
 
 
 class BaseTemplateItem(BaseModel):
