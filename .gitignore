@@ -53,3 +53,7 @@ Thumbs.db
 
 **/.ruff_cache/
 **/.pytest_cache/
+
+# CapacitorJS build files
+frontend/ios
+frontend/android
