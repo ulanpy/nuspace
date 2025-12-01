@@ -153,6 +153,7 @@ async def auth_callback(
 
     if code_key:
         await redis.setex(code_key, 300, "used")
+
     await redis.delete(csrf_key)
     # Optional: validate return_to against a whitelist to prevent open redirects
     return redirect_response

@@ -49,6 +49,10 @@ class CourseSummary(BaseModel):
     title: str
     credits: str
     term: str
+    priority_1: Optional[str] = None
+    priority_2: Optional[str] = None
+    priority_3: Optional[str] = None
+    priority_4: Optional[str] = None
 
 
 class CourseSearchResponse(BaseModel):
@@ -59,8 +63,16 @@ class CourseSearchResponse(BaseModel):
 class CourseSearchRequest(BaseModel):
     course_code: str | None = None
     term: str
-    level: Optional[str] = None
     page: int = Field(default=1, ge=1)
 
 
-
+class CourseScheduleEntry(BaseModel):
+    section_code: str
+    days: str
+    times: str
+    room: Optional[str] = None
+    faculty: Optional[str] = None
+    capacity: Optional[int] = None
+    enrollment: Optional[int] = None
+    final_exam: bool = False
+    instance_id: Optional[str] = None

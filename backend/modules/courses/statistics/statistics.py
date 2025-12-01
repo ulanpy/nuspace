@@ -12,7 +12,7 @@ from backend.common.utils import meilisearch
 from backend.core.database.models.common_enums import EntityType
 
 
-router = APIRouter(tags=["Grade Statistics"])
+router = APIRouter(tags=["Course Statistics"])
 
 @router.get("/grades", response_model=schemas.ListGradeReportResponse)
 async def get_grades(

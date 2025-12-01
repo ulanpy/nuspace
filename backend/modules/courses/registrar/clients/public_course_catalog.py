@@ -22,7 +22,7 @@ class PublicCourseCatalogClient:
         *,
         verify_ssl: bool = False,
         timeout: float = 30.0,
-        limit: int = 10,
+        limit: int = 50,
     ) -> None:
         self.verify_ssl = verify_ssl
         self.timeout = timeout
@@ -94,12 +94,15 @@ class PublicCourseCatalogClient:
         page: int = 1,
     ) -> Dict[str, Any]:
 
+        query = (course_code or "").strip()
+        quick_search = query.upper()
+
         params: Dict[str, Any] = {
             "searchParams[formSimple]": "false",
             "searchParams[limit]": self._limit,
             "searchParams[page]": page,
             "searchParams[start]": 0,
-            "searchParams[quickSearch]": course_code if course_code else "",
+            "searchParams[quickSearch]": quick_search,
             "searchParams[sortField]": -1,
             "searchParams[sortDescending]": -1,
             "searchParams[semester]": term if term else "",
@@ -150,4 +153,23 @@ class PublicCourseCatalogClient:
             payload["cursor"] = page + 1
         return payload
 
- 
+    async def get_schedules(
+        self,
+        course_id: str,
+        term: str,
+    ) -> List[Dict[str, Any]]:
+        params: Dict[str, Any] = {
+            "courseId": course_id,
+            "termId": term,
+        }
+        result = await self._request("getSchedule", params=params)
+
+        if isinstance(result, list):
+            return result
+        if isinstance(result, dict):
+            for key in ("data", "schedule", "rows"):
+                value = result.get(key)
+                if isinstance(value, list):
+                    return value
+        return []
+
