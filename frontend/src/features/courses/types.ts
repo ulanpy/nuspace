@@ -269,3 +269,101 @@ export interface StudentScheduleResponse {
   last_synced_at: string | null;
   schedule: ScheduleResponse;
 }
+
+// ==== Planner / Schedule builder ====
+export interface PlannerSection {
+  id: number;
+  section_code: string;
+  days: string;
+  times: string;
+  room: string | null;
+  faculty: string | null;
+  capacity: number | null;
+  enrollment_snapshot: number | null;
+  final_exam: boolean;
+  is_selected: boolean;
+  selected_count: number;
+}
+
+export interface PlannerCourse {
+  id: number;
+  registrar_course_id: string;
+  course_code: string;
+  level?: string | null;
+  school?: string | null;
+  term_value?: string | null;
+  term_label?: string | null;
+  status: string;
+  capacity_total?: number | null;
+  sections: PlannerSection[];
+  pre_req?: string | null;
+  co_req?: string | null;
+  anti_req?: string | null;
+  priority_1?: string | null;
+  priority_2?: string | null;
+  priority_3?: string | null;
+  priority_4?: string | null;
+}
+
+export interface PlannerSchedule {
+  id: number;
+  title?: string | null;
+  notes?: string | null;
+  unavailable_blocks: Array<{
+    day: string;
+    start: string;
+    end: string;
+  }>;
+  courses: PlannerCourse[];
+}
+
+export type PlannerVariantResponse = PlannerSchedule;
+export type PlannerCourseResponse = PlannerCourse;
+export type PlannerSectionResponse = PlannerSection;
+
+export interface PlannerCourseAddPayload {
+  course_code: string;
+  term_value: string;
+  term_label?: string;
+}
+
+export interface PlannerCourseSearchResult {
+  registrar_id: string;
+  course_code: string;
+  pre_req: string;
+  anti_req: string;
+  co_req: string;
+  level: string;
+  school: string;
+  description?: string | null;
+  department: string;
+  title: string;
+  credits: string;
+  term: string;
+  priority_1?: string | null;
+  priority_2?: string | null;
+  priority_3?: string | null;
+  priority_4?: string | null;
+}
+
+export interface PlannerCourseSearchResponse {
+  items: PlannerCourseSearchResult[];
+  cursor?: number;
+}
+
+export interface PlannerSectionSelectionPayload {
+  section_ids: number[];
+}
+
+export interface PlannerAutoBuildResponse {
+  scheduled: Array<{
+    course_id: number;
+    registrar_course_id: string;
+    course_code: string;
+    selected_section_id: number | null;
+    selected_section_code: string | null;
+    selected_section_ids: number[];
+  }>;
+  unscheduled_courses: string[];
+  message: string;
+}

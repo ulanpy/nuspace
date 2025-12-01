@@ -2,14 +2,23 @@
 from fastapi import Depends, HTTPException, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import get_db_session
+from backend.common.dependencies import get_db_session, get_infra
+from backend.common.schemas import Infra
 from backend.core.database.models.grade_report import CourseItem, StudentCourse
+from backend.modules.courses.registrar.service import RegistrarService
+from backend.modules.courses.courses.repository import CourseRepository
 from backend.modules.courses.courses.service import StudentCourseService
+
 
 async def get_student_course_service(
     db_session: AsyncSession = Depends(get_db_session),
+    infra: Infra = Depends(get_infra),
 ) -> StudentCourseService:
-    return StudentCourseService(db_session=db_session)
+    repository = CourseRepository(db_session=db_session)
+    return StudentCourseService(
+        repository=repository,
+        registrar_service=RegistrarService(meilisearch_client=infra.meilisearch_client),
+    )
 
 async def course_item_exists_or_404(
     item_id: int = Path(..., description="The ID of the course item"),

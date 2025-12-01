@@ -1,6 +1,17 @@
+"""ORM models for grade reports, course progress, and planner data."""
+
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -8,6 +19,8 @@ from .base import Base
 
 
 class GradeReport(Base):
+    """Aggregated historical grade distribution for a course section."""
+
     __tablename__ = "grade_reports"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -39,6 +52,8 @@ class GradeReport(Base):
 
 
 class Course(Base):
+    """Canonical course catalog entry synced from the registrar."""
+
     __tablename__ = "courses"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -67,6 +82,8 @@ class Course(Base):
 
 
 class StudentSchedule(Base):
+    """Snapshot of an imported registrar schedule for a student/term."""
+
     __tablename__ = "student_schedules"
     __table_args__ = (
         UniqueConstraint("student_sub", "term_value", name="uq_student_schedule_student_term"),
@@ -88,6 +105,8 @@ class StudentSchedule(Base):
 
 
 class StudentCourse(Base):
+    """Join table connecting students to the courses they track for grades."""
+
     __tablename__ = "student_courses"
     __table_args__ = (
         UniqueConstraint("student_sub", "course_id", name="uq_student_courses_student_course_unique"),
@@ -147,6 +166,8 @@ class CourseItem(Base):
 
 
 class CourseTemplate(Base):
+    """Per-student grading template that can be reused across semesters."""
+
     __tablename__ = "course_templates"
     __table_args__ = (
         UniqueConstraint("course_id", "student_sub", name="uq_course_templates_course_student"),
@@ -179,6 +200,8 @@ class CourseTemplate(Base):
 
 
 class TemplateItem(Base):
+    """Individual grading component (e.g., midterm) within a template."""
+
     __tablename__ = "template_items"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -196,3 +219,97 @@ class TemplateItem(Base):
 
     # ORM relationships
     template = relationship("CourseTemplate", back_populates="items")
+
+
+class PlannerSchedule(Base):
+    """Student-authored planner schedule containing planned courses/sections."""
+
+    __tablename__ = "planner_schedules"
+    __table_args__ = (
+        UniqueConstraint(
+            "student_sub",
+            name="uq_planner_schedule_student",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    student_sub: Mapped[str] = mapped_column(
+        ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
+    )
+    title: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    notes: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    unavailable_blocks: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    courses = relationship(
+        "PlannerScheduleCourse",
+        back_populates="planner_schedule",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+
+class PlannerScheduleCourse(Base):
+    """Course placeholder that lives within a planner schedule."""
+
+    __tablename__ = "planner_schedule_courses"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    planner_schedule_id: Mapped[int] = mapped_column(
+        ForeignKey("planner_schedules.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    registrar_course_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    course_code: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    level: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    school: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    term_value: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    term_label: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
+    metadata_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    capacity_total: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    enrollment_total: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    planner_schedule = relationship("PlannerSchedule", back_populates="courses")
+    sections = relationship(
+        "PlannerScheduleSection",
+        back_populates="planner_course",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+
+class PlannerScheduleSection(Base):
+    """Detailed section entry (meeting info) under a planner course."""
+
+    __tablename__ = "planner_schedule_sections"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    planner_schedule_course_id: Mapped[int] = mapped_column(
+        ForeignKey("planner_schedule_courses.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    section_code: Mapped[str] = mapped_column(String(32), nullable=False)
+    days: Mapped[str] = mapped_column(String(32), nullable=False)
+    times: Mapped[str] = mapped_column(String(64), nullable=False)
+    room: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    faculty: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    capacity: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    enrollment_snapshot: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    final_exam: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_selected: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    meeting_hash: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    planner_course = relationship("PlannerScheduleCourse", back_populates="sections")
+

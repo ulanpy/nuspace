@@ -15,7 +15,7 @@ from backend.modules.courses.templates.dependencies import (
 )
 
 
-router = APIRouter(tags=["Grades Templates"])
+router = APIRouter(tags=["Course Templates"])
 
 
 @router.post("/templates", response_model=schemas.TemplateResponse)

@@ -10,6 +10,7 @@ from .campuscurrent.events import events
 from .campuscurrent.profile import profile
 from .google_bucket import google_bucket
 from .courses.courses import courses
+from .courses.planner import planner
 from .courses.statistics import statistics
 from .courses.templates import templates
 from .notification import notification
@@ -28,6 +29,7 @@ routers: List[APIRouter] = [
     google_bucket.router,
     web_router,
     courses.router,
+    planner.router,
     statistics.router,
     templates.router,
     notification.router,

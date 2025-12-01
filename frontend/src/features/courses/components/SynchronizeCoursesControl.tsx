@@ -86,7 +86,7 @@ export function SynchronizeCoursesControl({
 
   return (
     <>
-      <Button size="sm" onClick={handleOpen} className="gap-2">
+      <Button size="sm" onClick={handleOpen} className="rounded-full px-4 font-medium gap-2">
         <RefreshCcw className="h-4 w-4" />
         Sync
       </Button>

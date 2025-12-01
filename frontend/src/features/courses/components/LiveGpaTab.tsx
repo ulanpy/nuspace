@@ -5,7 +5,6 @@ import { ConfirmationModal } from "./ConfirmationModal";
 import { ScheduleDialog } from "./ScheduleDialog";
 import { SynchronizeCoursesControl } from "./SynchronizeCoursesControl";
 import type { LiveGpaViewModel } from "../hooks/useLiveGpaViewModel";
-import { ScheduleButton } from "./live-gpa/ScheduleButton";
 import { SummaryCards } from "./live-gpa/SummaryCards";
 import { RegisteredCourseList } from "./live-gpa/RegisteredCourseList";
 import { ShareTemplateModal } from "./live-gpa/ShareTemplateModal";
@@ -35,24 +34,22 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
 
   return (
     <div className="space-y-6">
-      <header className="mb-6">
-        <div className="mb-2 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">My Courses</h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Track your academic progress and manage your course schedule
-            </p>
-          </div>
-          {user && (
-            <SynchronizeCoursesControl onSync={syncCourses} userEmail={userEmail} />
-          )}
-        </div>
-      </header>
-
       {user && (
         <>
           <SummaryCards metrics={metrics} />
-          <ScheduleButton schedule={schedule} />
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <SynchronizeCoursesControl onSync={syncCourses} userEmail={userEmail} />
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full px-4 font-medium"
+              onClick={schedule.open}
+              disabled={schedule.loading}
+            >
+              {schedule.loading ? "Opening…" : "Open calendar"}
+            </Button>
+          </div>
         </>
       )}
 

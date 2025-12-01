@@ -18,17 +18,18 @@ from backend.modules.courses.courses import dependencies as deps
 from backend.modules.courses.courses import schemas
 from backend.modules.courses.courses.policy import CourseItemPolicy, StudentCoursePolicy
 from backend.modules.courses.courses.service import StudentCourseService
-from backend.modules.courses.registrar.service import RegistrarService
-from backend.modules.courses.registrar.dependencies import get_registrar_service
+from backend.modules.courses.courses.dependencies import get_student_course_service
+from backend.core.configs.config import config
 
-router = APIRouter(tags=["Courses"])
+
+router = APIRouter(tags=["Student Courses"])
+
 
 @router.post("/registered_courses/sync", response_model=schemas.RegistrarSyncResponse)
 async def sync_courses_from_registrar(
     data: schemas.RegistrarSyncRequest,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
-    registrar_service: RegistrarService = Depends(get_registrar_service),
+    service: StudentCourseService = Depends(get_student_course_service),
 ):
     """
     Syncs courses from the university registrar for the authenticated student.
@@ -51,13 +52,11 @@ async def sync_courses_from_registrar(
        - Creates StudentCourse registration if not already registered
     """
     student_sub = user[0].get("sub")
-    student_username = user[0].get("email").split("@")[0] #e.g. ulan.sharipov
-    service = StudentCourseService(db_session=db_session)
+    student_username = user[0].get("email").split("@")[0] if not config.IS_DEBUG else "ulan.sharipov"
     sync_result = await service.sync_courses_from_registrar(
         student_sub=student_sub,
         password=data.password,
         username=student_username,
-        registrar_service=registrar_service
     )
 
     return sync_result
@@ -66,7 +65,7 @@ async def sync_courses_from_registrar(
 @router.get("/registered_courses", response_model=List[schemas.RegisteredCourseResponse])
 async def get_registered_courses(
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
+    service: StudentCourseService = Depends(get_student_course_service),
 ):
     """
     Retrieves all courses registered by the authenticated student.
@@ -81,14 +80,13 @@ async def get_registered_courses(
     student_sub = user[0].get("sub")
     StudentCoursePolicy(user=user).check_read_list(student_sub=student_sub)
 
-    service = StudentCourseService(db_session=db_session)
     return await service.get_registered_courses(student_sub=student_sub)
 
 
 @router.get("/registered_courses/schedule", response_model=schemas.StudentScheduleResponse | None)
 async def get_registered_courses_schedule(
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
+    service: StudentCourseService = Depends(get_student_course_service),
 ):
     """
     Return the most recently synced registrar schedule for the authenticated user.
@@ -96,7 +94,6 @@ async def get_registered_courses_schedule(
     student_sub = user[0].get("sub")
     StudentCoursePolicy(user=user).check_read_list(student_sub=student_sub)
 
-    service = StudentCourseService(db_session=db_session)
     return await service.get_latest_schedule(student_sub=student_sub)
 
 
@@ -105,6 +102,7 @@ async def add_course_item(
     course_item_data: schemas.CourseItemCreate,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
+    service: StudentCourseService = Depends(get_student_course_service),
 ) -> schemas.BaseCourseItem:
     """
     Adds a new course item (assignment, exam, etc.) to a registered course.
@@ -125,7 +123,6 @@ async def add_course_item(
     CourseItemPolicy(user=user).check_create(student_course=student_course)
 
     student_sub = user[0].get("sub")
-    service = StudentCourseService(db_session=db_session)
     item = await service.add_course_item(
         course_item_data=course_item_data, student_sub=student_sub
     )
@@ -145,6 +142,7 @@ async def update_course_item(
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
     item: CourseItem = Depends(deps.course_item_exists_or_404),
+    service: StudentCourseService = Depends(get_student_course_service),
 ) -> schemas.BaseCourseItem:
     """
     Updates an existing course item.
@@ -168,7 +166,6 @@ async def update_course_item(
         student_course=student_course, item_data=item_update
     )
 
-    service = StudentCourseService(db_session=db_session)
     return await service.update_course_item(item=item, item_update=item_update)
 
 
@@ -177,6 +174,7 @@ async def delete_course_item(
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     db_session: AsyncSession = Depends(get_db_session),
     item: CourseItem = Depends(deps.course_item_exists_or_404),
+    service: StudentCourseService = Depends(get_student_course_service),
 ) -> None:
     """
     Deletes a specific course item.
@@ -196,7 +194,6 @@ async def delete_course_item(
         student_course_id=item.student_course_id, db_session=db_session
     )
     CourseItemPolicy(user=user).check_delete(student_course=student_course)
-    service = StudentCourseService(db_session=db_session)
     await service.delete_course_item(item=item)
     return
 
@@ -210,7 +207,7 @@ async def get_courses(
     keyword: str | None = Query(
         default=None, description="Search keyword for course code or course title"
     ),
-    db_session: AsyncSession = Depends(get_db_session),
+    service: StudentCourseService = Depends(get_student_course_service),
 ) -> schemas.ListBaseCourseResponse:
     """
     Retrieves a paginated list of all courses with optional filtering and search.
@@ -227,7 +224,6 @@ async def get_courses(
     **Returns:**
     - Paginated list of courses with total pages information
     """
-    service = StudentCourseService(db_session=db_session)
     return await service.get_courses(
         infra=infra, page=page, size=size, term=term, keyword=keyword
     )

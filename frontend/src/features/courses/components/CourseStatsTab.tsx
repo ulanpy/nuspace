@@ -47,10 +47,9 @@ export function CourseStatsTab() {
             </p>
           </div>
         )}
-        searchPlaceholder="Search courses, course codes, or faculty..."
+        searchPlaceholder="Search courses"
         usePreSearch={usePreSearchGrades}
         setSelectedCondition={() => {}}
-        title="Course Statistics"
         itemCountPlaceholder=""
       />
     </div>

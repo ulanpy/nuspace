@@ -2,20 +2,12 @@ from datetime import datetime
 import re
 from typing import List
 
-from sqlalchemy import case, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from backend.common.cruds import QueryBuilder
 from backend.common.schemas import Infra
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.grade_report import (
-    Course,
-    CourseItem,
-    StudentCourse,
-    StudentSchedule,
-)
+from backend.core.database.models.grade_report import Course, CourseItem, StudentCourse, StudentSchedule
 from backend.modules.courses.courses import schemas
+from backend.modules.courses.courses.repository import CourseRepository
 from backend.modules.courses.registrar.service import RegistrarService
 from backend.modules.courses.registrar.schemas import (
     CourseSearchRequest,
@@ -27,72 +19,42 @@ from backend.modules.courses.registrar.schemas import (
 
 
 class StudentCourseService:
-    def __init__(self, db_session: AsyncSession):
-        self.db_session = db_session
+    def __init__(
+        self,
+        repository: CourseRepository,
+        registrar_service: RegistrarService,
+    ):
+        self.repository = repository
+        self._registrar_service = registrar_service
 
+    async def get_registered_courses(
+        self, student_sub: str
+    ) -> List[schemas.RegisteredCourseResponse]:
+        """
+        Retrieve the registered courses for a student, including class averages.
 
-    async def get_registered_courses(self, student_sub: str) -> List[schemas.RegisteredCourseResponse]:
-        qb = QueryBuilder(session=self.db_session, model=StudentCourse)
-
-        registrations: List[StudentCourse] = await (
-            qb.base()
-            .filter(StudentCourse.student_sub == student_sub)
-            .eager(StudentCourse.course, StudentCourse.items)
-            .all()
-        )
-
-        course_ids = [reg.course_id for reg in registrations]
-
-        if not course_ids:
+        @param student_sub: The student's sub.
+        @return: A list of registered courses with class averages.
+        """
+        registered_courses: List[StudentCourse] = await self.repository.fetch_registered_courses(student_sub)
+        if not registered_courses:
             return []
 
-        student_scores_subquery = (
-            select(
-                StudentCourse.course_id,
-                func.sum(
-                    case(
-                        (
-                            func.coalesce(CourseItem.max_score, 0) != 0,
-                            func.coalesce(CourseItem.obtained_score, 0)
-                            / func.nullif(CourseItem.max_score, 0)
-                            * func.coalesce(CourseItem.total_weight_pct, 0),
-                        ),
-                        else_=0,
-                    )
-                ).label("student_total_score"),
-            )
-            .join(CourseItem, StudentCourse.id == CourseItem.student_course_id)
-            .where(
-                StudentCourse.course_id.in_(course_ids),
-                CourseItem.obtained_score.is_not(None),
-                CourseItem.max_score.is_not(None),
-                CourseItem.total_weight_pct.is_not(None),
-                CourseItem.max_score != 0,
-            )
-            .group_by(StudentCourse.course_id, StudentCourse.id)
-            .subquery()
+        class_averages: dict[int, float] = await self.repository.fetch_class_averages(
+            course_ids=[reg.course_id for reg in registered_courses]
         )
 
-        class_averages_query = select(
-            student_scores_subquery.c.course_id,
-            func.avg(student_scores_subquery.c.student_total_score).label("class_average"),
-        ).group_by(student_scores_subquery.c.course_id)
-
-        class_averages_result = await self.db_session.execute(class_averages_query)
-        class_averages_dict = {
-            row.course_id: float(row.class_average) if row.class_average is not None else None
-            for row in class_averages_result
-        }
-
-        result = []
-        for reg in registrations:
-            class_average = class_averages_dict.get(reg.course_id)
+        result: List[schemas.RegisteredCourseResponse] = []
+        for reg in registered_courses:
+            class_average = class_averages.get(reg.course_id)
             result.append(
                 schemas.RegisteredCourseResponse(
                     id=reg.id,
                     course=schemas.BaseCourseSchema.model_validate(reg.course),
                     items=[schemas.BaseCourseItem.model_validate(item) for item in reg.items],
-                    class_average=class_average,
+                    class_average=(
+                        float(class_average) if class_average is not None else None
+                    ),
                 )
             )
 
@@ -108,11 +70,17 @@ class StudentCourseService:
         term: str | None,
         keyword: str | None,
     ) -> schemas.ListBaseCourseResponse:
-        filters = []
-        if term:
-            filters.append(Course.term == term)
+        """
+        Retrieve a paginated list of courses.
 
-        course_ids = []
+        @param infra: The infrastructure configuration.
+        @param page: The page number.
+        @param size: The number of courses per page.
+        @param term: The term to filter courses by.
+        @param keyword: The keyword to search for courses by.
+        @return: A paginated list of courses.
+        """
+        course_ids: list[int] = []
         meili_result = None
         if keyword:
             meili_result = await meilisearch.get(
@@ -124,32 +92,19 @@ class StudentCourseService:
                 filters=None,
             )
             course_ids = [item["id"] for item in meili_result["hits"]]
-
             if not course_ids:
                 return schemas.ListBaseCourseResponse(courses=[], total_pages=1)
-            filters.append(Course.id.in_(course_ids))
-
-        qb = QueryBuilder(session=self.db_session, model=Course)
 
         if keyword and course_ids:
-            order_clause = case(
-                *[(Course.id == course_id, index) for index, course_id in enumerate(course_ids)],
-                else_=len(course_ids),
-            )
-            courses: List[Course] = await qb.base().filter(*filters).order(order_clause).all()
+            courses = await self.repository.fetch_courses_by_ids(course_ids, term=term)
+            count = meili_result.get("estimatedTotalHits", 0) if meili_result else len(courses)
         else:
-            courses: List[Course] = (
-                await qb.base()
-                .filter(*filters)
-                .paginate(size, page)
-                .order(Course.created_at.desc())
-                .all()
+            courses = await self.repository.fetch_courses_page(
+                term=term,
+                page=page,
+                size=size,
             )
-
-        if keyword and meili_result:
-            count = meili_result.get("estimatedTotalHits", 0)
-        else:
-            count: int = await qb.blank(model=Course).base(count=True).filter(*filters).count()
+            count = await self.repository.count_courses(term=term)
 
         total_pages: int = response_builder.calculate_pages(count=count, size=size)
 
@@ -162,36 +117,29 @@ class StudentCourseService:
     async def add_course_item(
         self, course_item_data: schemas.CourseItemCreate, student_sub: str
     ) -> CourseItem | None:
-        qb = QueryBuilder(session=self.db_session, model=StudentCourse)
-        student_course = (
-            await qb.base()
-            .filter(
-                StudentCourse.id == course_item_data.student_course_id,
-                StudentCourse.student_sub == student_sub,
-            )
-            .first()
-        )
+        """
+        Add a course item to a registered course.
 
+        @param course_item_data: The course item data.
+        @param student_sub: The student's sub.
+        @return: The added course item.
+        """
+        student_course: StudentCourse | None = await self.repository.fetch_student_course_for_owner(
+            student_course_id=course_item_data.student_course_id,
+            student_sub=student_sub,
+            )
         if not student_course:
             return None
-
-        item_qb = QueryBuilder(session=self.db_session, model=CourseItem)
-        item: CourseItem = await item_qb.add(data=course_item_data)
-        return item
+        course_item: CourseItem = await self.repository.add_course_item(course_item_data)
+        return course_item
 
     async def update_course_item(
         self, item: CourseItem, item_update: schemas.CourseItemUpdate
     ) -> CourseItem:
-        qb = QueryBuilder(session=self.db_session, model=CourseItem)
-        item = await qb.update(
-            instance=item,
-            update_data=item_update,
-        )
-        return item
+        return await self.repository.update_course_item(item=item, update_data=item_update)
 
     async def delete_course_item(self, item: CourseItem):
-        qb = QueryBuilder(session=self.db_session, model=CourseItem)
-        await qb.delete(target=item)
+        await self.repository.delete_course_item(item=item)
 
     def _determine_current_semester(self, semesters: List[dict], current_date: datetime) -> str | None:
         """
@@ -259,7 +207,6 @@ class StudentCourseService:
         course_code_aliases: List[str], 
         term_value: str,
         term_label: str,
-        registrar_service: RegistrarService
     ) -> Course | None:
         """
         Get course from database or fetch from registrar and create it.
@@ -283,13 +230,7 @@ class StudentCourseService:
             return None
 
         # First, try to find in local database (using term label)
-        select_qb = QueryBuilder(session=self.db_session, model=Course)
-        course = await (
-            select_qb.base()
-            .filter(Course.course_code.in_(alias_candidates), Course.term == term_label)
-            .first()
-        )
-
+        course = await self.repository.find_course_by_aliases(alias_candidates, term_label)
         if course:
             return course
 
@@ -298,10 +239,9 @@ class StudentCourseService:
             search_request = CourseSearchRequest(
                 course_code=alias,
                 term=term_value,
-                level=None,
                 page=1,
             )
-            search_response = await registrar_service.search_courses(search_request)
+            search_response = await self._registrar_service.search_courses(search_request)
 
             for item in search_response.items:
                 normalized_item_code = self._normalize_course_code(item.course_code)
@@ -336,16 +276,13 @@ class StudentCourseService:
             term=matching_course.term,  # Use term from registrar response
         )
         
-        insert_qb = QueryBuilder(session=self.db_session, model=Course)
-        course: Course | None = await insert_qb.add(data=course_data)
-        return course
+        return await self.repository.create_course(course_data)
 
     async def sync_courses_from_registrar(
         self, 
         student_sub: str, 
         password: str, 
         username: str,
-        registrar_service: RegistrarService
     ) -> schemas.RegistrarSyncResponse:
         """
         Sync courses from registrar for a student.
@@ -359,19 +296,18 @@ class StudentCourseService:
             student_sub: Student's subject identifier
             password: Student's registrar password
             username: Student's registrar username
-            registrar_service: Service to query registrar API
             
         Returns:
             RegistrarSyncResponse containing course list and sync statistics
         """
         # Get student's schedule from registrar
-        schedule_response: ScheduleResponse = await registrar_service.sync_schedule(
+        schedule_response: ScheduleResponse = await self._registrar_service.sync_schedule(
             username=username,
             password=password
         )
         
         # Get semesters to determine current term
-        semesters: list[SemesterOption] = await registrar_service.list_semesters()
+        semesters: list[SemesterOption] = await self._registrar_service.list_semesters()
         semesters_dict = [{"label": s.label, "value": s.value} for s in semesters]
         current_term_value = self._determine_current_semester(
             semesters=semesters_dict,
@@ -424,13 +360,7 @@ class StudentCourseService:
                     )
         
         # Get all existing student courses for this student
-        qb = QueryBuilder(session=self.db_session, model=StudentCourse)
-        existing_registrations = await (
-            qb.base()
-            .filter(StudentCourse.student_sub == student_sub)
-            .eager(StudentCourse.course, StudentCourse.items)
-            .all()
-        )
+        existing_registrations = await self.repository.fetch_registered_courses(student_sub)
         
         # Map existing courses: course_code -> (StudentCourse, Course)
         existing_courses_map = {}
@@ -461,7 +391,7 @@ class StudentCourseService:
         # Delete courses no longer in schedule
         for course_code in courses_to_delete:
             student_course, _ = existing_courses_map[course_code]
-            await qb.delete(target=student_course)
+            await self.repository.delete_student_course(student_course)
         
         # Add new courses from schedule
         added_courses = []
@@ -471,7 +401,6 @@ class StudentCourseService:
                 course_code_aliases=schedule_course_aliases.get(course_code, [course_code]),
                 term_value=current_term_value,
                 term_label=current_term_label,
-                registrar_service=registrar_service
             )
             
             if not course:
@@ -482,11 +411,7 @@ class StudentCourseService:
                 course_id=course.id,
                 student_sub=student_sub
             )
-            student_course = await qb.add(
-                data=registration_data,
-                preload=[StudentCourse.course]
-            )
-            
+            student_course = await self.repository.add_student_course(registration_data)
             added_courses.append(student_course)
         
         # Build response with all current courses
@@ -514,39 +439,18 @@ class StudentCourseService:
             )
         
         # Upsert schedule snapshot
-        schedule_qb = QueryBuilder(session=self.db_session, model=StudentSchedule)
-        existing_schedule = await (
-            schedule_qb.base()
-            .filter(
-                StudentSchedule.student_sub == student_sub,
-                StudentSchedule.term_value == current_term_value,
-            )
-            .first()
-        )
-
         schedule_entries = [
             [item.model_dump() for item in day]
             for day in schedule_response.data
         ]
         preferences = schedule_response.preferences.model_dump()
-
-        schedule_payload = schemas.StudentScheduleCreate(
+        await self.repository.upsert_schedule(
             student_sub=student_sub,
-            term_label=current_term_label,
             term_value=current_term_value,
+            term_label=current_term_label,
             schedule_data=schedule_entries,
             preferences=preferences,
         )
-
-        if existing_schedule:
-            update_data = schemas.StudentScheduleUpdate(
-                schedule_data=schedule_entries,
-                preferences=preferences,
-                last_synced_at=datetime.utcnow(),
-            )
-            await schedule_qb.update(instance=existing_schedule, update_data=update_data)
-        else:
-            await schedule_qb.add(data=schedule_payload)
 
         synced_at = datetime.utcnow()
 
@@ -566,22 +470,16 @@ class StudentCourseService:
         self,
         student_sub: str,
     ) -> schemas.StudentScheduleResponse | None:
-        qb = QueryBuilder(session=self.db_session, model=StudentSchedule)
-        schedule_record = await (
-            qb.base()
-            .filter(StudentSchedule.student_sub == student_sub)
-            .order(StudentSchedule.last_synced_at.desc())
-            .first()
-        )
+        schedule_record: StudentSchedule | None = await self.repository.get_latest_schedule(student_sub)
 
         if not schedule_record:
             return None
 
         # Ensure week structure is a list of 7 days
-        raw_week = schedule_record.schedule_data or []
-        normalized_week = []
+        raw_week: list[list[dict]] = schedule_record.schedule_data or []
+        normalized_week: list[list[UserScheduleItem] | None] = []
         for day in raw_week:
-            day_items = []
+            day_items: list[UserScheduleItem] = []
             if isinstance(day, list):
                 for item in day:
                     if isinstance(item, dict):
@@ -606,3 +504,4 @@ class StudentCourseService:
             last_synced_at=schedule_record.last_synced_at,
             schedule=schedule,
         )
+
