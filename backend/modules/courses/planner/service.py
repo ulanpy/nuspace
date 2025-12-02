@@ -36,6 +36,10 @@ from backend.core.database.models.grade_report import (
 
 logger = logging.getLogger(__name__)
 
+# Upper bounds to keep the combinatorial search from exploding memory usage.
+MAX_SECTION_COMBINATIONS = 200
+MAX_ASSIGNMENT_CANDIDATES = 32
+
 
 DAY_TO_INDEX = {"M": 0, "T": 1, "W": 2, "R": 3, "F": 4, "S": 5, "U": 6}
 TIME_PATTERN = re.compile(r"(?P<hour>\d{1,2}):(?P<minute>\d{2})\s*(?P<mod>[AP]M)", re.IGNORECASE)
@@ -499,9 +503,13 @@ class PlannerService:
         assignments: Dict[int, Tuple[int, ...]] = {}
         best_assignment_candidates: List[Dict[int, Tuple[int, ...]]] = []
         best_size = 0
+        total_courses = len(course_ids)
+        stop_search = False
 
         def backtrack(index: int) -> None:
-            nonlocal best_assignment_candidates, best_size
+            nonlocal best_assignment_candidates, best_size, stop_search
+            if stop_search:
+                return
             if index >= len(course_ids):
                 current_size = len(assignments)
                 if current_size == 0:
@@ -510,7 +518,17 @@ class PlannerService:
                     best_size = current_size
                     best_assignment_candidates = [assignments.copy()]
                 elif current_size == best_size:
-                    best_assignment_candidates.append(assignments.copy())
+                    candidate = assignments.copy()
+                    if len(best_assignment_candidates) < MAX_ASSIGNMENT_CANDIDATES:
+                        best_assignment_candidates.append(candidate)
+                    else:
+                        replace_idx = random.randrange(MAX_ASSIGNMENT_CANDIDATES)
+                        best_assignment_candidates[replace_idx] = candidate
+                if (
+                    best_size == total_courses
+                    and len(best_assignment_candidates) >= MAX_ASSIGNMENT_CANDIDATES
+                ):
+                    stop_search = True
                 return
 
             course_id = course_ids[index]
@@ -610,7 +628,9 @@ class PlannerService:
         return grouped
 
     def _build_section_combinations(
-        self, grouped: Dict[str, List[PlannerScheduleSection]]
+        self,
+        grouped: Dict[str, List[PlannerScheduleSection]],
+        limit: Optional[int] = MAX_SECTION_COMBINATIONS,
     ) -> List[List[PlannerScheduleSection]]:
         if not grouped:
             return []
@@ -620,14 +640,20 @@ class PlannerService:
         current: List[PlannerScheduleSection] = []
 
         def backtrack(idx: int) -> None:
+            if limit is not None and len(combos) >= limit:
+                return
             if idx >= len(ordered):
                 combos.append(list(current))
                 return
             _, sections = ordered[idx]
-            for section in sections:
+            shuffled_sections = list(sections)
+            random.shuffle(shuffled_sections)
+            for section in shuffled_sections:
                 current.append(section)
                 backtrack(idx + 1)
                 current.pop()
+                if limit is not None and len(combos) >= limit:
+                    break
 
         backtrack(0)
         random.shuffle(combos)
