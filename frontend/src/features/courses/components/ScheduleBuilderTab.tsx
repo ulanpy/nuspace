@@ -59,6 +59,30 @@ type CourseRequirementDetail = {
 const hasText = (value?: string | null) => Boolean(value && value.trim().length);
 const hasPriorityValues = (values: Array<string | null | undefined>) =>
   values.some((value) => hasText(value));
+const buildRequirementDetailsFromSearch = (
+  item: PlannerCourseSearchResult,
+): CourseRequirementDetail => ({
+  heading: item.course_code,
+  subheading: item.title,
+  preReq: item.pre_req,
+  coReq: item.co_req,
+  antiReq: item.anti_req,
+  priority_1: item.priority_1,
+  priority_2: item.priority_2,
+  priority_3: item.priority_3,
+  priority_4: item.priority_4,
+});
+const buildRequirementDetailsFromCourse = (course: PlannerCourse): CourseRequirementDetail => ({
+  heading: course.course_code,
+  subheading: course.term_label || course.term_value || course.school || "",
+  preReq: course.pre_req,
+  coReq: course.co_req,
+  antiReq: course.anti_req,
+  priority_1: course.priority_1,
+  priority_2: course.priority_2,
+  priority_3: course.priority_3,
+  priority_4: course.priority_4,
+});
 
 type RefreshArgs = number;
 type RemoveArgs = number;
@@ -316,6 +340,14 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
     );
   }, [planner]);
 
+  const handleShowRequirementsFromSearch = (result: PlannerCourseSearchResult) => {
+    setActiveRequirements(buildRequirementDetailsFromSearch(result));
+  };
+
+  const handleShowRequirementsForCourse = (course: PlannerCourse) => {
+    setActiveRequirements(buildRequirementDetailsFromCourse(course));
+  };
+
   // Check for time clashes
   const hasClash = useMemo(() => {
     if (selectedEvents.length < 2) return false;
@@ -475,19 +507,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
                             size="xs"
                             variant="link"
                             className="px-0 text-xs"
-                            onClick={() =>
-                              setActiveRequirements({
-                                heading: result.course_code,
-                                subheading: result.title,
-                                preReq: result.pre_req,
-                                coReq: result.co_req,
-                                antiReq: result.anti_req,
-                                priority_1: result.priority_1,
-                                priority_2: result.priority_2,
-                                priority_3: result.priority_3,
-                                priority_4: result.priority_4,
-                              })
-                            }
+                            onClick={() => handleShowRequirementsFromSearch(result)}
                           >
                             Priorities & requisites
                           </Button>
@@ -585,7 +605,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
                   onRefresh={refreshSectionsMutation}
                   onRemove={removeCourseMutation}
                   onSelect={setActiveCourseId}
-                  onShowMeta={(details) => setActiveRequirements(details)}
+                  onShowMeta={handleShowRequirementsForCourse}
                   isActive={course.id === activeCourseId}
                 />
               ))
@@ -662,7 +682,7 @@ const CourseCard = ({
   onRefresh: MutationRef<RefreshArgs>;
   onRemove: MutationRef<RemoveArgs>;
   onSelect: (courseId: number) => void;
-  onShowMeta: (details: CourseRequirementDetail) => void;
+  onShowMeta: (course: PlannerCourse) => void;
   isActive: boolean;
 }) => {
   const metaParts = [
@@ -710,20 +730,10 @@ const CourseCard = ({
               className="px-0 text-xs"
               onClick={(event) => {
                 event.stopPropagation();
-                onShowMeta({
-                  heading: course.course_code,
-                  subheading: course.term_label || course.term_value,
-                  preReq: course.pre_req,
-                  coReq: course.co_req,
-                  antiReq: course.anti_req,
-                  priority_1: course.priority_1,
-                  priority_2: course.priority_2,
-                  priority_3: course.priority_3,
-                  priority_4: course.priority_4,
-                });
+                onShowMeta(course);
               }}
             >
-              Requisites & priorities
+              Priorities & requisites
             </Button>
           )}
         </div>

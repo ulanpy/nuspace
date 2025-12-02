@@ -26,9 +26,11 @@ def iter_tables(pdf_bytes: bytes) -> Iterable[Sequence[Sequence[str | None]]]:
     """Yield all tables from every page inside the provided PDF bytes."""
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         for page in pdf.pages:
-            for table in page.extract_tables() or []:
+            tables = page.extract_tables() or []
+            for table in tables:
                 if table:
                     yield table
+            page.flush_cache()
 
 
 def parse_pdf(pdf_bytes: bytes) -> List[dict]:
@@ -39,9 +41,7 @@ def parse_pdf(pdf_bytes: bytes) -> List[dict]:
         return cells[index] if index < len(cells) else ""
 
     for table in iter_tables(pdf_bytes):
-        # Skip the header row that repeats on each page.
-        body = table[1:] if table else []
-        for raw_row in body:
+        for raw_row in table or []:
             cells = [clean_cell(cell) for cell in raw_row]
             if not any(cells):
                 continue

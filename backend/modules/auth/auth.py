@@ -2,6 +2,7 @@ import json
 import random
 import secrets
 from typing import Annotated
+from urllib.parse import urljoin, urlparse
 
 from aiogram import Bot
 from aiogram.utils.deep_linking import create_start_link
@@ -88,6 +89,27 @@ async def auth_callback(
     csrf_return_to = await redis.get(csrf_key)
     if csrf_return_to is None:
         raise HTTPException(status_code=400, detail="Invalid or expired state")
+    redirect_url = config.HOME_URL
+    if csrf_return_to:
+        try:
+            csrf_return_to_str = (
+                csrf_return_to.decode("utf-8")
+                if isinstance(csrf_return_to, (bytes, bytearray))
+                else str(csrf_return_to)
+            ).strip()
+        except UnicodeDecodeError:
+            csrf_return_to_str = ""
+
+        parsed_return_to = urlparse(csrf_return_to_str)
+        if (
+            csrf_return_to_str
+            and not parsed_return_to.scheme
+            and not parsed_return_to.netloc
+            and parsed_return_to.path.startswith("/")
+            and not parsed_return_to.path.startswith("//")
+        ):
+            # Only allow relative paths so attackers can't craft open redirects
+            redirect_url = urljoin(config.HOME_URL, csrf_return_to_str)
 
     code_key: str | None = None
     if code:
@@ -140,7 +162,7 @@ async def auth_callback(
         raise
 
     # Prepare base redirect and cookies
-    redirect_response = RedirectResponse(url=config.HOME_URL, status_code=303)
+    redirect_response = RedirectResponse(url=redirect_url, status_code=303)
     set_kc_auth_cookies(redirect_response, creds)
     redirect_response.set_cookie(
         key=config.COOKIE_APP_NAME,

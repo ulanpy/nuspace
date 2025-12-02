@@ -119,9 +119,7 @@ export const useUser = () => {
   }, []);
 
   const login = () => {
-    globalQueryEnabled = true;
     sessionStorage.removeItem(AUTH_FAILURE_KEY);
-    forceUpdate((prev: number) => prev + 1);
     loginMutation.mutate();
   };
   const logout = () => {
