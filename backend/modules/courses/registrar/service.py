@@ -184,11 +184,13 @@ class RegistrarService:
         if not course_code or not self.meilisearch_client:
             return None
 
+        keyword = course_code.strip()
+
         try:
             result = await meilisearch_utils.get(
                 client=self.meilisearch_client,
                 storage_name=self.priority_index_uid,
-                keyword=course_code,
+                keyword=keyword or course_code,
                 page=1,
                 size=5,
             )
@@ -203,10 +205,13 @@ class RegistrarService:
                 for hit in hits
                 if self.normalize_course_code(hit.get("abbr")) == normalized
             ),
-            hits[0] if hits else None,
+            None,
         )
 
         if not match:
+            logger.debug(
+                "Course priority record not found for %s (normalized=%s)", course_code, normalized
+            )
             return None
 
         return CoursePriorityRecord(

@@ -1,11 +1,14 @@
 import asyncio
+import json
 import logging
+import os
+import sys
+import tempfile
+from pathlib import Path
 from typing import Sequence
 
 import httpx
 from httpx import AsyncClient
-
-from backend.modules.courses.registrar.parsers.priority_parser import parse_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -77,13 +80,39 @@ async def sync_priority_requirements(
     meilisearch_client: AsyncClient, pdf_url: str = PRIORITY_PDF_URL
 ) -> int:
     """Download, parse, and upload registrar priorities into Meilisearch."""
-    pdf_bytes = await _download_priority_pdf(url=pdf_url)
-    loop = asyncio.get_running_loop()
-    documents = await loop.run_in_executor(None, parse_pdf, pdf_bytes)
-
+    documents = await _run_priority_parser_subprocess(pdf_url)
     await _recreate_priority_index(meilisearch_client, documents)
     logger.info("Synced %s registrar course priority entries", len(documents))
     return len(documents)
+
+
+async def _run_priority_parser_subprocess(pdf_url: str) -> Sequence[dict]:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
+        output_path = Path(tmp.name)
+
+    env = os.environ.copy()
+    env["PRIORITY_SYNC__PDF_URL"] = pdf_url
+    env["PRIORITY_SYNC__OUTPUT_PATH"] = str(output_path)
+
+    process = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "backend.modules.courses.registrar.priority_sync_worker",
+        env=env,
+    )
+    await process.wait()
+
+    if process.returncode != 0:
+        output_path.unlink(missing_ok=True)
+        raise RuntimeError(f"Priority sync worker exited with code {process.returncode}")
+
+    try:
+        with output_path.open("r", encoding="utf-8") as fp:
+            data = json.load(fp)
+    finally:
+        output_path.unlink(missing_ok=True)
+
+    return data
 
 
 class PriorityRequirementsRefresher:
