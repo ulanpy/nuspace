@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, Iterable, List, Optional, Sequence
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -73,27 +73,71 @@ class PlannerRepository:
     ) -> Dict[int, Dict[str, int]]:
         if not course_ids:
             return {}
-        stmt = (
+
+        # Fetch registrar identifiers so we can aggregate selections across
+        # every student's planner that references the same registrar course/term.
+        course_meta_stmt = (
             select(
-                PlannerScheduleSection.planner_schedule_course_id,
+                PlannerScheduleCourse.id,
+                PlannerScheduleCourse.registrar_course_id,
+                PlannerScheduleCourse.term_value,
+            )
+            .where(PlannerScheduleCourse.id.in_(course_ids))
+        )
+        result = await self.session.execute(course_meta_stmt)
+        course_meta = {
+            course_id: (registrar_course_id, term_value)
+            for course_id, registrar_course_id, term_value in result.all()
+        }
+        if not course_meta:
+            return {}
+
+        # Build OR conditions to support NULL term values.
+        course_filters = []
+        for registrar_course_id, term_value in set(course_meta.values()):
+            base_condition = PlannerScheduleCourse.registrar_course_id == registrar_course_id
+            if term_value is None:
+                course_filters.append(and_(base_condition, PlannerScheduleCourse.term_value.is_(None)))
+            else:
+                course_filters.append(and_(base_condition, PlannerScheduleCourse.term_value == term_value))
+
+        if not course_filters:
+            return {}
+
+        selection_stmt = (
+            select(
+                PlannerScheduleCourse.registrar_course_id,
+                PlannerScheduleCourse.term_value,
                 PlannerScheduleSection.section_code,
                 func.count().label("total"),
             )
+            .select_from(PlannerScheduleSection)
+            .join(
+                PlannerScheduleCourse,
+                PlannerScheduleSection.planner_schedule_course_id == PlannerScheduleCourse.id,
+            )
             .where(
-                PlannerScheduleSection.planner_schedule_course_id.in_(course_ids),
                 PlannerScheduleSection.is_selected.is_(True),
+                or_(*course_filters),
             )
             .group_by(
-                PlannerScheduleSection.planner_schedule_course_id,
+                PlannerScheduleCourse.registrar_course_id,
+                PlannerScheduleCourse.term_value,
                 PlannerScheduleSection.section_code,
             )
         )
-        result = await self.session.execute(stmt)
-        counts: Dict[int, Dict[str, int]] = {}
-        for course_id, section_code, total in result.all():
-            course_counts = counts.setdefault(course_id, {})
+        selection_result = await self.session.execute(selection_stmt)
+
+        aggregated_counts: Dict[tuple[str, Optional[str]], Dict[str, int]] = {}
+        for registrar_course_id, term_value, section_code, total in selection_result.all():
+            key = (registrar_course_id, term_value)
+            course_counts = aggregated_counts.setdefault(key, {})
             course_counts[section_code] = int(total)
-        return counts
+
+        response: Dict[int, Dict[str, int]] = {}
+        for course_id, key in course_meta.items():
+            response[course_id] = aggregated_counts.get(key, {})
+        return response
 
     async def add_course_to_planner_schedule(
         self,
