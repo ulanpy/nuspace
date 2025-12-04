@@ -280,7 +280,6 @@ export interface PlannerSection {
   faculty: string | null;
   capacity: number | null;
   enrollment_snapshot: number | null;
-  final_exam: boolean;
   is_selected: boolean;
   selected_count: number;
 }
@@ -293,7 +292,6 @@ export interface PlannerCourse {
   school?: string | null;
   term_value?: string | null;
   term_label?: string | null;
-  status: string;
   capacity_total?: number | null;
   sections: PlannerSection[];
   pre_req?: string | null;
@@ -307,13 +305,6 @@ export interface PlannerCourse {
 
 export interface PlannerSchedule {
   id: number;
-  title?: string | null;
-  notes?: string | null;
-  unavailable_blocks: Array<{
-    day: string;
-    start: string;
-    end: string;
-  }>;
   courses: PlannerCourse[];
 }
 

@@ -22,9 +22,6 @@ from backend.modules.courses.registrar.clients.public_course_catalog import (
 from backend.modules.courses.registrar.priority_sync import PRIORITY_INDEX_UID
 
 
-logger = logging.getLogger(__name__)
-
-
 @dataclass
 class CoursePriorityRecord:
     prerequisite: str | None = None
@@ -144,7 +141,6 @@ class RegistrarService:
                     faculty=(section.get("FACULTY") or "").replace("<br>", "; ").strip() or None,
                     capacity=capacity,
                     enrollment=enrollment,
-                    final_exam=bool(section.get("FINALEXAM", False)),
                     instance_id=section.get("INSTANCEID"),
                 )
             )
@@ -195,7 +191,6 @@ class RegistrarService:
                 size=5,
             )
         except Exception as exc:
-            logger.warning("Failed to fetch priority info for %s: %s", course_code, exc)
             return None
 
         hits = result.get("hits", [])
@@ -209,9 +204,6 @@ class RegistrarService:
         )
 
         if not match:
-            logger.debug(
-                "Course priority record not found for %s (normalized=%s)", course_code, normalized
-            )
             return None
 
         return CoursePriorityRecord(

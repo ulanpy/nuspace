@@ -236,9 +236,6 @@ class PlannerSchedule(Base):
     student_sub: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
     )
-    title: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    notes: Mapped[str | None] = mapped_column(String(512), nullable=True)
-    unavailable_blocks: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
@@ -267,7 +264,6 @@ class PlannerScheduleCourse(Base):
     school: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     term_value: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
     term_label: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
-    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
     metadata_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     capacity_total: Mapped[int | None] = mapped_column(Integer, nullable=True)
     enrollment_total: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -303,9 +299,7 @@ class PlannerScheduleSection(Base):
     faculty: Mapped[str | None] = mapped_column(String(256), nullable=True)
     capacity: Mapped[int | None] = mapped_column(Integer, nullable=True)
     enrollment_snapshot: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    final_exam: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_selected: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    meeting_hash: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
