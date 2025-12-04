@@ -38,15 +38,9 @@ class PlannerRepository:
         self,
         *,
         student_sub: str,
-        title: Optional[str],
-        notes: Optional[str],
-        unavailable_blocks: list,
     ) -> PlannerSchedule:
         schedule = PlannerSchedule(
             student_sub=student_sub,
-            title=title,
-            notes=notes,
-            unavailable_blocks=unavailable_blocks,
         )
         self.session.add(schedule)
         await self.session.flush()
@@ -149,7 +143,6 @@ class PlannerRepository:
         school: Optional[str],
         term_value: Optional[str],
         term_label: Optional[str],
-        status: str = "draft",
     ) -> PlannerScheduleCourse:
         course = PlannerScheduleCourse(
             planner_schedule_id=schedule_id,
@@ -159,7 +152,6 @@ class PlannerRepository:
             school=school,
             term_value=term_value,
             term_label=term_label,
-            status=status,
         )
         self.session.add(course)
         await self.session.flush()
@@ -213,9 +205,7 @@ class PlannerRepository:
                     faculty=payload.get("faculty"),
                     capacity=payload.get("capacity"),
                     enrollment_snapshot=payload.get("enrollment"),
-                    final_exam=payload.get("final_exam", False),
                     is_selected=prev.is_selected if prev else False,
-                    meeting_hash=payload.get("meeting_hash") or payload.get("instance_id"),
                 )
             )
         self.session.add_all(new_sections)

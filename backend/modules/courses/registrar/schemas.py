@@ -74,5 +74,4 @@ class CourseScheduleEntry(BaseModel):
     faculty: Optional[str] = None
     capacity: Optional[int] = None
     enrollment: Optional[int] = None
-    final_exam: bool = False
     instance_id: Optional[str] = None

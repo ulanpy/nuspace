@@ -2,20 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, validator
-
-
-class UnavailableBlock(BaseModel):
-    day: str = Field(pattern=r"^[MTWRFSU]$", description="Single-letter day code (e.g., M, T, R)")
-    start: str = Field(pattern=r"^\d{2}:\d{2}$", description="24h start time, e.g., 09:00")
-    end: str = Field(pattern=r"^\d{2}:\d{2}$", description="24h end time, e.g., 11:00")
-
-    @validator("end")
-    def validate_range(cls, v: str, values: dict) -> str:
-        start = values.get("start")
-        if start and v <= start:
-            raise ValueError("end must be after start")
-        return v
+from pydantic import BaseModel, Field
 
 
 class PlannerCourseAddRequest(BaseModel):
@@ -34,7 +21,6 @@ class PlannerSectionResponse(BaseModel):
     faculty: Optional[str] = None
     capacity: Optional[int] = None
     enrollment_snapshot: Optional[int] = None
-    final_exam: bool
     is_selected: bool
     selected_count: int
 
@@ -47,7 +33,6 @@ class PlannerCourseResponse(BaseModel):
     school: Optional[str]
     term_value: Optional[str]
     term_label: Optional[str]
-    status: str
     capacity_total: Optional[int]
     sections: List[PlannerSectionResponse]
     pre_req: Optional[str] = None
@@ -61,9 +46,6 @@ class PlannerCourseResponse(BaseModel):
 
 class PlannerScheduleResponse(BaseModel):
     id: int
-    title: Optional[str]
-    notes: Optional[str]
-    unavailable_blocks: List[UnavailableBlock]
     courses: List[PlannerCourseResponse]
 
 
