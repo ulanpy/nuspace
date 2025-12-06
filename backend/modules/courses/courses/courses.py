@@ -20,7 +20,7 @@ from backend.modules.courses.courses.policy import CourseItemPolicy, StudentCour
 from backend.modules.courses.courses.service import StudentCourseService
 from backend.modules.courses.courses.dependencies import get_student_course_service
 from backend.core.configs.config import config
-
+from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
 
 router = APIRouter(tags=["Student Courses"])
 
@@ -51,15 +51,27 @@ async def sync_courses_from_registrar(
        - If not, fetches course details from registrar and creates it
        - Creates StudentCourse registration if not already registered
     """
-    student_sub = user[0].get("sub")
-    student_username = user[0].get("email").split("@")[0] if not config.IS_DEBUG else "bauyrzhan.kizatov"
-    sync_result = await service.sync_courses_from_registrar(
-        student_sub=student_sub,
-        password=data.password,
-        username=student_username,
-    )
+    try:
+        student_sub = user[0].get("sub")
+        student_username = user[0].get("email").split("@")[0] if not config.IS_DEBUG else "ulan.sharipov"
+        sync_result = await service.sync_courses_from_registrar(
+            student_sub=student_sub,
+            password=data.password,
+            username=student_username,
+        )
+        return sync_result
 
-    return sync_result
+    except CourseLookupError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    except SemesterResolutionError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+    except ValueError as e:
+        # Registrar login failures bubble up as ValueError
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+    
 
 
 @router.get("/registered_courses", response_model=List[schemas.RegisteredCourseResponse])
