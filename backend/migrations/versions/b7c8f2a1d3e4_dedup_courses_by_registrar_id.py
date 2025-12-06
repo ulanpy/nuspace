@@ -41,6 +41,22 @@ def upgrade() -> None:
         if not duplicate_ids:
             continue
 
+        # Remove student_course rows that would violate (student_sub, course_id) uniqueness
+        conn.execute(
+            text(
+                """
+                DELETE FROM student_courses sc
+                WHERE sc.course_id = ANY(:duplicate_ids)
+                  AND EXISTS (
+                      SELECT 1 FROM student_courses sc2
+                      WHERE sc2.student_sub = sc.student_sub
+                        AND sc2.course_id = :canonical_id
+                  )
+                """
+            ),
+            {"canonical_id": canonical_id, "duplicate_ids": duplicate_ids},
+        )
+
         # Repoint foreign keys in referencing tables.
         conn.execute(
             text(
