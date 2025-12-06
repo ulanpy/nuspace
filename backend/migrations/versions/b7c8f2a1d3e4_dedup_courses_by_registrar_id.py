@@ -57,6 +57,26 @@ def upgrade() -> None:
             {"canonical_id": canonical_id, "duplicate_ids": duplicate_ids},
         )
 
+        # For remaining duplicate course refs per student_sub, keep one and drop extras
+        conn.execute(
+            text(
+                """
+                DELETE FROM student_courses sc
+                USING (
+                    SELECT student_sub, MIN(id) AS keep_id
+                    FROM student_courses
+                    WHERE course_id = ANY(:duplicate_ids)
+                    GROUP BY student_sub
+                    HAVING COUNT(*) > 1
+                ) dupe
+                WHERE sc.course_id = ANY(:duplicate_ids)
+                  AND sc.student_sub = dupe.student_sub
+                  AND sc.id <> dupe.keep_id
+                """
+            ),
+            {"duplicate_ids": duplicate_ids},
+        )
+
         # Repoint foreign keys in referencing tables (only where it won't violate the unique constraint)
         conn.execute(
             text(
