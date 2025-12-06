@@ -2,13 +2,12 @@ from datetime import datetime, timezone
 import re
 from typing import List
 
-from fastapi import HTTPException, status
-
 from backend.common.schemas import Infra
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.grade_report import Course, CourseItem, StudentCourse, StudentSchedule
 from backend.modules.courses.courses import schemas
+from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
 from backend.modules.courses.courses.repository import CourseRepository
 from backend.modules.courses.registrar.service import RegistrarService
 from backend.modules.courses.registrar.schemas import (
@@ -242,34 +241,53 @@ class StudentCourseService:
             return None
 
         matching_course = None
-        search_request = CourseSearchRequest(
-            course_code=course_code,
-            term=term_value,
-            page=1,
-        )
-        search_response = await self._registrar_service.search_courses(search_request)
+        candidates = [course_code]
+        if "/" in course_code:
+            parts = [p.strip() for p in course_code.split("/") if p.strip()]
+            if len(parts) == 2:
+                reversed_code = "/".join(reversed(parts))
+                if reversed_code not in candidates:
+                    candidates.append(reversed_code)
+            for part in parts:
+                if part and part not in candidates:
+                    candidates.append(part)
 
-        for item in search_response.items:
-            normalized_item_code = self._normalize_course_code(item.course_code)
-            if normalized_item_code == course_code:
-                matching_course = item
-                break
-
-        if not matching_course and fallback_term_value:
-            fallback_request = CourseSearchRequest(
-                course_code=course_code,
-                term=fallback_term_value,
+        # try primary term
+        for candidate in candidates:
+            search_request = CourseSearchRequest(
+                course_code=candidate,
+                term=term_value,
                 page=1,
             )
-            fallback_response = await self._registrar_service.search_courses(fallback_request)
-            for item in fallback_response.items:
+            search_response = await self._registrar_service.search_courses(search_request)
+
+            for item in search_response.items:
                 normalized_item_code = self._normalize_course_code(item.course_code)
-                if normalized_item_code == course_code:
+                if normalized_item_code == candidate:
                     matching_course = item
+                    break
+            if matching_course:
+                break
+
+        # fallback term if needed
+        if not matching_course and fallback_term_value:
+            for candidate in candidates:
+                fallback_request = CourseSearchRequest(
+                    course_code=candidate,
+                    term=fallback_term_value,
+                    page=1,
+                )
+                fallback_response = await self._registrar_service.search_courses(fallback_request)
+                for item in fallback_response.items:
+                    normalized_item_code = self._normalize_course_code(item.course_code)
+                    if normalized_item_code == candidate:
+                        matching_course = item
+                        break
+                if matching_course:
                     break
 
         if not matching_course:
-            return None
+            raise CourseLookupError(f"Course not found in registrar for term {term_value}")
 
         # Insert course into database (using term label from response)
         try:
@@ -334,20 +352,15 @@ class StudentCourseService:
         )
         
         if current_term_value is None:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Unable to determine current registrar semester.",
-            )
+            raise SemesterResolutionError("Unable to determine current registrar semester.")
         
         # Get current term label
         current_term_label = next((sem.label for sem in semesters if sem.value == current_term_value), None)
         if current_term_label is None:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Unable to resolve current registrar semester label.",
-            )
+            raise SemesterResolutionError("Unable to resolve current registrar semester label.")
         
-        # Extract unique course codes from schedule
+        # Extract unique course codes from schedule (store only normalized full codes;
+        # matching against existing registrations handles cross-list variants)
         schedule_codes: set[str] = set()
         for day_schedule in schedule_response.data:
             for item in day_schedule:
@@ -365,7 +378,19 @@ class StudentCourseService:
             normalized_code = self._normalize_course_code(reg.course.course_code)
             if not normalized_code:
                 continue
-            existing_courses_map[normalized_code] = (reg, reg.course)
+            if normalized_code not in existing_courses_map:
+                existing_courses_map[normalized_code] = (reg, reg.course)
+
+            # also map reversed and parts to avoid duplicate inserts for cross-listed codes
+            if "/" in normalized_code:
+                parts = [p.strip() for p in normalized_code.split("/") if p.strip()]
+                if len(parts) == 2:
+                    reversed_code = "/".join(reversed(parts))
+                    if reversed_code not in existing_courses_map:
+                        existing_courses_map[reversed_code] = (reg, reg.course)
+                for part in parts:
+                    if part and part not in existing_courses_map:
+                        existing_courses_map[part] = (reg, reg.course)
         
         # Determine which courses to add and which to keep/delete
         matched_existing_codes: set[str] = set()
