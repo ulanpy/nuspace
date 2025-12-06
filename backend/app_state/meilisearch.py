@@ -127,14 +127,15 @@ async def setup_meilisearch(app: FastAPI):
             )
 
     # Initialize registrar course priority index and refresher
-    app.state.course_priority_refresher = PriorityRequirementsRefresher(
-        app.state.meilisearch_client
-    )
-    try:
-        await sync_priority_requirements(app.state.meilisearch_client)
-    except Exception as exc:
-        print(f"Error syncing registrar course priorities: {exc}")
-    app.state.course_priority_refresher.start()
+    if not config.IS_DEBUG:
+        app.state.course_priority_refresher = PriorityRequirementsRefresher(
+            app.state.meilisearch_client
+        )
+        try:
+            await sync_priority_requirements(app.state.meilisearch_client)
+        except Exception as exc:
+            print(f"Error syncing registrar course priorities: {exc}")
+        app.state.course_priority_refresher.start()
 
 
 async def cleanup_meilisearch(app: FastAPI):
