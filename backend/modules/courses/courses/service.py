@@ -1,6 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 from typing import List
+
+from fastapi import HTTPException, status
 
 from backend.common.schemas import Infra
 from backend.common.utils import meilisearch, response_builder
@@ -141,7 +143,7 @@ class StudentCourseService:
     async def delete_course_item(self, item: CourseItem):
         await self.repository.delete_course_item(item=item)
 
-    def _determine_current_semester(self, semesters: List[dict], current_date: datetime) -> str | None:
+    def _determine_current_semester(self, semesters: List[SemesterOption], current_date: datetime) -> str | None:
         """
         Determine current semester based on current date.
         Mapping:
@@ -166,91 +168,105 @@ class StudentCourseService:
         # Find matching semester
         target_label = f"{season} {year}"
         for semester in semesters:
-            if semester["label"] == target_label:
-                return semester["value"]
+            if semester.label == target_label:
+                return semester.value
         
         return None
 
     @staticmethod
     def _normalize_course_code(course_code: str | None) -> str:
+        """
+        Normalize course codes by:
+        - collapsing whitespace
+        - uppercasing
+        - trimming leading/trailing slashes
+        - converting “A / B” to “A/B”
+        - collapsing multiple slashes to a single slash
+
+        Examples:
+        - collapse whitespace: "  phys   161 "       -> "PHYS 161"
+        - uppercase: "phys 161"                       -> "PHYS 161"
+        - trim slashes: "/PHYS 161/"                  -> "PHYS 161"
+        - normalize spaced slash: "MATH / 161"        -> "MATH/161"
+        - ensure space before number: "WCS260"        -> "WCS 260"
+        - cross-list spacing: "WCS260/WLL235"         -> "WCS 260/WLL 235"
+        - collapse double slash: "COMP 101//102"      -> "COMP 101/102"
+        """
         if not course_code:
             return ""
         normalized = re.sub(r"\s+", " ", course_code).strip().upper()
         normalized = re.sub(r"\s*/\s*", "/", normalized)
         normalized = re.sub(r"/{2,}", "/", normalized)
         normalized = normalized.strip("/")
-        return normalized
 
-    @classmethod
-    def _expand_course_code_aliases(cls, course_code: str | None) -> list[str]:
-        normalized = cls._normalize_course_code(course_code)
-        if not normalized:
-            return []
-        aliases = [normalized]
-        if "/" in normalized:
-            parts = [
-                cls._normalize_course_code(part)
-                for part in normalized.split("/")
-                if cls._normalize_course_code(part)
-            ]
-            if len(parts) >= 2:
-                reversed_code = "/".join(reversed(parts))
-                if reversed_code and reversed_code not in aliases:
-                    aliases.append(reversed_code)
-            for part in parts:
-                if part not in aliases:
-                    aliases.append(part)
-        return aliases
+        # Ensure a space between subject and catalog number in each segment
+        parts: list[str] = []
+        for part in normalized.split("/"):
+            part = part.strip()
+            part = re.sub(r"^([A-Z]+)\s*([0-9].*)$", r"\1 \2", part)
+            parts.append(part)
+
+        return "/".join(parts)
+
+    def _resolve_fallback_term_value(
+        self,
+        semesters: List[SemesterOption],
+        current_term_value: str,
+    ) -> str | None:
+        """Return the next available older term_value, if any."""
+        term_values = [sem.value for sem in semesters]
+        try:
+            idx = term_values.index(current_term_value)
+        except ValueError:
+            return None
+        return term_values[idx + 1] if idx + 1 < len(term_values) else None
 
     async def _get_or_create_course(
-        self, 
-        course_code_aliases: List[str], 
+        self,
+        course_code: str,
         term_value: str,
-        term_label: str,
+        fallback_term_value: str | None = None,
     ) -> Course | None:
         """
         Get course from database or fetch from registrar and create it.
         
         Args:
-            course_code: Course code like "PHYS 161"
+            course_code: Normalized course code like "PHYS 161"
             term_value: Term value like "822" (used for registrar API)
-            term_label: Term label like "Fall 2025" (stored in database)
             registrar_service: Service to query registrar API
             
         Returns:
             Course object or None if not found
         """
-        alias_candidates: List[str] = []
-        for alias in course_code_aliases:
-            normalized = self._normalize_course_code(alias)
-            if normalized and normalized not in alias_candidates:
-                alias_candidates.append(normalized)
-
-        if not alias_candidates:
+        if not course_code:
             return None
 
-        # First, try to find in local database (using term label)
-        course = await self.repository.find_course_by_aliases(alias_candidates, term_label)
-        if course:
-            return course
-
         matching_course = None
-        for alias in alias_candidates:
-            search_request = CourseSearchRequest(
-                course_code=alias,
-                term=term_value,
+        search_request = CourseSearchRequest(
+            course_code=course_code,
+            term=term_value,
+            page=1,
+        )
+        search_response = await self._registrar_service.search_courses(search_request)
+
+        for item in search_response.items:
+            normalized_item_code = self._normalize_course_code(item.course_code)
+            if normalized_item_code == course_code:
+                matching_course = item
+                break
+
+        if not matching_course and fallback_term_value:
+            fallback_request = CourseSearchRequest(
+                course_code=course_code,
+                term=fallback_term_value,
                 page=1,
             )
-            search_response = await self._registrar_service.search_courses(search_request)
-
-            for item in search_response.items:
+            fallback_response = await self._registrar_service.search_courses(fallback_request)
+            for item in fallback_response.items:
                 normalized_item_code = self._normalize_course_code(item.course_code)
-                if normalized_item_code == alias:
+                if normalized_item_code == course_code:
                     matching_course = item
                     break
-
-            if matching_course:
-                break
 
         if not matching_course:
             return None
@@ -260,6 +276,10 @@ class StudentCourseService:
             registrar_id = int(matching_course.registrar_id)
         except (ValueError, TypeError):
             return None
+
+        existing_by_registrar: Course | None = await self.repository.find_course_by_registrar_id(registrar_id)
+        if existing_by_registrar:
+            return existing_by_registrar
             
         course_data = schemas.CourseCreate(
             registrar_id=registrar_id,
@@ -308,56 +328,33 @@ class StudentCourseService:
         
         # Get semesters to determine current term
         semesters: list[SemesterOption] = await self._registrar_service.list_semesters()
-        semesters_dict = [{"label": s.label, "value": s.value} for s in semesters]
         current_term_value = self._determine_current_semester(
-            semesters=semesters_dict,
+            semesters=semesters,
             current_date=datetime.now()
         )
         
-        if not current_term_value:
-            return schemas.RegistrarSyncResponse(
-                synced_courses=[],
-                total_synced=0,
-                added_count=0,
-                deleted_count=0,
-                kept_count=0,
-                schedule=None,
-                term_label=None,
-                term_value=None,
-                last_synced_at=None,
+        if current_term_value is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to determine current registrar semester.",
             )
         
         # Get current term label
-        current_term_label = None
-        for sem in semesters_dict:
-            if sem["value"] == current_term_value:
-                current_term_label = sem["label"]
-                break
-        
-        if not current_term_label:
-            return schemas.RegistrarSyncResponse(
-                synced_courses=[],
-                total_synced=0,
-                added_count=0,
-                deleted_count=0,
-                kept_count=0,
-                schedule=None,
-                term_label=None,
-                term_value=None,
-                last_synced_at=None,
+        current_term_label = next((sem.label for sem in semesters if sem.value == current_term_value), None)
+        if current_term_label is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to resolve current registrar semester label.",
             )
         
-        # Extract unique course codes from schedule (with alias support)
-        schedule_course_aliases: dict[str, list[str]] = {}
+        # Extract unique course codes from schedule
+        schedule_codes: set[str] = set()
         for day_schedule in schedule_response.data:
             for item in day_schedule:
                 normalized_code = self._normalize_course_code(item.course_code)
                 if not normalized_code:
                     continue
-                if normalized_code not in schedule_course_aliases:
-                    schedule_course_aliases[normalized_code] = self._expand_course_code_aliases(
-                        item.course_code
-                    )
+                schedule_codes.add(normalized_code)
         
         # Get all existing student courses for this student
         existing_registrations = await self.repository.fetch_registered_courses(student_sub)
@@ -375,19 +372,17 @@ class StudentCourseService:
         courses_to_add: list[str] = []
         courses_to_keep: list[str] = []
 
-        for schedule_code, aliases in schedule_course_aliases.items():
-            matched_alias = next(
-                (alias for alias in aliases if alias in existing_courses_map),
-                None,
-            )
-            if matched_alias:
-                courses_to_keep.append(matched_alias)
-                matched_existing_codes.add(matched_alias)
+        for schedule_code in schedule_codes:
+            if schedule_code in existing_courses_map:
+                courses_to_keep.append(schedule_code)
+                matched_existing_codes.add(schedule_code)
             else:
                 courses_to_add.append(schedule_code)
 
         courses_to_delete = set(existing_courses_map.keys()) - matched_existing_codes
         
+        fallback_term_value = self._resolve_fallback_term_value(semesters, current_term_value)
+
         # Delete courses no longer in schedule
         for course_code in courses_to_delete:
             student_course, _ = existing_courses_map[course_code]
@@ -398,9 +393,9 @@ class StudentCourseService:
         for course_code in courses_to_add:
             # Get or create course
             course = await self._get_or_create_course(
-                course_code_aliases=schedule_course_aliases.get(course_code, [course_code]),
+                course_code=course_code,
                 term_value=current_term_value,
-                term_label=current_term_label,
+                fallback_term_value=fallback_term_value,
             )
             
             if not course:
@@ -452,7 +447,7 @@ class StudentCourseService:
             preferences=preferences,
         )
 
-        synced_at = datetime.utcnow()
+        synced_at = datetime.now(timezone.utc)
 
         return schemas.RegistrarSyncResponse(
             synced_courses=all_current_courses,
@@ -475,23 +470,10 @@ class StudentCourseService:
         if not schedule_record:
             return None
 
-        # Ensure week structure is a list of 7 days
-        raw_week: list[list[dict]] = schedule_record.schedule_data or []
-        normalized_week: list[list[UserScheduleItem] | None] = []
-        for day in raw_week:
-            day_items: list[UserScheduleItem] = []
-            if isinstance(day, list):
-                for item in day:
-                    if isinstance(item, dict):
-                        try:
-                            day_items.append(UserScheduleItem(**item))
-                        except Exception:
-                            continue
-            normalized_week.append(day_items)
-
-        # Pad to 7 days if registrar returned fewer entries
-        while len(normalized_week) < 7:
-            normalized_week.append([])
+        normalized_week: list[list[UserScheduleItem]] = [
+            [UserScheduleItem(**item) for item in day]
+            for day in schedule_record.schedule_data
+        ]
 
         schedule = ScheduleResponse(
             data=normalized_week,

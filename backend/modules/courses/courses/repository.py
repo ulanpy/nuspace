@@ -31,6 +31,13 @@ class CourseRepository:
     def _base_course_qb(self) -> QueryBuilder[Course]:
         return QueryBuilder(session=self.db_session, model=Course)
 
+    async def find_course_by_registrar_id(self, registrar_id: int) -> Course | None:
+        qb = self._base_course_qb()
+        return await (
+            qb.base()
+            .filter(Course.registrar_id == registrar_id)
+            .first()
+        )
     async def fetch_registered_courses(self, student_sub: str) -> List[StudentCourse]:
         qb = self._base_student_course_qb()
         return await (
@@ -176,18 +183,6 @@ class CourseRepository:
             schedule_qb.base()
             .filter(StudentSchedule.student_sub == student_sub)
             .order(StudentSchedule.last_synced_at.desc())
-            .first()
-        )
-
-    async def find_course_by_aliases(
-        self,
-        aliases: Sequence[str],
-        term_label: str,
-    ) -> Course | None:
-        qb = self._base_course_qb()
-        return await (
-            qb.base()
-            .filter(Course.course_code.in_(aliases), Course.term == term_label)
             .first()
         )
 

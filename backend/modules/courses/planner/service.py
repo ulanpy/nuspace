@@ -229,7 +229,7 @@ class PlannerService:
 
     # ----- Auto build ----- #
     async def auto_build_schedule(self, student_sub: str) -> PlannerAutoBuildResponse:
-        schedule = await self._get_or_create_schedule(student_sub)
+        schedule: PlannerSchedule = await self._get_or_create_schedule(student_sub)
         # Ensure sections are available for each course
         for course in schedule.courses:
             if not course.sections:
