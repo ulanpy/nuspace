@@ -57,13 +57,18 @@ def upgrade() -> None:
             {"canonical_id": canonical_id, "duplicate_ids": duplicate_ids},
         )
 
-        # Repoint foreign keys in referencing tables.
+        # Repoint foreign keys in referencing tables (only where it won't violate the unique constraint)
         conn.execute(
             text(
                 """
-                UPDATE student_courses
+                UPDATE student_courses sc
                 SET course_id = :canonical_id
-                WHERE course_id = ANY(:duplicate_ids)
+                WHERE sc.course_id = ANY(:duplicate_ids)
+                  AND NOT EXISTS (
+                      SELECT 1 FROM student_courses sc2
+                      WHERE sc2.student_sub = sc.student_sub
+                        AND sc2.course_id = :canonical_id
+                  )
                 """
             ),
             {"canonical_id": canonical_id, "duplicate_ids": duplicate_ids},
