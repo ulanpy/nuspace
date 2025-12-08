@@ -148,7 +148,7 @@ async def dump_csv_to_database(
 
 
 async def dump_grades_csv(
-    csv_file_path: str = "grades.csv", batch_size: int = 100
+    csv_file_path: str = "grades_sp2025.csv", batch_size: int = 100
 ) -> Dict[str, int]:
     """
     Convenience function to dump the grades CSV file to the database.
@@ -172,7 +172,7 @@ async def dump_grades_csv(
         await db_manager.async_engine.dispose()
 
 
-async def analyze_csv_duplicates(csv_file_path: str = "grades.csv") -> Dict[str, Any]:
+async def analyze_csv_duplicates(csv_file_path: str = "grades_sp2025.csv") -> Dict[str, Any]:
     """
     Analyze the CSV file to identify duplicate patterns and provide insights.
 
@@ -274,7 +274,7 @@ async def example_usage():
     try:
         # First, analyze the CSV to understand duplicates
         print("Analyzing CSV duplicates...")
-        analysis = await analyze_csv_duplicates("grades.csv")
+        analysis = await analyze_csv_duplicates("grades_sp2025.csv")
 
         print("\nCSV Analysis Results:")
         print(f"Total rows: {analysis['total_rows']}")
@@ -297,7 +297,7 @@ async def example_usage():
 
         # Dump the CSV file to database
         print("\nDumping CSV to database...")
-        stats = await dump_grades_csv(csv_file_path="grades.csv", batch_size=50)
+        stats = await dump_grades_csv(csv_file_path="grades_sp2025.csv", batch_size=50)
 
         print("\nCSV dump completed successfully!")
         print(f"Records inserted: {stats['inserted']}")

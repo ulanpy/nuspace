@@ -14,6 +14,29 @@ from backend.core.database.models.common_enums import EntityType
 
 router = APIRouter(tags=["Course Statistics"])
 
+
+@router.get("/grades/terms", response_model=schemas.ListGradeTermsResponse)
+async def list_grade_terms(
+    db_session: AsyncSession = Depends(get_db_session),
+) -> schemas.ListGradeTermsResponse:
+    """
+    Returns distinct grade report terms (e.g., FA2024, SP2025) for filtering.
+    """
+
+    qb = QueryBuilder(session=db_session, model=GradeReport)
+    terms: List[str] = (
+        await qb.base()
+        .attributes(GradeReport.term)
+        .distinct(GradeReport.term)
+        .order(GradeReport.term.desc())
+        .all()
+    )
+
+    # Remove null/empty terms that may exist in legacy data
+    filtered_terms = [term for term in terms if term]
+    return schemas.ListGradeTermsResponse(terms=filtered_terms)
+
+
 @router.get("/grades", response_model=schemas.ListGradeReportResponse)
 async def get_grades(
     request: Request,
@@ -21,6 +44,10 @@ async def get_grades(
     page: int = 1,
     keyword: str | None = Query(
         default=None, description="Search keyword for course code or course title"
+    ),
+    term: str | None = Query(
+        default=None,
+        description="Filter by semester/term code (e.g., FA2024)",
     ),
     db_session: AsyncSession = Depends(get_db_session),
 ) -> schemas.ListGradeReportResponse:
@@ -34,6 +61,7 @@ async def get_grades(
     - `size`: Number of grade reports per page (default: 20, max: 100)
     - `page`: Page number to retrieve (default: 1)
     - `keyword`: Search term for course code or course title (optional)
+    - `term`: Filter results by semester/term code (optional)
 
     **Returns:**
     - List of grade reports and pagination info
@@ -45,7 +73,8 @@ async def get_grades(
     """
 
     conditions = []
-
+    # Meilisearch string filters are safer with single quotes; normalize term casing
+    meili_filters = [f"term = {term}"] if term else None
     if keyword:
         meili_result = await meilisearch.get(
             client=request.app.state.meilisearch_client,
@@ -53,10 +82,10 @@ async def get_grades(
             keyword=keyword,
             page=page,
             size=size,
-            filters=None,
+            filters=meili_filters,
         )
         grade_report_ids = [item["id"] for item in meili_result["hits"]]
-
+        print(grade_report_ids)
         if not grade_report_ids:
             return schemas.ListGradeReportResponse(grades=[], total_pages=1)
 

@@ -38,3 +38,7 @@ class ListGradeReportResponse(BaseModel):
     grades: List[BaseGradeReportSchema] = []
     total_pages: int = Query(1, ge=1)
 
+
+class ListGradeTermsResponse(BaseModel):
+    terms: List[str] = []
+

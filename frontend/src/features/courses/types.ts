@@ -28,6 +28,10 @@ export interface GradeStatisticsResponse {
   total_pages: number;
 }
 
+export interface GradeTermsResponse {
+  terms: string[];
+}
+
 export interface GradeStatisticsFilters {
   search?: string;
   keyword?: string;

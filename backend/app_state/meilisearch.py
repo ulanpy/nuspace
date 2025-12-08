@@ -83,8 +83,9 @@ async def setup_meilisearch(app: FastAPI):
                 GradeReport.course_code,
                 GradeReport.course_title,
                 GradeReport.faculty,
+                GradeReport.term,
             ],
-            filterable_attributes=None,
+            filterable_attributes=[GradeReport.term],
             primary_key=GradeReport.id,  # Explicitly specify primary key
         ),
         MeilisearchIndexConfig(
