@@ -151,6 +151,7 @@ async def gcs_webhook(
     db_session: AsyncSession = Depends(get_db_session),
     media_metadata: schemas.MediaMetadata = Depends(deps.get_media_metadata),
     validate_routing_prefix: bool = Depends(deps.validate_routing_prefix),
+    _jwt_claims: dict = Depends(deps.verify_pubsub_token),
 ):
     """
     Processes GCS notifications from Pub/Sub.

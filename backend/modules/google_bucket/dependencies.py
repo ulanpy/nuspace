@@ -1,6 +1,9 @@
+import asyncio
 import json
 
 from fastapi import Depends, HTTPException, Request, status
+from google.auth.transport.requests import Request as GoogleAuthRequest
+from google.oauth2 import id_token
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
@@ -13,6 +16,39 @@ from backend.core.database.models import (
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
 from backend.modules.google_bucket import schemas
+
+
+async def verify_pubsub_token(request: Request) -> dict:
+    """
+    Validates the Authorization bearer token sent by Pub/Sub push.
+    Ensures the token is signed by Google, matches the configured audience,
+    and was issued for the expected service account email.
+    """
+    auth_header = request.headers.get("authorization")
+    if not auth_header or not auth_header.lower().startswith("bearer "):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="missing_bearer_token")
+
+    token = auth_header.split(" ", 1)[1].strip()
+    config: Config = request.app.state.config
+
+    try:
+        claims = await asyncio.to_thread(
+            id_token.verify_oauth2_token,
+            token,
+            GoogleAuthRequest(),
+            config.PUSH_AUTH_AUDIENCE,
+        )
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token")
+
+    if claims.get("iss") not in {"accounts.google.com", "https://accounts.google.com"}:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token_issuer")
+
+    expected_email = config.PUSH_AUTH_SERVICE_ACCOUNT
+    if claims.get("email") != expected_email or claims.get("email_verified") is False:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token_email")
+
+    return claims
 
 
 def get_media_metadata(
