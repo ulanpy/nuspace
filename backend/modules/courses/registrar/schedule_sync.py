@@ -70,32 +70,54 @@ async def sync_schedule_catalog(
     term_label: str | None = None,
 ) -> int:
     """
-    Download, parse, and upload registrar schedule PDF into Meilisearch in-process.
-    (Subprocess path removed to avoid host/env mismatches.)
+    Download, parse, and upload registrar schedule PDF into Meilisearch.
+    Uses a subprocess parser (mirrors priority sync) to avoid blocking the API process.
     """
-    try:
-        async with httpx.AsyncClient(verify=False, timeout=60.0) as client:
-            resp = await client.get(pdf_url)
-            resp.raise_for_status()
-            term_id = None
-            try:
-                from urllib.parse import parse_qs, urlparse
-
-                qs = parse_qs(urlparse(pdf_url).query)
-                term_id = qs.get("termid", [None])[0]
-            except Exception:
-                term_id = None
-            effective_term_label = term_label or SCHEDULE_TERM_LABEL_DEFAULT
-            documents = parse_schedule_pdf(
-                resp.content, term_label=effective_term_label, term_id=term_id
-            )
-    except Exception as exc:  # pragma: no cover - network/parsing failures
-        logger.exception("Schedule sync failed: %s", exc)
-        raise
-
+    documents = await _run_schedule_parser_subprocess(pdf_url, term_label)
     await _recreate_schedule_index(meilisearch_client, documents)
     logger.info("Synced %s registrar schedule entries", len(documents))
     return len(documents)
+
+
+async def _run_schedule_parser_subprocess(pdf_url: str, term_label: str | None) -> Sequence[dict]:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
+        output_path = Path(tmp.name)
+
+    env = os.environ.copy()
+    env["SCHEDULE_SYNC__PDF_URL"] = pdf_url
+    env["SCHEDULE_SYNC__OUTPUT_PATH"] = str(output_path)
+    if term_label:
+        env["SCHEDULE_SYNC__TERM_LABEL"] = term_label
+    # Also pass term id if present in URL
+    try:
+        from urllib.parse import parse_qs, urlparse
+
+        qs = parse_qs(urlparse(pdf_url).query)
+        term_id = qs.get("termid", [None])[0]
+        if term_id:
+            env["SCHEDULE_SYNC__TERM_ID"] = term_id
+    except Exception:
+        pass
+
+    process = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-m",
+        "backend.modules.courses.registrar.schedule_sync_worker",
+        env=env,
+    )
+    await process.wait()
+
+    if process.returncode != 0:
+        output_path.unlink(missing_ok=True)
+        raise RuntimeError(f"Schedule sync worker exited with code {process.returncode}")
+
+    try:
+        with output_path.open("r", encoding="utf-8") as fp:
+            data = json.load(fp)
+    finally:
+        output_path.unlink(missing_ok=True)
+
+    return data
 
 
 class ScheduleCatalogRefresher:
