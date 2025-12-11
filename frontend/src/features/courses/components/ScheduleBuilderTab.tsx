@@ -110,6 +110,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
   const [courseForm, setCourseForm] = useState<CourseForm>(defaultCourseForm);
   const [autoBuildResult, setAutoBuildResult] = useState<PlannerAutoBuildResponse | null>(null);
   const [autoBuildError, setAutoBuildError] = useState<string | null>(null);
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
   const [loadingSections, setLoadingSections] = useState<Record<number, boolean>>({});
   const [searchResults, setSearchResults] = useState<PlannerCourseSearchResult[]>([]);
   const [searchCursor, setSearchCursor] = useState<number | null>(null);
@@ -201,12 +202,36 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
 
   const removeCourseMutation = useMutation({
     mutationFn: (courseId: number) => gradeStatisticsApi.removePlannerCourse(courseId),
-    onSuccess: invalidatePlanner,
+    onSuccess: (_data, courseId) => {
+      const courseLabel =
+        planner?.courses?.find((c) => c.id === courseId)?.course_code ?? "Course";
+      setAutoBuildResult(null);
+      setAutoBuildError(null);
+      setRefreshMessage(`${courseLabel} removed from planner.`);
+      invalidatePlanner();
+    },
+    onError: () => {
+      setAutoBuildResult(null);
+      setAutoBuildError(null);
+      setRefreshMessage("Remove failed. Please try again.");
+    },
   });
 
   const refreshSectionsMutation = useMutation({
     mutationFn: (courseId: number) => gradeStatisticsApi.fetchPlannerSections(courseId, true),
-    onSuccess: invalidatePlanner,
+    onSuccess: (_data, courseId) => {
+      const courseLabel =
+        planner?.courses?.find((c) => c.id === courseId)?.course_code ?? "Course";
+      setAutoBuildResult(null);
+      setAutoBuildError(null);
+      setRefreshMessage(`${courseLabel} sections refreshed.`);
+      invalidatePlanner();
+    },
+    onError: () => {
+      setAutoBuildResult(null);
+      setAutoBuildError(null);
+      setRefreshMessage("Refresh failed. Please try again.");
+    },
   });
 
   const selectSectionMutation = useMutation({
@@ -228,13 +253,16 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
     onMutate: () => {
       setAutoBuildError(null);
       setAutoBuildResult(null);
+      setRefreshMessage(null);
     },
     onSuccess: (result: PlannerAutoBuildResponse) => {
       setAutoBuildResult(result);
+      setRefreshMessage(null);
       invalidatePlanner();
     },
     onError: (error) => {
       setAutoBuildError(error instanceof Error ? error.message : "Shuffle failed");
+      setRefreshMessage(null);
     },
   });
 
@@ -581,19 +609,21 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
             </Button>
           </div>
           {(autoBuildResult || autoBuildError) && (
-            <div className="mt-2 rounded-md border border-border/40 bg-muted/20 p-2 text-xs text-muted-foreground">
-              {autoBuildError ? (
-                <p className="text-destructive">{autoBuildError}</p>
-              ) : (
+            <div className="mt-2 rounded-md border border-border/40 bg-muted/20 p-2 text-xs text-muted-foreground space-y-1">
+              {autoBuildError && <p className="text-destructive">{autoBuildError}</p>}
+              {autoBuildResult && (
                 <>
-                  <p>{autoBuildResult?.message}</p>
-                  {!!autoBuildResult?.unscheduled_courses.length && (
-                    <p>
-                      Couldn&apos;t place: {autoBuildResult.unscheduled_courses.join(", ")}
-                    </p>
+                  <p>{autoBuildResult.message}</p>
+                  {!!autoBuildResult.unscheduled_courses.length && (
+                    <p>Couldn&apos;t place: {autoBuildResult.unscheduled_courses.join(", ")}</p>
                   )}
                 </>
               )}
+            </div>
+          )}
+          {!autoBuildResult && !autoBuildError && refreshMessage && (
+            <div className="mt-2 rounded-md border border-border/40 bg-muted/20 p-2 text-xs text-muted-foreground">
+              <p>{refreshMessage}</p>
             </div>
           )}
           <div className="mt-3 space-y-3 text-sm">

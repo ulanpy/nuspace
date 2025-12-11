@@ -18,7 +18,7 @@ PRIORITY_PDF_URL = (
 )
 PRIORITY_INDEX_UID = "course_priorities"
 PRIORITY_PRIMARY_KEY = "id"
-PRIORITY_REFRESH_INTERVAL_SECONDS = 30 * 60  # 30 minutes
+PRIORITY_REFRESH_INTERVAL_SECONDS = 2 * 60 * 60  # 2 hours
 PRIORITY_SEARCHABLE_ATTRIBUTES: Sequence[str] = (
     "abbr",
     "title",
@@ -37,14 +37,6 @@ PRIORITY_FILTERABLE_ATTRIBUTES: Sequence[str] = (
     "priority_3",
     "priority_4",
 )
-
-
-async def _download_priority_pdf(url: str = PRIORITY_PDF_URL, timeout: float = 60.0) -> bytes:
-    # Registrar endpoint serves a self-signed cert in some envs, so skip verification.
-    async with httpx.AsyncClient(timeout=timeout, verify=False) as client:
-        response = await client.get(url)
-        response.raise_for_status()
-        return response.content
 
 
 async def _recreate_priority_index(

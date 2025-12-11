@@ -18,6 +18,10 @@ from backend.modules.courses.registrar.priority_sync import (
     PriorityRequirementsRefresher,
     sync_priority_requirements,
 )
+from backend.modules.courses.registrar.schedule_sync import (
+    ScheduleCatalogRefresher,
+    sync_schedule_catalog,
+)
 
 
 @dataclass
@@ -127,16 +131,26 @@ async def setup_meilisearch(app: FastAPI):
                 json={"filterableAttributes": index_config.get_filterable_names()},
             )
 
-    # Initialize registrar course priority index and refresher
+    # Initialize registrar course priority and schedule indexes + refreshers (run in debug)
     if not config.IS_DEBUG:
         app.state.course_priority_refresher = PriorityRequirementsRefresher(
             app.state.meilisearch_client
         )
+        app.state.course_schedule_refresher = ScheduleCatalogRefresher(
+            app.state.meilisearch_client
+        )
         try:
-            await sync_priority_requirements(app.state.meilisearch_client)
+            count = await sync_priority_requirements(app.state.meilisearch_client)
+            print(f"Synced priority requirements docs: {count}")
         except Exception as exc:
-            print(f"Error syncing registrar course priorities: {exc}")
+            print(f"Error syncing registrar course priority: {exc}")
         app.state.course_priority_refresher.start()
+        try:
+            count = await sync_schedule_catalog(app.state.meilisearch_client)
+            print(f"Synced schedule catalog docs: {count}")
+        except Exception as exc:
+            print(f"Error syncing registrar course schedule: {exc}")
+        app.state.course_schedule_refresher.start()
 
 
 async def cleanup_meilisearch(app: FastAPI):
@@ -144,6 +158,9 @@ async def cleanup_meilisearch(app: FastAPI):
     refresher = getattr(app.state, "course_priority_refresher", None)
     if refresher:
         await refresher.stop()
+    schedule_refresher = getattr(app.state, "course_schedule_refresher", None)
+    if schedule_refresher:
+        await schedule_refresher.stop()
     client = getattr(app.state, "meilisearch_client", None)
     if client:
         await client.aclose()
