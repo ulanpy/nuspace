@@ -82,19 +82,6 @@ jobs:
           cache-from: type=gha,scope=fastapi
           cache-to: type=gha,mode=max,scope=fastapi
 
-      # --- Build Celery Worker Image ---
-      - name: Build and Push Celery Worker Image
-        if: steps.changes.outputs.backend == 'true'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./backend/Dockerfile_celery
-          push: true
-          tags: kamikadze24/celeryworker:${{ steps.meta.outputs.version }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=celeryworker
-          cache-to: type=gha,mode=max,scope=celeryworker
-
       # --- Build Frontend Builder Image ---
       - name: Build and Push Frontend Builder Image
         if: steps.changes.outputs.frontend == 'true'
@@ -239,7 +226,7 @@ jobs:
           gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --command="docker ps --format 'table {{.Names}}\t{{.Status}}'" --ssh-flag="-o ConnectTimeout=10" --quiet > /tmp/container_status.txt 2>/dev/null || echo "Connection failed" > /tmp/container_status.txt
           
           # Check if expected containers are running
-          if grep -q "fastapi\|celery-worker\|nginx\|redis\|rabbitmq\|prometheus\|grafana\|loki\|alloy\|alertmanager\|wireguard" /tmp/container_status.txt; then
+          if grep -q "fastapi\|nginx\|redis\|rabbitmq\|prometheus\|grafana\|loki\|alloy\|alertmanager\|wireguard" /tmp/container_status.txt; then
             echo "containers_running=true" >> $GITHUB_OUTPUT
           else
             echo "containers_running=false" >> $GITHUB_OUTPUT

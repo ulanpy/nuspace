@@ -35,7 +35,7 @@
       ansible.builtin.include_role:
         name: container_analysis
 
-    - name: Backend tasks (migrations, fastapi, celery-worker)
+    - name: Backend tasks (migrations, fastapi)
       ansible.builtin.include_role:
         name: backend
 

@@ -3,13 +3,13 @@
   ansible.builtin.shell: |
     #!/bin/bash
     set -euo pipefail
-    docker ps --format "{{ '{{.Names}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|celery-worker|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard|meilisearch)" > /tmp/running_containers.txt 2>/dev/null || true
+    docker ps --format "{{ '{{.Names}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|alertmanager|wireguard|meilisearch)" > /tmp/running_containers.txt 2>/dev/null || true
     MISSING_CONTAINERS=""
     NEED_RESTART=""
-    for container in fastapi celery-worker nginx redis rabbitmq prometheus grafana loki alloy alertmanager wireguard meilisearch; do
+    for container in fastapi nginx redis rabbitmq prometheus grafana loki alloy alertmanager wireguard meilisearch; do
       if ! grep -q "^${container}" /tmp/running_containers.txt; then
         MISSING_CONTAINERS="${MISSING_CONTAINERS} ${container}"
-      elif [[ "${BACKEND_CHANGED:-false}" == "true" && "$container" =~ ^(fastapi|celery-worker)$ ]]; then
+      elif [[ "${BACKEND_CHANGED:-false}" == "true" && "$container" =~ ^(fastapi)$ ]]; then
         NEED_RESTART="${NEED_RESTART} ${container}"
       elif [[ "${FRONTEND_CHANGED:-false}" == "true" && "$container" == "nginx" ]]; then
         NEED_RESTART="${NEED_RESTART} ${container}"

@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres
+    image: postgres:17
     networks:
       - nuros
     restart: always
@@ -100,7 +100,7 @@ services:
       - "127.0.0.1:7700:7700"
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4.2.1
     container_name: rabbitmq
     networks:
       - nuros
@@ -118,24 +118,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-
-  celery-worker:
-    image: kamikadze24/celeryworker:latest
-    networks:
-      - nuros
-    restart: always
-    depends_on:
-      - rabbitmq
-      - redis
-      - fastapi
-    command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
-    environment:
-      - CELERY_WORKER_CONCURRENCY=4
-      - CELERY_WORKER_PREFETCH_MULTIPLIER=1
-    volumes:
-      - .env:/nuros/infra/.env:ro
-    deploy:
-      replicas: 2
 
   frontend-builder:
     container_name: frontend-builder

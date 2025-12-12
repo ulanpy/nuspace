@@ -8,16 +8,6 @@ services:
       args:
         IS_DEBUG: ${IS_DEBUG:-true} # Default to 'true' if not set
 
-  celeryworker:
-    image: kamikadze24/celeryworker:${TAG}
-    build:
-      context: ..
-      dockerfile: backend/Dockerfile_celery
-    command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
-    environment:
-      - CELERY_WORKER_CONCURRENCY=4
-      - CELERY_WORKER_PREFETCH_MULTIPLIER=1
-
   frontend-builder:
     image: kamikadze24/frontendbuilder:${TAG}
     build:

@@ -8,13 +8,6 @@
       failed_when: false
       changed_when: false
 
-    - name: Get running celery-worker image ID (if any)
-      ansible.builtin.command:
-        cmd: docker inspect --format='{{"{{.Image}}"}}' celery-worker
-      register: celery_current_image
-      failed_when: false
-      changed_when: false
-
 - name: Pull backend images to ensure freshest tags are present
   block:
     - name: Pull fastapi image
@@ -23,15 +16,6 @@
         set -e
         COMPOSE_FILE="/home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml"
         {{ compose_cmd }} -f "$COMPOSE_FILE" pull fastapi
-      args:
-        executable: /bin/bash
-
-    - name: Pull celery worker image
-      ansible.builtin.shell: |
-        #!/bin/bash
-        set -e
-        COMPOSE_FILE="/home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml"
-        {{ compose_cmd }} -f "$COMPOSE_FILE" pull celery-worker
       args:
         executable: /bin/bash
 
@@ -44,13 +28,6 @@
       failed_when: fastapi_latest_image.rc != 0
       changed_when: false
 
-    - name: Get latest celery-worker image ID
-      ansible.builtin.command:
-        cmd: docker image inspect kamikadze24/celeryworker:latest --format='{{"{{.Id}}"}}'
-      register: celery_latest_image
-      failed_when: celery_latest_image.rc != 0
-      changed_when: false
-
     - name: Determine backend rollout requirement
       ansible.builtin.set_fact:
         fastapi_image_changed: >-
@@ -58,18 +35,11 @@
             fastapi_current_image.rc != 0 or
             fastapi_current_image.stdout.strip() != fastapi_latest_image.stdout.strip()
           }}
-        celery_image_changed: >-
-          {{
-            celery_current_image.rc != 0 or
-            celery_current_image.stdout.strip() != celery_latest_image.stdout.strip()
-          }}
         backend_rollout_needed: >-
           {{
             (backend_changed | default(false)) | bool
             or (container_analysis is defined and 'fastapi' in container_analysis.stdout)
-            or (container_analysis is defined and 'celery-worker' in container_analysis.stdout)
             or fastapi_image_changed
-            or celery_image_changed
           }}
 
 - name: Ensure postgres is up before migrations
@@ -103,9 +73,9 @@
   when: backend_rollout_needed | default(false) | bool
   register: migrate_result
 
-- name: Recreate backend services (fastapi, celery-worker) when needed
+- name: Recreate backend services (fastapi) when needed
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-    up --no-deps -d fastapi celery-worker
+    up --no-deps -d fastapi
   when: backend_rollout_needed | default(false) | bool
   register: backend_up

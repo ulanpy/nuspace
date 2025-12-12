@@ -31,7 +31,6 @@ class Config(BaseSettings):
     MEILISEARCH_MASTER_KEY: str
     MEILISEARCH_URL: str
     CELERY_BROKER_URL: str
-    CELERY_RESULT_BACKEND: str
     IS_DEBUG: bool
     TELEGRAM_BOT_TOKEN: str
     TG_WEBHOOK_SECRET_TOKEN: str

@@ -1,7 +1,7 @@
 services:
   postgres:
     container_name: postgres
-    image: postgres
+    image: postgres:17
     networks:
       - nuros
     restart: always
@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql
 
   fastapi:
     container_name: fastapi
@@ -124,43 +124,23 @@ services:
 
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4.2.1
     container_name: rabbitmq
     networks:
       - nuros
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
-      # RABBITMQ_LOGS: -
     ports:
       - "15672:15672" # Management UI
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     healthcheck:
-      test: ["CMD", "rabbitmq", "status"]
+      test: ["CMD-SHELL", "rabbitmq-diagnostics ping"]
       interval: 30s
       timeout: 10s
       retries: 5
-
-  celery-worker:
-    build:
-      context: ..
-      dockerfile: backend/Dockerfile_celery
-    networks:
-      - nuros
-    depends_on:
-      - rabbitmq
-      - redis
-      - fastapi
-    volumes:
-      - .env:/nuros/.env:ro
-    command: celery -A backend.celery_app.celery_config worker --loglevel=info -Q kick_queue,default
-    environment:
-      - CELERY_WORKER_CONCURRENCY=4 # Adjust based on your needs
-      - CELERY_WORKER_PREFETCH_MULTIPLIER=1
-    deploy:
-      replicas: 1 # For scalability
 
   frontend:
     build:
