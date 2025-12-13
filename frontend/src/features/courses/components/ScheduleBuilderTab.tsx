@@ -22,6 +22,7 @@ import {
   PlannerCourseSearchResult,
 } from "../types";
 import { Loader2, RefreshCcw, Trash2, Wand2, X } from "lucide-react";
+import { ConfirmationModal } from "./ConfirmationModal";
 
 type CourseForm = {
   query: string;
@@ -118,6 +119,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
   );
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionEvent | null>(null);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [activeRequirements, setActiveRequirements] = useState<CourseRequirementDetail | null>(null);
   const [activeCourseId, setActiveCourseId] = useState<number | null>(null);
   const autoFetchedCourses = useRef<Set<number>>(new Set());
@@ -233,7 +235,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
       }
     },
     onSuccess: () => {
-      setRefreshMessage("All courses refreshed.");
+      setRefreshMessage("All courses refreshed with new Registrar data");
       invalidatePlanner();
     },
     onError: () => {
@@ -678,7 +680,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => resetPlannerMutation.mutate(undefined)}
+              onClick={() => setResetConfirmOpen(true)}
             >
               Reset
             </Button>
@@ -721,6 +723,14 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
           onClose={() => setActiveRequirements(null)}
         />
       )}
+      <ConfirmationModal
+        isOpen={resetConfirmOpen}
+        onClose={() => setResetConfirmOpen(false)}
+        onConfirm={() => resetPlannerMutation.mutate(undefined)}
+        title="Reset planner?"
+        description="This will clear all planner courses and selections. This action cannot be undone."
+        confirmText="Reset"
+      />
     </div>
   );
 };
