@@ -39,7 +39,8 @@
           {{
             (backend_changed | default(false)) | bool
             or (container_analysis is defined and 'fastapi' in container_analysis.stdout)
-            or fastapi_image_changed
+            or fastapi_current_image.rc != 0
+            or fastapi_current_image.stdout.strip() != fastapi_latest_image.stdout.strip()
           }}
 
 - name: Ensure postgres is up before migrations
