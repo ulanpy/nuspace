@@ -65,31 +65,33 @@ class PlannerRepository:
         self,
         course_ids: Sequence[int],
     ) -> Dict[int, Dict[str, int]]:
+        """
+        Return how many students picked each section, aggregated by course_code + term.
+        Using course_code instead of registrar_course_id avoids mismatches between
+        data sources (PCC IDs vs Meilisearch course codes).
+        """
         if not course_ids:
             return {}
 
-        # Fetch registrar identifiers so we can aggregate selections across
-        # every student's planner that references the same registrar course/term.
         course_meta_stmt = (
             select(
                 PlannerScheduleCourse.id,
-                PlannerScheduleCourse.registrar_course_id,
+                PlannerScheduleCourse.course_code,
                 PlannerScheduleCourse.term_value,
             )
             .where(PlannerScheduleCourse.id.in_(course_ids))
         )
         result = await self.session.execute(course_meta_stmt)
         course_meta = {
-            course_id: (registrar_course_id, term_value)
-            for course_id, registrar_course_id, term_value in result.all()
+            course_id: (course_code, term_value)
+            for course_id, course_code, term_value in result.all()
         }
         if not course_meta:
             return {}
 
-        # Build OR conditions to support NULL term values.
         course_filters = []
-        for registrar_course_id, term_value in set(course_meta.values()):
-            base_condition = PlannerScheduleCourse.registrar_course_id == registrar_course_id
+        for course_code, term_value in set(course_meta.values()):
+            base_condition = PlannerScheduleCourse.course_code == course_code
             if term_value is None:
                 course_filters.append(and_(base_condition, PlannerScheduleCourse.term_value.is_(None)))
             else:
@@ -100,7 +102,7 @@ class PlannerRepository:
 
         selection_stmt = (
             select(
-                PlannerScheduleCourse.registrar_course_id,
+                PlannerScheduleCourse.course_code,
                 PlannerScheduleCourse.term_value,
                 PlannerScheduleSection.section_code,
                 func.count().label("total"),
@@ -115,7 +117,7 @@ class PlannerRepository:
                 or_(*course_filters),
             )
             .group_by(
-                PlannerScheduleCourse.registrar_course_id,
+                PlannerScheduleCourse.course_code,
                 PlannerScheduleCourse.term_value,
                 PlannerScheduleSection.section_code,
             )
@@ -123,8 +125,8 @@ class PlannerRepository:
         selection_result = await self.session.execute(selection_stmt)
 
         aggregated_counts: Dict[tuple[str, Optional[str]], Dict[str, int]] = {}
-        for registrar_course_id, term_value, section_code, total in selection_result.all():
-            key = (registrar_course_id, term_value)
+        for course_code, term_value, section_code, total in selection_result.all():
+            key = (course_code, term_value)
             course_counts = aggregated_counts.setdefault(key, {})
             course_counts[section_code] = int(total)
 
