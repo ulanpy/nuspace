@@ -57,6 +57,27 @@ class PlannerResetRequest(BaseModel):
     term_value: Optional[str] = None
 
 
+class PlannerCourseSearchResult(BaseModel):
+    course_code: str
+    title: str
+    pre_req: str
+    anti_req: str
+    co_req: str
+    level: Optional[str] = None
+    school: Optional[str] = None
+    credits: Optional[str] = None
+    term: Optional[str] = None
+    priority_1: Optional[str] = None
+    priority_2: Optional[str] = None
+    priority_3: Optional[str] = None
+    priority_4: Optional[str] = None
+
+
+class PlannerCourseSearchResponse(BaseModel):
+    items: List[PlannerCourseSearchResult]
+    cursor: Optional[int] = None
+
+
 class AutoBuildCourseResult(BaseModel):
     course_id: int
     registrar_course_id: str

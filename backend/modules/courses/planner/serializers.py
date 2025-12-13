@@ -27,6 +27,7 @@ class PlannerSerializer:
         schedule: PlannerSchedule,
         selection_counts: Optional[Dict[int, Dict[str, int]]] = None,
         priority_map: Optional[Dict[str, CoursePriorityRecord]] = None,
+        term_label_fallback: str | None = None,
     ) -> PlannerScheduleResponse:
         selection_counts = selection_counts or {}
         return PlannerScheduleResponse(
@@ -36,6 +37,7 @@ class PlannerSerializer:
                     course,
                     selection_counts.get(course.id, {}),
                     priority_map,
+                    term_label_fallback=term_label_fallback,
                 )
                 for course in schedule.courses
             ],
@@ -46,19 +48,25 @@ class PlannerSerializer:
         course: PlannerScheduleCourse,
         selection_counts: Optional[Dict[str, int]] = None,
         priority_map: Optional[Dict[str, CoursePriorityRecord]] = None,
+        *,
+        term_label_fallback: str | None = None,
     ) -> PlannerCourseResponse:
         selection_counts = selection_counts or {}
         priority_map = priority_map or {}
         normalized_code = self.registrar_service.normalize_course_code(course.course_code)
         priority_record = priority_map.get(normalized_code)
+        term_label = (course.term_label or "").strip()
+        if not term_label or term_label.lower() == "unknown term":
+            term_label = term_label_fallback or None
+
         return PlannerCourseResponse(
             id=course.id,
             registrar_course_id=course.registrar_course_id,
             course_code=course.course_code,
-            level=course.level,
-            school=course.school,
+            level=course.level or None,
+            school=course.school or None,
             term_value=course.term_value,
-            term_label=course.term_label,
+            term_label=term_label,
             capacity_total=course.capacity_total,
             sections=[
                 self.serialize_section(

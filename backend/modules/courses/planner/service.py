@@ -11,6 +11,8 @@ from backend.modules.courses.planner.schemas import (
     PlannerAutoBuildResponse,
     PlannerCourseAddRequest,
     PlannerCourseResponse,
+    PlannerCourseSearchResponse,
+    PlannerCourseSearchResult,
     PlannerSectionResponse,
     PlannerScheduleResponse,
 )
@@ -40,6 +42,7 @@ class PlannerService:
         self.registrar_service = registrar_service
         self.autobuilder = PlannerAutoBuilder()
         self.serializer = PlannerSerializer(registrar_service)
+        self._active_semester: SemesterOption | None = None
 
     async def _get_or_create_schedule(self, student_sub: str) -> PlannerSchedule:
         schedule = await self.repository.get_schedule_for_student(student_sub)
@@ -55,22 +58,39 @@ class PlannerService:
         schedule: PlannerSchedule = await self._get_or_create_schedule(student_sub)
         return await self._serialize_schedule_with_counts(schedule)
 
+    async def refresh_all_courses(self, student_sub: str) -> PlannerScheduleResponse:
+        schedule = await self._get_or_create_schedule(student_sub)
+        for course in schedule.courses:
+            await self._fetch_course_sections(
+                student_sub=student_sub,
+                course=course,
+                refresh=True,
+            )
+        refreshed = await self._get_or_create_schedule(student_sub)
+        return await self._serialize_schedule_with_counts(refreshed)
+
     async def list_semesters(self) -> List[SemesterOption]:
-        return await self.registrar_service.list_semesters()
+        active = await self._get_active_semester()
+        return [active]
 
     async def search_courses(
         self,
         *,
         term_value: str,
         course_code: Optional[str],
+        size: int,
         page: int,
-    ) -> CourseSearchResponse:
+    ) -> PlannerCourseSearchResponse:
+        _ = term_value  # Planner is locked to the active registrar term.
+        active_term = await self._get_active_semester()
         request = CourseSearchRequest(
             course_code=course_code,
-            term=term_value,
+            term=active_term.value,
             page=page,
+            size=size,
         )
-        return await self.registrar_service.search_courses(request)
+        registrar_response = await self.registrar_service.search_courses(request)
+        return self._build_planner_search_response(registrar_response)
 
     async def reset(
         self,
@@ -78,7 +98,8 @@ class PlannerService:
         student_sub: str,
         term_value: Optional[str],
     ) -> None:
-        await self.repository.reset_student(student_sub, term_value)
+        resolved_term = term_value or (await self._get_active_semester()).value
+        await self.repository.reset_student(student_sub, resolved_term)
         await self.repository.session.commit()
 
     # ----- Course management ----- #
@@ -89,9 +110,10 @@ class PlannerService:
         payload: PlannerCourseAddRequest,
     ) -> PlannerCourseResponse:
         schedule = await self._get_or_create_schedule(student_sub)
+        active_term = await self._get_active_semester()
         summary: CourseSummary | None = await self._find_course_summary(
             course_code=payload.course_code,
-            term_value=payload.term_value,
+            term_value=active_term.value,
         )
         if summary is None:
             raise HTTPException(
@@ -99,14 +121,15 @@ class PlannerService:
                 detail="Course not found in registrar catalog",
             )
 
+        level = summary.level or payload.level
         course = await self.repository.add_course_to_planner_schedule(
             schedule_id=schedule.id,
             registrar_course_id=summary.registrar_id,
             course_code=summary.course_code,
-            level=summary.level or payload.level,
-            school=summary.school,
-            term_value=payload.term_value,
-            term_label=payload.term_label,
+            level=level,
+            school=summary.school or None,
+            term_value=active_term.value,
+            term_label=summary.term or payload.term_label or active_term.label,
         )
         await self.repository.session.commit()
 
@@ -133,16 +156,15 @@ class PlannerService:
         course: PlannerScheduleCourse,
         refresh: bool = False,
     ) -> List[PlannerSectionResponse]:
-        term_value = course.term_value
-        if not term_value:
-            raise HTTPException(
-                status_code=400,
-                detail="Course is missing term information. Remove and re-add the course with a term.",
-            )
+        active_term = await self._get_active_semester()
+        term_value = active_term.value
+        if course.term_value != term_value:
+            course.term_value = term_value
+            course.term_label = active_term.label
 
         if refresh or not course.sections:
             registrar_sections = await self.registrar_service.get_course_schedule(
-                course_id=course.registrar_course_id,
+                course_code=course.course_code,
                 term=term_value,
             )
             payload = [
@@ -273,6 +295,11 @@ class PlannerService:
         )
 
     # ----- Internal helpers ----- #
+    async def _get_active_semester(self) -> SemesterOption:
+        if self._active_semester is None:
+            self._active_semester = await self.registrar_service.get_active_semester()
+        return self._active_semester
+
     async def _serialize_schedule_with_counts(
         self,
         schedule: PlannerSchedule,
@@ -282,7 +309,13 @@ class PlannerService:
         priority_map = await self.registrar_service.fetch_course_priorities(
             [course.course_code for course in schedule.courses]
         )
-        return self.serializer.serialize_schedule(schedule, selection_counts, priority_map)
+        term_label_fallback = (await self._get_active_semester()).label
+        return self.serializer.serialize_schedule(
+            schedule,
+            selection_counts,
+            priority_map,
+            term_label_fallback=term_label_fallback,
+        )
 
     async def _serialize_course_with_counts(
         self,
@@ -292,11 +325,37 @@ class PlannerService:
         selection_counts = await self.repository.get_selection_counts_for_courses([course.id])
         if priority_map is None:
             priority_map = await self.registrar_service.fetch_course_priorities([course.course_code])
+        term_label_fallback = (await self._get_active_semester()).label
         return self.serializer.serialize_course(
             course,
             selection_counts.get(course.id, {}),
             priority_map,
+            term_label_fallback=term_label_fallback,
         )
+
+    def _build_planner_search_response(
+        self,
+        registrar_response: CourseSearchResponse,
+    ) -> PlannerCourseSearchResponse:
+        planner_items = [
+            PlannerCourseSearchResult(
+                course_code=item.course_code,
+                title=item.title,
+                pre_req=item.pre_req,
+                co_req=item.co_req,
+                anti_req=item.anti_req,
+                level=item.level,
+                school=item.school,
+                credits=item.credits,
+                term=item.term,
+                priority_1=item.priority_1,
+                priority_2=item.priority_2,
+                priority_3=item.priority_3,
+                priority_4=item.priority_4,
+            )
+            for item in registrar_response.items
+        ]
+        return PlannerCourseSearchResponse(items=planner_items, cursor=registrar_response.cursor)
 
     async def _find_course_summary(
         self,
@@ -309,6 +368,7 @@ class PlannerService:
             course_code=course_code,
             term=term_value,
             page=1,
+            size=1,
         )
         try:
             response = await self.registrar_service.search_courses(request)

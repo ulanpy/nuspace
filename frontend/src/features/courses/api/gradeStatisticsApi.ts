@@ -118,6 +118,10 @@ export const gradeStatisticsApi = {
     return await apiCall(`/planner/courses/search?${params.toString()}`);
   },
 
+  refreshPlannerCourses: async (): Promise<PlannerSchedule> => {
+    return await apiCall(`/planner/courses/refresh`, { method: "POST" });
+  },
+
   addPlannerCourse: async (payload: PlannerCourseAddPayload): Promise<PlannerCourseResponse> => {
     return await apiCall(`/planner/courses`, { method: 'POST', json: payload });
   },

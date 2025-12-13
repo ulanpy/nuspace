@@ -32,7 +32,7 @@ SCHEDULE_SEARCHABLE_ATTRIBUTES: Sequence[str] = (
     "sections.section_code",
     "sections.faculty",
 )
-SCHEDULE_FILTERABLE_ATTRIBUTES: Sequence[str] = ("term", "school", "level")
+SCHEDULE_FILTERABLE_ATTRIBUTES: Sequence[str] = ("term", "term_id", "school", "level")
 
 
 async def _recreate_schedule_index(

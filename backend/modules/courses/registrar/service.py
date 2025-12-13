@@ -56,6 +56,8 @@ class RegistrarService:
         self.public_client_factory = public_client_factory
         self.meilisearch_client = meilisearch_client
         self.priority_index_uid = priority_index_uid
+        self.schedule_index_uid = SCHEDULE_INDEX_UID
+        self._active_semester: SemesterOption | None = None
 
     async def sync_schedule(self, username: str, password: str) -> ScheduleResponse:
         async with self.client_factory() as client:
@@ -68,18 +70,44 @@ class RegistrarService:
             semesters = await client.get_semesters()
         return [SemesterOption(**semester) for semester in semesters]
 
-    async def search_courses(self, request: CourseSearchRequest) -> CourseSearchResponse:
-        try:
-            async with self.public_client_factory() as client:
-                data = await client.search(
-                    course_code=request.course_code,
-                    term=request.term,
-                    page=request.page,
-                )
-        except ValueError as exc:  # registrar returned non-JSON payload
-            raise HTTPException(status_code=502, detail=str(exc)) from exc
+    async def get_active_semester(self) -> SemesterOption:
+        """
+        Return the most recent registrar semester (highest numeric value).
+        Result is cached per service instance to avoid redundant HTTP calls.
+        """
+        if self._active_semester:
+            return self._active_semester
 
-        items = data.get("items", [])
+        semesters = await self.list_semesters()
+        if not semesters:
+            raise HTTPException(status_code=503, detail="no_semesters_available")
+
+        def _semester_sort_key(option: SemesterOption) -> tuple[int, str]:
+            try:
+                numeric_value = int(option.value)
+            except (TypeError, ValueError):
+                numeric_value = -1
+            return (numeric_value, option.label)
+
+        latest = max(semesters, key=_semester_sort_key)
+        self._active_semester = latest
+        return latest
+
+    async def search_courses(self, request: CourseSearchRequest) -> CourseSearchResponse:
+        keyword = request.course_code or ""
+        active_term = await self.get_active_semester()
+        items, has_next = await self._search_schedule_catalog(
+            keyword=keyword,
+            term=request.term,
+            page=request.page,
+            size=request.size,
+            strict_code_match=False,
+            term_label_fallback=active_term.label
+        )
+
+        if not items:
+            return CourseSearchResponse(items=[], cursor=None)
+
         priority_map = await self.fetch_course_priorities(
             [item.get("course_code") for item in items]
         )
@@ -106,235 +134,106 @@ class RegistrarService:
             if not item.get("anti_req"):
                 item["anti_req"] = priority_record.antirequisite or ""
 
-        # If PCC returned results, return them
-        if items:
-            return CourseSearchResponse(**data)
-
-        # Fallback: search schedule catalog in Meilisearch by keyword (code/title)
-        if request.course_code and self.meilisearch_client:
-            fallback_items = await self._fallback_search_schedule_catalog_by_keyword(
-                keyword=request.course_code,
-                term=request.term,
-            )
-            if fallback_items:
-                return CourseSearchResponse(items=fallback_items, cursor=None)
-
-        return CourseSearchResponse(items=[], cursor=None)
+        cursor = request.page + 1 if has_next else None
+        return CourseSearchResponse(items=items, cursor=cursor)
 
     async def get_course_schedule(
         self,
         *,
-        course_id: str,
+        course_code: str,
         term: str,
     ) -> list[CourseScheduleEntry]:
-        sections: list[dict] = []
-        # Try PCC first; if it fails or returns empty, fall back to catalog.
-        try:
-            async with self.public_client_factory() as client:
-                sections = await client.get_schedules(course_id, term)
-        except Exception:
-            sections = []
-
-        parsed = self._parse_pcc_sections(sections) if sections else []
-        if parsed:
-            return parsed
-
-        # Fallback to catalog if PCC schedule is empty or errored
-        if self.meilisearch_client:
-            fallback_sections = await self._fallback_schedule_sections(
-                course_code=course_id, term=term
+        sections = await self._schedule_sections_from_index(
+            course_code=course_code,
+            term=term,
             )
-            if fallback_sections:
-                return fallback_sections
-
+        if sections:
+            return sections
         raise HTTPException(status_code=502, detail="schedule_unavailable")
 
-    def _parse_pcc_sections(self, sections: list[dict]) -> list[CourseScheduleEntry]:
-        parsed: list[CourseScheduleEntry] = []
-        for section in sections:
-            capacity_raw = section.get("CAPACITY")
-            try:
-                capacity = int(capacity_raw) if capacity_raw not in (None, "") else None
-            except (TypeError, ValueError):
-                capacity = None
-            enrollment_raw = section.get("ENR")
-            try:
-                enrollment = int(enrollment_raw) if enrollment_raw not in (None, "") else None
-            except (TypeError, ValueError):
-                enrollment = None
-
-            parsed.append(
-                CourseScheduleEntry(
-                    section_code=section.get("ST", "") or section.get("SECTIONID", ""),
-                    days=section.get("DAYS", "") or "",
-                    times=section.get("TIMES", "") or "",
-                    room=section.get("ROOM"),
-                    faculty=(section.get("FACULTY") or "").replace("<br>", "; ").strip() or None,
-                    capacity=capacity,
-                    enrollment=enrollment,
-                    instance_id=section.get("INSTANCEID"),
-                )
-            )
-        return parsed
-
-    async def _fallback_search_schedule_catalog(
-        self, course_code: str, term: str | None
-    ) -> list[dict]:
-        """
-        Search the Meilisearch-backed XLS catalog when PCC misses a course.
-        Returns list of CourseSummary-compatible dicts.
-        """
-        if not self.meilisearch_client:
-            return []
-
-        keyword = course_code
-        filters = []
-        if term:
-            filters.append(f'term_id = "{term}"')
+    async def _search_schedule_catalog(
+        self,
+        *,
+        keyword: str,
+        term: str | None,
+        page: int,
+        size: int,
+        strict_code_match: bool,
+        term_label_fallback: str | None = None,
+    ) -> tuple[list[dict], bool]:
+        page = max(page, 1)
+        size = max(size, 1)
 
         result = await meilisearch_utils.get(
             client=self.meilisearch_client,
-            storage_name=SCHEDULE_INDEX_UID,
-            keyword=keyword,
-            filters=filters or None,
+            storage_name=self.schedule_index_uid,
+            keyword=keyword or "",
+            page=page,
+            size=size,
+        )
+
+        hits = result.get("hits", [])
+        normalized_target = (
+            self.normalize_course_code(keyword) if strict_code_match and keyword else None
+        )
+
+        summaries: list[dict] = []
+        for hit in hits:
+            if not self._matches_term(hit, term):
+                continue
+            code = hit.get("course_code") or ""
+            if not code:
+                continue
+            if normalized_target and self.normalize_course_code(code) != normalized_target:
+                continue
+            summaries.append(
+                self._build_course_summary_from_hit(hit, term_label_fallback=term_label_fallback)
+            )
+
+        total_hits = result.get("estimatedTotalHits")
+        has_next = False
+        if isinstance(total_hits, int):
+            has_next = total_hits > page * size
+        elif len(hits) == size:
+            has_next = True
+
+        return summaries, has_next
+
+    async def _schedule_sections_from_index(
+        self,
+        *,
+        course_code: str,
+        term: str | None,
+    ) -> list[CourseScheduleEntry]:
+        result = await meilisearch_utils.get(
+            client=self.meilisearch_client,
+            storage_name=self.schedule_index_uid,
+            keyword=course_code or "",
             page=1,
             size=5,
         )
         hits = result.get("hits", [])
-        if not hits and filters:
-            # Retry without filters in case term labels differ
+        if not hits:
             result = await meilisearch_utils.get(
                 client=self.meilisearch_client,
-                storage_name=SCHEDULE_INDEX_UID,
-                keyword=keyword,
+                storage_name=self.schedule_index_uid,
+                keyword=course_code or "",
                 page=1,
                 size=5,
             )
             hits = result.get("hits", [])
 
-        summaries: list[dict] = []
+        normalized_target = self.normalize_course_code(course_code)
         for hit in hits:
-            code = hit.get("course_code") or ""
-            normalized = self.normalize_course_code(code)
-            if normalized != self.normalize_course_code(course_code):
+            if not self._matches_term(hit, term):
                 continue
-            summaries.append(
-                {
-                    "registrar_id": hit.get("course_code", ""),
-                    "course_code": hit.get("course_code", ""),
-                    "pre_req": "",
-                    "anti_req": "",
-                    "co_req": "",
-                    "level": hit.get("level", "") or "",
-                    "school": hit.get("school", "") or "",
-                    "description": "",
-                    "department": "",
-                    "title": hit.get("title", "") or "",
-                    "credits": str(hit.get("credits_us", "") or ""),
-                    "term": hit.get("term", "") or "",
-                    "priority_1": None,
-                    "priority_2": None,
-                    "priority_3": None,
-                    "priority_4": None,
-                }
-            )
-        return summaries
+            code = hit.get("course_code") or ""
+            if normalized_target and self.normalize_course_code(code) != normalized_target:
+                continue
+            return self._map_sections_from_hit(hit)
+        return []
 
-    async def _fallback_search_schedule_catalog_by_keyword(
-        self, keyword: str, term: str | None
-    ) -> list[dict]:
-        """
-        Fallback search against the schedule catalog by arbitrary keyword
-        (course code or title). Returns CourseSummary-compatible dicts.
-        """
-        if not self.meilisearch_client:
-            return []
-
-        filters = []
-        if term:
-            filters.append(f'term_id = "{term}"')
-
-        result = await meilisearch_utils.get(
-            client=self.meilisearch_client,
-            storage_name=SCHEDULE_INDEX_UID,
-            keyword=keyword,
-            filters=filters or None,
-            page=1,
-            size=10,
-        )
-        hits = result.get("hits", [])
-        if not hits and filters:
-            result = await meilisearch_utils.get(
-                client=self.meilisearch_client,
-                storage_name=SCHEDULE_INDEX_UID,
-                keyword=keyword,
-                page=1,
-                size=10,
-            )
-            hits = result.get("hits", [])
-
-        summaries: list[dict] = []
-        for hit in hits:
-            summaries.append(
-                {
-                    "registrar_id": hit.get("course_code", ""),
-                    "course_code": hit.get("course_code", ""),
-                    "pre_req": "",
-                    "anti_req": "",
-                    "co_req": "",
-                    "level": hit.get("level", "") or "",
-                    "school": hit.get("school", "") or "",
-                    "description": "",
-                    "department": "",
-                    "title": hit.get("title", "") or "",
-                    "credits": str(hit.get("credits_us", "") or ""),
-                    "term": hit.get("term", "") or "",
-                    "priority_1": None,
-                    "priority_2": None,
-                    "priority_3": None,
-                    "priority_4": None,
-                }
-            )
-        return summaries
-
-    async def _fallback_schedule_sections(
-        self, course_code: str, term: str | None
-    ) -> list[CourseScheduleEntry]:
-        if not self.meilisearch_client:
-            return []
-
-        keyword = course_code
-        filters = []
-        if term:
-            filters.append(f'term_id = "{term}"')
-
-        result = await meilisearch_utils.get(
-            client=self.meilisearch_client,
-            storage_name=SCHEDULE_INDEX_UID,
-            keyword=keyword,
-            filters=filters or None,
-            page=1,
-            size=1,
-        )
-        hits = result.get("hits", [])
-        if not hits and filters:
-            result = await meilisearch_utils.get(
-                client=self.meilisearch_client,
-                storage_name=SCHEDULE_INDEX_UID,
-                keyword=keyword,
-                page=1,
-                size=1,
-            )
-            hits = result.get("hits", [])
-
-        if not hits:
-            return []
-
-        hit = hits[0]
-        code = hit.get("course_code") or ""
-        if self.normalize_course_code(code) != self.normalize_course_code(course_code):
-            return []
-
+    def _map_sections_from_hit(self, hit: dict) -> list[CourseScheduleEntry]:
         sections = hit.get("sections", []) or []
         parsed: list[CourseScheduleEntry] = []
         for sec in sections:
@@ -351,6 +250,52 @@ class RegistrarService:
                 )
             )
         return parsed
+
+    def _build_course_summary_from_hit(
+        self,
+        hit: dict,
+        *,
+        term_label_fallback: str | None = None,
+    ) -> dict:
+        course_code = hit.get("course_code", "") or ""
+        credits = hit.get("credits_us")
+        credits_str = ""
+        if credits not in (None, ""):
+            credits_str = str(credits)
+        term_label = (hit.get("term") or "").strip()
+        if not term_label or term_label.lower() == "unknown term":
+            term_label = term_label_fallback or ""
+        department = hit.get("department")
+        if not department:
+            department = hit.get("school") or "General"
+        return {
+            "registrar_id": course_code,
+            "course_code": course_code,
+            "pre_req": "",
+            "anti_req": "",
+            "co_req": "",
+            "level": hit.get("level") or None,
+            "school": hit.get("school") or None,
+            "description": None,
+            "department": department,
+            "title": hit.get("title") or "",
+            "credits": credits_str,
+            "term": term_label or "",
+            "priority_1": None,
+            "priority_2": None,
+            "priority_3": None,
+            "priority_4": None,
+        }
+
+    @staticmethod
+    def _matches_term(hit: dict, term: str | None) -> bool:
+        if not term:
+            return True
+        term_str = str(term).strip()
+        hit_term_id = str(hit.get("term_id") or "").strip()
+        hit_term_label = str(hit.get("term") or "").strip()
+        return term_str == hit_term_id or term_str == hit_term_label
+
 
     async def fetch_course_priorities(
         self,

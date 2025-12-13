@@ -257,6 +257,7 @@ class StudentCourseService:
             search_request = CourseSearchRequest(
                 course_code=candidate,
                 term=term_value,
+                
                 page=1,
             )
             search_response = await self._registrar_service.search_courses(search_request)

@@ -8,13 +8,14 @@ from backend.modules.courses.planner.schemas import (
     PlannerAutoBuildResponse,
     PlannerCourseAddRequest,
     PlannerCourseResponse,
+    PlannerCourseSearchResponse,
     PlannerResetRequest,
     PlannerScheduleResponse,
     PlannerSectionResponse,
     PlannerSectionSelectionRequest,
 )
 from backend.modules.courses.planner.service import PlannerService
-from backend.modules.courses.registrar.schemas import CourseSearchResponse, SemesterOption
+from backend.modules.courses.registrar.schemas import SemesterOption
 
 
 router = APIRouter(prefix="/planner", tags=["Schedule Planner"])
@@ -33,7 +34,7 @@ async def list_semesters(
 
 @router.get(
     "/courses/search",
-    response_model=CourseSearchResponse,
+    response_model=PlannerCourseSearchResponse,
     summary="Search registrar courses for planner use",
 )
 async def search_courses_for_planner(
@@ -41,14 +42,28 @@ async def search_courses_for_planner(
     term_value: str = Query(..., min_length=1),
     course_code: str | None = Query(None, min_length=1),
     page: int = Query(1, ge=1),
+    size: int = Query(5, ge=1, le=20),
     service: PlannerService = Depends(get_planner_service),
-) -> CourseSearchResponse:
+) -> PlannerCourseSearchResponse:
     _ = principals
     return await service.search_courses(
         term_value=term_value,
         course_code=course_code,
-        page=page,
+        size=size,
+        page=page
     )
+
+@router.post(
+    "/courses/refresh",
+    response_model=PlannerScheduleResponse,
+    summary="Refresh sections for all planner courses",
+)
+async def refresh_all_courses(
+    principals: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    service: PlannerService = Depends(get_planner_service),
+) -> PlannerScheduleResponse:
+    student_sub = principals[0]["sub"]
+    return await service.refresh_all_courses(student_sub=student_sub)
 
 @router.get(
     "",

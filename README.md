@@ -10,10 +10,8 @@
 
 - [Nuspace.kz](#nuspacekz)
   - [Tech Stack](#tech-stack)
-  - [Features](#features)
   - [Prerequisites](#prerequisites)
   - [Quick Start](#quick-start)
-  - [Development](#development)
   - [Documentation](#documentation)
   - [Contributing](#contributing)
   - [License](#license)
@@ -42,15 +40,6 @@
 ![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)
 ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
 
-## Features
-
-- 🔐 **Secure Authentication** - Email verification via `@nu.edu.kz` domain
-- 💬 **Student Communication Platform** - Centralized messaging and community management
-- 🤖 **Telegram Bot Integration** - Seamless bot functionality with localization
-- 📱 **Modern Web Interface** - Responsive React-based frontend
-- 🚀 **Scalable Architecture** - Microservices with async task processing
-- 📊 **Real-time Notifications** - Instant updates and alerts
-- 🎯 **Community Management** - Tools for organizing student groups and events
 
 ## Prerequisites
 
@@ -93,28 +82,6 @@ docker-compose up --build
 ### 4. Verify Setup
 
 Access the application at [localhost](http://localhost) to confirm everything is running correctly.
-
-## Development
-
-### Pre-commit Hooks (Recommended)
-
-Set up pre-commit hooks for code quality:
-
-```bash
-# Create virtual environment (if needed)
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install pre-commit
-pip install pre-commit
-pre-commit install
-```
-
-### Development Guidelines
-
-- Always use `pre-commit` to ensure code quality
-- Follow the contribution guidelines for submitting pull requests
-- Test your changes thoroughly before submitting
 
 ## Documentation
 

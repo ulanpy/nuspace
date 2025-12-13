@@ -323,18 +323,15 @@ export interface PlannerCourseAddPayload {
 }
 
 export interface PlannerCourseSearchResult {
-  registrar_id: string;
   course_code: string;
+  title: string;
   pre_req: string;
   anti_req: string;
   co_req: string;
-  level: string;
-  school: string;
-  description?: string | null;
-  department: string;
-  title: string;
-  credits: string;
-  term: string;
+  level?: string | null;
+  school?: string | null;
+  credits?: string | null;
+  term?: string | null;
   priority_1?: string | null;
   priority_2?: string | null;
   priority_3?: string | null;

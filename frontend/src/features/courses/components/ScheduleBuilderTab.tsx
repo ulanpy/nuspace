@@ -84,7 +84,6 @@ const buildRequirementDetailsFromCourse = (course: PlannerCourse): CourseRequire
   priority_4: course.priority_4,
 });
 
-type RefreshArgs = number;
 type RemoveArgs = number;
 type SelectArgs = { courseId: number; sectionIds: number[] };
 type MutationRef<TArgs> = UseMutationResult<any, unknown, TArgs, unknown>;
@@ -217,20 +216,31 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
     },
   });
 
-  const refreshSectionsMutation = useMutation({
-    mutationFn: (courseId: number) => gradeStatisticsApi.fetchPlannerSections(courseId, true),
-    onSuccess: (_data, courseId) => {
-      const courseLabel =
-        planner?.courses?.find((c) => c.id === courseId)?.course_code ?? "Course";
+  const refreshAllCoursesMutation = useMutation({
+    mutationFn: () => gradeStatisticsApi.refreshPlannerCourses(),
+    onMutate: () => {
       setAutoBuildResult(null);
       setAutoBuildError(null);
-      setRefreshMessage(`${courseLabel} sections refreshed.`);
+      setRefreshMessage(null);
+      if (planner?.courses?.length) {
+        setLoadingSections((prev) => {
+          const next = { ...prev };
+          planner.courses.forEach((course) => {
+            next[course.id] = true;
+          });
+          return next;
+        });
+      }
+    },
+    onSuccess: () => {
+      setRefreshMessage("All courses refreshed.");
       invalidatePlanner();
     },
     onError: () => {
-      setAutoBuildResult(null);
-      setAutoBuildError(null);
       setRefreshMessage("Refresh failed. Please try again.");
+    },
+    onSettled: () => {
+      setLoadingSections({});
     },
   });
 
@@ -518,18 +528,19 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
                   hasText(result.co_req) ||
                   hasText(result.anti_req) ||
                   hasPriorityValues(priorityValues);
+                const metaParts = [result.school, result.level, result.term].filter(Boolean);
                 return (
                   <div
-                    key={`${result.registrar_id}-${result.course_code}`}
+                    key={result.course_code}
                     className="rounded-lg border border-border/60 p-3"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold">{result.course_code}</p>
                         <p className="text-xs text-muted-foreground">{result.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {result.school} · {result.department} · {result.level} · {result.term}
-                        </p>
+                        {metaParts.length > 0 && (
+                          <p className="text-xs text-muted-foreground">{metaParts.join(" · ")}</p>
+                        )}
                         {hasMeta && (
                           <Button
                             size="xs"
@@ -590,23 +601,38 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
         </section>
 
         <section className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold">Courses</h3>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => autoBuildMutation.mutate()}
-              disabled={!planner || autoBuildMutation.isPending}
-            >
-              {autoBuildMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Wand2 className="h-4 w-4" />
-                  Shuffle
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => refreshAllCoursesMutation.mutate()}
+                disabled={!planner?.courses.length || refreshAllCoursesMutation.isPending}
+                aria-label="Refresh all courses"
+              >
+                {refreshAllCoursesMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCcw className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => autoBuildMutation.mutate()}
+                disabled={!planner || autoBuildMutation.isPending}
+              >
+                {autoBuildMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Wand2 className="h-4 w-4" />
+                    Shuffle
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
           {(autoBuildResult || autoBuildError) && (
             <div className="mt-2 rounded-md border border-border/40 bg-muted/20 p-2 text-xs text-muted-foreground space-y-1">
@@ -632,7 +658,6 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
                 <CourseCard
                   key={course.id}
                   course={course}
-                  onRefresh={refreshSectionsMutation}
                   onRemove={removeCourseMutation}
                   onSelect={setActiveCourseId}
                   onShowMeta={handleShowRequirementsForCourse}
@@ -702,14 +727,12 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
 
 const CourseCard = ({
   course,
-  onRefresh,
   onRemove,
   onSelect,
   onShowMeta,
   isActive,
 }: {
   course: PlannerCourse;
-  onRefresh: MutationRef<RefreshArgs>;
   onRemove: MutationRef<RemoveArgs>;
   onSelect: (courseId: number) => void;
   onShowMeta: (course: PlannerCourse) => void;
@@ -768,16 +791,6 @@ const CourseCard = ({
           )}
         </div>
         <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={(event) => {
-              event.stopPropagation();
-              onRefresh.mutate(course.id);
-            }}
-          >
-            <RefreshCcw className="h-4 w-4" />
-          </Button>
           <Button
             size="sm"
             variant="ghost"
@@ -1013,7 +1026,7 @@ const SectionSelectorBar = ({
         <div className="rounded-md border border-dashed border-border/60 px-3 py-2 text-[11px] text-muted-foreground">
           {isLoading
             ? "Pulling sections from registrar..."
-            : "Refresh this course to fetch registrar sections."}
+                : "Use the global refresh to fetch registrar sections."}
         </div>
       ) : (
         <div className="flex flex-wrap gap-3">

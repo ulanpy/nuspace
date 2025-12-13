@@ -42,13 +42,13 @@ class CourseSummary(BaseModel):
     pre_req: str
     anti_req: str
     co_req: str
-    level: str
-    school: str
+    level: Optional[str] = None
+    school: Optional[str] = None
     description: Optional[str] = None
-    department: str
+    department: Optional[str] = None
     title: str
-    credits: str
-    term: str
+    credits: Optional[str] = None
+    term: Optional[str] = None
     priority_1: Optional[str] = None
     priority_2: Optional[str] = None
     priority_3: Optional[str] = None
@@ -63,6 +63,7 @@ class CourseSearchResponse(BaseModel):
 class CourseSearchRequest(BaseModel):
     course_code: str | None = None
     term: str
+    size: int = Field(default=5, ge=1, le=20)
     page: int = Field(default=1, ge=1)
 
 

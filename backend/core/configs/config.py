@@ -8,10 +8,8 @@ import requests
 from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 
-ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
-
-# Load ONLY from infra/.env
-load_dotenv(os.path.join(ENV_DIR, "infra/.env"), override=False)
+ENV_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../"))
+load_dotenv(os.path.join(ENV_DIR, ".env"), override=False)
 
 
 class Config(BaseSettings):

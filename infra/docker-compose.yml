@@ -25,7 +25,7 @@ services:
     volumes:
       - ..:/nuros # Sync local backend folder with container's /nuros
       - cursor-server:/root/.cursor-server
-      - .env:/nuros/.env:ro
+      - .env:/.env:ro
     depends_on:
       - postgres
       - gcs
