@@ -1,0 +1,21 @@
+course_id,course_code,course_name,credits_need,grade,Option 1,Option 2,Option 3,Option 4,Option 5,Option 6,Option 7,Option 8,Must have Option 1,Except 1,Except 2
+1.0,Elementary Course,Any WLL or LING at 100-level,6,C,WLL 1XX,LING 1XX,,,,,,,,,
+2.0,Research Methods,HST 274/WLL 274 or LING 273,6,C-,HST 274/WLL 274,LING 273,,,,,,,,,
+3.0,Intermediate Courses,Any 2 WLL or LING 2XX courses or any two language courses,12,C-,WLL 2XX,LING 2XX,LANG 201,LANG 202,,,,,,,
+4.0,Advanced Courses,Any two WLL or LING 3XX/4XX courses,12,C-,WLL 3XX,LING 3XX,WLL 4XX,LING 3XX,,,,,,,
+5.0,WLL/lLING/LANG electives,"Any WLL, LING or LANG courses",24,C-,WLL XXX,LING XXX,LANG XXX,,,,,,,,
+6.0,Senior Capstone or 4XX,"WLL 489,499 or 2 WLL or LING 4XX",12,C-,"WLL 489, WLL 499",WLL 4XX,LING 4XX,,,,,,,,
+7.0,Ethics,"PHIL 210, 211 or 212",6,D,PHIL 210,PHIL 211,PHIL 212,,,,,,,,
+8.0,HST 100,History of Kazakhstan,6,D,HST 100,,,,,,,,,,
+9.0,WCS 150,Writing and Communication I,6,C-,WCS 150,,,,,,,,,,
+10.0,WCS 2XX,Writing and Communication Core,6,D,WCS 200,WCS 210,WCS 220,WCS 230,WCS 240,WCS 250,WCS 260/WLL 235,WCS 270,,,
+11.0,Kazakh Language I,Core Kazakh language requirments,6,C-,KAZ XXX,KFL 102,KFL 201,KFL 202,,,,,,KAZ 150,
+12.0,Kazakh Language II,Core Kazakh language requirments,6,C-,KAZ XXX,KFL 102,KFL 201,KFL 202,,,,,,KAZ 150,
+13.0,Computer Science,Any CSCI course,6,D,CSCI XXX,,,,,,,,,,
+14.0,BUS 101,Business Course,6,D,BUS 101,,,,,,,,,,
+15.0,MATH XXX,Any Math course,6,D,MATH XXX,,,,,,,,,,
+16.0,Natural science elective,"Any BIOL, CHEM, PHYS, GEOL",6,D,BIOL XXX,CHEM XXX,PHYS XXX,GEOL XXX,,,,,,,
+17.0,Humanities electives,,24,D,HUMELECTIVE,HUMSOCELECTIVE,,,,,,,,WLL XXX,LING XXX
+18.0,Social science elective,,18,D,SOCELECTIVE,HUMSOCELECTIVE,,,,,,,,WLL XXX,LING XXX
+19.0,ANY XXX,General elective,66,D,ANY XXX,,,,,,,,,,
+,,,240,,,,,,,,,,,,
