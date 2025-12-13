@@ -1,0 +1,23 @@
+course_id,course_code,course_name,credits_need,grade,Option 1,Option 2,Option 3,Option 4,Option 5,Option 6,Option 7,Option 8,Must have Option 1,Must have Option 2,Must have Option 3,Must have Option 4,Except 1
+1.0,ANT 101,Being Human: An Introduction to Four Field Anthropology,6,C,ANT 101,,,,,,,,,,,,
+2.0,Elementary ANT choice,ANT 110 or 140 or 160 or 175,6,C,ANT 110,ANT 140,ANT 160,ANT 175,,,,,,,,,
+3.0,SOC 201,Social Science Research Methods,6,C-,ANT 201,,,,,,,,,,,,
+4.0,Methods Courss Choice,ANT 214/SOC214 or ANT 240,6,C-,ANT 214/SOC 214,ANT 240,,,,,,,,,,,
+5.0,Theory Course Choice,ANT 306 or 385 or 340 or 301,6,C-,ANT 306,ANT 385,ANT 340,SOC 301,,,,,,,,,
+6.0,Intermediate/Advanced Electives,"Any 4 ANT above 2XX, at least 2 3XX, at least one in different subfield",24,C-,"ANT 3XX, ANT 3XX, ANT 2XX, ANT 2XX","ANT 3XX, ANT 3XX, ANT 2XX, ANT 3XX","ANT 3XX, ANT 3XX, ANT 4XX, ANT 2XX","ANT 3XX, ANT 3XX, ANT 4XX, ANT 4XX","ANT 3XX, ANT 3XX, ANT 3XX, ANT 3XX","ANT 3XX, ANT 3XX, ANT 3XX, ANT 4XX",,,ANT X00-ANT X29,ANT X30-ANT X49,ANT X50-ANT X74,ANT X75-ANT X99,
+7.0,Antropology elective,Any ANT course,6,C-,ANT XXX,,,,,,,,,,,,
+8.0,Senior Capstone or 4XX,"ANT 489,499 or ant 2 ANT 4XX",12,C-,"ANT 498, ANT 499",ANT 4XX,,,,,,,,,,,
+9.0,Ethics,"PHIL 210, 211 or 212",6,D,PHIL 210,PHIL 211,PHIL 212,,,,,,,,,,
+10.0,HST 100,History of Kazakhstan,6,D,HST 100,,,,,,,,,,,,
+11.0,WCS 150,Writing and Communication I,6,C-,WCS 150,,,,,,,,,,,,
+12.0,WCS 2XX,Writing and Communication Core,6,D,WCS 200,WCS 210,WCS 220,WCS 230,WCS 240,WCS 250,WCS 260/WLL 235,WCS 270,,,,,
+13.0,Kazakh Language I,Core Kazakh language requirments,6,C-,KAZ XXX,KFL 102,KFL 201,KFL 202,,,,,,,,,KAZ 150
+14.0,Kazakh Language II,Core Kazakh language requirments,6,C-,KAZ XXX,KFL 102,KFL 201,KFL 202,,,,,,,,,KAZ 150
+15.0,Computer Science,Any CSCI course,6,D,CSCI XXX,,,,,,,,,,,,
+16.0,BUS 101,Business Course,6,D,BUS 101,,,,,,,,,,,,
+19.0,MATH XXX,Any Math course,6,D,MATH XXX,,,,,,,,,,,,
+20.0,Natural science elective,"Any BIOL, CHEM, PHYS, GEOL",6,D,BIOL XXX,CHEM XXX,PHYS XXX,GEOL XXX,,,,,,,,,
+17.0,Humanities electives,,24,D,HUMELECTIVE,HUMSOCELECTIVE,,,,,,,,,,,ANT XXX
+18.0,Social science elective,,18,D,SOCELECTIVE,HUMSOCELECTIVE,,,,,,,,,,,ANT XXX
+21.0,ANY XXX,General elective,66,D,ANY XXX,,,,,,,,,,,,
+,,,240,,,,,,,,,,,,,,
