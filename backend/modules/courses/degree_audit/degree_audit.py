@@ -7,7 +7,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-from transcript_parser import Course, Transcript
+from backend.modules.courses.degree_audit.transcript_parser import Course, Transcript
+
+BASE_DIR = Path(__file__).resolve().parent
+REQUIREMENTS_BASE = BASE_DIR / "requirements"
 
 GRADE_ORDER = [
     "F",
@@ -63,7 +66,7 @@ def _extract_year_from_stem(stem: str) -> Optional[str]:
     return m.group(1) if m else None
 
 
-def discover_requirements_by_year(base: Path = Path("requirements")) -> Dict[str, Dict[str, Path]]:
+def discover_requirements_by_year(base: Path = REQUIREMENTS_BASE) -> Dict[str, Dict[str, Path]]:
     """Return mapping of admission year -> {major name -> CSV path}."""
     majors_by_year: Dict[str, Dict[str, Path]] = {}
 
@@ -189,7 +192,10 @@ def load_special_requirements(
     mapping: Dict[str, List[str]] = {}
     base_paths: List[Path] = []
     if folder is None:
-        base_paths = [Path("requirements/additional_tables"), Path("requirements/special_reqs")]
+        base_paths = [
+            REQUIREMENTS_BASE / "additional_tables",
+            REQUIREMENTS_BASE / "special_reqs",
+        ]
     elif isinstance(folder, Path):
         base_paths = [folder]
     elif isinstance(folder, (str, bytes)):
@@ -232,7 +238,7 @@ def load_special_requirements(
 def load_requirements(path: Path, special_dir: Path | None = None, *, admission_year: str | None = None) -> List[Requirement]:
     rows: List[Requirement] = []
     special_map = load_special_requirements(
-        special_dir or Path("requirements/additional_tables"), year=admission_year
+        special_dir or (REQUIREMENTS_BASE / "additional_tables"), year=admission_year
     )
 
     def expand_special(cell: str) -> List[str]:
@@ -663,8 +669,10 @@ def audit_transcript(transcript: Transcript, requirements: List[Requirement], ex
                         continue
                     if is_non_applicable_grade(course.grade):
                         continue
+                    if remaining_credits[idx] <= 0:
+                        continue
                     if any(course_matches_pattern(course.code, alias) for alias in aliases):
-                        reserved_indices.add(idx)
+                        continue
 
     return results
 

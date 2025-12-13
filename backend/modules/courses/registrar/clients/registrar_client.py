@@ -1,5 +1,7 @@
 import json
 from typing import Any
+import time
+import re
 
 import httpx
 from httpx import Cookies
@@ -107,3 +109,58 @@ class RegistrarClient:
         await self.login(username=username, password=password)
         schedule_type = await self._get_schedule_type()
         return await self._get_schedule(schedule_type)
+
+    async def fetch_unofficial_transcript_raw(self, username: str, password: str) -> tuple[str, Any]:
+        """
+        Fetch unofficial transcript payload directly from registrar.
+        Returns tuple of (content_type, payload) where payload is JSON (dict)
+        or raw bytes (e.g., PDF). Caller decides how to parse.
+        """
+        await self.login(username=username, password=password)
+        client = await self._ensure_client()
+        resp = await client.get(
+            "/my-registrar/unofficial-transcript/json",
+            params={"method": "getData", "_dc": str(int(time.time() * 1000))},
+        )
+        resp.raise_for_status()
+        content_type = resp.headers.get("Content-Type", "").lower()
+        if "application/json" in content_type or "text/json" in content_type:
+            return "json", resp.json()
+        return content_type or "application/octet-stream", resp.content
+
+    async def fetch_unofficial_transcript_pdf(self, username: str, password: str) -> bytes:
+        """
+        Fetch unofficial transcript as PDF bytes. Handles HTML wrapper that links to PDF.
+        """
+        await self.login(username=username, password=password)
+        client = await self._ensure_client()
+        resp = await client.get(
+            "/my-registrar/unofficial-transcript/json",
+            params={"method": "getData", "_dc": str(int(time.time() * 1000))},
+        )
+        resp.raise_for_status()
+        content_type = resp.headers.get("Content-Type", "").lower()
+        body = resp.content
+
+        if "pdf" in content_type or body.lstrip().startswith(b"%PDF"):
+            return body
+
+        # HTML page containing a link to the PDF render endpoint.
+        text = ""
+        try:
+            text = body.decode("utf-8", errors="ignore")
+        except Exception:
+            pass
+
+        if text:
+            m = re.search(r'(?:href|src)="([^"]*transcriptRenderDocumentPDF[^"]+)"', text, re.IGNORECASE)
+            if m:
+                url = m.group(1)
+                # Support both absolute and relative links.
+                pdf_resp = await client.get(url)
+                pdf_resp.raise_for_status()
+                pdf_ct = pdf_resp.headers.get("Content-Type", "").lower()
+                if "pdf" in pdf_ct or pdf_resp.content.lstrip().startswith(b"%PDF"):
+                    return pdf_resp.content
+
+        raise ValueError("Could not retrieve transcript PDF (unexpected response)")

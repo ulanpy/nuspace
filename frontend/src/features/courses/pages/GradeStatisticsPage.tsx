@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { BookOpen, BarChart3, CalendarDays } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { BookOpen, BarChart3, CalendarDays, GraduationCap } from "lucide-react";
 
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/atoms/tabs";
@@ -10,6 +11,7 @@ import { useLiveGpaViewModel } from "../hooks/useLiveGpaViewModel";
 import { LiveGpaTab } from "../components/LiveGpaTab";
 import { CourseStatsTab } from "../components/CourseStatsTab";
 import { ScheduleBuilderTab } from "../components/ScheduleBuilderTab";
+import { DegreeAuditTab } from "../components/DegreeAuditTab";
 
 const tabOptions = [
   {
@@ -27,6 +29,11 @@ const tabOptions = [
     label: "Schedule Builder",
     icon: CalendarDays,
   },
+  {
+    value: "degree-audit",
+    label: "Degree Audit",
+    icon: GraduationCap,
+  },
 ] as const;
 
 export default function GradeStatisticsPage() {
@@ -35,6 +42,17 @@ export default function GradeStatisticsPage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [activeTab, setActiveTab] = useState("live-gpa");
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Initialize tab from query param (?tab=...)
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tab = searchParams.get("tab");
+    if (tab && tabOptions.some((t) => t.value === tab)) {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     const tabElement = tabRefs.current[activeTab];
@@ -52,6 +70,9 @@ export default function GradeStatisticsPage() {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
+    const params = new URLSearchParams(location.search);
+    params.set("tab", value);
+    navigate({ search: params.toString() }, { replace: true });
   };
 
   return (
@@ -95,6 +116,10 @@ export default function GradeStatisticsPage() {
 
           <TabsContent value="schedule-builder">
             <ScheduleBuilderTab user={user} login={login} />
+          </TabsContent>
+
+          <TabsContent value="degree-audit">
+            <DegreeAuditTab user={user} login={login} />
           </TabsContent>
         </Tabs>
       </div>

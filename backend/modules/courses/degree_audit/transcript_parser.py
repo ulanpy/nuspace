@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from pypdf import PdfReader
+import tempfile
 
 SEMESTER_HEADER_RE = re.compile(r"^(Fall|Spring|Summer|Winter)\s+\d{4}$")
 COURSE_CODE_RE = re.compile(
@@ -191,6 +192,17 @@ def parse_transcript(pdf_path: str | Path) -> Transcript:
         overall_credits_enrolled=overall_enrolled,
         overall_credits_earned=overall_earned,
     )
+
+
+def parse_transcript_bytes(pdf_bytes: bytes) -> Transcript:
+    """Convenience helper: parse transcript from PDF bytes."""
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        tmp.write(pdf_bytes)
+        tmp_path = Path(tmp.name)
+    try:
+        return parse_transcript(tmp_path)
+    finally:
+        tmp_path.unlink(missing_ok=True)
 
 
 def transcript_to_dict(transcript: Transcript) -> Dict[str, object]:

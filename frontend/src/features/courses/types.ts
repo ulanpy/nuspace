@@ -359,3 +359,42 @@ export interface PlannerAutoBuildResponse {
   unscheduled_courses: string[];
   message: string;
 }
+
+// ==== Degree Audit ====
+
+export interface DegreeAuditCatalogYear {
+  year: string;
+  majors: string[];
+}
+
+export interface DegreeAuditCatalogResponse {
+  years: DegreeAuditCatalogYear[];
+}
+
+export interface DegreeAuditResultRow {
+  course_code: string;
+  course_name: string;
+  credits_required: string;
+  min_grade: string;
+  status: string;
+  used_courses: string;
+  credits_applied: string;
+  credits_remaining: string;
+  note: string;
+}
+
+export interface DegreeAuditSummary {
+  total_required: string;
+  total_applied: string;
+  total_remaining: string;
+  total_taken: string;
+}
+
+export interface DegreeAuditResponse {
+  year: string;
+  major: string;
+  results: DegreeAuditResultRow[];
+  summary?: DegreeAuditSummary | null;
+  warnings: string[];
+  csv_base64?: string | null;
+}

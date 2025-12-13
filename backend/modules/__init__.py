@@ -13,6 +13,7 @@ from .courses.courses import courses
 from .courses.planner import planner
 from .courses.statistics import statistics
 from .courses.templates import templates
+from .courses.degree_audit import api as degree_audit
 from .notification import notification
 from .search import search
 from .sgotinish.tickets import tickets, delegation
@@ -32,6 +33,7 @@ routers: List[APIRouter] = [
     planner.router,
     statistics.router,
     templates.router,
+    degree_audit.router,
     notification.router,
     tickets.router,
     conversations.router,

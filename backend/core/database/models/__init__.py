@@ -26,6 +26,7 @@ __all__ = [
     "Conversation",
     "Message",
     "MessageReadStatus",
+    "DegreeAuditResult",
 ]
 from .base import Base
 from .community import (
@@ -49,3 +50,4 @@ from .media import Media
 from .notification import Notification
 from .user import User, UserRole, UserScope
 from .sgotinish import Ticket, Conversation, Message, MessageReadStatus
+from .degree_audit import DegreeAuditResult

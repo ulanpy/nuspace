@@ -154,4 +154,34 @@ export const gradeStatisticsApi = {
     await apiCall(`/planner/reset`, { method: 'POST', json: { term_value } });
   },
 
+  // ==== Degree Audit ====
+  getDegreeAuditCatalog: async () => {
+    return await apiCall(`/degree-audit/catalog`);
+  },
+
+  getDegreeAuditStored: async (params?: { year?: string; major?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.year) search.append("year", params.year);
+    if (params?.major) search.append("major", params.major);
+    const qs = search.toString();
+    const url = qs ? `/degree-audit/result?${qs}` : `/degree-audit/result`;
+    return await apiCall(url);
+  },
+
+  getDegreeRequirements: async (params: { year: string; major: string }) => {
+    const search = new URLSearchParams();
+    search.append("year", params.year);
+    search.append("major", params.major);
+    return await apiCall(`/degree-audit/requirements?${search.toString()}`);
+  },
+
+  runDegreeAuditFromRegistrar: async (payload: {
+    year: string;
+    major: string;
+    username: string;
+    password: string;
+  }) => {
+    return await apiCall(`/degree-audit/audit/registrar`, { method: "POST", json: payload });
+  },
+
 };

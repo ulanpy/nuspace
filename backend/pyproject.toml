@@ -54,6 +54,7 @@ prometheus-client = "^0.22.1"
 alembic = "^1.16.4"
 orjson = "^3.11.3"
 pdfplumber = "^0.11.8"
+pypdf = "^5.1.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.5"

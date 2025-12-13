@@ -13,6 +13,7 @@ export const ABOUT = "about";
 export const PROFILE = "profile";
 export const CONTACTS = "contacts";
 export const COURSES = "courses";
+export const DEGREE_AUDIT_INFO = "degree-audit-info";
 export const DORM_EATS = "dorm-eats";
 export const EVENTS = "events";
 export const COMMUNITIES = "communities";
@@ -30,6 +31,7 @@ export const ROUTES = {
   PROFILE: buildPath(PROFILE),
   CONTACTS: buildPath(CONTACTS),
   COURSES: buildPath(COURSES),
+  DEGREE_AUDIT_INFO: buildPath(DEGREE_AUDIT_INFO),
   DORM_EATS: buildPath(DORM_EATS),
   EVENTS: {
     ROOT: buildPath(EVENTS),
@@ -107,6 +109,10 @@ export const LazyRoutes: {
     {
       path: ROUTES.COURSES,
       Component: withLazy(() => import("@/features/courses/pages/GradeStatisticsPage")),
+    },
+    {
+      path: ROUTES.DEGREE_AUDIT_INFO,
+      Component: withLazy(() => import("@/features/courses/pages/DegreeAuditInfoPage")),
     },
     {
       path: ROUTES.DORM_EATS,
