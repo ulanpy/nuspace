@@ -519,7 +519,7 @@ def _match_group(
                 matched_idx = cand[0]
                 break
         if matched_idx is None:
-            return False, [], total_credits, f"Missing {pat}"
+            return False, temp_used, total_credits, f"Missing {pat}"
         available = remaining[matched_idx]
         consume = min(available, credits_needed - total_credits) if credits_needed > 0 else available
         temp_used.append((matched_idx, consume))
@@ -527,7 +527,7 @@ def _match_group(
 
     # If credits_needed is specified for fixed-course groups, ensure threshold.
     if credits_needed and total_credits < credits_needed:
-        return False, [], total_credits, "Insufficient credits"
+        return False, temp_used, total_credits, "Insufficient credits"
 
     return True, temp_used, total_credits, ""
 
