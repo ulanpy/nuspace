@@ -1,4 +1,4 @@
-course_id,course_code,course_name,credits_need,grade,Option 1,Option 2,Option 3,Option 4,Option 5,Option 6,Option 7,Option 8,Option 9,Option 10,Option 11,Option 12,Option 13,Option 14,Option 15,Option 16,Option 17,Unnamed: 22,Unnamed: 23,Must have Option 1,Except 1,Except 2,Except 3
+course_id,course_code,course_name,credits_need,grade,Option 1,Option 2,Option 3,Option 4,Option 5,Option 6,Option 7,Option 8,Option 9,Option 10,Option 11,Option 12,Option 13,Option 14,Option 15,Option 16,Option 17,Option 18,Option 19,Must have Option 1,Except 1,Except 2,Except 3
 1.0,MATH 161,Calculus I,8,C,MATH 161,,,,,,,,,,,,,,,,,,,,,,
 2.0,PHYS 161,Physics for Scientists and Engineers I with Lab,8,C-,PHYS 161,,,,,,,,,,,,,,,,,,,,,,
 3.0,CSCI 151,Programming for Scientists and Engineers,8,C-,CSCI 151,,,,,,,,,,,,,,,,,,,,,,
