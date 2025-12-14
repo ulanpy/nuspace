@@ -32,8 +32,8 @@ course_id,course_code,course_name,credits_need,grade,Option 1,Option 2,Option 3,
 31,Programming course,Any CSCI course,8,D,CSCI XXX,,,,,,,,,,,,,,,,,,,,,,,
 32,BIOL 4XX,Major elective ,6,C,BIOL 4XX,,,,,,,,,,,,,,,,,,,,,,,
 33,BIOL 3XX/4XX,Major elective ,18,C,BIOL 3XX,BIOL 4XX,,,,,,,,,,,,,,,,,,,,,,BIOL 399
-34,Technical Electvies,"Any ECON, MATH, SEDS, SMG, PHYS, CHEM (except CHEM 341)",12,C-,ECON XXX,MATH XXX,CSCI XXX,SMG XXX,PHYS XXX,CHME XXX,MAE XXX,ELCE XXX,CHEM XXX,ROBT XXX,CEE XXX,,,,,,,,,,,,,CHEM 341
 35,Technical Electvies 3XX,At least one technical at 3XX,6,C-,ECON 3XX,MATH 3XX,CSCI 3XX,SMG 3XX,PHYS 3XX,CHME 3XX,MAE 3XX,ELCE 3XX,CHEM 3XX,ROBT 3XX,CEE 3XX,ECON 4XX,MATH 4XX,CSCI 4XX,SMG 4XX,PHYS 4XX,CHME 4XX,MAE 4XX,ELCE 4XX,CHEM 4XX,ROBT 4XX,CEE 4XX,,CHEM 341
+34,Technical Electvies,"Any ECON, MATH, SEDS, SMG, PHYS, CHEM (except CHEM 341)",12,C-,ECON XXX,MATH XXX,CSCI XXX,SMG XXX,PHYS XXX,CHME XXX,MAE XXX,ELCE XXX,CHEM XXX,ROBT XXX,CEE XXX,,,,,,,,,,,,,CHEM 341
 36,Social science elective,,6,D,SOCELECTIVE,HUMSOCELECTIVE,,,,,,,,,,,,,,,,,,,,,,
 37,ANY XXX,General electives,12,D,ANY XXX,,,,,,,,,,,,,,,,,,,,,,,
 ,,,240,,,,,,,,,,,,,,,,,,,,,,,,,
