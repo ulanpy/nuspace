@@ -14,7 +14,6 @@ REQUIREMENTS_BASE = BASE_DIR / "requirements"
 
 GRADE_ORDER = [
     "F",
-    "D-",
     "D",
     "D+",
     "C-",
@@ -339,6 +338,20 @@ def _pattern_aliases(pattern: str) -> List[str]:
     return [p.strip() for p in (pattern or "").split("/") if p and p.strip()]
 
 
+def _is_excluded_course(course_code: str, excluded_patterns: Sequence[str]) -> bool:
+    """Return True only if every alias of the course matches an excluded pattern."""
+    if not excluded_patterns:
+        return False
+    course_aliases = _pattern_aliases(course_code) or [course_code]
+    excluded_aliases = [
+        alias for ex_pat in excluded_patterns for alias in _pattern_aliases(ex_pat) or [ex_pat]
+    ]
+    for alias in course_aliases:
+        if not any(course_matches_pattern(alias, ex_alias) for ex_alias in excluded_aliases):
+            return False
+    return True
+
+
 def course_matches_pattern(course_code: str, pattern: str) -> bool:
     rng = _parse_range_pattern(pattern)
     if rng:
@@ -405,9 +418,7 @@ def _candidate_courses(
             continue
         if not grade_meets(course.grade, min_grade):
             continue
-        if excluded_patterns and any(
-            course_matches_pattern(course.code, alias) for ex_pat in excluded_patterns for alias in _pattern_aliases(ex_pat)
-        ):
+        if _is_excluded_course(course.code, excluded_patterns):
             continue
         if any(course_matches_pattern(course.code, alias) for alias in aliases):
             candidates.append(idx)
