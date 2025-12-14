@@ -12,7 +12,7 @@ course_id,course_code,course_name,credits_need,grade,Option 1,Option 2,Option 3,
 11.0,KAZ XXX,Kazakh Language,6,D,KAZ XXX,KFL 102,KFL 201,KFL 202,,,,,,,,,,,,,,,KAZ 150
 12.0,Ethics,"PHIL 210, 211 or 212",6,D,PHIL 210,PHIL 211,PHIL 212,,,,,,,,,,,,,,,,
 13.0,ENG 200,Differential Equations and Linear Algebra,6,D,ENG 200,,,,,,,,,,,,,,,,,,
-14.0,MAE 202,Environmental Science,6,D,MAE 202,,,,,,,,,,,,,,,,,,
+14.0,CEE 201,Environmental Chemistry,6,D,CEE 201,,,,,,,,,,,,,,,,,,,,
 15.0,CEE 200,Structural Mechanics I,6,D,CEE 200,,,,,,,,,,,,,,,,,,
 16.0,MAE 201,Computer Aided Design,6,D,MAE 201,,,,,,,,,,,,,,,,,,
 17.0,WCS 210,Technical and Professional Writing,6,D,WCS 210,,,,,,,,,,,,,,,,,,
