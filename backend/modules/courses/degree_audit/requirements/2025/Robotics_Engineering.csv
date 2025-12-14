@@ -1,7 +1,7 @@
 course_id,course_code,course_name,credits_need,grade,Option 1,Option 2,Option 3,Option 4,Option 5,Option 6,Option 7,Option 8,Option 9,Option 10,Option 11,Option 12,Option 13,Option 14,Option 15,Option 16,Option 17,Option 18,Option 19,Must have Option 1,Except 1
 1,MATH 161,Calculus I,8,C,MATH 161,,,,,,,,,,,,,,,,,,,,
 2,PHYS 161,Physics for Scientists and Engineers I with Lab,8,C-,PHYS 161,,,,,,,,,,,,,,,,,,,,
-3,CSCI 151,Programming for Scientists and Engineers,8,C,CSCI 151,,,,,,,,,,,,,,,,,,,,
+3,CSCI 151,Programming for Scientists and Engineers,8,C-,CSCI 151,,,,,,,,,,,,,,,,,,,,
 4,WCS 150,Rhetoric and Composition,6,C-,WCS 150,,,,,,,,,,,,,,,,,,,,
 5,MATH 162,Calculus II,8,C,MATH 162,,,,,,,,,,,,,,,,,,,,
 6,PHYS 162,Physics for Scientists and Engineers II with Lab,8,C-,PHYS 162,,,,,,,,,,,,,,,,,,,,
