@@ -212,13 +212,37 @@ class StudentCourseService:
         semesters: List[SemesterOption],
         current_term_value: str,
     ) -> str | None:
-        """Return the next available older term_value, if any."""
-        term_values = [sem.value for sem in semesters]
-        try:
-            idx = term_values.index(current_term_value)
-        except ValueError:
+        """
+        Return the next available older term_value (numerically smaller), if any.
+
+        The registrar may return semesters in varying orders. To make fallback
+        deterministic, sort by numeric term id descending and pick the next
+        lower value relative to the current term.
+        """
+        term_entries: list[tuple[int, str]] = []
+        for sem in semesters:
+            try:
+                numeric_value = int(sem.value)
+            except (TypeError, ValueError):
+                continue
+            term_entries.append((numeric_value, sem.value))
+
+        if not term_entries:
             return None
-        return term_values[idx + 1] if idx + 1 < len(term_values) else None
+
+        # sort newest -> oldest
+        term_entries.sort(key=lambda t: t[0], reverse=True)
+
+        try:
+            current_numeric = int(current_term_value)
+        except (TypeError, ValueError):
+            return None
+
+        for numeric, value in term_entries:
+            if numeric < current_numeric:
+                return value
+
+        return None
 
     async def _get_or_create_course(
         self,
@@ -260,7 +284,7 @@ class StudentCourseService:
                 
                 page=1,
             )
-            search_response = await self._registrar_service.search_courses(search_request)
+            search_response = await self._registrar_service.search_courses_pcc(search_request)
 
             for item in search_response.items:
                 normalized_item_code = self._normalize_course_code(item.course_code)
@@ -278,7 +302,7 @@ class StudentCourseService:
                     term=fallback_term_value,
                     page=1,
                 )
-                fallback_response = await self._registrar_service.search_courses(fallback_request)
+                fallback_response = await self._registrar_service.search_courses_pcc(fallback_request)
                 for item in fallback_response.items:
                     normalized_item_code = self._normalize_course_code(item.course_code)
                     if normalized_item_code == candidate:
@@ -286,9 +310,38 @@ class StudentCourseService:
                         break
                 if matching_course:
                     break
+        if not matching_course and not fallback_term_value:
+            pass
+
+        # last-resort: search without term filter to discover course/term if catalog has it
+        if not matching_course:
+            for candidate in candidates:
+                any_term_request = CourseSearchRequest(
+                    course_code=candidate,
+                    term=None,
+                    page=1,
+                )
+                any_term_response = await self._registrar_service.search_courses_pcc(any_term_request)
+                for item in any_term_response.items:
+                    normalized_item_code = self._normalize_course_code(item.course_code)
+                    if normalized_item_code == candidate:
+                        matching_course = item
+                        # adjust term_value to hit term if present
+                        if getattr(item, "term", None):
+                            try:
+                                # item.term may be label like "Fall 2025"; we keep current term_value
+                                pass
+                            except Exception:
+                                pass
+                        break
+                if matching_course:
+                    break
 
         if not matching_course:
-            raise CourseLookupError(f"Course not found in registrar for term {term_value}")
+            raise CourseLookupError(
+                f"Course not found in registrar for term {term_value}"
+                + (f" (fallback tried: {fallback_term_value})" if fallback_term_value else "")
+            )
 
         # Insert course into database (using term label from response)
         try:
@@ -360,6 +413,10 @@ class StudentCourseService:
         if current_term_label is None:
             raise SemesterResolutionError("Unable to resolve current registrar semester label.")
         
+        fallback_term_value = self._resolve_fallback_term_value(semesters, current_term_value)
+
+        
+
         # Extract unique course codes from schedule (store only normalized full codes;
         # matching against existing registrations handles cross-list variants)
         schedule_codes: set[str] = set()
@@ -369,6 +426,8 @@ class StudentCourseService:
                 if not normalized_code:
                     continue
                 schedule_codes.add(normalized_code)
+
+        
         
         # Get all existing student courses for this student
         existing_registrations = await self.repository.fetch_registered_courses(student_sub)
@@ -406,8 +465,6 @@ class StudentCourseService:
                 courses_to_add.append(schedule_code)
 
         courses_to_delete = set(existing_courses_map.keys()) - matched_existing_codes
-        
-        fallback_term_value = self._resolve_fallback_term_value(semesters, current_term_value)
 
         # Delete courses no longer in schedule
         for course_code in courses_to_delete:

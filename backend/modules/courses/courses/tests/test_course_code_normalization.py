@@ -51,6 +51,10 @@ async def test_get_or_create_course_searches_cross_list_parts():
                 )
             return CourseSearchResponse(items=[])
 
+        # Service now calls search_courses_pcc; delegate for compatibility.
+        async def search_courses_pcc(self, request):
+            return await self.search_courses(request)
+
     class FakeRepo:
         async def find_course_by_registrar_id(self, registrar_id: int):
             return None

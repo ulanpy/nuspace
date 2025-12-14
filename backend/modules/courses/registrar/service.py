@@ -70,6 +70,50 @@ class RegistrarService:
             semesters = await client.get_semesters()
         return [SemesterOption(**semester) for semester in semesters]
 
+    async def search_courses_pcc(self, request: CourseSearchRequest) -> CourseSearchResponse:
+        """
+        Search courses directly against the public course catalog (registrar live),
+        bypassing Meilisearch schedule index. Used by course sync as a reliable source.
+        """
+        try:
+            async with self.public_client_factory() as client:
+                data = await client.search(
+                    course_code=request.course_code,
+                    term=request.term or "",
+                    page=request.page,
+                )
+        except ValueError as exc:  # registrar returned non-JSON payload
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+        items = data.get("items", [])
+        priority_map = await self.fetch_course_priorities(
+            [item.get("course_code") for item in items]
+        )
+
+        for item in items:
+            normalized = self.normalize_course_code(item.get("course_code"))
+            priority_record = priority_map.get(normalized)
+            if not priority_record:
+                item.setdefault("priority_1", None)
+                item.setdefault("priority_2", None)
+                item.setdefault("priority_3", None)
+                item.setdefault("priority_4", None)
+                continue
+
+            item["priority_1"] = priority_record.priority_1
+            item["priority_2"] = priority_record.priority_2
+            item["priority_3"] = priority_record.priority_3
+            item["priority_4"] = priority_record.priority_4
+
+            if not item.get("pre_req"):
+                item["pre_req"] = priority_record.prerequisite or ""
+            if not item.get("co_req"):
+                item["co_req"] = priority_record.corequisite or ""
+            if not item.get("anti_req"):
+                item["anti_req"] = priority_record.antirequisite or ""
+
+        return CourseSearchResponse(**data)
+
     async def get_active_semester(self) -> SemesterOption:
         """
         Return the most recent registrar semester (highest numeric value).

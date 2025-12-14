@@ -85,6 +85,74 @@ class PublicCourseCatalogClient:
             for entry in semesters
         ]
 
+    async def search(
+        self,
+        course_code: str | None,
+        term: str,
+        level: str | None = None,
+        page: int = 1,
+    ) -> Dict[str, Any]:
+        """
+        Search the public course catalog (live registrar) for a course code within a term.
+        Mirrors the previously used PCC search; kept lean for sync fallback.
+        """
+        query = (course_code or "").strip()
+        quick_search = query.upper()
+
+        params: Dict[str, Any] = {
+            "searchParams[formSimple]": "false",
+            "searchParams[limit]": self._limit,
+            "searchParams[page]": page,
+            "searchParams[start]": 0,
+            "searchParams[quickSearch]": quick_search,
+            "searchParams[sortField]": -1,
+            "searchParams[sortDescending]": -1,
+            "searchParams[semester]": term if term else "",
+            "searchParams[schools]": "",
+            "searchParams[departments]": "",
+            "searchParams[subjects]": "",
+            "searchParams[instructors]": "",
+            "searchParams[breadths]": "",
+            "searchParams[abbrNum]": "",
+            "searchParams[credit]": "",
+        }
+        if level:
+            params["searchParams[levels][]"] = level
+
+        result = await self._request("getSearchData", params=params)
+        raw_items = result.get("data", [])
+        items: List[Dict[str, Any]] = []
+
+        for entry in raw_items:
+            items.append(
+                {
+                    "registrar_id": entry.get("COURSEID", ""),
+                    "course_code": entry.get("ABBR", ""),
+                    "pre_req": entry.get("PREREQ", ""),
+                    "anti_req": entry.get("ANTIREQ", ""),
+                    "co_req": entry.get("COREQ", ""),
+                    "level": entry.get("ACADEMICLEVEL", ""),
+                    "school": entry.get("SCHOOLABBR", ""),
+                    "description": entry.get("SHORTDESC") or None,
+                    "department": entry.get("DEPARTMENT", ""),
+                    "title": entry.get("TITLE", ""),
+                    "credits": entry.get("CRECTS", ""),
+                    "term": entry.get("TERMNAME", ""),
+                }
+            )
+
+        total_raw = result.get("total", 0)
+        try:
+            total = int(total_raw)
+        except (TypeError, ValueError):
+            total = 0
+        has_next_page = total > page * self._limit
+
+        payload: Dict[str, Any] = {"items": items}
+        if has_next_page:
+            payload["cursor"] = page + 1
+        return payload
+
 
     async def get_schedules(
         self,
