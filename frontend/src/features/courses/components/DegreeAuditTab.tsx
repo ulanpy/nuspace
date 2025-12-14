@@ -43,9 +43,10 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
 
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedMajor, setSelectedMajor] = useState("");
+  const [showReqModal, setShowReqModal] = useState(false);
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showReqModal, setShowReqModal] = useState(false);
 
   useEffect(() => {
     if (catalogQuery.data?.years?.length) {
@@ -146,6 +147,30 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
           </div>
         </div>
 
+        <Alert variant="default" className="border-amber-300/60 bg-amber-50 text-amber-900">
+          <ShieldCheck className="h-4 w-4" />
+          <AlertTitle className="text-sm font-semibold">Important note</AlertTitle>
+          <AlertDescription className="text-xs space-y-2">
+            <p>
+              Please note that the output is preliminary and is based on the Academic Handbook provided by the Academic
+              Advising Office. The handbook itself may contain inaccuracies, and degree requirements may change over time
+              and may not always be fully reflected in it.
+            </p>
+            <p>
+              Therefore, this output should be used as a guiding reference only and not as a final confirmation. Final
+              degree completion requirements are confirmed exclusively by Program Directors. We do not take responsibility
+              for any discrepancies.
+            </p>
+            <p>If you notice any errors, please report them to us.</p>
+            <p className="font-semibold">
+              Best wishes,<br />
+              <a href="https://t.me/nu_mri" className="underline" target="_blank" rel="noreferrer">
+                SG Ministry of Research and Innovations
+              </a>
+            </p>
+          </AlertDescription>
+        </Alert>
+
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Admission year</label>
@@ -188,71 +213,18 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Registrar username</label>
-            <Input value={username} readOnly className="cursor-not-allowed bg-muted/60" />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Registrar password</label>
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(ev) => setPassword(ev.target.value)}
-                placeholder="Enter your registrar password"
-                className="h-11 rounded-xl pr-10"
-                disabled={auditMutation.isPending}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1 h-9 w-9 text-muted-foreground hover:text-foreground"
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  setShowPassword(true);
-                }}
-                onPointerUp={() => setShowPassword(false)}
-                onPointerLeave={() => setShowPassword(false)}
-                onPointerCancel={() => setShowPassword(false)}
-                onBlur={() => setShowPassword(false)}
-                disabled={auditMutation.isPending}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-        </div>
-
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex gap-2">
             <Button
-              variant="outline"
               size="sm"
-              className="h-8 rounded-full px-3 text-xs font-medium"
+              className="h-8 rounded-full px-3 text-xs font-medium gap-2"
               onClick={() => {
+                setIsAuditModalOpen(true);
                 setPassword("");
                 setShowPassword(false);
                 auditMutation.reset();
               }}
-              disabled={auditMutation.isPending}
-            >
-              Clear
-            </Button>
-            <Button
-              size="sm"
-              className="h-8 rounded-full px-3 text-xs font-medium gap-2"
-              onClick={() => auditMutation.mutate({ password: password.trim() })}
-              disabled={
-                !selectedYear ||
-                !selectedMajor ||
-                !password.trim() ||
-                !username ||
-                auditMutation.isPending ||
-                catalogQuery.isLoading
-              }
+              disabled={!selectedYear || !selectedMajor || !username || catalogQuery.isLoading || auditMutation.isPending}
             >
               {auditMutation.isPending ? "Running..." : "Run audit"}
               <GraduationCap className={cn("h-4 w-4", auditMutation.isPending && "animate-spin")} />
@@ -357,6 +329,109 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
           </div>
         </div>
       )}
+      <Modal
+        isOpen={isAuditModalOpen}
+        onClose={() => {
+          if (!auditMutation.isPending) {
+            setIsAuditModalOpen(false);
+            setPassword("");
+            setShowPassword(false);
+          }
+        }}
+        title="Run degree audit"
+        className="max-w-lg"
+        contentClassName="rounded-3xl"
+      >
+        <div className="space-y-4">
+          <Alert variant="default" className="border-border/60 bg-muted/40">
+            <ShieldCheck className="h-4 w-4" />
+            <AlertTitle className="text-sm font-semibold">We never store your NU Registrar password.</AlertTitle>
+            <AlertDescription className="text-xs text-muted-foreground">
+              Your credentials are sent directly to the registrar via our API just to fetch your transcript for this audit.
+            </AlertDescription>
+          </Alert>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Registrar username</label>
+            <Input value={username} readOnly className="cursor-not-allowed bg-muted/60" />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">Registrar password</label>
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(ev) => setPassword(ev.target.value)}
+                placeholder="Enter your registrar password"
+                className="h-11 rounded-xl pr-10"
+                disabled={auditMutation.isPending}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1 h-9 w-9 text-muted-foreground hover:text-foreground"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  setShowPassword(true);
+                }}
+                onPointerUp={() => setShowPassword(false)}
+                onPointerLeave={() => setShowPassword(false)}
+                onPointerCancel={() => setShowPassword(false)}
+                onBlur={() => setShowPassword(false)}
+                disabled={auditMutation.isPending}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 rounded-full px-3 text-xs font-medium"
+              onClick={() => {
+                if (!auditMutation.isPending) {
+                  setIsAuditModalOpen(false);
+                  setPassword("");
+                  setShowPassword(false);
+                }
+              }}
+              disabled={auditMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="h-9 rounded-full px-3 text-xs font-medium gap-2"
+              onClick={async () => {
+                if (!password.trim()) return;
+                try {
+                  await auditMutation.mutateAsync({ password: password.trim() });
+                  setIsAuditModalOpen(false);
+                  setPassword("");
+                  setShowPassword(false);
+                } catch {
+                  // keep modal open to show error
+                }
+              }}
+              disabled={
+                !selectedYear ||
+                !selectedMajor ||
+                !username ||
+                !password.trim() ||
+                auditMutation.isPending ||
+                catalogQuery.isLoading
+              }
+            >
+              {auditMutation.isPending ? "Running..." : "Run audit"}
+              <GraduationCap className={cn("h-4 w-4", auditMutation.isPending && "animate-spin")} />
+            </Button>
+          </div>
+        </div>
+      </Modal>
       <Modal
         isOpen={showReqModal}
         onClose={() => setShowReqModal(false)}

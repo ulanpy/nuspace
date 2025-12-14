@@ -87,6 +87,25 @@ export default function DegreeAuditInfoPage() {
         </div>
 
         <div className="grid gap-4 rounded-3xl border border-border/60 bg-card p-6 shadow-sm">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900 space-y-2">
+            <p>
+              Please note that the output is preliminary and is based on the Academic Handbook provided by the Academic
+              Advising Office. The handbook itself may contain inaccuracies, and degree requirements may change over time
+              and may not always be fully reflected in it.
+            </p>
+            <p>
+              Therefore, this output should be used as a guiding reference only and not as a final confirmation. Final
+              degree completion requirements are confirmed exclusively by Program Directors. We do not take responsibility
+              for any discrepancies.
+            </p>
+            <p>If you notice any errors, please report them to us.</p>
+            <p className="font-semibold">
+              Best wishes,<br />
+              <a href="https://t.me/nu_mri" className="underline" target="_blank" rel="noreferrer">
+                SG Ministry of Research and Innovations
+              </a>
+            </p>
+          </div>
           <div className="space-y-3 text-sm leading-relaxed text-foreground">
             {paragraphs.map((p, idx) => (
               <p key={idx}>{p}</p>
