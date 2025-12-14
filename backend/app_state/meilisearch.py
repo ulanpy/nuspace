@@ -1,5 +1,6 @@
+import asyncio
 from dataclasses import dataclass
-from typing import List, Type
+from typing import List, Type, Optional
 
 import httpx
 from fastapi import FastAPI
@@ -58,103 +59,107 @@ async def setup_meilisearch(app: FastAPI):
         headers={"Authorization": f"Bearer {config.MEILISEARCH_MASTER_KEY}"},
     )
 
-    # Delete all existing indexes first
-    try:
-        response = await app.state.meilisearch_client.get("/indexes")
-        existing_indexes = response.json()
-        for index in existing_indexes["results"]:
-            await app.state.meilisearch_client.delete(f"/indexes/{index['uid']}")
-    except Exception as e:
-        print(f"Error clearing existing indexes: {str(e)}")
-
-    # Define index configurations directly
-    index_configs = [
-        MeilisearchIndexConfig(
-            model=Event,
-            searchable_columns=[Event.name, Event.description],
-            filterable_attributes=None,
-            primary_key=Event.id,  # Explicitly specify primary key
-        ),
-        MeilisearchIndexConfig(
-            model=Community,
-            searchable_columns=[Community.name, Community.description],
-            filterable_attributes=None,
-            primary_key=Community.id,  # Explicitly specify primary key
-        ),
-        MeilisearchIndexConfig(
-            model=GradeReport,
-            searchable_columns=[
-                GradeReport.course_code,
-                GradeReport.course_title,
-                GradeReport.faculty,
-                GradeReport.term,
-            ],
-            filterable_attributes=[GradeReport.term],
-            primary_key=GradeReport.id,  # Explicitly specify primary key
-        ),
-        MeilisearchIndexConfig(
-            model=Course,
-            searchable_columns=[Course.course_code, Course.term],
-            filterable_attributes=[Course.term],
-            primary_key=Course.id,  # Explicitly specify primary key
-        )
-    ]
-
-    # Import data for each configured index
-    for index_config in index_configs:
-        await meilisearch.sync_with_db(
-            meilisearch_client=app.state.meilisearch_client,
-            storage_name=index_config.model.__tablename__,
-            db_manager=app.state.db_manager,
-            model=index_config.model,
-            columns_for_searching=index_config.get_searchable_names(),
-            primary_key=index_config.get_primary_key_name(),  # Pass primary key name
-        )
-
-        # Ensure only intended attributes are searchable (avoid matching by id)
+    async def _init_meili_indices() -> None:
+        # Delete all existing indexes first
         try:
-            await app.state.meilisearch_client.patch(
-                f"/indexes/{index_config.model.__tablename__}/settings",
-                json={
-                    "searchableAttributes": index_config.get_searchable_names(),
-                },
-            )
+            response = await app.state.meilisearch_client.get("/indexes")
+            existing_indexes = response.json()
+            for index in existing_indexes.get("results", []):
+                await app.state.meilisearch_client.delete(f"/indexes/{index['uid']}")
         except Exception as e:
-            print(
-                f"Error setting searchable attributes for {index_config.model.__tablename__}: {str(e)}"
-            )
+            print(f"Error clearing existing indexes: {str(e)}")
 
-        # Set filterable attributes if specified
-        if index_config.filterable_attributes:
-            await app.state.meilisearch_client.patch(
-                f"/indexes/{index_config.model.__tablename__}/settings",
-                json={"filterableAttributes": index_config.get_filterable_names()},
-            )
+        # Define index configurations directly
+        index_configs = [
+            MeilisearchIndexConfig(
+                model=Event,
+                searchable_columns=[Event.name, Event.description],
+                filterable_attributes=None,
+                primary_key=Event.id,
+            ),
+            MeilisearchIndexConfig(
+                model=Community,
+                searchable_columns=[Community.name, Community.description],
+                filterable_attributes=None,
+                primary_key=Community.id,
+            ),
+            MeilisearchIndexConfig(
+                model=GradeReport,
+                searchable_columns=[
+                    GradeReport.course_code,
+                    GradeReport.course_title,
+                    GradeReport.faculty,
+                    GradeReport.term,
+                ],
+                filterable_attributes=[GradeReport.term],
+                primary_key=GradeReport.id,
+            ),
+            MeilisearchIndexConfig(
+                model=Course,
+                searchable_columns=[Course.course_code, Course.term],
+                filterable_attributes=[Course.term],
+                primary_key=Course.id,
+            ),
+        ]
 
-    # Initialize registrar course priority and schedule indexes + refreshers (run in debug)
-    if not config.IS_DEBUG:
-        app.state.course_priority_refresher = PriorityRequirementsRefresher(
-            app.state.meilisearch_client
-        )
-        app.state.course_schedule_refresher = ScheduleCatalogRefresher(
-            app.state.meilisearch_client
-        )
-        try:
-            count = await sync_priority_requirements(app.state.meilisearch_client)
-            print(f"Synced priority requirements docs: {count}")
-        except Exception as exc:
-            print(f"Error syncing registrar course priority: {exc}")
-        app.state.course_priority_refresher.start()
-        try:
-            count = await sync_schedule_catalog(app.state.meilisearch_client)
-            print(f"Synced schedule catalog docs: {count}")
-        except Exception as exc:
-            print(f"Error syncing registrar course schedule: {exc}")
-        app.state.course_schedule_refresher.start()
+        # Import data for each configured index
+        for index_config in index_configs:
+            try:
+                await meilisearch.sync_with_db(
+                    meilisearch_client=app.state.meilisearch_client,
+                    storage_name=index_config.model.__tablename__,
+                    db_manager=app.state.db_manager,
+                    model=index_config.model,
+                    columns_for_searching=index_config.get_searchable_names(),
+                    primary_key=index_config.get_primary_key_name(),
+                )
+                await app.state.meilisearch_client.patch(
+                    f"/indexes/{index_config.model.__tablename__}/settings",
+                    json={"searchableAttributes": index_config.get_searchable_names()},
+                )
+                if index_config.filterable_attributes:
+                    await app.state.meilisearch_client.patch(
+                        f"/indexes/{index_config.model.__tablename__}/settings",
+                        json={"filterableAttributes": index_config.get_filterable_names()},
+                    )
+            except Exception as e:
+                print(f"Error syncing index {index_config.model.__tablename__}: {e}")
+
+        # Initialize registrar course priority and schedule indexes + refreshers (run in debug)
+        if not config.IS_DEBUG:
+            app.state.course_priority_refresher = PriorityRequirementsRefresher(
+                app.state.meilisearch_client
+            )
+            app.state.course_schedule_refresher = ScheduleCatalogRefresher(
+                app.state.meilisearch_client
+            )
+            try:
+                count = await sync_priority_requirements(app.state.meilisearch_client)
+                print(f"Synced priority requirements docs: {count}")
+            except Exception as exc:
+                print(f"Error syncing registrar course priority: {exc}")
+            app.state.course_priority_refresher.start()
+            try:
+                count = await sync_schedule_catalog(app.state.meilisearch_client)
+                print(f"Synced schedule catalog docs: {count}")
+            except Exception as exc:
+                print(f"Error syncing registrar course schedule: {exc}")
+            app.state.course_schedule_refresher.start()
+
+    # Kick off indexing in background to avoid blocking startup
+    app.state.meili_init_task: Optional[asyncio.Task] = asyncio.create_task(_init_meili_indices())
 
 
 async def cleanup_meilisearch(app: FastAPI):
     """Clean up Meilisearch client connection"""
+    init_task: Optional[asyncio.Task] = getattr(app.state, "meili_init_task", None)
+    if init_task and not init_task.done():
+        init_task.cancel()
+        try:
+            await init_task
+        except asyncio.CancelledError:
+            pass
+
     refresher = getattr(app.state, "course_priority_refresher", None)
     if refresher:
         await refresher.stop()
