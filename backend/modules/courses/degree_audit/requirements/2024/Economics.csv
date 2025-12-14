@@ -1,5 +1,5 @@
 course_id,course_code,course_name,credits_need,grade,Option 1,Option 2,Option 3,Option 4,Option 5,Option 6,Option 7,Option 8,Must have Option 1,Except 1
-1.0,Elementary Course,"ECON 101, 102 and 211",18,В-,"ECON 101, ECON 102, ECON 211",,,,,,,,,HST 100
+1.0,Elementary Course,"ECON 101, 102 and 211",18,B-,"ECON 101, ECON 102, ECON 211",,,,,,,,,HST 100
 3.0,Intermediate Courses,"ECON 201, 202 and 301",18,C-,"ECON 201, ECON 202, ECON 301",,,,,,,,,
 4.0,Advanced Economics Electives,Three ECON 4XX,18,C-,ECON 4XX,,,,,,,,,
 8.0,General ECON elective,Four ECON 3XX,24,C-,ECON 3XX,,,,,,,,,HST 100
