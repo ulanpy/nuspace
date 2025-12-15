@@ -5,6 +5,7 @@ import {
 } from "@/components/atoms/tabs";
 import { Badge } from "@/components/atoms/badge";
 import { VerificationBadge } from "@/components/molecules/verification-badge";
+import { MarkdownContent } from "@/components/molecules/MarkdownContent";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar";
 import { EventCard } from "@/features/events/components/EventCard";
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
@@ -183,7 +184,7 @@ export default function CommunityDetailPage() {
     if (serverPast.length > 0) return serverPast;
     const all = recentCommunityEvents?.events ?? [];
     const todayDate = new Date(today);
-    return all.filter((e) => new Date(e.event_datetime) < todayDate);
+    return all.filter((e) => new Date(e.end_datetime) < todayDate);
   }, [pastEvents, recentCommunityEvents, today]);
 
   if (isCommunityLoading) {
@@ -517,9 +518,10 @@ export default function CommunityDetailPage() {
                   </div>
                   <div className="p-6">
                     <div className="prose max-w-none">
-                      <p className="text-base leading-relaxed whitespace-pre-line break-words">
-                        {community.description || "No description available."}
-                      </p>
+                      <MarkdownContent 
+                        content={community.description} 
+                        fallback="No description available." 
+                      />
                     </div>
                     
                     {/* Additional Info */}
