@@ -74,6 +74,15 @@ import { Media } from "@/features/media/types/types";
       editable_fields: CommunityEditableFields[]
     }
 
+    export interface Achievement {
+      id: number;
+      community_id: number;
+      description: string;
+      year: number;
+      created_at: string;
+      updated_at: string;
+    }
+
     export interface Community {
       id: number;
       name: string;
@@ -94,6 +103,7 @@ import { Media } from "@/features/media/types/types";
       head_user: HeadUser;
       media: Media[];
       permissions: CommunityPermissions;
+      achivements: Achievement[];
 
     }
 

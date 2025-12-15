@@ -98,5 +98,41 @@ export const campuscurrentAPI = {
       },
     });
   },
+
+  // Achievements API
+  createAchievement: (data: { community_id: number; description: string; year: number }) => {
+    return apiCall<any>(`/` + Routes.COMMUNITIES + `/${data.community_id}/achievements`, {
+      method: "POST",
+      json: data,
+    });
+  },
+
+  updateAchievement: (communityId: number, achievementId: number, data: { description?: string; year?: number }) => {
+    return apiCall<any>(`/` + Routes.COMMUNITIES + `/${communityId}/achievements/${achievementId}`, {
+      method: "PATCH",
+      json: data,
+    });
+  },
+
+  deleteAchievement: (communityId: number, achievementId: number) => {
+    return apiCall(`/` + Routes.COMMUNITIES + `/${communityId}/achievements/${achievementId}`, {
+      method: "DELETE",
+    });
+  },
+
+  getAchievementsQueryOptions: (communityId: number, page: number = 1, size: number = 20) => {
+    return queryOptions({
+      queryKey: ["campusCurrent", "community", communityId, "achievements", page, size],
+      queryFn: async () => {
+        const queryParams = new URLSearchParams();
+        queryParams.set("page", String(page));
+        queryParams.set("size", String(size));
+        
+        return apiCall<{ achievements: any[]; total_pages: number }>(
+          `/` + Routes.COMMUNITIES + `/${communityId}/achievements?` + queryParams.toString()
+        );
+      },
+    });
+  },
 };
 
