@@ -1,13 +1,13 @@
-import {useUser} from "@/hooks/use-user";
-import {Card, CardContent, CardFooter, CardHeader} from "@/components/atoms/card";
-import {Button} from "@/components/atoms/button";
-import {ThemeToggle} from "@/components/molecules/theme-toggle";
-import {BindTelegramButton} from "@/components/molecules/buttons/bind-telegram-button";
-import {TelegramStatus} from "@/components/molecules/telegram-status";
-import {LogOut, User, Users, Plus} from "lucide-react";
-import {useUserCommunities} from "@/features/communities/hooks/use-user-communities";
-import {useNavigate} from "react-router-dom";
-import {ROUTES} from "@/data/routes";
+import { useUser } from "@/hooks/use-user";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/atoms/card";
+import { Button } from "@/components/atoms/button";
+import { ThemeToggle } from "@/components/molecules/theme-toggle";
+import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
+import { TelegramStatus } from "@/components/molecules/telegram-status";
+import { LogOut, User, Users, Plus } from "lucide-react";
+import { useUserCommunities } from "@/features/communities/hooks/use-user-communities";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/data/routes";
 import { Community } from "@/features/shared/campus/types";
 import { MediaFormat } from "@/features/media/types/types";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
@@ -15,9 +15,9 @@ import { useState } from "react";
 import { CommunityModal } from "@/features/communities/components/CommunityModal";
 
 export default function ProfilePage() {
-    const {user, isLoading, logout, login} = useUser();
+    const { user, isLoading, logout, login } = useUser();
     const navigate = useNavigate();
-    const {communities} = useUserCommunities(user?.user?.sub);
+    const { communities } = useUserCommunities(user?.user?.sub);
     const [isCreateCommunityModalOpen, setIsCreateCommunityModalOpen] = useState(false);
 
 
@@ -33,9 +33,9 @@ export default function ProfilePage() {
                         <div
                             className="w-12 h-12 rounded-full bg-muted overflow-hidden flex items-center justify-center">
                             {user?.user?.picture ? (
-                                <img src={user.user.picture} alt="avatar" className="w-full h-full object-cover"/>
+                                <img src={user.user.picture} alt="avatar" className="w-full h-full object-cover" />
                             ) : (
-                                <User className="h-6 w-6 text-muted-foreground"/>
+                                <User className="h-6 w-6 text-muted-foreground" />
                             )}
                         </div>
                         <div className="min-w-0">
@@ -54,7 +54,7 @@ export default function ProfilePage() {
                                     className="inline-flex items-center gap-2"
                                     onClick={() => logout()}
                                 >
-                                    <LogOut size={16}/> Logout
+                                    <LogOut size={16} /> Logout
                                 </Button>
                             ) : (
                                 <Button variant="outline" size="sm" onClick={() => login()}>
@@ -69,7 +69,7 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-between w-full">
                         <div className="text-sm text-muted-foreground">Theme</div>
                         <div className="flex gap-2">
-                            <ThemeToggle/>
+                            <ThemeToggle />
                         </div>
                     </div>
                 </CardFooter>
@@ -78,9 +78,9 @@ export default function ProfilePage() {
                         <div className="border-t pt-4 space-y-4">
                             <div className="flex items-center justify-between">
                                 <div className="text-sm">Telegram</div>
-                                {user?.tg_id ? <TelegramStatus isConnected/> : <BindTelegramButton/>}
+                                {user?.tg_id ? <TelegramStatus isConnected /> : <BindTelegramButton />}
                             </div>
-                            
+
                             {/* My Communities Section */}
                             <div className="border-t pt-4">
                                 <div className="flex items-center justify-between">
@@ -92,7 +92,7 @@ export default function ProfilePage() {
                                             const profile = community.media?.find(
                                                 (media) => media.media_format === MediaFormat.profile
                                             );
-                                            
+
                                             return (
                                                 <Button
                                                     key={community.id}

@@ -149,7 +149,7 @@ export default function SGDashboard() {
   return (
     <MotionWrapper>
       <div className="container mx-auto px-4 py-8">
-        
+
         {/* Page Header */}
         <div className="mb-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -159,7 +159,7 @@ export default function SGDashboard() {
             </div>
           </div>
         </div>
-        
+
 
         {/* Filters */}
         <div className="mb-6">
