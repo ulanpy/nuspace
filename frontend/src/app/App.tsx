@@ -1,33 +1,44 @@
 import type { ComponentType } from "react";
 import { LazyRoutes, ROUTES } from "../data/routes";
-// import AdminLayout from "../pages/admin/admin-layout";
-// import AdminPage from "../pages/admin/admin-page";
 import { Routes, Route, Navigate } from "react-router-dom";
-import HomePage from "../pages/home";
-import AppsLayout from "../pages/apps-layout";
 import { Toasts } from "../components/atoms/toast";
-import { MediaUploadProvider } from "../context/MediaUploadContext";
-import { MediaEditProvider } from "../context/MediaEditContext";
+
+// Layouts
+import { PublicLayout } from "../layouts/PublicLayout";
+import { LoggedInLayout } from "../layouts/LoggedInLayout";
 import { CampusLayout } from "../components/CampusLayout";
-import { MobileBottomNav } from "@/components/molecules/MobileBottomNav";
+
+// Route guards
+import { ProtectedRoute } from "../components/layout/ProtectedRoute";
+import { PublicRoute } from "../components/layout/PublicRoute";
+
+// Pages
+import LandingPage from "../pages/LandingPage";
+import Announcements from "../pages/Announcements";
 
 function App() {
   return (
-    <MediaUploadProvider>
-      <MediaEditProvider>
-        <Routes>
-          <Route path={ROUTES.HOME} element={<HomePage />} />
-          {/* <Route path={ROUTES.ADMIN.ROOT} element={<AdminLayout />}>
-            <Route index element={<AdminPage />} />
-            {LazyRoutes.ADMINS.map(({ path, Component }) => (
-              <Route key={path} path={path} element={<Component />} />
-            ))} */}
-          {/* </Route> */}
-          <Route element={<AppsLayout />}>
+    <>
+      <Routes>
+        {/* Public routes (Landing Page for guests) */}
+        <Route element={<PublicRoute />}>
+          <Route element={<PublicLayout />}>
+            <Route path={ROUTES.HOME} element={<LandingPage />} />
+          </Route>
+        </Route>
+
+        {/* Protected routes (Announcements for authenticated users) */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<LoggedInLayout />}>
+            <Route path={ROUTES.ANNOUNCEMENTS} element={<Announcements />} />
+
+            {/* Main app routes */}
             {LazyRoutes.MAIN.map(({ path, Component }) => {
               const Screen = Component as ComponentType<any>;
               return <Route key={path} path={path} element={<Screen />} />;
             })}
+
+            {/* Events with CampusLayout wrapper (content-only, no header) */}
             <Route element={<CampusLayout />}>
               {LazyRoutes.EVENTS.map(({ path, Component }) => {
                 const Screen = Component as ComponentType<any>;
@@ -35,13 +46,15 @@ function App() {
               })}
             </Route>
           </Route>
-          <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
-        </Routes>
-        {/* <Footer note="About Nuspace" /> */}
-        <MobileBottomNav />
-        <Toasts />
-      </MediaEditProvider>
-    </MediaUploadProvider>
+        </Route>
+
+        {/* Catch-all: redirect to home */}
+        <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+      </Routes>
+
+      {/* Global toasts (outside layouts for consistent positioning) */}
+      <Toasts />
+    </>
   );
 }
 

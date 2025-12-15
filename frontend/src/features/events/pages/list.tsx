@@ -91,7 +91,7 @@ export default function Events() {
             </Button>
           </div>
         </div>
-        
+
         <main>
           {/* Optimized mobile filter section */}
           <div className="mb-6">
@@ -100,8 +100,8 @@ export default function Events() {
               {/* Time filter - compact on mobile */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     className="flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm justify-between bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
@@ -110,7 +110,7 @@ export default function Events() {
                     <ChevronDown className="h-3 w-3 ml-1 sm:h-4 sm:w-4 sm:ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent 
+                <DropdownMenuContent
                   className="w-48 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                   align="start"
                 >
@@ -120,8 +120,8 @@ export default function Events() {
                       onClick={() => setTimeFilter(option.value as TimeFilter)}
                       className={`
                         text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700
-                        ${timeFilter === option.value 
-                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
+                        ${timeFilter === option.value
+                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                           : ''
                         }
                       `}
@@ -139,8 +139,8 @@ export default function Events() {
                 onClick={() => setIsCommunityModalOpen(true)}
                 className={`
                   flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm gap-1 sm:gap-2
-                  ${selectedCommunity 
-                    ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm' 
+                  ${selectedCommunity
+                    ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm'
                     : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }
                 `}
@@ -157,8 +157,8 @@ export default function Events() {
                 onClick={() => setEventTypeFilter(eventTypeFilter === "recruitment" ? null : "recruitment")}
                 className={`
                   flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm gap-1 sm:gap-2
-                  ${eventTypeFilter === "recruitment" 
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-sm' 
+                  ${eventTypeFilter === "recruitment"
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-sm'
                     : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }
                 `}

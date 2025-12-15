@@ -5,7 +5,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { BackNavigationProvider } from "@/context/BackNavigationContext";
-import { ThemeProvider } from "../context/ThemeProviderContext";
+import { ThemeProvider } from "@/context/ThemeProviderContext";
 import "./index.css";
 import { queryClient } from "../utils/query-client";
 

@@ -71,8 +71,10 @@ export default function SgotinishPage() {
 
   return (
     <MotionWrapper>
-      <div className="container mx-auto px-4 py-8">
-        <TelegramConnectCard user={user ?? null} className="mb-6" />
+      <div>
+        {user && !user.tg_id && (
+          <TelegramConnectCard user={user} className="mb-6" />
+        )}
         {isSgMember && (
           <Tabs
             value={effectiveDashboard}
@@ -93,7 +95,7 @@ export default function SgotinishPage() {
         )}
         {renderDashboardContent()}
       </div>
-      
+
       {/* Render the Login Modal */}
       <LoginModal
         isOpen={isLoginModalOpen}

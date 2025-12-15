@@ -77,7 +77,7 @@ export default function GradeStatisticsPage() {
 
   return (
     <MotionWrapper>
-      <div className="w-full max-w-none space-y-6">
+      <div className="container mx-auto px-4 py-8 space-y-6">
         <div className="space-y-4">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Courses</h1>

@@ -18,7 +18,8 @@ from .notification import notification
 from .search import search
 from .sgotinish.tickets import tickets, delegation
 from .sgotinish.conversations import conversations
-from .sgotinish.messages import messages  
+from .sgotinish.messages import messages
+from .announcements import router as announcements_router
 # Import all routers from the routes directory
 
 routers: List[APIRouter] = [
@@ -39,4 +40,5 @@ routers: List[APIRouter] = [
     conversations.router,
     messages.router,
     delegation.router,
+    announcements_router,
 ]
