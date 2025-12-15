@@ -501,6 +501,7 @@ def _match_group(
         return False, temp_used, total_credits, "Not enough credits in bucket"
 
     # Standard AND group
+    missing: List[str] = []
     for pat in patterns:
         # Handle slash-separated aliases (OR within a component)
         aliases = [p.strip() for p in pat.split("/") if p.strip()]
@@ -519,15 +520,17 @@ def _match_group(
                 matched_idx = cand[0]
                 break
         if matched_idx is None:
-            return False, temp_used, total_credits, f"Missing {pat}"
+            missing.append(pat)
+            continue
         available = remaining[matched_idx]
         consume = min(available, credits_needed - total_credits) if credits_needed > 0 else available
         temp_used.append((matched_idx, consume))
         total_credits += consume
 
     # If credits_needed is specified for fixed-course groups, ensure threshold.
-    if credits_needed and total_credits < credits_needed:
-        return False, temp_used, total_credits, "Insufficient credits"
+    if missing or (credits_needed and total_credits < credits_needed):
+        note = f"Missing {missing[0]}" if missing else "Insufficient credits"
+        return False, temp_used, total_credits, note
 
     return True, temp_used, total_credits, ""
 
