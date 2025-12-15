@@ -12,6 +12,61 @@ from backend.core.database.models.community import (
 )
 
 
+# Achievement Schemas
+class AchievementBase(BaseModel):
+    description: str = Field(
+        ...,
+        min_length=1,
+        max_length=500,
+        description="Short description of the achievement",
+        example="Revived tradition 'Miriater' allowing both new and older members to perform",
+    )
+    year: int = Field(
+        ...,
+        ge=1900,
+        le=2100,
+        description="Year the achievement was accomplished",
+        example=2024,
+    )
+
+    class Config:
+        from_attributes = True
+
+
+class AchievementCreateRequest(AchievementBase):
+    community_id: int = Field(..., description="ID of the community this achievement belongs to")
+
+
+class AchievementUpdateRequest(BaseModel):
+    description: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=500,
+        description="Short description of the achievement",
+    )
+    year: int | None = Field(
+        default=None,
+        ge=1900,
+        le=2100,
+        description="Year the achievement was accomplished",
+    )
+
+    class Config:
+        from_attributes = True
+
+
+class AchievementResponse(AchievementBase):
+    id: int
+    community_id: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class ListAchievements(BaseModel):
+    achievements: List[AchievementResponse] = []
+    total_pages: int = 1
+
+
 class CommunityCreateRequest(BaseModel):
     name: str = Field(
         ...,
@@ -114,6 +169,7 @@ class CommunityResponse(BaseCommunity):
     head_user: ShortUserResponse
     media: List[MediaResponse] = []
     permissions: ResourcePermissions = ResourcePermissions()
+    achivements: List[AchievementResponse] = []
 
 
 class ShortCommunityResponse(BaseModel):

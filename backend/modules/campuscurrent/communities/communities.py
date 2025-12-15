@@ -17,6 +17,7 @@ from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import (
     Community,
+    CommunityAchivements,
     CommunityCategory,
     CommunityRecruitmentStatus,
     CommunityType,
@@ -66,7 +67,7 @@ async def add_community(
 
     try:
         qb = QueryBuilder(session=db_session, model=Community)
-        community: Community = await qb.add(data=community_data, preload=[Community.head_user])
+        community: Community = await qb.add(data=community_data, preload=[Community.head_user, Community.achivements])
 
     except IntegrityError as e:
         raise HTTPException(
@@ -197,14 +198,14 @@ async def get_communities(
             else_=len(community_ids),
         )
         communities: List[Community] = (
-            await qb.base().filter(*conditions).eager(Community.head_user).order(order_clause).all()
+            await qb.base().filter(*conditions).eager(Community.head_user, Community.achivements).order(order_clause).all()
         )
     else:
         # Alphabetical order when no keyword
         communities: List[Community] = (
             await qb.base()
             .filter(*conditions)
-            .eager(Community.head_user)
+            .eager(Community.head_user, Community.achivements)
             .paginate(size, page)
             .order(Community.name.asc())
             .all()
@@ -277,6 +278,8 @@ async def get_community(
 
     # Get associated media
     qb = QueryBuilder(session=db_session, model=Community)
+    # Eagerly load achivements to avoid lazy loading issues
+    await qb.session.refresh(community, ["achivements"])
     media_objs: List[Media] = (
         await qb.blank(model=Media)
         .base()
@@ -333,7 +336,7 @@ async def update_community(
 
     qb = QueryBuilder(session=db_session, model=Community)
     community: Community = await qb.update(
-        instance=community, update_data=new_data, preload=[Community.head_user]
+        instance=community, update_data=new_data, preload=[Community.head_user, Community.achivements]
     )
 
     # Update Meilisearch index
@@ -406,6 +409,8 @@ async def delete_community(
         action=ResourceAction.DELETE, community=community
     )
 
+    qb = QueryBuilder(session=db_session, model=Community)
+
     # 4. Handle community media
     community_media_objects: List[Media] = await (
         qb.blank(model=Media)
@@ -428,3 +433,193 @@ async def delete_community(
         storage_name=Community.__tablename__,
         primary_key=str(community_id),
     )
+
+
+# ==================== Achievement Endpoints ====================
+
+
+@router.post("/communities/{community_id}/achievements", response_model=schemas.AchievementResponse)
+async def create_achievement(
+    community_id: int,
+    achievement_data: schemas.AchievementCreateRequest,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(deps.community_exists_or_404),
+) -> schemas.AchievementResponse:
+    """
+    Create a new achievement for a community.
+
+    **Access Policy:**
+    - User must be the community head (can_edit permission)
+
+    **Parameters:**
+    - `community_id`: The ID of the community
+    - `achievement_data`: Achievement details (description, year)
+
+    **Returns:**
+    - Created achievement object
+
+    **Errors:**
+    - 403 if user doesn't have permission
+    - 404 if community not found
+    """
+    await CommunityPolicy(user=user).check_permission(
+        action=ResourceAction.UPDATE, community=community
+    )
+
+    # Override community_id from URL
+    achievement_data.community_id = community_id
+
+    qb = QueryBuilder(session=db_session, model=CommunityAchivements)
+    achievement: CommunityAchivements = await qb.add(data=achievement_data)
+
+    return schemas.AchievementResponse.model_validate(achievement)
+
+
+@router.get("/communities/{community_id}/achievements", response_model=schemas.ListAchievements)
+async def get_achievements(
+    community_id: int,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
+    db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(deps.community_exists_or_404),
+    size: int = Query(100, ge=1, le=200),
+    page: int = 1,
+) -> schemas.ListAchievements:
+    """
+    Get all achievements for a community.
+
+    **Access Policy:**
+    - All users can access
+
+    **Parameters:**
+    - `community_id`: The ID of the community
+    - `size`: Number of achievements per page
+    - `page`: Page number
+
+    **Returns:**
+    - List of achievements ordered by year (descending)
+    """
+    await CommunityPolicy(user=user).check_permission(
+        action=ResourceAction.READ, community=community
+    )
+
+    qb = QueryBuilder(session=db_session, model=CommunityAchivements)
+    achievements: List[CommunityAchivements] = (
+        await qb.base()
+        .filter(CommunityAchivements.community_id == community_id)
+        .order(CommunityAchivements.year.desc())
+        .paginate(size, page)
+        .all()
+    )
+
+    count: int = (
+        await qb.blank(model=CommunityAchivements)
+        .base(count=True)
+        .filter(CommunityAchivements.community_id == community_id)
+        .count()
+    )
+
+    achievement_responses = [
+        schemas.AchievementResponse.model_validate(achievement)
+        for achievement in achievements
+    ]
+
+    total_pages = response_builder.calculate_pages(count=count, size=size)
+    return schemas.ListAchievements(
+        achievements=achievement_responses,
+        total_pages=total_pages,
+    )
+
+
+@router.patch("/communities/{community_id}/achievements/{achievement_id}", response_model=schemas.AchievementResponse)
+async def update_achievement(
+    community_id: int,
+    achievement_id: int,
+    achievement_data: schemas.AchievementUpdateRequest,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(deps.community_exists_or_404),
+) -> schemas.AchievementResponse:
+    """
+    Update an achievement.
+
+    **Access Policy:**
+    - User must be the community head (can_edit permission)
+
+    **Parameters:**
+    - `community_id`: The ID of the community
+    - `achievement_id`: The ID of the achievement
+    - `achievement_data`: Updated achievement data
+
+    **Returns:**
+    - Updated achievement object
+
+    **Errors:**
+    - 403 if user doesn't have permission
+    - 404 if achievement or community not found
+    """
+    qb = QueryBuilder(session=db_session, model=CommunityAchivements)
+    achievement: CommunityAchivements | None = (
+        await qb.base()
+        .filter(CommunityAchivements.id == achievement_id, CommunityAchivements.community_id == community_id)
+        .first()
+    )
+
+    if achievement is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Achievement with id {achievement_id} not found in community {community_id}",
+        )
+
+    await CommunityPolicy(user=user).check_permission(
+        action=ResourceAction.UPDATE, community=community
+    )
+
+    achievement = await qb.update(instance=achievement, update_data=achievement_data)
+
+    return schemas.AchievementResponse.model_validate(achievement)
+
+
+@router.delete("/communities/{community_id}/achievements/{achievement_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_achievement(
+    community_id: int,
+    achievement_id: int,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(deps.community_exists_or_404),
+):
+    """
+    Delete an achievement.
+
+    **Access Policy:**
+    - User must be the community head (can_edit permission)
+
+    **Parameters:**
+    - `community_id`: The ID of the community
+    - `achievement_id`: The ID of the achievement
+
+    **Returns:**
+    - 204 No Content on success
+
+    **Errors:**
+    - 403 if user doesn't have permission
+    - 404 if achievement or community not found
+    """
+    qb = QueryBuilder(session=db_session, model=CommunityAchivements)
+    achievement: CommunityAchivements | None = (
+        await qb.base()
+        .filter(CommunityAchivements.id == achievement_id, CommunityAchivements.community_id == community_id)
+        .first()
+    )
+
+    if achievement is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Achievement with id {achievement_id} not found in community {community_id}",
+        )
+
+    await CommunityPolicy(user=user).check_permission(
+        action=ResourceAction.UPDATE, community=community
+    )
+
+    await qb.delete(target=achievement)
