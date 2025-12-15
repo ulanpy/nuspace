@@ -1,17 +1,8 @@
 import { useRef } from "react";
-import { Bold, Heading, Italic, Link2, List, ListOrdered, Quote } from "lucide-react";
 import { Label } from "@/components/atoms/label";
 import { Textarea } from "@/components/atoms/textarea";
-import { Button } from "@/components/atoms/button";
+import { MarkdownToolbar, type FormattingAction } from "@/components/molecules/MarkdownToolbar";
 import { useEventForm } from "@/context/EventFormContext";
-
-type FormattingAction =
-  | "bold"
-  | "italic"
-  | "heading"
-  | "unordered-list"
-  | "ordered-list"
-  | "quote";
 
 const MAX_DESCRIPTION_LENGTH = 1250;
 
@@ -121,39 +112,6 @@ export function EventDescription() {
     updateDescription(nextValue, nextSelectionStart, nextSelectionStart);
   };
 
-  const toolbarButtons = [
-    {
-      action: "bold" as FormattingAction,
-      label: "Bold",
-      icon: Bold,
-    },
-    {
-      action: "italic" as FormattingAction,
-      label: "Italic",
-      icon: Italic,
-    },
-    {
-      action: "heading" as FormattingAction,
-      label: "Heading",
-      icon: Heading,
-    },
-    {
-      action: "unordered-list" as FormattingAction,
-      label: "Bulleted list",
-      icon: List,
-    },
-    {
-      action: "ordered-list" as FormattingAction,
-      label: "Numbered list",
-      icon: ListOrdered,
-    },
-    {
-      action: "quote" as FormattingAction,
-      label: "Quote",
-      icon: Quote,
-    },
-  ];
-
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -163,38 +121,11 @@ export function EventDescription() {
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed border-muted-foreground/40 p-2">
-        <div className="flex flex-wrap gap-1">
-          {toolbarButtons.map(({ action, label, icon: Icon }) => (
-            <Button
-              key={action}
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={label}
-              title={label}
-              disabled={!isEditable}
-              onClick={() => applyFormatting(action)}
-              className="h-8 w-8 text-muted-foreground"
-            >
-              <Icon className="h-4 w-4" />
-            </Button>
-          ))}
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-label="Insert link"
-          title="Insert link"
-          disabled={!isEditable}
-          onClick={handleInsertLink}
-          className="text-muted-foreground"
-        >
-          <Link2 className="mr-1 h-4 w-4" />
-          Link
-        </Button>
-      </div>
+      <MarkdownToolbar
+        onFormat={applyFormatting}
+        onInsertLink={handleInsertLink}
+        disabled={!isEditable}
+      />
 
       <Textarea
         ref={textareaRef}
