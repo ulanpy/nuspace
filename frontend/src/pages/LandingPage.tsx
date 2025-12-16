@@ -117,11 +117,11 @@ export default function LandingPage() {
                 {features.map((feature, index) => (
                     <section
                         key={feature.title}
-                        className={`py-24 px-4 ${index % 2 === 0 ? "bg-background" : "bg-muted/30"
+                        className={`py-24 px-4 ${index % 2 === 1 ? "bg-background" : "bg-muted/30"
                             }`}
                     >
                         <div className="max-w-6xl mx-auto">
-                            <div className={`flex flex-col md:flex-row items-center gap-12 ${index % 2 === 1 ? "md:flex-row-reverse" : ""
+                            <div className={`flex flex-col md:flex-row items-center gap-12 ${index % 2 === 0 ? "md:flex-row-reverse" : ""
                                 }`}>
                                 {/* Content Side */}
                                 <div className="flex-1 space-y-6 text-center md:text-left">
