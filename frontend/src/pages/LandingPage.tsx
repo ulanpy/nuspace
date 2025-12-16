@@ -160,9 +160,6 @@ export default function LandingPage() {
                                     transition={{ duration: 0.6 }}
                                     className="flex-1 space-y-6 text-center md:text-left"
                                 >
-                                    <div className={`inline-flex p-3 rounded-2xl bg-gradient-to-br ${feature.gradient} ${feature.iconColor}`}>
-                                        {feature.icon}
-                                    </div>
                                     <h2 className="text-3xl sm:text-4xl font-bold">
                                         {feature.title}
                                     </h2>
