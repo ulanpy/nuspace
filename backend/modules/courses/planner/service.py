@@ -167,18 +167,41 @@ class PlannerService:
                 course_code=course.course_code,
                 term=term_value,
             )
-            payload = [
-                {
+            # Merge multiple meetings for the same section_code into one section entry.
+            def _merge_text(base: str | None, new_val: str | None) -> str:
+                parts = []
+                for val in (base, new_val):
+                    if val:
+                        parts.extend([p.strip() for p in val.split("/") if p.strip()])
+                seen = []
+                for p in parts:
+                    if p not in seen:
+                        seen.append(p)
+                return " / ".join(seen)
+
+            merged: Dict[str, dict] = {}
+            for entry in registrar_sections:
+                key = entry.section_code or ""
+                current = merged.get(key) or {
                     "section_code": entry.section_code,
-                    "days": entry.days,
-                    "times": entry.times,
-                    "room": entry.room,
-                    "faculty": entry.faculty,
+                    "days": "",
+                    "times": "",
+                    "room": None,
+                    "faculty": None,
                     "capacity": entry.capacity,
                     "enrollment": entry.enrollment,
                 }
-                for entry in registrar_sections
-            ]
+                current["days"] = _merge_text(current["days"], entry.days)
+                current["times"] = _merge_text(current["times"], entry.times)
+                current["room"] = _merge_text(current.get("room"), entry.room) if entry.room else current.get("room")
+                current["faculty"] = _merge_text(current.get("faculty"), entry.faculty) if entry.faculty else current.get("faculty")
+                if current.get("capacity") is None and entry.capacity is not None:
+                    current["capacity"] = entry.capacity
+                if current.get("enrollment") is None and entry.enrollment is not None:
+                    current["enrollment"] = entry.enrollment
+                merged[key] = current
+
+            payload = list(merged.values())
             new_sections = await self.repository.replace_sections(
                 course=course,
                 sections_payload=payload,
