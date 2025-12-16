@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowRight, Calendar, Users, Sparkles, Library, Shield, Phone } from "lucide-react";
-import { motion } from "framer-motion";
 import { ROUTES } from "@/data/routes";
 import { Button } from "@/components/atoms/button";
 import { useUser } from "@/hooks/use-user";
@@ -65,56 +64,26 @@ export default function LandingPage() {
             <section className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5" />
 
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl"
-                />
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    className="absolute bottom-10 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"
-                />
+                <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
 
                 <div className="relative max-w-4xl mx-auto text-center">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6"
-                    >
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
                         <Sparkles className="w-4 h-4" />
                         Built by students, for students
-                    </motion.div>
+                    </div>
 
-                    <motion.h1
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.1 }}
-                        className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text"
-                    >
+                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                         Your all-in-one platform for{" "}
                         <span className="text-primary">university life</span>
-                    </motion.h1>
+                    </h1>
 
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2 }}
-                        className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
-                    >
+                    <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
                         Nuspace brings together everything you need at Nazarbayev University —
                         academics, events, communities, and more — in one beautiful, unified experience.
-                    </motion.p>
+                    </p>
 
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.3 }}
-                        className="flex flex-col sm:flex-row gap-4 justify-center"
-                    >
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Button
                             size="lg"
                             onClick={login}
@@ -137,7 +106,7 @@ export default function LandingPage() {
                                 View on GitHub
                             </a>
                         </Button>
-                    </motion.div>
+                    </div>
                 </div>
             </section>
 
@@ -153,29 +122,17 @@ export default function LandingPage() {
                             <div className={`flex flex-col md:flex-row items-center gap-12 ${index % 2 === 1 ? "md:flex-row-reverse" : ""
                                 }`}>
                                 {/* Content Side */}
-                                <motion.div
-                                    initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
-                                    whileInView={{ opacity: 1, x: 0 }}
-                                    viewport={{ once: false, margin: "-100px" }}
-                                    transition={{ duration: 0.6 }}
-                                    className="flex-1 space-y-6 text-center md:text-left"
-                                >
+                                <div className="flex-1 space-y-6 text-center md:text-left">
                                     <h2 className="text-3xl sm:text-4xl font-bold">
                                         {feature.title}
                                     </h2>
                                     <p className="text-lg text-muted-foreground leading-relaxed">
                                         {feature.description}
                                     </p>
-                                </motion.div>
+                                </div>
 
                                 {/* Visual Side */}
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.9, x: index % 2 === 0 ? 50 : -50 }}
-                                    whileInView={{ opacity: 1, scale: 1, x: 0 }}
-                                    viewport={{ once: false, margin: "-100px" }}
-                                    transition={{ duration: 0.6 }}
-                                    className="flex-1 w-full"
-                                >
+                                <div className="flex-1 w-full">
                                     {feature.title === "Events" ? (
                                         <div className={`aspect-video rounded-3xl overflow-hidden shadow-2xl border bg-gradient-to-br ${feature.gradient} p-1`}>
                                             <div className="w-full h-full rounded-[1.25rem] overflow-hidden bg-background relative">
@@ -191,7 +148,7 @@ export default function LandingPage() {
                                             </div>
                                         </div>
                                     )}
-                                </motion.div>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -200,13 +157,7 @@ export default function LandingPage() {
 
             {/* CTA Section */}
             <section className="py-20 px-4 bg-muted/50">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: false }}
-                    transition={{ duration: 0.5 }}
-                    className="max-w-3xl mx-auto text-center"
-                >
+                <div className="max-w-3xl mx-auto text-center">
                     <h2 className="text-2xl sm:text-3xl font-bold mb-4">
                         Ready to get started?
                     </h2>
@@ -217,7 +168,7 @@ export default function LandingPage() {
                         Login with NU Account
                         <ArrowRight className="w-5 h-5" />
                     </Button>
-                </motion.div>
+                </div>
             </section>
         </div>
     );
