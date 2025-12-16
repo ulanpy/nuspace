@@ -103,7 +103,7 @@ import { Media } from "@/features/media/types/types";
       head_user: HeadUser;
       media: Media[];
       permissions: CommunityPermissions;
-      achivements: Achievement[];
+      achievements: Achievement[];
 
     }
 

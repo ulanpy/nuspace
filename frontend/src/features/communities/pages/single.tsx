@@ -842,7 +842,7 @@ export default function CommunityDetailPage() {
           isOpen={isEditAchievementsModalOpen}
           onClose={() => setIsEditAchievementsModalOpen(false)}
           communityId={community.id}
-          initialAchievements={community.achivements || []}
+          initialAchievements={community.achievements || []}
         />
       )}
     </div>

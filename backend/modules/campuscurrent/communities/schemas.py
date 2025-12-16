@@ -169,7 +169,7 @@ class CommunityResponse(BaseCommunity):
     head_user: ShortUserResponse
     media: List[MediaResponse] = []
     permissions: ResourcePermissions = ResourcePermissions()
-    achivements: List[AchievementResponse] = []
+    achievements: List[AchievementResponse] = []
 
 
 class ShortCommunityResponse(BaseModel):
