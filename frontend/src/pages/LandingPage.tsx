@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowRight, Calendar, Users, Sparkles, Library, Shield, Phone } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ROUTES } from "@/data/routes";
 import { Button } from "@/components/atoms/button";
@@ -16,17 +15,7 @@ import eventImg5 from "@/assets/images/event_pics/5.webp";
 const eventImages = [eventImg1, eventImg2, eventImg3, eventImg4, eventImg5];
 
 export default function LandingPage() {
-    const { user, login } = useUser();
-    const navigate = useNavigate();
-
-    const handleNavigation = (link: string) => {
-        if (!user) {
-            sessionStorage.setItem("__nuspace_redirect_url__", link);
-            login();
-        } else {
-            navigate(link);
-        }
-    };
+    const { login } = useUser();
 
     const features = [
         {
@@ -36,7 +25,6 @@ export default function LandingPage() {
             link: ROUTES.COURSES,
             gradient: "from-green-500/20 to-green-600/10",
             iconColor: "text-green-500",
-            buttonText: "Go to Courses",
         },
         {
             icon: <Calendar className="w-12 h-12" />,
@@ -45,7 +33,6 @@ export default function LandingPage() {
             link: ROUTES.EVENTS.ROOT,
             gradient: "from-orange-500/20 to-orange-600/10",
             iconColor: "text-orange-500",
-            buttonText: "Browse Events",
         },
         {
             icon: <Users className="w-12 h-12" />,
@@ -54,7 +41,6 @@ export default function LandingPage() {
             link: ROUTES.COMMUNITIES.ROOT,
             gradient: "from-blue-500/20 to-blue-600/10",
             iconColor: "text-blue-500",
-            buttonText: "Find Communities",
         },
         {
             icon: <Phone className="w-12 h-12" />,
@@ -63,7 +49,6 @@ export default function LandingPage() {
             link: ROUTES.CONTACTS,
             gradient: "from-cyan-500/20 to-cyan-600/10",
             iconColor: "text-cyan-500",
-            buttonText: "View Contacts",
         },
         {
             icon: <Shield className="w-12 h-12" />,
@@ -72,7 +57,6 @@ export default function LandingPage() {
             link: ROUTES.SGOTINISH.ROOT,
             gradient: "from-pink-500/20 to-pink-600/10",
             iconColor: "text-pink-500",
-            buttonText: "Go to Sgotinish",
         },
     ];
 
@@ -185,10 +169,6 @@ export default function LandingPage() {
                                     <p className="text-lg text-muted-foreground leading-relaxed">
                                         {feature.description}
                                     </p>
-                                    <Button onClick={() => handleNavigation(feature.link)} size="lg" className="gap-2 mt-4">
-                                        {feature.buttonText}
-                                        <ArrowRight className="w-5 h-5" />
-                                    </Button>
                                 </motion.div>
 
                                 {/* Visual Side */}
