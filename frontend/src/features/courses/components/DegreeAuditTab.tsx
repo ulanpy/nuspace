@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { GraduationCap, AlertCircle, ShieldCheck, Eye, EyeOff, FileDown, ListChecks } from "lucide-react";
+import { GraduationCap, AlertCircle, ShieldCheck, Eye, EyeOff, FileDown, ListChecks, ArrowUpDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
 
@@ -98,6 +98,19 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
 
   const currentYearMajors =
     catalogQuery.data?.years.find((y) => y.year === selectedYear)?.majors || [];
+  const [statusSort, setStatusSort] = useState<"default" | "satisfied-first" | "pending-first">("default");
+  const sortedResults = useMemo(() => {
+    const rows = (auditMutation.data || cachedQuery.data)?.results || [];
+    if (statusSort === "default") return rows;
+    const order =
+      statusSort === "satisfied-first" ? { Satisfied: 0, Pending: 1 } : { Pending: 0, Satisfied: 1 };
+    return [...rows].sort((a, b) => {
+      const av = order[a.status as keyof typeof order] ?? 2;
+      const bv = order[b.status as keyof typeof order] ?? 2;
+      if (av !== bv) return av - bv;
+      return a.course_code.localeCompare(b.course_code);
+    });
+  }, [auditMutation.data, cachedQuery.data, statusSort]);
 
   const handleDownloadCsv = () => {
     const b64 = (auditMutation.data || cachedQuery.data)?.csv_base64;
@@ -267,7 +280,7 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
                 <Badge variant="outline">Taken: {(auditMutation.data || cachedQuery.data)?.summary?.total_taken}</Badge>
               </div>
             )}
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
             <Button variant="ghost" size="sm" className="gap-1" onClick={handleDownloadCsv} disabled={!(auditMutation.data || cachedQuery.data)?.csv_base64}>
               <FileDown className="h-4 w-4" /> Download CSV
             </Button>
@@ -292,19 +305,32 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
             <table className="min-w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-3 py-2 text-left">Course</th>
-                  <th className="px-3 py-2 text-left">Name</th>
-                  <th className="px-3 py-2">Req credits</th>
-                  <th className="px-3 py-2">Min grade</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2 text-left">Used courses</th>
-                  <th className="px-3 py-2">Applied</th>
+              <th className="px-3 py-2 text-left">Course</th>
+              <th className="px-3 py-2 text-left">Name</th>
+              <th className="px-3 py-2">Req credits</th>
+              <th className="px-3 py-2">Min grade</th>
+              <th className="px-3 py-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusSort((prev) =>
+                      prev === "default" ? "satisfied-first" : prev === "satisfied-first" ? "pending-first" : "default"
+                    );
+                  }}
+                  className="inline-flex items-center gap-1 text-sm font-medium text-foreground hover:text-foreground/80"
+                >
+                  <span>Status</span>
+                  <ArrowUpDown className="h-3.5 w-3.5" />
+                </button>
+              </th>
+              <th className="px-3 py-2 text-left">Used courses</th>
+              <th className="px-3 py-2">Applied</th>
                   <th className="px-3 py-2">Remaining</th>
                   <th className="px-3 py-2 text-left">Note</th>
                 </tr>
               </thead>
               <tbody>
-                {(auditMutation.data || cachedQuery.data)?.results.map((row: DegreeAuditResultRow, idx: number) => (
+                {sortedResults.map((row: DegreeAuditResultRow, idx: number) => (
                   <tr key={`${row.course_code}-${row.status}-${idx}`} className="border-t border-border/60">
                     <td className="px-3 py-2 whitespace-nowrap">{row.course_code}</td>
                     <td className="px-3 py-2">{row.course_name}</td>
