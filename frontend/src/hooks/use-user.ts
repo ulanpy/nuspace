@@ -42,8 +42,9 @@ export const useUser = () => {
       try {
         return await fetchUser();
       } catch (error: any) {
-        // If we get a 401, disable future queries and persist this state
-        if (error?.status === 401 || error?.response?.status === 401) {
+        // If we get a 401 or 500, disable future queries and persist this state
+        if (error?.status === 401 || error?.response?.status === 401 || error?.status === 500 || error?.respone?.status === 500 ) {
+          console.error(`[ERROR] failed to query user data, error status: ${error?.status}, response status: ${error?.response?.status}`);
           globalQueryEnabled = false;
           sessionStorage.setItem(AUTH_FAILURE_KEY, "true");
           forceUpdate((prev: number) => prev + 1);
