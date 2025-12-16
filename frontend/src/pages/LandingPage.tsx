@@ -16,6 +16,13 @@ const eventImages = [eventImg1, eventImg2, eventImg3, eventImg4, eventImg5];
 export default function LandingPage() {
     const { login } = useUser();
 
+    const scrollToLogin = () => {
+        const element = document.getElementById('login-cta');
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
     const features = [
         {
             icon: <Library className="w-12 h-12" />,
@@ -62,11 +69,6 @@ export default function LandingPage() {
     return (
         <div className="flex flex-col">
             <section className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5" />
-
-                <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
-                <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-
                 <div className="relative max-w-4xl mx-auto text-center">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
                         <Sparkles className="w-4 h-4" />
@@ -86,7 +88,7 @@ export default function LandingPage() {
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Button
                             size="lg"
-                            onClick={login}
+                            onClick={scrollToLogin}
                             className="text-base px-8 py-6 gap-2"
                         >
                             Get Started
@@ -156,7 +158,7 @@ export default function LandingPage() {
             </div>
 
             {/* CTA Section */}
-            <section className="py-20 px-4 bg-muted/50">
+            <section id="login-cta" className="py-28 px-4 bg-muted/50">
                 <div className="max-w-3xl mx-auto text-center">
                     <h2 className="text-2xl sm:text-3xl font-bold mb-4">
                         Ready to get started?
