@@ -14,7 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47% 11%;
 
-    --primary: 217 91% 60%; /* Modern blue */
+    --primary: 217 91% 60%;
+    /* Modern blue */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96%;
@@ -23,7 +24,8 @@
     --muted: 210 20% 94%;
     --muted-foreground: 215 16% 40%;
 
-    --accent: 174 70% 45%; /* Fresh teal accent */
+    --accent: 174 70% 45%;
+    /* Fresh teal accent */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -47,7 +49,8 @@
     --popover: 220 15% 18%;
     --popover-foreground: 210 20% 96%;
 
-    --primary: 217 91% 65%; /* Vibrant blue */
+    --primary: 217 91% 65%;
+    /* Vibrant blue */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 15% 25%;
@@ -56,7 +59,8 @@
     --muted: 220 15% 25%;
     --muted-foreground: 215 15% 70%;
 
-    --accent: 174 70% 50%; /* Teal accent */
+    --accent: 174 70% 50%;
+    /* Teal accent */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 50%;
@@ -72,6 +76,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -85,20 +90,25 @@
   .backface-hidden {
     backface-visibility: hidden;
   }
+
   .safe-area-inset-top {
     padding-top: env(safe-area-inset-top);
   }
+
   .safe-area-inset-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
+
   .text-gradient-primary {
     background: linear-gradient(135deg, #ef5a2e, #fdae3d);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
   }
+
   /* Prevent iOS/Android webview zoom on input focus by enforcing >=16px font-size */
   @media (max-width: 768px) {
+
     input,
     textarea,
     select {
@@ -109,10 +119,11 @@
 }
 
 /* Smooth transitions */
-/* * {
+* {
   transition:
-    background-color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.1s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.1s cubic-bezier(0.4, 0, 0.2, 1);
-} */
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    fill 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

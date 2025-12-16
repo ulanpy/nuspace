@@ -29,7 +29,7 @@ subscription_suffix = "staging"
 # Push subscription
 push_endpoint                   = "https://stage.nuspace.kz/api/bucket/gcs-hook"
 push_auth_service_account_email = "nuspace-vm-sa@nuspace-staging.iam.gserviceaccount.com"
-push_auth_audience              = "https://stage.nuspace.kz"
+push_auth_audience              = "nuspace"
 
 # Service accounts (IDs)
 vm_account_id      = "nuspace-vm-sa"

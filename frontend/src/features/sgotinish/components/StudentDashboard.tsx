@@ -161,7 +161,7 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
   return (
     <MotionWrapper>
       <div className="container mx-auto px-4 py-8">
-        
+
         {/* Page Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
@@ -174,7 +174,7 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
             </div>
           </div>
         </div>
-        
+
         {/* Filters */}
         <div className="mb-6">
           <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible">

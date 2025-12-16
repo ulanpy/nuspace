@@ -28,7 +28,7 @@ subscription_suffix = "prod"
 # Push subscription
 push_endpoint                   = "https://nuspace.kz/api/bucket/gcs-hook"
 push_auth_service_account_email = "nuspace-vm-sa@nuspace2025.iam.gserviceaccount.com"
-push_auth_audience              = "https://nuspace.kz"
+push_auth_audience              = "nuspace"
 
 # Service accounts (IDs)
 vm_account_id      = "nuspace-vm-sa"

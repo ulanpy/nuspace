@@ -1,7 +1,7 @@
 import { withSuspense } from "@/components/molecules/hoc/with-suspense";
 import { lazy } from "react";
 import type { ComponentType, LazyExoticComponent } from "react";
-import { LayoutDashboard, Package, Users } from "lucide-react";
+import { Megaphone, Package, Users } from "lucide-react";
 
 // --- Path Segments ---
 export const ADMIN = "admin";
@@ -21,12 +21,14 @@ export const SGOTINISH = "sgotinish";
 export const STUDENT = "student";
 export const SG = "sg";
 export const TICKET = "ticket";
+export const ANNOUNCEMENTS = "announcements";
 
 // --- Helper to build paths ---
 const buildPath = (...args: string[]) => `/${args.filter(Boolean).join("/")}`;
 
 export const ROUTES = {
   HOME: buildPath(""),
+  ANNOUNCEMENTS: buildPath(ANNOUNCEMENTS),
   ABOUT: buildPath(ABOUT),
   PROFILE: buildPath(PROFILE),
   CONTACTS: buildPath(CONTACTS),
@@ -62,10 +64,10 @@ export const ROUTES = {
   },
   ADMIN: {
     ROOT: buildPath(ADMIN),
-    DASHBOARD: {
+    ANNOUNCEMENTS: {
       path: buildPath(ADMIN),
-      icon: <LayoutDashboard size={20} />,
-      label: "Dashboard",
+      icon: <Megaphone size={20} />,
+      label: "Announcements",
     },
     PRODUCTS: {
       path: buildPath(ADMIN, PRODUCTS),

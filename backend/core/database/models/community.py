@@ -61,6 +61,11 @@ class Community(Base):
 
     head_user = relationship("User", back_populates="communities_led")
     events = relationship("Event", back_populates="community", cascade="all, delete-orphan")
+    achievements = relationship(
+        "CommunityAchievements",
+        back_populates="community",
+        cascade="all, delete-orphan",
+    )
 
 
 class CommunityMember(Base):
@@ -77,4 +82,17 @@ class CommunityMember(Base):
 
     community = relationship("Community")
     user = relationship("User", back_populates="communities")
+    
+    
+class CommunityAchievements(Base):
+    __tablename__ = "community_achievements"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
+    community_id: Mapped[int] = mapped_column(
+        ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    description: Mapped[str] = mapped_column(nullable=False)
+    year: Mapped[int] = mapped_column(nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
+    community = relationship("Community", back_populates="achievements")

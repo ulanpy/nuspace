@@ -5,13 +5,16 @@ import {
 } from "@/components/atoms/tabs";
 import { Badge } from "@/components/atoms/badge";
 import { VerificationBadge } from "@/components/molecules/verification-badge";
+import { MarkdownContent } from "@/components/molecules/MarkdownContent";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar";
 import { EventCard } from "@/features/events/components/EventCard";
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { format } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { campuscurrentAPI } from "@/features/communities/api/communitiesApi";
 
 
 import {
@@ -32,6 +35,7 @@ import { useUser } from "@/hooks/use-user";
 
 import { CommunityModal } from "@/features/communities/components/CommunityModal";
 import { EventModal } from "@/features/events/components/EventModal";
+import { AchievementsModal } from "@/features/communities/components/AchievementsModal";
 import { MediaFormat } from "@/features/media/types/types";
 
 // Helpers
@@ -98,6 +102,9 @@ export default function CommunityDetailPage() {
   const [isEditCommunityModalOpen, setIsEditCommunityModalOpen] =
     useState(false);
   const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false);
+  const [isEditAchievementsModalOpen, setIsEditAchievementsModalOpen] = useState(false);
+  const [achievementsPage, setAchievementsPage] = useState(1);
+  const [allLoadedAchievements, setAllLoadedAchievements] = useState<any[]>([]);
 
   const [activeTab, setActiveTab] = useState<string>("about");
   const contentTopRef = useRef<HTMLDivElement | null>(null);
@@ -110,6 +117,49 @@ export default function CommunityDetailPage() {
       contentTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   };
+
+  // Fetch achievements with pagination
+  const { 
+    data: achievementsData, 
+    isLoading: isLoadingAchievements 
+  } = useQuery({
+    ...campuscurrentAPI.getAchievementsQueryOptions(community?.id ?? 0, achievementsPage, 20),
+    enabled: !!community?.id && activeTab === "awards",
+  });
+
+  const totalAchievementsPages = achievementsData?.total_pages ?? 1;
+  const hasMoreAchievements = achievementsPage < totalAchievementsPages;
+
+  const handleLoadMoreAchievements = () => {
+    setAchievementsPage(prev => prev + 1);
+  };
+
+  // Update loaded achievements when data changes (replaces onSuccess for v5)
+  useEffect(() => {
+    if (achievementsData?.achievements) {
+      if (achievementsPage === 1) {
+        setAllLoadedAchievements(achievementsData.achievements);
+      } else {
+        setAllLoadedAchievements(prev => [...prev, ...achievementsData.achievements]);
+      }
+    }
+  }, [achievementsData, achievementsPage]);
+
+  // Reset achievements pagination when leaving the awards tab
+  useEffect(() => {
+    if (activeTab !== "awards") {
+      setAchievementsPage(1);
+      setAllLoadedAchievements([]);
+    }
+  }, [activeTab]);
+
+  // Reset achievements when modal closes
+  useEffect(() => {
+    if (!isEditAchievementsModalOpen) {
+      setAchievementsPage(1);
+      setAllLoadedAchievements([]);
+    }
+  }, [isEditAchievementsModalOpen]);
 
   // Fetch events for this community
   const today = new Date().toISOString().split("T")[0];
@@ -183,7 +233,7 @@ export default function CommunityDetailPage() {
     if (serverPast.length > 0) return serverPast;
     const all = recentCommunityEvents?.events ?? [];
     const todayDate = new Date(today);
-    return all.filter((e) => new Date(e.event_datetime) < todayDate);
+    return all.filter((e) => new Date(e.end_datetime) < todayDate);
   }, [pastEvents, recentCommunityEvents, today]);
 
   if (isCommunityLoading) {
@@ -407,6 +457,7 @@ export default function CommunityDetailPage() {
                         ? [{ value: "requests", label: "Requests", icon: "📝" }]
                         : []),
                       { value: "events", label: "Events", icon: "🎉" },
+                      { value: "awards", label: "Student Awards", icon: "🏆" },
                       { value: "gallery", label: "Gallery", icon: "🖼️" },
                     ] as const
                   ).map((item) => (
@@ -517,9 +568,10 @@ export default function CommunityDetailPage() {
                   </div>
                   <div className="p-6">
                     <div className="prose max-w-none">
-                      <p className="text-base leading-relaxed whitespace-pre-line break-words">
-                        {community.description || "No description available."}
-                      </p>
+                      <MarkdownContent 
+                        content={community.description} 
+                        fallback="No description available." 
+                      />
                     </div>
                     
                     {/* Additional Info */}
@@ -638,6 +690,114 @@ export default function CommunityDetailPage() {
                 </Card>
               </TabsContent>
 
+              <TabsContent value="awards" className="mt-0">
+                <Card className="p-0 overflow-hidden">
+                  <div className="p-6 border-b flex justify-between items-center">
+                    <h2 className="text-2xl font-bold">Student Awards</h2>
+                    {permissions?.can_edit && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsEditAchievementsModalOpen(true)}
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Edit Achievements
+                      </Button>
+                    )}
+                  </div>
+                  <div className="p-6">
+                    {(() => {
+                      if (isLoadingAchievements && allLoadedAchievements.length === 0) {
+                        return (
+                          <div className="text-center py-12">
+                            <div className="text-6xl mb-4">⏳</div>
+                            <p className="text-muted-foreground">Loading achievements...</p>
+                          </div>
+                        );
+                      }
+
+                      if (allLoadedAchievements.length === 0 && !isLoadingAchievements) {
+                        return (
+                          <div className="text-center py-12">
+                            <div className="text-6xl mb-4">🏆</div>
+                            <h3 className="text-xl font-semibold mb-2">No Achievements Yet</h3>
+                            <p className="text-muted-foreground max-w-md mx-auto">
+                              {permissions?.can_edit
+                                ? "Click 'Edit Achievements' to add the community's accomplishments and awards."
+                                : "This community hasn't added any achievements yet."}
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      const currentYear = new Date().getFullYear();
+                      const lastYear = currentYear - 1;
+
+                      return (
+                        <div className="space-y-4">
+                          <div className="space-y-3">
+                            {allLoadedAchievements.map((achievement: any) => {
+                              const isRecent = achievement.year === currentYear || achievement.year === lastYear;
+                              
+                              return (
+                                <div
+                                  key={achievement.id}
+                                  className={`flex items-start gap-4 p-5 rounded-lg border transition-colors ${
+                                    isRecent
+                                      ? "bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 border-amber-200 dark:border-amber-800"
+                                      : "bg-card border-border hover:bg-muted/50"
+                                  }`}
+                                >
+                                  <div className="flex-shrink-0">
+                                    <div className={`rounded-full flex items-center justify-center ${
+                                      isRecent
+                                        ? "w-14 h-14 bg-amber-100 dark:bg-amber-900"
+                                        : "w-12 h-12 bg-muted"
+                                    }`}>
+                                      <span className={isRecent ? "text-3xl" : "text-2xl"}>
+                                        {isRecent ? "🏆" : "🎖️"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`leading-relaxed mb-2 ${
+                                      isRecent
+                                        ? "text-base font-medium text-foreground"
+                                        : "text-base text-muted-foreground"
+                                    }`}>
+                                      {achievement.description}
+                                    </p>
+                                    <Badge 
+                                      variant={isRecent ? "secondary" : "outline"} 
+                                      className="text-xs font-semibold"
+                                    >
+                                      {achievement.year}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          
+                          {hasMoreAchievements && (
+                            <div className="flex justify-center pt-4">
+                              <Button
+                                variant="outline"
+                                onClick={handleLoadMoreAchievements}
+                                disabled={isLoadingAchievements}
+                                className="w-full sm:w-auto"
+                              >
+                                {isLoadingAchievements ? "Loading..." : `Load More (${totalAchievementsPages - achievementsPage} pages remaining)`}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </Card>
+              </TabsContent>
+
               <TabsContent value="gallery" className="mt-0">
                 <Card className="p-0 overflow-hidden">
                   <div className="p-6 border-b">
@@ -675,6 +835,16 @@ export default function CommunityDetailPage() {
         communityId={community?.id}
         initialCommunity={community ?? undefined}
       />
+
+      {/* Achievements Modal */}
+      {community && (
+        <AchievementsModal
+          isOpen={isEditAchievementsModalOpen}
+          onClose={() => setIsEditAchievementsModalOpen(false)}
+          communityId={community.id}
+          initialAchievements={community.achievements || []}
+        />
+      )}
     </div>
   );
 }

@@ -42,8 +42,9 @@ export const useUser = () => {
       try {
         return await fetchUser();
       } catch (error: any) {
-        // If we get a 401, disable future queries and persist this state
-        if (error?.status === 401 || error?.response?.status === 401) {
+        // If we get a 401 or 500, disable future queries and persist this state
+        if (error?.status === 401 || error?.response?.status === 401 || error?.status === 500 || error?.respone?.status === 500 ) {
+          console.error(`[ERROR] failed to query user data, error status: ${error?.status}, response status: ${error?.response?.status}`);
           globalQueryEnabled = false;
           sessionStorage.setItem(AUTH_FAILURE_KEY, "true");
           forceUpdate((prev: number) => prev + 1);
@@ -74,7 +75,15 @@ export const useUser = () => {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      // Check for saved redirect URL from ProtectedRoute (deep-link preservation)
+      const savedRedirect = sessionStorage.getItem("__nuspace_redirect_url__");
+      const returnTo = savedRedirect || `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+      // Clear the saved redirect now that we're using it
+      if (savedRedirect) {
+        sessionStorage.removeItem("__nuspace_redirect_url__");
+      }
+
       const url = `/api/login?return_to=${encodeURIComponent(returnTo)}`;
       window.location.href = url;
       return null;

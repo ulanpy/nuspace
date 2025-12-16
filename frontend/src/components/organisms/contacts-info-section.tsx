@@ -442,9 +442,8 @@ function ContactChip({ info }: { info: ContactInfo }) {
         </span>
         {secondaryText && (
           <span
-            className={`text-xs leading-snug text-muted-foreground break-words ${
-              info.type === "web" ? "break-all" : ""
-            }`}
+            className={`text-xs leading-snug text-muted-foreground break-words ${info.type === "web" ? "break-all" : ""
+              }`}
           >
             {secondaryText}
           </span>
@@ -476,14 +475,7 @@ function ContactChip({ info }: { info: ContactInfo }) {
 
 export function ContactsInfoSection() {
   return (
-    <section className="w-full max-w-5xl mx-auto">
-      <div className="w-full mb-4">
-        <h2 className="text-2xl sm:text-3xl font-semibold">Contacts & Essential Services</h2>
-        <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-          Save these contacts. In an emergency, call campus security or local services immediately.
-        </p>
-      </div>
-
+    <div className="w-full">
       <Accordion
         type="single"
         collapsible
@@ -494,9 +486,8 @@ export function ContactsInfoSection() {
             <AccordionTrigger className="py-4">
               <div className="flex flex-1 items-center gap-3 text-left">
                 <div
-                  className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border/40 bg-gradient-to-br ${
-                    service.accent ?? "from-primary/15"
-                  } to-transparent`}
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border/40 bg-gradient-to-br ${service.accent ?? "from-primary/15"
+                    } to-transparent`}
                 >
                   {service.icon}
                 </div>
@@ -521,7 +512,7 @@ export function ContactsInfoSection() {
           </AccordionItem>
         ))}
       </Accordion>
-    </section>
+    </div>
   );
 }
 
