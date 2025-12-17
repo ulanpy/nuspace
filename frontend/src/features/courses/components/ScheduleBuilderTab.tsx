@@ -23,6 +23,7 @@ import {
 } from "../types";
 import { Loader2, RefreshCcw, Trash2, Wand2, X } from "lucide-react";
 import { ConfirmationModal } from "./ConfirmationModal";
+import { useSyllabusLinks } from "../utils/useSyllabusLinks";
 
 type CourseForm = {
   query: string;
@@ -118,6 +119,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
     null,
   );
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const { getLinkForCode: getSyllabusLink } = useSyllabusLinks("/data/course_links.csv");
   const [activeSection, setActiveSection] = useState<SectionEvent | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [activeRequirements, setActiveRequirements] = useState<CourseRequirementDetail | null>(null);
@@ -531,6 +533,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
                   hasText(result.anti_req) ||
                   hasPriorityValues(priorityValues);
                 const metaParts = [result.school, result.level, result.term].filter(Boolean);
+                const syllabusLink = getSyllabusLink(result.course_code);
                 return (
                   <div
                     key={result.course_code}
@@ -543,16 +546,33 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
                         {metaParts.length > 0 && (
                           <p className="text-xs text-muted-foreground">{metaParts.join(" · ")}</p>
                         )}
-                        {hasMeta && (
+                        <div className="flex items-center gap-2 text-xs">
+                          {hasMeta && (
+                            <Button
+                              size="xs"
+                              variant="link"
+                              className="px-0 text-xs"
+                              onClick={() => handleShowRequirementsFromSearch(result)}
+                            >
+                              Priorities & requisites
+                            </Button>
+                          )}
+                          <span className="text-border">|</span>
                           <Button
                             size="xs"
                             variant="link"
                             className="px-0 text-xs"
-                            onClick={() => handleShowRequirementsFromSearch(result)}
+                            disabled={!syllabusLink}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (syllabusLink) {
+                                window.open(syllabusLink, "_blank");
+                              }
+                            }}
                           >
-                            Priorities & requisites
+                            Syllabus
                           </Button>
-                        )}
+                        </div>
                       </div>
                       <Button
                         size="sm"
@@ -664,6 +684,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
                   onSelect={setActiveCourseId}
                   onShowMeta={handleShowRequirementsForCourse}
                   isActive={course.id === activeCourseId}
+                  getSyllabusLink={getSyllabusLink}
                 />
               ))
             ) : (
@@ -741,12 +762,14 @@ const CourseCard = ({
   onSelect,
   onShowMeta,
   isActive,
+  getSyllabusLink,
 }: {
   course: PlannerCourse;
   onRemove: MutationRef<RemoveArgs>;
   onSelect: (courseId: number) => void;
   onShowMeta: (course: PlannerCourse) => void;
   isActive: boolean;
+  getSyllabusLink: (code?: string | null) => string | undefined;
 }) => {
   const metaParts = [
     course.school,
@@ -764,6 +787,10 @@ const CourseCard = ({
     hasText(course.co_req) ||
     hasText(course.anti_req) ||
     hasPriorityValues(priorityValues);
+  const syllabusLink = useMemo(
+    () => getSyllabusLink(course.course_code),
+    [course.course_code, getSyllabusLink],
+  );
 
   return (
     <div
@@ -786,19 +813,36 @@ const CourseCard = ({
           {metaParts.length > 0 && (
             <p className="text-xs text-muted-foreground">{metaParts.join(" · ")}</p>
           )}
-          {hasMeta && (
+          <div className="flex items-center gap-2 text-xs">
+            {hasMeta && (
+              <Button
+                size="xs"
+                variant="link"
+                className="px-0 text-xs"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onShowMeta(course);
+                }}
+              >
+                Priorities & requisites
+              </Button>
+            )}
+            <span className="text-border">|</span>
             <Button
               size="xs"
               variant="link"
               className="px-0 text-xs"
+              disabled={!syllabusLink}
               onClick={(event) => {
                 event.stopPropagation();
-                onShowMeta(course);
+                if (syllabusLink) {
+                  window.open(syllabusLink, "_blank");
+                }
               }}
             >
-              Priorities & requisites
+              Syllabus
             </Button>
-          )}
+          </div>
         </div>
         <div className="flex gap-2">
           <Button
@@ -1482,4 +1526,3 @@ function getSectionTypeLabel(typeKey: string): string {
   };
   return dictionary[typeKey] ?? typeKey;
 }
-
