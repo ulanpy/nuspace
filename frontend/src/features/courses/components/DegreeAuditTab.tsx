@@ -476,7 +476,7 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
           </div>
           <div className="max-h-[480px] overflow-auto rounded-lg border border-border/50">
             <table className="min-w-full text-sm">
-              <thead className="bg-muted/50 sticky top-0">
+              <thead className="border-border/60 bg-muted sticky top-0">
                 <tr>
                   <th className="px-3 py-2 text-left">Course</th>
                   <th className="px-3 py-2 text-left">Name</th>
