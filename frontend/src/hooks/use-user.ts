@@ -110,6 +110,8 @@ export const useUser = () => {
       queryClient.removeQueries({
         queryKey: ["user"],
       });
+      // Refresh the page to reset all state
+      window.location.reload();
     },
   });
 
