@@ -45,7 +45,7 @@ async def audit_from_registrar(
     return await service.audit_with_registrar(
         year=payload.year,
         major=payload.major,
-        username=payload.username if not config.IS_DEBUG else "ulan.sharipov",
+        username=payload.username if not config.IS_DEBUG else "bauyrzhan.kizatov",
         password=payload.password,
         student_sub=_creds[1]["sub"],
         session=db_session,

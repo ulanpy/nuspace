@@ -231,7 +231,7 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("data/course_links.csv"),
+        default=Path("frontend/public/data/course_links.csv"),
         help="Path to write CSV output",
     )
     parser.add_argument(

@@ -126,7 +126,7 @@ async def setup_meilisearch(app: FastAPI):
                 print(f"Error syncing index {index_config.model.__tablename__}: {e}")
 
         # Initialize registrar course priority and schedule indexes + refreshers (run in debug)
-        if not config.IS_DEBUG:
+        if config.IS_DEBUG:
             app.state.course_priority_refresher = PriorityRequirementsRefresher(
                 app.state.meilisearch_client
             )
