@@ -1,12 +1,10 @@
 "use client";
 
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { useUser } from "@/hooks/use-user";
-import { ROUTES } from "@/data/routes";
 
 export function ProtectedRoute() {
-    const { user, isLoading, isSuccess } = useUser();
-    const location = useLocation();
+    const { isLoading } = useUser();
 
     // Show loading state while checking authentication
     if (isLoading) {
@@ -20,18 +18,7 @@ export function ProtectedRoute() {
         );
     }
 
-    // Redirect to landing page if not authenticated, preserving intended destination
-    if (!isSuccess || !user) {
-        // Save the intended destination to sessionStorage (survives OAuth redirect)
-        const intendedUrl = location.pathname + location.search + location.hash;
-        if (intendedUrl !== "/" && intendedUrl !== ROUTES.ANNOUNCEMENTS) {
-            sessionStorage.setItem("__nuspace_redirect_url__", intendedUrl);
-        }
-
-        return <Navigate to={ROUTES.HOME} replace />;
-    }
-
-    // User is authenticated, render the protected content
+    // User is authenticated (or guest), render the protected content
     return <Outlet />;
 }
 

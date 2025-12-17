@@ -11,6 +11,7 @@ import {
     Shield,
     Menu,
     LogOut,
+    LogIn,
     ChevronLeft,
     ChevronRight,
 } from "lucide-react";
@@ -111,27 +112,36 @@ interface SidebarUserFooterProps {
 }
 
 function SidebarUserFooter({ collapsed = false }: SidebarUserFooterProps) {
-    const { user, logout, isLoggingOut } = useUser();
+    const { user, logout, login, isLoggingOut } = useUser();
 
-    if (!user) return null;
+    const displayUser = user || {
+        given_name: "Guest",
+        family_name: "",
+        email: "Guest",
+        picture: null
+    };
+
+    const handleAuthAction = user ? logout : login;
+    const authActionLabel = user ? (isLoggingOut ? "Logging out..." : "Logout") : "Login";
+    const AuthIcon = user ? LogOut : LogIn;
 
     if (collapsed) {
         return (
             <div className="border-t pt-4 mt-auto flex flex-col items-center gap-2">
-                {user.picture ? (
+                {displayUser.picture ? (
                     <img
-                        src={user.picture}
-                        alt={user.given_name || "User"}
+                        src={displayUser.picture}
+                        alt={displayUser.given_name || "User"}
                         className="w-10 h-10 rounded-full"
-                        title={`${user.given_name} ${user.family_name || ""}`}
+                        title={`${displayUser.given_name} ${displayUser.family_name || ""}`}
                     />
                 ) : (
                     <div
                         className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"
-                        title={`${user.given_name} ${user.family_name || ""}`}
+                        title={`${displayUser.given_name} ${displayUser.family_name || ""}`}
                     >
                         <span className="text-primary font-semibold text-sm">
-                            {(user.given_name?.[0] || "U").toUpperCase()}
+                            {(displayUser.given_name?.[0] || "U").toUpperCase()}
                         </span>
                     </div>
                 )}
@@ -139,11 +149,11 @@ function SidebarUserFooter({ collapsed = false }: SidebarUserFooterProps) {
                     variant="ghost"
                     size="icon"
                     className="h-10 w-10 text-muted-foreground hover:text-destructive"
-                    onClick={logout}
+                    onClick={handleAuthAction}
                     disabled={isLoggingOut}
-                    title="Logout"
+                    title={authActionLabel}
                 >
-                    <LogOut size={18} />
+                    <AuthIcon size={18} />
                 </Button>
             </div>
         );
@@ -152,25 +162,25 @@ function SidebarUserFooter({ collapsed = false }: SidebarUserFooterProps) {
     return (
         <div className="border-t pt-4 mt-auto">
             <div className="flex items-center gap-3 px-2 mb-3">
-                {user.picture ? (
+                {displayUser.picture ? (
                     <img
-                        src={user.picture}
-                        alt={user.given_name || "User"}
+                        src={displayUser.picture}
+                        alt={displayUser.given_name || "User"}
                         className="w-10 h-10 rounded-full flex-shrink-0"
                     />
                 ) : (
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <span className="text-primary font-semibold">
-                            {(user.given_name?.[0] || "U").toUpperCase()}
+                            {(displayUser.given_name?.[0] || "U").toUpperCase()}
                         </span>
                     </div>
                 )}
                 <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">
-                        {user.given_name} {user.family_name || ""}
+                        {displayUser.given_name} {displayUser.family_name || ""}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
-                        {user.email || "NU Student"}
+                        {displayUser.email || "NU Student"}
                     </p>
                 </div>
             </div>
@@ -178,11 +188,11 @@ function SidebarUserFooter({ collapsed = false }: SidebarUserFooterProps) {
                 variant="ghost"
                 size="sm"
                 className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
-                onClick={logout}
+                onClick={handleAuthAction}
                 disabled={isLoggingOut}
             >
-                <LogOut size={18} />
-                {isLoggingOut ? "Logging out..." : "Logout"}
+                <AuthIcon size={18} />
+                {authActionLabel}
             </Button>
         </div>
     );
