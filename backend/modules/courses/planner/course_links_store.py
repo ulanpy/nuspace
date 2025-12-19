@@ -26,7 +26,7 @@ def _load_course_link_class():
 CourseLink = _load_course_link_class()
 
 
-DEFAULT_LINKS_CSV = Path("data/course_links.csv")
+DEFAULT_LINKS_CSV = Path("frontend/public/data/course_links.csv")
 
 
 def write_links_csv(path: Path, links: Iterable[CourseLink]) -> int:
