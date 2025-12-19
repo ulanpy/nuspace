@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowRight, Calendar, Users, Sparkles, Library, Shield, Phone } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
 import { Button } from "@/components/atoms/button";
 import { useUser } from "@/hooks/use-user";
@@ -16,7 +15,13 @@ const eventImages = [eventImg1, eventImg2, eventImg3, eventImg4, eventImg5];
 
 export default function LandingPage() {
     const { login } = useUser();
-    const navigate = useNavigate();
+
+    const scrollToLogin = () => {
+        const element = document.getElementById('login-cta');
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
 
     const features = [
         {
@@ -83,7 +88,7 @@ export default function LandingPage() {
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Button
                             size="lg"
-                                onClick={() => navigate(ROUTES.ANNOUNCEMENTS)}
+                            onClick={scrollToLogin}
                             className="text-base px-8 py-6 gap-2"
                         >
                             Get Started
@@ -167,6 +172,21 @@ export default function LandingPage() {
                     </Button>
                 </div>
             </section>
-        </div>
+
+            {/* Footer */}
+            <footer className="py-8 text-center text-sm text-muted-foreground border-t bg-muted/30">
+                <div className="max-w-4xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <p>© {new Date().getFullYear()} Nuspace. All rights reserved.</p>
+                    <div className="flex gap-6">
+                        <a href={ROUTES.PRIVACY_POLICY} className="hover:text-foreground transition-colors">
+                            Privacy Policy
+                        </a>
+                        <a href="https://github.com/ulanpy/nuspace" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+                            GitHub
+                        </a>
+                    </div>
+                </div>
+            </footer>
+        </div >
     );
 }
