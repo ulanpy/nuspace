@@ -15,6 +15,7 @@ import { PublicRoute } from "../components/layout/PublicRoute";
 // Pages
 import LandingPage from "../pages/LandingPage";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
+import TermsOfService from "../pages/TermsOfService";
 import Announcements from "../pages/Announcements";
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
           <Route element={<PublicLayout />}>
             <Route path={ROUTES.HOME} element={<LandingPage />} />
             <Route path={ROUTES.PRIVACY_POLICY} element={<PrivacyPolicy />} />
+            <Route path={ROUTES.TERMS_OF_SERVICE} element={<TermsOfService />} />
           </Route>
         </Route>
 
