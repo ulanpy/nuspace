@@ -22,6 +22,7 @@ export const STUDENT = "student";
 export const SG = "sg";
 export const TICKET = "ticket";
 export const ANNOUNCEMENTS = "announcements";
+export const PRIVACY_POLICY = "privacy-policy";
 
 // --- Helper to build paths ---
 const buildPath = (...args: string[]) => `/${args.filter(Boolean).join("/")}`;
@@ -29,6 +30,7 @@ const buildPath = (...args: string[]) => `/${args.filter(Boolean).join("/")}`;
 export const ROUTES = {
   HOME: buildPath(""),
   ANNOUNCEMENTS: buildPath(ANNOUNCEMENTS),
+  PRIVACY_POLICY: buildPath(PRIVACY_POLICY),
   ABOUT: buildPath(ABOUT),
   PROFILE: buildPath(PROFILE),
   CONTACTS: buildPath(CONTACTS),
@@ -110,11 +112,15 @@ export const LazyRoutes: {
     },
     {
       path: ROUTES.COURSES,
-      Component: withLazy(() => import("@/features/courses/pages/GradeStatisticsPage")),
+      Component: withLazy(
+        () => import("@/features/courses/pages/GradeStatisticsPage"),
+      ),
     },
     {
       path: ROUTES.DEGREE_AUDIT_INFO,
-      Component: withLazy(() => import("@/features/courses/pages/DegreeAuditInfoPage")),
+      Component: withLazy(
+        () => import("@/features/courses/pages/DegreeAuditInfoPage"),
+      ),
     },
     {
       path: ROUTES.DORM_EATS,
@@ -126,23 +132,33 @@ export const LazyRoutes: {
     },
     {
       path: ROUTES.SGOTINISH.ROOT,
-      Component: withLazy(() => import("@/features/sgotinish/pages/SgotinishPage")),
+      Component: withLazy(
+        () => import("@/features/sgotinish/pages/SgotinishPage"),
+      ),
     },
     {
       path: ROUTES.SGOTINISH.STUDENT.ROOT,
-      Component: withLazy(() => import("@/features/sgotinish/components/StudentDashboard")),
+      Component: withLazy(
+        () => import("@/features/sgotinish/components/StudentDashboard"),
+      ),
     },
     {
       path: ROUTES.SGOTINISH.STUDENT.TICKET.DETAIL,
-      Component: withLazy(() => import("@/features/sgotinish/components/TicketDetail")),
+      Component: withLazy(
+        () => import("@/features/sgotinish/components/TicketDetail"),
+      ),
     },
     {
       path: ROUTES.SGOTINISH.SG.ROOT,
-      Component: withLazy(() => import("@/features/sgotinish/components/SGDashboard")),
+      Component: withLazy(
+        () => import("@/features/sgotinish/components/SGDashboard"),
+      ),
     },
     {
       path: ROUTES.SGOTINISH.SG.TICKET.DETAIL,
-      Component: withLazy(() => import("@/features/sgotinish/components/TicketDetail")),
+      Component: withLazy(
+        () => import("@/features/sgotinish/components/TicketDetail"),
+      ),
     },
     {
       path: ROUTES.COMMUNITIES.ROOT,
