@@ -181,6 +181,9 @@ export default function LandingPage() {
                         <a href={ROUTES.PRIVACY_POLICY} className="hover:text-foreground transition-colors">
                             Privacy Policy
                         </a>
+                        <a href={ROUTES.TERMS_OF_SERVICE} className="hover:text-foreground transition-colors">
+                            Terms of Service
+                        </a>
                         <a href="https://github.com/ulanpy/nuspace" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
                             GitHub
                         </a>

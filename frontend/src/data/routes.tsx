@@ -23,6 +23,7 @@ export const SG = "sg";
 export const TICKET = "ticket";
 export const ANNOUNCEMENTS = "announcements";
 export const PRIVACY_POLICY = "privacy-policy";
+export const TERMS_OF_SERVICE = "terms-of-service";
 
 // --- Helper to build paths ---
 const buildPath = (...args: string[]) => `/${args.filter(Boolean).join("/")}`;
@@ -31,6 +32,7 @@ export const ROUTES = {
   HOME: buildPath(""),
   ANNOUNCEMENTS: buildPath(ANNOUNCEMENTS),
   PRIVACY_POLICY: buildPath(PRIVACY_POLICY),
+  TERMS_OF_SERVICE: buildPath(TERMS_OF_SERVICE),
   ABOUT: buildPath(ABOUT),
   PROFILE: buildPath(PROFILE),
   CONTACTS: buildPath(CONTACTS),
