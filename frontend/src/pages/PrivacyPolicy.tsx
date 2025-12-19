@@ -1,5 +1,4 @@
 import { Mail, Phone, ExternalLink } from "lucide-react";
-import { Button } from "@/components/atoms/button";
 
 const privacyData = {
     title: "Privacy Policy for nuspace.kz",
@@ -56,6 +55,7 @@ const privacyData = {
         }
     ],
     contact: {
+        message: "For privacy-related inquiries, please contact us through any of the following channels:",
         email: "ulan.sharipov@nu.edu.kz",
         phone: "+77072818516",
         telegram: "https://t.me/kamikadze24"
@@ -102,25 +102,29 @@ export default function PrivacyPolicy() {
             {/* Contact */}
             <div className="mt-12 pt-8 border-t border-border">
                 <h2 className="text-2xl font-bold mb-6">Contact Us</h2>
+                <p className="text-muted-foreground mb-6">{privacyData.contact.message}</p>
                 <div className="grid gap-4 md:grid-cols-3">
-                    <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2" asChild>
-                        <a href={`mailto:${privacyData.contact.email}`}>
+                    <a href={`mailto:${privacyData.contact.email}`} className="block p-4 rounded-lg border border-border hover:border-foreground hover:bg-muted/50 transition-colors">
+                        <div className="flex flex-col items-center gap-2">
                             <Mail className="h-6 w-6" />
-                            <span>Email Support</span>
-                        </a>
-                    </Button>
-                    <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2" asChild>
-                        <a href={`tel:${privacyData.contact.phone.replace(/\s+/g, '')}`}>
+                            <span className="font-medium">Email Support</span>
+                            <span className="text-xs text-muted-foreground break-all">{privacyData.contact.email}</span>
+                        </div>
+                    </a>
+                    <a href={`tel:${privacyData.contact.phone.replace(/\s+/g, '')}`} className="block p-4 rounded-lg border border-border hover:border-foreground hover:bg-muted/50 transition-colors">
+                        <div className="flex flex-col items-center gap-2">
                             <Phone className="h-6 w-6" />
-                            <span>Phone</span>
-                        </a>
-                    </Button>
-                    <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2" asChild>
-                        <a href={privacyData.contact.telegram} target="_blank" rel="noopener noreferrer">
+                            <span className="font-medium">Phone</span>
+                            <span className="text-xs text-muted-foreground">{privacyData.contact.phone}</span>
+                        </div>
+                    </a>
+                    <a href={privacyData.contact.telegram} target="_blank" rel="noopener noreferrer" className="block p-4 rounded-lg border border-border hover:border-foreground hover:bg-muted/50 transition-colors">
+                        <div className="flex flex-col items-center gap-2">
                             <ExternalLink className="h-6 w-6" />
-                            <span>Telegram</span>
-                        </a>
-                    </Button>
+                            <span className="font-medium">Telegram</span>
+                            <span className="text-xs text-muted-foreground">@kamikadze24</span>
+                        </div>
+                    </a>
                 </div>
             </div>
         </div>

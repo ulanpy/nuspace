@@ -1,5 +1,4 @@
-import { ExternalLink } from "lucide-react";
-import { Button } from "@/components/atoms/button";
+import { ExternalLink, Mail, Phone } from "lucide-react";
 
 const tosData = {
     title: "Terms of Service for nuspace.kz",
@@ -49,7 +48,9 @@ const tosData = {
         }
     ],
     contact: {
-        message: "Questions about the Terms can be directed to the administrator.",
+        message: "Questions about the Terms can be directed to the administrator through any of the following channels:",
+        email: "ulan.sharipov@nu.edu.kz",
+        phone: "+77072818516",
         telegram: "https://t.me/kamikadze24"
     }
 };
@@ -95,12 +96,29 @@ export default function TermsOfService() {
             <div className="mt-12 pt-8 border-t border-border">
                 <h2 className="text-2xl font-bold mb-6">Contact</h2>
                 <p className="text-muted-foreground mb-6">{tosData.contact.message}</p>
-                <Button variant="outline" className="h-auto p-4 flex items-center gap-2" asChild>
-                    <a href={tosData.contact.telegram} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-6 w-6" />
-                        <span>Contact on Telegram</span>
+                <div className="grid gap-4 md:grid-cols-3">
+                    <a href={`mailto:${tosData.contact.email}`} className="block p-4 rounded-lg border border-border hover:border-foreground hover:bg-muted/50 transition-colors">
+                        <div className="flex flex-col items-center gap-2">
+                            <Mail className="h-6 w-6" />
+                            <span className="font-medium">Email Support</span>
+                            <span className="text-xs text-muted-foreground break-all">{tosData.contact.email}</span>
+                        </div>
                     </a>
-                </Button>
+                    <a href={`tel:${tosData.contact.phone.replace(/\s+/g, '')}`} className="block p-4 rounded-lg border border-border hover:border-foreground hover:bg-muted/50 transition-colors">
+                        <div className="flex flex-col items-center gap-2">
+                            <Phone className="h-6 w-6" />
+                            <span className="font-medium">Phone</span>
+                            <span className="text-xs text-muted-foreground">{tosData.contact.phone}</span>
+                        </div>
+                    </a>
+                    <a href={tosData.contact.telegram} target="_blank" rel="noopener noreferrer" className="block p-4 rounded-lg border border-border hover:border-foreground hover:bg-muted/50 transition-colors">
+                        <div className="flex flex-col items-center gap-2">
+                            <ExternalLink className="h-6 w-6" />
+                            <span className="font-medium">Telegram</span>
+                            <span className="text-xs text-muted-foreground">@kamikadze24</span>
+                        </div>
+                    </a>
+                </div>
             </div>
         </div>
     );
