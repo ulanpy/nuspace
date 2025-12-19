@@ -172,6 +172,21 @@ export default function LandingPage() {
                     </Button>
                 </div>
             </section>
-        </div>
+
+            {/* Footer */}
+            <footer className="py-8 text-center text-sm text-muted-foreground border-t bg-muted/30">
+                <div className="max-w-4xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <p>© {new Date().getFullYear()} Nuspace. All rights reserved.</p>
+                    <div className="flex gap-6">
+                        <a href={ROUTES.PRIVACY_POLICY} className="hover:text-foreground transition-colors">
+                            Privacy Policy
+                        </a>
+                        <a href="https://github.com/ulanpy/nuspace" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+                            GitHub
+                        </a>
+                    </div>
+                </div>
+            </footer>
+        </div >
     );
 }
