@@ -22,6 +22,7 @@ export const STUDENT = "student";
 export const SG = "sg";
 export const TICKET = "ticket";
 export const ANNOUNCEMENTS = "announcements";
+export const PRIVACY_POLICY = "privacy-policy";
 
 // --- Helper to build paths ---
 const buildPath = (...args: string[]) => `/${args.filter(Boolean).join("/")}`;
@@ -29,6 +30,7 @@ const buildPath = (...args: string[]) => `/${args.filter(Boolean).join("/")}`;
 export const ROUTES = {
   HOME: buildPath(""),
   ANNOUNCEMENTS: buildPath(ANNOUNCEMENTS),
+  PRIVACY_POLICY: buildPath(PRIVACY_POLICY),
   ABOUT: buildPath(ABOUT),
   PROFILE: buildPath(PROFILE),
   CONTACTS: buildPath(CONTACTS),
