@@ -1,5 +1,5 @@
 course_id,course_code,course_name,credits_need,grade,Option 1,Option 2,Option 3,Option 4,Option 5,Option 6,Option 7,Option 8,Must have Option 1,Except 1
-1.0,SOC 101,Introduction to Sociology,6,C,ANT 101,,,,,,,,,
+1.0,SOC 101,Introduction to Sociology,6,C,SOC 101,,,,,,,,,
 2.0,Methods Courses,"SOC 201, 203 and 214",18,C-,"SOC 201, SOC 203, SOC 214",,,,,,,,,
 3.0,SOC 301,Theory course,6,C-,SOC 301,,,,,,,,,
 4.0,Intermediate/Advanced Electives 1,"Two from SOC 2XX, 3XX or 4XX",12,C-,SOC 2XX,SOC 3XX,SOC 4XX,,,,,,,
