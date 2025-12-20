@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight, Calendar, Users, Sparkles, Library, Shield, Phone } from "lucide-react";
+import { Link } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
 import { Button } from "@/components/atoms/button";
 import { useUser } from "@/hooks/use-user";
@@ -15,13 +16,6 @@ const eventImages = [eventImg1, eventImg2, eventImg3, eventImg4, eventImg5];
 
 export default function LandingPage() {
     const { login } = useUser();
-
-    const scrollToLogin = () => {
-        const element = document.getElementById('login-cta');
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-        }
-    };
 
     const features = [
         {
@@ -88,11 +82,13 @@ export default function LandingPage() {
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Button
                             size="lg"
-                            onClick={scrollToLogin}
+                            asChild
                             className="text-base px-8 py-6 gap-2"
                         >
-                            Get Started
-                            <ArrowRight className="w-5 h-5" />
+                            <Link to={ROUTES.ANNOUNCEMENTS}>
+                                Get Started
+                                <ArrowRight className="w-5 h-5" />
+                            </Link>
                         </Button>
                         <Button
                             variant="outline"
