@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Calendar, Plus } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 import { LoginModal } from "@/components/molecules/login-modal";
 import { CommunityCard } from "@/features/communities/components/CommunityCard";
@@ -28,6 +29,8 @@ import MotionWrapper from "@/components/atoms/motion-wrapper";
 export default function CommunitiesPage() {
   // const location = useLocation();
   // const { user } = useUser();
+  const [searchParams] = useSearchParams();
+  const initialRecruitmentFilter = searchParams.get("recruitment_status") === "open";
   const [selectedCommunityCategory, setSelectedCommunityCategory] =
     useState<string>("All");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -35,7 +38,7 @@ export default function CommunitiesPage() {
   const debouncedKeyword = useDebounce(searchKeyword, 300);
 
   // Open-only filter toggle
-  const [isWifiFilterActive, setIsWifiFilterActive] = useState<boolean>(false);
+  const [isWifiFilterActive, setIsWifiFilterActive] = useState<boolean>(initialRecruitmentFilter);
 
   const normalize = (value: unknown) =>
     String(value ?? "").trim().toLowerCase();
