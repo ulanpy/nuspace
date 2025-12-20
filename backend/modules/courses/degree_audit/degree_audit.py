@@ -406,6 +406,7 @@ def _candidate_courses(
     min_grade: str,
     excluded_patterns: Sequence[str],
     prefer_latest: bool = True,
+    flex_scores: Optional[List[int]] = None,
 ) -> List[int]:
     candidates: List[int] = []
     aliases = _pattern_aliases(pattern) or [pattern]
@@ -422,7 +423,11 @@ def _candidate_courses(
             continue
         if any(course_matches_pattern(course.code, alias) for alias in aliases):
             candidates.append(idx)
-    candidates.sort(reverse=prefer_latest)
+    def _sort_key(i: int) -> Tuple[int, int]:
+        flex = flex_scores[i] if flex_scores and i < len(flex_scores) else 0
+        return (flex, -i if prefer_latest else i)
+
+    candidates.sort(key=_sort_key)
     return candidates
 
 
@@ -434,6 +439,7 @@ def _match_group(
     credits_needed: float,
     min_grade: str,
     excluded_patterns: Sequence[str],
+    flex_scores: Optional[List[int]] = None,
 ) -> Tuple[bool, List[Tuple[int, float]], float, str]:
     """Try to satisfy an AND-group of patterns, consuming courses if successful."""
     temp_used: List[Tuple[int, float]] = []
@@ -455,6 +461,7 @@ def _match_group(
             min_grade,
             excluded_patterns,
             prefer_latest=not pat.strip().upper().startswith("ANY"),
+            flex_scores=flex_scores,
         )
         for idx in candidates:
             available = remaining[idx]
@@ -482,6 +489,7 @@ def _match_group(
                 min_grade,
                 excluded_patterns,
                 prefer_latest=not pat.strip().upper().startswith("ANY"),
+                flex_scores=flex_scores,
             )
             for idx in cand:
                 if idx not in seen:
@@ -515,6 +523,7 @@ def _match_group(
                 min_grade,
                 excluded_patterns,
                 prefer_latest=not alias.strip().upper().startswith("ANY"),
+                flex_scores=flex_scores,
             )
             if cand:
                 matched_idx = cand[0]
@@ -582,6 +591,19 @@ def audit_transcript(transcript: Transcript, requirements: List[Requirement], ex
     courses: List[Course] = [c for idx, c in enumerate(all_courses) if idx in keep_indices]
 
     remaining_credits = [c.credits for c in courses]
+    # Compute flexibility: how many different requirement patterns a course can satisfy.
+    all_patterns: List[str] = []
+    for req in ordered_reqs:
+        sources = req.options if req.options else [req.course_code]
+        for src in sources:
+            all_patterns.extend(_split_alternative_group(src))
+    flex_scores: List[int] = []
+    for course in courses:
+        flex = 0
+        for pat in all_patterns:
+            if course_matches_pattern(course.code, pat):
+                flex += 1
+        flex_scores.append(flex)
     used_indices: set = set()
     reserved_indices: set = set()
     results: List[RequirementResult] = []
@@ -616,6 +638,7 @@ def audit_transcript(transcript: Transcript, requirements: List[Requirement], ex
                 req.credits_need,
                 req.min_grade,
                 req.excepts,
+                flex_scores=flex_scores,
             )
             if ok and req.must_haves:
                 has_must = False
