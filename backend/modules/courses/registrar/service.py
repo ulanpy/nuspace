@@ -1,5 +1,6 @@
 import logging
 import re
+import asyncio
 from dataclasses import dataclass
 from typing import Dict, Sequence
 
@@ -349,19 +350,20 @@ class RegistrarService:
         if not course_codes or not self.meilisearch_client:
             return {}
 
-        cache: Dict[str, CoursePriorityRecord | None] = {}
         results: Dict[str, CoursePriorityRecord] = {}
 
-        for course_code in course_codes:
-            normalized = self.normalize_course_code(course_code)
-            if not normalized or normalized in cache:
-                if normalized and cache.get(normalized):
-                    results[normalized] = cache[normalized]  # type: ignore[assignment]
-                continue
+        sem = asyncio.Semaphore(5)
 
-            record = await self._fetch_priority_record(course_code, normalized)
-            cache[normalized] = record
-            if record:
+        async def _fetch_one(raw_code: str, normalized: str):
+            async with sem:
+                record = await self._fetch_priority_record(raw_code, normalized)
+                return normalized, record
+
+        fetch_results = await asyncio.gather(
+            *(_fetch_one(code, self.normalize_course_code(code)) for code in course_codes)
+        )
+        for normalized, record in fetch_results:
+            if normalized and record:
                 results[normalized] = record
 
         return results

@@ -1,10 +1,13 @@
 import { useMemo } from "react";
+import { CalendarPlus } from "lucide-react";
+import { Button } from "@/components/atoms/button";
 import { Modal } from "@/components/atoms/modal";
 import { Badge } from "@/components/atoms/badge";
 import { Skeleton } from "@/components/atoms/skeleton";
 import { cn } from "@/utils/utils";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { ScheduleResponse } from "../types";
+import { useToast } from "@/hooks/use-toast";
 
 interface ScheduleDialogProps {
   open: boolean;
@@ -46,6 +49,8 @@ function toMinutes(time: { hh: number; mm: number }) {
 }
 
 export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: ScheduleDialogProps) {
+  const { toast } = useToast();
+
   const timetable = useMemo(() => {
     const days = WEEKDAYS.map(({ label, index }) => {
       const dayItems = schedule?.data?.[index] ?? [];
@@ -134,6 +139,22 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
     }
   }, [meta?.last_synced_at]);
 
+  const handleMockImport = () => {
+    if (!hasItems) {
+      toast({
+        title: "No classes to import",
+        description: "Add courses first, then use this demo button to mock sending them to Google Calendar.",
+      });
+      return;
+    }
+
+    toast({
+      title: "Demo: sent to Google Calendar",
+      description:
+        "For the verification video, this button represents the OAuth + Calendar flow. Production will create recurring events via calendar.events.",
+    });
+  };
+
   return (
     <Modal
       isOpen={open}
@@ -152,66 +173,21 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
               Synced {lastSyncedText ?? "just now"}
             </p>
           </div>
-          {/* Export to iCal button - temporarily hidden */}
-          {/* <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col items-end gap-1 text-right">
             <Button
               size="sm"
               variant="outline"
-              className="gap-2"
-              disabled={!hasItems || isLoading}
-              onClick={() => {
-                if (!hasItems || isLoading) return;
-                const now = new Date();
-                const nowStamp = `${now.getUTCFullYear()}${`${now.getUTCMonth() + 1}`.padStart(2, "0")}${`${now.getUTCDate()}`.padStart(2, "0" )}T${`${now.getUTCHours()}`.padStart(2, "0")}${`${now.getUTCMinutes()}`.padStart(2, "0")}${`${now.getUTCSeconds()}`.padStart(2, "0") }Z`;
-                let ics = "BEGIN:VCALENDAR\nVERSION:2.0\nCALSCALE:GREGORIAN\nPRODID:-//Nuspace//Registrar Schedule//EN\n";
-                timetable.forEach(({ index: dayIndex, items }) => {
-                  items.forEach((item, idx) => {
-                    const nowLocal = new Date();
-                    const startDate = new Date(nowLocal);
-                    const currentWeekday = nowLocal.getDay();
-                    const targetWeekday = (dayIndex + 1) % 7;
-                    let diff = (targetWeekday - currentWeekday + 7) % 7;
-                    const candidate = new Date(nowLocal);
-                    candidate.setHours(item.time.start.hh, item.time.start.mm, 0, 0);
-                    if (diff === 0 && candidate <= nowLocal) {
-                      diff = 7;
-                    }
-                    startDate.setDate(nowLocal.getDate() + diff);
-                    startDate.setHours(item.time.start.hh, item.time.start.mm, 0, 0);
-
-                    const endDate = new Date(startDate);
-                    endDate.setHours(item.time.end.hh, item.time.end.mm, 0, 0);
-
-                    const startStr = `${startDate.getUTCFullYear()}${`${startDate.getUTCMonth() + 1}`.padStart(2, "0")}${`${startDate.getUTCDate()}`.padStart(2, "0")}T${`${startDate.getUTCHours()}`.padStart(2, "0")}${`${startDate.getUTCMinutes()}`.padStart(2, "0")}${`${startDate.getUTCSeconds()}`.padStart(2, "0")}Z`;
-                    const endStr = `${endDate.getUTCFullYear()}${`${endDate.getUTCMonth() + 1}`.padStart(2, "0")}${`${endDate.getUTCDate()}`.padStart(2, "0")}T${`${endDate.getUTCHours()}`.padStart(2, "0")}${`${endDate.getUTCMinutes()}`.padStart(2, "0")}${`${endDate.getUTCSeconds()}`.padStart(2, "0")}Z`;
-                    const uid = `${item.course_code}-${dayIndex}-${idx}@nuspace`;
-                    const summary = (item.label || item.title || item.course_code).replace(/\n/g, " ");
-                    const description = [item.title, item.info, item.teacher]
-                      .filter(Boolean)
-                      .join("\\n")
-                      .replace(/\n/g, "\\n");
-                    const location = (item.cab ?? "").replace(/\n/g, " ");
-                    ics += `BEGIN:VEVENT\nUID:${uid}\nDTSTAMP:${nowStamp}\nSUMMARY:${summary}\nDESCRIPTION:${description}\nLOCATION:${location}\nDTSTART:${startStr}\nDTEND:${endStr}\nRRULE:FREQ=WEEKLY\nEND:VEVENT\n`;
-                  });
-                });
-                ics += "END:VCALENDAR";
-
-                const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-                const url = URL.createObjectURL(blob);
-                const anchor = document.createElement("a");
-                anchor.href = url;
-                anchor.download = "nuspace-schedule.ics";
-                anchor.rel = "noopener";
-                document.body.appendChild(anchor);
-                anchor.click();
-                document.body.removeChild(anchor);
-                URL.revokeObjectURL(url);
-              }}
+              className="gap-2 rounded-full"
+              disabled={isLoading}
+              onClick={handleMockImport}
             >
-              <Download className="h-4 w-4" />
-              Export to iCal
+              <CalendarPlus className="h-4 w-4" />
+              Import to Google Calendar (demo)
             </Button>
-          </div> */}
+            <p className="text-[11px] text-muted-foreground">
+              Demo button for OAuth verification video; no real events are created here.
+            </p>
+          </div>
         </div>
 
         {isLoading ? (

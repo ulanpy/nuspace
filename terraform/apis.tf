@@ -27,6 +27,13 @@ resource "google_project_service" "serviceusage_api" {
   disable_on_destroy = false
 }
 
+# Enable the Organization Policy API to manage org policy constraints via automation.
+resource "google_project_service" "orgpolicy_api" {
+  project            = var.project_id
+  service            = "orgpolicy.googleapis.com"
+  disable_on_destroy = false
+}
+
 # Enable the Cloud Storage API so we can manage buckets via Terraform.
 resource "google_project_service" "storage_api" {
   project = var.project_id
@@ -38,6 +45,13 @@ resource "google_project_service" "storage_api" {
 resource "google_project_service" "pubsub_api" {
   project = var.project_id
   service = "pubsub.googleapis.com"
+  disable_on_destroy = false
+}
+
+# Enable the Google Calendar API for creating and managing calendar events.
+resource "google_project_service" "calendar_api" {
+  project            = var.project_id
+  service            = "calendar-json.googleapis.com"
   disable_on_destroy = false
 }
 

@@ -118,6 +118,14 @@ async def auth_callback(
             await redis.delete(csrf_key)
             return RedirectResponse(url=config.HOME_URL, status_code=303)
 
+    # In debug without mock, state cookies might be scoped to a different host (tunnel vs localhost).
+    # Seed the expected oauth state into the session to avoid authlib's MismatchingState when the
+    # callback arrives on the tunnel host without the original session cookie.
+    if config.IS_DEBUG and not config.MOCK_KEYCLOAK:
+        session_state_key = f"{kc_manager.__class__.__name__.lower()}_oauth_state"
+        if request.session.get(session_state_key) != state:
+            request.session[session_state_key] = state
+
     try:
         creds = await exchange_code_for_credentials(request)
     except MismatchingStateError as exc:
