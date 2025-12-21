@@ -45,17 +45,17 @@ export default function CommunitiesPage() {
   const alias = (value: string) => {
     switch (value) {
       case "sport":
-        return "Sports";
+        return "sports";
       case "arts":
-        return "Art";
+        return "art";
       case "recreation":
-        return "Recreational";
+        return "recreational";
       case "tech":
-        return "Technology";
+        return "technology";
       case "culture":
-        return "Cultural";
+        return "cultural";
       case "prof":
-        return "Professional";
+        return "professional";
       default:
         return value;
     }
@@ -139,8 +139,8 @@ export default function CommunitiesPage() {
                   size="sm"
                   className="flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm justify-between bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
                 >
-                  <span className="hidden sm:inline">{selectedCommunityCategory}</span>
-                  <span className="sm:hidden">{selectedCommunityCategory === "All" ? "All" : selectedCommunityCategory.slice(0, 8) + (selectedCommunityCategory.length > 8 ? "..." : "")}</span>
+                  <span className="hidden sm:inline capitalize">{selectedCommunityCategory}</span>
+                  <span className="sm:hidden capitalize">{selectedCommunityCategory === "All" ? "All" : selectedCommunityCategory.slice(0, 8) + (selectedCommunityCategory.length > 8 ? "..." : "")}</span>
                   <ChevronDown className="h-3 w-3 ml-1 sm:h-4 sm:w-4 sm:ml-2" />
                 </Button>
               </DropdownMenuTrigger>
@@ -153,7 +153,7 @@ export default function CommunitiesPage() {
                     key={option}
                     onClick={() => handleCategoryChange(option)}
                     className={`
-                        text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700
+                        text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 capitalize
                         ${selectedCommunityCategory === option
                         ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                         : ''
