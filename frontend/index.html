@@ -93,6 +93,19 @@
 
   <link rel="manifest" href="/src/assets/manifest.json">
   <title>Nuspace</title>
+  <script>
+    (function () {
+      const storageKey = "vite-ui-theme";
+      let theme = localStorage.getItem(storageKey);
+      document.documentElement.classList.add('no-transitions');
+      document.documentElement.classList.add(theme);
+      window.onload = () => {
+        setTimeout(() => {
+          document.documentElement.classList.remove('no-transitions');
+        }, 0);
+      };
+    })();
+  </script>
 </head>
 
 <body>

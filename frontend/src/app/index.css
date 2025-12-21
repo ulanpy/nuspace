@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+.no-transitions * {
+  transition: none !important;
+}
+
 @layer base {
   :root {
     /* Light mode - clean, modern, airy */
