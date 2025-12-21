@@ -45,17 +45,17 @@ export default function CommunitiesPage() {
   const alias = (value: string) => {
     switch (value) {
       case "sport":
-        return "sports";
+        return "Sports";
       case "arts":
-        return "art";
+        return "Art";
       case "recreation":
-        return "recreational";
+        return "Recreational";
       case "tech":
-        return "technology";
+        return "Technology";
       case "culture":
-        return "cultural";
+        return "Cultural";
       case "prof":
-        return "professional";
+        return "Professional";
       default:
         return value;
     }
@@ -137,7 +137,7 @@ export default function CommunitiesPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm justify-between bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm justify-between bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
                 >
                   <span className="hidden sm:inline">{selectedCommunityCategory}</span>
                   <span className="sm:hidden">{selectedCommunityCategory === "All" ? "All" : selectedCommunityCategory.slice(0, 8) + (selectedCommunityCategory.length > 8 ? "..." : "")}</span>
@@ -175,7 +175,7 @@ export default function CommunitiesPage() {
                   flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm gap-1 sm:gap-2
                   ${isWifiFilterActive
                   ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-sm'
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
                 }
                 `}
             >
