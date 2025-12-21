@@ -29,6 +29,7 @@ class PlannerCourseResponse(BaseModel):
     id: int
     registrar_course_id: str
     course_code: str
+    title: Optional[str]
     level: Optional[str]
     school: Optional[str]
     term_value: Optional[str]

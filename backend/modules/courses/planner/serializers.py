@@ -63,6 +63,7 @@ class PlannerSerializer:
             id=course.id,
             registrar_course_id=course.registrar_course_id,
             course_code=course.course_code,
+            title=(course.metadata_json or {}).get("title") or course.course_code,
             level=course.level or None,
             school=course.school or None,
             term_value=course.term_value,

@@ -863,6 +863,9 @@ const CourseCard = ({
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="font-semibold">{course.course_code}</p>
+          {course.title && (
+            <p className="text-xs text-muted-foreground">{course.title}</p>
+          )}
           {metaParts.length > 0 && (
             <p className="text-xs text-muted-foreground">{metaParts.join(" · ")}</p>
           )}

@@ -15,10 +15,6 @@ from backend.core.database.models import (
     Event,
     GradeReport,
 )
-from backend.modules.courses.registrar.priority_sync import (
-    PriorityRequirementsRefresher,
-    sync_priority_requirements,
-)
 from backend.modules.courses.registrar.schedule_sync import (
     ScheduleCatalogRefresher,
     sync_schedule_catalog,
@@ -125,22 +121,13 @@ async def setup_meilisearch(app: FastAPI):
             except Exception as e:
                 print(f"Error syncing index {index_config.model.__tablename__}: {e}")
 
-        # Initialize registrar course priority and schedule indexes + refreshers (run in debug)
-        app.state.course_priority_refresher = PriorityRequirementsRefresher(
-            app.state.meilisearch_client
-        )
+        # Initialize merged registrar schedule index (includes priorities) + refresher
         app.state.course_schedule_refresher = ScheduleCatalogRefresher(
             app.state.meilisearch_client
         )
         try:
-            count = await sync_priority_requirements(app.state.meilisearch_client)
-            print(f"Synced priority requirements docs: {count}")
-        except Exception as exc:
-            print(f"Error syncing registrar course priority: {exc}")
-        app.state.course_priority_refresher.start()
-        try:
             count = await sync_schedule_catalog(app.state.meilisearch_client)
-            print(f"Synced schedule catalog docs: {count}")
+            print(f"Synced schedule catalog docs (with priorities): {count}")
         except Exception as exc:
             print(f"Error syncing registrar course schedule: {exc}")
         app.state.course_schedule_refresher.start()
@@ -159,9 +146,6 @@ async def cleanup_meilisearch(app: FastAPI):
         except asyncio.CancelledError:
             pass
 
-    refresher = getattr(app.state, "course_priority_refresher", None)
-    if refresher:
-        await refresher.stop()
     schedule_refresher = getattr(app.state, "course_schedule_refresher", None)
     if schedule_refresher:
         await schedule_refresher.stop()

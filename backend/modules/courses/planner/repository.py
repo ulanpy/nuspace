@@ -145,6 +145,7 @@ class PlannerRepository:
         school: Optional[str],
         term_value: Optional[str],
         term_label: Optional[str],
+        metadata_json: Optional[dict] = None,
     ) -> PlannerScheduleCourse:
         course = PlannerScheduleCourse(
             planner_schedule_id=schedule_id,
@@ -154,6 +155,7 @@ class PlannerRepository:
             school=school,
             term_value=term_value,
             term_label=term_label,
+            metadata_json=metadata_json or {},
         )
         self.session.add(course)
         await self.session.flush()

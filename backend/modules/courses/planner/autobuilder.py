@@ -145,13 +145,7 @@ class PlannerAutoBuilder:
         )
 
     def _build_section_slots(self, course: PlannerScheduleCourse) -> List[SectionSlot]:
-        available_sections = [
-            section for section in course.sections if not self._is_section_full(section)
-        ]
-        if not available_sections:
-            return []
-
-        grouped = self._group_sections_by_type(available_sections)
+        grouped = self._group_sections_by_type(course.sections)
         if not grouped:
             return []
 
@@ -241,16 +235,6 @@ class PlannerAutoBuilder:
             return "SECTION"
         letters = re.sub(r"[\d\s]+", "", section_code).upper()
         return letters or "SECTION"
-
-    @staticmethod
-    def _is_section_full(section: PlannerScheduleSection) -> bool:
-        capacity = section.capacity
-        enrollment = section.enrollment_snapshot
-        if capacity is None:
-            return False
-        if enrollment is None:
-            return False
-        return enrollment >= capacity
 
     @staticmethod
     def _conflicts(slot: SectionSlot, occupancy: Dict[int, List[tuple]]) -> bool:

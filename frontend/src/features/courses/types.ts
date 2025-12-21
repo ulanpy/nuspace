@@ -292,6 +292,7 @@ export interface PlannerCourse {
   id: number;
   registrar_course_id: string;
   course_code: string;
+  title?: string | null;
   level?: string | null;
   school?: string | null;
   term_value?: string | null;

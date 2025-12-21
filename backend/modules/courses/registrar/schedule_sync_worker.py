@@ -1,5 +1,4 @@
 import asyncio
-import asyncio
 import json
 import os
 import sys
@@ -9,12 +8,12 @@ from urllib.parse import parse_qs, urlparse
 import httpx
 
 from backend.modules.courses.registrar.parsers.schedule_pdf_parser import parse_schedule_pdf
-from backend.modules.courses.registrar.schedule_sync import SCHEDULE_PDF_URL, SCHEDULE_TERM_LABEL_DEFAULT
+from backend.modules.courses.registrar.schedule_sync import SCHEDULE_PDF_URL
 
 
 async def main() -> None:
     pdf_url = os.environ.get("SCHEDULE_SYNC__PDF_URL", SCHEDULE_PDF_URL)
-    term_label = os.environ.get("SCHEDULE_SYNC__TERM_LABEL", SCHEDULE_TERM_LABEL_DEFAULT)
+    term_label = os.environ.get("SCHEDULE_SYNC__TERM_LABEL") or None
     term_id = os.environ.get("SCHEDULE_SYNC__TERM_ID") or _extract_term_id(pdf_url)
     output_path = os.environ.get("SCHEDULE_SYNC__OUTPUT_PATH")
 
@@ -22,7 +21,15 @@ async def main() -> None:
         raise SystemExit("SCHEDULE_SYNC__OUTPUT_PATH env var is required")
 
     content = await _download(pdf_url)
-    documents = parse_schedule_pdf(content, term_label=term_label, term_id=term_id)
+    try:
+        documents = parse_schedule_pdf(content, term_label=term_label, term_id=term_id)
+    except Exception as exc:
+        print(f"Schedule sync worker failed to parse feed: {exc}", file=sys.stderr)
+        # Debug hint: dump first few KB as hex to help inspect headers
+        preview_path = Path(output_path + ".preview.txt")
+        hex_preview = content[:4096].hex()
+        preview_path.write_text(hex_preview, encoding="utf-8")
+        raise SystemExit(1)
 
     Path(output_path).write_text(json.dumps(documents), encoding="utf-8")
 
@@ -48,8 +55,6 @@ if __name__ == "__main__":
     except Exception as exc:  # pragma: no cover - surfaced in parent process
         print(f"Schedule sync worker failed: {exc}", file=sys.stderr)
         raise
-
-
 
 async def main() -> None:
     pdf_url = os.environ.get("SCHEDULE_SYNC__PDF_URL", SCHEDULE_PDF_URL)

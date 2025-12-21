@@ -20,7 +20,6 @@ from backend.modules.courses.registrar.parsers.registrar_parser import parse_sch
 from backend.modules.courses.registrar.clients.public_course_catalog import (
     PublicCourseCatalogClient,
 )
-from backend.modules.courses.registrar.priority_sync import PRIORITY_INDEX_UID
 from backend.modules.courses.registrar.schedule_sync import SCHEDULE_INDEX_UID
 
 
@@ -51,12 +50,10 @@ class RegistrarService:
         public_client_factory=PublicCourseCatalogClient,
         *,
         meilisearch_client: AsyncClient | None = None,
-        priority_index_uid: str = PRIORITY_INDEX_UID,
     ) -> None:
         self.client_factory = client_factory
         self.public_client_factory = public_client_factory
         self.meilisearch_client = meilisearch_client
-        self.priority_index_uid = priority_index_uid
         self.schedule_index_uid = SCHEDULE_INDEX_UID
         self._active_semester: SemesterOption | None = None
 
@@ -87,32 +84,6 @@ class RegistrarService:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
 
         items = data.get("items", [])
-        priority_map = await self.fetch_course_priorities(
-            [item.get("course_code") for item in items]
-        )
-
-        for item in items:
-            normalized = self.normalize_course_code(item.get("course_code"))
-            priority_record = priority_map.get(normalized)
-            if not priority_record:
-                item.setdefault("priority_1", None)
-                item.setdefault("priority_2", None)
-                item.setdefault("priority_3", None)
-                item.setdefault("priority_4", None)
-                continue
-
-            item["priority_1"] = priority_record.priority_1
-            item["priority_2"] = priority_record.priority_2
-            item["priority_3"] = priority_record.priority_3
-            item["priority_4"] = priority_record.priority_4
-
-            if not item.get("pre_req"):
-                item["pre_req"] = priority_record.prerequisite or ""
-            if not item.get("co_req"):
-                item["co_req"] = priority_record.corequisite or ""
-            if not item.get("anti_req"):
-                item["anti_req"] = priority_record.antirequisite or ""
-
         return CourseSearchResponse(**data)
 
     async def get_active_semester(self) -> SemesterOption:
@@ -152,32 +123,6 @@ class RegistrarService:
 
         if not items:
             return CourseSearchResponse(items=[], cursor=None)
-
-        priority_map = await self.fetch_course_priorities(
-            [item.get("course_code") for item in items]
-        )
-
-        for item in items:
-            normalized = self.normalize_course_code(item.get("course_code"))
-            priority_record = priority_map.get(normalized)
-            if not priority_record:
-                item.setdefault("priority_1", None)
-                item.setdefault("priority_2", None)
-                item.setdefault("priority_3", None)
-                item.setdefault("priority_4", None)
-                continue
-
-            item["priority_1"] = priority_record.priority_1
-            item["priority_2"] = priority_record.priority_2
-            item["priority_3"] = priority_record.priority_3
-            item["priority_4"] = priority_record.priority_4
-
-            if not item.get("pre_req"):
-                item["pre_req"] = priority_record.prerequisite or ""
-            if not item.get("co_req"):
-                item["co_req"] = priority_record.corequisite or ""
-            if not item.get("anti_req"):
-                item["anti_req"] = priority_record.antirequisite or ""
 
         cursor = request.page + 1 if has_next else None
         return CourseSearchResponse(items=items, cursor=cursor)
@@ -243,6 +188,74 @@ class RegistrarService:
             has_next = True
 
         return summaries, has_next
+
+    async def fetch_course_priorities(
+        self,
+        course_codes: Sequence[str],
+    ) -> Dict[str, CoursePriorityRecord]:
+        """Fetch priority metadata from the merged schedule index."""
+        if not course_codes or not self.meilisearch_client:
+            return {}
+
+        results: Dict[str, CoursePriorityRecord] = {}
+        sem = asyncio.Semaphore(5)
+
+        async def _fetch_one(raw_code: str, normalized: str):
+            async with sem:
+                record = await self._fetch_priority_record(raw_code, normalized)
+                return normalized, record
+
+        fetch_results = await asyncio.gather(
+            *(_fetch_one(code, self.normalize_course_code(code)) for code in course_codes)
+        )
+        for normalized, record in fetch_results:
+            if normalized and record:
+                results[normalized] = record
+
+        return results
+
+    async def _fetch_priority_record(
+        self,
+        course_code: str | None,
+        normalized: str,
+    ) -> CoursePriorityRecord | None:
+        if not course_code or not self.meilisearch_client:
+            return None
+
+        keyword = course_code.strip()
+        try:
+            result = await meilisearch_utils.get(
+                client=self.meilisearch_client,
+                storage_name=self.schedule_index_uid,
+                keyword=keyword or course_code,
+                page=1,
+                size=3,
+            )
+        except Exception:
+            return None
+
+        hits = result.get("hits", [])
+        match = next(
+            (
+                hit
+                for hit in hits
+                if self.normalize_course_code(hit.get("course_code")) == normalized
+            ),
+            None,
+        )
+
+        if not match:
+            return None
+
+        return CoursePriorityRecord(
+            prerequisite=match.get("prerequisite"),
+            corequisite=match.get("corequisite"),
+            antirequisite=match.get("antirequisite"),
+            priority_1=match.get("priority_1"),
+            priority_2=match.get("priority_2"),
+            priority_3=match.get("priority_3"),
+            priority_4=match.get("priority_4"),
+        )
 
     async def _schedule_sections_from_index(
         self,
@@ -326,10 +339,13 @@ class RegistrarService:
             "title": hit.get("title") or "",
             "credits": credits_str,
             "term": term_label or "",
-            "priority_1": None,
-            "priority_2": None,
-            "priority_3": None,
-            "priority_4": None,
+            "priority_1": hit.get("priority_1"),
+            "priority_2": hit.get("priority_2"),
+            "priority_3": hit.get("priority_3"),
+            "priority_4": hit.get("priority_4"),
+            "pre_req": (hit.get("prerequisite") or "").strip(),
+            "co_req": (hit.get("corequisite") or "").strip(),
+            "anti_req": (hit.get("antirequisite") or "").strip(),
         }
 
     @staticmethod
@@ -341,76 +357,6 @@ class RegistrarService:
         hit_term_label = str(hit.get("term") or "").strip()
         return term_str == hit_term_id or term_str == hit_term_label
 
-
-    async def fetch_course_priorities(
-        self,
-        course_codes: Sequence[str],
-    ) -> Dict[str, CoursePriorityRecord]:
-        """Fetch registrar priority metadata for the provided course codes."""
-        if not course_codes or not self.meilisearch_client:
-            return {}
-
-        results: Dict[str, CoursePriorityRecord] = {}
-
-        sem = asyncio.Semaphore(5)
-
-        async def _fetch_one(raw_code: str, normalized: str):
-            async with sem:
-                record = await self._fetch_priority_record(raw_code, normalized)
-                return normalized, record
-
-        fetch_results = await asyncio.gather(
-            *(_fetch_one(code, self.normalize_course_code(code)) for code in course_codes)
-        )
-        for normalized, record in fetch_results:
-            if normalized and record:
-                results[normalized] = record
-
-        return results
-
-    async def _fetch_priority_record(
-        self,
-        course_code: str | None,
-        normalized: str,
-    ) -> CoursePriorityRecord | None:
-        if not course_code or not self.meilisearch_client:
-            return None
-
-        keyword = course_code.strip()
-
-        try:
-            result = await meilisearch_utils.get(
-                client=self.meilisearch_client,
-                storage_name=self.priority_index_uid,
-                keyword=keyword or course_code,
-                page=1,
-                size=5,
-            )
-        except Exception as exc:
-            return None
-
-        hits = result.get("hits", [])
-        match = next(
-            (
-                hit
-                for hit in hits
-                if self.normalize_course_code(hit.get("abbr")) == normalized
-            ),
-            None,
-        )
-
-        if not match:
-            return None
-
-        return CoursePriorityRecord(
-            prerequisite=match.get("prerequisite"),
-            corequisite=match.get("corequisite"),
-            antirequisite=match.get("antirequisite"),
-            priority_1=match.get("priority_1"),
-            priority_2=match.get("priority_2"),
-            priority_3=match.get("priority_3"),
-            priority_4=match.get("priority_4"),
-        )
 
     @staticmethod
     def normalize_course_code(value: str | None) -> str:

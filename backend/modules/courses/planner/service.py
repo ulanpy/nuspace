@@ -130,6 +130,10 @@ class PlannerService:
             school=summary.school or None,
             term_value=active_term.value,
             term_label=summary.term or payload.term_label or active_term.label,
+            metadata_json={
+                "title": summary.title,
+                "credits": summary.credits,
+            },
         )
         await self.repository.session.commit()
 
