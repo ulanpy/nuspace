@@ -1,13 +1,10 @@
 import { useMemo } from "react";
-import { CalendarPlus } from "lucide-react";
-import { Button } from "@/components/atoms/button";
 import { Modal } from "@/components/atoms/modal";
 import { Badge } from "@/components/atoms/badge";
 import { Skeleton } from "@/components/atoms/skeleton";
 import { cn } from "@/utils/utils";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { ScheduleResponse } from "../types";
-import { useToast } from "@/hooks/use-toast";
 
 interface ScheduleDialogProps {
   open: boolean;
@@ -49,8 +46,6 @@ function toMinutes(time: { hh: number; mm: number }) {
 }
 
 export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: ScheduleDialogProps) {
-  const { toast } = useToast();
-
   const timetable = useMemo(() => {
     const days = WEEKDAYS.map(({ label, index }) => {
       const dayItems = schedule?.data?.[index] ?? [];
@@ -139,22 +134,6 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
     }
   }, [meta?.last_synced_at]);
 
-  const handleMockImport = () => {
-    if (!hasItems) {
-      toast({
-        title: "No classes to import",
-        description: "Add courses first, then use this demo button to mock sending them to Google Calendar.",
-      });
-      return;
-    }
-
-    toast({
-      title: "Demo: sent to Google Calendar",
-      description:
-        "For the verification video, this button represents the OAuth + Calendar flow. Production will create recurring events via calendar.events.",
-    });
-  };
-
   return (
     <Modal
       isOpen={open}
@@ -171,21 +150,6 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
             </p>
             <p className="text-xs text-muted-foreground">
               Synced {lastSyncedText ?? "just now"}
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-1 text-right">
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-2 rounded-full"
-              disabled={isLoading}
-              onClick={handleMockImport}
-            >
-              <CalendarPlus className="h-4 w-4" />
-              Import to Google Calendar (demo)
-            </Button>
-            <p className="text-[11px] text-muted-foreground">
-              Demo button for OAuth verification video; no real events are created here.
             </p>
           </div>
         </div>
