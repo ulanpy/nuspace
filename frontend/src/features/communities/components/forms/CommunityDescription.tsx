@@ -4,7 +4,7 @@ import { Label } from "@/components/atoms/label";
 import { Textarea } from "@/components/atoms/textarea";
 import { MarkdownToolbar, type FormattingAction } from "@/components/molecules/MarkdownToolbar";
 
-const MAX_DESCRIPTION_LENGTH = 1000;
+const MAX_DESCRIPTION_LENGTH = 5000;
 
 export function CommunityDescription() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);

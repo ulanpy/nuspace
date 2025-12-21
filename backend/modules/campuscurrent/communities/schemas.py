@@ -98,7 +98,7 @@ class CommunityCreateRequest(BaseModel):
     )
     description: str = Field(
         ...,
-        max_length=1000,
+        max_length=5000,
         description="The description of the community",
         example="We are a club that does fencing",
     )
@@ -206,6 +206,7 @@ class CommunityUpdateRequest(BaseModel):
     )
     description: str | None = Field(
         default=None,
+        max_length=5000,
         description="The description of the community",
         example="We are a club that does fencing",
     )

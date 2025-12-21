@@ -171,12 +171,12 @@ export function CommunityFormProvider({
       errors.push("Community name must be no more than 100 characters long");
     }
     
-    // Description validation (required, max 1000 characters)
+    // Description validation (required, max 5000 characters)
     if (!formData.description || formData.description.trim().length === 0) {
       errors.push("Description is required");
     }
-    if (formData.description && formData.description.length > 1000) {
-      errors.push("Description must be no more than 1000 characters long");
+    if (formData.description && formData.description.length > 5000) {
+      errors.push("Description must be no more than 5000 characters long");
     }
 
     // Email validation (optional field, but must be valid if provided)
