@@ -126,25 +126,24 @@ async def setup_meilisearch(app: FastAPI):
                 print(f"Error syncing index {index_config.model.__tablename__}: {e}")
 
         # Initialize registrar course priority and schedule indexes + refreshers (run in debug)
-        if not config.IS_DEBUG:
-            app.state.course_priority_refresher = PriorityRequirementsRefresher(
-                app.state.meilisearch_client
-            )
-            app.state.course_schedule_refresher = ScheduleCatalogRefresher(
-                app.state.meilisearch_client
-            )
-            try:
-                count = await sync_priority_requirements(app.state.meilisearch_client)
-                print(f"Synced priority requirements docs: {count}")
-            except Exception as exc:
-                print(f"Error syncing registrar course priority: {exc}")
-            app.state.course_priority_refresher.start()
-            try:
-                count = await sync_schedule_catalog(app.state.meilisearch_client)
-                print(f"Synced schedule catalog docs: {count}")
-            except Exception as exc:
-                print(f"Error syncing registrar course schedule: {exc}")
-            app.state.course_schedule_refresher.start()
+        app.state.course_priority_refresher = PriorityRequirementsRefresher(
+            app.state.meilisearch_client
+        )
+        app.state.course_schedule_refresher = ScheduleCatalogRefresher(
+            app.state.meilisearch_client
+        )
+        try:
+            count = await sync_priority_requirements(app.state.meilisearch_client)
+            print(f"Synced priority requirements docs: {count}")
+        except Exception as exc:
+            print(f"Error syncing registrar course priority: {exc}")
+        app.state.course_priority_refresher.start()
+        try:
+            count = await sync_schedule_catalog(app.state.meilisearch_client)
+            print(f"Synced schedule catalog docs: {count}")
+        except Exception as exc:
+            print(f"Error syncing registrar course schedule: {exc}")
+        app.state.course_schedule_refresher.start()
 
     # Kick off indexing in background to avoid blocking startup
     app.state.meili_init_task: Optional[asyncio.Task] = asyncio.create_task(_init_meili_indices())
