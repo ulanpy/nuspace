@@ -61,6 +61,65 @@ type CourseRequirementDetail = {
 const hasText = (value?: string | null) => Boolean(value && value.trim().length);
 const hasPriorityValues = (values: Array<string | null | undefined>) =>
   values.some((value) => hasText(value));
+const normalizeCourseQuery = (raw: string) => {
+  const map: Record<string, string> = {
+    // Russian keyboard layout -> Latin
+    "й": "q",
+    "ц": "w",
+    "у": "e",
+    "к": "r",
+    "е": "t",
+    "н": "y",
+    "г": "u",
+    "ш": "i",
+    "щ": "o",
+    "з": "p",
+    "х": "[",
+    "ъ": "]",
+    "ф": "a",
+    "ы": "s",
+    "в": "d",
+    "а": "f",
+    "п": "g",
+    "р": "h",
+    "о": "j",
+    "л": "k",
+    "д": "l",
+    "ж": ";",
+    "э": "'",
+    "я": "z",
+    "ч": "x",
+    "с": "c",
+    "м": "v",
+    "и": "b",
+    "т": "n",
+    "ь": "m",
+    "б": ",",
+    "ю": ".",
+    // Kazakh-specific letters on the Kazakh layout (positions mirror QWERTY)
+    "ұ": "o",
+    "қ": "p",
+    "ө": "[",
+    "һ": "]",
+    "і": "b",
+    "ү": ",",
+    "ң": ".",
+    "ғ": "/",
+  };
+  return raw
+    .split("")
+    .map((ch) => {
+      const lower = ch.toLowerCase();
+      if (map[lower]) {
+        const mapped = map[lower];
+        return ch === lower ? mapped : mapped.toUpperCase();
+      }
+      return ch;
+    })
+    .join("")
+    .toUpperCase()
+    .trim();
+};
 const buildRequirementDetailsFromSearch = (
   item: PlannerCourseSearchResult,
 ): CourseRequirementDetail => ({
@@ -119,6 +178,8 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
     null,
   );
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchBoxRef = useRef<HTMLDivElement | null>(null);
   const { getLinkForCode: getSyllabusLink } = useSyllabusLinks("/data/course_links.csv");
   const [activeSection, setActiveSection] = useState<SectionEvent | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
@@ -167,6 +228,21 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
       term_label: latestSemester.label,
     }));
   }, [semestersQuery.data, currentTermValue]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent | TouchEvent) => {
+      if (!searchBoxRef.current) return;
+      if (!searchBoxRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+  }, []);
 
   useEffect(() => {
     setSearchResults([]);
@@ -326,6 +402,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
         setSearchResults((prev) => (append ? [...prev, ...data.items] : data.items));
         setSearchCursor(data.cursor ?? null);
         setLastSearch({ term_value: params.term_value, query: params.query });
+        setSearchOpen(true);
       },
       onSettled: () => {
         setIsLoadingMore(false);
@@ -335,20 +412,6 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
 
   const handleSearchSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!planner || !courseForm.term_value) return;
-    const query = courseForm.query.trim();
-    if (!query) return;
-    setSearchResults([]);
-    setSearchCursor(null);
-    setLastSearch(null);
-    performSearch(
-      {
-        term_value: courseForm.term_value,
-        query,
-        page: 1,
-      },
-      { append: false },
-    );
   };
 
   const handleLoadMoreResults = () => {
@@ -364,6 +427,29 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
     );
   };
 
+  // Live search on typing (debounced)
+  const searchDebounce = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    if (!planner || !courseForm.term_value) return;
+    const query = normalizeCourseQuery(courseForm.query);
+    if (!query) {
+      setSearchResults([]);
+      setSearchCursor(null);
+      setLastSearch(null);
+      return;
+    }
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    searchDebounce.current = setTimeout(() => {
+      performSearch(
+        { term_value: courseForm.term_value, query, page: 1 },
+        { append: false },
+      );
+    }, 250);
+    return () => {
+      if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    };
+  }, [courseForm.query, courseForm.term_value, planner]);
+
   const searchError =
     courseSearchMutation.isError && courseSearchMutation.error instanceof Error
       ? courseSearchMutation.error.message
@@ -371,7 +457,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
         ? "Unable to search courses"
         : null;
   const isSearchPending = courseSearchMutation.isPending && !isLoadingMore;
-  const canSearch = Boolean(planner && courseForm.term_value && courseForm.query.trim());
+  const canSearch = Boolean(planner && courseForm.term_value && normalizeCourseQuery(courseForm.query));
 
   const selectedEvents: SectionEvent[] = useMemo(() => {
     if (!planner) return [];
@@ -461,9 +547,15 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
     <div className="space-y-6">
       <div className="flex flex-col gap-6 lg:flex-row">
         <aside className="w-full space-y-4 lg:w-80">
-          <section className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+        <section className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold">Find a course</h3>
-            <form className="mt-3 space-y-2" onSubmit={handleSearchSubmit}>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              Shows courses from "{courseForm.term_label || courseForm.term_value || "semester"}"
+            </span>
+          </div>
+          <div ref={searchBoxRef} className="relative mt-3 space-y-2">
+            <form className="space-y-2" onSubmit={handleSearchSubmit}>
               <input
                 className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="Search by code (e.g., MATH 161)"
@@ -475,244 +567,203 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
                   }))
                 }
                 disabled={!planner}
-                required
+                onFocus={() => setSearchOpen(true)}
               />
-              <Select
-                value={courseForm.term_value}
-                onValueChange={(value) => {
-                  const term = semestersQuery.data?.find((option) => option.value === value);
-                  setCourseForm((prev) => ({
-                    ...prev,
-                    term_value: value,
-                    term_label: term?.label ?? "",
-                  }));
-                }}
-                disabled={!planner || semestersQuery.isLoading}
-              >
-                <SelectTrigger className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm shadow-sm focus:ring-2 focus:ring-ring">
-                  <SelectValue placeholder="Select term" />
-                </SelectTrigger>
-                <SelectContent>
-                  {semestersQuery.data?.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={!canSearch || courseSearchMutation.isPending}
-              >
-                {isSearchPending ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Searching
-                  </span>
-                ) : (
-                  "Search"
-                )}
-              </Button>
             </form>
             {searchError && (
-              <p className="mt-2 text-xs text-destructive">{searchError}</p>
+              <p className="text-xs text-destructive">{searchError}</p>
             )}
-            <div className="mt-4 space-y-3 text-sm">
-              {isSearchPending && searchResults.length === 0 ? (
-                <p className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Searching registrar catalog...
-                </p>
-              ) : searchResults.length ? (
-                searchResults.map((result) => {
-                  const priorityValues = [
-                    result.priority_1,
-                    result.priority_2,
-                    result.priority_3,
-                    result.priority_4,
-                  ];
-                  const hasMeta =
-                    hasText(result.pre_req) ||
-                    hasText(result.co_req) ||
-                    hasText(result.anti_req) ||
-                    hasPriorityValues(priorityValues);
-                  const metaParts = [result.school, result.level, result.term].filter(Boolean);
-                  const syllabusLink = getSyllabusLink(result.course_code);
-                  return (
-                    <div
-                      key={result.course_code}
-                      className="rounded-lg border border-border/60 p-3"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold">{result.course_code}</p>
-                          <p className="text-xs text-muted-foreground">{result.title}</p>
-                          {metaParts.length > 0 && (
-                            <p className="text-xs text-muted-foreground">{metaParts.join(" · ")}</p>
-                          )}
-                          <div className="flex items-center gap-2 text-xs">
-                            {hasMeta && (
-                              <Button
-                                size="xs"
-                                variant="link"
-                                className="px-0 text-xs"
-                                onClick={() => handleShowRequirementsFromSearch(result)}
-                              >
-                                Priorities & requisites
-                              </Button>
-                            )}
-                            <span className="text-border">|</span>
+            {searchOpen && (
+              <div className="absolute left-0 right-0 top-full z-20 mt-2 rounded-xl border border-border/60 bg-card shadow-lg">
+                <div className="max-h-80 overflow-auto p-3 space-y-3 text-sm">
+                  {isSearchPending && searchResults.length === 0 ? (
+                    <p className="flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Searching registrar catalog...
+                    </p>
+                  ) : searchResults.length ? (
+                    searchResults.map((result) => {
+                      const priorityValues = [
+                        result.priority_1,
+                        result.priority_2,
+                        result.priority_3,
+                        result.priority_4,
+                      ];
+                      const hasMeta =
+                        hasText(result.pre_req) ||
+                        hasText(result.co_req) ||
+                        hasText(result.anti_req) ||
+                        hasPriorityValues(priorityValues);
+                      const metaParts = [result.school, result.level, result.term].filter(Boolean);
+                      const syllabusLink = getSyllabusLink(result.course_code);
+                      return (
+                        <div
+                          key={result.course_code}
+                          className="rounded-lg border border-border/60 p-3"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold">{result.course_code}</p>
+                              <p className="text-xs text-muted-foreground">{result.title}</p>
+                              {metaParts.length > 0 && (
+                                <p className="text-xs text-muted-foreground">{metaParts.join(" · ")}</p>
+                              )}
+                              <div className="flex items-center gap-2 text-xs">
+                                {hasMeta && (
+                                  <Button
+                                    size="xs"
+                                    variant="link"
+                                    className="px-0 text-xs"
+                                    onClick={() => handleShowRequirementsFromSearch(result)}
+                                  >
+                                    Priorities & requisites
+                                  </Button>
+                                )}
+                                <span className="text-border">|</span>
+                                <Button
+                                  size="xs"
+                                  variant="link"
+                                  className="px-0 text-xs"
+                                  disabled={!syllabusLink}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (syllabusLink) {
+                                      window.open(syllabusLink, "_blank");
+                                    }
+                                  }}
+                                >
+                                  Syllabus
+                                </Button>
+                              </div>
+                            </div>
                             <Button
-                              size="xs"
-                              variant="link"
-                              className="px-0 text-xs"
-                              disabled={!syllabusLink}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (syllabusLink) {
-                                  window.open(syllabusLink, "_blank");
-                                }
-                              }}
+                              size="sm"
+                              onClick={() => handleAddCourse(result.course_code)}
+                              disabled={
+                                !planner ||
+                                !courseForm.term_value ||
+                                addCourseMutation.isPending ||
+                                isCourseAlreadyAdded(result.course_code, courseForm.term_value)
+                              }
+                              variant={
+                                isCourseAlreadyAdded(result.course_code, courseForm.term_value)
+                                  ? "outline"
+                                  : "default"
+                              }
                             >
-                              Syllabus
+                              {addCourseMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : isCourseAlreadyAdded(result.course_code, courseForm.term_value) ? (
+                                "Added"
+                              ) : (
+                                "Add"
+                              )}
                             </Button>
                           </div>
                         </div>
-                        <Button
-                          size="sm"
-                          onClick={() => handleAddCourse(result.course_code)}
-                          disabled={
-                            !planner ||
-                            !courseForm.term_value ||
-                            addCourseMutation.isPending ||
-                            isCourseAlreadyAdded(result.course_code, courseForm.term_value)
-                          }
-                          variant={
-                            isCourseAlreadyAdded(result.course_code, courseForm.term_value)
-                              ? "outline"
-                              : "default"
-                          }
-                        >
-                          {addCourseMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : isCourseAlreadyAdded(result.course_code, courseForm.term_value) ? (
-                            "Added"
-                          ) : (
-                            "Add"
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : null}
-            </div>
-            {searchCursor && (
+                      );
+                    })
+                  ) : (
+                    <p className="text-xs text-muted-foreground">No results. Try another code.</p>
+                  )}
+                </div>
+                {searchCursor && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-full border-t border-border/60 rounded-b-xl"
+                    onClick={handleLoadMoreResults}
+                    disabled={isLoadingMore}
+                  >
+                    {isLoadingMore ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading more
+                      </span>
+                    ) : (
+                      "Load more"
+                    )}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-border/60 bg-card p-4 shadow-sm max-h-[500px] overflow-auto">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold">Courses</h3>
+            <div className="flex items-center gap-2">
               <Button
                 size="sm"
-                variant="ghost"
-                className="mt-3 w-full"
-                onClick={handleLoadMoreResults}
-                disabled={isLoadingMore}
+                variant="secondary"
+                onClick={() => refreshAllCoursesMutation.mutate()}
+                disabled={!planner?.courses.length || refreshAllCoursesMutation.isPending}
               >
-                {isLoadingMore ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Loading more
-                  </span>
+                {refreshAllCoursesMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Load more"
+                  "Refresh"
                 )}
               </Button>
-            )}
-          </section>
-
-          <section className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold">Courses</h3>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => refreshAllCoursesMutation.mutate()}
-                  disabled={!planner?.courses.length || refreshAllCoursesMutation.isPending}
-                  aria-label="Refresh all courses"
-                >
-                  {refreshAllCoursesMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCcw className="h-4 w-4" />
-                  )}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => autoBuildMutation.mutate()}
-                  disabled={!planner || autoBuildMutation.isPending}
-                >
-                  {autoBuildMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Wand2 className="h-4 w-4" />
-                      Shuffle
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-            {(autoBuildResult || autoBuildError) && (
-              <div className="mt-2 rounded-md border border-border/40 bg-muted/20 p-2 text-xs text-muted-foreground space-y-1">
-                {autoBuildError && <p className="text-destructive">{autoBuildError}</p>}
-                {autoBuildResult && (
-                  <>
-                    <p>{autoBuildResult.message}</p>
-                    {!!autoBuildResult.unscheduled_courses.length && (
-                      <p>Couldn&apos;t place: {autoBuildResult.unscheduled_courses.join(", ")}</p>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-            {!autoBuildResult && !autoBuildError && refreshMessage && (
-              <div className="mt-2 rounded-md border border-border/40 bg-muted/20 p-2 text-xs text-muted-foreground">
-                <p>{refreshMessage}</p>
-              </div>
-            )}
-            <div className="mt-3 space-y-3 text-sm">
-              {planner?.courses.length ? (
-                planner.courses.map((course) => (
-                  <CourseCard
-                    key={course.id}
-                    course={course}
-                    onRemove={removeCourseMutation}
-                    onSelect={setActiveCourseId}
-                    onShowMeta={handleShowRequirementsForCourse}
-                    isActive={course.id === activeCourseId}
-                    getSyllabusLink={getSyllabusLink}
-                  />
-                ))
-              ) : (
-                <p className="text-muted-foreground">
-                  {planner ? "Add a course to get started." : "Planner is still loading."}
-                </p>
-              )}
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-border/60 bg-card p-4 shadow-sm space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Planner data</h3>
               <Button
                 size="sm"
-                variant="ghost"
+                variant="secondary"
                 onClick={() => setResetConfirmOpen(true)}
+                disabled={resetPlannerMutation.isPending}
               >
                 Reset
               </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => autoBuildMutation.mutate()}
+                disabled={!planner || autoBuildMutation.isPending}
+              >
+                {autoBuildMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Shuffle"
+                )}
+              </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Reset clears cached planner courses and sections for the current student.
-            </p>
-          </section>
+          </div>
+          {(autoBuildResult || autoBuildError) && (
+            <div className="mt-2 rounded-md border border-border/40 bg-muted/20 p-2 text-xs text-muted-foreground space-y-1">
+              {autoBuildError && <p className="text-destructive">{autoBuildError}</p>}
+              {autoBuildResult && (
+                <>
+                  <p>{autoBuildResult.message}</p>
+                  {!!autoBuildResult.unscheduled_courses.length && (
+                    <p>Couldn&apos;t place: {autoBuildResult.unscheduled_courses.join(", ")}</p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+          {!autoBuildResult && !autoBuildError && refreshMessage && (
+            <div className="mt-2 rounded-md border border-border/40 bg-muted/20 p-2 text-xs text-muted-foreground">
+              <p>{refreshMessage}</p>
+            </div>
+          )}
+          <div className="mt-3 space-y-3 text-sm">
+            {planner?.courses.length ? (
+              planner.courses.map((course) => (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  onRemove={removeCourseMutation}
+                  onSelect={setActiveCourseId}
+                  onShowMeta={handleShowRequirementsForCourse}
+                  isActive={course.id === activeCourseId}
+                  getSyllabusLink={getSyllabusLink}
+                />
+              ))
+            ) : (
+              <p className="text-muted-foreground">
+                {planner ? "Add a course to get started." : "Planner is still loading."}
+              </p>
+            )}
+          </div>
+        </section>
         </aside>
 
         <section className="flex-1 rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
