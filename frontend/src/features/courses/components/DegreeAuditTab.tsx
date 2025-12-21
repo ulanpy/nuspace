@@ -270,7 +270,7 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
 
       {(auditMutation.data || cachedQuery.data) && (
         <div className="space-y-3">
-        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
             <h3 className="text-sm font-semibold text-foreground">Results</h3>
             {(auditMutation.data || cachedQuery.data)?.summary && (
               <div className="flex gap-2 flex-wrap text-xs">
@@ -280,51 +280,51 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
                 <Badge variant="outline">Taken: {(auditMutation.data || cachedQuery.data)?.summary?.total_taken}</Badge>
               </div>
             )}
-          <div className="flex gap-2 flex-wrap items-center">
-            <Button variant="ghost" size="sm" className="gap-1" onClick={handleDownloadCsv} disabled={!(auditMutation.data || cachedQuery.data)?.csv_base64}>
-              <FileDown className="h-4 w-4" /> Download CSV
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1"
-              onClick={() => {
-                setShowReqModal(true);
-                if (selectedYear && selectedMajor) {
-                  requirementsQuery.refetch();
-                }
-              }}
-              disabled={!selectedYear || !selectedMajor}
-            >
-              <ListChecks className="h-4 w-4" /> View requirements
-            </Button>
-          </div>
+            <div className="flex gap-2 flex-wrap items-center">
+              <Button variant="ghost" size="sm" className="gap-1" onClick={handleDownloadCsv} disabled={!(auditMutation.data || cachedQuery.data)?.csv_base64}>
+                <FileDown className="h-4 w-4" /> Download CSV
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1"
+                onClick={() => {
+                  setShowReqModal(true);
+                  if (selectedYear && selectedMajor) {
+                    requirementsQuery.refetch();
+                  }
+                }}
+                disabled={!selectedYear || !selectedMajor}
+              >
+                <ListChecks className="h-4 w-4" /> View requirements
+              </Button>
+            </div>
           </div>
 
           <div className="overflow-auto rounded-2xl border border-border/60">
             <table className="min-w-full text-sm">
               <thead className="bg-muted/50">
                 <tr>
-              <th className="px-3 py-2 text-left">Course</th>
-              <th className="px-3 py-2 text-left">Name</th>
-              <th className="px-3 py-2">Req credits</th>
-              <th className="px-3 py-2">Min grade</th>
-              <th className="px-3 py-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStatusSort((prev) =>
-                      prev === "default" ? "satisfied-first" : prev === "satisfied-first" ? "pending-first" : "default"
-                    );
-                  }}
-                  className="inline-flex items-center gap-1 text-sm font-medium text-foreground hover:text-foreground/80"
-                >
-                  <span>Status</span>
-                  <ArrowUpDown className="h-3.5 w-3.5" />
-                </button>
-              </th>
-              <th className="px-3 py-2 text-left">Used courses</th>
-              <th className="px-3 py-2">Applied</th>
+                  <th className="px-3 py-2 text-left">Course</th>
+                  <th className="px-3 py-2 text-left">Name</th>
+                  <th className="px-3 py-2">Req credits</th>
+                  <th className="px-3 py-2">Min grade</th>
+                  <th className="px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStatusSort((prev) =>
+                          prev === "default" ? "satisfied-first" : prev === "satisfied-first" ? "pending-first" : "default"
+                        );
+                      }}
+                      className="inline-flex items-center gap-1 text-sm font-medium text-foreground hover:text-foreground/80"
+                    >
+                      <span>Status</span>
+                      <ArrowUpDown className="h-3.5 w-3.5" />
+                    </button>
+                  </th>
+                  <th className="px-3 py-2 text-left">Used courses</th>
+                  <th className="px-3 py-2">Applied</th>
                   <th className="px-3 py-2">Remaining</th>
                   <th className="px-3 py-2 text-left">Note</th>
                 </tr>

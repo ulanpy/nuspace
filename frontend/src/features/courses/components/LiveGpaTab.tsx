@@ -131,9 +131,12 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
       />
 
       {!user ? (
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-muted/30 p-3">
-          <div className="text-sm text-muted-foreground">
-            Login to track your course progress this semester.
+        <div className="rounded-2xl border border-border/60 bg-muted/30 p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Sign in to track your course progress this semester.</p>
+            <p className="text-xs text-muted-foreground">
+              We will save your course progress for you in your account.
+            </p>
           </div>
           <Button onClick={login} size="sm" className="h-8 rounded-full px-3 text-xs font-medium">
             Login

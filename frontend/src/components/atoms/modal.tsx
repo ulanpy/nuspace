@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { Button } from "./button";
 import { cn } from "../../utils/utils";
 import { createPortal } from "react-dom";
-import { useEffect, MouseEvent } from "react";
+import { useEffect } from "react";
 import { useMaybeBackNavigation } from "@/context/BackNavigationContext";
 // Removed framer-motion to avoid transformed ancestors affecting fixed elements on Safari
 
@@ -28,7 +28,7 @@ export function Modal({
   className = "max-w-md",
   contentClassName,
 }: ModalProps) {
-  
+
   const backNav = useMaybeBackNavigation();
   useEffect(() => {
     if (!isOpen || !backNav) return;
@@ -54,7 +54,7 @@ export function Modal({
       document.body.style.left = "0";
       document.body.style.right = "0";
       document.body.style.width = "100%";
-      
+
       // Cleanup: restore scroll position and styles
       return () => {
         document.removeEventListener("keydown", handleEscape);
@@ -69,7 +69,7 @@ export function Modal({
         window.scrollTo(0, y);
       };
     }
-    
+
     return () => {
       document.removeEventListener("keydown", handleEscape);
     };
@@ -85,15 +85,17 @@ export function Modal({
 
       {/* Centered container. Keep it non-transformed (no scale/opacity animations) */}
       <div
-        className="fixed inset-0 grid place-items-start md:place-items-center px-4"
+        className="fixed inset-0 grid place-items-center px-4"
         style={{
           paddingTop: "calc(env(safe-area-inset-top, 0px) + 2rem)",
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1rem)",
         }}
         onWheel={(e) => e.stopPropagation()}
         onTouchMove={(e) => e.stopPropagation()}
+        onClick={onClose}
       >
         <div
+          onClick={(e) => e.stopPropagation()}
           className={cn(
             "relative flex w-full flex-col overflow-hidden rounded-lg bg-background shadow-lg",
             "max-h-[calc(100dvh-4rem)]",
