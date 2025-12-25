@@ -78,8 +78,7 @@ class OpportunityEligibility(Base):
         SAEnum(EducationLevel, name="education_level"),
         nullable=False,
     )
-    min_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    max_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
 class Opportunity(Base):

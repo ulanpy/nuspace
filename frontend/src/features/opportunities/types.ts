@@ -80,8 +80,8 @@ export type Opportunity = {
 };
 
 export type OpportunityFilters = {
-  type?: OpportunityType;
-  majors?: OpportunityMajor;
+  type?: OpportunityType | OpportunityType[];
+  majors?: OpportunityMajor | OpportunityMajor[];
   education_level?: EducationLevel;
   min_year?: number;
   max_year?: number;
@@ -99,8 +99,7 @@ export type EducationLevel = (typeof EDUCATION_LEVELS)[number];
 export type OpportunityEligibility = {
   id?: number;
   education_level: EducationLevel;
-  min_year?: number | null;
-  max_year?: number | null;
+  year?: number | null;
 };
 
 export const formatEducationLevel = (value?: EducationLevel | null) => {
