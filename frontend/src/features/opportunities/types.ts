@@ -1,3 +1,25 @@
+export const OPPORTUNITY_TYPES = [
+  "research",
+  "internship",
+  "summer_school",
+  "forum",
+  "summit",
+  "grant",
+  "scholarship",
+  "conference",
+] as const;
+
+export type OpportunityType = (typeof OPPORTUNITY_TYPES)[number];
+
+export const formatOpportunityType = (value?: OpportunityType | null) => {
+  if (!value) return "";
+  return value
+    .split("_")
+    .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : ""))
+    .join(" ")
+    .trim();
+};
+
 export type Opportunity = {
   id: number;
   name: string;
@@ -5,7 +27,7 @@ export type Opportunity = {
   deadline?: string | null;
   steps?: string | null;
   host?: string | null;
-  type?: string | null;
+  type: OpportunityType;
   majors?: string | null;
   link?: string | null;
   location?: string | null;
@@ -14,7 +36,7 @@ export type Opportunity = {
 };
 
 export type OpportunityFilters = {
-  type?: string;
+  type?: OpportunityType;
   majors?: string;
   eligibility?: string;
   q?: string;

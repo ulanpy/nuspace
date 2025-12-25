@@ -1,18 +1,19 @@
 from datetime import date, datetime
-from typing import Optional, List
+from typing import List
+
+from backend.core.database.models import OpportunityType
 
 from pydantic import BaseModel, field_validator
-from pydantic import Field
 from fastapi import Query
 
 
 class OpportunityBase(BaseModel):
-    name: str = Field(..., max_length=512)
+    name: str 
     description: str | None = None
     deadline: date | None = None
     steps: str | None = None
     host: str | None = None
-    type: str | None = None
+    type: OpportunityType
     majors: str | None = None
     link: str | None = None
     location: str | None = None
@@ -50,7 +51,7 @@ class OpportunityUpdate(BaseModel):
     deadline: date | None = None
     steps: str | None = None
     host: str | None = None
-    type: str | None = None
+    type: OpportunityType | None = None
     majors: str | None = None
     link: str | None = None
     location: str | None = None
@@ -75,7 +76,7 @@ class OpportunityListResponse(BaseModel):
 
 
 class OpportunityFilter(BaseModel):
-    type: str | None = Query(default=None, description="Filter by opportunity type")
+    type: OpportunityType | None = Query(default=None, description="Filter by opportunity type")
     majors: str | None = Query(default=None, description="Filter by majors substring")
     eligibility: str | None = Query(default=None, description="Filter by eligibility")
     q: str | None = Query(default=None, description="Search in name/description")

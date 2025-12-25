@@ -2,7 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Search, Loader2, Plus, Eye, EyeOff } from "lucide-react";
 import { createOpportunity, fetchOpportunities, updateOpportunity } from "../api";
-import { Opportunity, OpportunityFilters, UpsertOpportunityInput, OpportunityListResponse } from "../types";
+import {
+  Opportunity,
+  OpportunityFilters,
+  UpsertOpportunityInput,
+  OpportunityListResponse,
+  OPPORTUNITY_TYPES,
+  formatOpportunityType,
+} from "../types";
 import { OpportunityCard } from "../components/OpportunityCard";
 import { Button } from "@/components/atoms/button";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
@@ -134,7 +141,7 @@ export default function OpportunitiesPage() {
     const items = accItems || [];
 
     return {
-      types: collectTokens(items.map((d) => d.type)),
+      types: OPPORTUNITY_TYPES,
       eligibilities: collectTokens(items.map((d) => d.eligibility)),
       majors: collectTokens(items.map((d) => d.majors)),
     };
@@ -236,7 +243,7 @@ export default function OpportunitiesPage() {
                   <SelectItem value="__all__">All</SelectItem>
                   {options.types.map((t) => (
                     <SelectItem key={t} value={t}>
-                      {t}
+                      {formatOpportunityType(t)}
                     </SelectItem>
                   ))}
                 </SelectContent>
