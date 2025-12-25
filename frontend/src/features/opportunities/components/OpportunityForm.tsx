@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
-import { Opportunity, UpsertOpportunityInput } from "../types";
+import {
+  Opportunity,
+  OpportunityType,
+  OPPORTUNITY_TYPES,
+  UpsertOpportunityInput,
+  formatOpportunityType,
+} from "../types";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
 import { Button } from "@/components/atoms/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
 
 type Props = {
   initial?: Opportunity | null;
@@ -17,7 +24,7 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
     deadline: "",
     steps: "",
     host: "",
-    type: "",
+    type: OPPORTUNITY_TYPES[0],
     majors: "",
     link: "",
     location: "",
@@ -33,7 +40,7 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
         deadline: initial.deadline || "",
         steps: initial.steps || "",
         host: initial.host || "",
-        type: initial.type || "",
+        type: initial.type || OPPORTUNITY_TYPES[0],
         majors: initial.majors || "",
         link: initial.link || "",
         location: initial.location || "",
@@ -41,11 +48,11 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
         funding: initial.funding || "",
       });
     } else {
-      setForm((prev) => ({ ...prev, name: "" }));
+      setForm((prev) => ({ ...prev, name: "", type: OPPORTUNITY_TYPES[0] }));
     }
   }, [initial]);
 
-  const handleChange = (key: keyof UpsertOpportunityInput, value: string) => {
+  const handleChange = (key: keyof UpsertOpportunityInput, value: string | OpportunityType) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -67,12 +74,21 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
       </div>
       <div>
         <Label htmlFor="type">Type</Label>
-        <Input
-          id="type"
-          value={form.type || ""}
-          onChange={(e) => handleChange("type", e.target.value)}
-          placeholder="Internship, Fellowship..."
-        />
+        <Select
+          value={form.type}
+          onValueChange={(v) => handleChange("type", v as OpportunityType)}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select type" />
+          </SelectTrigger>
+          <SelectContent>
+            {OPPORTUNITY_TYPES.map((t) => (
+              <SelectItem key={t} value={t}>
+                {formatOpportunityType(t)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div>
         <Label htmlFor="host">Host</Label>

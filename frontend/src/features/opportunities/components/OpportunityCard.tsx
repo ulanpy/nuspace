@@ -1,4 +1,4 @@
-import { Opportunity } from "../types";
+import { Opportunity, formatOpportunityType } from "../types";
 import { Calendar, MapPin, Link2, Bookmark, Building2, GraduationCap, Wallet } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -51,7 +51,7 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
             <div className="flex items-center gap-2">
               {opportunity.type && (
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${pickBadge(opportunity.type)} shadow-sm`}>
-                  {opportunity.type}
+                  {formatOpportunityType(opportunity.type)}
                 </span>
               )}
               {opportunity.host && (
