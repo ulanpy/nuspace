@@ -20,6 +20,7 @@ from .sgotinish.tickets import tickets, delegation
 from .sgotinish.conversations import conversations
 from .sgotinish.messages import messages
 from .announcements import router as announcements_router
+from .opportunities_digest import api as opportunities_digest_api
 # Import all routers from the routes directory
 
 routers: List[APIRouter] = [
@@ -41,4 +42,5 @@ routers: List[APIRouter] = [
     messages.router,
     delegation.router,
     announcements_router,
+    opportunities_digest_api.router,
 ]
