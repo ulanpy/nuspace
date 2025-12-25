@@ -26,10 +26,10 @@ async def list_opportunities(
     )
 
 
-@router.get("/{opp_id}", response_model=schemas.OpportunityDigestResponse)
-async def get_opportunity(opp_id: int, db: AsyncSession = Depends(get_db_session)):
+@router.get("/{id}", response_model=schemas.OpportunityDigestResponse)
+async def get_opportunity(id: int, db: AsyncSession = Depends(get_db_session)):
     service = OpportunitiesDigestService(db_session=db)
-    record = await service.get(opp_id)
+    record = await service.get(id)
     if not record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Opportunity not found")
     return record
@@ -47,30 +47,30 @@ async def create_opportunity(
     return record
 
 
-@router.patch("/{opp_id}", response_model=schemas.OpportunityDigestResponse)
+@router.patch("/{id}", response_model=schemas.OpportunityDigestResponse)
 async def update_opportunity(
-    opp_id: int,
+    id: int,
     payload: schemas.OpportunityDigestUpdate,
     user=Depends(get_creds_or_401),
     db: AsyncSession = Depends(get_db_session),
 ):
     OpportunityDigestPolicy(user).check_manage()
     service = OpportunitiesDigestService(db_session=db)
-    record = await service.update(opp_id, payload)
+    record = await service.update(id, payload)
     if not record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Opportunity not found")
     return record
 
 
-@router.delete("/{opp_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_opportunity(
-    opp_id: int,
+    id: int,
     user=Depends(get_creds_or_401),
     db: AsyncSession = Depends(get_db_session),
 ):
     OpportunityDigestPolicy(user).check_manage()
     service = OpportunitiesDigestService(db_session=db)
-    ok = await service.delete(opp_id)
+    ok = await service.delete(id)
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Opportunity not found")
     return None
