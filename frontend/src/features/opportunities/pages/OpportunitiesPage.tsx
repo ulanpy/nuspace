@@ -8,6 +8,8 @@ import {
   UpsertOpportunityInput,
   OpportunityListResponse,
   OPPORTUNITY_TYPES,
+  EDUCATION_LEVELS,
+  formatEducationLevel,
   formatOpportunityType,
 } from "../types";
 import { OpportunityCard } from "../components/OpportunityCard";
@@ -62,11 +64,13 @@ export default function OpportunitiesPage() {
 
   const baseFilterKey = useMemo(
     () =>
-      `${filters.type ?? ""}|${filters.majors ?? ""}|${filters.eligibility ?? ""}|${filters.q ?? ""}|${filters.hide_expired ? "hide" : "all"}|${filters.size ?? 15}`,
+      `${filters.type ?? ""}|${filters.majors ?? ""}|${filters.education_level ?? ""}|${filters.min_year ?? ""}|${filters.max_year ?? ""}|${filters.q ?? ""}|${filters.hide_expired ? "hide" : "all"}|${filters.size ?? 15}`,
     [
       filters.type,
       filters.majors,
-      filters.eligibility,
+      filters.education_level,
+      filters.min_year,
+      filters.max_year,
       filters.q,
       filters.hide_expired,
       filters.size,
@@ -142,18 +146,18 @@ export default function OpportunitiesPage() {
 
     return {
       types: OPPORTUNITY_TYPES,
-      eligibilities: collectTokens(items.map((d) => d.eligibility)),
       majors: collectTokens(items.map((d) => d.majors)),
     };
   }, [accItems]);
 
-  const onChange = (field: keyof OpportunityFilters, value: string | undefined) => {
+  const onChange = (field: keyof OpportunityFilters, value: string | number | undefined) => {
     setFilters((prev) => ({
       ...prev,
-      [field]: value || undefined,
+      [field]: value === "" ? undefined : (value as any),
       page: 1,
     }));
   };
+
 
   const onPageChange = (delta: number) => {
     setFilters((prev) => ({
@@ -251,26 +255,68 @@ export default function OpportunitiesPage() {
             </div>
 
             <div>
-              <Label htmlFor="eligibility" className="text-xs text-gray-500">
-                Eligibility
+              <Label htmlFor="education_level" className="text-xs text-gray-500">
+                Education level
               </Label>
               <Select
-                value={filters.eligibility ?? "__all__"}
-                onValueChange={(v) => onChange("eligibility", v === "__all__" ? undefined : v)}
+                value={filters.education_level ?? "__all__"}
+                onValueChange={(v) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    education_level: v === "__all__" ? undefined : (v as any),
+                    // reset years on change
+                    min_year: undefined,
+                    max_year: undefined,
+                    page: 1,
+                  }))
+                }
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="All eligibility" />
+                  <SelectValue placeholder="All levels" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">All</SelectItem>
-                  {options.eligibilities.map((e) => (
-                    <SelectItem key={e} value={e}>
-                      {e}
+                  {EDUCATION_LEVELS.map((lvl) => (
+                    <SelectItem key={lvl} value={lvl}>
+                      {formatEducationLevel(lvl)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+
+            {(filters.education_level === "UG" || filters.education_level === "GrM") && (
+              <div>
+                <Label className="text-xs text-gray-500">Year</Label>
+                <Select
+                  value={
+                    typeof filters.min_year === "number" && filters.min_year === filters.max_year
+                      ? String(filters.min_year)
+                      : "__all__"
+                  }
+                  onValueChange={(v) => {
+                    if (v === "__all__") {
+                      setFilters((prev) => ({ ...prev, min_year: undefined, max_year: undefined, page: 1 }));
+                      return;
+                    }
+                    const yr = Number(v);
+                    setFilters((prev) => ({ ...prev, min_year: yr, max_year: yr, page: 1 }));
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="All years" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All years</SelectItem>
+                    {(filters.education_level === "UG" ? [1, 2, 3, 4] : [1, 2]).map((yr) => (
+                      <SelectItem key={yr} value={String(yr)}>
+                        Year {yr}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="majors" className="text-xs text-gray-500">

@@ -31,13 +31,16 @@ export type Opportunity = {
   majors?: string | null;
   link?: string | null;
   location?: string | null;
-  eligibility?: string | null;
   funding?: string | null;
+  eligibility?: OpportunityEligibility[];
 };
 
 export type OpportunityFilters = {
   type?: OpportunityType;
   majors?: string;
+  education_level?: EducationLevel;
+  min_year?: number;
+  max_year?: number;
   eligibility?: string;
   q?: string;
   hide_expired?: boolean;
@@ -46,6 +49,24 @@ export type OpportunityFilters = {
 };
 
 export type UpsertOpportunityInput = Partial<Omit<Opportunity, "id">>;
+
+export const EDUCATION_LEVELS = ["UG", "GrM", "PhD"] as const;
+export type EducationLevel = (typeof EDUCATION_LEVELS)[number];
+
+export type OpportunityEligibility = {
+  id?: number;
+  education_level: EducationLevel;
+  min_year?: number | null;
+  max_year?: number | null;
+};
+
+export const formatEducationLevel = (value?: EducationLevel | null) => {
+  if (!value) return "";
+  if (value === "UG") return "Undergraduate";
+  if (value === "GrM") return "Master";
+  if (value === "PhD") return "PhD";
+  return value;
+};
 
 export type OpportunityListResponse = {
   items: Opportunity[];

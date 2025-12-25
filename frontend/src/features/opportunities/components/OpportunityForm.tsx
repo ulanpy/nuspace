@@ -5,6 +5,8 @@ import {
   OPPORTUNITY_TYPES,
   UpsertOpportunityInput,
   formatOpportunityType,
+  EDUCATION_LEVELS,
+  EducationLevel,
 } from "../types";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
@@ -28,7 +30,7 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
     majors: "",
     link: "",
     location: "",
-    eligibility: "",
+    eligibility: [],
     funding: "",
   });
 
@@ -44,11 +46,11 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
         majors: initial.majors || "",
         link: initial.link || "",
         location: initial.location || "",
-        eligibility: initial.eligibility || "",
+        eligibility: initial.eligibility || [],
         funding: initial.funding || "",
       });
     } else {
-      setForm((prev) => ({ ...prev, name: "", type: OPPORTUNITY_TYPES[0] }));
+      setForm((prev) => ({ ...prev, name: "", type: OPPORTUNITY_TYPES[0], eligibility: [] }));
     }
   }, [initial]);
 
@@ -145,6 +147,113 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
             onChange={(e) => handleChange("eligibility", e.target.value)}
           />
         </div>
+      </div>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label>Eligibility</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setForm((prev) => ({
+                ...prev,
+                eligibility: [
+                  ...(prev.eligibility || []),
+                  { education_level: EDUCATION_LEVELS[0], min_year: null, max_year: null },
+                ],
+              }))
+            }
+          >
+            Add
+          </Button>
+        </div>
+        {(form.eligibility || []).length === 0 && (
+          <p className="text-xs text-gray-500">No eligibility added.</p>
+        )}
+        {(form.eligibility || []).map((item, idx) => (
+          <div
+            key={idx}
+            className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end rounded-lg border border-border/60 p-3"
+          >
+            <div>
+              <Label className="text-xs text-gray-500">Education level</Label>
+              <Select
+                value={item.education_level}
+                onValueChange={(v) =>
+                  setForm((prev) => {
+                    const next = [...(prev.eligibility || [])];
+                    next[idx] = { ...next[idx], education_level: v as EducationLevel };
+                    if (v === "PhD") {
+                      next[idx].min_year = null;
+                      next[idx].max_year = null;
+                    }
+                    return { ...prev, eligibility: next };
+                  })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {EDUCATION_LEVELS.map((lvl) => (
+                    <SelectItem key={lvl} value={lvl}>
+                      {lvl === "UG" ? "Undergraduate" : lvl === "GrM" ? "Master" : "PhD"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500">Min year</Label>
+              <Input
+                type="number"
+                min={1}
+                max={item.education_level === "UG" ? 4 : item.education_level === "GrM" ? 2 : undefined}
+                value={item.min_year ?? ""}
+                onChange={(e) =>
+                  setForm((prev) => {
+                    const next = [...(prev.eligibility || [])];
+                    next[idx] = { ...next[idx], min_year: e.target.value ? Number(e.target.value) : null };
+                    return { ...prev, eligibility: next };
+                  })
+                }
+                disabled={item.education_level === "PhD"}
+              />
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Label className="text-xs text-gray-500">Max year</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={item.education_level === "UG" ? 4 : item.education_level === "GrM" ? 2 : undefined}
+                  value={item.max_year ?? ""}
+                  onChange={(e) =>
+                    setForm((prev) => {
+                      const next = [...(prev.eligibility || [])];
+                      next[idx] = { ...next[idx], max_year: e.target.value ? Number(e.target.value) : null };
+                      return { ...prev, eligibility: next };
+                    })
+                  }
+                  disabled={item.education_level === "PhD"}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() =>
+                  setForm((prev) => ({
+                    ...prev,
+                    eligibility: (prev.eligibility || []).filter((_, i) => i !== idx),
+                  }))
+                }
+              >
+                Remove
+              </Button>
+            </div>
+          </div>
+        ))}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>

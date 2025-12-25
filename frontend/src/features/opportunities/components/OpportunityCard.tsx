@@ -1,5 +1,27 @@
-import { Opportunity, formatOpportunityType } from "../types";
+import {
+  Opportunity,
+  OpportunityEligibility,
+  formatEducationLevel,
+  formatOpportunityType,
+} from "../types";
 import { Calendar, MapPin, Link2, Bookmark, Building2, GraduationCap, Wallet } from "lucide-react";
+const formatEligibility = (eligibility?: OpportunityEligibility[] | null) => {
+  if (!eligibility || eligibility.length === 0) return null;
+  return eligibility
+    .map((item) => {
+      const level = formatEducationLevel(item.education_level);
+      if (item.education_level === "PhD") {
+        return level;
+      }
+      const range =
+        item.min_year && item.max_year
+          ? `Year ${item.min_year}${item.max_year !== item.min_year ? `-${item.max_year}` : ""}`
+          : "";
+      return range ? `${level} · ${range}` : level;
+    })
+    .join(" • ");
+};
+
 import { motion } from "framer-motion";
 
 const badgeColors = ["bg-blue-100 text-blue-800", "bg-emerald-100 text-emerald-800", "bg-amber-100 text-amber-800", "bg-indigo-100 text-indigo-800"];
@@ -40,6 +62,7 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
     status === "Year-round"
       ? "Year-round"
       : formatDeadline(opportunity.deadline);
+  const eligibilityText = formatEligibility(opportunity.eligibility);
   return (
     <motion.article
       layout
@@ -149,6 +172,11 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
             </button>
           )}
         </div>
+        {eligibilityText && (
+          <div className="pt-2 text-xs text-gray-600 dark:text-gray-300">
+            Eligibility: {eligibilityText}
+          </div>
+        )}
       </div>
     </motion.article>
   );

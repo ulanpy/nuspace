@@ -29,6 +29,8 @@ __all__ = [
     "DegreeAuditResult",
     "Opportunity",
     "OpportunityType",
+    "OpportunityEligibility",
+    "EducationLevel",
 ]
 from .base import Base
 from .community import (
@@ -53,4 +55,4 @@ from .notification import Notification
 from .user import User, UserRole, UserScope
 from .sgotinish import Ticket, Conversation, Message, MessageReadStatus
 from .degree_audit import DegreeAuditResult
-from .opportunities import Opportunity, OpportunityType
+from .opportunities import Opportunity, OpportunityEligibility, OpportunityType, EducationLevel
