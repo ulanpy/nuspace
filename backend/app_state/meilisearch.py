@@ -14,6 +14,7 @@ from backend.core.database.models import (
     Course,
     Event,
     GradeReport,
+    Opportunity,
 )
 from backend.modules.courses.registrar.schedule_sync import (
     ScheduleCatalogRefresher,
@@ -95,6 +96,12 @@ async def setup_meilisearch(app: FastAPI):
                 searchable_columns=[Course.course_code, Course.term],
                 filterable_attributes=[Course.term],
                 primary_key=Course.id,
+            ),
+            MeilisearchIndexConfig(
+                model=Opportunity,
+                searchable_columns=[Opportunity.name, Opportunity.description],
+                filterable_attributes=None,
+                primary_key=Opportunity.id,
             ),
         ]
 

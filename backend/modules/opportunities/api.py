@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import get_creds_or_401, get_db_session
+from backend.common.dependencies import get_creds_or_401, get_db_session, get_infra
+from backend.common.schemas import Infra
 from backend.modules.opportunities import schemas
 from backend.modules.opportunities.policy import OpportunityPolicy
 from backend.modules.opportunities.service import OpportunitiesDigestService
@@ -11,9 +12,11 @@ router = APIRouter(prefix="/opportunities", tags=["Opportunities Digest"])
 
 @router.get("", response_model=schemas.OpportunityListResponse)
 async def list_opportunities(
-    filters: schemas.OpportunityFilter = Depends(), db: AsyncSession = Depends(get_db_session)
+    filters: schemas.OpportunityFilter = Depends(),
+    db: AsyncSession = Depends(get_db_session),
+    infra: Infra = Depends(get_infra),
 ):
-    service = OpportunitiesDigestService(db_session=db)
+    service = OpportunitiesDigestService(db_session=db, meilisearch_client=infra.meilisearch_client)
     items, total = await service.list(filters)
     total_pages = (total + filters.size - 1) // filters.size if filters.size else 0
     return schemas.OpportunityListResponse(
