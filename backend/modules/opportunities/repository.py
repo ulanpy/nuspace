@@ -1,0 +1,192 @@
+from typing import List, Optional, Tuple
+
+from datetime import date
+from sqlalchemy import func, select, update, exists, case
+from sqlalchemy.ext.asyncio import AsyncSession
+from httpx import AsyncClient
+
+from backend.common.utils import meilisearch
+from backend.core.database.models import Opportunity, OpportunityEligibility
+from backend.modules.opportunities import schemas
+
+
+class OpportunitiesRepository:
+    def __init__(self, db_session: AsyncSession, meilisearch_client: AsyncClient):
+        self.db = db_session
+        self.meilisearch_client = meilisearch_client
+
+    async def list(self, flt: schemas.OpportunityFilter) -> Tuple[List[Opportunity], int]:
+        """
+        Use Meilisearch for keyword search, then filter in DB.
+        Fallback to DB-only filtering when no keyword.
+        """
+        # If keyword, use it for id list + total
+        if flt.q:
+            meili_result = await meilisearch.get(
+                client=self.meilisearch_client,
+                storage_name=Opportunity.__tablename__,
+                keyword=flt.q,
+                page=flt.page,
+                size=flt.size,
+            )
+            hits = meili_result.get("hits", []) or []
+            ids = [hit.get("id") for hit in hits if hit.get("id") is not None]
+            total = meili_result.get("estimatedTotalHits", len(ids))
+
+            if not ids:
+                return [], total
+
+            stmt = select(Opportunity).where(Opportunity.id.in_(ids))
+
+            if flt.type:
+                stmt = stmt.where(Opportunity.type == flt.type)
+            if flt.majors:
+                stmt = stmt.where(Opportunity.majors.ilike(f"%{flt.majors}%"))
+            if flt.education_level or flt.min_year is not None or flt.max_year is not None:
+                oe = OpportunityEligibility
+                sub_conditions = []
+                if flt.education_level:
+                    sub_conditions.append(oe.education_level == flt.education_level)
+                if flt.min_year is not None:
+                    sub_conditions.append(oe.min_year >= flt.min_year)
+                if flt.max_year is not None:
+                    sub_conditions.append(oe.max_year <= flt.max_year)
+                stmt = stmt.where(
+                    exists(
+                        select(oe.id).where(
+                            oe.opportunity_id == Opportunity.id,
+                            *sub_conditions,
+                        )
+                    )
+                )
+            if flt.hide_expired:
+                today = date.today()
+                stmt = stmt.where(
+                    (Opportunity.deadline.is_(None))
+                    | (Opportunity.deadline >= today)
+                )
+
+            # preserve Meilisearch relevance order
+            order_clause = case(
+                *[
+                    (Opportunity.id == oid, idx)
+                    for idx, oid in enumerate(ids)
+                ],
+                else_=len(ids),
+            )
+            stmt = stmt.order_by(order_clause)
+
+            result = await self.db.execute(stmt)
+            items = list(result.scalars().all())
+            return items, total
+
+        # Fallback: DB filters without keyword search
+        stmt = select(Opportunity)
+
+        if flt.type:
+            stmt = stmt.where(Opportunity.type == flt.type)
+        if flt.majors:
+            stmt = stmt.where(Opportunity.majors.ilike(f"%{flt.majors}%"))
+        if flt.education_level or flt.min_year is not None or flt.max_year is not None:
+            oe = OpportunityEligibility
+            sub_conditions = []
+            if flt.education_level:
+                sub_conditions.append(oe.education_level == flt.education_level)
+            if flt.min_year is not None:
+                sub_conditions.append(oe.min_year >= flt.min_year)
+            if flt.max_year is not None:
+                sub_conditions.append(oe.max_year <= flt.max_year)
+            stmt = stmt.where(
+                exists(
+                    select(oe.id).where(
+                        oe.opportunity_id == Opportunity.id,
+                        *sub_conditions,
+                    )
+                )
+            )
+        if flt.hide_expired:
+            today = date.today()
+            stmt = stmt.where(
+                (Opportunity.deadline.is_(None))
+                | (Opportunity.deadline >= today)
+            )
+
+        count_stmt = select(func.count()).select_from(stmt.order_by(None).subquery())
+        total_result = await self.db.execute(count_stmt)
+        total = total_result.scalar_one() or 0
+
+        stmt = stmt.order_by(
+            Opportunity.deadline.is_(None),
+            Opportunity.deadline,
+            Opportunity.id,
+        )
+
+        offset_val = (flt.page - 1) * flt.size
+        stmt = stmt.offset(offset_val).limit(flt.size)
+
+        result = await self.db.execute(stmt)
+        items = list(result.scalars().all())
+        return items, total
+
+    async def get(self, id: int) -> Optional[Opportunity]:
+        result = await self.db.execute(
+            select(Opportunity).where(Opportunity.id == id)
+        )
+        return result.scalar_one_or_none()
+
+    async def create(self, payload: schemas.OpportunityCreate) -> Opportunity:
+        data = payload.model_dump()
+        eligibility_data = data.pop("eligibility", []) or []
+        record = Opportunity(**data)
+        self.db.add(record)
+        await self.db.flush()
+
+        for item in eligibility_data:
+            eligibility = OpportunityEligibility(
+                opportunity_id=record.id,
+                education_level=item["education_level"],
+                min_year=item.get("min_year"),
+                max_year=item.get("max_year"),
+            )
+            self.db.add(eligibility)
+
+        await self.db.commit()
+        await self.db.refresh(record)
+        return record
+
+    async def update(self, id: int, payload: schemas.OpportunityUpdate) -> Optional[Opportunity]:
+        data = {k: v for k, v in payload.model_dump(exclude_unset=True).items()}
+        eligibility_data = data.pop("eligibility", None)
+
+        if data:
+            await self.db.execute(
+                update(Opportunity).where(Opportunity.id == id).values(**data)
+            )
+
+        if eligibility_data is not None:
+            # Replace eligibilities
+            await self.db.execute(
+                OpportunityEligibility.__table__.delete().where(
+                    OpportunityEligibility.opportunity_id == id
+                )
+            )
+            for item in eligibility_data:
+                eligibility = OpportunityEligibility(
+                    opportunity_id=id,
+                    education_level=item["education_level"],
+                    min_year=item.get("min_year"),
+                    max_year=item.get("max_year"),
+                )
+                self.db.add(eligibility)
+
+        await self.db.commit()
+        return await self.get(id)
+
+    async def delete(self, id: int) -> bool:
+        record = await self.get(id)
+        if not record:
+            return False
+        await self.db.delete(record)
+        await self.db.commit()
+        return True
+
