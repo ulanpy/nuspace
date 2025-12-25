@@ -2,7 +2,7 @@ import { Mail, Phone, ExternalLink } from "lucide-react";
 
 const privacyData = {
     title: "Privacy Policy for nuspace.kz",
-    lastUpdated: "2025-12-19",
+    lastUpdated: "2025-12-25",
     introduction: "This document explains what personal data we collect, how we store it, and how we use it in the nuspace.kz service and the @NUspaceBot on Telegram. This service is a non-commercial, student-led project designed specifically for Nazarbayev University students.",
     sections: [
         {
@@ -36,8 +36,12 @@ const privacyData = {
         },
         {
             id: 5,
-            title: "Third-Party Services",
-            description: "We use Google Cloud (infrastructure) and Telegram (notifications). These providers process data according to their own privacy policies. We do not use external analytics (like Google Analytics) or third-party marketing trackers."
+            title: "Data Sharing and Disclosure",
+            description: "We do not share, transfer, or disclose your Google user data (Full Name, Email, Profile Photo) to any third parties. We do not sell, trade, or rent your personal data. Your data is only used internally to provide the service. The only exceptions where data interacts with third parties are for technical infrastructure, as described below:",
+            points: [
+                "Google Cloud: We use Google Cloud Platform solely for data hosting and storage. Your data remains encrypted and is not accessed by Google for other purposes.",
+                "Telegram: We do not share your Google user data with Telegram. The Telegram integration uses only your Telegram User ID to route notifications; your Google identity (email/name) is never transferred to Telegram servers."
+            ]
         },
         {
             id: 6,
