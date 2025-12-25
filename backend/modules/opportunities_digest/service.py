@@ -15,23 +15,23 @@ class OpportunitiesDigestService:
     async def list(self, flt: schemas.OpportunityDigestFilter) -> Tuple[List[OpportunityDigest], int]:
         stmt = select(OpportunityDigest)
 
-        if flt.opp_type:
-            stmt = stmt.where(OpportunityDigest.opp_type == flt.opp_type)
-        if flt.opp_majors:
-            stmt = stmt.where(OpportunityDigest.opp_majors.ilike(f"%{flt.opp_majors}%"))
-        if flt.opp_eligibility:
-            stmt = stmt.where(OpportunityDigest.opp_eligibility.ilike(f"%{flt.opp_eligibility}%"))
+        if flt.type:
+            stmt = stmt.where(OpportunityDigest.type == flt.type)
+        if flt.majors:
+            stmt = stmt.where(OpportunityDigest.majors.ilike(f"%{flt.majors}%"))
+        if flt.eligibility:
+            stmt = stmt.where(OpportunityDigest.eligibility.ilike(f"%{flt.eligibility}%"))
         if flt.q:
             pattern = f"%{flt.q}%"
             stmt = stmt.where(
-                (OpportunityDigest.opp_name.ilike(pattern))
-                | (OpportunityDigest.opp_description.ilike(pattern))
+                (OpportunityDigest.name.ilike(pattern))
+                | (OpportunityDigest.description.ilike(pattern))
             )
         if flt.hide_expired:
             today = date.today()
             stmt = stmt.where(
-                (OpportunityDigest.opp_deadline.is_(None))
-                | (OpportunityDigest.opp_deadline >= today)
+                (OpportunityDigest.deadline.is_(None))
+                | (OpportunityDigest.deadline >= today)
             )
 
         count_stmt = select(func.count()).select_from(stmt.order_by(None).subquery())
@@ -39,9 +39,9 @@ class OpportunitiesDigestService:
         total = total_result.scalar_one() or 0
 
         stmt = stmt.order_by(
-            OpportunityDigest.opp_deadline.is_(None),
-            OpportunityDigest.opp_deadline,
-            OpportunityDigest.opp_id,
+            OpportunityDigest.deadline.is_(None),
+            OpportunityDigest.deadline,
+            OpportunityDigest.id,
         )
 
         offset_val = (flt.page - 1) * flt.size
@@ -51,9 +51,9 @@ class OpportunitiesDigestService:
         items = list(result.scalars().all())
         return items, total
 
-    async def get(self, opp_id: int) -> Optional[OpportunityDigest]:
+    async def get(self, id: int) -> Optional[OpportunityDigest]:
         result = await self.db.execute(
-            select(OpportunityDigest).where(OpportunityDigest.opp_id == opp_id)
+            select(OpportunityDigest).where(OpportunityDigest.id == id)
         )
         return result.scalar_one_or_none()
 
@@ -66,19 +66,19 @@ class OpportunitiesDigestService:
         return record
 
     async def update(
-        self, opp_id: int, payload: schemas.OpportunityDigestUpdate
+        self, id: int, payload: schemas.OpportunityDigestUpdate
     ) -> Optional[OpportunityDigest]:
         data = {k: v for k, v in payload.model_dump(exclude_unset=True).items()}
         if not data:
-            return await self.get(opp_id)
+            return await self.get(id)
         await self.db.execute(
-            update(OpportunityDigest).where(OpportunityDigest.opp_id == opp_id).values(**data)
+            update(OpportunityDigest).where(OpportunityDigest.id == id).values(**data)
         )
         await self.db.commit()
-        return await self.get(opp_id)
+        return await self.get(id)
 
-    async def delete(self, opp_id: int) -> bool:
-        record = await self.get(opp_id)
+    async def delete(self, id: int) -> bool:
+        record = await self.get(id)
         if not record:
             return False
         await self.db.delete(record)

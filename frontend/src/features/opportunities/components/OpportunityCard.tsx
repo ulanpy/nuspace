@@ -35,11 +35,11 @@ type Props = {
 };
 
 export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Props) => {
-  const status = deadlineStatus(opportunity.opp_deadline);
+  const status = deadlineStatus(opportunity.deadline);
   const deadlineLabel =
     status === "Year-round"
       ? "Year-round"
-      : formatDeadline(opportunity.opp_deadline);
+      : formatDeadline(opportunity.deadline);
   return (
     <motion.article
       layout
@@ -49,20 +49,20 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              {opportunity.opp_type && (
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${pickBadge(opportunity.opp_type)} shadow-sm`}>
-                  {opportunity.opp_type}
+              {opportunity.type && (
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${pickBadge(opportunity.type)} shadow-sm`}>
+                  {opportunity.type}
                 </span>
               )}
-              {opportunity.opp_host && (
+              {opportunity.host && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
                   <Building2 className="h-3 w-3" />
-                  {opportunity.opp_host}
+                  {opportunity.host}
                 </span>
               )}
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 leading-tight">
-              {opportunity.opp_name}
+              {opportunity.name}
             </h3>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
@@ -82,54 +82,54 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
           </div>
         </div>
 
-        {opportunity.opp_description && (
+        {opportunity.description && (
           <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-            {opportunity.opp_description}
+            {opportunity.description}
           </p>
         )}
 
         <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-300">
-          {opportunity.opp_majors && (
+          {opportunity.majors && (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200">
               <GraduationCap className="h-3 w-3" />
-              {opportunity.opp_majors}
+              {opportunity.majors}
             </span>
           )}
-          {opportunity.opp_location && (
+          {opportunity.location && (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-purple-50 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200">
               <MapPin className="h-3 w-3" />
-              {opportunity.opp_location}
+              {opportunity.location}
             </span>
           )}
-          {opportunity.opp_funding && (
+          {opportunity.funding && (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
               <Wallet className="h-3 w-3" />
-              Funding: {opportunity.opp_funding}
+              Funding: {opportunity.funding}
             </span>
           )}
         </div>
 
-        {(opportunity.opp_steps || opportunity.opp_eligibility) && (
+        {(opportunity.steps || opportunity.eligibility) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {opportunity.opp_steps && (
+            {opportunity.steps && (
               <div className="rounded-xl bg-gray-50 dark:bg-gray-800/70 p-3">
                 <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Steps</div>
-                <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line">{opportunity.opp_steps}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line">{opportunity.steps}</p>
               </div>
             )}
-            {opportunity.opp_eligibility && (
+            {opportunity.eligibility && (
               <div className="rounded-xl bg-gray-50 dark:bg-gray-800/70 p-3">
                 <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Eligibility</div>
-                <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line">{opportunity.opp_eligibility}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line">{opportunity.eligibility}</p>
               </div>
             )}
           </div>
         )}
 
         <div className="flex items-center justify-between pt-2">
-          {opportunity.opp_link ? (
+          {opportunity.link ? (
             <a
-              href={opportunity.opp_link}
+              href={opportunity.link}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"

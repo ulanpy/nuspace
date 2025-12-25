@@ -55,11 +55,11 @@ export default function OpportunitiesPage() {
 
   const baseFilterKey = useMemo(
     () =>
-      `${filters.opp_type ?? ""}|${filters.opp_majors ?? ""}|${filters.opp_eligibility ?? ""}|${filters.q ?? ""}|${filters.hide_expired ? "hide" : "all"}|${filters.size ?? 15}`,
+      `${filters.type ?? ""}|${filters.majors ?? ""}|${filters.eligibility ?? ""}|${filters.q ?? ""}|${filters.hide_expired ? "hide" : "all"}|${filters.size ?? 15}`,
     [
-      filters.opp_type,
-      filters.opp_majors,
-      filters.opp_eligibility,
+      filters.type,
+      filters.majors,
+      filters.eligibility,
       filters.q,
       filters.hide_expired,
       filters.size,
@@ -75,11 +75,11 @@ export default function OpportunitiesPage() {
       prevBaseFilterKey.current = baseFilterKey;
       return;
     }
-    // Otherwise append new page results, deduping by opp_id
+    // Otherwise append new page results, deduping by id
     setAccItems((prev) => {
       const map = new Map<number, Opportunity>();
-      prev.forEach((item) => map.set(item.opp_id, item));
-      (data.items || []).forEach((item) => map.set(item.opp_id, item));
+      prev.forEach((item) => map.set(item.id, item));
+      (data.items || []).forEach((item) => map.set(item.id, item));
       return Array.from(map.values());
     });
   }, [data, baseFilterKey]);
@@ -89,8 +89,8 @@ export default function OpportunitiesPage() {
     if (!filters.hide_expired) return items;
     const today = new Date(new Date().toDateString());
     return items.filter((opp) => {
-      if (!opp.opp_deadline) return true; // Year-round stays
-      const d = new Date(opp.opp_deadline);
+      if (!opp.deadline) return true; // Year-round stays
+      const d = new Date(opp.deadline);
       if (Number.isNaN(d.getTime())) return true;
       return d >= today;
     });
@@ -134,9 +134,9 @@ export default function OpportunitiesPage() {
     const items = accItems || [];
 
     return {
-      types: collectTokens(items.map((d) => d.opp_type)),
-      eligibilities: collectTokens(items.map((d) => d.opp_eligibility)),
-      majors: collectTokens(items.map((d) => d.opp_majors)),
+      types: collectTokens(items.map((d) => d.type)),
+      eligibilities: collectTokens(items.map((d) => d.eligibility)),
+      majors: collectTokens(items.map((d) => d.majors)),
     };
   }, [accItems]);
 
@@ -166,7 +166,7 @@ export default function OpportunitiesPage() {
 
   const handleSubmitForm = (payload: UpsertOpportunityInput) => {
     if (editing) {
-      updateMutation.mutate({ id: editing.opp_id, data: payload });
+      updateMutation.mutate({ id: editing.id, data: payload });
     } else {
       createMutation.mutate(payload);
     }
@@ -222,12 +222,12 @@ export default function OpportunitiesPage() {
             </div>
 
             <div>
-              <Label htmlFor="opp_type" className="text-xs text-gray-500">
+              <Label htmlFor="type" className="text-xs text-gray-500">
                 Type
               </Label>
               <Select
-                value={filters.opp_type ?? "__all__"}
-                onValueChange={(v) => onChange("opp_type", v === "__all__" ? undefined : v)}
+                value={filters.type ?? "__all__"}
+                onValueChange={(v) => onChange("type", v === "__all__" ? undefined : v)}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="All types" />
@@ -244,12 +244,12 @@ export default function OpportunitiesPage() {
             </div>
 
             <div>
-              <Label htmlFor="opp_eligibility" className="text-xs text-gray-500">
+              <Label htmlFor="eligibility" className="text-xs text-gray-500">
                 Eligibility
               </Label>
               <Select
-                value={filters.opp_eligibility ?? "__all__"}
-                onValueChange={(v) => onChange("opp_eligibility", v === "__all__" ? undefined : v)}
+                value={filters.eligibility ?? "__all__"}
+                onValueChange={(v) => onChange("eligibility", v === "__all__" ? undefined : v)}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="All eligibility" />
@@ -266,12 +266,12 @@ export default function OpportunitiesPage() {
             </div>
 
             <div>
-              <Label htmlFor="opp_majors" className="text-xs text-gray-500">
+              <Label htmlFor="majors" className="text-xs text-gray-500">
                 Majors
               </Label>
               <Select
-                value={filters.opp_majors ?? "__all__"}
-                onValueChange={(v) => onChange("opp_majors", v === "__all__" ? undefined : v)}
+                value={filters.majors ?? "__all__"}
+                onValueChange={(v) => onChange("majors", v === "__all__" ? undefined : v)}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="All majors" />
@@ -320,7 +320,7 @@ export default function OpportunitiesPage() {
               <div className="grid grid-cols-1 gap-4">
                 {visibleData.map((opp) => (
                   <OpportunityCard
-                    key={opp.opp_id}
+                    key={opp.id}
                     opportunity={opp}
                     canManage={canManage}
                     onEdit={(o) => { setEditing(o); setIsFormOpen(true); }}

@@ -5,9 +5,9 @@ export const fetchOpportunities = async (
   filters: OpportunityFilters,
 ): Promise<OpportunityListResponse> => {
   const params = new URLSearchParams();
-  if (filters.opp_type) params.set("opp_type", filters.opp_type);
-  if (filters.opp_majors) params.set("opp_majors", filters.opp_majors);
-  if (filters.opp_eligibility) params.set("opp_eligibility", filters.opp_eligibility);
+  if (filters.type) params.set("type", filters.type);
+  if (filters.majors) params.set("majors", filters.majors);
+  if (filters.eligibility) params.set("eligibility", filters.eligibility);
   if (filters.q) params.set("q", filters.q);
   if (filters.hide_expired) params.set("hide_expired", "true");
   if (filters.page) params.set("page", String(filters.page));
@@ -28,18 +28,18 @@ export const createOpportunity = async (payload: Partial<Opportunity>): Promise<
 };
 
 export const updateOpportunity = async (
-  opp_id: number,
+  id: number,
   payload: Partial<Opportunity>,
 ): Promise<Opportunity> => {
-  return apiCall<Opportunity>(`/opportunities/${opp_id}`, {
+  return apiCall<Opportunity>(`/opportunities/${id}`, {
     method: "PATCH",
     credentials: "include",
     json: payload,
   });
 };
 
-export const deleteOpportunity = async (opp_id: number): Promise<void> => {
-  await apiCall<void>(`/opportunities/${opp_id}`, {
+export const deleteOpportunity = async (id: number): Promise<void> => {
+  await apiCall<void>(`/opportunities/${id}`, {
     method: "DELETE",
     credentials: "include",
   });
