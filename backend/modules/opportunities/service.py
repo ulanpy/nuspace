@@ -1,9 +1,9 @@
 from typing import List, Optional, Tuple
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, update, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database.models import Opportunity
+from backend.core.database.models import Opportunity, OpportunityEligibility
 from backend.modules.opportunities import schemas
 from datetime import date
 
@@ -19,13 +19,28 @@ class OpportunitiesDigestService:
             stmt = stmt.where(Opportunity.type == flt.type)
         if flt.majors:
             stmt = stmt.where(Opportunity.majors.ilike(f"%{flt.majors}%"))
-        if flt.eligibility:
-            stmt = stmt.where(Opportunity.eligibility.ilike(f"%{flt.eligibility}%"))
         if flt.q:
             pattern = f"%{flt.q}%"
             stmt = stmt.where(
                 (Opportunity.name.ilike(pattern))
                 | (Opportunity.description.ilike(pattern))
+            )
+        if flt.education_level or flt.min_year is not None or flt.max_year is not None:
+            oe = OpportunityEligibility
+            sub_conditions = []
+            if flt.education_level:
+                sub_conditions.append(oe.education_level == flt.education_level)
+            if flt.min_year is not None:
+                sub_conditions.append(oe.min_year >= flt.min_year)
+            if flt.max_year is not None:
+                sub_conditions.append(oe.max_year <= flt.max_year)
+            stmt = stmt.where(
+                exists(
+                    select(oe.id).where(
+                        oe.opportunity_id == Opportunity.id,
+                        *sub_conditions,
+                    )
+                )
             )
         if flt.hide_expired:
             today = date.today()
@@ -58,9 +73,21 @@ class OpportunitiesDigestService:
         return result.scalar_one_or_none()
 
     async def create(self, payload: schemas.OpportunityCreate) -> Opportunity:
-        record = Opportunity(**payload.model_dump())
+        data = payload.model_dump()
+        eligibility_data = data.pop("eligibility", []) or []
+        record = Opportunity(**data)
         self.db.add(record)
         await self.db.flush()
+
+        for item in eligibility_data:
+            eligibility = OpportunityEligibility(
+                opportunity_id=record.id,
+                education_level=item["education_level"],
+                min_year=item.get("min_year"),
+                max_year=item.get("max_year"),
+            )
+            self.db.add(eligibility)
+
         await self.db.commit()
         await self.db.refresh(record)
         return record
@@ -69,11 +96,29 @@ class OpportunitiesDigestService:
         self, id: int, payload: schemas.OpportunityUpdate
     ) -> Optional[Opportunity]:
         data = {k: v for k, v in payload.model_dump(exclude_unset=True).items()}
-        if not data:
-            return await self.get(id)
-        await self.db.execute(
-            update(Opportunity).where(Opportunity.id == id).values(**data)
-        )
+        eligibility_data = data.pop("eligibility", None)
+
+        if data:
+            await self.db.execute(
+                update(Opportunity).where(Opportunity.id == id).values(**data)
+            )
+
+        if eligibility_data is not None:
+            # Replace eligibilities
+            await self.db.execute(
+                OpportunityEligibility.__table__.delete().where(
+                    OpportunityEligibility.opportunity_id == id
+                )
+            )
+            for item in eligibility_data:
+                eligibility = OpportunityEligibility(
+                    opportunity_id=id,
+                    education_level=item["education_level"],
+                    min_year=item.get("min_year"),
+                    max_year=item.get("max_year"),
+                )
+                self.db.add(eligibility)
+
         await self.db.commit()
         return await self.get(id)
 

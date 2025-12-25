@@ -1,14 +1,45 @@
 from datetime import date, datetime
 from typing import List
 
-from backend.core.database.models import OpportunityType
-
-from pydantic import BaseModel, field_validator
 from fastapi import Query
+from pydantic import BaseModel, field_validator, model_validator
+
+from backend.core.database.models import EducationLevel, OpportunityType
+
+
+class OpportunityEligibility(BaseModel):
+    id: str | None = None
+    education_level: EducationLevel
+    min_year: int | None = None
+    max_year: int | None = None
+
+    @model_validator(mode="after")
+    def validate_year_range(self):
+        if self.education_level == EducationLevel.UG:
+            if self.min_year is None or self.max_year is None:
+                raise ValueError("UG eligibility requires min_year and max_year")
+            if not (1 <= self.min_year <= 4 and 1 <= self.max_year <= 4):
+                raise ValueError("UG years must be between 1 and 4")
+            if self.min_year > self.max_year:
+                raise ValueError("UG min_year cannot exceed max_year")
+        elif self.education_level == EducationLevel.GRM:
+            if self.min_year is None or self.max_year is None:
+                raise ValueError("GrM eligibility requires min_year and max_year")
+            if not (1 <= self.min_year <= 2 and 1 <= self.max_year <= 2):
+                raise ValueError("GrM years must be between 1 and 2")
+            if self.min_year > self.max_year:
+                raise ValueError("GrM min_year cannot exceed max_year")
+        elif self.education_level == EducationLevel.PHD:
+            if self.min_year is not None or self.max_year is not None:
+                raise ValueError("PhD eligibility should not set year bounds")
+        return self
+
+    class Config:
+        from_attributes = True
 
 
 class OpportunityBase(BaseModel):
-    name: str 
+    name: str
     description: str | None = None
     deadline: date | None = None
     steps: str | None = None
@@ -17,10 +48,10 @@ class OpportunityBase(BaseModel):
     majors: str | None = None
     link: str | None = None
     location: str | None = None
-    eligibility: str | None = None
     funding: str | None = None
     created_at: datetime
     updated_at: datetime
+    eligibility: List[OpportunityEligibility] = []
 
     class Config:
         from_attributes = True
@@ -55,8 +86,8 @@ class OpportunityUpdate(BaseModel):
     majors: str | None = None
     link: str | None = None
     location: str | None = None
-    eligibility: str | None = None
     funding: str | None = None
+    eligibility: List[OpportunityEligibility] | None = None
 
     class Config:
         from_attributes = True
@@ -78,7 +109,9 @@ class OpportunityListResponse(BaseModel):
 class OpportunityFilter(BaseModel):
     type: OpportunityType | None = Query(default=None, description="Filter by opportunity type")
     majors: str | None = Query(default=None, description="Filter by majors substring")
-    eligibility: str | None = Query(default=None, description="Filter by eligibility")
+    education_level: EducationLevel | None = Query(default=None, description="Filter by education level")
+    min_year: int | None = Query(default=None, description="Minimum study year for eligibility")
+    max_year: int | None = Query(default=None, description="Maximum study year for eligibility")
     q: str | None = Query(default=None, description="Search in name/description")
     hide_expired: bool = Query(default=False, description="Hide expired opportunities")
     page: int = Query(default=1, ge=1, description="Page number (1-indexed)")

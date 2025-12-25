@@ -19,6 +19,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    education_level_enum = sa.Enum(
+        "UG",
+        "GrM",
+        "PhD",
+        name="education_level",
+    )
+    education_level_enum.create(op.get_bind(), checkfirst=True)
+
     opportunity_type_enum = sa.Enum(
         "research",
         "internship",
@@ -44,13 +52,29 @@ def upgrade() -> None:
         sa.Column("majors", sa.String(length=512), nullable=True),
         sa.Column("link", sa.String(length=1024), nullable=True),
         sa.Column("location", sa.String(length=256), nullable=True),
-        sa.Column("eligibility", sa.Text(), nullable=True),
         sa.Column("funding", sa.String(length=256), nullable=True),
+    )
+
+    op.create_table(
+        "opportunity_eligibility",
+        sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
+        sa.Column("opportunity_id", sa.Integer(), sa.ForeignKey("opportunities.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("education_level", education_level_enum, nullable=False),
+        sa.Column("min_year", sa.SmallInteger(), nullable=True),
+        sa.Column("max_year", sa.SmallInteger(), nullable=True),
     )
 
 
 def downgrade() -> None:
+    op.drop_table("opportunity_eligibility")
     op.drop_table("opportunities")
+    education_level_enum = sa.Enum(
+        "UG",
+        "GrM",
+        "PhD",
+        name="education_level",
+    )
+    education_level_enum.drop(op.get_bind(), checkfirst=True)
     opportunity_type_enum = sa.Enum(
         "research",
         "internship",
