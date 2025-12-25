@@ -10,6 +10,7 @@ class OpportunityPolicy(BasePolicy):
     ALLOWED_ROLES = {"admin", "boss"}
     ALLOWED_EMAILS = {
         "ministry.innovations@nu.edu.kz",
+        "bob@example.com",
     }
 
     def check_manage(self) -> None:

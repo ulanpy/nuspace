@@ -42,7 +42,6 @@ class OpportunityBase(BaseModel):
     name: str
     description: str | None = None
     deadline: date | None = None
-    steps: str | None = None
     host: str | None = None
     type: OpportunityType
     majors: str | None = None
@@ -80,7 +79,6 @@ class OpportunityUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     deadline: date | None = None
-    steps: str | None = None
     host: str | None = None
     type: OpportunityType | None = None
     majors: str | None = None

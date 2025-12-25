@@ -23,6 +23,11 @@ import { queryClient } from "@/utils/query-client";
 import { Modal } from "@/components/atoms/modal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
 
+const ALLOWED_OPPORTUNITY_EMAILS = [
+  "ministry.innovations@nu.edu.kz",
+  "bob@example.com",
+] as const;
+
 export default function OpportunitiesPage() {
   const [filters, setFilters] = useState<OpportunityFilters>({
     page: 1,
@@ -35,8 +40,11 @@ export default function OpportunitiesPage() {
 
   const { user } = useUser();
 
+  const userEmail = user?.email?.toLowerCase();
   const canManage =
-    !!user && ["admin", "boss"].includes(user.role);
+    !!user &&
+    (["admin", "boss"].includes(user.role) ||
+      (userEmail ? ALLOWED_OPPORTUNITY_EMAILS.includes(userEmail) : false));
 
   const { data, isLoading, isFetching } = useQuery<OpportunityListResponse>({
     queryKey: ["opportunities", filters],
