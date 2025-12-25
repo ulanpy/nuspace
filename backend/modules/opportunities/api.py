@@ -2,21 +2,21 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import get_creds_or_401, get_db_session
-from backend.modules.opportunities_digest import schemas
-from backend.modules.opportunities_digest.policy import OpportunityDigestPolicy
-from backend.modules.opportunities_digest.service import OpportunitiesDigestService
+from backend.modules.opportunities import schemas
+from backend.modules.opportunities.policy import OpportunityPolicy
+from backend.modules.opportunities.service import OpportunitiesDigestService
 
 router = APIRouter(prefix="/opportunities", tags=["Opportunities Digest"])
 
 
-@router.get("", response_model=schemas.OpportunityDigestListResponse)
+@router.get("", response_model=schemas.OpportunityListResponse)
 async def list_opportunities(
-    filters: schemas.OpportunityDigestFilter = Depends(), db: AsyncSession = Depends(get_db_session)
+    filters: schemas.OpportunityFilter = Depends(), db: AsyncSession = Depends(get_db_session)
 ):
     service = OpportunitiesDigestService(db_session=db)
     items, total = await service.list(filters)
     total_pages = (total + filters.size - 1) // filters.size if filters.size else 0
-    return schemas.OpportunityDigestListResponse(
+    return schemas.OpportunityListResponse(
         items=items,
         total=total,
         page=filters.page,
@@ -26,7 +26,7 @@ async def list_opportunities(
     )
 
 
-@router.get("/{id}", response_model=schemas.OpportunityDigestResponse)
+@router.get("/{id}", response_model=schemas.OpportunityResponse)
 async def get_opportunity(id: int, db: AsyncSession = Depends(get_db_session)):
     service = OpportunitiesDigestService(db_session=db)
     record = await service.get(id)
@@ -35,26 +35,26 @@ async def get_opportunity(id: int, db: AsyncSession = Depends(get_db_session)):
     return record
 
 
-@router.post("", response_model=schemas.OpportunityDigestResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=schemas.OpportunityResponse, status_code=status.HTTP_201_CREATED)
 async def create_opportunity(
-    payload: schemas.OpportunityDigestCreate,
+    payload: schemas.OpportunityCreate,
     user=Depends(get_creds_or_401),
     db: AsyncSession = Depends(get_db_session),
 ):
-    OpportunityDigestPolicy(user).check_manage()
+    OpportunityPolicy(user).check_manage()
     service = OpportunitiesDigestService(db_session=db)
     record = await service.create(payload)
     return record
 
 
-@router.patch("/{id}", response_model=schemas.OpportunityDigestResponse)
+@router.patch("/{id}", response_model=schemas.OpportunityResponse)
 async def update_opportunity(
     id: int,
-    payload: schemas.OpportunityDigestUpdate,
+    payload: schemas.OpportunityUpdate,
     user=Depends(get_creds_or_401),
     db: AsyncSession = Depends(get_db_session),
 ):
-    OpportunityDigestPolicy(user).check_manage()
+    OpportunityPolicy(user).check_manage()
     service = OpportunitiesDigestService(db_session=db)
     record = await service.update(id, payload)
     if not record:
@@ -68,7 +68,7 @@ async def delete_opportunity(
     user=Depends(get_creds_or_401),
     db: AsyncSession = Depends(get_db_session),
 ):
-    OpportunityDigestPolicy(user).check_manage()
+    OpportunityPolicy(user).check_manage()
     service = OpportunitiesDigestService(db_session=db)
     ok = await service.delete(id)
     if not ok:

@@ -3,8 +3,8 @@ from typing import List, Optional, Tuple
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database.models import OpportunityDigest
-from backend.modules.opportunities_digest import schemas
+from backend.core.database.models import Opportunity
+from backend.modules.opportunities import schemas
 from datetime import date
 
 
@@ -12,26 +12,26 @@ class OpportunitiesDigestService:
     def __init__(self, db_session: AsyncSession):
         self.db = db_session
 
-    async def list(self, flt: schemas.OpportunityDigestFilter) -> Tuple[List[OpportunityDigest], int]:
-        stmt = select(OpportunityDigest)
+    async def list(self, flt: schemas.OpportunityFilter) -> Tuple[List[Opportunity], int]:
+        stmt = select(Opportunity)
 
         if flt.type:
-            stmt = stmt.where(OpportunityDigest.type == flt.type)
+            stmt = stmt.where(Opportunity.type == flt.type)
         if flt.majors:
-            stmt = stmt.where(OpportunityDigest.majors.ilike(f"%{flt.majors}%"))
+            stmt = stmt.where(Opportunity.majors.ilike(f"%{flt.majors}%"))
         if flt.eligibility:
-            stmt = stmt.where(OpportunityDigest.eligibility.ilike(f"%{flt.eligibility}%"))
+            stmt = stmt.where(Opportunity.eligibility.ilike(f"%{flt.eligibility}%"))
         if flt.q:
             pattern = f"%{flt.q}%"
             stmt = stmt.where(
-                (OpportunityDigest.name.ilike(pattern))
-                | (OpportunityDigest.description.ilike(pattern))
+                (Opportunity.name.ilike(pattern))
+                | (Opportunity.description.ilike(pattern))
             )
         if flt.hide_expired:
             today = date.today()
             stmt = stmt.where(
-                (OpportunityDigest.deadline.is_(None))
-                | (OpportunityDigest.deadline >= today)
+                (Opportunity.deadline.is_(None))
+                | (Opportunity.deadline >= today)
             )
 
         count_stmt = select(func.count()).select_from(stmt.order_by(None).subquery())
@@ -39,9 +39,9 @@ class OpportunitiesDigestService:
         total = total_result.scalar_one() or 0
 
         stmt = stmt.order_by(
-            OpportunityDigest.deadline.is_(None),
-            OpportunityDigest.deadline,
-            OpportunityDigest.id,
+            Opportunity.deadline.is_(None),
+            Opportunity.deadline,
+            Opportunity.id,
         )
 
         offset_val = (flt.page - 1) * flt.size
@@ -51,14 +51,14 @@ class OpportunitiesDigestService:
         items = list(result.scalars().all())
         return items, total
 
-    async def get(self, id: int) -> Optional[OpportunityDigest]:
+    async def get(self, id: int) -> Optional[Opportunity]:
         result = await self.db.execute(
-            select(OpportunityDigest).where(OpportunityDigest.id == id)
+            select(Opportunity).where(Opportunity.id == id)
         )
         return result.scalar_one_or_none()
 
-    async def create(self, payload: schemas.OpportunityDigestCreate) -> OpportunityDigest:
-        record = OpportunityDigest(**payload.model_dump())
+    async def create(self, payload: schemas.OpportunityCreate) -> Opportunity:
+        record = Opportunity(**payload.model_dump())
         self.db.add(record)
         await self.db.flush()
         await self.db.commit()
@@ -66,13 +66,13 @@ class OpportunitiesDigestService:
         return record
 
     async def update(
-        self, id: int, payload: schemas.OpportunityDigestUpdate
-    ) -> Optional[OpportunityDigest]:
+        self, id: int, payload: schemas.OpportunityUpdate
+    ) -> Optional[Opportunity]:
         data = {k: v for k, v in payload.model_dump(exclude_unset=True).items()}
         if not data:
             return await self.get(id)
         await self.db.execute(
-            update(OpportunityDigest).where(OpportunityDigest.id == id).values(**data)
+            update(Opportunity).where(Opportunity.id == id).values(**data)
         )
         await self.db.commit()
         return await self.get(id)

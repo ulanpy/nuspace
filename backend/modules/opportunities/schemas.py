@@ -6,7 +6,7 @@ from pydantic import Field
 from fastapi import Query
 
 
-class OpportunityDigestBase(BaseModel):
+class OpportunityBase(BaseModel):
     name: str = Field(..., max_length=512)
     description: Optional[str] = None
     deadline: Optional[date] = None
@@ -34,7 +34,7 @@ class OpportunityDigestBase(BaseModel):
         return link
 
 
-class OpportunityDigestCreate(OpportunityDigestBase):
+class OpportunityCreate(OpportunityBase):
     @field_validator("deadline")
     def validate_deadline(cls, v):
         if v is not None and v < date.today():
@@ -42,7 +42,7 @@ class OpportunityDigestCreate(OpportunityDigestBase):
         return v
 
 
-class OpportunityDigestUpdate(BaseModel):
+class OpportunityUpdate(BaseModel):
     name: Optional[str] = Field(default=None, max_length=512)
     description: Optional[str] = None
     deadline: Optional[date] = None
@@ -59,12 +59,12 @@ class OpportunityDigestUpdate(BaseModel):
         from_attributes = True
 
 
-class OpportunityDigestResponse(OpportunityDigestBase):
+class OpportunityResponse(OpportunityBase):
     id: int
 
 
-class OpportunityDigestListResponse(BaseModel):
-    items: List[OpportunityDigestResponse]
+class OpportunityListResponse(BaseModel):
+    items: List[OpportunityResponse]
     total: int
     page: int
     size: int
@@ -72,7 +72,7 @@ class OpportunityDigestListResponse(BaseModel):
     has_next: bool
 
 
-class OpportunityDigestFilter(BaseModel):
+class OpportunityFilter(BaseModel):
     type: Optional[str] = Query(default=None, description="Filter by opportunity type")
     majors: Optional[str] = Query(default=None, description="Filter by majors substring")
     eligibility: Optional[str] = Query(default=None, description="Filter by eligibility")
