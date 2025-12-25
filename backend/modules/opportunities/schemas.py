@@ -4,7 +4,7 @@ from typing import List
 from fastapi import Query
 from pydantic import BaseModel, field_validator, model_validator
 
-from backend.core.database.models import EducationLevel, OpportunityType
+from backend.core.database.models import EducationLevel, OpportunityType, OpportunityMajor
 
 
 class OpportunityEligibility(BaseModel):
@@ -44,7 +44,7 @@ class OpportunityBase(BaseModel):
     deadline: date | None = None
     host: str | None = None
     type: OpportunityType
-    majors: str | None = None
+    majors: List[OpportunityMajor] = []
     link: str | None = None
     location: str | None = None
     funding: str | None = None
@@ -81,7 +81,7 @@ class OpportunityUpdate(BaseModel):
     deadline: date | None = None
     host: str | None = None
     type: OpportunityType | None = None
-    majors: str | None = None
+    majors: List[OpportunityMajor] | None = None
     link: str | None = None
     location: str | None = None
     funding: str | None = None
@@ -106,7 +106,7 @@ class OpportunityListResponse(BaseModel):
 
 class OpportunityFilter(BaseModel):
     type: OpportunityType | None = Query(default=None, description="Filter by opportunity type")
-    majors: str | None = Query(default=None, description="Filter by majors substring")
+    majors: OpportunityMajor | None = Query(default=None, description="Filter by major")
     education_level: EducationLevel | None = Query(default=None, description="Filter by education level")
     min_year: int | None = Query(default=None, description="Minimum study year for eligibility")
     max_year: int | None = Query(default=None, description="Maximum study year for eligibility")
