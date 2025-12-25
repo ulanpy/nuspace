@@ -4,7 +4,7 @@ from backend.core.database.models.user import UserRole
 from backend.modules.campuscurrent.base import BasePolicy
 
 
-class OpportunityDigestPolicy(BasePolicy):
+class OpportunityPolicy(BasePolicy):
     """Policy: only privileged roles can create/update/delete opportunities."""
 
     ALLOWED_ROLES = {"admin", "boss"}

@@ -3,8 +3,8 @@ from sqlalchemy import Column, Date, Integer, String, Text
 from backend.core.database.models.base import Base
 
 
-class OpportunityDigest(Base):
-    __tablename__ = "opportunities_digest"
+class Opportunity(Base):
+    __tablename__ = "opportunities"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(512), nullable=False)
