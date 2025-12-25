@@ -39,13 +39,13 @@ class OpportunitiesRepository:
             stmt = select(Opportunity).where(Opportunity.id.in_(ids))
 
             if flt.type:
-                stmt = stmt.where(Opportunity.type == flt.type)
+                stmt = stmt.where(Opportunity.type.in_(flt.type))
             if flt.majors:
                 stmt = stmt.where(
                     exists(
                         select(OpportunityMajorMap.id).where(
                             OpportunityMajorMap.opportunity_id == Opportunity.id,
-                            OpportunityMajorMap.major == flt.majors,
+                            OpportunityMajorMap.major.in_(flt.majors),
                         )
                     )
                 )
@@ -53,11 +53,11 @@ class OpportunitiesRepository:
                 oe = OpportunityEligibility
                 sub_conditions = []
                 if flt.education_level:
-                    sub_conditions.append(oe.education_level == flt.education_level)
+                    sub_conditions.append(oe.education_level.in_(flt.education_level))
                 if flt.min_year is not None:
-                    sub_conditions.append(oe.min_year >= flt.min_year)
+                    sub_conditions.append(oe.year >= flt.min_year)
                 if flt.max_year is not None:
-                    sub_conditions.append(oe.max_year <= flt.max_year)
+                    sub_conditions.append(oe.year <= flt.max_year)
                 stmt = stmt.where(
                     exists(
                         select(oe.id).where(
@@ -91,13 +91,13 @@ class OpportunitiesRepository:
         stmt = select(Opportunity)
 
         if flt.type:
-            stmt = stmt.where(Opportunity.type == flt.type)
+            stmt = stmt.where(Opportunity.type.in_(flt.type))
         if flt.majors:
             stmt = stmt.where(
                 exists(
                     select(OpportunityMajorMap.id).where(
                         OpportunityMajorMap.opportunity_id == Opportunity.id,
-                        OpportunityMajorMap.major == flt.majors,
+                        OpportunityMajorMap.major.in_(flt.majors),
                     )
                 )
             )
@@ -105,11 +105,11 @@ class OpportunitiesRepository:
             oe = OpportunityEligibility
             sub_conditions = []
             if flt.education_level:
-                sub_conditions.append(oe.education_level == flt.education_level)
+                sub_conditions.append(oe.education_level.in_(flt.education_level))
             if flt.min_year is not None:
-                sub_conditions.append(oe.min_year >= flt.min_year)
+                sub_conditions.append(oe.year >= flt.min_year)
             if flt.max_year is not None:
-                sub_conditions.append(oe.max_year <= flt.max_year)
+                sub_conditions.append(oe.year <= flt.max_year)
             stmt = stmt.where(
                 exists(
                     select(oe.id).where(
@@ -160,8 +160,7 @@ class OpportunitiesRepository:
             eligibility = OpportunityEligibility(
                 opportunity_id=record.id,
                 education_level=item["education_level"],
-                min_year=item.get("min_year"),
-                max_year=item.get("max_year"),
+                year=item.get("year"),
             )
             self.db.add(eligibility)
 
@@ -194,8 +193,7 @@ class OpportunitiesRepository:
                 eligibility = OpportunityEligibility(
                     opportunity_id=id,
                     education_level=item["education_level"],
-                    min_year=item.get("min_year"),
-                    max_year=item.get("max_year"),
+                    year=item.get("year"),
                 )
                 self.db.add(eligibility)
 
