@@ -1,23 +1,25 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, HttpUrl, field_validator
+from pydantic import BaseModel, field_validator
 from pydantic import Field
 from fastapi import Query
 
 
 class OpportunityBase(BaseModel):
     name: str = Field(..., max_length=512)
-    description: Optional[str] = None
-    deadline: Optional[date] = None
-    steps: Optional[str] = None
-    host: Optional[str] = Field(default=None, max_length=256)
-    type: Optional[str] = Field(default=None, max_length=128)
-    majors: Optional[str] = Field(default=None, max_length=512)
-    link: Optional[str] = None
-    location: Optional[str] = Field(default=None, max_length=256)
-    eligibility: Optional[str] = None
-    funding: Optional[str] = Field(default=None, max_length=256)
+    description: str | None = None
+    deadline: date | None = None
+    steps: str | None = None
+    host: str | None = None
+    type: str | None = None
+    majors: str | None = None
+    link: str | None = None
+    location: str | None = None
+    eligibility: str | None = None
+    funding: str | None = None
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True
@@ -43,17 +45,17 @@ class OpportunityCreate(OpportunityBase):
 
 
 class OpportunityUpdate(BaseModel):
-    name: Optional[str] = Field(default=None, max_length=512)
-    description: Optional[str] = None
-    deadline: Optional[date] = None
-    steps: Optional[str] = None
-    host: Optional[str] = Field(default=None, max_length=256)
-    type: Optional[str] = Field(default=None, max_length=128)
-    majors: Optional[str] = Field(default=None, max_length=512)
-    link: Optional[str] = None
-    location: Optional[str] = Field(default=None, max_length=256)
-    eligibility: Optional[str] = None
-    funding: Optional[str] = Field(default=None, max_length=256)
+    name: str | None = None
+    description: str | None = None
+    deadline: date | None = None
+    steps: str | None = None
+    host: str | None = None
+    type: str | None = None
+    majors: str | None = None
+    link: str | None = None
+    location: str | None = None
+    eligibility: str | None = None
+    funding: str | None = None
 
     class Config:
         from_attributes = True
@@ -73,10 +75,10 @@ class OpportunityListResponse(BaseModel):
 
 
 class OpportunityFilter(BaseModel):
-    type: Optional[str] = Query(default=None, description="Filter by opportunity type")
-    majors: Optional[str] = Query(default=None, description="Filter by majors substring")
-    eligibility: Optional[str] = Query(default=None, description="Filter by eligibility")
-    q: Optional[str] = Query(default=None, description="Search in name/description")
+    type: str | None = Query(default=None, description="Filter by opportunity type")
+    majors: str | None = Query(default=None, description="Filter by majors substring")
+    eligibility: str | None = Query(default=None, description="Filter by eligibility")
+    q: str | None = Query(default=None, description="Search in name/description")
     hide_expired: bool = Query(default=False, description="Hide expired opportunities")
     page: int = Query(default=1, ge=1, description="Page number (1-indexed)")
     size: int = Query(default=15, ge=1, le=1000, description="Page size")
