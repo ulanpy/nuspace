@@ -150,6 +150,9 @@ export default function OpportunitiesPage() {
     };
   }, [accItems]);
 
+  const yearOptions =
+    filters.education_level === "UG" ? [1, 2, 3, 4] : filters.education_level === "GrM" ? [1, 2] : [1, 2, 3, 4];
+
   const onChange = (field: keyof OpportunityFilters, value: string | number | undefined) => {
     setFilters((prev) => ({
       ...prev,
@@ -185,7 +188,7 @@ export default function OpportunitiesPage() {
 
   return (
     <MotionWrapper>
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8 space-y-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             {header}
@@ -285,38 +288,36 @@ export default function OpportunitiesPage() {
               </Select>
             </div>
 
-            {(filters.education_level === "UG" || filters.education_level === "GrM") && (
-              <div>
-                <Label className="text-xs text-gray-500">Year</Label>
-                <Select
-                  value={
-                    typeof filters.min_year === "number" && filters.min_year === filters.max_year
-                      ? String(filters.min_year)
-                      : "__all__"
+            <div>
+              <Label className="text-xs text-gray-500">Year</Label>
+              <Select
+                value={
+                  typeof filters.min_year === "number" && filters.min_year === filters.max_year
+                    ? String(filters.min_year)
+                    : "__all__"
+                }
+                onValueChange={(v) => {
+                  if (v === "__all__") {
+                    setFilters((prev) => ({ ...prev, min_year: undefined, max_year: undefined, page: 1 }));
+                    return;
                   }
-                  onValueChange={(v) => {
-                    if (v === "__all__") {
-                      setFilters((prev) => ({ ...prev, min_year: undefined, max_year: undefined, page: 1 }));
-                      return;
-                    }
-                    const yr = Number(v);
-                    setFilters((prev) => ({ ...prev, min_year: yr, max_year: yr, page: 1 }));
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="All years" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">All years</SelectItem>
-                    {(filters.education_level === "UG" ? [1, 2, 3, 4] : [1, 2]).map((yr) => (
-                      <SelectItem key={yr} value={String(yr)}>
-                        Year {yr}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+                  const yr = Number(v);
+                  setFilters((prev) => ({ ...prev, min_year: yr, max_year: yr, page: 1 }));
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All years" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All years</SelectItem>
+                  {yearOptions.map((yr) => (
+                    <SelectItem key={yr} value={String(yr)}>
+                      Year {yr}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             <div>
               <Label htmlFor="majors" className="text-xs text-gray-500">
@@ -340,25 +341,28 @@ export default function OpportunitiesPage() {
               </Select>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Button
-                variant={filters.hide_expired ? "default" : "outline"}
-                className="flex items-center gap-2 whitespace-nowrap"
-                onClick={() => {
-                  setFilters((prev) => ({
-                    ...prev,
-                    hide_expired: !prev.hide_expired,
-                    page: 1,
-                  }));
-                  setAccItems([]);
-                }}
-              >
-                {filters.hide_expired ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                {filters.hide_expired ? "Show expired" : "Hide expired"}
-              </Button>
-              <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                <span>{displayTotal} results</span>
-                {isFetching && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+            <div className="flex flex-col justify-end gap-2">
+              <Label className="text-xs text-transparent select-none">Spacer</Label>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant={filters.hide_expired ? "default" : "outline"}
+                  className="flex items-center gap-2 whitespace-nowrap"
+                  onClick={() => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      hide_expired: !prev.hide_expired,
+                      page: 1,
+                    }));
+                    setAccItems([]);
+                  }}
+                >
+                  {filters.hide_expired ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  {filters.hide_expired ? "Show expired" : "Hide expired"}
+                </Button>
+                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  <span>{displayTotal} results</span>
+                  {isFetching && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+                </div>
               </div>
             </div>
           </div>
