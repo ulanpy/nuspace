@@ -40,6 +40,51 @@ def upgrade() -> None:
     )
     opportunity_type_enum.create(op.get_bind(), checkfirst=True)
 
+    opportunity_major_enum = sa.Enum(
+        "Engineering Management",
+        "Mechanical and Aerospace Engineering",
+        "Electrical and Computer Engineering",
+        "Chemical and Materials Engineering",
+        "Civil and Environmental Engineering",
+        "Biomedical Engineering",
+        "Mining Engineering",
+        "Petroleum Engineering",
+        "Robotics and Mechatronics Engineering",
+        "Computer Science",
+        "Data Science",
+        "Applied Mathematics",
+        "Mathematics",
+        "Economics",
+        "Business Administration",
+        "Finance",
+        "Life Sciences",
+        "Biological Sciences",
+        "Medical Sciences",
+        "Molecular Medicine",
+        "Pharmacology and Toxicology",
+        "Public Health",
+        "Sports Medicine and Rehabilitation",
+        "Nursing",
+        "Doctor of Medicine",
+        "A Six-Year Medical Program",
+        "Chemistry",
+        "Physics",
+        "Geosciences",
+        "Geology",
+        "Political Science and International Relations",
+        "Public Policy",
+        "Public Administration",
+        "Eurasian Studies",
+        "Sociology",
+        "Anthropology",
+        "History",
+        "Educational Leadership",
+        "Multilingual Education",
+        "World Languages, Literature and Culture",
+        name="opportunity_major",
+    )
+    opportunity_major_enum.create(op.get_bind(), checkfirst=True)
+
     op.create_table(
         "opportunities",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
@@ -48,7 +93,6 @@ def upgrade() -> None:
         sa.Column("deadline", sa.Date(), nullable=True),
         sa.Column("host", sa.String(length=256), nullable=True),
         sa.Column("type", opportunity_type_enum, nullable=False),
-        sa.Column("majors", sa.String(length=512), nullable=True),
         sa.Column("link", sa.String(length=1024), nullable=True),
         sa.Column("location", sa.String(length=256), nullable=True),
         sa.Column("funding", sa.String(length=256), nullable=True),
@@ -63,8 +107,16 @@ def upgrade() -> None:
         sa.Column("max_year", sa.SmallInteger(), nullable=True),
     )
 
+    op.create_table(
+        "opportunity_majors",
+        sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
+        sa.Column("opportunity_id", sa.Integer(), sa.ForeignKey("opportunities.id", ondelete="CASCADE"), nullable=False),
+        sa.Column("major", opportunity_major_enum, nullable=False),
+    )
+
 
 def downgrade() -> None:
+    op.drop_table("opportunity_majors")
     op.drop_table("opportunity_eligibility")
     op.drop_table("opportunities")
     education_level_enum = sa.Enum(
@@ -74,6 +126,50 @@ def downgrade() -> None:
         name="education_level",
     )
     education_level_enum.drop(op.get_bind(), checkfirst=True)
+    opportunity_major_enum = sa.Enum(
+        "Engineering Management",
+        "Mechanical and Aerospace Engineering",
+        "Electrical and Computer Engineering",
+        "Chemical and Materials Engineering",
+        "Civil and Environmental Engineering",
+        "Biomedical Engineering",
+        "Mining Engineering",
+        "Petroleum Engineering",
+        "Robotics and Mechatronics Engineering",
+        "Computer Science",
+        "Data Science",
+        "Applied Mathematics",
+        "Mathematics",
+        "Economics",
+        "Business Administration",
+        "Finance",
+        "Life Sciences",
+        "Biological Sciences",
+        "Medical Sciences",
+        "Molecular Medicine",
+        "Pharmacology and Toxicology",
+        "Public Health",
+        "Sports Medicine and Rehabilitation",
+        "Nursing",
+        "Doctor of Medicine",
+        "A Six-Year Medical Program",
+        "Chemistry",
+        "Physics",
+        "Geosciences",
+        "Geology",
+        "Political Science and International Relations",
+        "Public Policy",
+        "Public Administration",
+        "Eurasian Studies",
+        "Sociology",
+        "Anthropology",
+        "History",
+        "Educational Leadership",
+        "Multilingual Education",
+        "World Languages, Literature and Culture",
+        name="opportunity_major",
+    )
+    opportunity_major_enum.drop(op.get_bind(), checkfirst=True)
     opportunity_type_enum = sa.Enum(
         "research",
         "internship",

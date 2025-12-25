@@ -8,6 +8,7 @@ import {
   UpsertOpportunityInput,
   OpportunityListResponse,
   OPPORTUNITY_TYPES,
+  OPPORTUNITY_MAJORS,
   EDUCATION_LEVELS,
   formatEducationLevel,
   formatOpportunityType,
@@ -133,33 +134,16 @@ export default function OpportunitiesPage() {
     return lastPageCount >= pageSize;
   }, [data?.has_next, data?.items?.length, accItems.length, totalCount, filters.size]);
 
-  const options = useMemo(() => {
-    const tokenize = (value: string | null | undefined) => {
-      if (!value) return [];
-      return value
-        .split(/[;,]/)
-        .map((v) => v.trim())
-        .filter(Boolean);
-    };
-
-    const collectTokens = (values: (string | null | undefined)[]) => {
-      const set = new Set<string>();
-      values.forEach((val) => tokenize(val).forEach((t) => set.add(t)));
-      return Array.from(set)
-        .filter((v) => v.toLowerCase() !== "all")
-        .sort();
-    };
-
-    const items = accItems || [];
-
-    return {
+  const options = useMemo(
+    () => ({
       types: OPPORTUNITY_TYPES,
-      majors: collectTokens(items.map((d) => d.majors)),
-    };
-  }, [accItems]);
+      majors: OPPORTUNITY_MAJORS,
+    }),
+    []
+  );
 
   const yearOptions =
-    filters.education_level === "UG" ? [1, 2, 3, 4] : filters.education_level === "GrM" ? [1, 2] : [1, 2, 3, 4];
+    filters.education_level === "UG" ? [1, 2, 3, 4] : filters.education_level === "GrM" ? [1, 2] : [];
 
   const onChange = (field: keyof OpportunityFilters, value: string | number | undefined) => {
     setFilters((prev) => ({

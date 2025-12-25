@@ -112,12 +112,15 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
         )}
 
         <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-300">
-          {opportunity.majors && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200">
+          {(opportunity.majors || []).map((m) => (
+            <span
+              key={m}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
+            >
               <GraduationCap className="h-3 w-3" />
-              {opportunity.majors}
+              {m}
             </span>
-          )}
+          ))}
           {opportunity.location && (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-purple-50 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200">
               <MapPin className="h-3 w-3" />
@@ -131,23 +134,6 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
             </span>
           )}
         </div>
-
-        {(opportunity.steps || opportunity.eligibility) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {opportunity.steps && (
-              <div className="rounded-xl bg-gray-50 dark:bg-gray-800/70 p-3">
-                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Steps</div>
-                <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line">{opportunity.steps}</p>
-              </div>
-            )}
-            {opportunity.eligibility && (
-              <div className="rounded-xl bg-gray-50 dark:bg-gray-800/70 p-3">
-                <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Eligibility</div>
-                <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line">{opportunity.eligibility}</p>
-              </div>
-            )}
-          </div>
-        )}
 
         <div className="flex items-center justify-between pt-2">
           {opportunity.link ? (

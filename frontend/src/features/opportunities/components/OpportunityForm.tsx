@@ -112,12 +112,54 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
         </div>
         <div>
           <Label htmlFor="majors">Majors</Label>
-          <Input
-            id="majors"
-            value={form.majors || ""}
-            onChange={(e) => handleChange("majors", e.target.value)}
-            placeholder="CS; EE"
-          />
+          <div className="space-y-2">
+            <Select
+              onValueChange={(v) => {
+                if (!v) return;
+                setForm((prev) => {
+                  const current = prev.majors || [];
+                  if (current.includes(v)) return prev;
+                  return { ...prev, majors: [...current, v] };
+                });
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Add major" />
+              </SelectTrigger>
+              <SelectContent>
+                {OPPORTUNITY_MAJORS.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex flex-wrap gap-2">
+              {(form.majors || []).map((m) => (
+                <span
+                  key={m}
+                  className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800"
+                >
+                  {m}
+                  <button
+                    type="button"
+                    className="text-blue-700 hover:text-blue-900"
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        majors: (prev.majors || []).filter((x) => x !== m),
+                      }))
+                    }
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              {(form.majors || []).length === 0 && (
+                <span className="text-xs text-gray-500">No majors added</span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
       <div>

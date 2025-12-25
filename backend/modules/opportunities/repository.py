@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from httpx import AsyncClient
 
 from backend.common.utils import meilisearch
-from backend.core.database.models import Opportunity, OpportunityEligibility
+from backend.core.database.models import Opportunity, OpportunityEligibility, OpportunityMajorMap
 from backend.modules.opportunities import schemas
 
 
@@ -41,7 +41,14 @@ class OpportunitiesRepository:
             if flt.type:
                 stmt = stmt.where(Opportunity.type == flt.type)
             if flt.majors:
-                stmt = stmt.where(Opportunity.majors.ilike(f"%{flt.majors}%"))
+                stmt = stmt.where(
+                    exists(
+                        select(OpportunityMajorMap.id).where(
+                            OpportunityMajorMap.opportunity_id == Opportunity.id,
+                            OpportunityMajorMap.major == flt.majors,
+                        )
+                    )
+                )
             if flt.education_level or flt.min_year is not None or flt.max_year is not None:
                 oe = OpportunityEligibility
                 sub_conditions = []
@@ -86,7 +93,14 @@ class OpportunitiesRepository:
         if flt.type:
             stmt = stmt.where(Opportunity.type == flt.type)
         if flt.majors:
-            stmt = stmt.where(Opportunity.majors.ilike(f"%{flt.majors}%"))
+            stmt = stmt.where(
+                exists(
+                    select(OpportunityMajorMap.id).where(
+                        OpportunityMajorMap.opportunity_id == Opportunity.id,
+                        OpportunityMajorMap.major == flt.majors,
+                    )
+                )
+            )
         if flt.education_level or flt.min_year is not None or flt.max_year is not None:
             oe = OpportunityEligibility
             sub_conditions = []
@@ -137,6 +151,7 @@ class OpportunitiesRepository:
     async def create(self, payload: schemas.OpportunityCreate) -> Opportunity:
         data = payload.model_dump()
         eligibility_data = data.pop("eligibility", []) or []
+        majors_data = data.pop("majors", []) or []
         record = Opportunity(**data)
         self.db.add(record)
         await self.db.flush()
@@ -150,6 +165,10 @@ class OpportunitiesRepository:
             )
             self.db.add(eligibility)
 
+        for major in majors_data:
+            major_row = OpportunityMajorMap(opportunity_id=record.id, major=major)
+            self.db.add(major_row)
+
         await self.db.commit()
         await self.db.refresh(record)
         return record
@@ -157,6 +176,7 @@ class OpportunitiesRepository:
     async def update(self, id: int, payload: schemas.OpportunityUpdate) -> Optional[Opportunity]:
         data = {k: v for k, v in payload.model_dump(exclude_unset=True).items()}
         eligibility_data = data.pop("eligibility", None)
+        majors_data = data.pop("majors", None)
 
         if data:
             await self.db.execute(
@@ -178,6 +198,16 @@ class OpportunitiesRepository:
                     max_year=item.get("max_year"),
                 )
                 self.db.add(eligibility)
+
+        if majors_data is not None:
+            await self.db.execute(
+                OpportunityMajorMap.__table__.delete().where(
+                    OpportunityMajorMap.opportunity_id == id
+                )
+            )
+            for major in majors_data:
+                major_row = OpportunityMajorMap(opportunity_id=id, major=major)
+                self.db.add(major_row)
 
         await self.db.commit()
         return await self.get(id)
