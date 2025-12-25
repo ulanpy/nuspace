@@ -25,7 +25,6 @@ export type Opportunity = {
   name: string;
   description?: string | null;
   deadline?: string | null;
-  steps?: string | null;
   host?: string | null;
   type: OpportunityType;
   majors?: string | null;

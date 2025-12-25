@@ -46,7 +46,6 @@ class Opportunity(Base):
     name: Mapped[str] = mapped_column(String(512), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     deadline: Mapped[date | None] = mapped_column(Date, nullable=True)
-    steps: Mapped[str | None] = mapped_column(Text, nullable=True)
     host: Mapped[str | None] = mapped_column(String(256), nullable=True)
     type: Mapped[OpportunityType] = mapped_column(
         SAEnum(OpportunityType, name="opportunity_type"),

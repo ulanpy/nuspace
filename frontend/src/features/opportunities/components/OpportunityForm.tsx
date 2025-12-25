@@ -24,7 +24,6 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
     name: "",
     description: "",
     deadline: "",
-    steps: "",
     host: "",
     type: OPPORTUNITY_TYPES[0],
     majors: "",
@@ -40,7 +39,6 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
         name: initial.name || "",
         description: initial.description || "",
         deadline: initial.deadline || "",
-        steps: initial.steps || "",
         host: initial.host || "",
         type: initial.type || OPPORTUNITY_TYPES[0],
         majors: initial.majors || "",
@@ -129,24 +127,6 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
           value={form.description || ""}
           onChange={(e) => handleChange("description", e.target.value)}
         />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <Label htmlFor="steps">Steps</Label>
-          <Input
-            id="steps"
-            value={form.steps || ""}
-            onChange={(e) => handleChange("steps", e.target.value)}
-          />
-        </div>
-        <div>
-          <Label htmlFor="eligibility">Eligibility</Label>
-          <Input
-            id="eligibility"
-            value={form.eligibility || ""}
-            onChange={(e) => handleChange("eligibility", e.target.value)}
-          />
-        </div>
       </div>
       <div className="space-y-2">
         <div className="flex items-center justify-between">

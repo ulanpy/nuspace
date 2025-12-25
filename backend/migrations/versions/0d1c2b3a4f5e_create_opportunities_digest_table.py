@@ -46,7 +46,6 @@ def upgrade() -> None:
         sa.Column("name", sa.String(length=512), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("deadline", sa.Date(), nullable=True),
-        sa.Column("steps", sa.Text(), nullable=True),
         sa.Column("host", sa.String(length=256), nullable=True),
         sa.Column("type", opportunity_type_enum, nullable=False),
         sa.Column("majors", sa.String(length=512), nullable=True),
