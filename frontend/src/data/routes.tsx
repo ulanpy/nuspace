@@ -17,6 +17,7 @@ export const DEGREE_AUDIT_INFO = "degree-audit-info";
 export const DORM_EATS = "dorm-eats";
 export const EVENTS = "events";
 export const COMMUNITIES = "communities";
+export const OPPORTUNITIES = "opportunities";
 export const SGOTINISH = "sgotinish";
 export const STUDENT = "student";
 export const SG = "sg";
@@ -43,6 +44,9 @@ export const ROUTES = {
     ROOT: buildPath(EVENTS),
     DETAIL: buildPath(EVENTS, ":id"),
     DETAIL_FN: (id: string) => buildPath(EVENTS, id),
+  },
+  OPPORTUNITIES: {
+    ROOT: buildPath(OPPORTUNITIES),
   },
   COMMUNITIES: {
     ROOT: buildPath(COMMUNITIES),
@@ -169,6 +173,10 @@ export const LazyRoutes: {
     {
       path: ROUTES.COMMUNITIES.DETAIL,
       Component: withLazy(() => import("@/features/communities/pages/single")),
+    },
+    {
+      path: ROUTES.OPPORTUNITIES.ROOT,
+      Component: withLazy(() => import("@/features/opportunities/pages/OpportunitiesPage")),
     },
   ],
   EVENTS: [

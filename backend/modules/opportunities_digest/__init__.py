@@ -1,0 +1,1 @@
+"""Opportunities digest feature module."""
