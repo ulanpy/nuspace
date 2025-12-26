@@ -103,7 +103,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
         sa.Column("opportunity_id", sa.Integer(), sa.ForeignKey("opportunities.id", ondelete="CASCADE"), nullable=False),
         sa.Column("education_level", education_level_enum, nullable=False),
-        sa.Column("year", sa.SmallInteger(), nullable=False),
+        sa.Column("year", sa.SmallInteger(), nullable=True),
     )
 
     op.create_table(

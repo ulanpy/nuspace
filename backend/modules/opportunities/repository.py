@@ -49,15 +49,13 @@ class OpportunitiesRepository:
                         )
                     )
                 )
-            if flt.education_level or flt.min_year is not None or flt.max_year is not None:
+            if flt.education_level or flt.years:
                 oe = OpportunityEligibility
                 sub_conditions = []
                 if flt.education_level:
                     sub_conditions.append(oe.education_level.in_(flt.education_level))
-                if flt.min_year is not None:
-                    sub_conditions.append(oe.year >= flt.min_year)
-                if flt.max_year is not None:
-                    sub_conditions.append(oe.year <= flt.max_year)
+                if flt.years:
+                    sub_conditions.append(oe.year.in_(flt.years))
                 stmt = stmt.where(
                     exists(
                         select(oe.id).where(
@@ -101,15 +99,13 @@ class OpportunitiesRepository:
                     )
                 )
             )
-        if flt.education_level or flt.min_year is not None or flt.max_year is not None:
+        if flt.education_level or flt.years:
             oe = OpportunityEligibility
             sub_conditions = []
             if flt.education_level:
                 sub_conditions.append(oe.education_level.in_(flt.education_level))
-            if flt.min_year is not None:
-                sub_conditions.append(oe.year >= flt.min_year)
-            if flt.max_year is not None:
-                sub_conditions.append(oe.year <= flt.max_year)
+            if flt.years:
+                sub_conditions.append(oe.year.in_(flt.years))
             stmt = stmt.where(
                 exists(
                     select(oe.id).where(

@@ -78,7 +78,7 @@ class OpportunityEligibility(Base):
         SAEnum(EducationLevel, name="education_level"),
         nullable=False,
     )
-    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    year: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
 class Opportunity(Base):
