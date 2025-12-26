@@ -73,17 +73,8 @@ export default function OpportunitiesPage() {
 
   const baseFilterKey = useMemo(
     () =>
-      `${filters.type ?? ""}|${filters.majors ?? ""}|${filters.education_level ?? ""}|${filters.min_year ?? ""}|${filters.max_year ?? ""}|${filters.q ?? ""}|${filters.hide_expired ? "hide" : "all"}|${filters.size ?? 15}`,
-    [
-      filters.type,
-      filters.majors,
-      filters.education_level,
-      filters.min_year,
-      filters.max_year,
-      filters.q,
-      filters.hide_expired,
-      filters.size,
-    ]
+      `${filters.type ?? ""}|${filters.majors ?? ""}|${filters.education_level ?? ""}|${(filters.years || []).join(",")}|${filters.q ?? ""}|${filters.hide_expired ? "hide" : "all"}|${filters.size ?? 15}`,
+    [filters.type, filters.majors, filters.education_level, filters.years, filters.q, filters.hide_expired, filters.size]
   );
   const prevBaseFilterKey = useRef(baseFilterKey);
 
@@ -145,7 +136,7 @@ export default function OpportunitiesPage() {
   const yearOptions =
     filters.education_level === "UG" ? [1, 2, 3, 4] : filters.education_level === "GrM" ? [1, 2] : [];
 
-  const onChange = (field: keyof OpportunityFilters, value: string | number | undefined) => {
+  const onChange = (field: keyof OpportunityFilters, value: string | number | string[] | number[] | undefined) => {
     setFilters((prev) => ({
       ...prev,
       [field]: value === "" ? undefined : (value as any),
@@ -259,9 +250,7 @@ export default function OpportunitiesPage() {
                   setFilters((prev) => ({
                     ...prev,
                     education_level: v === "__all__" ? undefined : (v as any),
-                    // reset years on change
-                    min_year: undefined,
-                    max_year: undefined,
+                    years: undefined,
                     page: 1,
                   }))
                 }
@@ -283,18 +272,14 @@ export default function OpportunitiesPage() {
             <div>
               <Label className="text-xs text-gray-500">Year</Label>
               <Select
-                value={
-                  typeof filters.min_year === "number" && filters.min_year === filters.max_year
-                    ? String(filters.min_year)
-                    : "__all__"
-                }
+                value={filters.years && filters.years.length === 1 ? String(filters.years[0]) : "__all__"}
                 onValueChange={(v) => {
                   if (v === "__all__") {
-                    setFilters((prev) => ({ ...prev, min_year: undefined, max_year: undefined, page: 1 }));
+                    setFilters((prev) => ({ ...prev, years: undefined, page: 1 }));
                     return;
                   }
                   const yr = Number(v);
-                  setFilters((prev) => ({ ...prev, min_year: yr, max_year: yr, page: 1 }));
+                  setFilters((prev) => ({ ...prev, years: [yr], page: 1 }));
                 }}
               >
                 <SelectTrigger className="w-full">

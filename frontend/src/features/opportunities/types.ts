@@ -82,9 +82,8 @@ export type Opportunity = {
 export type OpportunityFilters = {
   type?: OpportunityType | OpportunityType[];
   majors?: OpportunityMajor | OpportunityMajor[];
-  education_level?: EducationLevel;
-  min_year?: number;
-  max_year?: number;
+  education_level?: EducationLevel | EducationLevel[];
+  years?: number[];
   q?: string;
   hide_expired?: boolean;
   page?: number;

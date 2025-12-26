@@ -5,11 +5,18 @@ export const fetchOpportunities = async (
   filters: OpportunityFilters,
 ): Promise<OpportunityListResponse> => {
   const params = new URLSearchParams();
-  if (filters.type) params.set("type", filters.type);
-  if (filters.majors) params.set("majors", filters.majors);
-  if (filters.education_level) params.set("education_level", filters.education_level);
-  if (typeof filters.min_year === "number") params.set("min_year", String(filters.min_year));
-  if (typeof filters.max_year === "number") params.set("max_year", String(filters.max_year));
+  const appendList = (key: string, value: string | string[]) => {
+    if (Array.isArray(value)) {
+      value.forEach((v) => params.append(key, v));
+    } else {
+      params.append(key, value);
+    }
+  };
+
+  if (filters.type) appendList("type", filters.type as any);
+  if (filters.majors) appendList("majors", filters.majors as any);
+  if (filters.education_level) appendList("education_level", filters.education_level as any);
+  if (filters.years) filters.years.forEach((y) => params.append("years", String(y)));
   if (filters.q) params.set("q", filters.q);
   if (filters.hide_expired) params.set("hide_expired", "true");
   if (filters.page) params.set("page", String(filters.page));
