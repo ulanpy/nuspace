@@ -1,17 +1,99 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Opportunity,
-  OpportunityType,
   OPPORTUNITY_TYPES,
+  OPPORTUNITY_MAJORS,
   UpsertOpportunityInput,
-  formatOpportunityType,
   EDUCATION_LEVELS,
   EducationLevel,
 } from "../types";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
 import { Button } from "@/components/atoms/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/popover";
+import { Textarea } from "@/components/atoms/textarea";
+import { MarkdownToolbar, type FormattingAction } from "@/components/molecules/MarkdownToolbar";
+
+const MAX_DESCRIPTION_LENGTH = 1250;
+
+type OptionItem = { label: string; value: string };
+
+const MultiCheckboxDropdown = ({
+  label,
+  options,
+  selected,
+  onChange,
+  placeholder = "All",
+}: {
+  label?: string;
+  options: OptionItem[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+}) => {
+  const toggle = (value: string) => {
+    if (selected.includes(value)) {
+      onChange(selected.filter((v) => v !== value));
+    } else {
+      onChange([...selected, value]);
+    }
+  };
+
+  const allSelected = selected.length === options.length;
+  const display =
+    selected.length === 0
+      ? placeholder
+      : selected.length === options.length
+        ? "All"
+        : `${selected.length} selected`;
+
+  return (
+    <div className="flex h-full flex-col justify-end gap-1">
+      {label ? <Label className="text-xs text-gray-500">{label}</Label> : null}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="w-full justify-between h-11">
+            <span className="truncate text-left">{display}</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 space-y-2">
+          <div className="flex items-center justify-between text-sm font-medium">
+            <span>Select</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7"
+              onClick={() => onChange(allSelected ? [] : options.map((o) => o.value))}
+            >
+              {allSelected ? "Clear all" : "Select all"}
+            </Button>
+          </div>
+          <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
+            {options.map((opt) => {
+              const active = selected.includes(opt.value);
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => toggle(opt.value)}
+                  className="flex w-full items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left text-sm hover:border-border/60 hover:bg-muted/40"
+                >
+                  <span
+                    className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-sm border text-[10px] leading-none ${active ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"}`}
+                  >
+                    {active ? "✓" : ""}
+                  </span>
+                  <span className="truncate">{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+};
 
 type Props = {
   initial?: Opportunity | null;
@@ -20,45 +102,178 @@ type Props = {
 };
 
 export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
+  const typeOptions = OPPORTUNITY_TYPES.map((t) => ({ value: t, label: t.replace(/_/g, " ") }));
+  const majorOptions = OPPORTUNITY_MAJORS.map((m) => ({ value: m, label: m }));
+  const levelOptions = EDUCATION_LEVELS.map((lvl) => ({
+    value: lvl,
+    label: lvl === "UG" ? "Undergraduate" : lvl === "GrM" ? "Master" : "PhD",
+  }));
+  const yearOptions = [1, 2, 3, 4].map((y) => ({ value: String(y), label: `Year ${y}` }));
+
   const [form, setForm] = useState<UpsertOpportunityInput>({
     name: "",
     description: "",
-    deadline: "",
     host: "",
-    type: OPPORTUNITY_TYPES[0],
-    majors: "",
     link: "",
     location: "",
-    eligibility: [],
     funding: "",
   });
+
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([OPPORTUNITY_TYPES[0]]);
+  const [selectedMajors, setSelectedMajors] = useState<string[]>([]);
+  const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
+  const [selectedYears, setSelectedYears] = useState<string[]>([]);
 
   useEffect(() => {
     if (initial) {
       setForm({
         name: initial.name || "",
         description: initial.description || "",
-        deadline: initial.deadline || "",
         host: initial.host || "",
-        type: initial.type || OPPORTUNITY_TYPES[0],
-        majors: initial.majors || "",
         link: initial.link || "",
         location: initial.location || "",
-        eligibility: initial.eligibility || [],
         funding: initial.funding || "",
       });
+      setSelectedTypes(initial.type ? (Array.isArray(initial.type) ? initial.type : [initial.type]) : [OPPORTUNITY_TYPES[0]]);
+      setSelectedMajors(Array.isArray(initial.majors) ? initial.majors : []);
+      setSelectedLevels(initial.eligibility?.map((e) => e.education_level) || []);
+      setSelectedYears(
+        initial.eligibility?.flatMap((e) =>
+          typeof (e as any).year === "number" ? [String((e as any).year)] : []
+        ) || []
+      );
     } else {
-      setForm((prev) => ({ ...prev, name: "", type: OPPORTUNITY_TYPES[0], eligibility: [] }));
+      setForm((prev) => ({
+        ...prev,
+        name: "",
+      }));
+      setSelectedTypes([]);
+      setSelectedMajors([]);
+      setSelectedLevels([]);
+      setSelectedYears([]);
     }
   }, [initial]);
 
-  const handleChange = (key: keyof UpsertOpportunityInput, value: string | OpportunityType) => {
+  const handleChange = (key: keyof UpsertOpportunityInput, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const toggleMajor = (value: OpportunityMajor) => {
+    setForm((prev) => {
+      const current = Array.isArray(prev.majors) ? prev.majors : [];
+      const exists = current.includes(value);
+      const next = exists ? current.filter((m) => m !== value) : [...current, value];
+      return { ...prev, majors: next };
+    });
+  };
+
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const updateDescription = (nextValue: string, selectionStart?: number, selectionEnd?: number) => {
+    setForm((prev) => ({
+      ...prev,
+      description: nextValue.slice(0, MAX_DESCRIPTION_LENGTH),
+    }));
+
+    requestAnimationFrame(() => {
+      if (!textareaRef.current) return;
+      if (typeof selectionStart === "number" && typeof selectionEnd === "number") {
+        textareaRef.current.setSelectionRange(selectionStart, selectionEnd);
+      }
+      textareaRef.current.focus();
+    });
+  };
+
+  const applyFormatting = (action: FormattingAction) => {
+    if (!textareaRef.current) return;
+    const textarea = textareaRef.current;
+    const { selectionStart, selectionEnd, value } = textarea;
+    if (selectionStart === selectionEnd) return;
+    const selectedText = value.slice(selectionStart, selectionEnd);
+    let replacement = "";
+    let selectionOffsetStart = 0;
+    let selectionLength = 0;
+
+    const wrapText = (prefix: string, suffix: string) => {
+      replacement = `${prefix}${selectedText}${suffix}`;
+      selectionOffsetStart = prefix.length;
+      selectionLength = selectedText.length;
+    };
+
+    const formatLines = (formatter: (line: string, index: number) => string) => {
+      const lines = selectedText.split(/\r?\n/);
+      replacement = lines.map((line, index) => formatter(line, index)).join("\n");
+      selectionOffsetStart = 0;
+      selectionLength = replacement.length;
+    };
+
+    switch (action) {
+      case "bold":
+        wrapText("**", "**");
+        break;
+      case "italic":
+        wrapText("_", "_");
+        break;
+      case "heading":
+        formatLines((line) => `## ${line}`);
+        break;
+      case "unordered-list":
+        formatLines((line) => `- ${line}`);
+        break;
+      case "ordered-list":
+        formatLines((line, index) => `${index + 1}. ${line}`);
+        break;
+      case "quote":
+        formatLines((line) => `> ${line}`);
+        break;
+      default:
+        return;
+    }
+
+    const nextValue = value.slice(0, selectionStart) + replacement + value.slice(selectionEnd);
+    const nextSelectionStart = selectionStart + selectionOffsetStart;
+    const nextSelectionEnd = nextSelectionStart + selectionLength;
+
+    updateDescription(nextValue, nextSelectionStart, nextSelectionEnd);
+  };
+
+  const handleInsertLink = () => {
+    if (!textareaRef.current) return;
+    const textarea = textareaRef.current;
+    const { selectionStart, selectionEnd, value } = textarea;
+    const selectedText = value.slice(selectionStart, selectionEnd);
+
+    const linkLabel = selectedText || window.prompt("Link text", "Opportunity link") || "Opportunity link";
+    const href = window.prompt("URL (include https://)", "https://");
+
+    if (!href) return;
+
+    const linkMarkdown = `[${linkLabel}](${href})`;
+    const nextValue = value.slice(0, selectionStart) + linkMarkdown + value.slice(selectionEnd);
+    const nextSelectionStart = selectionStart + linkMarkdown.length;
+
+    updateDescription(nextValue, nextSelectionStart, nextSelectionStart);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    const yearValue =
+      selectedYears.length > 0 ? Number(selectedYears[selectedYears.length - 1]) : null;
+
+    const eligibility =
+      selectedLevels.length > 0
+        ? selectedLevels.map((lvl) => ({
+            education_level: lvl as EducationLevel,
+            year: yearValue,
+          }))
+        : [];
+
+    onSubmit({
+      ...form,
+      type: selectedTypes[0] || OPPORTUNITY_TYPES[0],
+      majors: selectedMajors,
+      eligibility,
+    });
   };
 
   return (
@@ -73,24 +288,6 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
         />
       </div>
       <div>
-        <Label htmlFor="type">Type</Label>
-        <Select
-          value={form.type}
-          onValueChange={(v) => handleChange("type", v as OpportunityType)}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select type" />
-          </SelectTrigger>
-          <SelectContent>
-            {OPPORTUNITY_TYPES.map((t) => (
-              <SelectItem key={t} value={t}>
-                {formatOpportunityType(t)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
         <Label htmlFor="host">Host</Label>
         <Input
           id="host"
@@ -100,182 +297,51 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div>
-          <Label htmlFor="deadline">Deadline</Label>
-          <Input
-            id="deadline"
-            type="date"
-            value={form.deadline ? form.deadline.slice(0, 10) : ""}
-            onChange={(e) => handleChange("deadline", e.target.value)}
-          />
-          <p className="text-xs text-gray-500">Leave empty for Year-round</p>
-        </div>
-        <div>
-          <Label htmlFor="majors">Majors</Label>
-          <div className="space-y-2">
-            <Select
-              onValueChange={(v) => {
-                if (!v) return;
-                setForm((prev) => {
-                  const current = prev.majors || [];
-                  if (current.includes(v)) return prev;
-                  return { ...prev, majors: [...current, v] };
-                });
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Add major" />
-              </SelectTrigger>
-              <SelectContent>
-                {OPPORTUNITY_MAJORS.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex flex-wrap gap-2">
-              {(form.majors || []).map((m) => (
-                <span
-                  key={m}
-                  className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800"
-                >
-                  {m}
-                  <button
-                    type="button"
-                    className="text-blue-700 hover:text-blue-900"
-                    onClick={() =>
-                      setForm((prev) => ({
-                        ...prev,
-                        majors: (prev.majors || []).filter((x) => x !== m),
-                      }))
-                    }
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-              {(form.majors || []).length === 0 && (
-                <span className="text-xs text-gray-500">No majors added</span>
-              )}
-            </div>
-          </div>
-        </div>
+        <MultiCheckboxDropdown
+          label="Type"
+          options={typeOptions}
+          selected={selectedTypes}
+          onChange={(next) => setSelectedTypes(next.slice(-1))} // single select behavior
+        />
+        <MultiCheckboxDropdown
+          label="Majors"
+          options={majorOptions}
+          selected={selectedMajors}
+          onChange={setSelectedMajors}
+        />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <MultiCheckboxDropdown
+          label="Education level"
+          options={levelOptions}
+          selected={selectedLevels}
+          onChange={setSelectedLevels}
+        />
+        <MultiCheckboxDropdown
+          label="Year"
+          options={yearOptions}
+          selected={selectedYears}
+          onChange={(next) => setSelectedYears(next.slice(-1))} // single select behavior
+        />
       </div>
       <div>
         <Label htmlFor="description">Description</Label>
-        <Input
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
+            {form.description?.length ?? 0} / {MAX_DESCRIPTION_LENGTH}
+          </span>
+        </div>
+        <MarkdownToolbar onFormat={applyFormatting} onInsertLink={handleInsertLink} />
+        <Textarea
+          ref={textareaRef}
           id="description"
           value={form.description || ""}
-          onChange={(e) => handleChange("description", e.target.value)}
+          onChange={(e) => updateDescription(e.target.value)}
+          placeholder="Describe the opportunity, benefits, selection steps, etc."
+          className="min-h-[120px]"
+          maxLength={MAX_DESCRIPTION_LENGTH}
+          required
         />
-      </div>
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label>Eligibility</Label>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              setForm((prev) => ({
-                ...prev,
-                eligibility: [
-                  ...(prev.eligibility || []),
-                  { education_level: EDUCATION_LEVELS[0], min_year: null, max_year: null },
-                ],
-              }))
-            }
-          >
-            Add
-          </Button>
-        </div>
-        {(form.eligibility || []).length === 0 && (
-          <p className="text-xs text-gray-500">No eligibility added.</p>
-        )}
-        {(form.eligibility || []).map((item, idx) => (
-          <div
-            key={idx}
-            className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end rounded-lg border border-border/60 p-3"
-          >
-            <div>
-              <Label className="text-xs text-gray-500">Education level</Label>
-              <Select
-                value={item.education_level}
-                onValueChange={(v) =>
-                  setForm((prev) => {
-                    const next = [...(prev.eligibility || [])];
-                    next[idx] = { ...next[idx], education_level: v as EducationLevel };
-                    if (v === "PhD") {
-                      next[idx].min_year = null;
-                      next[idx].max_year = null;
-                    }
-                    return { ...prev, eligibility: next };
-                  })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select level" />
-                </SelectTrigger>
-                <SelectContent>
-                  {EDUCATION_LEVELS.map((lvl) => (
-                    <SelectItem key={lvl} value={lvl}>
-                      {lvl === "UG" ? "Undergraduate" : lvl === "GrM" ? "Master" : "PhD"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs text-gray-500">Min year</Label>
-              <Input
-                type="number"
-                min={1}
-                max={item.education_level === "UG" ? 4 : item.education_level === "GrM" ? 2 : undefined}
-                value={item.min_year ?? ""}
-                onChange={(e) =>
-                  setForm((prev) => {
-                    const next = [...(prev.eligibility || [])];
-                    next[idx] = { ...next[idx], min_year: e.target.value ? Number(e.target.value) : null };
-                    return { ...prev, eligibility: next };
-                  })
-                }
-                disabled={item.education_level === "PhD"}
-              />
-            </div>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <Label className="text-xs text-gray-500">Max year</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={item.education_level === "UG" ? 4 : item.education_level === "GrM" ? 2 : undefined}
-                  value={item.max_year ?? ""}
-                  onChange={(e) =>
-                    setForm((prev) => {
-                      const next = [...(prev.eligibility || [])];
-                      next[idx] = { ...next[idx], max_year: e.target.value ? Number(e.target.value) : null };
-                      return { ...prev, eligibility: next };
-                    })
-                  }
-                  disabled={item.education_level === "PhD"}
-                />
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() =>
-                  setForm((prev) => ({
-                    ...prev,
-                    eligibility: (prev.eligibility || []).filter((_, i) => i !== idx),
-                  }))
-                }
-              >
-                Remove
-              </Button>
-            </div>
-          </div>
-        ))}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>

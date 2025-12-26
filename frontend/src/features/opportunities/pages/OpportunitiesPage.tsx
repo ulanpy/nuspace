@@ -22,6 +22,7 @@ import { OpportunityForm } from "../components/OpportunityForm";
 import { useUser } from "@/hooks/use-user";
 import { queryClient } from "@/utils/query-client";
 import { Modal } from "@/components/atoms/modal";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
 
 const ALLOWED_OPPORTUNITY_EMAILS = [
@@ -29,11 +30,116 @@ const ALLOWED_OPPORTUNITY_EMAILS = [
   "bob@example.com",
 ] as const;
 
+type OptionItem = { label: string; value: string };
+
+const MultiCheckboxDropdown = ({
+  label,
+  options,
+  selected,
+  onChange,
+  placeholder = "All",
+}: {
+  label?: string;
+  options: OptionItem[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+}) => {
+  const toggle = (value: string) => {
+    if (selected.includes(value)) {
+      onChange(selected.filter((v) => v !== value));
+    } else {
+      onChange([...selected, value]);
+    }
+  };
+
+  const allSelected = selected.length === options.length;
+
+  const display =
+    selected.length === 0
+      ? placeholder
+      : selected.length === options.length
+        ? "All"
+        : `${selected.length} selected`;
+
+  return (
+    <div className="flex h-full flex-col justify-end gap-1">
+      {label ? <Label className="text-xs text-gray-500">{label}</Label> : null}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="w-full justify-between h-11">
+            <span className="truncate text-left">{display}</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 space-y-2">
+          <div className="flex items-center justify-between text-sm font-medium">
+            <span>Select</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7"
+              onClick={() => onChange(allSelected ? [] : options.map((o) => o.value))}
+            >
+              {allSelected ? "Clear all" : "Select all"}
+            </Button>
+          </div>
+          <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
+            {options.map((opt) => {
+              const active = selected.includes(opt.value);
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => toggle(opt.value)}
+                  className="flex w-full items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left text-sm hover:border-border/60 hover:bg-muted/40"
+                >
+                  <span
+                    className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-sm border text-[10px] leading-none ${active ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"}`}
+                  >
+                    {active ? "✓" : ""}
+                  </span>
+                  <span className="truncate">{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+};
+
 export default function OpportunitiesPage() {
+  const typeOptions = useMemo<OptionItem[]>(
+    () => OPPORTUNITY_TYPES.map((t) => ({ value: t, label: formatOpportunityType(t) })),
+    []
+  );
+
+  const majorOptions = useMemo<OptionItem[]>(
+    () => OPPORTUNITY_MAJORS.map((m) => ({ value: m, label: m })),
+    []
+  );
+
+  const levelOptions = useMemo<OptionItem[]>(
+    () => EDUCATION_LEVELS.map((lvl) => ({ value: lvl, label: formatEducationLevel(lvl) })),
+    []
+  );
+
+  const yearOptions = useMemo<OptionItem[]>(
+    () => [1, 2, 3, 4].map((y) => ({ value: String(y), label: `Year ${y}` })),
+    []
+  );
+
   const [filters, setFilters] = useState<OpportunityFilters>({
     page: 1,
     size: 15,
     hide_expired: false,
+    type: [],
+    majors: [],
+    education_level: [],
+    min_year: undefined,
+    max_year: undefined,
   });
   const [accItems, setAccItems] = useState<Opportunity[]>([]);
   const [editing, setEditing] = useState<Opportunity | null>(null);
@@ -73,8 +179,17 @@ export default function OpportunitiesPage() {
 
   const baseFilterKey = useMemo(
     () =>
-      `${filters.type ?? ""}|${filters.majors ?? ""}|${filters.education_level ?? ""}|${(filters.years || []).join(",")}|${filters.q ?? ""}|${filters.hide_expired ? "hide" : "all"}|${filters.size ?? 15}`,
-    [filters.type, filters.majors, filters.education_level, filters.years, filters.q, filters.hide_expired, filters.size]
+      `${(filters.type || []).join(",")}|${(filters.majors || []).join(",")}|${(filters.education_level || []).join(",")}|${filters.min_year ?? ""}|${filters.max_year ?? ""}|${filters.q ?? ""}|${filters.hide_expired ? "hide" : "all"}|${filters.size ?? 15}`,
+    [
+      filters.type,
+      filters.majors,
+      filters.education_level,
+      filters.min_year,
+      filters.max_year,
+      filters.q,
+      filters.hide_expired,
+      filters.size,
+    ]
   );
   const prevBaseFilterKey = useRef(baseFilterKey);
 
@@ -125,18 +240,7 @@ export default function OpportunitiesPage() {
     return lastPageCount >= pageSize;
   }, [data?.has_next, data?.items?.length, accItems.length, totalCount, filters.size]);
 
-  const options = useMemo(
-    () => ({
-      types: OPPORTUNITY_TYPES,
-      majors: OPPORTUNITY_MAJORS,
-    }),
-    []
-  );
-
-  const yearOptions =
-    filters.education_level === "UG" ? [1, 2, 3, 4] : filters.education_level === "GrM" ? [1, 2] : [];
-
-  const onChange = (field: keyof OpportunityFilters, value: string | number | string[] | number[] | undefined) => {
+  const onChange = (field: keyof OpportunityFilters, value: string | number | undefined) => {
     setFilters((prev) => ({
       ...prev,
       [field]: value === "" ? undefined : (value as any),
@@ -177,29 +281,6 @@ export default function OpportunitiesPage() {
             {header}
           </div>
 
-          {canManage && (
-            <div className="flex justify-end">
-              <>
-                <Button className="flex items-center gap-2" onClick={() => setIsFormOpen(true)}>
-                  <Plus className="h-4 w-4" />
-                  Add Opportunity
-                </Button>
-                <Modal
-                  isOpen={isFormOpen}
-                  onClose={() => { setIsFormOpen(false); setEditing(null); }}
-                  title={editing ? "Edit Opportunity" : "Add Opportunity"}
-                  className="max-w-2xl"
-                >
-                  <OpportunityForm
-                    initial={editing}
-                    onSubmit={handleSubmitForm}
-                    onCancel={() => { setIsFormOpen(false); setEditing(null); }}
-                  />
-                </Modal>
-              </>
-            </div>
-          )}
-
           {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-3 rounded-2xl bg-white/80 p-4 shadow-sm border border-gray-200 backdrop-blur dark:bg-gray-900/70 dark:border-gray-800">
             <div className="md:col-span-2 lg:col-span-3">
@@ -213,117 +294,65 @@ export default function OpportunitiesPage() {
                   value={filters.q || ""}
                   onChange={(e) => onChange("q", e.target.value)}
                   placeholder="Search name or description"
-                  className="pl-9"
+                  className="pl-9 h-11"
                 />
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="type" className="text-xs text-gray-500">
-                Type
-              </Label>
-              <Select
-                value={filters.type ?? "__all__"}
-                onValueChange={(v) => onChange("type", v === "__all__" ? undefined : v)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="All types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All</SelectItem>
-                  {options.types.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {formatOpportunityType(t)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <MultiCheckboxDropdown
+              label="Type"
+              options={typeOptions}
+              selected={(filters.type as string[]) || []}
+              onChange={(next) => setFilters((prev) => ({ ...prev, type: next, page: 1 }))}
+            />
 
-            <div>
-              <Label htmlFor="education_level" className="text-xs text-gray-500">
-                Education level
-              </Label>
-              <Select
-                value={filters.education_level ?? "__all__"}
-                onValueChange={(v) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    education_level: v === "__all__" ? undefined : (v as any),
-                    years: undefined,
-                    page: 1,
-                  }))
+            <MultiCheckboxDropdown
+              label="Education level"
+              options={levelOptions}
+              selected={(filters.education_level as string[]) || []}
+              onChange={(next) => setFilters((prev) => ({ ...prev, education_level: next, page: 1 }))}
+            />
+
+            <MultiCheckboxDropdown
+              label="Year"
+              options={yearOptions}
+              selected={
+                filters.min_year && filters.max_year
+                  ? Array.from(
+                      new Set(
+                        Array.from(
+                          { length: filters.max_year - filters.min_year + 1 },
+                          (_, i) => String((filters.min_year || 0) + i)
+                        )
+                      )
+                    )
+                  : []
+              }
+              onChange={(next) => {
+                if (next.length === 0) {
+                  setFilters((prev) => ({ ...prev, min_year: undefined, max_year: undefined, page: 1 }));
+                  return;
                 }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="All levels" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All</SelectItem>
-                  {EDUCATION_LEVELS.map((lvl) => (
-                    <SelectItem key={lvl} value={lvl}>
-                      {formatEducationLevel(lvl)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                const nums = next.map((v) => Number(v)).filter((n) => !Number.isNaN(n));
+                const min = Math.min(...nums);
+                const max = Math.max(...nums);
+                setFilters((prev) => ({ ...prev, min_year: min, max_year: max, page: 1 }));
+              }}
+            />
 
-            <div>
-              <Label className="text-xs text-gray-500">Year</Label>
-              <Select
-                value={filters.years && filters.years.length === 1 ? String(filters.years[0]) : "__all__"}
-                onValueChange={(v) => {
-                  if (v === "__all__") {
-                    setFilters((prev) => ({ ...prev, years: undefined, page: 1 }));
-                    return;
-                  }
-                  const yr = Number(v);
-                  setFilters((prev) => ({ ...prev, years: [yr], page: 1 }));
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="All years" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All years</SelectItem>
-                  {yearOptions.map((yr) => (
-                    <SelectItem key={yr} value={String(yr)}>
-                      Year {yr}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <MultiCheckboxDropdown
+              label="Majors"
+              options={majorOptions}
+              selected={(filters.majors as string[]) || []}
+              onChange={(next) => setFilters((prev) => ({ ...prev, majors: next, page: 1 }))}
+              className="md:col-span-2 lg:col-span-2"
+            />
 
-            <div>
-              <Label htmlFor="majors" className="text-xs text-gray-500">
-                Majors
-              </Label>
-              <Select
-                value={filters.majors ?? "__all__"}
-                onValueChange={(v) => onChange("majors", v === "__all__" ? undefined : v)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="All majors" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All</SelectItem>
-                  {options.majors.map((m) => (
-                    <SelectItem key={m} value={m}>
-                      {m}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-col justify-end gap-2">
-              <Label className="text-xs text-transparent select-none">Spacer</Label>
+            <div className="flex h-full flex-col justify-end gap-2 md:col-span-2 lg:col-span-2">
               <div className="flex items-center gap-3">
                 <Button
                   variant={filters.hide_expired ? "default" : "outline"}
-                  className="flex items-center gap-2 whitespace-nowrap"
+                  className="flex h-11 items-center gap-2 whitespace-nowrap"
                   onClick={() => {
                     setFilters((prev) => ({
                       ...prev,
@@ -336,13 +365,37 @@ export default function OpportunitiesPage() {
                   {filters.hide_expired ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                   {filters.hide_expired ? "Show expired" : "Hide expired"}
                 </Button>
-                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  <span>{displayTotal} results</span>
+                <div className="flex h-11 items-center text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  <span className="whitespace-nowrap">{displayTotal} results</span>
                   {isFetching && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
                 </div>
               </div>
             </div>
+
+            {canManage && (
+              <div className="flex h-full flex-col justify-end gap-2 md:col-span-2 lg:col-span-1 lg:col-start-6 items-end">
+                <Button className="flex h-11 w-full items-center justify-center gap-2 whitespace-nowrap text-center" onClick={() => setIsFormOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                  Add Opportunity
+                </Button>
+              </div>
+            )}
           </div>
+
+          {canManage && (
+            <Modal
+              isOpen={isFormOpen}
+              onClose={() => { setIsFormOpen(false); setEditing(null); }}
+              title={editing ? "Edit Opportunity" : "Add Opportunity"}
+              className="max-w-2xl"
+            >
+              <OpportunityForm
+                initial={editing}
+                onSubmit={handleSubmitForm}
+                onCancel={() => { setIsFormOpen(false); setEditing(null); }}
+              />
+            </Modal>
+          )}
 
           {/* Results */}
           <div className="space-y-3">
