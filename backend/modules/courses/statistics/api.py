@@ -87,7 +87,14 @@ async def get_grades(
         grade_report_ids = [item["id"] for item in meili_result["hits"]]
         print(grade_report_ids)
         if not grade_report_ids:
-            return schemas.ListGradeReportResponse(grades=[], total_pages=1)
+            return schemas.ListGradeReportResponse(
+                items=[],
+                total_pages=1,
+                total=0,
+                page=page,
+                size=size,
+                has_next=False,
+            )
 
     if keyword:
         conditions.append(GradeReport.id.in_(grade_report_ids))
@@ -121,6 +128,10 @@ async def get_grades(
     total_pages: int = response_builder.calculate_pages(count=count, size=size)
 
     return schemas.ListGradeReportResponse(
-        grades=[schemas.BaseGradeReportSchema.model_validate(grade) for grade in grades],
+        items=[schemas.BaseGradeReportSchema.model_validate(grade) for grade in grades],
         total_pages=total_pages,
+        total=count,
+        page=page,
+        size=size,
+        has_next=page < total_pages,
     )

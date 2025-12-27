@@ -48,7 +48,8 @@ export const campuscurrentAPI = {
         ) {
           res.total_pages = res.num_of_pages;
         }
-        return res as Types.PaginatedResponse<Community, "communities">;
+        const items = (res as any)?.items ?? (res as any)?.communities ?? [];
+        return { ...res, items } as Types.PaginatedResponse<Community, "communities">;
       },
     };
   },
@@ -94,7 +95,8 @@ export const campuscurrentAPI = {
         const res = await apiCall<any>(
           `/` + Routes.COMMUNITIES + `?` + queryParams.toString()
         );
-        return res as Types.PaginatedResponse<Community, "communities">;
+        const items = (res as any)?.items ?? (res as any)?.communities ?? [];
+        return { ...res, items } as Types.PaginatedResponse<Community, "communities">;
       },
     });
   },

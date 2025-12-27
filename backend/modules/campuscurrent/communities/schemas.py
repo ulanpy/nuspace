@@ -258,5 +258,9 @@ class CommunityUpdateRequest(BaseModel):
 
 
 class ListCommunity(BaseModel):
-    communities: List[CommunityResponse] = []
-    total_pages: int = Query(1, ge=1)
+    items: List[CommunityResponse] = Field(default_factory=list)
+    total_pages: int = Field(default=1, ge=1)
+    total: int
+    page: int
+    size: int
+    has_next: bool

@@ -33,6 +33,7 @@ export const useEvents = (params: UseEventsParams) => {
 
   return {
     events: data || null,
+    items: data?.items ?? null,
     isLoading,
     isError,
     page,
