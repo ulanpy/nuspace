@@ -217,21 +217,21 @@ export default function CommunityDetailPage() {
   });
 
   const upcomingList = useMemo(
-    () => upcomingEvents?.events ?? [],
+    () => upcomingEvents?.items ?? [],
     [upcomingEvents]
   );
   const pendingList = useMemo(
-    () => pendingEvents?.events ?? [],
+    () => pendingEvents?.items ?? [],
     [pendingEvents]
   );
-  const upcomingCount = (upcomingEvents as any)?.events?.length ?? 0;
+  const upcomingCount = (upcomingEvents as any)?.items?.length ?? 0;
   const upcomingHasMore = ((upcomingEvents as any)?.total_pages ?? 1) > 1;
-  const pendingCount = (pendingEvents as any)?.events?.length ?? 0;
+  const pendingCount = (pendingEvents as any)?.items?.length ?? 0;
   const pendingHasMore = ((pendingEvents as any)?.total_pages ?? 1) > 1;
   const pastList = useMemo(() => {
-    const serverPast = pastEvents?.events ?? [];
+    const serverPast = pastEvents?.items ?? [];
     if (serverPast.length > 0) return serverPast;
-    const all = recentCommunityEvents?.events ?? [];
+    const all = recentCommunityEvents?.items ?? [];
     const todayDate = new Date(today);
     return all.filter((e) => new Date(e.end_datetime) < todayDate);
   }, [pastEvents, recentCommunityEvents, today]);

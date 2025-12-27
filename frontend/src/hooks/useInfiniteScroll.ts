@@ -2,7 +2,6 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { apiCall } from "@/utils/api";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useDebounce } from "@/hooks/useDebounce";
 
 export type InfiniteScrollParams<T> = {
   queryKey: string[];
@@ -105,15 +104,12 @@ export function useInfiniteScroll<T>({
   });
 
   const allItems = useMemo(() => {
-    const items = data?.pages.flatMap((page) => {
-      if (page.events) return page.events;
-      if (page.communities) return page.communities;
-      if (page.posts) return page.posts;
-      if (page.grades) return page.grades;
-      if (page.products) return page.products;
-      if (Array.isArray(page)) return page;
-      return [];
-    }) ?? [];
+    const items =
+      data?.pages.flatMap((page) => {
+        if (Array.isArray(page)) return page;
+        if (page.items) return page.items;
+        return [];
+      }) ?? [];
 
     const seenIds = new Set();
     return items.filter((item) => {

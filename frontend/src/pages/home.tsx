@@ -72,7 +72,7 @@ export default function HomePage() {
   const { events: eventsData } = useEvents({ start_date: todayStr, size: 1 });
 
   const eventSlide = useMemo(() => {
-    const e = eventsData?.events?.[0];
+    const e = eventsData?.items?.[0];
     if (!e) return null;
     const poster = e.media?.[0]?.url || "/placeholder.svg";
     const dateStr = new Date(e.start_datetime).toLocaleDateString();

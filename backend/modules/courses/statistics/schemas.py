@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 from fastapi import Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 
@@ -35,10 +35,14 @@ class BaseGradeReportSchema(BaseModel):
 
 
 class ListGradeReportResponse(BaseModel):
-    grades: List[BaseGradeReportSchema] = []
-    total_pages: int = Query(1, ge=1)
+    items: List[BaseGradeReportSchema] = Field(default_factory=list)
+    total_pages: int = Field(default=1, ge=1)
+    total: int
+    page: int
+    size: int
+    has_next: bool
 
 
 class ListGradeTermsResponse(BaseModel):
-    terms: List[str] = []
+    terms: List[str] = Field(default_factory=list)
 

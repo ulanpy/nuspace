@@ -61,7 +61,8 @@ export const campuscurrentAPI = {
         ) {
           res.total_pages = res.num_of_pages;
         }
-        return res as Types.PaginatedResponse<Event, "events">;
+        const items = (res as any)?.items ?? [];
+        return { ...res, items } as Types.PaginatedResponse<Event>;
       },
     };
   },

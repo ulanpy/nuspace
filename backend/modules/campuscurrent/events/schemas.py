@@ -2,7 +2,6 @@ from datetime import date, datetime, timezone
 from enum import Enum
 from typing import List, Optional
 
-from fastapi import Query
 from pydantic import BaseModel, Field, field_validator
 
 from backend.common.schemas import MediaResponse, ResourcePermissions, ShortUserResponse
@@ -196,10 +195,10 @@ class BaseEventSchema(BaseModel):  # ORMtoPydantic
 
 
 class EventResponse(BaseEventSchema):
-    media: List[MediaResponse] = []
+    media: List[MediaResponse] = Field(default_factory=list)
     community: Optional[ShortCommunityResponse] = None
     creator: ShortUserResponse
-    permissions: ResourcePermissions = ResourcePermissions()
+    permissions: ResourcePermissions = Field(default_factory=ResourcePermissions)
 
     class Config:
         from_attributes = True
@@ -235,5 +234,9 @@ class EventFilter(BaseModel):
 
 
 class ListEventResponse(BaseModel):
-    events: List[EventResponse] = []
-    total_pages: int = Query(1, ge=1)
+    items: List[EventResponse] = Field(default_factory=list)
+    total_pages: int = Field(default=1, ge=1)
+    total: int
+    page: int
+    size: int
+    has_next: bool

@@ -35,11 +35,10 @@ declare global {
       };
       tg_id: boolean;
     }
-    type PaginatedResponse<T, TKey extends string> = {
-      [K in TKey]: T[];
-    } & {
+    type PaginatedResponse<T, TKey extends string = "items"> = {
+      items: T[];
       total_pages: number;
-    };
+    } & (TKey extends "items" ? {} : { [K in TKey]?: T[] });
 
     type KeyActions = Record<string, () => void>;
     type InputHandlers = {
