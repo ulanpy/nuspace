@@ -99,7 +99,15 @@ class MessageService:
 
         message_responses = [await self._build_message_response(m, user) for m in messages]
         total_pages = response_builder.calculate_pages(count=count, size=size)
-        return schemas.ListMessageDTO(messages=message_responses, total_pages=total_pages)
+        has_next = page < total_pages
+        return schemas.ListMessageDTO(
+            items=message_responses,
+            total_pages=total_pages,
+            total=count,
+            page=page,
+            size=size,
+            has_next=has_next,
+        )
 
     async def get_message_by_id(
         self, message_id: int, user: tuple[dict, dict]

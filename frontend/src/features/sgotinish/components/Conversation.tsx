@@ -199,9 +199,12 @@ export const Conversation: React.FC<ConversationProps> = ({ conversationId, part
         queryFn: ({ pageParam = 1 }) => sgotinishApi.getMessages(conversationId, { page: pageParam, size: 20 }),
         initialPageParam: 1,
         getNextPageParam: (lastPage, allPages) => {
-            return lastPage.messages.length > 0 && allPages.length < lastPage.total_pages
-                ? allPages.length + 1
-                : undefined;
+            if (!lastPage) return undefined;
+            const currentPage = typeof lastPage.page === "number" ? lastPage.page : allPages.length;
+            if (lastPage.has_next === true) return currentPage + 1;
+            if (lastPage.has_next === false) return undefined;
+            const totalPages = lastPage.total_pages ?? 0;
+            return currentPage < totalPages ? currentPage + 1 : undefined;
         },
     });
 
@@ -238,7 +241,7 @@ export const Conversation: React.FC<ConversationProps> = ({ conversationId, part
         });
     };
 
-    const messages = data?.pages.flatMap((page) => page.messages) ?? [];
+    const messages = data?.pages.flatMap((page) => page.items ?? []) ?? [];
     const ticketAuthorSub = ticket.author?.sub ?? ticket.author_sub ?? null;
 
     const participantsMap = React.useMemo(() => {

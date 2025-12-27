@@ -169,6 +169,11 @@ class TicketService:
 
         qb = QueryBuilder(session=self.db_session, model=Ticket)
 
+        # Calculate total count before fetching current page to build pagination metadata
+        count: int = await qb.blank(model=Ticket).base(count=True).filter(*filters).count()
+        total_pages: int = response_builder.calculate_pages(count=count, size=size)
+        has_next = page < total_pages
+
         tickets: List[Ticket] = (
             await qb.base()
             .filter(*filters)
@@ -180,9 +185,14 @@ class TicketService:
         )
 
         if not tickets:
-            return schemas.ListTicketDTO(tickets=[], total_pages=1)
-
-        count: int = await qb.blank(model=Ticket).base(count=True).filter(*filters).count()
+            return schemas.ListTicketDTO(
+                items=[],
+                total_pages=total_pages,
+                total=count,
+                page=page,
+                size=size,
+                has_next=has_next,
+            )
 
         # Batch fetch all required data
         ticket_ids_list: List[int] = [ticket.id for ticket in tickets]
@@ -216,8 +226,14 @@ class TicketService:
             for ticket in tickets
         ]
 
-        total_pages: int = response_builder.calculate_pages(count=count, size=size)
-        return schemas.ListTicketDTO(tickets=ticket_responses, total_pages=total_pages)
+        return schemas.ListTicketDTO(
+            items=ticket_responses,
+            total_pages=total_pages,
+            total=count,
+            page=page,
+            size=size,
+            has_next=has_next,
+        )
 
     async def create_ticket(
         self, ticket_data: schemas.TicketCreateDTO, user: tuple[dict, dict]

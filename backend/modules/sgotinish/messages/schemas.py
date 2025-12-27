@@ -106,14 +106,19 @@ class MessageResponseDTO(BaseMessage):
 
 
 class ListMessageDTO(BaseModel):
-    """Response schema for message listings."""
+    """Response schema for message listings with pagination metadata."""
 
-    messages: List[MessageResponseDTO] = Field(default=[], description="List of messages")
+    items: List[MessageResponseDTO] = Field(default_factory=list, description="List of messages")
     total_pages: int = Field(..., ge=1, description="Total number of pages")
+    total: int = Field(..., ge=0, description="Total number of messages")
+    page: int = Field(..., ge=1, description="Current page number")
+    size: int = Field(..., ge=1, description="Page size used for this response")
+    has_next: bool = Field(..., description="Whether another page exists")
 
     @field_validator("total_pages")
     def validate_pages(cls, value):
         if value <= 0:
             raise ValueError("Number of pages should be positive")
         return value
+
 

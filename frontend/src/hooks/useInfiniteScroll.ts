@@ -86,19 +86,17 @@ export function useInfiniteScroll<T>({
 
       return res;
     },
-    getNextPageParam: (lastPage) => {
-      const currentPage = lastPage?.page;
+    getNextPageParam: (lastPage, allPages) => {
+      const currentPage = typeof lastPage?.page === "number" ? lastPage.page : allPages.length;
+      if (lastPage?.has_next === true) return currentPage + 1;
+      if (lastPage?.has_next === false) return undefined;
+
       const totalPages = lastPage?.total_pages;
-
-      if (typeof currentPage !== "number" || typeof totalPages !== "number") {
-        return undefined;
+      if (typeof totalPages === "number" && currentPage < totalPages) {
+        return currentPage + 1;
       }
 
-      if (currentPage >= totalPages) {
-        return undefined;
-      }
-
-      return currentPage + 1;
+      return undefined;
     },
     initialPageParam: 1,
   });
