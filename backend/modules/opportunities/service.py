@@ -16,8 +16,17 @@ class OpportunitiesDigestService:
     def __init__(self, db_session: AsyncSession, meilisearch_client=None, repo: OpportunitiesRepository | None = None):
         self.repo = repo or OpportunitiesRepository(db_session, meilisearch_client=meilisearch_client)
 
-    async def list(self, flt: schemas.OpportunityFilter) -> Tuple[List[Opportunity], int]:
-        return await self.repo.list(flt)
+    async def list(self, flt: schemas.OpportunityFilter) -> schemas.OpportunityListResponse:
+        items, total = await self.repo.list(flt)
+        total_pages = (total + flt.size - 1) // flt.size if flt.size else 0
+        return schemas.OpportunityListResponse(
+            items=items,
+            total=total,
+            page=flt.page,
+            size=flt.size,
+            total_pages=total_pages,
+            has_next=flt.page < total_pages,
+        )
 
     async def get(self, id: int) -> schemas.OpportunityResponseDto | None:
         return await self.repo.get(id)
