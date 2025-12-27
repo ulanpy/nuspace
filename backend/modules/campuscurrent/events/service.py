@@ -184,11 +184,29 @@ class EventService:
         )
 
         if keyword_no_results:
-            return schemas.ListEventResponse(events=[], total_pages=1)
+            return schemas.ListEventResponse(
+                items=[],
+                total_pages=1,
+                total=0,
+                page=event_filter.page,
+                size=event_filter.size,
+                has_next=False,
+            )
 
         event_responses: List[schemas.EventResponse] = await self._build_event_responses(
             events, infra, user
         )
 
         total_pages: int = response_builder.calculate_pages(count=count, size=event_filter.size)
-        return schemas.ListEventResponse(events=event_responses, total_pages=total_pages)
+        page = event_filter.page
+        size = event_filter.size
+        has_next = page < total_pages
+
+        return schemas.ListEventResponse(
+            items=event_responses,
+            total_pages=total_pages,
+            total=count,
+            page=page,
+            size=size,
+            has_next=has_next,
+        )

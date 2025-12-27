@@ -174,7 +174,14 @@ async def get_communities(
         community_ids = [item["id"] for item in meili_result["hits"]]
 
         if not community_ids:
-            return schemas.ListCommunity(communities=[], total_pages=1)
+            return schemas.ListCommunity(
+                items=[],
+                total_pages=1,
+                total=0,
+                page=page,
+                size=size,
+                has_next=False,
+            )
 
     if community_type:
         conditions.append(Community.type == community_type)
@@ -248,7 +255,14 @@ async def get_communities(
     ]
 
     total_pages: int = response_builder.calculate_pages(count=count, size=size)
-    return schemas.ListCommunity(communities=community_responses, total_pages=total_pages)
+    return schemas.ListCommunity(
+        items=community_responses,
+        total_pages=total_pages,
+        total=count,
+        page=page,
+        size=size,
+        has_next=page < total_pages,
+    )
 
 
 @router.get("/communities/{community_id}", response_model=schemas.CommunityResponse)

@@ -28,7 +28,7 @@ export default function Announcements() {
         size: 5
     });
 
-    const upcomingEvents = eventsData?.events || [];
+    const upcomingEvents = eventsData?.items || [];
     const { data: recruitingCommunitiesData, isLoading: recruitingLoading } = useQuery(
         campuscurrentAPI.getCommunitiesQueryOptions({
             page: 1,
