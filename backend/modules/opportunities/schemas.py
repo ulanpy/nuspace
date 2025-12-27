@@ -1,40 +1,60 @@
 from datetime import date, datetime
 from typing import List
 
-from fastapi import Query
-from pydantic import BaseModel, field_validator, model_validator, Field
+from pydantic import BaseModel, Field
 
 from backend.core.database.models import EducationLevel, OpportunityType, OpportunityMajor
 
 
-class OpportunityEligibility(BaseModel):
-    id: str | None = None
+class OpportunityEligibilityBase(BaseModel):
+    """orm to pydantic mapping. do not use in create/update requests"""
+    id: int
     education_level: EducationLevel
     year: int | None
-
-    @model_validator(mode="after")
-    def validate_year(self):
-        if self.education_level == EducationLevel.UG:
-            if self.year is None:
-                raise ValueError("UG eligibility requires year")
-            if not (1 <= self.year <= 4):
-                raise ValueError("UG year must be between 1 and 4")
-        elif self.education_level == EducationLevel.GRM:
-            if self.year is None:
-                raise ValueError("GrM eligibility requires year")
-            if not (1 <= self.year <= 2):
-                raise ValueError("GrM year must be between 1 and 2")
-        elif self.education_level == EducationLevel.PHD:
-            # For PhD, year must be None
-            if self.year is not None:
-                raise ValueError("PhD eligibility should not set year")
-        return self
 
     class Config:
         from_attributes = True
 
+class OpportunityMajorMapBase(BaseModel):
+    """orm to pydantic mapping. do not use in create/update requests"""
+    id: int
+    opportunity_id: int
+    major: OpportunityMajor
+
+    class Config:
+        from_attributes = True
 
 class OpportunityBase(BaseModel):
+    """orm to pydantic mapping. do not use in create/update requests"""
+    id: int
+    name: str
+    description: str | None = None
+    deadline: date | None = None
+    host: str | None = None
+    type: OpportunityType
+    majors: List[OpportunityMajorMapBase] = []
+    link: str | None = None
+    location: str | None = None
+    funding: str | None = None
+    eligibility: List[OpportunityEligibilityBase] = []
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+        extra = "ignore"
+
+class OpportunityEligibilityCreateDto(BaseModel):
+    education_level: EducationLevel
+    year: int | None
+
+
+class OpportunityEligibilityUpdateDto(BaseModel):
+    """update request of eligibility perform full replacement"""
+    education_level: EducationLevel | None = None
+    year: int | None = None
+
+class OpportunityCreateDto(BaseModel):
     name: str
     description: str | None = None
     deadline: date | None = None
@@ -44,34 +64,10 @@ class OpportunityBase(BaseModel):
     link: str | None = None
     location: str | None = None
     funding: str | None = None
-    created_at: datetime
-    updated_at: datetime
-    eligibility: List[OpportunityEligibility] = []
-
-    class Config:
-        from_attributes = True
-
-    @field_validator("link")
-    def normalize_link(cls, v):
-        if v is None:
-            return v
-        link = v.strip()
-        if not link:
-            return None
-        if not link.startswith(("http://", "https://")):
-            link = f"https://{link}"
-        return link
+    eligibility: List[OpportunityEligibilityCreateDto] = []
 
 
-class OpportunityCreate(OpportunityBase):
-    @field_validator("deadline")
-    def validate_deadline(cls, v):
-        if v is not None and v < date.today():
-            raise ValueError("Deadline cannot be in the past")
-        return v
-
-
-class OpportunityUpdate(BaseModel):
+class OpportunityUpdateDto(BaseModel):
     name: str | None = None
     description: str | None = None
     deadline: date | None = None
@@ -81,18 +77,13 @@ class OpportunityUpdate(BaseModel):
     link: str | None = None
     location: str | None = None
     funding: str | None = None
-    eligibility: List[OpportunityEligibility] | None = None
+    eligibility: List[OpportunityEligibilityUpdateDto] | None = None
 
-    class Config:
-        from_attributes = True
-
-
-class OpportunityResponse(OpportunityBase):
-    id: int
-
+class OpportunityResponseDto(OpportunityBase):
+    pass
 
 class OpportunityListResponse(BaseModel):
-    items: List[OpportunityResponse]
+    items: List[OpportunityResponseDto]
     total: int
     page: int
     size: int

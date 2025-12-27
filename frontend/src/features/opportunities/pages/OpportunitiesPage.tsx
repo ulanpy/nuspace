@@ -347,7 +347,6 @@ export default function OpportunitiesPage() {
               onChange={(next) => setFilters((prev) => ({ ...prev, majors: next, page: 1 }))}
               className="md:col-span-2 lg:col-span-2"
             />
-
             <div className="flex h-full flex-col justify-end gap-2 md:col-span-2 lg:col-span-2">
               <div className="flex items-center gap-3">
                 <Button

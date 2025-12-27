@@ -3,6 +3,7 @@ import {
   OpportunityEligibility,
   formatEducationLevel,
   formatOpportunityType,
+  normalizeOpportunityMajors,
 } from "../types";
 import { Calendar, MapPin, Link2, Bookmark, Building2, GraduationCap, Wallet } from "lucide-react";
 const formatEligibility = (eligibility?: OpportunityEligibility[] | null) => {
@@ -63,6 +64,7 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
       ? "Year-round"
       : formatDeadline(opportunity.deadline);
   const eligibilityText = formatEligibility(opportunity.eligibility);
+  const majors = normalizeOpportunityMajors(opportunity.majors);
   return (
     <motion.article
       layout
@@ -112,9 +114,9 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
         )}
 
         <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-300">
-          {(opportunity.majors || []).map((m) => (
+          {majors.map((m, idx) => (
             <span
-              key={m}
+              key={`${m}-${idx}`}
               className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
             >
               <GraduationCap className="h-3 w-3" />

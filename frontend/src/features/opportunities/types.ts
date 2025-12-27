@@ -65,6 +65,13 @@ export const OPPORTUNITY_MAJORS = [
 
 export type OpportunityMajor = (typeof OPPORTUNITY_MAJORS)[number];
 
+// Some backend responses send majors as objects (id, opportunity_id, major).
+export type OpportunityMajorRecord = {
+  id?: number;
+  opportunity_id?: number;
+  major?: OpportunityMajor | string | null;
+};
+
 export type Opportunity = {
   id: number;
   name: string;
@@ -117,4 +124,29 @@ export type OpportunityListResponse = {
   size: number;
   total_pages: number;
   has_next: boolean;
+};
+
+type OpportunityLike = Omit<Opportunity, "majors"> & {
+  majors?: Array<OpportunityMajor | OpportunityMajorRecord | null> | null;
+};
+
+export const normalizeOpportunityMajors = (
+  majors?: OpportunityLike["majors"],
+): OpportunityMajor[] => {
+  if (!Array.isArray(majors)) return [];
+  const normalized = majors
+    .map((m) => {
+      if (typeof m === "string") return m;
+      return m?.major ?? null;
+    })
+    .filter((m): m is OpportunityMajor => Boolean(m));
+  // Deduplicate to avoid duplicate keys in UI
+  return Array.from(new Set(normalized));
+};
+
+export const normalizeOpportunity = (opp: OpportunityLike): Opportunity => {
+  return {
+    ...opp,
+    majors: normalizeOpportunityMajors(opp.majors),
+  };
 };
