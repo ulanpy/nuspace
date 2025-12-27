@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { apiCall } from "@/utils/api";
 import { useDebounce } from "@/hooks/useDebounce";
 
@@ -21,6 +21,7 @@ export type UseInfiniteScrollReturn<T> = {
   isFetchingNextPage: boolean;
   keyword: string;
   setKeyword: (keyword: string) => void;
+  loadMoreRef: (node: HTMLDivElement | null) => void;
 };
 
 export function useInfiniteScroll<T>({
@@ -86,7 +87,7 @@ export function useInfiniteScroll<T>({
 
       return res;
     },
-    getNextPageParam: (lastPage, allPages) => {
+    getNextPageParam: (lastPage: any, allPages: any[]) => {
       const currentPage = typeof lastPage?.page === "number" ? lastPage.page : allPages.length;
       if (lastPage?.has_next === true) return currentPage + 1;
       if (lastPage?.has_next === false) return undefined;
@@ -101,16 +102,16 @@ export function useInfiniteScroll<T>({
     initialPageParam: 1,
   });
 
-  const allItems = useMemo(() => {
+  const allItems = useMemo<T[]>(() => {
     const items =
-      data?.pages.flatMap((page) => {
+      data?.pages.flatMap((page: any) => {
         if (Array.isArray(page)) return page;
         if (page.items) return page.items;
         return [];
       }) ?? [];
 
-    const seenIds = new Set();
-    return items.filter((item) => {
+    const seenIds = new Set<any>();
+    return items.filter((item: any) => {
       const id = item.id || item.event_id || item.community_id || item.post_id;
       if (seenIds.has(id)) {
         return false;
@@ -120,24 +121,29 @@ export function useInfiniteScroll<T>({
     });
   }, [data]);
 
-  const handleScroll = useCallback(() => {
-    if (!hasNextPage || isFetchingNextPage) return;
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
-    const scrollTop = window.scrollY;
-    const scrollHeight = document.documentElement.scrollHeight;
-    const clientHeight = window.innerHeight;
+  const loadMoreRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (observerRef.current) observerRef.current.disconnect();
 
-    if (scrollTop + clientHeight >= scrollHeight - 100) {
-      fetchNextPage();
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+      if (!node || !hasNextPage) return;
 
-  useEffect(() => {
-    if (allItems.length > 0) {
-      window.addEventListener("scroll", handleScroll);
-      return () => window.removeEventListener("scroll", handleScroll);
-    }
-  }, [handleScroll, allItems.length]);
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+          }
+        },
+        { rootMargin: "200px" },
+      );
+
+      observerRef.current.observe(node);
+    },
+    [fetchNextPage, hasNextPage, isFetchingNextPage],
+  );
+
+  useEffect(() => () => observerRef.current?.disconnect(), []);
 
   return {
     items: allItems,
@@ -148,5 +154,6 @@ export function useInfiniteScroll<T>({
     isFetchingNextPage,
     keyword: debouncedKeyword,
     setKeyword: setInternalKeyword,
+    loadMoreRef,
   };
 }
