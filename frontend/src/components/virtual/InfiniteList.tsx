@@ -91,6 +91,8 @@ export function InfiniteList<T>({
     isLoading,
     isError,
     isFetchingNextPage,
+    hasNextPage,
+    loadMoreRef,
     setKeyword: setHookKeyword,
   } = useInfiniteScroll<T>({
     queryKey,
@@ -205,6 +207,8 @@ export function InfiniteList<T>({
               </div>
             )}
             
+            {hasNextPage && <div ref={loadMoreRef} />}
+
             {/* Load more indicator */}
             {isFetchingNextPage && (
               <div className="mt-4">

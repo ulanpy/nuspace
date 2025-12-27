@@ -1,4 +1,4 @@
-import { useInfiniteScroll, useInfiniteScrollWithWindow } from '@/hooks/useInfiniteScroll';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { Community } from '@/features/shared/campus/types';
 import * as Routes from '@/data/routes';
 
@@ -17,7 +17,7 @@ export function useInfiniteCommunities(params: UseInfiniteCommunitiesParams = {}
     size = 12,
   } = params;
 
-  const infiniteScrollReturn = useInfiniteScroll<Community>({
+  return useInfiniteScroll<Community>({
     queryKey: ["campusCurrent", "communities"],
     apiEndpoint: `/${Routes.COMMUNITIES}`,
     size,
@@ -27,6 +27,4 @@ export function useInfiniteCommunities(params: UseInfiniteCommunitiesParams = {}
       recruitment_status,
     },
   });
-
-  return useInfiniteScrollWithWindow(infiniteScrollReturn);
 }

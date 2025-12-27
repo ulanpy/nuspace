@@ -1,4 +1,4 @@
-import { useInfiniteScroll, useInfiniteScrollWithWindow } from '@/hooks/useInfiniteScroll';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { Event } from '@/features/shared/campus/types';
 import * as Routes from '@/data/routes';
 import { TimeFilter } from '@/features/events/api/eventsApi';
@@ -32,7 +32,7 @@ export function useInfiniteEvents(params: UseInfiniteEventsParams = {}) {
     size = 12,
   } = params;
 
-  const infiniteScrollReturn = useInfiniteScroll<Event>({
+  return useInfiniteScroll<Event>({
     queryKey: ["campusCurrent", "events"],
     apiEndpoint: `/${Routes.EVENTS}`,
     size,
@@ -49,6 +49,4 @@ export function useInfiniteEvents(params: UseInfiniteEventsParams = {}) {
       creator_sub,
     },
   });
-
-  return useInfiniteScrollWithWindow(infiniteScrollReturn);
 }
