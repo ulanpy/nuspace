@@ -6,6 +6,7 @@ import {
   UpsertOpportunityInput,
   EDUCATION_LEVELS,
   EducationLevel,
+  normalizeOpportunityMajors,
 } from "../types";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
@@ -135,7 +136,7 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
         funding: initial.funding || "",
       });
       setSelectedTypes(initial.type ? (Array.isArray(initial.type) ? initial.type : [initial.type]) : [OPPORTUNITY_TYPES[0]]);
-      setSelectedMajors(Array.isArray(initial.majors) ? initial.majors : []);
+      setSelectedMajors(normalizeOpportunityMajors(initial.majors));
       setSelectedLevels(initial.eligibility?.map((e) => e.education_level) || []);
       setSelectedYears(
         initial.eligibility?.flatMap((e) =>

@@ -1,12 +1,13 @@
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 from datetime import date
-from sqlalchemy import func, select, update, exists, case
+from sqlalchemy import func, select, update, exists, case, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from httpx import AsyncClient
 
 from backend.common.utils import meilisearch
-from backend.core.database.models import Opportunity, OpportunityEligibility, OpportunityMajorMap
+from backend.core.database.models import Opportunity, OpportunityEligibility, OpportunityMajorMap, EducationLevel
 from backend.modules.opportunities import schemas
 
 
@@ -36,7 +37,14 @@ class OpportunitiesRepository:
             if not ids:
                 return [], total
 
-            stmt = select(Opportunity).where(Opportunity.id.in_(ids))
+            stmt = (
+                select(Opportunity)
+                .where(Opportunity.id.in_(ids))
+                .options(
+                    selectinload(Opportunity.eligibilities),
+                    selectinload(Opportunity.majors),
+                )
+            )
 
             if flt.type:
                 stmt = stmt.where(Opportunity.type.in_(flt.type))
@@ -55,7 +63,15 @@ class OpportunitiesRepository:
                 if flt.education_level:
                     sub_conditions.append(oe.education_level.in_(flt.education_level))
                 if flt.years:
-                    sub_conditions.append(oe.year.in_(flt.years))
+                    if flt.education_level and EducationLevel.PHD in flt.education_level:
+                        sub_conditions.append(
+                            or_(
+                                oe.year.in_(flt.years),
+                                and_(oe.education_level == EducationLevel.PHD, oe.year.is_(None)),
+                            )
+                        )
+                    else:
+                        sub_conditions.append(oe.year.in_(flt.years))
                 stmt = stmt.where(
                     exists(
                         select(oe.id).where(
@@ -86,7 +102,12 @@ class OpportunitiesRepository:
             return items, total
 
         # Fallback: DB filters without keyword search
-        stmt = select(Opportunity)
+        stmt = (
+            select(Opportunity).options(
+                selectinload(Opportunity.eligibilities),
+                selectinload(Opportunity.majors),
+            )
+        )
 
         if flt.type:
             stmt = stmt.where(Opportunity.type.in_(flt.type))
@@ -105,7 +126,15 @@ class OpportunitiesRepository:
             if flt.education_level:
                 sub_conditions.append(oe.education_level.in_(flt.education_level))
             if flt.years:
-                sub_conditions.append(oe.year.in_(flt.years))
+                if flt.education_level and EducationLevel.PHD in flt.education_level:
+                    sub_conditions.append(
+                        or_(
+                            oe.year.in_(flt.years),
+                            and_(oe.education_level == EducationLevel.PHD, oe.year.is_(None)),
+                        )
+                    )
+                else:
+                    sub_conditions.append(oe.year.in_(flt.years))
             stmt = stmt.where(
                 exists(
                     select(oe.id).where(
@@ -138,13 +167,13 @@ class OpportunitiesRepository:
         items = list(result.scalars().all())
         return items, total
 
-    async def get(self, id: int) -> Optional[Opportunity]:
+    async def get(self, id: int) -> Opportunity | None:
         result = await self.db.execute(
             select(Opportunity).where(Opportunity.id == id)
         )
         return result.scalar_one_or_none()
 
-    async def create(self, payload: schemas.OpportunityCreate) -> Opportunity:
+    async def create(self, payload: schemas.OpportunityCreateDto) -> Opportunity:
         data = payload.model_dump()
         eligibility_data = data.pop("eligibility", []) or []
         majors_data = data.pop("majors", []) or []
@@ -165,10 +194,10 @@ class OpportunitiesRepository:
             self.db.add(major_row)
 
         await self.db.commit()
-        await self.db.refresh(record)
+        await self.db.refresh(record, attribute_names=["eligibilities", "majors"])
         return record
 
-    async def update(self, id: int, payload: schemas.OpportunityUpdate) -> Optional[Opportunity]:
+    async def update(self, id: int, payload: schemas.OpportunityUpdateDto) -> Opportunity | None:
         data = {k: v for k, v in payload.model_dump(exclude_unset=True).items()}
         eligibility_data = data.pop("eligibility", None)
         majors_data = data.pop("majors", None)
@@ -204,7 +233,9 @@ class OpportunitiesRepository:
                 self.db.add(major_row)
 
         await self.db.commit()
-        return await self.get(id)
+        record = await self.get(id)
+        await self.db.refresh(record, attribute_names=["eligibilities", "majors"])
+        return record
 
     async def delete(self, id: int) -> bool:
         record = await self.get(id)

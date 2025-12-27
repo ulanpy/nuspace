@@ -1,5 +1,5 @@
 import { apiCall } from "@/utils/api";
-import { Opportunity, OpportunityFilters, OpportunityListResponse } from "./types";
+import { Opportunity, OpportunityFilters, OpportunityListResponse, normalizeOpportunity } from "./types";
 
 export const fetchOpportunities = async (
   filters: OpportunityFilters,
@@ -27,26 +27,32 @@ export const fetchOpportunities = async (
   const query = params.toString();
   const endpoint = query ? `/opportunities?${query}` : "/opportunities";
 
-  return apiCall<OpportunityListResponse>(endpoint, { method: "GET", credentials: "include" });
+  const response = await apiCall<OpportunityListResponse>(endpoint, { method: "GET", credentials: "include" });
+  return {
+    ...response,
+    items: (response.items || []).map((item) => normalizeOpportunity(item)),
+  };
 };
 
 export const createOpportunity = async (payload: Partial<Opportunity>): Promise<Opportunity> => {
-  return apiCall<Opportunity>("/opportunities", {
+  const response = await apiCall<Opportunity>("/opportunities", {
     method: "POST",
     credentials: "include",
     json: payload,
   });
+  return normalizeOpportunity(response);
 };
 
 export const updateOpportunity = async (
   id: number,
   payload: Partial<Opportunity>,
 ): Promise<Opportunity> => {
-  return apiCall<Opportunity>(`/opportunities/${id}`, {
+  const response = await apiCall<Opportunity>(`/opportunities/${id}`, {
     method: "PATCH",
     credentials: "include",
     json: payload,
   });
+  return normalizeOpportunity(response);
 };
 
 export const deleteOpportunity = async (id: number): Promise<void> => {

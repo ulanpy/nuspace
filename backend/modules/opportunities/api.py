@@ -53,7 +53,7 @@ async def list_opportunities(
     )
 
 
-@router.get("/{id}", response_model=schemas.OpportunityResponse)
+@router.get("/{id}", response_model=schemas.OpportunityResponseDto)
 async def get_opportunity(id: int, db: AsyncSession = Depends(get_db_session)):
     service = OpportunitiesDigestService(db_session=db)
     record = await service.get(id)
@@ -62,9 +62,9 @@ async def get_opportunity(id: int, db: AsyncSession = Depends(get_db_session)):
     return record
 
 
-@router.post("", response_model=schemas.OpportunityResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=schemas.OpportunityResponseDto, status_code=status.HTTP_201_CREATED)
 async def create_opportunity(
-    payload: schemas.OpportunityCreate,
+    payload: schemas.OpportunityCreateDto,
     user=Depends(get_creds_or_401),
     db: AsyncSession = Depends(get_db_session),
 ):
@@ -74,10 +74,10 @@ async def create_opportunity(
     return record
 
 
-@router.patch("/{id}", response_model=schemas.OpportunityResponse)
+@router.patch("/{id}", response_model=schemas.OpportunityResponseDto)
 async def update_opportunity(
     id: int,
-    payload: schemas.OpportunityUpdate,
+    payload: schemas.OpportunityUpdateDto,
     user=Depends(get_creds_or_401),
     db: AsyncSession = Depends(get_db_session),
 ):
