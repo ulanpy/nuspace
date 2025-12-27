@@ -176,7 +176,8 @@ class ShortCommunityResponse(BaseModel):
     id: int
     name: str
     description: str
-    media: List[MediaResponse] = []
+    verified: bool = False
+    media: List[MediaResponse] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
