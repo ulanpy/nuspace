@@ -212,7 +212,7 @@ const EventDetailView = ({
                   onClick={goToCommunity}
                 >
                   <span>by {event.community?.name || "Unknown Community"}</span>
-                  <VerificationBadge className="ml-1" size={14} />
+                  {event.community?.verified && <VerificationBadge className="ml-1" size={14} />}
                 </button>
               </div>
             ) : (

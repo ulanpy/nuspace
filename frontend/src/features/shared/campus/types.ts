@@ -89,7 +89,7 @@ import { Media } from "@/features/media/types/types";
       type: CommunityType;
       category: CommunityCategory;
       /** Whether the community is verified */
-      verified?: boolean;
+      verified: boolean;
       email?: string;
       recruitment_status: CommunityRecruitmentStatus;
       recruitment_link: string;
