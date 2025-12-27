@@ -6,7 +6,7 @@ export const useSearchCommunities = (params?: { keyword?: string; size?: number 
   const keyword = (params?.keyword ?? "").trim();
   const size = params?.size ?? (keyword ? 10 : 20);
 
-  const { data, isLoading, isError } = useQuery<Types.PaginatedResponse<Community, "communities">>(
+  const { data, isLoading, isError } = useQuery<Types.PaginatedResponse<Community>>(
     campuscurrentAPI.getCommunitiesQueryOptions({
       page: 1,
       size,
@@ -15,11 +15,11 @@ export const useSearchCommunities = (params?: { keyword?: string; size?: number 
     })
   );
 
+  const items = data?.items ?? (data as any)?.communities ?? null;
+
   return {
-    communities: data || null,
+    communities: items,
     isLoading,
     isError,
   };
 };
-
-

@@ -34,7 +34,7 @@ export function CommunitySelectionModal({
     size: debouncedQuery ? 10 : 20,
   });
 
-  const filteredCommunities = useMemo(() => communities?.communities ?? [], [communities]);
+  const filteredCommunities = useMemo(() => communities ?? [], [communities]);
 
   const handleSelect = (community: Community) => {
     onSelect(community);
