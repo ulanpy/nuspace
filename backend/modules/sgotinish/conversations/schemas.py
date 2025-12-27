@@ -41,12 +41,14 @@ class ConversationResponseDTO(BaseConversation):
 
 
 class ListConversationDTO(BaseModel):
-    """Response schema for conversation listings."""
+    """Response schema for conversation listings with pagination metadata."""
 
-    conversations: List[ConversationResponseDTO] = Field(
-        default=[], description="List of conversations"
-    )
+    items: List[ConversationResponseDTO] = Field(default_factory=list, description="List of conversations")
     total_pages: int = Field(..., ge=1, description="Total number of pages")
+    total: int = Field(..., ge=0, description="Total number of conversations")
+    page: int = Field(..., ge=1, description="Current page number")
+    size: int = Field(..., ge=1, description="Page size used for this response")
+    has_next: bool = Field(..., description="Whether another page exists")
 
     @field_validator("total_pages")
     def validate_pages(cls, value):

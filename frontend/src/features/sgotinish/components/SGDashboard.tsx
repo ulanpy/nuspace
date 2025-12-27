@@ -79,8 +79,12 @@ export default function SGDashboard() {
         category: categoryFilter === "all" ? undefined : categoryFilter,
       }),
     getNextPageParam: (lastPage, allPages) => {
-      const nextPage = allPages.length + 1;
-      return nextPage <= (lastPage?.total_pages ?? 0) ? nextPage : undefined;
+      if (!lastPage) return undefined;
+      const currentPage = typeof lastPage.page === "number" ? lastPage.page : allPages.length;
+      if (lastPage.has_next === true) return currentPage + 1;
+      if (lastPage.has_next === false) return undefined;
+      const totalPages = lastPage.total_pages ?? 0;
+      return currentPage < totalPages ? currentPage + 1 : undefined;
     },
     initialPageParam: 1,
     enabled: !!user,
@@ -93,7 +97,7 @@ export default function SGDashboard() {
   }, [user, refetch]);
 
   const allTickets = useMemo(
-    () => data?.pages.flatMap((page) => page.tickets) ?? [],
+    () => data?.pages.flatMap((page) => page.items ?? []) ?? [],
     [data?.pages],
   );
 

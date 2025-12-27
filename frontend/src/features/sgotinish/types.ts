@@ -62,9 +62,16 @@ export interface Ticket {
     conversations?: LegacyConversation[]; // legacy support until backend returns single conversation
 }
 
-export interface TicketListResponse{
-    tickets: Ticket[];
+export interface PaginatedMeta {
     total_pages: number;
+    total: number;
+    page: number;
+    size: number;
+    has_next: boolean;
+}
+
+export interface TicketListResponse extends PaginatedMeta {
+    items: Ticket[];
 }
 
 export interface TicketCreatePayload {
@@ -120,9 +127,8 @@ export interface Message {
     sender: ShortUserResponse | SGUserResponse | null;
 }
 
-export interface MessageListResponse {
-    messages: Message[];
-    total_pages: number;
+export interface MessageListResponse extends PaginatedMeta {
+    items: Message[];
 }
 
 export interface MessageCreatePayload {

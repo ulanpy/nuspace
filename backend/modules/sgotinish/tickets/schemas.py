@@ -122,14 +122,17 @@ class TicketResponseDTO(BaseTicket):
 
 
 class ListTicketDTO(BaseModel):
-    """Response schema for ticket listings."""
+    """Response schema for ticket listings with pagination metadata."""
 
-    tickets: List[TicketResponseDTO] = Field(default=[], description="List of tickets")
+    items: List[TicketResponseDTO] = Field(default_factory=list, description="List of tickets")
     total_pages: int = Field(..., ge=1, description="Total number of pages")
+    total: int = Field(..., ge=0, description="Total number of tickets")
+    page: int = Field(..., ge=1, description="Current page number")
+    size: int = Field(..., ge=1, description="Page size used for this response")
+    has_next: bool = Field(..., description="Whether there is another page available")
 
     @field_validator("total_pages")
     def validate_pages(cls, value):
         if value <= 0:
             raise ValueError("Number of pages should be positive")
         return value
-
