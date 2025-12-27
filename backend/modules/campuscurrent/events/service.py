@@ -1,18 +1,16 @@
 from collections import defaultdict
-import time
 from typing import List
 
-from sqlalchemy import and_, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.cruds import QueryBuilder
 from backend.common.schemas import Infra, MediaResponse
-from backend.common.utils import meilisearch, response_builder
+from backend.common.utils import response_builder
 from backend.core.database.models import Event
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
 from backend.modules.campuscurrent.events import schemas, utils
 from backend.modules.campuscurrent.events.policy import EventPolicy
+from backend.modules.campuscurrent.events.repository import EventRepository
 from backend.modules.google_bucket.utils import (
     batch_delete_blobs,
     generate_batch_download_urls,
@@ -20,8 +18,9 @@ from backend.modules.google_bucket.utils import (
 
 
 class EventService:
-    def __init__(self, db_session: AsyncSession):
+    def __init__(self, db_session: AsyncSession, repo: EventRepository | None = None):
         self.db_session = db_session
+        self.repo = repo or EventRepository(db_session)
 
     async def add_event(
         self,
@@ -33,22 +32,8 @@ class EventService:
             user=user
         ).enrich_event_data(event_data)
 
-        qb = QueryBuilder(session=self.db_session, model=Event)
-        event: Event = await qb.add(
-            data=event_data,
-            preload=[Event.creator, Event.community, Event.collaborators],
-        )
-
-        await meilisearch.upsert(
-            client=infra.meilisearch_client,
-            storage_name=Event.__tablename__,
-            json_values={
-                "id": event.id,
-                "name": event.name,
-                "description": event.description,
-                "policy": event.policy.value if event.policy else None,
-            },
-        )
+        event: Event = await self.repo.create_event(event_data)
+        await self.repo.upsert_search(infra.meilisearch_client, event)
 
         event_responses = await self._build_event_responses([event], infra, user)
         return event_responses[0]
@@ -60,49 +45,25 @@ class EventService:
         event_data: schemas.EventUpdateRequest,
         user: tuple[dict, dict],
     ) -> schemas.EventResponse:
-        qb = QueryBuilder(session=self.db_session, model=Event)
-        event: Event = await qb.update(
-            instance=event,
-            update_data=event_data,
-            preload=[Event.creator, Event.community, Event.collaborators],
-        )
-
-        await meilisearch.upsert(
-            client=infra.meilisearch_client,
-            storage_name=Event.__tablename__,
-            json_values={
-                "id": event.id,
-                "name": event.name,
-                "description": event.description,
-                "community_id": event.community_id,
-                "policy": event.policy.value if event.policy else None,
-            },
-        )
+        event: Event = await self.repo.update_event(event=event, event_data=event_data)
+        await self.repo.upsert_search(infra.meilisearch_client, event)
 
         event_responses = await self._build_event_responses([event], infra, user)
         return event_responses[0]
 
     async def delete_event(self, infra: Infra, event: Event, event_id: int) -> bool:
-        media_conditions = [
-            Media.entity_id == event.id,
-            Media.entity_type == EntityType.community_events,
-        ]
-
-        qb = QueryBuilder(session=self.db_session, model=Media)
-        media_objects: List[Media] = await qb.base().filter(*media_conditions).all()
-
+        media_objects: List[Media] = await self.repo.list_media(event_ids=[event.id])
         await batch_delete_blobs(infra.storage_client, infra.config, media_objects)
 
-        event_deleted: bool = await qb.blank(Event).delete(target=event)
-        media_deleted: bool = await qb.blank(Media).delete(target=media_objects)
+        event_deleted, media_deleted = await self.repo.delete_event_and_media(
+            event=event, media_objects=media_objects
+        )
 
         if not event_deleted or not media_deleted:
             return False
 
-        await meilisearch.delete(
-            client=infra.meilisearch_client,
-            storage_name=Event.__tablename__,
-            primary_key=str(event_id),
+        await self.repo.delete_from_search(
+            meilisearch_client=infra.meilisearch_client, event_id=event_id
         )
         return True
 
@@ -120,27 +81,11 @@ class EventService:
             event.community_id for event in events if event.community_id
         ]
 
-        qb = QueryBuilder(session=self.db_session, model=Media)
-        media_conditions = []
-        if event_ids:
-            media_conditions.append(
-                and_(
-                    Media.entity_id.in_(event_ids),
-                    Media.entity_type == EntityType.community_events,
-                    Media.media_format == MediaFormat.carousel,
-                )
-            )
-        if community_ids:
-            media_conditions.append(
-                and_(
-                    Media.entity_id.in_(community_ids),
-                    Media.entity_type == EntityType.communities,
-                    Media.media_format.in_([MediaFormat.profile, MediaFormat.banner]),
-                )
-            )
-
-        all_media_objs: List[Media] = (
-            await qb.base().filter(or_(*media_conditions)).all() if media_conditions else []
+        all_media_objs: List[Media] = await self.repo.list_media(
+            event_ids=event_ids,
+            community_ids=community_ids,
+            event_media_formats=[MediaFormat.carousel],
+            community_media_formats=[MediaFormat.profile, MediaFormat.banner],
         )
 
         media_to_url = {}
@@ -218,14 +163,7 @@ class EventService:
     async def get_event_by_id(
         self, infra: Infra, event_id: int, user: tuple[dict, dict]
     ) -> schemas.EventResponse | None:
-        qb = QueryBuilder(session=self.db_session, model=Event)
-        event: Event | None = (
-            await qb.base()
-            .filter(Event.id == event_id)
-            .eager(Event.community, Event.creator, Event.collaborators)
-            .first()
-        )
-
+        event: Event | None = await self.repo.get_event_by_id(event_id)
         if event is None:
             return None
 
@@ -239,69 +177,18 @@ class EventService:
             user[0].get("sub") if event_filter.creator_sub == "me" else event_filter.creator_sub
         )
 
-        if event_filter.keyword:
-            meili_result: dict = await meilisearch.get(
-                client=infra.meilisearch_client,
-                storage_name=EntityType.community_events.value,
-                keyword=event_filter.keyword,
-                page=event_filter.page,
-                size=event_filter.size,
-                filters=None,
-            )
-
-            event_ids: List[int] = [item["id"] for item in meili_result["hits"]]
-
-            if not event_ids:
-                return schemas.ListEventResponse(events=[], total_pages=1)
-
-        filters = []
-        if event_filter.registration_policy:
-            filters.append(Event.policy == event_filter.registration_policy)
-        if event_filter.community_id:
-            filters.append(Event.community_id == event_filter.community_id)
-        if event_filter.keyword:
-            filters.append(Event.id.in_(event_ids))
-        if event_filter.event_type:
-            filters.append(Event.type == event_filter.event_type)
-        if event_filter.event_status:
-            filters.append(Event.status == event_filter.event_status)
-        if event_filter.event_scope:
-            filters.append(Event.scope == event_filter.event_scope)
-        if creator_sub:
-            filters.append(Event.creator_sub == creator_sub)
-
-        if event_filter.time_filter:
-            filters.extend(
-                utils.build_time_filter_expressions(time_filter=event_filter.time_filter)
-            )
-        else:
-            if event_filter.start_date:
-                filters.append(func.date(Event.start_datetime) >= event_filter.start_date)
-            if event_filter.end_date:
-                filters.append(func.date(Event.start_datetime) <= event_filter.end_date)
-
-        qb = QueryBuilder(session=self.db_session, model=Event)
-
-        events: List[Event] = (
-            await qb.base()
-            .filter(*filters)
-            .eager(Event.creator, Event.community, Event.collaborators)
-            .paginate(
-                event_filter.size if not event_filter.keyword else None,
-                event_filter.page if not event_filter.keyword else None,
-            )
-            .order(Event.start_datetime.asc())
-            .all()
+        events, count, keyword_no_results = await self.repo.list_events(
+            event_filter=event_filter,
+            creator_sub=creator_sub,
+            meilisearch_client=infra.meilisearch_client,
         )
+
+        if keyword_no_results:
+            return schemas.ListEventResponse(events=[], total_pages=1)
 
         event_responses: List[schemas.EventResponse] = await self._build_event_responses(
             events, infra, user
         )
-
-        if event_filter.keyword:
-            count = meili_result.get("estimatedTotalHits", 0)
-        else:
-            count: int = await qb.blank(model=Event).base(count=True).filter(*filters).count()
 
         total_pages: int = response_builder.calculate_pages(count=count, size=event_filter.size)
         return schemas.ListEventResponse(events=event_responses, total_pages=total_pages)
