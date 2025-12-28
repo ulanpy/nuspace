@@ -208,7 +208,7 @@ export function InfiniteList<T>({
             )}
             
             {hasNextPage && <div ref={loadMoreRef} />}
-
+            
             {/* Load more indicator */}
             {isFetchingNextPage && (
               <div className="mt-4">

@@ -83,7 +83,8 @@ export type Opportunity = {
   link?: string | null;
   location?: string | null;
   funding?: string | null;
-  eligibility?: OpportunityEligibility[];
+  eligibility?: OpportunityEligibility[]; // legacy naming
+  eligibilities?: OpportunityEligibility[];
 };
 
 export type OpportunityFilters = {
@@ -98,7 +99,9 @@ export type OpportunityFilters = {
   size?: number;
 };
 
-export type UpsertOpportunityInput = Partial<Omit<Opportunity, "id">>;
+export type UpsertOpportunityInput = Partial<Omit<Opportunity, "id">> & {
+  eligibilities?: OpportunityEligibility[];
+};
 
 export const EDUCATION_LEVELS = ["UG", "GrM", "PhD"] as const;
 export type EducationLevel = (typeof EDUCATION_LEVELS)[number];

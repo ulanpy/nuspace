@@ -175,7 +175,7 @@ class OpportunitiesRepository:
 
     async def create(self, payload: schemas.OpportunityCreateDto) -> Opportunity:
         data = payload.model_dump()
-        eligibility_data = data.pop("eligibility", []) or []
+        eligibility_data = data.pop("eligibilities", []) or []
         majors_data = data.pop("majors", []) or []
         record = Opportunity(**data)
         self.db.add(record)
@@ -199,7 +199,7 @@ class OpportunitiesRepository:
 
     async def update(self, id: int, payload: schemas.OpportunityUpdateDto) -> Opportunity | None:
         data = {k: v for k, v in payload.model_dump(exclude_unset=True).items()}
-        eligibility_data = data.pop("eligibility", None)
+        eligibility_data = data.pop("eligibilities", None)
         majors_data = data.pop("majors", None)
 
         if data:

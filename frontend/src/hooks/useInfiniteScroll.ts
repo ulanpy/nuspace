@@ -97,7 +97,7 @@ export function useInfiniteScroll<T>({
         return currentPage + 1;
       }
 
-      return undefined;
+        return undefined;
     },
     initialPageParam: 1,
   });
@@ -132,8 +132,8 @@ export function useInfiniteScroll<T>({
       observerRef.current = new IntersectionObserver(
         (entries) => {
           if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-            fetchNextPage();
-          }
+      fetchNextPage();
+    }
         },
         { rootMargin: "200px" },
       );

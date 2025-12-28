@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useMutation, useInfiniteQuery } from "@tanstack/react-query";
 import { Search, Loader2, Plus, Eye, EyeOff } from "lucide-react";
 import { createOpportunity, fetchOpportunities, updateOpportunity } from "../api";
 import {
@@ -141,7 +141,6 @@ export default function OpportunitiesPage() {
     min_year: undefined,
     max_year: undefined,
   });
-  const [accItems, setAccItems] = useState<Opportunity[]>([]);
   const [editing, setEditing] = useState<Opportunity | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
@@ -153,10 +152,24 @@ export default function OpportunitiesPage() {
     (["admin", "boss"].includes(user.role) ||
       (userEmail ? ALLOWED_OPPORTUNITY_EMAILS.includes(userEmail) : false));
 
-  const { data, isLoading, isFetching } = useQuery<OpportunityListResponse>({
-    queryKey: ["opportunities", filters],
-    queryFn: () => fetchOpportunities({ ...filters }),
-    keepPreviousData: true,
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    isFetching,
+    fetchNextPage,
+    hasNextPage,
+  } = useInfiniteQuery<OpportunityListResponse>({
+    queryKey: ["opportunities", { ...filters, page: undefined }],
+    queryFn: ({ pageParam = 1 }) => fetchOpportunities({ ...filters, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      if (!lastPage) return undefined;
+      if (lastPage.has_next === true) {
+        return (lastPage.page ?? 1) + 1;
+      }
+      return undefined;
+    },
   });
 
   const createMutation = useMutation({
@@ -177,41 +190,12 @@ export default function OpportunitiesPage() {
     },
   });
 
-  const baseFilterKey = useMemo(
-    () =>
-      `${(filters.type || []).join(",")}|${(filters.majors || []).join(",")}|${(filters.education_level || []).join(",")}|${filters.min_year ?? ""}|${filters.max_year ?? ""}|${filters.q ?? ""}|${filters.hide_expired ? "hide" : "all"}|${filters.size ?? 15}`,
-    [
-      filters.type,
-      filters.majors,
-      filters.education_level,
-      filters.min_year,
-      filters.max_year,
-      filters.q,
-      filters.hide_expired,
-      filters.size,
-    ]
-  );
-  const prevBaseFilterKey = useRef(baseFilterKey);
-
-  useEffect(() => {
-    if (!data) return;
-    // If base filters changed, reset the accumulator
-    if (baseFilterKey !== prevBaseFilterKey.current) {
-      setAccItems(data.items || []);
-      prevBaseFilterKey.current = baseFilterKey;
-      return;
-    }
-    // Otherwise append new page results, deduping by id
-    setAccItems((prev) => {
-      const map = new Map<number, Opportunity>();
-      prev.forEach((item) => map.set(item.id, item));
-      (data.items || []).forEach((item) => map.set(item.id, item));
-      return Array.from(map.values());
-    });
-  }, [data, baseFilterKey]);
+  const allItems = useMemo<Opportunity[]>(() => {
+    return data?.pages.flatMap((page) => page.items || []) ?? [];
+  }, [data]);
 
   const visibleData = useMemo(() => {
-    const items = accItems || [];
+    const items = allItems || [];
     if (!filters.hide_expired) return items;
     const today = new Date(new Date().toDateString());
     return items.filter((opp) => {
@@ -220,25 +204,16 @@ export default function OpportunitiesPage() {
       if (Number.isNaN(d.getTime())) return true;
       return d >= today;
     });
-  }, [accItems, filters.hide_expired]);
+  }, [allItems, filters.hide_expired]);
 
   const totalCount = useMemo(() => {
-    if (typeof data?.total === "number") return data.total;
-    return accItems.length;
-  }, [data?.total, accItems.length]);
+    const firstPage = data?.pages?.[0];
+    if (typeof firstPage?.total === "number") return firstPage.total;
+    return allItems.length;
+  }, [data?.pages, allItems.length]);
 
   const filteredCount = visibleData.length;
   const displayTotal = totalCount; // always show backend total for current filters
-
-  const moreAvailable = useMemo(() => {
-    const pageSize = filters.size || 15;
-    const hasNextFlag = data?.has_next === true;
-    const fetchedCount = accItems.length;
-    const lastPageCount = data?.items?.length ?? 0;
-    if (hasNextFlag) return true;
-    if (totalCount > 0 && fetchedCount < totalCount) return true;
-    return lastPageCount >= pageSize;
-  }, [data?.has_next, data?.items?.length, accItems.length, totalCount, filters.size]);
 
   const onChange = (field: keyof OpportunityFilters, value: string | number | undefined) => {
     setFilters((prev) => ({
@@ -248,13 +223,25 @@ export default function OpportunitiesPage() {
     }));
   };
 
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (observerRef.current) observerRef.current.disconnect();
+      if (!node || !hasNextPage) return;
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+          }
+        },
+        { rootMargin: "200px" },
+      );
+      observerRef.current.observe(node);
+    },
+    [fetchNextPage, hasNextPage, isFetchingNextPage],
+  );
 
-  const onPageChange = (delta: number) => {
-    setFilters((prev) => ({
-      ...prev,
-      page: Math.max(1, (prev.page || 1) + delta),
-    }));
-  };
+  useEffect(() => () => observerRef.current?.disconnect(), []);
 
   const header = (
     <div className="flex flex-col gap-2">
@@ -358,7 +345,6 @@ export default function OpportunitiesPage() {
                       hide_expired: !prev.hide_expired,
                       page: 1,
                     }));
-                    setAccItems([]);
                   }}
                 >
                   {filters.hide_expired ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
@@ -403,16 +389,25 @@ export default function OpportunitiesPage() {
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : visibleData && visibleData.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4">
-                {visibleData.map((opp) => (
-                  <OpportunityCard
-                    key={opp.id}
-                    opportunity={opp}
-                    canManage={canManage}
-                    onEdit={(o) => { setEditing(o); setIsFormOpen(true); }}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 gap-4">
+                  {visibleData.map((opp) => (
+                    <OpportunityCard
+                      key={opp.id}
+                      opportunity={opp}
+                      canManage={canManage}
+                      onEdit={(o) => { setEditing(o); setIsFormOpen(true); }}
+                    />
+                  ))}
+                </div>
+                {hasNextPage && <div ref={loadMoreRef} />}
+                {isFetchingNextPage && (
+                  <div className="flex justify-center py-4 text-sm text-gray-500 dark:text-gray-400">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Loading more...
+                  </div>
+                )}
+              </>
             ) : (
               <div className="rounded-2xl border border-dashed border-gray-300 bg-white/70 p-10 text-center text-gray-500 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-400">
                 No opportunities match your filters.
@@ -426,15 +421,9 @@ export default function OpportunitiesPage() {
               <div className="text-sm text-gray-500">
                 Showing {filteredCount} of {displayTotal} {displayTotal === 1 ? "item" : "items"}
               </div>
-              <Button
-                variant="outline"
-                onClick={() => onPageChange(1)}
-                disabled={isFetching || !moreAvailable}
-                className="flex items-center gap-2"
-              >
-                {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Show more
-              </Button>
+              {!hasNextPage && (
+                <div className="text-sm text-gray-400 dark:text-gray-500">End of list</div>
+              )}
             </div>
           )}
         </div>

@@ -7,6 +7,7 @@ import {
   EDUCATION_LEVELS,
   EducationLevel,
   normalizeOpportunityMajors,
+  OpportunityEligibility,
 } from "../types";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
@@ -24,7 +25,7 @@ const MultiCheckboxDropdown = ({
   options,
   selected,
   onChange,
-  placeholder = "All",
+  placeholder = "Select",
 }: {
   label?: string;
   options: OptionItem[];
@@ -40,13 +41,9 @@ const MultiCheckboxDropdown = ({
     }
   };
 
-  const allSelected = selected.length === options.length;
+  const allSelected = selected.length === options.length && options.length > 0;
   const display =
-    selected.length === 0
-      ? placeholder
-      : selected.length === options.length
-        ? "All"
-        : `${selected.length} selected`;
+    selected.length === 0 ? placeholder : `${selected.length} selected`;
 
   return (
     <div className="flex h-full flex-col justify-end gap-1">
@@ -109,7 +106,11 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
     value: lvl,
     label: lvl === "UG" ? "Undergraduate" : lvl === "GrM" ? "Master" : "PhD",
   }));
-  const yearOptions = [1, 2, 3, 4].map((y) => ({ value: String(y), label: `Year ${y}` }));
+  const yearOptionsByLevel: Record<EducationLevel, OptionItem[]> = {
+    UG: [1, 2, 3, 4].map((y) => ({ value: String(y), label: `Year ${y}` })),
+    GrM: [1, 2].map((y) => ({ value: String(y), label: `Year ${y}` })),
+    PhD: [],
+  };
 
   const [form, setForm] = useState<UpsertOpportunityInput>({
     name: "",
@@ -123,7 +124,8 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([OPPORTUNITY_TYPES[0]]);
   const [selectedMajors, setSelectedMajors] = useState<string[]>([]);
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
-  const [selectedYears, setSelectedYears] = useState<string[]>([]);
+  const [eligibilityByLevel, setEligibilityByLevel] = useState<Record<EducationLevel, number[]>>({});
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initial) {
@@ -137,11 +139,20 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
       });
       setSelectedTypes(initial.type ? (Array.isArray(initial.type) ? initial.type : [initial.type]) : [OPPORTUNITY_TYPES[0]]);
       setSelectedMajors(normalizeOpportunityMajors(initial.majors));
-      setSelectedLevels(initial.eligibility?.map((e) => e.education_level) || []);
-      setSelectedYears(
-        initial.eligibility?.flatMap((e) =>
-          typeof (e as any).year === "number" ? [String((e as any).year)] : []
-        ) || []
+      const initialEligibility = (initial as any).eligibilities || initial.eligibility || [];
+      const levels = (initialEligibility as OpportunityEligibility[]).map((e) => e.education_level);
+      setSelectedLevels(levels);
+      setEligibilityByLevel(
+        (initialEligibility as OpportunityEligibility[]).reduce<Record<EducationLevel, number[]>>((acc, e) => {
+          const level = e.education_level;
+          const years = acc[level] ?? [];
+          if (typeof e.year === "number") {
+            acc[level] = Array.from(new Set([...years, e.year]));
+          } else {
+            acc[level] = years;
+          }
+          return acc;
+        }, {}),
       );
     } else {
       setForm((prev) => ({
@@ -151,7 +162,7 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
       setSelectedTypes([]);
       setSelectedMajors([]);
       setSelectedLevels([]);
-      setSelectedYears([]);
+      setEligibilityByLevel({});
     }
   }, [initial]);
 
@@ -258,27 +269,48 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const yearValue =
-      selectedYears.length > 0 ? Number(selectedYears[selectedYears.length - 1]) : null;
+    setFormError(null);
 
-    const eligibility =
+    if (selectedLevels.length === 0) {
+      setFormError("Select at least one education level");
+      return;
+    }
+
+    const missingYears = selectedLevels.some((lvl) => {
+      const level = lvl as EducationLevel;
+      if (level === "PhD") return false;
+      const years = eligibilityByLevel[level] || [];
+      return years.length === 0;
+    });
+    if (missingYears) {
+      setFormError("Select years for each non-PhD level");
+      return;
+    }
+    const eligibilities =
       selectedLevels.length > 0
-        ? selectedLevels.map((lvl) => ({
-            education_level: lvl as EducationLevel,
-            year: yearValue,
-          }))
+        ? selectedLevels.flatMap((lvl) => {
+            const level = lvl as EducationLevel;
+            if (level === "PhD") {
+              return [{ education_level: level, year: null }];
+            }
+            const years = eligibilityByLevel[level] || [];
+            if (years.length === 0) {
+              return [{ education_level: level, year: null }];
+            }
+            return years.map((year) => ({ education_level: level, year }));
+          })
         : [];
 
     onSubmit({
       ...form,
       type: selectedTypes[0] || OPPORTUNITY_TYPES[0],
       majors: selectedMajors,
-      eligibility,
+      eligibilities,
     });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <Label htmlFor="name">Name</Label>
         <Input
@@ -311,19 +343,63 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
           onChange={setSelectedMajors}
         />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+      <div className="space-y-3">
         <MultiCheckboxDropdown
           label="Education level"
           options={levelOptions}
           selected={selectedLevels}
-          onChange={setSelectedLevels}
+          onChange={(next) => {
+            setSelectedLevels(next);
+            setEligibilityByLevel((prev) => {
+              const nextMap: Record<EducationLevel, number[]> = {};
+              next.forEach((lvl) => {
+                const level = lvl as EducationLevel;
+                if (level === "PhD") {
+                  nextMap[level] = [];
+                } else {
+                  nextMap[level] = prev[level] ?? [];
+                }
+              });
+              return nextMap;
+            });
+          }}
         />
-        <MultiCheckboxDropdown
-          label="Year"
-          options={yearOptions}
-          selected={selectedYears}
-          onChange={(next) => setSelectedYears(next.slice(-1))} // single select behavior
-        />
+        {selectedLevels.length > 0 && (
+          <div className="space-y-2">
+            <Label className="text-xs text-gray-500">Year by level</Label>
+            <div className="space-y-2">
+              {selectedLevels.map((lvl) => {
+                const level = lvl as EducationLevel;
+                const options = yearOptionsByLevel[level];
+                const values = eligibilityByLevel[level] || [];
+                return (
+                  <div key={level} className="flex items-start gap-3">
+                    <div className="w-32 text-sm text-gray-700 dark:text-gray-200 pt-2">
+                      {level === "UG" ? "Undergraduate" : level === "GrM" ? "Master" : "PhD"}
+                    </div>
+                    {level === "PhD" ? (
+                      <div className="text-sm text-gray-500 dark:text-gray-400 pt-2">Year not applicable</div>
+                    ) : (
+                      <MultiCheckboxDropdown
+                        label="Years"
+                        options={options}
+                        selected={values.map(String)}
+                        onChange={(next) =>
+                          setEligibilityByLevel((prev) => ({
+                            ...prev,
+                            [level]: next.map((v) => Number(v)),
+                          }))
+                        }
+                        placeholder="Select years"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
       <div>
         <Label htmlFor="description">Description</Label>
@@ -373,6 +449,7 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
+        {formError && <div className="text-sm text-destructive mr-auto">{formError}</div>}
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
