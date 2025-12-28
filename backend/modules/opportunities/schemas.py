@@ -36,7 +36,7 @@ class OpportunityBase(BaseModel):
     link: str | None = None
     location: str | None = None
     funding: str | None = None
-    eligibility: List[OpportunityEligibilityBase] = []
+    eligibilities: List[OpportunityEligibilityBase] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
@@ -64,7 +64,7 @@ class OpportunityCreateDto(BaseModel):
     link: str | None = None
     location: str | None = None
     funding: str | None = None
-    eligibility: List[OpportunityEligibilityCreateDto] = []
+    eligibilities: List[OpportunityEligibilityCreateDto] = []
 
 
 class OpportunityUpdateDto(BaseModel):
@@ -77,7 +77,7 @@ class OpportunityUpdateDto(BaseModel):
     link: str | None = None
     location: str | None = None
     funding: str | None = None
-    eligibility: List[OpportunityEligibilityUpdateDto] | None = None
+    eligibilities: List[OpportunityEligibilityUpdateDto] | None = None
 
 class OpportunityResponseDto(OpportunityBase):
     pass
