@@ -19,61 +19,65 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Create enums only if they don't exist
+    # Drop/recreate enums to avoid duplicate-type errors
     op.execute(
         """
         DO $$
         BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'education_level') THEN
-                CREATE TYPE education_level AS ENUM ('UG','GrM','PhD');
+            IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'opportunity_major') THEN
+                DROP TYPE opportunity_major;
             END IF;
-            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'opportunity_type') THEN
-                CREATE TYPE opportunity_type AS ENUM ('research','internship','summer_school','forum','summit','grant','scholarship','conference');
+            IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'opportunity_type') THEN
+                DROP TYPE opportunity_type;
             END IF;
-            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'opportunity_major') THEN
-                CREATE TYPE opportunity_major AS ENUM (
-                    'Engineering Management',
-                    'Mechanical and Aerospace Engineering',
-                    'Electrical and Computer Engineering',
-                    'Chemical and Materials Engineering',
-                    'Civil and Environmental Engineering',
-                    'Biomedical Engineering',
-                    'Mining Engineering',
-                    'Petroleum Engineering',
-                    'Robotics and Mechatronics Engineering',
-                    'Computer Science',
-                    'Data Science',
-                    'Applied Mathematics',
-                    'Mathematics',
-                    'Economics',
-                    'Business Administration',
-                    'Finance',
-                    'Life Sciences',
-                    'Biological Sciences',
-                    'Medical Sciences',
-                    'Molecular Medicine',
-                    'Pharmacology and Toxicology',
-                    'Public Health',
-                    'Sports Medicine and Rehabilitation',
-                    'Nursing',
-                    'Doctor of Medicine',
-                    'A Six-Year Medical Program',
-                    'Chemistry',
-                    'Physics',
-                    'Geosciences',
-                    'Geology',
-                    'Political Science and International Relations',
-                    'Public Policy',
-                    'Public Administration',
-                    'Eurasian Studies',
-                    'Sociology',
-                    'Anthropology',
-                    'History',
-                    'Educational Leadership',
-                    'Multilingual Education',
-                    'World Languages, Literature and Culture'
-                );
+            IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'education_level') THEN
+                DROP TYPE education_level;
             END IF;
+
+            CREATE TYPE education_level AS ENUM ('UG','GrM','PhD');
+            CREATE TYPE opportunity_type AS ENUM ('research','internship','summer_school','forum','summit','grant','scholarship','conference');
+            CREATE TYPE opportunity_major AS ENUM (
+                'Engineering Management',
+                'Mechanical and Aerospace Engineering',
+                'Electrical and Computer Engineering',
+                'Chemical and Materials Engineering',
+                'Civil and Environmental Engineering',
+                'Biomedical Engineering',
+                'Mining Engineering',
+                'Petroleum Engineering',
+                'Robotics and Mechatronics Engineering',
+                'Computer Science',
+                'Data Science',
+                'Applied Mathematics',
+                'Mathematics',
+                'Economics',
+                'Business Administration',
+                'Finance',
+                'Life Sciences',
+                'Biological Sciences',
+                'Medical Sciences',
+                'Molecular Medicine',
+                'Pharmacology and Toxicology',
+                'Public Health',
+                'Sports Medicine and Rehabilitation',
+                'Nursing',
+                'Doctor of Medicine',
+                'A Six-Year Medical Program',
+                'Chemistry',
+                'Physics',
+                'Geosciences',
+                'Geology',
+                'Political Science and International Relations',
+                'Public Policy',
+                'Public Administration',
+                'Eurasian Studies',
+                'Sociology',
+                'Anthropology',
+                'History',
+                'Educational Leadership',
+                'Multilingual Education',
+                'World Languages, Literature and Culture'
+            );
         END
         $$;
         """
