@@ -172,3 +172,11 @@ class StudentScheduleResponse(BaseModel):
     last_synced_at: datetime | None
     schedule: ScheduleResponse
 
+
+class GoogleCalendarExportResponse(BaseModel):
+    created: int
+    skipped: int
+    missing_dates: List[str] = []
+    lookup_errors: List[str] = []
+    google_errors: List[str] = []
+

@@ -12,7 +12,6 @@ import httpx
 from httpx import AsyncClient
 
 from backend.modules.courses.registrar.parsers.schedule_pdf_parser import parse_schedule_pdf
-from backend.modules.courses.registrar.parsers.priority_parser import parse_pdf as parse_priority_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +70,8 @@ async def sync_schedule_catalog(
     Download, parse, and upload registrar schedule PDF into Meilisearch.
     Also merges registrar priority metadata into the same index to avoid
     cross-index lookups at runtime.
-    Uses a subprocess parser for the schedule PDF to avoid blocking the API process.
+    Uses a subprocess parser for the schedule PDF (and priority merge) to avoid blocking
+    the API process.
     """
     latest = None
     if pdf_url is None or term_label is None or priority_pdf_url is None:
@@ -93,31 +93,16 @@ async def sync_schedule_catalog(
             f"&name=course_requirements&termid={latest['termid']}"
         )
 
-    documents = await _run_schedule_parser_subprocess(pdf_url, term_label)
-
-    if priority_pdf_url:
-        try:
-            # Priority PDF sometimes has cert issues; allow insecure fetch to avoid blocking sync.
-            async with httpx.AsyncClient(verify=False, timeout=30) as client:
-                resp = await client.get(priority_pdf_url)
-                resp.raise_for_status()
-                priority_docs = parse_priority_pdf(resp.content)
-        except Exception:
-            logger.exception(
-                "Failed to fetch/parse priority PDF (SSL verify disabled for this fetch); continuing without priorities"
-            )
-            priority_docs = []
-
-        if priority_docs:
-            merged = _merge_priorities_into_schedule(documents, priority_docs)
-            documents = merged
+    documents = await _run_schedule_parser_subprocess(pdf_url, term_label, priority_pdf_url)
 
     await _recreate_schedule_index(meilisearch_client, documents)
     logger.info("Synced %s registrar schedule entries", len(documents))
     return len(documents)
 
 
-async def _run_schedule_parser_subprocess(pdf_url: str, term_label: str | None) -> Sequence[dict]:
+async def _run_schedule_parser_subprocess(
+    pdf_url: str, term_label: str | None, priority_pdf_url: str | None
+) -> Sequence[dict]:
     with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
         output_path = Path(tmp.name)
 
@@ -126,6 +111,8 @@ async def _run_schedule_parser_subprocess(pdf_url: str, term_label: str | None) 
     env["SCHEDULE_SYNC__OUTPUT_PATH"] = str(output_path)
     if term_label:
         env["SCHEDULE_SYNC__TERM_LABEL"] = term_label
+    if priority_pdf_url:
+        env["SCHEDULE_SYNC__PRIORITY_PDF_URL"] = priority_pdf_url
     # Also pass term id if present in URL
     try:
         from urllib.parse import parse_qs, urlparse

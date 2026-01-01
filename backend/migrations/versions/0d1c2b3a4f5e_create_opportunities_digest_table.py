@@ -96,6 +96,8 @@ def upgrade() -> None:
         sa.Column("link", sa.String(length=1024), nullable=True),
         sa.Column("location", sa.String(length=256), nullable=True),
         sa.Column("funding", sa.String(length=256), nullable=True),
+        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.func.now(), onupdate=sa.func.now()),
     )
 
     op.create_table(
@@ -103,7 +105,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
         sa.Column("opportunity_id", sa.Integer(), sa.ForeignKey("opportunities.id", ondelete="CASCADE"), nullable=False),
         sa.Column("education_level", education_level_enum, nullable=False),
-        sa.Column("year", sa.SmallInteger(), nullable=True),
+        sa.Column("year", sa.Integer(), nullable=True),
     )
 
     op.create_table(

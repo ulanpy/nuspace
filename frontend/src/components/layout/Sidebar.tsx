@@ -42,8 +42,8 @@ const NAV_ITEMS: NavItem[] = [
     { to: ROUTES.ANNOUNCEMENTS, label: "Announcements", icon: <Megaphone size={20} /> },
     { to: ROUTES.EVENTS.ROOT, label: "Events", icon: <Calendar size={20} /> },
     { to: ROUTES.COURSES, label: "Courses", icon: <BookOpen size={20} /> },
-    { to: ROUTES.OPPORTUNITIES.ROOT, label: "Opportunities Digest", icon: <Briefcase size={20} /> },
     { to: ROUTES.COMMUNITIES.ROOT, label: "Communities", icon: <Users size={20} /> },
+    { to: ROUTES.OPPORTUNITIES.ROOT, label: "Opportunities Digest", icon: <Briefcase size={20} /> },
     { to: ROUTES.CONTACTS, label: "Contacts", icon: <Info size={20} /> },
     { to: ROUTES.SGOTINISH.ROOT, label: "Sgotinish", icon: <Shield size={20} /> },
 ];

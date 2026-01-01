@@ -43,6 +43,7 @@ async def login(
     state: str | None = None,
     return_to: str | None = None,
     mock_user: str | None = "2",  # shorthand alias
+    reauth: bool | None = None,
 ):
     kc: KeyCloakManager = request.app.state.kc_manager
     redis: Redis = request.app.state.redis
@@ -63,10 +64,32 @@ async def login(
             callback_url += f"&mock_user={mock_user}"
         return RedirectResponse(url=callback_url, status_code=303)
 
+    # Optional reauth: attempt Keycloak logout to drop SSO session
+    if reauth:
+        refresh_token = request.cookies.get(config.COOKIE_REFRESH_NAME)
+        if refresh_token:
+            try:
+                await kc.revoke_offline_refresh_token(refresh_token)
+            except Exception:
+                pass
+        # Clear local cookies to avoid silent SSO reuse
+        response = RedirectResponse(url="/", status_code=303)
+        unset_kc_auth_cookies(response)
+        response.delete_cookie(key=config.COOKIE_APP_NAME)
+        # we don't return this response, but clearing headers affects current request pipeline
+        # (FastAPI will still continue). This is a best-effort cleanup.
+
+    options = {}
+    if reauth:
+        options["kc_idp_hint"] = "google"
+        options["prompt"] = "login"
+        options["max_age"] = 0
+
     return await getattr(kc.oauth, kc.__class__.__name__.lower()).authorize_redirect(
         request,
         kc.KEYCLOAK_REDIRECT_URI,
         state=state,
+        **options,
     )
 
 

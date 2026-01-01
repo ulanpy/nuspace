@@ -24,6 +24,7 @@ import {
   TemplateListResponse,
   TemplateResponse,
   TemplateUpdatePayload,
+  GoogleCalendarExportResponse,
 } from "../types";
 
 export const gradeStatisticsApi = {
@@ -57,6 +58,10 @@ export const gradeStatisticsApi = {
   getSchedule: async (): Promise<StudentScheduleResponse | null> => {
     const response = await apiCall<StudentScheduleResponse | null>(`/registered_courses/schedule`);
     return response ?? null;
+  },
+  
+  exportScheduleToGoogle: async (): Promise<GoogleCalendarExportResponse> => {
+    return await apiCall(`/registered_courses/schedule/google`, { method: 'POST' });
   },
   
   // ==== Course Items APIs ====

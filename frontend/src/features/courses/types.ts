@@ -274,6 +274,14 @@ export interface StudentScheduleResponse {
   schedule: ScheduleResponse;
 }
 
+export interface GoogleCalendarExportResponse {
+  created: number;
+  skipped: number;
+  missing_dates: string[];
+  lookup_errors: string[];
+  google_errors: string[];
+}
+
 // ==== Planner / Schedule builder ====
 export interface PlannerSection {
   id: number;

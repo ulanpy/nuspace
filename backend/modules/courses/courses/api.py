@@ -8,7 +8,8 @@ GitHub: https://github.com/superhooman/crashed.nu
 
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+import httpx
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import get_creds_or_401, get_db_session, get_infra
@@ -107,6 +108,36 @@ async def get_registered_courses_schedule(
     StudentCoursePolicy(user=user).check_read_list(student_sub=student_sub)
 
     return await service.get_latest_schedule(student_sub=student_sub)
+
+
+@router.post(
+    "/registered_courses/schedule/google",
+    response_model=schemas.GoogleCalendarExportResponse,
+)
+async def export_registered_schedule_to_google_calendar(
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    infra: Infra = Depends(get_infra),
+    kc_access_token: Annotated[str | None, Cookie(alias=config.COOKIE_ACCESS_NAME)] = None,
+    kc_refresh_token: Annotated[str | None, Cookie(alias=config.COOKIE_REFRESH_NAME)] = None,
+    service: StudentCourseService = Depends(get_student_course_service),
+):
+    """
+    Export the student's latest registrar schedule to Google Calendar.
+    """
+    student_sub = user[0].get("sub")
+    StudentCoursePolicy(user=user).check_read_list(student_sub=student_sub)
+
+    try:
+        return await service.export_schedule_to_google_calendar(
+            student_sub=student_sub,
+            kc_access_token=kc_access_token,
+            kc_refresh_token=kc_refresh_token,
+            infra=infra,
+        )
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(status_code=exc.response.status_code, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
 
 
 @router.post("/course_items", response_model=schemas.BaseCourseItem)

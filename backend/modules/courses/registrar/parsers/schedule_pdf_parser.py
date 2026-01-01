@@ -18,6 +18,22 @@ def _clean_header(cell: Any) -> str:
     return str(cell).replace("\xa0", " ").strip()
 
 
+def _get_field(record: Dict[str, Any], *keys: str) -> Any:
+    """
+    Return the first non-empty value for the provided keys (case-sensitive),
+    falling back to the first present value even if empty. This helps when
+    column headers vary slightly across PDFs (e.g., "Start Date" vs "Start date").
+    """
+    for key in keys:
+        val = record.get(key)
+        if val not in (None, ""):
+            return val
+    for key in keys:
+        if key in record:
+            return record.get(key, "")
+    return ""
+
+
 def _find_header_row(rows: Sequence[Sequence[Any]]) -> tuple[int, List[str]]:
     target = "courseabbr"
     for idx, row in enumerate(rows[:120]):  # scan a generous number of rows across tables
@@ -99,8 +115,8 @@ def _parse_rows(
                 "section_code": section_code,
                 "days": str(record.get("Days") or "").strip(),
                 "time": str(record.get("Time") or "").strip(),
-                "start_date": str(record.get("Start date") or "").strip(),
-                "end_date": str(record.get("End date") or "").strip(),
+                "start_date": str(_get_field(record, "Start date", "Start Date")).strip(),
+                "end_date": str(_get_field(record, "End date", "End Date")).strip(),
                 "faculty": str(record.get("Faculty") or "").strip(),
                 "room": str(record.get("Room") or "").strip(),
                 "enrollment": record.get("Enr"),
