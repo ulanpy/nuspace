@@ -36,7 +36,7 @@ export default function Announcements() {
             recruitment_status: "open",
         })
     );
-    const recruitingCommunities = recruitingCommunitiesData?.communities ?? [];
+    const recruitingCommunities = recruitingCommunitiesData?.items ?? [];
 
     return (
         <div className="container mx-auto px-4 py-8 space-y-8">

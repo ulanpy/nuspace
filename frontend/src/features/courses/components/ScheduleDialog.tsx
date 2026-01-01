@@ -114,6 +114,19 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
         console.error("Google calendar export errors", res.google_errors);
       }
     } catch (err: unknown) {
+      // If Keycloak/Google token exchange fails (e.g., expired Google consent), we receive a 403.
+      // In that case prompt the user to re-authenticate instead of only showing a toast.
+      const status = (err as any)?.response?.status ?? (err as any)?.status;
+      if (status === 401 || status === 403) {
+        setShowReauth(true);
+        toast({
+          title: "Sign in again required",
+          description: "We need fresh permission to sync your calendar.",
+          variant: "warning",
+        });
+        return;
+      }
+
       let detail = "Failed to export";
       if (err instanceof Error) {
         detail = err.message;
