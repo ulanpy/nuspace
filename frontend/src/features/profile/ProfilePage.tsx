@@ -2,6 +2,7 @@ import { useUser } from "@/hooks/use-user";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/atoms/card";
 import { Button } from "@/components/atoms/button";
 import { ThemeToggle } from "@/components/molecules/theme-toggle";
+import { SnowToggle } from "@/components/molecules/snow-toggle";
 import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
 import { TelegramStatus } from "@/components/molecules/telegram-status";
 import { LogOut, User, Users, Plus } from "lucide-react";
@@ -67,9 +68,10 @@ export default function ProfilePage() {
 
                 <CardFooter className="p-4 pt-3 border-t">
                     <div className="flex items-center justify-between w-full">
-                        <div className="text-sm text-muted-foreground">Theme</div>
-                        <div className="flex gap-2">
+                        <div className="text-sm text-muted-foreground">Appearance</div>
+                        <div className="flex gap-3">
                             <ThemeToggle />
+                            <SnowToggle />
                         </div>
                     </div>
                 </CardFooter>

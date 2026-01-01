@@ -38,12 +38,14 @@ const MultiCheckboxDropdown = ({
   selected,
   onChange,
   placeholder = "All",
+  className,
 }: {
   label?: string;
   options: OptionItem[];
   selected: string[];
   onChange: (next: string[]) => void;
   placeholder?: string;
+  className?: string;
 }) => {
   const toggle = (value: string) => {
     if (selected.includes(value)) {
@@ -63,7 +65,7 @@ const MultiCheckboxDropdown = ({
         : `${selected.length} selected`;
 
   return (
-    <div className="flex h-full flex-col justify-end gap-1">
+    <div className={`flex h-full flex-col justify-end gap-1 ${className ?? ""}`}>
       {label ? <Label className="text-xs text-gray-500">{label}</Label> : null}
       <Popover>
         <PopoverTrigger asChild>
@@ -269,8 +271,8 @@ export default function OpportunitiesPage() {
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-3 rounded-2xl bg-white/90 p-4 shadow-sm border border-gray-200 backdrop-blur dark:bg-background/80 dark:border-border/60">
-            <div className="md:col-span-2 lg:col-span-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 rounded-2xl bg-white/90 p-4 shadow-sm border border-gray-200 backdrop-blur dark:bg-background/80 dark:border-border/60">
+            <div className="sm:col-span-2 md:col-span-2 lg:col-span-3">
               <Label htmlFor="q" className="text-xs text-gray-500">
                 Search
               </Label>
@@ -332,9 +334,9 @@ export default function OpportunitiesPage() {
               options={majorOptions}
               selected={(filters.majors as string[]) || []}
               onChange={(next) => setFilters((prev) => ({ ...prev, majors: next, page: 1 }))}
-              className="md:col-span-2 lg:col-span-2"
+              className="sm:col-span-2 md:col-span-2 lg:col-span-2"
             />
-            <div className="flex h-full flex-col justify-end gap-2 md:col-span-2 lg:col-span-2">
+            <div className="flex h-full flex-col justify-end gap-2 sm:col-span-2 md:col-span-2 lg:col-span-2">
               <div className="flex items-center gap-3">
                 <Button
                   variant={filters.hide_expired ? "default" : "outline"}
@@ -358,7 +360,7 @@ export default function OpportunitiesPage() {
             </div>
 
             {canManage && (
-              <div className="flex h-full flex-col justify-end gap-2 md:col-span-2 lg:col-span-1 lg:col-start-6 items-end">
+              <div className="flex h-full flex-col justify-end gap-2 sm:col-span-2 md:col-span-2 lg:col-span-1 lg:col-start-6 items-end">
                 <Button className="flex h-11 w-full items-center justify-center gap-2 whitespace-nowrap text-center" onClick={() => setIsFormOpen(true)}>
                   <Plus className="h-4 w-4" />
                   Add Opportunity
@@ -417,7 +419,7 @@ export default function OpportunitiesPage() {
 
           {/* Load more */}
           {visibleData.length > 0 && (
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-gray-500">
                 Showing {filteredCount} of {displayTotal} {displayTotal === 1 ? "item" : "items"}
               </div>

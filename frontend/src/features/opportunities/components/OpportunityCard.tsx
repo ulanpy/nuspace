@@ -61,6 +61,7 @@ type Props = {
 
 export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Props) => {
   const [expanded, setExpanded] = useState(false);
+  const [showAllMajors, setShowAllMajors] = useState(false);
   const showToggle = useMemo(() => (opportunity.description?.length || 0) > 320, [opportunity.description]);
   const status = deadlineStatus(opportunity.deadline);
   const deadlineLabel =
@@ -69,44 +70,49 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
       : formatDeadline(opportunity.deadline);
   const eligibilityText = formatEligibility(opportunity.eligibility);
   const majors = normalizeOpportunityMajors(opportunity.majors);
+  const displayedMajors = showAllMajors ? majors : majors.slice(0, 5);
+  const hasMoreMajors = majors.length > 5;
+
   return (
     <article
       className="rounded-2xl border border-gray-200 bg-white/90 backdrop-blur shadow-sm hover:shadow-lg transition-all duration-200 dark:border-border/60 dark:bg-background/70"
     >
-      <div className="p-5 space-y-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
+      <div className="p-4 space-y-3">
+        <div className="flex flex-col gap-2 lg:gap-3">
+          <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
               {opportunity.type && (
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${pickBadge(opportunity.type)} shadow-sm`}>
                   {formatOpportunityType(opportunity.type)}
                 </span>
               )}
-              {opportunity.host && (
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                  <Building2 className="h-3 w-3" />
-                  {opportunity.host}
-                </span>
-              )}
             </div>
+            <div className="flex items-center gap-2 sm:gap-3 text-sm text-gray-600 dark:text-gray-300 flex-shrink-0 whitespace-nowrap">
+              <Calendar className="h-4 w-4" />
+              <span>{deadlineLabel}</span>
+              <span
+                className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  status === "Expired"
+                    ? "bg-red-100 text-red-800"
+                    : status === "Year-round"
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-emerald-100 text-emerald-800"
+                }`}
+              >
+                {status}
+              </span>
+            </div>
+          </div>
+          <div className="flex-1 min-w-0 space-y-1">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 leading-tight">
               {opportunity.name}
             </h3>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            <Calendar className="h-4 w-4" />
-            <span>{deadlineLabel}</span>
-            <span
-              className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                status === "Expired"
-                  ? "bg-red-100 text-red-800"
-                  : status === "Year-round"
-                  ? "bg-amber-100 text-amber-800"
-                  : "bg-emerald-100 text-emerald-800"
-              }`}
-            >
-              {status}
-            </span>
+            {opportunity.host && (
+              <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300 leading-snug min-w-0">
+                <Building2 className="h-4 w-4" />
+                <span className="break-words">{opportunity.host}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -130,7 +136,7 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
         )}
 
         <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-300">
-          {majors.map((m, idx) => (
+          {displayedMajors.map((m, idx) => (
             <span
               key={`${m}-${idx}`}
               className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
@@ -139,6 +145,15 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
               {m}
             </span>
           ))}
+          {hasMoreMajors && (
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-muted text-xs font-medium text-blue-700 dark:text-blue-200 dark:bg-gray-800"
+              onClick={() => setShowAllMajors((v) => !v)}
+            >
+              {showAllMajors ? "Show less" : `Show ${majors.length - 5} more`}
+            </button>
+          )}
           {opportunity.location && (
             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-purple-50 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200">
               <MapPin className="h-3 w-3" />
@@ -153,20 +168,22 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          {opportunity.link ? (
-            <a
-              href={opportunity.link}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
-            >
-              <Link2 className="h-4 w-4" />
-              Application link
-            </a>
-          ) : (
-            <span className="text-sm text-gray-500">No application link</span>
-          )}
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:flex-nowrap pt-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            {opportunity.link ? (
+              <a
+                href={opportunity.link}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 whitespace-nowrap"
+              >
+                <Link2 className="h-4 w-4" />
+                Application link
+              </a>
+            ) : (
+              <span className="text-sm text-gray-500">No application link</span>
+            )}
+          </div>
           {canManage && onEdit && (
             <button
               onClick={() => onEdit(opportunity)}

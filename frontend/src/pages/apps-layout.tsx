@@ -2,6 +2,7 @@
 
 import { Outlet, useLocation } from "react-router-dom";
 import { ThemeToggle } from "../components/molecules/theme-toggle";
+import { SnowToggle } from "../components/molecules/snow-toggle";
 import { LoginButton } from "../components/molecules/buttons/login-button";
 import { ROUTES } from "@/data/routes";
 import { BackNavigationProvider } from "@/context/BackNavigationContext";
@@ -19,6 +20,7 @@ export default function AppsLayout() {
           right={
             <div className="flex gap-2">
               <ThemeToggle />
+              <SnowToggle />
               <LoginButton />
             </div>
           }

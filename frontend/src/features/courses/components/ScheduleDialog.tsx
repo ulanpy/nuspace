@@ -216,7 +216,7 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
             disabled={exporting || isLoading || !hasItems}
           >
             <img src={GoogleCalendarIcon} alt="" className="h-4 w-4" />
-            {exporting ? "Exporting…" : "Sync with Google Calendar"}
+            {exporting ? "Exporting…" : "Import to Google Calendar"}
           </Button>
         </div>
 

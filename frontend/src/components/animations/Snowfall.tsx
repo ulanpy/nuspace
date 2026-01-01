@@ -13,7 +13,7 @@ type Snowflake = {
   drift: number;
 };
 
-const FLAKE_COUNT = 60;
+const FLAKE_COUNT = 15;
 
 const randomBetween = (min: number, max: number) =>
   Math.random() * (max - min) + min;

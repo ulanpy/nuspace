@@ -21,6 +21,7 @@ import { useEvents } from "@/features/events/hooks/useEvents";
 import { Link } from "react-router-dom";
 import { ROUTES } from "@/data/routes";
 import { ThemeToggle } from "@/components/molecules/theme-toggle";
+import { SnowToggle } from "@/components/molecules/snow-toggle";
 
 // Static slides reused below when composing the final carousel list
 const staticSlides = [
@@ -128,6 +129,7 @@ export default function HomePage() {
         right={
           <div className="flex gap-2">
             <ThemeToggle />
+            <SnowToggle />
             <LoginButton />
           </div>
         }

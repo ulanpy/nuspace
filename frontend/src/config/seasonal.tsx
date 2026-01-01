@@ -1,0 +1,70 @@
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { useTheme } from "@/context/ThemeProviderContext";
+
+const snowFlag = import.meta.env.VITE_ENABLE_SNOWFALL;
+
+// Toggle for temporary New Year snow effect. Default on; set VITE_ENABLE_SNOWFALL=false to disable.
+export const ENABLE_SNOWFALL = snowFlag === undefined ? true : snowFlag === "true";
+
+type SnowContextValue = {
+  enabled: boolean;
+  setEnabled: (value: boolean) => void;
+  toggle: () => void;
+};
+
+const SnowContext = createContext<SnowContextValue | undefined>(undefined);
+
+const STORAGE_KEY = "snow-enabled";
+
+export function SnowProvider({ children }: { children: ReactNode }) {
+  const { theme } = useTheme();
+
+  const [enabled, setEnabledState] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (saved !== null) return saved === "true";
+    // Default: on for dark theme when allowed by env flag
+    return ENABLE_SNOWFALL && theme === "dark";
+  });
+
+  useEffect(() => {
+    if (!ENABLE_SNOWFALL) {
+      setEnabledState(false);
+      return;
+    }
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(STORAGE_KEY, String(enabled));
+    }
+  }, [enabled]);
+
+  const value = useMemo(
+    () => ({
+      enabled: ENABLE_SNOWFALL && enabled,
+      setEnabled: (value: boolean) => {
+        if (!ENABLE_SNOWFALL) return;
+        setEnabledState(value);
+      },
+      toggle: () => {
+        if (!ENABLE_SNOWFALL) return;
+        setEnabledState((v) => !v);
+      },
+    }),
+    [enabled],
+  );
+
+  return <SnowContext.Provider value={value}>{children}</SnowContext.Provider>;
+}
+
+export const useSnow = () => {
+  const ctx = useContext(SnowContext);
+  if (!ctx) {
+    throw new Error("useSnow must be used within a SnowProvider");
+  }
+  return ctx;
+};
+
+export const useSnowEnabled = () => {
+  const { enabled } = useSnow();
+  return enabled;
+};
