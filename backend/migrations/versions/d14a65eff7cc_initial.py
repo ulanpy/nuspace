@@ -1,18 +1,18 @@
-"""initial schema
+"""initial
 
-Revision ID: 9aafcb4e4c98
+Revision ID: d07224c89b5d
 Revises: 
-Create Date: 2025-10-17 11:26:43.615695
+Create Date: 2026-01-01 15:58:49.329752
 
 """
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '9aafcb4e4c98'
+revision: str = 'd07224c89b5d'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -37,7 +37,8 @@ def upgrade() -> None:
     sa.Column('term', sa.String(length=32), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('registrar_id', name='uq_courses_registrar_id')
     )
     op.create_index(op.f('ix_courses_course_code'), 'courses', ['course_code'], unique=False)
     op.create_index(op.f('ix_courses_level'), 'courses', ['level'], unique=False)
@@ -82,7 +83,7 @@ def upgrade() -> None:
     sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('mime_type', sa.String(), nullable=False),
-    sa.Column('entity_type', sa.Enum('products', 'community_events', 'communities', 'community_posts', 'reviews', 'community_comments', 'grade_reports', 'courses', 'tickets', 'messages', name='entity_type'), nullable=False),
+    sa.Column('entity_type', sa.Enum('community_events', 'communities', 'grade_reports', 'courses', 'tickets', 'messages', name='entity_type'), nullable=False),
     sa.Column('entity_id', sa.BigInteger(), nullable=False),
     sa.Column('media_format', sa.Enum('banner', 'carousel', 'profile', name='media_format'), nullable=False),
     sa.Column('media_order', sa.Integer(), nullable=False),
@@ -94,6 +95,35 @@ def upgrade() -> None:
     op.create_index(op.f('ix_media_entity_type'), 'media', ['entity_type'], unique=False)
     op.create_index(op.f('ix_media_media_format'), 'media', ['media_format'], unique=False)
     op.create_index(op.f('ix_media_name'), 'media', ['name'], unique=True)
+    op.create_table('opportunities',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.String(length=512), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('deadline', sa.Date(), nullable=True),
+    sa.Column('host', sa.String(length=256), nullable=True),
+    sa.Column('type', sa.Enum('RESEARCH', 'INTERNSHIP', 'SUMMER_SCHOOL', 'FORUM', 'SUMMIT', 'GRANT', 'SCHOLARSHIP', 'CONFERENCE', name='opportunity_type'), nullable=False),
+    sa.Column('link', sa.String(length=1024), nullable=True),
+    sa.Column('location', sa.String(length=256), nullable=True),
+    sa.Column('funding', sa.String(length=256), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('opportunity_eligibility',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('opportunity_id', sa.Integer(), nullable=False),
+    sa.Column('education_level', sa.Enum('UG', 'GRM', 'PHD', name='education_level'), nullable=False),
+    sa.Column('year', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['opportunity_id'], ['opportunities.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('opportunity_majors',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('opportunity_id', sa.Integer(), nullable=False),
+    sa.Column('major', sa.Enum('ENGINEERING_MANAGEMENT', 'MECHANICAL_AND_AEROSPACE_ENGINEERING', 'ELECTRICAL_AND_COMPUTER_ENGINEERING', 'CHEMICAL_AND_MATERIALS_ENGINEERING', 'CIVIL_AND_ENVIRONMENTAL_ENGINEERING', 'BIOMEDICAL_ENGINEERING', 'MINING_ENGINEERING', 'PETROLEUM_ENGINEERING', 'ROBOTICS_AND_MECHATRONICS_ENGINEERING', 'COMPUTER_SCIENCE', 'DATA_SCIENCE', 'APPLIED_MATHEMATICS', 'MATHEMATICS', 'ECONOMICS', 'BUSINESS_ADMINISTRATION', 'FINANCE', 'LIFE_SCIENCES', 'BIOLOGICAL_SCIENCES', 'MEDICAL_SCIENCES', 'MOLECULAR_MEDICINE', 'PHARMACOLOGY_AND_TOXICOLOGY', 'PUBLIC_HEALTH', 'SPORTS_MEDICINE_AND_REHABILITATION', 'NURSING', 'DOCTOR_OF_MEDICINE', 'SIX_YEAR_MEDICAL_PROGRAM', 'CHEMISTRY', 'PHYSICS', 'GEOSCIENCES', 'GEOLOGY', 'POLITICAL_SCIENCE_AND_INTERNATIONAL_RELATIONS', 'PUBLIC_POLICY', 'PUBLIC_ADMINISTRATION', 'EURASIAN_STUDIES', 'SOCIOLOGY', 'ANTHROPOLOGY', 'HISTORY', 'EDUCATIONAL_LEADERSHIP', 'MULTILINGUAL_EDUCATION', 'WORLD_LANGUAGES_LITERATURE_AND_CULTURE', name='opportunity_major'), nullable=False),
+    sa.ForeignKeyConstraint(['opportunity_id'], ['opportunities.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('users',
     sa.Column('sub', sa.String(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
@@ -107,11 +137,11 @@ def upgrade() -> None:
     sa.Column('telegram_id', sa.BigInteger(), nullable=True),
     sa.Column('department_id', sa.BigInteger(), nullable=True),
     sa.ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='SET NULL'),
-    sa.PrimaryKeyConstraint('sub')
+    sa.PrimaryKeyConstraint('sub'),
+    sa.UniqueConstraint('sub')
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_index(op.f('ix_users_name'), 'users', ['name'], unique=False)
-    op.create_index(op.f('ix_users_sub'), 'users', ['sub'], unique=True)
     op.create_index(op.f('ix_users_surname'), 'users', ['surname'], unique=False)
     op.create_index(op.f('ix_users_telegram_id'), 'users', ['telegram_id'], unique=True)
     op.create_table('communities',
@@ -153,8 +183,23 @@ def upgrade() -> None:
     sa.UniqueConstraint('course_id', 'student_sub', name='uq_course_templates_course_student')
     )
     op.create_index(op.f('ix_course_templates_course_id'), 'course_templates', ['course_id'], unique=False)
-    op.create_index(op.f('ix_course_templates_id'), 'course_templates', ['id'], unique=False)
     op.create_index(op.f('ix_course_templates_student_sub'), 'course_templates', ['student_sub'], unique=False)
+    op.create_table('degree_audit_results',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('student_sub', sa.String(), nullable=False),
+    sa.Column('admission_year', sa.String(length=16), nullable=False),
+    sa.Column('major', sa.String(length=256), nullable=False),
+    sa.Column('results', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('summary', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('warnings', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'[]'::jsonb"), nullable=False),
+    sa.Column('csv_base64', sa.String(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), server_default=sa.text('NOW()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), server_default=sa.text('NOW()'), nullable=False),
+    sa.ForeignKeyConstraint(['student_sub'], ['users.sub'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('student_sub', 'admission_year', 'major', name='uq_degree_audit_user_year_major')
+    )
+    op.create_index(op.f('ix_degree_audit_results_student_sub'), 'degree_audit_results', ['student_sub'], unique=False)
     op.create_table('notifications',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(), nullable=False),
@@ -168,36 +213,16 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['receiver_sub'], ['users.sub'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('products',
-    sa.Column('id', sa.BigInteger(), nullable=False),
-    sa.Column('name', sa.String(length=255), nullable=False),
-    sa.Column('description', sa.String(), nullable=False),
-    sa.Column('price', sa.BigInteger(), nullable=False),
-    sa.Column('user_sub', sa.String(), nullable=False),
-    sa.Column('category', sa.Enum('books', 'electronics', 'clothing', 'furniture', 'appliances', 'sports', 'stationery', 'art_supplies', 'beauty', 'services', 'food', 'tickets', 'transport', 'others', name='product_category'), nullable=False),
-    sa.Column('condition', sa.Enum('new', 'like_new', 'used', name='product_condition'), nullable=False),
-    sa.Column('status', sa.Enum('inactive', 'active', name='product_status'), nullable=False),
+    op.create_table('planner_schedules',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('student_sub', sa.String(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['user_sub'], ['users.sub'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.ForeignKeyConstraint(['student_sub'], ['users.sub'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('student_sub', name='uq_planner_schedule_student')
     )
-    op.create_index(op.f('ix_products_name'), 'products', ['name'], unique=False)
-    op.create_table('reviews',
-    sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False),
-    sa.Column('reviewable_type', sa.Enum('products', 'club_events', name='reviewable_type'), nullable=False),
-    sa.Column('entity_id', sa.BigInteger(), nullable=False),
-    sa.Column('user_sub', sa.String(), nullable=False),
-    sa.Column('rating', sa.Integer(), nullable=False),
-    sa.Column('content', sa.Text(), nullable=True),
-    sa.Column('owner_type', sa.Enum('users', 'clubs', name='owner_type'), nullable=False),
-    sa.Column('owner_id', sa.String(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['user_sub'], ['users.sub'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_reviews_entity_id'), 'reviews', ['entity_id'], unique=False)
+    op.create_index(op.f('ix_planner_schedules_student_sub'), 'planner_schedules', ['student_sub'], unique=False)
     op.create_table('student_courses',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('student_sub', sa.String(), nullable=False),
@@ -210,8 +235,24 @@ def upgrade() -> None:
     sa.UniqueConstraint('student_sub', 'course_id', name='uq_student_courses_student_course_unique')
     )
     op.create_index(op.f('ix_student_courses_course_id'), 'student_courses', ['course_id'], unique=False)
-    op.create_index(op.f('ix_student_courses_id'), 'student_courses', ['id'], unique=False)
     op.create_index(op.f('ix_student_courses_student_sub'), 'student_courses', ['student_sub'], unique=False)
+    op.create_table('student_schedules',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('student_sub', sa.String(), nullable=False),
+    sa.Column('term_label', sa.String(length=64), nullable=True),
+    sa.Column('term_value', sa.String(length=32), nullable=True),
+    sa.Column('schedule_data', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('preferences', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('last_synced_at', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['student_sub'], ['users.sub'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('student_sub', 'term_value', name='uq_student_schedule_student_term')
+    )
+    op.create_index(op.f('ix_student_schedules_student_sub'), 'student_schedules', ['student_sub'], unique=False)
+    op.create_index(op.f('ix_student_schedules_term_label'), 'student_schedules', ['term_label'], unique=False)
+    op.create_index(op.f('ix_student_schedules_term_value'), 'student_schedules', ['term_value'], unique=False)
     op.create_table('tickets',
     sa.Column('id', sa.BigInteger(), nullable=False),
     sa.Column('author_sub', sa.String(), nullable=True),
@@ -229,6 +270,18 @@ def upgrade() -> None:
     op.create_index(op.f('ix_tickets_category'), 'tickets', ['category'], unique=False)
     op.create_index(op.f('ix_tickets_created_at'), 'tickets', ['created_at'], unique=False)
     op.create_index(op.f('ix_tickets_status'), 'tickets', ['status'], unique=False)
+    op.create_table('community_achievements',
+    sa.Column('id', sa.BigInteger(), nullable=False),
+    sa.Column('community_id', sa.BigInteger(), nullable=False),
+    sa.Column('description', sa.String(), nullable=False),
+    sa.Column('year', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['community_id'], ['communities.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_community_achievements_community_id'), 'community_achievements', ['community_id'], unique=False)
+    op.create_index(op.f('ix_community_achievements_year'), 'community_achievements', ['year'], unique=False)
     op.create_table('community_members',
     sa.Column('id', sa.BigInteger(), nullable=False),
     sa.Column('community_id', sa.BigInteger(), nullable=False),
@@ -237,15 +290,6 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['community_id'], ['communities.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_sub'], ['users.sub'], ondelete='SET NULL'),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('community_post_tags',
-    sa.Column('id', sa.BigInteger(), nullable=False),
-    sa.Column('community_id', sa.BigInteger(), nullable=False),
-    sa.Column('name', sa.String(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['community_id'], ['communities.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('conversations',
@@ -274,7 +318,6 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['student_course_id'], ['student_courses.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_course_items_id'), 'course_items', ['id'], unique=False)
     op.create_index(op.f('ix_course_items_student_course_id'), 'course_items', ['student_course_id'], unique=False)
     op.create_table('events',
     sa.Column('id', sa.BigInteger(), nullable=False),
@@ -305,28 +348,30 @@ def upgrade() -> None:
     op.create_index(op.f('ix_events_start_datetime'), 'events', ['start_datetime'], unique=False)
     op.create_index(op.f('ix_events_status'), 'events', ['status'], unique=False)
     op.create_index(op.f('ix_events_type'), 'events', ['type'], unique=False)
-    op.create_table('product_reports',
+    op.create_table('planner_schedule_courses',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('user_sub', sa.String(), nullable=False),
-    sa.Column('product_id', sa.BigInteger(), nullable=False),
-    sa.Column('text', sa.String(), nullable=False),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['product_id'], ['products.id'], ),
-    sa.ForeignKeyConstraint(['user_sub'], ['users.sub'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('review_replies',
-    sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False),
-    sa.Column('review_id', sa.BigInteger(), nullable=False),
-    sa.Column('user_sub', sa.String(), nullable=False),
-    sa.Column('content', sa.Text(), nullable=False),
+    sa.Column('planner_schedule_id', sa.Integer(), nullable=False),
+    sa.Column('registrar_course_id', sa.String(length=64), nullable=False),
+    sa.Column('course_code', sa.String(length=128), nullable=False),
+    sa.Column('level', sa.String(length=64), nullable=True),
+    sa.Column('school', sa.String(length=64), nullable=True),
+    sa.Column('term_value', sa.String(length=32), nullable=True),
+    sa.Column('term_label', sa.String(length=64), nullable=True),
+    sa.Column('metadata_json', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('capacity_total', sa.Integer(), nullable=True),
+    sa.Column('enrollment_total', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['review_id'], ['reviews.id'], ),
-    sa.ForeignKeyConstraint(['user_sub'], ['users.sub'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('review_id')
+    sa.ForeignKeyConstraint(['planner_schedule_id'], ['planner_schedules.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
     )
+    op.create_index(op.f('ix_planner_schedule_courses_course_code'), 'planner_schedule_courses', ['course_code'], unique=False)
+    op.create_index(op.f('ix_planner_schedule_courses_level'), 'planner_schedule_courses', ['level'], unique=False)
+    op.create_index(op.f('ix_planner_schedule_courses_planner_schedule_id'), 'planner_schedule_courses', ['planner_schedule_id'], unique=False)
+    op.create_index(op.f('ix_planner_schedule_courses_registrar_course_id'), 'planner_schedule_courses', ['registrar_course_id'], unique=False)
+    op.create_index(op.f('ix_planner_schedule_courses_school'), 'planner_schedule_courses', ['school'], unique=False)
+    op.create_index(op.f('ix_planner_schedule_courses_term_label'), 'planner_schedule_courses', ['term_label'], unique=False)
+    op.create_index(op.f('ix_planner_schedule_courses_term_value'), 'planner_schedule_courses', ['term_value'], unique=False)
     op.create_table('template_items',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('template_id', sa.Integer(), nullable=False),
@@ -337,7 +382,6 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['template_id'], ['course_templates.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_template_items_id'), 'template_items', ['id'], unique=False)
     op.create_index(op.f('ix_template_items_template_id'), 'template_items', ['template_id'], unique=False)
     op.create_table('ticket_access',
     sa.Column('ticket_id', sa.BigInteger(), nullable=False),
@@ -350,25 +394,6 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_sub'], ['users.sub'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('ticket_id', 'user_sub', 'permission')
     )
-    op.create_table('community_posts',
-    sa.Column('id', sa.BigInteger(), nullable=False),
-    sa.Column('community_id', sa.BigInteger(), nullable=False),
-    sa.Column('user_sub', sa.String(), nullable=True),
-    sa.Column('title', sa.String(), nullable=False),
-    sa.Column('description', sa.String(), nullable=False),
-    sa.Column('tag_id', sa.BigInteger(), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.Column('from_community', sa.Boolean(), nullable=False),
-    sa.ForeignKeyConstraint(['community_id'], ['communities.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['tag_id'], ['community_post_tags.id'], ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['user_sub'], ['users.sub'], ondelete='SET NULL'),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_community_posts_community_id'), 'community_posts', ['community_id'], unique=False)
-    op.create_index(op.f('ix_community_posts_created_at'), 'community_posts', ['created_at'], unique=False)
-    op.create_index(op.f('ix_community_posts_tag_id'), 'community_posts', ['tag_id'], unique=False)
-    op.create_index(op.f('ix_community_posts_user_sub'), 'community_posts', ['user_sub'], unique=False)
     op.create_table('event_collaborators',
     sa.Column('id', sa.BigInteger(), nullable=False),
     sa.Column('event_id', sa.BigInteger(), nullable=False),
@@ -398,25 +423,23 @@ def upgrade() -> None:
     op.create_index(op.f('ix_messages_conversation_id'), 'messages', ['conversation_id'], unique=False)
     op.create_index(op.f('ix_messages_sender_sub'), 'messages', ['sender_sub'], unique=False)
     op.create_index(op.f('ix_messages_sent_at'), 'messages', ['sent_at'], unique=False)
-    op.create_table('community_comments',
-    sa.Column('id', sa.BigInteger(), nullable=False),
-    sa.Column('post_id', sa.BigInteger(), nullable=False),
-    sa.Column('parent_id', sa.BigInteger(), nullable=True),
-    sa.Column('user_sub', sa.String(), nullable=True),
-    sa.Column('content', sa.String(), nullable=False),
+    op.create_table('planner_schedule_sections',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('planner_schedule_course_id', sa.Integer(), nullable=False),
+    sa.Column('section_code', sa.String(length=32), nullable=False),
+    sa.Column('days', sa.String(length=32), nullable=False),
+    sa.Column('times', sa.String(length=64), nullable=False),
+    sa.Column('room', sa.String(length=128), nullable=True),
+    sa.Column('faculty', sa.String(length=256), nullable=True),
+    sa.Column('capacity', sa.Integer(), nullable=True),
+    sa.Column('enrollment_snapshot', sa.Integer(), nullable=True),
+    sa.Column('is_selected', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.Column('deleted_at', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['parent_id'], ['community_comments.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['post_id'], ['community_posts.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['user_sub'], ['users.sub'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['planner_schedule_course_id'], ['planner_schedule_courses.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_community_comments_created_at'), 'community_comments', ['created_at'], unique=False)
-    op.create_index(op.f('ix_community_comments_deleted_at'), 'community_comments', ['deleted_at'], unique=False)
-    op.create_index(op.f('ix_community_comments_parent_id'), 'community_comments', ['parent_id'], unique=False)
-    op.create_index(op.f('ix_community_comments_post_id'), 'community_comments', ['post_id'], unique=False)
-    op.create_index(op.f('ix_community_comments_user_sub'), 'community_comments', ['user_sub'], unique=False)
+    op.create_index(op.f('ix_planner_schedule_sections_planner_schedule_course_id'), 'planner_schedule_sections', ['planner_schedule_course_id'], unique=False)
     op.create_table('message_read_status',
     sa.Column('message_id', sa.BigInteger(), nullable=False),
     sa.Column('user_sub', sa.String(), nullable=False),
@@ -434,12 +457,8 @@ def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_index(op.f('ix_message_read_status_read_at'), table_name='message_read_status')
     op.drop_table('message_read_status')
-    op.drop_index(op.f('ix_community_comments_user_sub'), table_name='community_comments')
-    op.drop_index(op.f('ix_community_comments_post_id'), table_name='community_comments')
-    op.drop_index(op.f('ix_community_comments_parent_id'), table_name='community_comments')
-    op.drop_index(op.f('ix_community_comments_deleted_at'), table_name='community_comments')
-    op.drop_index(op.f('ix_community_comments_created_at'), table_name='community_comments')
-    op.drop_table('community_comments')
+    op.drop_index(op.f('ix_planner_schedule_sections_planner_schedule_course_id'), table_name='planner_schedule_sections')
+    op.drop_table('planner_schedule_sections')
     op.drop_index(op.f('ix_messages_sent_at'), table_name='messages')
     op.drop_index(op.f('ix_messages_sender_sub'), table_name='messages')
     op.drop_index(op.f('ix_messages_conversation_id'), table_name='messages')
@@ -448,17 +467,17 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_event_collaborators_event_id'), table_name='event_collaborators')
     op.drop_index(op.f('ix_event_collaborators_community_id'), table_name='event_collaborators')
     op.drop_table('event_collaborators')
-    op.drop_index(op.f('ix_community_posts_user_sub'), table_name='community_posts')
-    op.drop_index(op.f('ix_community_posts_tag_id'), table_name='community_posts')
-    op.drop_index(op.f('ix_community_posts_created_at'), table_name='community_posts')
-    op.drop_index(op.f('ix_community_posts_community_id'), table_name='community_posts')
-    op.drop_table('community_posts')
     op.drop_table('ticket_access')
     op.drop_index(op.f('ix_template_items_template_id'), table_name='template_items')
-    op.drop_index(op.f('ix_template_items_id'), table_name='template_items')
     op.drop_table('template_items')
-    op.drop_table('review_replies')
-    op.drop_table('product_reports')
+    op.drop_index(op.f('ix_planner_schedule_courses_term_value'), table_name='planner_schedule_courses')
+    op.drop_index(op.f('ix_planner_schedule_courses_term_label'), table_name='planner_schedule_courses')
+    op.drop_index(op.f('ix_planner_schedule_courses_school'), table_name='planner_schedule_courses')
+    op.drop_index(op.f('ix_planner_schedule_courses_registrar_course_id'), table_name='planner_schedule_courses')
+    op.drop_index(op.f('ix_planner_schedule_courses_planner_schedule_id'), table_name='planner_schedule_courses')
+    op.drop_index(op.f('ix_planner_schedule_courses_level'), table_name='planner_schedule_courses')
+    op.drop_index(op.f('ix_planner_schedule_courses_course_code'), table_name='planner_schedule_courses')
+    op.drop_table('planner_schedule_courses')
     op.drop_index(op.f('ix_events_type'), table_name='events')
     op.drop_index(op.f('ix_events_status'), table_name='events')
     op.drop_index(op.f('ix_events_start_datetime'), table_name='events')
@@ -469,31 +488,34 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_events_community_id'), table_name='events')
     op.drop_table('events')
     op.drop_index(op.f('ix_course_items_student_course_id'), table_name='course_items')
-    op.drop_index(op.f('ix_course_items_id'), table_name='course_items')
     op.drop_table('course_items')
     op.drop_index(op.f('ix_conversations_ticket_id'), table_name='conversations')
     op.drop_index(op.f('ix_conversations_status'), table_name='conversations')
     op.drop_index(op.f('ix_conversations_sg_member_sub'), table_name='conversations')
     op.drop_index(op.f('ix_conversations_created_at'), table_name='conversations')
     op.drop_table('conversations')
-    op.drop_table('community_post_tags')
     op.drop_table('community_members')
+    op.drop_index(op.f('ix_community_achievements_year'), table_name='community_achievements')
+    op.drop_index(op.f('ix_community_achievements_community_id'), table_name='community_achievements')
+    op.drop_table('community_achievements')
     op.drop_index(op.f('ix_tickets_status'), table_name='tickets')
     op.drop_index(op.f('ix_tickets_created_at'), table_name='tickets')
     op.drop_index(op.f('ix_tickets_category'), table_name='tickets')
     op.drop_index(op.f('ix_tickets_author_sub'), table_name='tickets')
     op.drop_table('tickets')
+    op.drop_index(op.f('ix_student_schedules_term_value'), table_name='student_schedules')
+    op.drop_index(op.f('ix_student_schedules_term_label'), table_name='student_schedules')
+    op.drop_index(op.f('ix_student_schedules_student_sub'), table_name='student_schedules')
+    op.drop_table('student_schedules')
     op.drop_index(op.f('ix_student_courses_student_sub'), table_name='student_courses')
-    op.drop_index(op.f('ix_student_courses_id'), table_name='student_courses')
     op.drop_index(op.f('ix_student_courses_course_id'), table_name='student_courses')
     op.drop_table('student_courses')
-    op.drop_index(op.f('ix_reviews_entity_id'), table_name='reviews')
-    op.drop_table('reviews')
-    op.drop_index(op.f('ix_products_name'), table_name='products')
-    op.drop_table('products')
+    op.drop_index(op.f('ix_planner_schedules_student_sub'), table_name='planner_schedules')
+    op.drop_table('planner_schedules')
     op.drop_table('notifications')
+    op.drop_index(op.f('ix_degree_audit_results_student_sub'), table_name='degree_audit_results')
+    op.drop_table('degree_audit_results')
     op.drop_index(op.f('ix_course_templates_student_sub'), table_name='course_templates')
-    op.drop_index(op.f('ix_course_templates_id'), table_name='course_templates')
     op.drop_index(op.f('ix_course_templates_course_id'), table_name='course_templates')
     op.drop_table('course_templates')
     op.drop_index(op.f('ix_communities_verified'), table_name='communities')
@@ -507,10 +529,12 @@ def downgrade() -> None:
     op.drop_table('communities')
     op.drop_index(op.f('ix_users_telegram_id'), table_name='users')
     op.drop_index(op.f('ix_users_surname'), table_name='users')
-    op.drop_index(op.f('ix_users_sub'), table_name='users')
     op.drop_index(op.f('ix_users_name'), table_name='users')
     op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_table('users')
+    op.drop_table('opportunity_majors')
+    op.drop_table('opportunity_eligibility')
+    op.drop_table('opportunities')
     op.drop_index(op.f('ix_media_name'), table_name='media')
     op.drop_index(op.f('ix_media_media_format'), table_name='media')
     op.drop_index(op.f('ix_media_entity_type'), table_name='media')
