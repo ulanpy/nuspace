@@ -108,7 +108,7 @@ class RegistrarClient:
     async def fetch_schedule(self, username: str, password: str) -> dict[str, Any]:
         await self.login(username=username, password=password)
         schedule_type = await self._get_schedule_type()
-        return await self._get_schedule(schedule_type)
+        return await self._get_schedule("current")
 
     async def fetch_unofficial_transcript_raw(self, username: str, password: str) -> tuple[str, Any]:
         """

@@ -106,6 +106,58 @@ class KeyCloakManager(BaseSettings):
         response.raise_for_status()
         return response.json()
 
+    async def fetch_broker_token(self, access_token: str, provider: str = "google") -> dict:
+        """
+        Fetch the downstream identity provider token (e.g., Google access token)
+        associated with the current Keycloak session.
+        """
+        broker_url = f"{self.KEYCLOAK_URL}/realms/{self.REALM}/broker/{provider}/token"
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                broker_url, headers={"Authorization": f"Bearer {access_token}"}
+            )
+        response.raise_for_status()
+        return response.json()
+
+    async def exchange_token_for_idp(
+        self,
+        subject_token: str,
+        *,
+        requested_issuer: str,
+        requested_token_type: str = "urn:ietf:params:oauth:grant-type:token-exchange",
+    ) -> dict:
+        """
+        Perform Keycloak legacy token exchange to obtain an external IdP access token.
+
+        Args:
+            subject_token: KC access token of the user
+            requested_issuer: alias of the IdP (e.g., "google")
+            requested_token_type: usually urn:ietf:params:oauth:token-type:access_token
+
+        Returns:
+            JSON response containing access_token (and possibly account-link-url on errors)
+        """
+        token_url = f"{self.KEYCLOAK_URL}/realms/{self.REALM}/protocol/openid-connect/token"
+        data = {
+            "client_id": self.KEYCLOAK_CLIENT_ID,
+            "client_secret": self.KEYCLOAK_CLIENT_SECRET,
+            "grant_type": "urn:ietf:params:oauth:grant-type:token-exchange",
+            "subject_token": subject_token,
+            "requested_token_type": "urn:ietf:params:oauth:token-type:access_token",
+            "requested_issuer": requested_issuer,
+        }
+        async with httpx.AsyncClient() as client:
+            response = await client.post(token_url, data=data)
+        if response.status_code == 400:
+            # propagate structured error for account-link-url handling
+            raise httpx.HTTPStatusError(
+                "token_exchange_failed",
+                request=response.request,
+                response=response,
+            )
+        response.raise_for_status()
+        return response.json()
+
     async def revoke_offline_refresh_token(self, refresh_token: str) -> None:
         """Revoke the offline refresh token in Keycloak."""
         revoke_url = f"{self.KEYCLOAK_URL}/realms/{self.REALM}/protocol/openid-connect/revoke"

@@ -1,15 +1,21 @@
-from datetime import datetime, timezone
+import asyncio
+from datetime import date, datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo
 import re
-from typing import List
+from typing import List, Tuple
+
+import httpx
 
 from backend.common.schemas import Infra
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.grade_report import Course, CourseItem, StudentCourse, StudentSchedule
+from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.courses.courses import schemas
 from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
 from backend.modules.courses.courses.repository import CourseRepository
 from backend.modules.courses.registrar.service import RegistrarService
+from backend.modules.courses.registrar.schedule_sync import SCHEDULE_INDEX_UID
 from backend.modules.courses.registrar.schemas import (
     CourseSearchRequest,
     SchedulePreferences,
@@ -24,9 +30,16 @@ class StudentCourseService:
         self,
         repository: CourseRepository,
         registrar_service: RegistrarService,
+        *,
+        infra: Infra | None = None,
+        kc_manager: KeyCloakManager | None = None,
+        calendar_service=None,
     ):
         self.repository = repository
         self._registrar_service = registrar_service
+        self.infra = infra
+        self.kc_manager = kc_manager
+        self.calendar_service = calendar_service
 
     async def get_registered_courses(
         self, student_sub: str
@@ -206,6 +219,50 @@ class StudentCourseService:
             parts.append(part)
 
         return "/".join(parts)
+
+    @staticmethod
+    def _normalize_course_code_for_lookup(course_code: str | None) -> str:
+        """Normalize course codes for matching against Meilisearch schedule index."""
+        if not course_code:
+            return ""
+        return re.sub(r"[\s/-]+", "", course_code).upper()
+
+    @staticmethod
+    def _parse_schedule_date(value: str | None) -> date | None:
+        """Parse registrar-style dates like '2-JAN-26' into date objects."""
+        if not value:
+            return None
+        raw = value.strip()
+        if not raw:
+            return None
+        for fmt in ("%d-%b-%y", "%d-%b-%Y"):
+            try:
+                dt = datetime.strptime(raw.upper(), fmt)
+                return dt.date()
+            except ValueError:
+                continue
+        return None
+
+    @staticmethod
+    def _extract_course_window(hit: dict) -> Tuple[date, date] | None:
+        """Extract the earliest start_date and latest end_date across course sections."""
+        sections = hit.get("sections") or []
+        windows: list[Tuple[date, date]] = []
+        for section in sections:
+            start_date = StudentCourseService._parse_schedule_date(section.get("start_date"))
+            end_date = StudentCourseService._parse_schedule_date(section.get("end_date"))
+            if start_date and end_date:
+                windows.append((start_date, end_date))
+        if not windows:
+            return None
+        starts, ends = zip(*windows)
+        return min(starts), max(ends)
+
+    @staticmethod
+    def _first_occurrence(start_date: date, target_weekday: int) -> date:
+        """Return first date on/after start_date that falls on target_weekday (0=Mon)."""
+        delta_days = (target_weekday - start_date.weekday()) % 7
+        return start_date + timedelta(days=delta_days)
 
     def _resolve_fallback_term_value(
         self,
@@ -570,3 +627,198 @@ class StudentCourseService:
             schedule=schedule,
         )
 
+    async def export_schedule_to_google_calendar(
+        self,
+        *,
+        student_sub: str,
+        kc_access_token: str | None,
+        kc_refresh_token: str | None,
+        infra: Infra | None = None,
+    ) -> schemas.GoogleCalendarExportResponse:
+        """
+        Push the student's weekly schedule to Google Calendar by enriching
+        entries with start/end dates from the Meilisearch schedule index.
+        """
+        if not self.calendar_service:
+            raise ValueError("Calendar service is not configured")
+
+        active_infra = infra or self.infra
+        if not active_infra or not active_infra.meilisearch_client:
+            raise ValueError("Meilisearch client is not available")
+
+        schedule_record: StudentSchedule | None = await self.repository.get_latest_schedule(student_sub)
+        if not schedule_record:
+            raise ValueError("No schedule found for student")
+
+        normalized_week: list[list[UserScheduleItem]] = [
+            [UserScheduleItem(**item) for item in day]
+            for day in schedule_record.schedule_data
+        ]
+
+        # Collect course codes for Meilisearch lookups
+        code_lookup: dict[str, str] = {}
+        for day in normalized_week:
+            for item in day:
+                normalized = self._normalize_course_code_for_lookup(item.course_code)
+                if normalized:
+                    code_lookup.setdefault(normalized, item.course_code)
+
+        async def fetch_course_window(normalized_code: str, raw_code: str):
+            search_result = await meilisearch.get(
+                client=active_infra.meilisearch_client,
+                storage_name=SCHEDULE_INDEX_UID,
+                keyword=raw_code,
+                page=1,
+                size=3,
+                filters=None,
+            )
+            hits = search_result.get("hits", []) if isinstance(search_result, dict) else []
+            chosen = None
+            for hit in hits:
+                hit_code = self._normalize_course_code_for_lookup(hit.get("course_code"))
+                if hit_code == normalized_code:
+                    chosen = hit
+                    break
+            if not chosen and hits:
+                chosen = hits[0]
+            window = self._extract_course_window(chosen) if chosen else None
+            return normalized_code, window, chosen
+
+        lookup_tasks = [
+            fetch_course_window(normalized, raw)
+            for normalized, raw in code_lookup.items()
+        ]
+        lookup_results = await asyncio.gather(*lookup_tasks, return_exceptions=True)
+
+        course_windows: dict[str, tuple[date, date]] = {}
+        missing_dates: list[str] = []
+        lookup_errors: list[str] = []
+        for res in lookup_results:
+            if isinstance(res, Exception):
+                lookup_errors.append(str(res))
+                continue
+            normalized_code, window, chosen_hit = res
+            if window:
+                course_windows[normalized_code] = window
+            else:
+                raw_code = code_lookup.get(normalized_code) or normalized_code
+                missing_dates.append(raw_code)
+
+        # Build calendar events
+        events: list[dict] = []
+        seen_blocks: set[tuple[str, int, int, int]] = set()
+        local_tz = ZoneInfo("Asia/Almaty")
+
+        def _event_dict(start_dt: datetime, end_dt: datetime, until_dt: datetime, exdates: list[datetime] | None = None) -> dict:
+            recurrence: list[str] = [
+                f"RRULE:FREQ=WEEKLY;UNTIL={until_dt.astimezone(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+            ]
+            if exdates:
+                exdate_values = ",".join(
+                    dt.strftime("%Y%m%dT%H%M%S") for dt in exdates
+                )
+                recurrence.append(f"EXDATE;TZID=Asia/Almaty:{exdate_values}")
+            return {
+                "summary": summary,
+                "description": description,
+                "location": item.cab or "",
+                "start": {"dateTime": start_dt.isoformat(), "timeZone": "Asia/Almaty"},
+                "end": {"dateTime": end_dt.isoformat(), "timeZone": "Asia/Almaty"},
+                "recurrence": recurrence,
+                "extendedProperties": {
+                    "private": {
+                        "course_code": item.course_code,
+                        "teacher": item.teacher,
+                        "label": item.label,
+                    }
+                },
+            }
+
+        for day_idx, day_entries in enumerate(normalized_week):
+            for item in day_entries:
+                normalized_code = self._normalize_course_code_for_lookup(item.course_code)
+                window = course_windows.get(normalized_code)
+                if not window:
+                    continue
+
+                start_date, end_date = window
+                first_occurrence = self._first_occurrence(start_date, day_idx)
+                if first_occurrence > end_date:
+                    continue
+
+                start_time = item.time.start
+                end_time = item.time.end
+                block_key = (normalized_code, day_idx, start_time.hh, start_time.mm)
+                if block_key in seen_blocks:
+                    continue
+                seen_blocks.add(block_key)
+
+                event_start = datetime.combine(
+                    first_occurrence, time(start_time.hh, start_time.mm), tzinfo=local_tz
+                )
+                event_end = datetime.combine(
+                    first_occurrence, time(end_time.hh, end_time.mm), tzinfo=local_tz
+                )
+                until_dt = datetime.combine(
+                    end_date, time(end_time.hh, end_time.mm), tzinfo=local_tz
+                )
+
+                course_name = item.label or item.title or ""
+                summary = f"{item.course_code} — {course_name}" if course_name else (item.course_code or "")
+                description_parts = [item.label or item.title or "", item.info or ""]
+                description = "\\n".join([p for p in description_parts if p])
+
+                exdates: list[datetime] = []
+                long_span = (end_date - start_date).days > 90
+                if long_span:
+                    skip_date = first_occurrence + timedelta(weeks=7)
+                    if skip_date <= end_date:
+                        exdates.append(
+                            datetime.combine(skip_date, time(start_time.hh, start_time.mm), tzinfo=local_tz)
+                        )
+
+                # stable event key per course/day/time
+                event_key = f"{normalized_code}-{day_idx}-{start_time.hh:02d}{start_time.mm:02d}-{end_time.hh:02d}{end_time.mm:02d}"
+                events.append(
+                    _event_dict(
+                        event_start,
+                        event_end,
+                        until_dt,
+                        exdates=exdates,
+                    )
+                    | {
+                        "extendedProperties": {
+                            "private": {
+                                "course_code": item.course_code,
+                                "teacher": item.teacher,
+                                "label": item.label,
+                                "nuros_event_key": event_key,
+                                "source": "nuros_schedule",
+                                "term_value": schedule_record.term_value,
+                            }
+                        }
+                    }
+                )
+
+        if not events:
+            return schemas.GoogleCalendarExportResponse(
+                created=0,
+                skipped=0,
+                missing_dates=missing_dates,
+                lookup_errors=lookup_errors,
+                google_errors=["no_events_to_create"],
+            )
+
+        created, updated, deleted, google_errors = await self.calendar_service.sync_events(
+            desired_events=events,
+            kc_access_token=kc_access_token,
+            kc_refresh_token=kc_refresh_token,
+        )
+
+        return schemas.GoogleCalendarExportResponse(
+            created=created + updated,  # treated as applied
+            skipped=len(events) - created - updated,
+            missing_dates=missing_dates,
+            lookup_errors=lookup_errors,
+            google_errors=google_errors,
+        )

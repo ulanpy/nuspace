@@ -269,7 +269,7 @@ export default function OpportunitiesPage() {
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-3 rounded-2xl bg-white/80 p-4 shadow-sm border border-gray-200 backdrop-blur dark:bg-gray-900/70 dark:border-gray-800">
+          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-3 rounded-2xl bg-white/90 p-4 shadow-sm border border-gray-200 backdrop-blur dark:bg-background/80 dark:border-border/60">
             <div className="md:col-span-2 lg:col-span-3">
               <Label htmlFor="q" className="text-xs text-gray-500">
                 Search

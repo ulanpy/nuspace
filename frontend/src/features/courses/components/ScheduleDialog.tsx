@@ -1,10 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Modal } from "@/components/atoms/modal";
 import { Badge } from "@/components/atoms/badge";
 import { Skeleton } from "@/components/atoms/skeleton";
 import { cn } from "@/utils/utils";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { ScheduleResponse } from "../types";
+import { Button } from "@/components/atoms/button";
+import { gradeStatisticsApi } from "../api/gradeStatisticsApi";
+import { useToast } from "@/hooks/use-toast";
+import GoogleCalendarIcon from "@/assets/svg/google_calendar_icon.svg";
 
 interface ScheduleDialogProps {
   open: boolean;
@@ -46,6 +50,9 @@ function toMinutes(time: { hh: number; mm: number }) {
 }
 
 export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: ScheduleDialogProps) {
+  const { toast } = useToast();
+  const [exporting, setExporting] = useState(false);
+  const [showReauth, setShowReauth] = useState(false);
   const timetable = useMemo(() => {
     const days = WEEKDAYS.map(({ label, index }) => {
       const dayItems = schedule?.data?.[index] ?? [];
@@ -80,6 +87,42 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
   }, [schedule]);
 
   const hasItems = timetable.some((day) => day.items.length > 0);
+
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const res = await gradeStatisticsApi.exportScheduleToGoogle();
+      if (res.google_errors?.includes("insufficient_google_scope")) {
+        setShowReauth(true);
+        return;
+      }
+      if (res.google_errors?.length) {
+        toast({
+          title: "Google Calendar sync completed with issues",
+          description: "Some events failed to sync. Please try again.",
+          variant: "warning",
+        });
+      } else {
+        toast({
+          title: "Synced to Google Calendar",
+          description: "Your schedule is up to date.",
+          variant: "success",
+        });
+      }
+      if (res.google_errors?.length) {
+        console.error("Google calendar export errors", res.google_errors);
+      }
+    } catch (err: unknown) {
+      let detail = "Failed to export";
+      if (err instanceof Error) {
+        detail = err.message;
+      }
+      toast({ title: "Export failed", description: detail, variant: "error" });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const timeSlots = useMemo(() => {
     const MIN_TIME = 6 * 60;
@@ -152,6 +195,16 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
               Synced {lastSyncedText ?? "just now"}
             </p>
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-full px-4 font-medium gap-2"
+            onClick={handleExport}
+            disabled={exporting || isLoading || !hasItems}
+          >
+            <img src={GoogleCalendarIcon} alt="" className="h-4 w-4" />
+            {exporting ? "Exporting…" : "Sync with Google Calendar"}
+          </Button>
         </div>
 
         {isLoading ? (
@@ -306,6 +359,34 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
           </div>
         )}
       </div>
+
+      <Modal
+        isOpen={showReauth}
+        onClose={() => setShowReauth(false)}
+        title="Sign in again for Google Calendar"
+        className="max-w-md"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            We couldn’t access your Google Calendar. Please sign in again so the updated calendar permission applies.
+            This is a one-time step.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowReauth(false)}>
+              Close
+            </Button>
+            <Button
+              onClick={() => {
+                const url = new URL("/api/login", window.location.origin);
+                url.searchParams.set("reauth", "1");
+                window.location.href = url.toString();
+              }}
+            >
+              Sign in again
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </Modal>
   );
 }

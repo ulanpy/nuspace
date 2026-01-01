@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import {
   Opportunity,
   OpportunityEligibility,
@@ -6,6 +7,7 @@ import {
   normalizeOpportunityMajors,
 } from "../types";
 import { Calendar, MapPin, Link2, Bookmark, Building2, GraduationCap, Wallet } from "lucide-react";
+import { MarkdownContent } from "@/components/molecules/MarkdownContent";
 const formatEligibility = (eligibility?: OpportunityEligibility[] | null) => {
   if (!eligibility || eligibility.length === 0) return null;
   return eligibility
@@ -58,6 +60,8 @@ type Props = {
 };
 
 export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Props) => {
+  const [expanded, setExpanded] = useState(false);
+  const showToggle = useMemo(() => (opportunity.description?.length || 0) > 320, [opportunity.description]);
   const status = deadlineStatus(opportunity.deadline);
   const deadlineLabel =
     status === "Year-round"
@@ -66,9 +70,8 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
   const eligibilityText = formatEligibility(opportunity.eligibility);
   const majors = normalizeOpportunityMajors(opportunity.majors);
   return (
-    <motion.article
-      layout
-      className="rounded-2xl border border-gray-200 bg-white/90 backdrop-blur shadow-sm hover:shadow-lg transition-all duration-200 dark:border-gray-800 dark:bg-gray-900/80"
+    <article
+      className="rounded-2xl border border-gray-200 bg-white/90 backdrop-blur shadow-sm hover:shadow-lg transition-all duration-200 dark:border-border/60 dark:bg-background/70"
     >
       <div className="p-5 space-y-3">
         <div className="flex items-start justify-between gap-3">
@@ -108,9 +111,22 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
         </div>
 
         {opportunity.description && (
-          <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-            {opportunity.description}
-          </p>
+          <div className="space-y-2">
+            <div className={expanded ? "" : "line-clamp-4"}>
+              <MarkdownContent
+                content={opportunity.description}
+                className="prose prose-sm dark:prose-invert max-w-none [&_*]:text-gray-700 dark:[&_*]:text-gray-200"
+              />
+            </div>
+            {showToggle && (
+              <button
+                onClick={() => setExpanded((v) => !v)}
+                className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+              >
+                {expanded ? "Show less" : "Show more"}
+              </button>
+            )}
+          </div>
         )}
 
         <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-300">
@@ -166,6 +182,6 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
           </div>
         )}
       </div>
-    </motion.article>
+    </article>
   );
 };
