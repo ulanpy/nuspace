@@ -55,6 +55,7 @@ class Course(Base):
     """Canonical course catalog entry synced from the registrar."""
 
     __tablename__ = "courses"
+    __table_args__ = (UniqueConstraint("registrar_id", name="uq_courses_registrar_id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     registrar_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
@@ -89,7 +90,7 @@ class StudentSchedule(Base):
         UniqueConstraint("student_sub", "term_value", name="uq_student_schedule_student_term"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
     student_sub: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
     )
@@ -112,7 +113,7 @@ class StudentCourse(Base):
         UniqueConstraint("student_sub", "course_id", name="uq_student_courses_student_course_unique"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
     student_sub: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
     )
@@ -140,7 +141,7 @@ class CourseItem(Base):
 
     __tablename__ = "course_items"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
 
     student_course_id: Mapped[int] = mapped_column(
         ForeignKey("student_courses.id", ondelete="CASCADE"), nullable=False, index=True
@@ -173,7 +174,7 @@ class CourseTemplate(Base):
         UniqueConstraint("course_id", "student_sub", name="uq_course_templates_course_student"),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
 
     course_id: Mapped[int] = mapped_column(
         ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
@@ -204,7 +205,7 @@ class TemplateItem(Base):
 
     __tablename__ = "template_items"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
 
     template_id: Mapped[int] = mapped_column(
         ForeignKey("course_templates.id", ondelete="CASCADE"), nullable=False, index=True
@@ -232,7 +233,7 @@ class PlannerSchedule(Base):
         ),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
     student_sub: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
     )
@@ -254,7 +255,7 @@ class PlannerScheduleCourse(Base):
 
     __tablename__ = "planner_schedule_courses"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
     planner_schedule_id: Mapped[int] = mapped_column(
         ForeignKey("planner_schedules.id", ondelete="CASCADE"), nullable=False, index=True
     )
@@ -286,7 +287,7 @@ class PlannerScheduleSection(Base):
 
     __tablename__ = "planner_schedule_sections"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
     planner_schedule_course_id: Mapped[int] = mapped_column(
         ForeignKey("planner_schedule_courses.id", ondelete="CASCADE"),
         nullable=False,

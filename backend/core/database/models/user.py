@@ -27,7 +27,7 @@ class UserScope(PyEnum):
 class User(Base):
     __tablename__ = "users"
 
-    sub: Mapped[str] = mapped_column(primary_key=True, nullable=False, unique=True, index=True)
+    sub: Mapped[str] = mapped_column(primary_key=True, nullable=False, unique=True)
     email: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
     role: Mapped[UserRole] = mapped_column(SQLEnum(UserRole, name="userrole"), nullable=False)
     scope: Mapped[UserScope] = mapped_column(SQLEnum(UserScope, name="userscope"), nullable=False)

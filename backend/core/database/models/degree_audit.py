@@ -14,7 +14,7 @@ class DegreeAuditResult(Base):
         UniqueConstraint("student_sub", "admission_year", "major", name="uq_degree_audit_user_year_major"),
     )
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     student_sub = Column(String, ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True)
     admission_year = Column(String(16), nullable=False)
     major = Column(String(256), nullable=False)
