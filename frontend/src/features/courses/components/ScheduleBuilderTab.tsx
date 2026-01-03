@@ -402,7 +402,6 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
         setSearchResults((prev) => (append ? [...prev, ...data.items] : data.items));
         setSearchCursor(data.cursor ?? null);
         setLastSearch({ term_value: params.term_value, query: params.query });
-        setSearchOpen(true);
       },
       onSettled: () => {
         setIsLoadingMore(false);
