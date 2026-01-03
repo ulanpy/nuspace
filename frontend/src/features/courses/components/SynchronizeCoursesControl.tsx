@@ -5,8 +5,11 @@ import { Modal } from "@/components/atoms/modal";
 import { Input } from "@/components/atoms/input";
 import { Badge } from "@/components/atoms/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/atoms/alert";
-import { RefreshCcw, Lock, AlertCircle, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { RefreshCcw, AlertCircle, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { RegistrarSyncResponse } from "../types";
+import { gradeStatisticsApi } from "../api/gradeStatisticsApi";
+import { useToast } from "@/hooks/use-toast";
+import GoogleCalendarIcon from "@/assets/svg/google_calendar_icon.svg";
 
 interface SynchronizeCoursesControlProps {
   onSync: (password: string) => Promise<RegistrarSyncResponse>;
@@ -23,6 +26,8 @@ export function SynchronizeCoursesControl({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [syncResult, setSyncResult] = useState<RegistrarSyncResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
 
   const username = useMemo(() => {
     if (!userEmail) return "";
@@ -58,6 +63,41 @@ export function SynchronizeCoursesControl({
       setError("Failed to sync courses. Please double-check your password and try again. If the problem persists, please contact us");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleImportToGoogleCalendar = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      const res = await gradeStatisticsApi.exportScheduleToGoogle();
+      if (res.google_errors?.includes("insufficient_google_scope")) {
+        toast({
+          title: "Additional permissions required",
+          description: "Please sign in again to grant calendar permissions.",
+          variant: "warning",
+        });
+      } else if (res.google_errors?.length) {
+        toast({
+          title: "Google Calendar sync completed with issues",
+          description: "Some events failed to sync. Please try again.",
+          variant: "warning",
+        });
+      } else {
+        toast({
+          title: "Synced to Google Calendar",
+          description: "Your schedule is up to date.",
+          variant: "success",
+        });
+      }
+    } catch (err: unknown) {
+      let detail = "Failed to export";
+      if (err instanceof Error) {
+        detail = err.message;
+      }
+      toast({ title: "Export failed", description: detail, variant: "error" });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -192,6 +232,19 @@ export function SynchronizeCoursesControl({
           )}
 
           <div className="flex items-center justify-between gap-2 my-2">
+            {syncResult && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleImportToGoogleCalendar}
+                disabled={isExporting || isSubmitting}
+                className="rounded-full px-4 font-medium gap-2"
+              >
+                <img src={GoogleCalendarIcon} alt="" className="h-4 w-4" />
+                {isExporting ? "Importing…" : "Import to Google Calendar"}
+              </Button>
+            )}
             <Button
               size="sm"
               // onClick={}
