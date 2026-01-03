@@ -949,7 +949,6 @@ const SchedulePreview = ({
   const hourHeight = 75;
   const hours = Array.from({ length: endHour - startHour + 1 }, (_, idx) => startHour + idx);
   const maxTimeMinutes = endHour * 60; // 10 PM in minutes (1320)
-  const overallProbability = calculateOverallScheduleProbability(events);
 
   // Filter out events that end after 10 PM
   const filteredEvents = events.filter(({ section }) => {
@@ -983,14 +982,6 @@ const SchedulePreview = ({
 
   return (
     <div className="mt-4 space-y-4">
-      {filteredEvents.length > 0 && (
-        <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 px-4 py-2">
-          <span className="text-sm font-medium text-muted-foreground">Schedule probability</span>
-          <span className="text-lg font-bold text-foreground">
-            {Math.round(overallProbability * 100)}%
-          </span>
-        </div>
-      )}
       <SectionSelectorBar
         schedule={schedule}
         onSelect={onSelect}
@@ -1076,9 +1067,6 @@ const SchedulePreview = ({
                                 {truncateFaculty(section.faculty)}
                               </p>
                             )}
-                            <p className="text-[9px] text-current opacity-80">
-                              {formatSectionProbability(section)}
-                            </p>
                           </div>
                         );
                       })}
@@ -1451,34 +1439,6 @@ function getDemandClasses(ratio: number): { bg: string; text: string } {
     return { bg: "bg-primary/20 hover:bg-primary/30", text: "text-primary-900" };
   }
   return { bg: "bg-blue-500/20 hover:bg-blue-500/30", text: "text-blue-900 dark:text-blue-100" };
-}
-
-function calculateSectionProbability(section: PlannerSection): number {
-  const picked = section.selected_count ?? 0;
-  const enrolled = section.enrollment_snapshot ?? 0;
-  const capacity = section.capacity ?? Number.POSITIVE_INFINITY;
-
-  if (!isFinite(capacity) || capacity <= 0) {
-    return 1.0; // If no capacity info, assume 100% probability
-  }
-
-  const demand = Math.max(picked, enrolled);
-  // Probability of successfully registering = available spots / total capacity
-  const availableSpots = Math.max(0, capacity - demand);
-  return Math.min(availableSpots / capacity, 1.0); // Cap at 100%
-}
-
-function formatSectionProbability(section: PlannerSection): string {
-  const probability = calculateSectionProbability(section);
-  return `${Math.round(probability * 100)}%`;
-}
-
-function calculateOverallScheduleProbability(events: SectionEvent[]): number {
-  if (events.length === 0) return 0;
-
-  const probabilities = events.map(({ section }) => calculateSectionProbability(section));
-  // Overall probability is the product of all section probabilities
-  return probabilities.reduce((acc, prob) => acc * prob, 1.0);
 }
 
 function truncateFaculty(faculty: string | null | undefined): string {
