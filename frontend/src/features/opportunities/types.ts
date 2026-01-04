@@ -129,6 +129,11 @@ export type OpportunityListResponse = {
   has_next: boolean;
 };
 
+export type OpportunityCalendarResponse = {
+  created: number;
+  google_errors?: string[];
+};
+
 type OpportunityLike = Omit<Opportunity, "majors"> & {
   majors?: Array<OpportunityMajor | OpportunityMajorRecord | null> | null;
 };

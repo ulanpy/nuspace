@@ -1,5 +1,11 @@
 import { apiCall } from "@/utils/api";
-import { Opportunity, OpportunityFilters, OpportunityListResponse, normalizeOpportunity } from "./types";
+import {
+  Opportunity,
+  OpportunityFilters,
+  OpportunityListResponse,
+  normalizeOpportunity,
+  OpportunityCalendarResponse,
+} from "./types";
 
 export const fetchOpportunities = async (
   filters: OpportunityFilters,
@@ -60,4 +66,12 @@ export const deleteOpportunity = async (id: number): Promise<void> => {
     method: "DELETE",
     credentials: "include",
   });
+};
+
+export const addOpportunityToCalendar = async (id: number): Promise<OpportunityCalendarResponse> => {
+  const response = await apiCall<OpportunityCalendarResponse>(`/opportunities/${id}/calendar`, {
+    method: "POST",
+    credentials: "include",
+  });
+  return response;
 };

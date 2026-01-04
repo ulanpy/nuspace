@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import {
   Opportunity,
   OpportunityEligibility,
@@ -8,6 +9,10 @@ import {
 } from "../types";
 import { Calendar, MapPin, Link2, Bookmark, Building2, GraduationCap, Wallet } from "lucide-react";
 import { MarkdownContent } from "@/components/molecules/MarkdownContent";
+import { Button } from "@/components/atoms/button";
+import { useToast } from "@/hooks/use-toast";
+import { addOpportunityToCalendar } from "../api";
+import GoogleCalendarIcon from "@/assets/svg/google_calendar_icon.svg";
 const formatEligibility = (eligibility?: OpportunityEligibility[] | null) => {
   if (!eligibility || eligibility.length === 0) return null;
   return eligibility
@@ -72,6 +77,45 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
   const majors = normalizeOpportunityMajors(opportunity.majors);
   const displayedMajors = showAllMajors ? majors : majors.slice(0, 5);
   const hasMoreMajors = majors.length > 5;
+  const { toast } = useToast();
+
+  const calendarMutation = useMutation({
+    mutationFn: () => addOpportunityToCalendar(opportunity.id),
+    onSuccess: (res) => {
+      const hasGoogleErrors = (res.google_errors || []).length > 0;
+      toast({
+        title: "Added to Google Calendar",
+        description: hasGoogleErrors
+          ? `Event created, but Google reported: ${res.google_errors?.join(", ")}`
+          : "Check your Google Calendar for the deadline event.",
+        variant: hasGoogleErrors ? "warning" : "success",
+      });
+    },
+    onError: (err: any) => {
+      const status = err?.response?.status;
+      const description =
+        status === 401
+          ? "Please sign in to add events to your calendar."
+          : "Could not add this opportunity to your calendar.";
+      toast({
+        title: "Failed to add to calendar",
+        description,
+        variant: "error",
+      });
+    },
+  });
+
+  const handleAddToCalendar = () => {
+    if (!opportunity.deadline) {
+      toast({
+        title: "Deadline missing",
+        description: "This opportunity has no deadline to place on the calendar.",
+        variant: "warning",
+      });
+      return;
+    }
+    calendarMutation.mutate();
+  };
 
   return (
     <article
@@ -183,6 +227,18 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
             ) : (
               <span className="text-sm text-gray-500">No application link</span>
             )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAddToCalendar}
+              disabled={calendarMutation.isPending}
+              className="whitespace-nowrap gap-2"
+            >
+              <img src={GoogleCalendarIcon} alt="" className="h-4 w-4" />
+              {calendarMutation.isPending ? "Adding..." : "Add to Google Calendar"}
+            </Button>
           </div>
           {canManage && onEdit && (
             <button
