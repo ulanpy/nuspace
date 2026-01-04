@@ -1,10 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Annotated
+
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, status, Cookie
 
 from backend.common.dependencies import get_creds_or_401
 from backend.modules.opportunities import schemas
 from backend.modules.opportunities.policy import OpportunityPolicy
 from backend.modules.opportunities.service import OpportunitiesDigestService
 from backend.modules.opportunities.dependencies import get_opportunity_filters, get_opportunities_digest_service
+from backend.core.configs.config import config
 
 
 router = APIRouter(prefix="/opportunities", tags=["Opportunities Digest"])
@@ -64,3 +68,28 @@ async def delete_opportunity(
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Opportunity not found")
     return None
+
+
+@router.post("/{id}/calendar", response_model=schemas.OpportunityCalendarResponse)
+async def add_opportunity_to_calendar(
+    id: int,
+    user=Depends(get_creds_or_401),
+    kc_access_token: Annotated[str | None, Cookie(alias=config.COOKIE_ACCESS_NAME)] = None,
+    kc_refresh_token: Annotated[str | None, Cookie(alias=config.COOKIE_REFRESH_NAME)] = None,
+    service: OpportunitiesDigestService = Depends(get_opportunities_digest_service),
+):
+    """
+    Add a single opportunity to the user's Google Calendar (all-day event on the deadline).
+    """
+    try:
+        return await service.add_to_calendar(
+            opportunity_id=id,
+            kc_access_token=kc_access_token,
+            kc_refresh_token=kc_refresh_token,
+        )
+    except ValueError as exc:
+        detail = str(exc)
+        status_code = status.HTTP_404_NOT_FOUND if "not found" in detail.lower() else status.HTTP_400_BAD_REQUEST
+        raise HTTPException(status_code=status_code, detail=detail)
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(status_code=exc.response.status_code, detail=str(exc))
