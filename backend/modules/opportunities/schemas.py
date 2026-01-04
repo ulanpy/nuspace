@@ -100,3 +100,8 @@ class OpportunityFilter(BaseModel):
     hide_expired: bool = Field(default=False, description="Hide expired opportunities")
     page: int = Field(default=1, ge=1, description="Page number (1-indexed)")
     size: int = Field(default=15, ge=1, le=1000, description="Page size")
+
+
+class OpportunityCalendarResponse(BaseModel):
+    created: int
+    google_errors: List[str] = []

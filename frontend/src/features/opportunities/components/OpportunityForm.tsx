@@ -119,6 +119,7 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
     link: "",
     location: "",
     funding: "",
+    deadline: "",
   });
 
   const [selectedTypes, setSelectedTypes] = useState<string[]>([OPPORTUNITY_TYPES[0]]);
@@ -136,6 +137,7 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
         link: initial.link || "",
         location: initial.location || "",
         funding: initial.funding || "",
+        deadline: initial.deadline || "",
       });
       setSelectedTypes(initial.type ? (Array.isArray(initial.type) ? initial.type : [initial.type]) : [OPPORTUNITY_TYPES[0]]);
       setSelectedMajors(normalizeOpportunityMajors(initial.majors));
@@ -276,16 +278,6 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
       return;
     }
 
-    const missingYears = selectedLevels.some((lvl) => {
-      const level = lvl as EducationLevel;
-      if (level === "PhD") return false;
-      const years = eligibilityByLevel[level] || [];
-      return years.length === 0;
-    });
-    if (missingYears) {
-      setFormError("Select years for each non-PhD level");
-      return;
-    }
     const eligibilities =
       selectedLevels.length > 0
         ? selectedLevels.flatMap((lvl) => {
@@ -350,10 +342,11 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
           options={levelOptions}
           selected={selectedLevels}
           onChange={(next) => {
-            setSelectedLevels(next);
+            const uniqueNext = Array.from(new Set(next));
+            setSelectedLevels(uniqueNext);
             setEligibilityByLevel((prev) => {
               const nextMap: Record<EducationLevel, number[]> = {};
-              next.forEach((lvl) => {
+              uniqueNext.forEach((lvl) => {
                 const level = lvl as EducationLevel;
                 if (level === "PhD") {
                   nextMap[level] = [];
@@ -422,6 +415,15 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
+          <Label htmlFor="deadline">Deadline</Label>
+          <Input
+            id="deadline"
+            type="date"
+            value={form.deadline || ""}
+            onChange={(e) => handleChange("deadline", e.target.value)}
+          />
+        </div>
+        <div>
           <Label htmlFor="funding">Funding</Label>
           <Input
             id="funding"
@@ -429,14 +431,14 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
             onChange={(e) => handleChange("funding", e.target.value)}
           />
         </div>
-        <div>
-          <Label htmlFor="location">Location</Label>
-          <Input
-            id="location"
-            value={form.location || ""}
-            onChange={(e) => handleChange("location", e.target.value)}
-          />
-        </div>
+      </div>
+      <div>
+        <Label htmlFor="location">Location</Label>
+        <Input
+          id="location"
+          value={form.location || ""}
+          onChange={(e) => handleChange("location", e.target.value)}
+        />
       </div>
       <div>
         <Label htmlFor="link">Link</Label>
