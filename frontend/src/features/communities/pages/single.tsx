@@ -11,10 +11,10 @@ import { EventCard } from "@/features/events/components/EventCard";
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
-import { campuscurrentAPI } from "@/features/communities/api/communitiesApi";
+import { useQueryClient } from "@tanstack/react-query";
 
 
 import {
@@ -29,6 +29,7 @@ import {
 
 import { Media } from "@/features/media/types/types";
 import { useCommunity } from "@/features/communities/hooks/use-community";
+import { useInfiniteAchievements } from "@/features/communities/hooks/useInfiniteAchievements";
 import { useEvents } from "@/features/events/hooks/useEvents"; // Import useEvents
 import { Event } from "@/features/shared/campus/types";
 import { useUser } from "@/hooks/use-user";
@@ -103,10 +104,39 @@ export default function CommunityDetailPage() {
     useState(false);
   const [isCreateEventModalOpen, setIsCreateEventModalOpen] = useState(false);
   const [isEditAchievementsModalOpen, setIsEditAchievementsModalOpen] = useState(false);
-  const [achievementsPage, setAchievementsPage] = useState(1);
-  const [allLoadedAchievements, setAllLoadedAchievements] = useState<any[]>([]);
 
-  const [activeTab, setActiveTab] = useState<string>("about");
+  const queryClient = useQueryClient();
+
+  // Fetch achievements with infinite scroll using the custom hook
+  const {
+    achievements: allLoadedAchievements,
+    isLoading: isLoadingAchievements,
+    isFetchingNextPage: isFetchingAchievements,
+    hasNextPage: hasMoreAchievements,
+    loadMoreRef: achievementsLoadMoreRef,
+  } = useInfiniteAchievements({
+    communityId: community?.id,
+    size: 20,
+  });
+
+  // Use URL search params for tab persistence across page refreshes
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs = ["about", "requests", "events", "achievements", "gallery"];
+  const tabFromUrl = searchParams.get("tab");
+  const activeTab = validTabs.includes(tabFromUrl || "") ? tabFromUrl! : "about";
+  
+  const setActiveTab = useCallback((tab: string) => {
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      if (tab === "about") {
+        newParams.delete("tab"); // Clean URL for default tab
+      } else {
+        newParams.set("tab", tab);
+      }
+      return newParams;
+    }, { replace: true });
+  }, [setSearchParams]);
+
   const contentTopRef = useRef<HTMLDivElement | null>(null);
 
   const handleNavigate = (tabValue: string) => {
@@ -118,48 +148,15 @@ export default function CommunityDetailPage() {
     });
   };
 
-  // Fetch achievements with pagination
-  const { 
-    data: achievementsData, 
-    isLoading: isLoadingAchievements 
-  } = useQuery({
-    ...campuscurrentAPI.getAchievementsQueryOptions(community?.id ?? 0, achievementsPage, 20),
-    enabled: !!community?.id && activeTab === "awards",
-  });
-
-  const totalAchievementsPages = achievementsData?.total_pages ?? 1;
-  const hasMoreAchievements = achievementsPage < totalAchievementsPages;
-
-  const handleLoadMoreAchievements = () => {
-    setAchievementsPage(prev => prev + 1);
-  };
-
-  // Update loaded achievements when data changes (replaces onSuccess for v5)
+  // Reset achievements pagination when modal closes (after editing)
   useEffect(() => {
-    if (achievementsData?.achievements) {
-      if (achievementsPage === 1) {
-        setAllLoadedAchievements(achievementsData.achievements);
-      } else {
-        setAllLoadedAchievements(prev => [...prev, ...achievementsData.achievements]);
-      }
+    if (!isEditAchievementsModalOpen && community?.id) {
+      // Invalidate achievements cache to refetch fresh data after edits
+      queryClient.invalidateQueries({
+        queryKey: ["campusCurrent", "community", String(community.id), "achievements"],
+      });
     }
-  }, [achievementsData, achievementsPage]);
-
-  // Reset achievements pagination when leaving the awards tab
-  useEffect(() => {
-    if (activeTab !== "awards") {
-      setAchievementsPage(1);
-      setAllLoadedAchievements([]);
-    }
-  }, [activeTab]);
-
-  // Reset achievements when modal closes
-  useEffect(() => {
-    if (!isEditAchievementsModalOpen) {
-      setAchievementsPage(1);
-      setAllLoadedAchievements([]);
-    }
-  }, [isEditAchievementsModalOpen]);
+  }, [isEditAchievementsModalOpen, community?.id, queryClient]);
 
   // Fetch events for this community
   const today = new Date().toISOString().split("T")[0];
@@ -457,7 +454,7 @@ export default function CommunityDetailPage() {
                         ? [{ value: "requests", label: "Requests", icon: "📝" }]
                         : []),
                       { value: "events", label: "Events", icon: "🎉" },
-                      { value: "awards", label: "Student Awards", icon: "🏆" },
+                      { value: "achievements", label: "Achievements", icon: "🏆" },
                       { value: "gallery", label: "Gallery", icon: "🖼️" },
                     ] as const
                   ).map((item) => (
@@ -690,10 +687,10 @@ export default function CommunityDetailPage() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="awards" className="mt-0">
+              <TabsContent value="achievements" className="mt-0">
                 <Card className="p-0 overflow-hidden">
                   <div className="p-6 border-b flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">Student Awards</h2>
+                    <h2 className="text-2xl font-bold">Achievements</h2>
                     {permissions?.can_edit && (
                       <Button
                         variant="outline"
@@ -780,15 +777,13 @@ export default function CommunityDetailPage() {
                           </div>
                           
                           {hasMoreAchievements && (
-                            <div className="flex justify-center pt-4">
-                              <Button
-                                variant="outline"
-                                onClick={handleLoadMoreAchievements}
-                                disabled={isLoadingAchievements}
-                                className="w-full sm:w-auto"
-                              >
-                                {isLoadingAchievements ? "Loading..." : `Load More (${totalAchievementsPages - achievementsPage} pages remaining)`}
-                              </Button>
+                            <div 
+                              ref={achievementsLoadMoreRef}
+                              className="flex justify-center pt-4"
+                            >
+                              {isFetchingAchievements && (
+                                <div className="text-muted-foreground text-sm">Loading more...</div>
+                              )}
                             </div>
                           )}
                         </div>
