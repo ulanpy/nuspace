@@ -136,5 +136,53 @@ export const campuscurrentAPI = {
       },
     });
   },
-};
 
+  // Photo Albums API
+  createPhotoAlbum: (data: { community_id: number; album_url: string; description?: string; album_type?: string; album_date?: string }) => {
+    return apiCall<any>(`/` + Routes.COMMUNITIES + `/${data.community_id}/albums`, {
+      method: "POST",
+      json: data,
+    });
+  },
+
+  updatePhotoAlbum: (communityId: number, albumId: number, data: { album_url?: string; description?: string; album_type?: string; album_date?: string }) => {
+    return apiCall<any>(`/` + Routes.COMMUNITIES + `/${communityId}/albums/${albumId}`, {
+      method: "PATCH",
+      json: data,
+    });
+  },
+
+  deletePhotoAlbum: (communityId: number, albumId: number) => {
+    return apiCall(`/` + Routes.COMMUNITIES + `/${communityId}/albums/${albumId}`, {
+      method: "DELETE",
+    });
+  },
+
+  refreshPhotoAlbumMetadata: (communityId: number, albumId: number) => {
+    return apiCall<any>(`/` + Routes.COMMUNITIES + `/${communityId}/albums/${albumId}/refresh`, {
+      method: "POST",
+    });
+  },
+
+  refreshAllPhotoAlbums: (communityId: number) => {
+    return apiCall<any>(`/` + Routes.COMMUNITIES + `/${communityId}/albums/refresh`, {
+      method: "POST",
+    });
+  },
+
+  getPhotoAlbumsQueryOptions: (communityId: number, page: number = 1, size: number = 20, albumType?: string | null) => {
+    return queryOptions({
+      queryKey: ["campusCurrent", "community", communityId, "albums", page, size, albumType ?? ""],
+      queryFn: async () => {
+        const queryParams = new URLSearchParams();
+        queryParams.set("page", String(page));
+        queryParams.set("size", String(size));
+        if (albumType) queryParams.set("album_type", albumType);
+        
+        return apiCall<{ albums: any[]; total_pages: number; total: number; page: number; size: number; has_next: boolean }>(
+          `/` + Routes.COMMUNITIES + `/${communityId}/albums?` + queryParams.toString()
+        );
+      },
+    });
+  },
+};

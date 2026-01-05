@@ -1,4 +1,5 @@
 from typing import List
+from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,6 +9,8 @@ from backend.core.database.models.community import (
     Community,
     CommunityAchievements,
     CommunityCategory,
+    CommunityPhotoAlbum,
+    CommunityPhotoAlbumType,
     CommunityRecruitmentStatus,
     CommunityType,
 )
@@ -15,6 +18,7 @@ from backend.core.database.models.media import Media, MediaFormat
 from backend.modules.campuscurrent.communities import schemas
 from backend.modules.campuscurrent.communities.repository import CommunityRepository
 from backend.modules.campuscurrent.communities.utils import get_community_permissions
+from backend.modules.campuscurrent.communities.google_photos_utils import fetch_google_photos_metadata
 from backend.modules.google_bucket.utils import batch_delete_blobs
 
 
@@ -226,3 +230,220 @@ class CommunityService:
         if achievement is None:
             return False
         return await self.repo.delete_achievement(achievement)
+
+    # Photo Album operations
+    async def create_photo_album(
+        self,
+        community_id: int,
+        album_data: schemas.PhotoAlbumCreateRequest,
+        user: tuple[dict, dict],
+    ) -> schemas.PhotoAlbumResponse:
+        album_data.community_id = community_id
+        
+        # Create album first without metadata
+        album_data_dict = album_data.model_dump()
+        album = await self.repo.create_photo_album(album_data_dict)
+        
+        # Try to fetch metadata, but don't block on failure
+        try:
+            metadata = await fetch_google_photos_metadata(album_data.album_url)
+            
+            # Parse date from scraped metadata
+            album_date = None
+            if metadata.get("date_str"):
+                try:
+                    # Try YYYY-MM-DD format first (from Google Photos title parsing)
+                    album_date = datetime.strptime(metadata["date_str"], "%Y-%m-%d").date()
+                except:
+                    try:
+                        # Try ISO format (from og:release_date, article:published_time)
+                        album_date = datetime.fromisoformat(metadata["date_str"].replace("Z", "+00:00")).date()
+                    except:
+                        try:
+                            # Fallback to "Jan 5, 2026" or "December 5, 2026" format
+                            album_date = datetime.strptime(metadata["date_str"], "%b %d, %Y").date()
+                        except:
+                            try:
+                                album_date = datetime.strptime(metadata["date_str"], "%B %d, %Y").date()
+                            except:
+                                pass
+            
+            # Update album with metadata if fetched successfully
+            update_data = {
+                "album_title": metadata.get("title"),
+                "album_thumbnail_url": metadata.get("thumbnail_url"),
+                "album_date": album_date,
+            }
+            album = await self.repo.update_photo_album(album=album, album_data=update_data)
+        except Exception as e:
+            # Log the error but return the album anyway
+            print(f"Warning: Could not fetch metadata for album {album.id}: {e}")
+        
+        return schemas.PhotoAlbumResponse.model_validate(album)
+
+    async def list_photo_albums(
+        self,
+        community_id: int,
+        size: int,
+        page: int,
+        album_type: CommunityPhotoAlbumType | None,
+        user: tuple[dict, dict],
+    ) -> schemas.ListPhotoAlbums:
+        albums, count = await self.repo.get_photo_albums(
+            community_id=community_id, size=size, page=page, album_type=album_type
+        )
+        total_pages = response_builder.calculate_pages(count=count, size=size)
+        return schemas.ListPhotoAlbums(
+            albums=[
+                schemas.PhotoAlbumResponse.model_validate(album)
+                for album in albums
+            ],
+            total_pages=total_pages,
+            total=count,
+            page=page,
+            size=size,
+            has_next=page < total_pages,
+        )
+
+    async def update_photo_album(
+        self,
+        community_id: int,
+        album_id: int,
+        album_data: schemas.PhotoAlbumUpdateRequest,
+        user: tuple[dict, dict],
+    ) -> schemas.PhotoAlbumResponse | None:
+        album = await self.repo.get_photo_album(community_id, album_id)
+        if album is None:
+            return None
+        
+        album_data_dict = album_data.model_dump(exclude_unset=True)
+        
+        # If URL changed, fetch new metadata (always update date from metadata)
+        if album_data.album_url and album_data.album_url != album.album_url:
+            metadata = await fetch_google_photos_metadata(album_data.album_url)
+            
+            album_data_dict["album_title"] = metadata.get("title")
+            album_data_dict["album_thumbnail_url"] = metadata.get("thumbnail_url")
+            
+            # Always update date from scraped metadata
+            if metadata.get("date_str"):
+                try:
+                    album_data_dict["album_date"] = datetime.strptime(metadata["date_str"], "%b %d, %Y").date()
+                except:
+                    album_data_dict["album_date"] = None
+            else:
+                album_data_dict["album_date"] = None
+        
+        album = await self.repo.update_photo_album(album=album, album_data=album_data_dict)
+        return schemas.PhotoAlbumResponse.model_validate(album)
+
+    async def delete_photo_album(
+        self,
+        community_id: int,
+        album_id: int,
+        user: tuple[dict, dict],
+    ) -> bool:
+        album = await self.repo.get_photo_album(community_id, album_id)
+        if album is None:
+            return False
+        return await self.repo.delete_photo_album(album)
+
+    async def refresh_photo_album_metadata(
+        self,
+        community_id: int,
+        album_id: int,
+        user: tuple[dict, dict],
+    ) -> schemas.PhotoAlbumResponse | None:
+        """Refresh album metadata from Google Photos."""
+        album = await self.repo.get_photo_album(community_id, album_id)
+        if album is None:
+            return None
+        
+        # Fetch fresh metadata
+        metadata = await fetch_google_photos_metadata(album.album_url)
+        
+        album_date = None
+        if metadata.get("date_str"):
+            try:
+                # Try YYYY-MM-DD format first (from Google Photos title parsing)
+                album_date = datetime.strptime(metadata["date_str"], "%Y-%m-%d").date()
+            except:
+                try:
+                    # Try ISO format (from og:release_date, article:published_time)
+                    album_date = datetime.fromisoformat(metadata["date_str"].replace("Z", "+00:00")).date()
+                except:
+                    try:
+                        # Fallback to "Jan 5, 2026" or "December 5, 2026" format
+                        album_date = datetime.strptime(metadata["date_str"], "%b %d, %Y").date()
+                    except:
+                        try:
+                            album_date = datetime.strptime(metadata["date_str"], "%B %d, %Y").date()
+                        except:
+                            pass
+        
+        # Update metadata fields
+        update_data = {
+            "album_title": metadata.get("title"),
+            "album_thumbnail_url": metadata.get("thumbnail_url"),
+            "album_date": album_date,
+        }
+        
+        album = await self.repo.update_photo_album(album=album, album_data=update_data)
+        return schemas.PhotoAlbumResponse.model_validate(album)
+
+    async def refresh_all_photo_albums(
+        self,
+        community_id: int,
+        user: tuple[dict, dict],
+    ) -> dict:
+        """Refresh metadata for all albums in a community."""
+        # Get all albums for this community (no pagination)
+        albums, count = await self.repo.get_photo_albums(
+            community_id=community_id,
+            size=1000,  # Large number to get all
+            page=1,
+            album_type=None,
+        )
+        
+        success_count = 0
+        error_count = 0
+        
+        for album in albums:
+            try:
+                # Fetch fresh metadata
+                metadata = await fetch_google_photos_metadata(album.album_url)
+                
+                album_date = None
+                if metadata.get("date_str"):
+                    try:
+                        album_date = datetime.strptime(metadata["date_str"], "%Y-%m-%d").date()
+                    except:
+                        try:
+                            album_date = datetime.fromisoformat(metadata["date_str"].replace("Z", "+00:00")).date()
+                        except:
+                            try:
+                                album_date = datetime.strptime(metadata["date_str"], "%b %d, %Y").date()
+                            except:
+                                try:
+                                    album_date = datetime.strptime(metadata["date_str"], "%B %d, %Y").date()
+                                except:
+                                    pass
+                
+                # Update metadata fields
+                update_data = {
+                    "album_title": metadata.get("title"),
+                    "album_thumbnail_url": metadata.get("thumbnail_url"),
+                    "album_date": album_date,
+                }
+                
+                await self.repo.update_photo_album(album=album, album_data=update_data)
+                success_count += 1
+            except Exception as e:
+                print(f"Error refreshing album {album.id}: {e}")
+                error_count += 1
+        
+        return {
+            "total_albums": count,
+            "success_count": success_count,
+            "error_count": error_count,
+        }

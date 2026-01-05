@@ -37,6 +37,7 @@ import { useUser } from "@/hooks/use-user";
 import { CommunityModal } from "@/features/communities/components/CommunityModal";
 import { EventModal } from "@/features/events/components/EventModal";
 import { AchievementsModal } from "@/features/communities/components/AchievementsModal";
+import { GallerySection } from "@/features/communities/components/GallerySection";
 import { MediaFormat } from "@/features/media/types/types";
 
 // Helpers
@@ -795,16 +796,10 @@ export default function CommunityDetailPage() {
 
               <TabsContent value="gallery" className="mt-0">
                 <Card className="p-0 overflow-hidden">
-                  <div className="p-6 border-b">
-                    <h2 className="text-2xl font-bold">Gallery</h2>
-                  </div>
-                  <div className="p-6 text-center">
-                    <div className="py-12">
-                      <div className="text-6xl mb-4">🖼️</div>
-                      <h3 className="text-xl font-semibold mb-2">Coming Soon!</h3>
-                      <p className="text-muted-foreground">Photo gallery and media content will be available here.</p>
-                    </div>
-                  </div>
+                  <GallerySection
+                    communityId={community.id}
+                    canEdit={Boolean(permissions?.can_edit)}
+                  />
                 </Card>
               </TabsContent>
             </Tabs>

@@ -13,6 +13,9 @@ __all__ = [
     "CommunityRecruitmentStatus",
     "CommunityType",
     "CommunityCategory",
+    "CommunityAchievements",
+    "CommunityPhotoAlbum",
+    "CommunityPhotoAlbumType",
     "Media",
     "User",
     "UserRole",
@@ -37,8 +40,11 @@ __all__ = [
 from .base import Base
 from .community import (
     Community,
+    CommunityAchievements,
     CommunityCategory,
     CommunityMember,
+    CommunityPhotoAlbum,
+    CommunityPhotoAlbumType,
     CommunityRecruitmentStatus,
     CommunityType,
 )

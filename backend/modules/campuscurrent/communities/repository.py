@@ -11,6 +11,8 @@ from backend.core.database.models.community import (
     Community,
     CommunityAchievements,
     CommunityCategory,
+    CommunityPhotoAlbum,
+    CommunityPhotoAlbumType,
     CommunityRecruitmentStatus,
     CommunityType,
 )
@@ -203,3 +205,68 @@ class CommunityRepository:
         Ensure required relationships are loaded to avoid lazy-load during response building.
         """
         await self.db_session.refresh(community, relations or ["head_user", "achievements"])
+
+    # Photo Album operations
+    async def get_photo_albums(
+        self,
+        community_id: int,
+        size: int,
+        page: int,
+        album_type: CommunityPhotoAlbumType | None = None,
+    ) -> Tuple[List[CommunityPhotoAlbum], int]:
+        qb = QueryBuilder(session=self.db_session, model=CommunityPhotoAlbum)
+        conditions = [CommunityPhotoAlbum.community_id == community_id]
+        
+        if album_type is not None:
+            conditions.append(CommunityPhotoAlbum.album_type == album_type)
+        
+        albums: List[CommunityPhotoAlbum] = (
+            await qb.base()
+            .filter(*conditions)
+            .order(CommunityPhotoAlbum.created_at.asc())
+            .paginate(size, page)
+            .all()
+        )
+        count: int = (
+            await qb.blank(model=CommunityPhotoAlbum)
+            .base(count=True)
+            .filter(*conditions)
+            .count()
+        )
+        return albums, count
+
+    async def create_photo_album(self, album_data: dict) -> CommunityPhotoAlbum:
+        """Create a new photo album from dict data."""
+        album = CommunityPhotoAlbum(**album_data)
+        self.db_session.add(album)
+        await self.db_session.commit()
+        await self.db_session.refresh(album)
+        return album
+
+    async def get_photo_album(
+        self, community_id: int, album_id: int
+    ) -> CommunityPhotoAlbum | None:
+        qb = QueryBuilder(session=self.db_session, model=CommunityPhotoAlbum)
+        return (
+            await qb.base()
+            .filter(
+                CommunityPhotoAlbum.id == album_id,
+                CommunityPhotoAlbum.community_id == community_id,
+            )
+            .first()
+        )
+
+    async def update_photo_album(
+        self, album: CommunityPhotoAlbum, album_data: dict
+    ) -> CommunityPhotoAlbum:
+        """Update a photo album from dict data."""
+        for key, value in album_data.items():
+            if hasattr(album, key) and value is not None:
+                setattr(album, key, value)
+        await self.db_session.commit()
+        await self.db_session.refresh(album)
+        return album
+
+    async def delete_photo_album(self, album: CommunityPhotoAlbum) -> bool:
+        qb = QueryBuilder(session=self.db_session, model=CommunityPhotoAlbum)
+        return await qb.delete(target=album)
