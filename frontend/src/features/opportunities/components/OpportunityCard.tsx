@@ -82,11 +82,22 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
   const calendarMutation = useMutation({
     mutationFn: () => addOpportunityToCalendar(opportunity.id),
     onSuccess: (res) => {
-      const hasGoogleErrors = (res.google_errors || []).length > 0;
+      const googleErrors = res.google_errors || [];
+      const hasInsufficientScope = googleErrors.includes("insufficient_google_scope");
+      if (hasInsufficientScope) {
+        toast({
+          title: "Additional permissions required",
+          description: "Please sign in again to grant calendar permissions.",
+          variant: "warning",
+        });
+        return;
+      }
+
+      const hasGoogleErrors = googleErrors.length > 0;
       toast({
         title: "Added to Google Calendar",
         description: hasGoogleErrors
-          ? `Event created, but Google reported: ${res.google_errors?.join(", ")}`
+          ? `Event created, but Google reported: ${googleErrors.join(", ")}`
           : "Check your Google Calendar for the deadline event.",
         variant: hasGoogleErrors ? "warning" : "success",
       });
