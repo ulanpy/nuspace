@@ -1,6 +1,5 @@
 """Utility functions for fetching Google Photos album metadata."""
 import re
-from datetime import date
 from typing import Dict, Optional
 
 import httpx
