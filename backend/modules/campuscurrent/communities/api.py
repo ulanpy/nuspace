@@ -14,6 +14,7 @@ from backend.common.schemas import Infra
 from backend.core.database.models.community import (
     Community,
     CommunityCategory,
+    CommunityPhotoAlbumType,
     CommunityRecruitmentStatus,
     CommunityType,
 )
@@ -396,3 +397,241 @@ async def delete_achievement(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Achievement with id {achievement_id} not found in community {community_id}",
         )
+
+
+# ==================== Photo Album Endpoints ====================
+
+
+@router.post("/communities/{community_id}/albums", response_model=schemas.PhotoAlbumResponse)
+async def create_photo_album(
+    community_id: int,
+    album_data: schemas.PhotoAlbumCreateRequest,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(deps.community_exists_or_404),
+) -> schemas.PhotoAlbumResponse:
+    """
+    Create a new photo album for a community.
+
+    **Access Policy:**
+    - User must be the community head (can_edit permission)
+
+    **Parameters:**
+    - `community_id`: The ID of the community
+    - `album_data`: Album details (album_url, description, album_type)
+
+    **Returns:**
+    - Created photo album object
+
+    **Errors:**
+    - 403 if user doesn't have permission
+    - 404 if community not found
+    """
+    await CommunityPolicy(user=user).check_permission(
+        action=ResourceAction.UPDATE, community=community
+    )
+    community_service = CommunityService(db_session=db_session)
+    return await community_service.create_photo_album(
+        community_id=community_id,
+        album_data=album_data,
+        user=user,
+    )
+
+
+@router.get("/communities/{community_id}/albums", response_model=schemas.ListPhotoAlbums)
+async def get_photo_albums(
+    community_id: int,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
+    db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(deps.community_exists_or_404),
+    size: int = Query(20, ge=1, le=100),
+    page: int = 1,
+    album_type: CommunityPhotoAlbumType | None = None,
+) -> schemas.ListPhotoAlbums:
+    """
+    Get all photo albums for a community.
+
+    **Access Policy:**
+    - All users can access
+
+    **Parameters:**
+    - `community_id`: The ID of the community
+    - `size`: Number of albums per page (default: 20)
+    - `page`: Page number (default: 1)
+    - `album_type`: Filter by album type (optional)
+
+    **Returns:**
+    - List of photo albums ordered by creation date (newest first)
+    """
+    await CommunityPolicy(user=user).check_permission(
+        action=ResourceAction.READ, community=community
+    )
+    community_service = CommunityService(db_session=db_session)
+    return await community_service.list_photo_albums(
+        community_id=community_id,
+        size=size,
+        page=page,
+        album_type=album_type,
+        user=user,
+    )
+
+
+@router.patch("/communities/{community_id}/albums/{album_id}", response_model=schemas.PhotoAlbumResponse)
+async def update_photo_album(
+    community_id: int,
+    album_id: int,
+    album_data: schemas.PhotoAlbumUpdateRequest,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(deps.community_exists_or_404),
+) -> schemas.PhotoAlbumResponse:
+    """
+    Update a photo album.
+
+    **Access Policy:**
+    - User must be the community head (can_edit permission)
+
+    **Parameters:**
+    - `community_id`: The ID of the community
+    - `album_id`: The ID of the album
+    - `album_data`: Updated album data
+
+    **Returns:**
+    - Updated photo album object
+
+    **Errors:**
+    - 403 if user doesn't have permission
+    - 404 if album or community not found
+    """
+    await CommunityPolicy(user=user).check_permission(
+        action=ResourceAction.UPDATE, community=community
+    )
+    community_service = CommunityService(db_session=db_session)
+    album = await community_service.update_photo_album(
+        community_id=community_id,
+        album_id=album_id,
+        album_data=album_data,
+        user=user,
+    )
+    if album is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Photo album with id {album_id} not found in community {community_id}",
+        )
+    return album
+
+
+@router.delete("/communities/{community_id}/albums/{album_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_photo_album(
+    community_id: int,
+    album_id: int,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(deps.community_exists_or_404),
+):
+    """
+    Delete a photo album.
+
+    **Access Policy:**
+    - User must be the community head (can_edit permission)
+
+    **Parameters:**
+    - `community_id`: The ID of the community
+    - `album_id`: The ID of the album
+
+    **Returns:**
+    - 204 No Content on success
+
+    **Errors:**
+    - 403 if user doesn't have permission
+    - 404 if album or community not found
+    """
+    await CommunityPolicy(user=user).check_permission(
+        action=ResourceAction.UPDATE, community=community
+    )
+    community_service = CommunityService(db_session=db_session)
+    deleted = await community_service.delete_photo_album(
+        community_id=community_id,
+        album_id=album_id,
+        user=user,
+    )
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Photo album with id {album_id} not found in community {community_id}",
+        )
+
+
+@router.post("/communities/{community_id}/albums/{album_id}/refresh", response_model=schemas.PhotoAlbumResponse)
+async def refresh_photo_album_metadata(
+    community_id: int,
+    album_id: int,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(deps.community_exists_or_404),
+) -> schemas.PhotoAlbumResponse:
+    """
+    Refresh album metadata from Google Photos.
+
+    **Access Policy:**
+    - User must be the community head (can_edit permission)
+
+    **Parameters:**
+    - `community_id`: The ID of the community
+    - `album_id`: The ID of the album
+
+    **Returns:**
+    - Updated photo album object with fresh metadata
+
+    **Errors:**
+    - 403 if user doesn't have permission
+    - 404 if album or community not found
+    """
+    await CommunityPolicy(user=user).check_permission(
+        action=ResourceAction.UPDATE, community=community
+    )
+    community_service = CommunityService(db_session=db_session)
+    album = await community_service.refresh_photo_album_metadata(
+        community_id=community_id,
+        album_id=album_id,
+        user=user,
+    )
+    if album is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Photo album with id {album_id} not found in community {community_id}",
+        )
+    return album
+
+
+@router.post("/communities/{community_id}/albums/refresh")
+async def refresh_all_photo_albums(
+    community_id: int,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    db_session: AsyncSession = Depends(get_db_session),
+    community: Community = Depends(deps.community_exists_or_404),
+) -> dict:
+    """
+    Refresh metadata for all photo albums in a community.
+
+    **Access Policy:**
+    - User must be the community head (can_edit permission)
+
+    **Parameters:**
+    - `community_id`: The ID of the community
+
+    **Returns:**
+    - Summary of refresh operation (total, success, error counts)
+
+    **Errors:**
+    - 403 if user doesn't have permission
+    - 404 if community not found
+    """
+    await CommunityPolicy(user=user).check_permission(
+        action=ResourceAction.UPDATE, community=community
+    )
+    community_service = CommunityService(db_session=db_session)
+    return await community_service.refresh_all_photo_albums(
+        community_id=community_id,
+        user=user,
+    )

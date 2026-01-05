@@ -7,6 +7,7 @@ from pydantic import BaseModel, EmailStr, Field, HttpUrl, field_serializer, fiel
 from backend.common.schemas import MediaResponse, ResourcePermissions, ShortUserResponse
 from backend.core.database.models.community import (
     CommunityCategory,
+    CommunityPhotoAlbumType,
     CommunityRecruitmentStatus,
     CommunityType,
 )
@@ -65,6 +66,97 @@ class AchievementResponse(AchievementBase):
 class ListAchievements(BaseModel):
     achievements: List[AchievementResponse] = []
     total_pages: int = 1
+
+
+# Photo Album Schemas
+class PhotoAlbumBase(BaseModel):
+    album_url: str = Field(
+        ...,
+        min_length=1,
+        max_length=2048,
+        description="URL to the Google Photos album",
+        example="https://photos.google.com/share/AF1QipN...",
+    )
+    description: str | None = Field(
+        default=None,
+        max_length=500,
+        description="Optional custom description for the album",
+        example="Our club photoshoot from Spring 2025",
+    )
+    album_type: CommunityPhotoAlbumType = Field(
+        default=CommunityPhotoAlbumType.other,
+        description="Type of the photo album",
+        example=CommunityPhotoAlbumType.event_photos,
+    )
+
+    @field_validator("album_url", mode="before")
+    def validate_album_url(cls, value):
+        if value is None:
+            raise ValueError("Album URL is required")
+        value = str(value).strip()
+        if value == "":
+            raise ValueError("Album URL cannot be empty")
+        if not value.startswith(("http://", "https://")):
+            return f"https://{value}"
+        return value
+
+    class Config:
+        from_attributes = True
+
+
+class PhotoAlbumCreateRequest(PhotoAlbumBase):
+    community_id: int = Field(..., description="ID of the community this album belongs to")
+
+
+class PhotoAlbumUpdateRequest(BaseModel):
+    album_url: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=2048,
+        description="URL to the Google Photos album",
+    )
+    description: str | None = Field(
+        default=None,
+        max_length=500,
+        description="Optional custom description for the album",
+    )
+    album_type: CommunityPhotoAlbumType | None = Field(
+        default=None,
+        description="Type of the photo album",
+    )
+
+    @field_validator("album_url", mode="before")
+    def validate_album_url_update(cls, value):
+        if value is None:
+            return None
+        value = str(value).strip()
+        if value == "":
+            return None
+        if not value.startswith(("http://", "https://")):
+            return f"https://{value}"
+        return value
+
+    class Config:
+        from_attributes = True
+
+
+class PhotoAlbumResponse(PhotoAlbumBase):
+    id: int
+    community_id: int
+    album_title: str | None = None
+    album_thumbnail_url: str | None = None
+    album_date: date | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ListPhotoAlbums(BaseModel):
+    albums: List[PhotoAlbumResponse] = []
+    total_pages: int = 1
+    total: int = 0
+    page: int = 1
+    size: int = 20
+    has_next: bool = False
 
 
 class CommunityCreateRequest(BaseModel):

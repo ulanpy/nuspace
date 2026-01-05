@@ -29,6 +29,7 @@ pydantic-settings = "^2.7.1"
 httpx = "^0.28.1"
 itsdangerous = "^2.2.0"
 google-auth = "^2.37.0"
+beautifulsoup4 = "^4.12.0"
 pydantic = {extras = ["email"], version = "^2.10.5"}
 asyncpg = "^0.30.0"
 fernet = "^1.0.1"

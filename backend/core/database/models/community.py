@@ -66,6 +66,11 @@ class Community(Base):
         back_populates="community",
         cascade="all, delete-orphan",
     )
+    photo_albums = relationship(
+        "CommunityPhotoAlbum",
+        back_populates="community",
+        cascade="all, delete-orphan",
+    )
 
 
 class CommunityMember(Base):
@@ -96,3 +101,34 @@ class CommunityAchievements(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     community = relationship("Community", back_populates="achievements")
+
+
+class CommunityPhotoAlbumType(PyEnum):
+    event_photos = "event_photos"
+    club_photoshoot = "club_photoshoot"
+    other = "other"
+
+
+class CommunityPhotoAlbum(Base):
+    __tablename__ = "community_photo_albums"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
+    community_id: Mapped[int] = mapped_column(
+        ForeignKey("communities.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    album_url: Mapped[str] = mapped_column(nullable=False)
+    description: Mapped[str] = mapped_column(nullable=True)
+    album_type: Mapped[CommunityPhotoAlbumType] = mapped_column(
+        SQLEnum(CommunityPhotoAlbumType, name="community_photo_album_type"),
+        nullable=False,
+        default=CommunityPhotoAlbumType.other,
+        index=True,
+    )
+    # Metadata fetched from Google Photos
+    album_title: Mapped[str] = mapped_column(nullable=True)
+    album_thumbnail_url: Mapped[str] = mapped_column(nullable=True)
+    album_date: Mapped[date] = mapped_column(Date, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    community = relationship("Community", back_populates="photo_albums")
