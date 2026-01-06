@@ -217,7 +217,11 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
             onClick={handleExport}
             disabled={exporting || isLoading || !hasItems}
           >
-            <img src={GoogleCalendarIcon} alt="" className="h-4 w-4" />
+            <img 
+              src={typeof GoogleCalendarIcon === 'string' ? GoogleCalendarIcon : GoogleCalendarIcon.src} 
+              alt="" 
+              className="h-4 w-4" 
+            />
             {exporting ? "Exporting…" : "Import to Google Calendar"}
           </Button>
         </div>

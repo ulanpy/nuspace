@@ -97,7 +97,11 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
               onClick={() => setIsImportModalOpen(true)}
               disabled={isExporting}
             >
-              <img src={GoogleCalendarIcon} alt="" className="h-4 w-4" />
+              <img 
+                src={typeof GoogleCalendarIcon === 'string' ? GoogleCalendarIcon : GoogleCalendarIcon.src} 
+                alt="" 
+                className="h-4 w-4" 
+              />
               {isExporting ? "Importing…" : "Import to Google Calendar"}
             </Button>
           </div>
