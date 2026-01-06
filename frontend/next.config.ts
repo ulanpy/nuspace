@@ -2,10 +2,10 @@ import type { NextConfig } from 'next'
 
 
 const nextConfig: NextConfig = {
-  // Static export for production (generates /out directory)
-  output: 'export',
+  // Removed static export - using standard Next.js for dynamic routes
+  // output: 'export',
   
-  // Trailing slashes for static hosting compatibility
+  // Trailing slashes for compatibility
   trailingSlash: true,
   
   images: {
@@ -23,11 +23,6 @@ const nextConfig: NextConfig = {
 
   // Disable x-powered-by header for security
   poweredByHeader: false,
-
-  // Skip ESLint during build (run separately)
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
 
   // Skip TypeScript errors during build (run separately)
   typescript: {

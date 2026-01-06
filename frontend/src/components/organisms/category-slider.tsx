@@ -1,7 +1,8 @@
-"use client";
-
+"use client";;
 import { useRouter } from "next/navigation";
 import { CategoryGrid } from "./category-grid";
+
+import type { JSX } from "react";
 
 interface CategorySliderProps {
   categories: { title: string; icon?: JSX.Element}[];

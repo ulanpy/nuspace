@@ -1,5 +1,7 @@
 import { CategoryCard } from "@/components/atoms/category-card";
 
+import type { JSX } from "react";
+
 interface CategoryGridProps {
   categories: { title: string; icon?: JSX.Element }[];
   selectedCategory: string | "";
