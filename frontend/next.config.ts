@@ -2,8 +2,8 @@ import type { NextConfig } from 'next'
 
 
 const nextConfig: NextConfig = {
-  // Removed static export - using standard Next.js for dynamic routes
-  // output: 'export',
+  // Standalone output for Docker deployment with full Next.js features
+  output: 'standalone',
   
   // Trailing slashes for compatibility
   trailingSlash: true,
