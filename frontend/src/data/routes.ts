@@ -21,7 +21,7 @@ export const ROUTES = {
   EVENTS: {
     ROOT: "/events",
     DETAIL: "/events?id=:id",
-    DETAIL_FN: (id: string | number) => `/events/?id=${id}`,
+    DETAIL_FN: (id: string | number) => `/events?id=${id}`,
   },
   OPPORTUNITIES: {
     ROOT: "/opportunities",
@@ -29,7 +29,7 @@ export const ROUTES = {
   COMMUNITIES: {
     ROOT: "/communities",
     DETAIL: "/communities?id=:id",
-    DETAIL_FN: (id: string | number) => `/communities/?id=${id}`,
+    DETAIL_FN: (id: string | number) => `/communities?id=${id}`,
   },
   SGOTINISH: {
     ROOT: "/sgotinish",
@@ -37,14 +37,14 @@ export const ROUTES = {
       ROOT: "/sgotinish/student",
       TICKET: {
         DETAIL: "/sgotinish/student/ticket?id=:id",
-        DETAIL_FN: (id: string | number) => `/sgotinish/student/ticket/?id=${id}`,
+        DETAIL_FN: (id: string | number) => `/sgotinish/student/ticket?id=${id}`,
       },
     },
     SG: {
       ROOT: "/sgotinish/sg",
       TICKET: {
         DETAIL: "/sgotinish/sg/ticket?id=:id",
-        DETAIL_FN: (id: string | number) => `/sgotinish/sg/ticket/?id=${id}`,
+        DETAIL_FN: (id: string | number) => `/sgotinish/sg/ticket?id=${id}`,
       },
     },
   },
