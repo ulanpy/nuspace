@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { campuscurrentAPI } from "../api/communitiesApi";
+import { campuscurrentAPI } from '../api/communities-api';
 import { Community } from "@/features/shared/campus/types";
 
 export const useSearchCommunities = (params?: { keyword?: string; size?: number }) => {

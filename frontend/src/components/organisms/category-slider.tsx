@@ -1,5 +1,8 @@
-import { useNavigate } from "react-router-dom";
+"use client";;
+import { useRouter } from "next/navigation";
 import { CategoryGrid } from "./category-grid";
+
+import type { JSX } from "react";
 
 interface CategorySliderProps {
   categories: { title: string; icon?: JSX.Element}[];
@@ -18,7 +21,7 @@ export function CategorySlider({
   setInputValue,
   setSelectedCondition,
 }: CategorySliderProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleCategorySelect = (title: string) => {
     setSelectedCategory(title);
@@ -26,7 +29,7 @@ export function CategorySlider({
     setInputValue?.("");
     setSelectedCondition?.("All Conditions");
 
-    navigate(`${window.location.pathname}?category=${title.toLowerCase()}`);
+    router.push(`${window.location.pathname}?category=${title.toLowerCase()}`);
   };
 
   return (

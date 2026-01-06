@@ -1,5 +1,7 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { useTheme } from "@/context/ThemeProviderContext";
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from '@/context/theme-provider-context';
 /**
  * ConditionGroup Component
  * 
@@ -29,17 +31,17 @@ export function ConditionGroup({
   selectedCondition: string;
   setSelectedCondition: (condition: string) => void;
 }) {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
 
   const handleClick = (item: string) => {
-    const params = new URLSearchParams(location.search);
+    const params = new URLSearchParams(window.location.search);
     params.delete("page");
     params.set("condition", item);
     setSelectedCondition(item);
-    navigate(`${location.pathname}?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   };
   return (
     <div className="flex gap-2 sm:gap-3 overflow-x-auto no-scrollbar pb-1">

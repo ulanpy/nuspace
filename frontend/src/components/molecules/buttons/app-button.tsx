@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { useTheme } from "../../../context/ThemeProviderContext";
+import Link from "next/link";
+import { useTheme } from '../../../context/theme-provider-context';
 
 interface AppButtonProps {
   icon: React.ReactNode;
@@ -41,7 +41,7 @@ export const AppButton = ({
     >
       <div>
         <Link
-          to={href}
+          href={href}
           onClick={(e) => comingSoon && e.preventDefault()}
           className={`block ${
             comingSoon

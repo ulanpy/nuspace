@@ -1,7 +1,10 @@
-import { NavLink } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { PiUserCircle, PiUserCircleFill } from "react-icons/pi";
 import { ROUTES } from "@/data/routes";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type JSX } from "react";
 
 interface HeaderProps {
   left?: JSX.Element;
@@ -11,6 +14,7 @@ interface HeaderProps {
 }
 
 export function Header({ left, center, right, showMainNav = false }: HeaderProps) {
+  const pathname = usePathname();
   const [isMobileBrowser, setIsMobileBrowser] = useState(false);
   
   // Check if we're in a mobile browser (not just mini app)
@@ -52,23 +56,22 @@ export function Header({ left, center, right, showMainNav = false }: HeaderProps
         <div className="flex items-center gap-4">
           {shouldShowNavItems && showMainNav && mainNavItems.length > 0 && (
             <nav className="flex items-center gap-5">
-              {mainNavItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === ROUTES.HOME}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 text-base font-medium transition-colors text-foreground ` +
-                    (isActive ? "text-primary" : "text-muted-foreground hover:text-foreground")
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {renderIcon(item.icon, isActive, 23)}
-                    </>
-                  )}
-                </NavLink>
-              ))}
+              {mainNavItems.map((item) => {
+                const isActive = item.to === ROUTES.HOME 
+                  ? pathname === item.to 
+                  : pathname.startsWith(item.to);
+                return (
+                  <Link
+                    key={item.to}
+                    href={item.to}
+                    className={`flex items-center gap-2 text-base font-medium transition-colors text-foreground ` +
+                      (isActive ? "text-primary" : "text-muted-foreground hover:text-foreground")
+                    }
+                  >
+                    {renderIcon(item.icon, isActive, 23)}
+                  </Link>
+                );
+              })}
             </nav>
           )}
           {right}

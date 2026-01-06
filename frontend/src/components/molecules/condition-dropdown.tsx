@@ -1,6 +1,8 @@
+"use client";
+
 import { useState, useRef, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useTheme } from "../../context/ThemeProviderContext";
+import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from '../../context/theme-provider-context';
 import { ChevronDown, Filter } from "lucide-react";
 
 interface ConditionDropdownProps {
@@ -17,18 +19,18 @@ export function ConditionDropdown({
   disableNavigation,
 }: ConditionDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleClick = (item: string) => {
     if (!disableNavigation) {
-      const params = new URLSearchParams(location.search);
+      const params = new URLSearchParams(window.location.search);
       params.delete("page");
       params.set("condition", item);
-      navigate(`${location.pathname}?${params.toString()}`);
+      router.push(`${pathname}?${params.toString()}`);
     }
     setSelectedCondition(item);
     setIsOpen(false);

@@ -1,3 +1,5 @@
+"use client";
+
 import { Snowflake } from "lucide-react";
 import { Button } from "../atoms/button";
 import { cn } from "@/utils/utils";

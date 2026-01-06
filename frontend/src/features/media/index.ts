@@ -8,19 +8,19 @@ export {
   type MediaState,
   type MediaActions,
   type UnifiedMediaContextType 
-} from './context/UnifiedMediaContext';
+} from './context/unified-media-context';
 
 // Hooks
 export { 
   useUnifiedMedia,
   type UnifiedMediaHookReturn 
-} from './hooks/useUnifiedMedia';
+} from './hooks/use-unified-media';
 
 // Components
 export { 
   UnifiedMediaUploadZone,
   type UnifiedMediaUploadZoneProps 
-} from '@/components/organisms/media/UnifiedMediaUploadZone';
+} from '@/components/organisms/media/unified-media-upload-zone';
 
 // Configuration
 export { 
@@ -28,15 +28,15 @@ export {
   getMediaConfig,
   createCustomMediaConfig,
   type MediaConfigKey 
-} from './config/mediaConfigs';
+} from './config/media-configs';
 
 // Feature-specific components
-export { UnifiedEventMediaUpload } from '@/features/events/components/UnifiedEventMediaUpload';
+export { UnifiedEventMediaUpload } from '@/features/events/components/unified-event-media-upload';
 
 // Legacy exports for backward compatibility (deprecated)
-export { useMediaUpload } from './hooks/useMediaUpload';
-export { useMediaSelection } from './hooks/useMediaSelection';
-export { useMediaEdit } from './hooks/useMediaEdit';
+export { useMediaUpload } from './hooks/use-media-upload';
+export { useMediaSelection } from './hooks/use-media-selection';
+export { useMediaEdit } from './hooks/use-media-edit';
 
 // Types
 export type { UploadMediaOptions } from './types/types';

@@ -1,7 +1,9 @@
+"use client";
+
 // components/molecules/SliderContainer.tsx
 import { useRef, useState, ReactNode, useEffect } from "react"; // useEffect қосылды
 import { Button } from "../atoms/button";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 
 interface SliderContainerProps {
   title?: string;
@@ -18,7 +20,7 @@ export function SliderContainer({
   itemWidth = 200, // Әдепкі мәні
   className = "",
 }: SliderContainerProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -56,7 +58,7 @@ export function SliderContainer({
           <Button
             variant="link"
             className="text-xs p-0 h-auto"
-            onClick={() => navigate(link)}
+            onClick={() => router.push(link)}
           >
             See All
           </Button>

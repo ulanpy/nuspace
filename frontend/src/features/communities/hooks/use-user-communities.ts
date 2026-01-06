@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { campuscurrentAPI } from "../api/communitiesApi";
+import { campuscurrentAPI } from '../api/communities-api';
 
 export const useUserCommunities = (userSub: string | null | undefined) => {
   const { data, isLoading, isError } = useQuery({

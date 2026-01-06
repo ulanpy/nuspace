@@ -1,6 +1,6 @@
 import { UploadMediaOptions } from "../types/types";
 import { SignedUrlRequest, SignedUrlResponse } from "../types/types";
-import { mediaApi } from "../api/mediaApi";
+import { mediaApi } from '../api/media-api';
 
 export const getSignedUrls = async (
     entityId: number,

@@ -82,13 +82,13 @@ jobs:
           cache-from: type=gha,scope=fastapi
           cache-to: type=gha,mode=max,scope=fastapi
 
-      # --- Build Frontend Builder Image ---
+      # --- Build Frontend Builder Image (Next.js) ---
       - name: Build and Push Frontend Builder Image
         if: steps.changes.outputs.frontend == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./frontend/Dockerfile_static_builder
+          file: ./frontend/Dockerfile_next_builder
           push: true
           tags: kamikadze24/frontendbuilder:${{ steps.meta.outputs.version }}
           labels: ${{ steps.meta.outputs.labels }}

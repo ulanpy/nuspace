@@ -1,10 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { campuscurrentAPI } from "../api/communitiesApi";
-import { useParams } from "react-router-dom";
+import { campuscurrentAPI } from '../api/communities-api';
+import { useSearchParams } from "next/navigation";
 import { Community, CommunityPermissions } from "@/features/shared/campus/types";
 
 export const useCommunity = () => {
-  const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  // Get ID from query parameter for static export compatibility
+  // URL format: /communities/?id=123
+  const id = searchParams.get('id') || undefined;
 
   const { data, isPending, isLoading, isError } = useQuery({
     ...campuscurrentAPI.getCommunityQueryOptions(id || ""),

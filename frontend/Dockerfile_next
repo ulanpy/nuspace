@@ -1,0 +1,39 @@
+# Use official Node.js image with Alpine Linux
+FROM node:20-alpine
+
+# Install bash and other essential tools for development
+RUN apk add --no-cache bash curl git jq
+
+# Set working directory in container
+WORKDIR /nuros
+
+# Copy only package.json and package-lock.json for caching dependencies
+COPY frontend/package*.json ./
+
+# Clean install dependencies (force rebuild for container architecture)
+RUN npm install
+
+# Copy the rest of the project files
+COPY frontend .
+
+# Script to resolve quick tunnel URL from cloudflared metrics and export for Next.js
+RUN printf '%s\n' '#!/bin/sh' \
+  'set -e' \
+  'cd /nuros' \
+  'METRICS="http://cloudflared:2000/metrics"' \
+  'for i in 1 2 3 4 5; do' \
+  '  URL=$(curl -fsS "$METRICS" | grep -Eo "https://[a-z0-9-]+\\.trycloudflare\\.com" | head -n1 || true)' \
+  '  if [ -n "$URL" ]; then echo "$URL"; break; fi' \
+  '  sleep 2' \
+  'done' \
+  'if [ -z "$URL" ]; then URL="http://localhost:5173"; fi' \
+  'export NEXT_PUBLIC_BASE_URL="$URL"' \
+  'echo "Using NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL"' \
+  'exec npm run dev' > /usr/local/bin/start-frontend.sh \
+  && chmod +x /usr/local/bin/start-frontend.sh
+
+# Expose port 5173 for compatibility with existing nginx config
+EXPOSE 5173
+
+# Start Next.js dev server
+CMD ["/usr/local/bin/start-frontend.sh"]

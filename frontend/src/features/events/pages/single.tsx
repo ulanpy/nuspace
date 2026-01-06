@@ -1,3 +1,5 @@
+'use client'
+
 import {
   Calendar,
   Clock,
@@ -11,23 +13,23 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Badge } from "@/components/atoms/badge";
-import { EventModal } from "@/features/events/components/EventModal";
-import { CountdownBadge } from "@/features/events/components/CountdownBadge";
+import { EventModal } from '@/features/events/components/event-modal';
+import { CountdownBadge } from '@/features/events/components/countdown-badge';
 import { VerificationBadge } from "@/components/molecules/verification-badge";
-import { MarkdownContent } from "@/components/molecules/MarkdownContent";
-import { QueryBoundary } from "@/components/molecules/QueryBoundary";
+import { MarkdownContent } from '@/components/molecules/markdown-content';
+import { QueryBoundary } from '@/components/molecules/query-boundary';
 import type { Event } from "@/features/shared/campus/types";
 import {
   useEventDetailViewModel,
   type EventActionDescriptor,
   type EventActionId,
-} from "@/features/events/hooks/useEventDetailViewModel";
+} from '@/features/events/hooks/use-event-detail-view-model';
 import {
   formatEventDate,
   formatEventTime,
   getPolicyColor,
   getPolicyDisplay,
-} from "@/features/events/utils/eventFormatters";
+} from '@/features/events/utils/event-formatters';
 
 const actionIconMap: Record<EventActionId, LucideIcon> = {
   calendar: CalendarPlus,

@@ -1,5 +1,7 @@
 import { cn } from "../../utils/utils";
 
+import type { JSX } from "react";
+
 interface CategoryCardProps {
   title: string;
   icon?: JSX.Element;

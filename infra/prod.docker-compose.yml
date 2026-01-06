@@ -67,12 +67,15 @@ services:
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ../frontend/dist:/var/www/my-app/dist
+      - ../frontend/out:/var/www/my-app/out
       - ../ssl/cloudflare.crt:/etc/ssl/cloudflare/origin.crt
       - ../ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key
       - ./nginx/vpn-index.html:/etc/nginx/vpn-index.html:ro
     depends_on:
       - frontend-builder
+    # SSR Alternative: Change depends_on to frontend and remove out volume
+    # depends_on:
+    #   - frontend
     command: >
       /bin/sh -c "
         apt update && apt install -y inotify-tools &&
@@ -128,9 +131,25 @@ services:
       - nuros
     user: "0:0"
     volumes:
-      - ../frontend/dist:/app/dist
-    command: sh -c "npm run build"
+      - ../frontend/out:/output
+    command: sh -c "npm run build && rm -rf /output/* && cp -r /app/out/. /output/"
     restart: "no"
+
+  # SSR Alternative: Uncomment to run Next.js server instead of static files
+  # frontend:
+  #   container_name: frontend
+  #   image: kamikadze24/frontendbuilder:latest
+  #   networks:
+  #     - nuros
+  #   depends_on:
+  #     - frontend-builder
+  #   ports:
+  #     - "127.0.0.1:3000:3000"
+  #   environment:
+  #     - NODE_ENV=production
+  #     - PORT=3000
+  #     - HOSTNAME=0.0.0.0
+  #   restart: unless-stopped
 
   loki:
     container_name: loki

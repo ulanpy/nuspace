@@ -6,7 +6,7 @@ import { Button } from "./button";
 import { cn } from "../../utils/utils";
 import { createPortal } from "react-dom";
 import { useEffect, useCallback } from "react";
-import { useMaybeBackNavigation } from "@/context/BackNavigationContext";
+import { useMaybeBackNavigation } from '@/context/back-navigation-context';
 // Removed framer-motion to avoid transformed ancestors affecting fixed elements on Safari
 
 interface ModalProps {
