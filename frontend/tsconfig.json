@@ -41,7 +41,9 @@
     "src",
     "src/types",
     "dist/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "/tmp/out/types/**/*.ts",
+    "/tmp/out/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

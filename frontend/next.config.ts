@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   // Static export for deployment (no Node.js server needed)
   output: 'export',
   
+  // Output to /tmp/out to avoid volume mount conflicts during build
+  distDir: '/tmp/out',
+  
   // SSR Alternative: Uncomment below for standalone server deployment
   // output: 'standalone',
   

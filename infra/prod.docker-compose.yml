@@ -132,7 +132,7 @@ services:
     user: "0:0"
     volumes:
       - ../frontend/out:/app/out
-    command: sh -c "npm run build"
+    command: sh -c "rm -rf /tmp/out && npm run build && rm -rf /app/out/* && cp -r /tmp/out/* /app/out/"
     restart: "no"
 
   # SSR Alternative: Uncomment to run Next.js server instead of static files
