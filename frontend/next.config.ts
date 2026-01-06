@@ -2,8 +2,11 @@ import type { NextConfig } from 'next'
 
 
 const nextConfig: NextConfig = {
-  // Standalone output for Docker deployment with full Next.js features
-  output: 'standalone',
+  // Static export for deployment (no Node.js server needed)
+  output: 'export',
+  
+  // SSR Alternative: Uncomment below for standalone server deployment
+  // output: 'standalone',
   
   // Trailing slashes for compatibility
   trailingSlash: true,
