@@ -79,7 +79,7 @@ export default function AnnouncementsPage() {
                                 {upcomingEvents.slice(0, 5).map((event: any) => (
                                     <Link
                                         key={event.id}
-                                        href={`/events/${event.id}`}
+                                        href={`/events/?id=${event.id}`}
                                         className="flex items-center gap-4 p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors"
                                     >
                                         {event.media?.[0]?.url ? (
@@ -139,7 +139,7 @@ export default function AnnouncementsPage() {
                                 {recruitingCommunities.map((community: any) => (
                                     <Link
                                         key={community.id}
-                                        href={`/communities/${community.id}`}
+                                        href={`/communities/?id=${community.id}`}
                                         className="flex items-start gap-3 p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors"
                                     >
                                         {community.media?.[0]?.url ? (

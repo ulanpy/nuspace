@@ -1,14 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { campuscurrentAPI } from '../api/events-api';
-import { usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 export const useEvent = () => {
-  const pathname = usePathname();
-  // Extract ID from pathname for static export compatibility
-  // Pattern: /events/{id} or /events/{id}/
-  const extractedId = pathname?.match(/\/events\/([^/]+)/)?.[1];
-  // Filter out 'placeholder' - it's the static generation placeholder, not a real ID
-  const id = extractedId && extractedId !== 'placeholder' ? extractedId : undefined;
+  const searchParams = useSearchParams();
+  // Get ID from query parameter for static export compatibility
+  // URL format: /events/?id=123
+  const id = searchParams.get('id') || undefined;
+  
   const {
     data: event,
     isPending,

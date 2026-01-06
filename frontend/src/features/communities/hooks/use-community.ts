@@ -1,15 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { campuscurrentAPI } from '../api/communities-api';
-import { usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Community, CommunityPermissions } from "@/features/shared/campus/types";
 
 export const useCommunity = () => {
-  const pathname = usePathname();
-  // Extract ID from pathname for static export compatibility
-  // Pattern: /communities/{id} or /communities/{id}/
-  const extractedId = pathname?.match(/\/communities\/([^/]+)/)?.[1];
-  // Filter out 'placeholder' - it's the static generation placeholder, not a real ID
-  const id = extractedId && extractedId !== 'placeholder' ? extractedId : undefined;
+  const searchParams = useSearchParams();
+  // Get ID from query parameter for static export compatibility
+  // URL format: /communities/?id=123
+  const id = searchParams.get('id') || undefined;
 
   const { data, isPending, isLoading, isError } = useQuery({
     ...campuscurrentAPI.getCommunityQueryOptions(id || ""),

@@ -10,6 +10,7 @@ export type InfiniteScrollParams<T> = {
   keyword?: string;
   additionalParams?: Record<string, any>;
   transformResponse?: (response: any) => any;
+  enabled?: boolean;
 };
 
 export type UseInfiniteScrollReturn<T> = {
@@ -31,6 +32,7 @@ export function useInfiniteScroll<T>({
   keyword = "",
   additionalParams = {},
   transformResponse,
+  enabled = true,
 }: InfiniteScrollParams<T>): UseInfiniteScrollReturn<T> {
   const [internalKeyword, setInternalKeyword] = useState<string>(keyword);
 
@@ -100,6 +102,7 @@ export function useInfiniteScroll<T>({
         return undefined;
     },
     initialPageParam: 1,
+    enabled,
   });
 
   const allItems = useMemo<T[]>(() => {

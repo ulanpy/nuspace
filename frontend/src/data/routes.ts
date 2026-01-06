@@ -20,31 +20,31 @@ export const ROUTES = {
   DORM_EATS: "/dorm-eats",
   EVENTS: {
     ROOT: "/events",
-    DETAIL: "/events/:id",
-    DETAIL_FN: (id: string | number) => `/events/${id}`,
+    DETAIL: "/events?id=:id",
+    DETAIL_FN: (id: string | number) => `/events/?id=${id}`,
   },
   OPPORTUNITIES: {
     ROOT: "/opportunities",
   },
   COMMUNITIES: {
     ROOT: "/communities",
-    DETAIL: "/communities/:id",
-    DETAIL_FN: (id: string | number) => `/communities/${id}`,
+    DETAIL: "/communities?id=:id",
+    DETAIL_FN: (id: string | number) => `/communities/?id=${id}`,
   },
   SGOTINISH: {
     ROOT: "/sgotinish",
     STUDENT: {
       ROOT: "/sgotinish/student",
       TICKET: {
-        DETAIL: "/sgotinish/student/ticket/:id",
-        DETAIL_FN: (id: string | number) => `/sgotinish/student/ticket/${id}`,
+        DETAIL: "/sgotinish/student/ticket?id=:id",
+        DETAIL_FN: (id: string | number) => `/sgotinish/student/ticket/?id=${id}`,
       },
     },
     SG: {
       ROOT: "/sgotinish/sg",
       TICKET: {
-        DETAIL: "/sgotinish/sg/ticket/:id",
-        DETAIL_FN: (id: string | number) => `/sgotinish/sg/ticket/${id}`,
+        DETAIL: "/sgotinish/sg/ticket?id=:id",
+        DETAIL_FN: (id: string | number) => `/sgotinish/sg/ticket/?id=${id}`,
       },
     },
   },
