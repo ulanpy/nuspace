@@ -1,12 +1,22 @@
 ---
-- name: Ensure frontend .next directory exists with proper permissions
+- name: Ensure frontend out directory exists with proper permissions
   ansible.builtin.file:
-    path: "/home/{{ ansible_user }}/nuspace/frontend/.next"
+    path: "/home/{{ ansible_user }}/nuspace/frontend/out"
     state: directory
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: '0755'
   when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
+
+# SSR Alternative: Use .next directory instead
+# - name: Ensure frontend .next directory exists with proper permissions
+#   ansible.builtin.file:
+#     path: "/home/{{ ansible_user }}/nuspace/frontend/.next"
+#     state: directory
+#     owner: "{{ ansible_user }}"
+#     group: "{{ ansible_user }}"
+#     mode: '0755'
+#   when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
 
 - name: Pull frontend builder image
   ansible.builtin.shell: |
@@ -31,37 +41,54 @@
     echo "Starting frontend build..."
     {{ compose_cmd }} -f prod.docker-compose.yml run --rm frontend-builder
     echo "Frontend build completed"
+    ls -la ../frontend/out/
   args:
     executable: /bin/bash
   when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
   register: frontend_build_result
 
-- name: Verify standalone build was created
+- name: Verify out files were created
   ansible.builtin.stat:
-    path: "/home/{{ ansible_user }}/nuspace/frontend/.next/standalone/server.js"
+    path: "/home/{{ ansible_user }}/nuspace/frontend/out/index.html"
   register: dist_check
   when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
 
-- name: Fail if standalone build files are missing
+# SSR Alternative: Check for standalone build instead
+# - name: Verify standalone build was created
+#   ansible.builtin.stat:
+#     path: "/home/{{ ansible_user }}/nuspace/frontend/.next/standalone/server.js"
+#   register: dist_check
+#   when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
+
+- name: Fail if out files are missing
   ansible.builtin.fail:
-    msg: "Frontend build failed - .next/standalone/server.js not found. Build output: {{ frontend_build_result.stdout | default('No output') }}"
+    msg: "Frontend build failed - out/index.html not found. Build output: {{ frontend_build_result.stdout | default('No output') }}"
   when: 
     - (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
     - not dist_check.stat.exists
 
+# SSR Alternative: Check for standalone server.js instead
+# - name: Fail if standalone build files are missing
+#   ansible.builtin.fail:
+#     msg: "Frontend build failed - .next/standalone/server.js not found. Build output: {{ frontend_build_result.stdout | default('No output') }}"
+#   when: 
+#     - (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
+#     - not dist_check.stat.exists
+
 - name: Show frontend build success message
   ansible.builtin.debug:
-    msg: "Frontend build completed successfully. Standalone Next.js server is ready."
+    msg: "Frontend build completed successfully. New out files are ready."
 
-- name: Start frontend Next.js server
-  ansible.builtin.command: >
-    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-    up --no-deps -d frontend
-  when: 
-    - (frontend_changed | default(false)) | bool or 
-      (force_frontend_build | default(false)) | bool
+# SSR Alternative: Start the frontend Next.js server
+# - name: Start frontend Next.js server
+#   ansible.builtin.command: >
+#     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+#     up --no-deps -d frontend
+#   when: 
+#     - (frontend_changed | default(false)) | bool or 
+#       (force_frontend_build | default(false)) | bool
 
-- name: Recreate nginx service to pick up changes
+- name: Recreate nginx service to pick up new out files
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up --no-deps -d nginx
