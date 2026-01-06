@@ -62,4 +62,4 @@ Production and staging environments use Google Cloud metadata server for authent
 
 ## Explanation
 
-For explanation look [here](https://github.com/sagyzdop/simple_monitoring) and a future post at [blog.sagyzdop.com](https://blog.sagyzdop.com).
+For explanation look at the blog post at [sagyzdop.com](https://sagyzdop.com/blog/simple-monitoring-for-a-website/).
