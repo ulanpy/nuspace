@@ -28,7 +28,7 @@ function checkAuthentication(request: NextRequest): boolean {
   return !!(accessToken || appToken)
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isAuthenticated = checkAuthentication(request)
   

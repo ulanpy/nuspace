@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PiUserCircle, PiUserCircleFill } from "react-icons/pi";
 import { ROUTES } from "@/data/routes";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type JSX } from "react";
 
 interface HeaderProps {
   left?: JSX.Element;

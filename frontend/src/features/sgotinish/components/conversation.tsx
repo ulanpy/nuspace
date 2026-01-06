@@ -210,7 +210,7 @@ export const Conversation: React.FC<ConversationProps> = ({ conversationId, part
         },
     });
 
-    const observer = useRef<IntersectionObserver>();
+    const observer = useRef<IntersectionObserver>(undefined);
     const lastMessageRef = useCallback(
         (node: HTMLDivElement) => {
             if (isFetchingNextPage) return;

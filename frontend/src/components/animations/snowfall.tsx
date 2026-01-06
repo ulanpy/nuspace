@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import type { CSSProperties } from "react";
 
-import "./Snowfall.css";
+import "./snowfall.css";
 
 type Snowflake = {
   id: number;

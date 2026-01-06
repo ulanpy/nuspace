@@ -1,18 +1,10 @@
+'use client'
+
 /**
  * Event Detail Page
- * 
- * Server component wrapper for static export compatibility.
- * generateStaticParams returns empty array - pages are rendered client-side.
  */
-import EventDetailPageClient from './client'
-
-// Required for static export with dynamic routes
-// Empty array means no pages pre-rendered at build time
-// Client-side routing handles all dynamic IDs
-export function generateStaticParams() {
-  return []
-}
+import EventDetailPageContent from '@/features/events/pages/single'
 
 export default function Page() {
-  return <EventDetailPageClient />
+  return <EventDetailPageContent />
 }
