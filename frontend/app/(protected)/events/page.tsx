@@ -1,13 +1,32 @@
 'use client'
 
 /**
- * Events List Page
+ * Events Page
  * 
- * This page wrapper imports the events list content from the features folder.
- * Following Next.js App Router convention: app/ for routing, src/features/ for page content.
+ * Handles both list and detail views using query parameters for static export compatibility.
+ * - /events/ → Shows list view
+ * - /events/?id=123 → Shows detail view for event 123
  */
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import EventsListPage from '@/features/events/pages/list'
+import EventDetailPage from '@/features/events/pages/single'
+
+function EventsContent() {
+  const searchParams = useSearchParams()
+  const id = searchParams.get('id')
+
+  if (id) {
+    return <EventDetailPage />
+  }
+
+  return <EventsListPage />
+}
 
 export default function Page() {
-  return <EventsListPage />
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading...</div>}>
+      <EventsContent />
+    </Suspense>
+  )
 }

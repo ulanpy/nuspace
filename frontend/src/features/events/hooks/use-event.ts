@@ -1,10 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { campuscurrentAPI } from '../api/events-api';
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 export const useEvent = () => {
-  const params = useParams<{ id: string }>();
-  const id = params.id;
+  const searchParams = useSearchParams();
+  // Get ID from query parameter for static export compatibility
+  // URL format: /events/?id=123
+  const id = searchParams.get('id') || undefined;
+  
   const {
     data: event,
     isPending,

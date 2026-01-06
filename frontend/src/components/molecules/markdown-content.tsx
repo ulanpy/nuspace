@@ -102,12 +102,13 @@ export const MarkdownContent = ({
   fallback = "No description provided.",
 }: MarkdownContentProps) => {
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      components={markdownComponents}
-      className={className}
-    >
-      {content || fallback}
-    </ReactMarkdown>
+    <div className={className}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={markdownComponents}
+      >
+        {content || fallback}
+      </ReactMarkdown>
+    </div>
   );
 };

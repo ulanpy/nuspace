@@ -7,7 +7,7 @@ import { Badge } from "@/components/atoms/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
 import { Modal } from "@/components/atoms/modal";
 import { MessageCircle, Clock, User, Shield, Settings, ShieldCheck, Info, MessageSquare } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { formatDistanceToNow } from "date-fns";
 import { enUS } from "date-fns/locale";
@@ -49,8 +49,10 @@ const getStatusDefinition = (status: string) => {
 };
 
 export default function TicketDetail() {
-  const params = useParams<{ id: string }>();
-  const ticketId = params.id;
+  const searchParams = useSearchParams();
+  // Get ID from query parameter for static export compatibility
+  // URL format: /sgotinish/sg/ticket/?id=123 or /sgotinish/student/ticket/?id=123
+  const ticketId = searchParams.get('id') || undefined;
   const queryClient = useQueryClient();
   const { user } = useUser();
   const [isDelegateModalOpen, setDelegateModalOpen] = useState(false);

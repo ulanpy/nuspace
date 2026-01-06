@@ -19,9 +19,12 @@ export type UseInfiniteAchievementsParams = {
 export function useInfiniteAchievements(params: UseInfiniteAchievementsParams) {
   const { communityId, size = 20 } = params;
 
+  // Only fetch when we have a valid communityId (not null, undefined, or 0)
+  const isEnabled = !!communityId && communityId !== 0;
+
   const result = useInfiniteScroll<Achievement>({
-    queryKey: ["campusCurrent", "community", String(communityId ?? 0), "achievements"],
-    apiEndpoint: `/${Routes.COMMUNITIES}/${communityId}/achievements`,
+    queryKey: ["campusCurrent", "community", String(communityId ?? 'none'), "achievements"],
+    apiEndpoint: isEnabled ? `/${Routes.COMMUNITIES}/${communityId}/achievements` : `/${Routes.COMMUNITIES}/0/achievements`,
     size,
     additionalParams: {},
     transformResponse: (response: any) => {
@@ -32,6 +35,7 @@ export function useInfiniteAchievements(params: UseInfiniteAchievementsParams) {
         page: response.page ?? 1,
       };
     },
+    enabled: isEnabled,
   });
 
   return {
