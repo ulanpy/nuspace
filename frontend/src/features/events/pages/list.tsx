@@ -1,11 +1,13 @@
+"use client";
+
 import MotionWrapper from "@/components/atoms/motion-wrapper";
-import { EventCard } from "@/features/events/components/EventCard";
-import { InfiniteList } from "@/components/virtual/InfiniteList";
+import { EventCard } from '@/features/events/components/event-card';
+import { InfiniteList } from '@/components/virtual/infinite-list';
 import { Event, Community } from "@/features/shared/campus/types";
 import { useState } from "react";
 import { Calendar, ChevronDown, Users, Building2, X } from "lucide-react";
-import { EventModal } from "@/features/events/components/EventModal";
-import { TimeFilter } from "@/features/events/api/eventsApi";
+import { EventModal } from '@/features/events/components/event-modal';
+import { TimeFilter } from '@/features/events/api/events-api';
 import { Button } from "@/components/atoms/button";
 import {
   DropdownMenu,
@@ -13,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/atoms/dropdown-menu";
-import { CommunitySelectionModal } from "@/features/communities/components/CommunitySelectionModal";
+import { CommunitySelectionModal } from '@/features/communities/components/community-selection-modal';
 
 const renderEmptyEvents = (filterType: string, eventTypeFilter: string | null, selectedCommunity: Community | null) => () => (
   <div className="flex flex-col items-center justify-center py-12 text-center">

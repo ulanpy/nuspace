@@ -1,6 +1,8 @@
+"use client";
+
 import React, { useEffect, useRef, useCallback } from "react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { sgotinishApi } from "../api/sgotinishApi";
+import { sgotinishApi } from '../api/sgotinish-api';
 import { Message as MessageType, PermissionType, ShortUserResponse, Ticket, SGUserResponse } from "../types";
 import { useUser } from "@/hooks/use-user";
 import { format } from "date-fns";
@@ -9,7 +11,7 @@ import { Check, CheckCheck, User } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { Textarea } from "@/components/atoms/textarea";
 import { Button } from "@/components/atoms/button";
-import { mapRoleToDisplayName } from "../utils/roleMapping";
+import { mapRoleToDisplayName } from '../utils/role-mapping';
 
 interface MessageProps {
   message: MessageType;

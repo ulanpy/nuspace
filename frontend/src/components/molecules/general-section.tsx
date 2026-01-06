@@ -1,4 +1,6 @@
-import { useNavigate } from "react-router-dom";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { Button } from "../atoms/button";
 
 export function GeneralSection({
@@ -10,7 +12,7 @@ export function GeneralSection({
   link: string;
   children: React.ReactNode;
 }) {
-  const navigate = useNavigate();
+  const router = useRouter();
   return (
     <div className="mt-6">
       <div className="flex justify-between items-center mb-2">
@@ -18,7 +20,7 @@ export function GeneralSection({
         <Button
           variant="link"
           className="text-xs p-0 h-auto"
-          onClick={() => navigate(link)}
+          onClick={() => router.push(link)}
         >
           See All
         </Button>

@@ -1,6 +1,6 @@
 import { FaTelegram } from "react-icons/fa";
 import { Badge } from "@/components/atoms/badge";
-import { useTheme } from "@/context/ThemeProviderContext";
+import { useTheme } from '@/context/theme-provider-context';
 
 interface TelegramStatusProps {
   isConnected: boolean;

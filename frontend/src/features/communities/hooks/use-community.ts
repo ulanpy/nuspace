@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { campuscurrentAPI } from "../api/communitiesApi";
-import { useParams } from "react-router-dom";
+import { campuscurrentAPI } from '../api/communities-api';
+import { useParams } from "next/navigation";
 import { Community, CommunityPermissions } from "@/features/shared/campus/types";
 
 export const useCommunity = () => {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams();
+  const id = params?.id as string | undefined;
 
   const { data, isPending, isLoading, isError } = useQuery({
     ...campuscurrentAPI.getCommunityQueryOptions(id || ""),

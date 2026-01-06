@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/atoms/button";
 import {
   Tabs,
@@ -5,14 +7,14 @@ import {
 } from "@/components/atoms/tabs";
 import { Badge } from "@/components/atoms/badge";
 import { VerificationBadge } from "@/components/molecules/verification-badge";
-import { MarkdownContent } from "@/components/molecules/MarkdownContent";
+import { MarkdownContent } from '@/components/molecules/markdown-content';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar";
-import { EventCard } from "@/features/events/components/EventCard";
+import { EventCard } from '@/features/events/components/event-card';
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -29,15 +31,15 @@ import {
 
 import { Media } from "@/features/media/types/types";
 import { useCommunity } from "@/features/communities/hooks/use-community";
-import { useInfiniteAchievements } from "@/features/communities/hooks/useInfiniteAchievements";
-import { useEvents } from "@/features/events/hooks/useEvents"; // Import useEvents
+import { useInfiniteAchievements } from '@/features/communities/hooks/use-infinite-achievements';
+import { useEvents } from '@/features/events/hooks/use-events'; // Import useEvents
 import { Event } from "@/features/shared/campus/types";
 import { useUser } from "@/hooks/use-user";
 
-import { CommunityModal } from "@/features/communities/components/CommunityModal";
-import { EventModal } from "@/features/events/components/EventModal";
-import { AchievementsModal } from "@/features/communities/components/AchievementsModal";
-import { GallerySection } from "@/features/communities/components/GallerySection";
+import { CommunityModal } from '@/features/communities/components/community-modal';
+import { EventModal } from '@/features/events/components/event-modal';
+import { AchievementsModal } from '@/features/communities/components/achievements-modal';
+import { GallerySection } from '@/features/communities/components/gallery-section';
 import { MediaFormat } from "@/features/media/types/types";
 
 // Helpers
@@ -121,22 +123,22 @@ export default function CommunityDetailPage() {
   });
 
   // Use URL search params for tab persistence across page refreshes
-  const [searchParams, setSearchParams] = useSearchParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const validTabs = ["about", "requests", "events", "achievements", "gallery"];
-  const tabFromUrl = searchParams.get("tab");
+  const tabFromUrl = searchParams?.get("tab");
   const activeTab = validTabs.includes(tabFromUrl || "") ? tabFromUrl! : "about";
   
   const setActiveTab = useCallback((tab: string) => {
-    setSearchParams((prev) => {
-      const newParams = new URLSearchParams(prev);
-      if (tab === "about") {
-        newParams.delete("tab"); // Clean URL for default tab
-      } else {
-        newParams.set("tab", tab);
-      }
-      return newParams;
-    }, { replace: true });
-  }, [setSearchParams]);
+    const newParams = new URLSearchParams(searchParams?.toString() || "");
+    if (tab === "about") {
+      newParams.delete("tab"); // Clean URL for default tab
+    } else {
+      newParams.set("tab", tab);
+    }
+    const queryString = newParams.toString();
+    router.replace(queryString ? `?${queryString}` : window.location.pathname, { scroll: false });
+  }, [searchParams, router]);
 
   const contentTopRef = useRef<HTMLDivElement | null>(null);
 

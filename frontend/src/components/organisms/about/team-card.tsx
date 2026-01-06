@@ -1,10 +1,12 @@
+"use client";
+
 import { useState } from "react";
 import { Card, CardContent } from "@/components/atoms/card";
 import { FaUsers } from "react-icons/fa";
 
 import { teamMembers } from "@/data/about/team-members";
 import { Modal } from "@/components/atoms/modal";
-import { useTheme } from "@/context/ThemeProviderContext";
+import { useTheme } from '@/context/theme-provider-context';
 import { TeamMemberCard } from "./team-member-card";
 
 export function TeamCard() {

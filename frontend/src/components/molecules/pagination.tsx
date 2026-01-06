@@ -1,5 +1,7 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { useTheme } from "../../context/ThemeProviderContext";
+"use client";
+
+import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from '../../context/theme-provider-context';
 
 export interface PaginationProps {
   length: number;
@@ -15,8 +17,8 @@ export const Pagination = ({
   onChange,
   manageUrl = true,
 }: PaginationProps) => {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
   const getPages = () => {
@@ -53,10 +55,10 @@ export const Pagination = ({
   const handleChange = (page: number) => {
     if (page !== currentPage) {
       if (manageUrl) {
-        const currentParams = new URLSearchParams(location.search);
+        const currentParams = new URLSearchParams(window.location.search);
         currentParams.set("page", page.toString());
         onChange(page);
-        navigate(`${location.pathname}?${currentParams.toString()}`);
+        router.push(`${pathname}?${currentParams.toString()}`);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         onChange(page);
