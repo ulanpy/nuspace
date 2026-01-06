@@ -249,7 +249,11 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
               disabled={calendarMutation.isPending}
               className="whitespace-nowrap gap-2"
             >
-              <img src={GoogleCalendarIcon} alt="" className="h-4 w-4" />
+              <img 
+                src={typeof GoogleCalendarIcon === 'string' ? GoogleCalendarIcon : GoogleCalendarIcon.src} 
+                alt="" 
+                className="h-4 w-4" 
+              />
               {calendarMutation.isPending ? "Adding..." : "Add to Google Calendar"}
             </Button>
           </div>
