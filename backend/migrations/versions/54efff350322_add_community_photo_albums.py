@@ -1,8 +1,8 @@
 """add_community_photo_albums
 
-Revision ID: cb29ee4e7ca3
+Revision ID: 54efff350322
 Revises: d07224c89b5d
-Create Date: 2026-01-05 14:10:13.584855
+Create Date: 2026-01-06 05:13:44.868165
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'cb29ee4e7ca3'
+revision: str = '54efff350322'
 down_revision: Union[str, Sequence[str], None] = 'd07224c89b5d'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,6 +27,9 @@ def upgrade() -> None:
     sa.Column('album_url', sa.String(), nullable=False),
     sa.Column('description', sa.String(), nullable=True),
     sa.Column('album_type', sa.Enum('event_photos', 'club_photoshoot', 'other', name='community_photo_album_type'), nullable=False),
+    sa.Column('album_title', sa.String(), nullable=True),
+    sa.Column('album_thumbnail_url', sa.String(), nullable=True),
+    sa.Column('album_date', sa.Date(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['community_id'], ['communities.id'], ondelete='CASCADE'),
