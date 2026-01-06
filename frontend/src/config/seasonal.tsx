@@ -1,8 +1,10 @@
+"use client";
+
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { useTheme } from "@/context/ThemeProviderContext";
+import { useTheme } from '@/context/theme-provider-context';
 
-const snowFlag = import.meta.env.VITE_ENABLE_SNOWFALL;
+const snowFlag = process.env.NEXT_PUBLIC_ENABLE_SNOWFALL;
 
 // Toggle for temporary New Year snow effect. Default on; set VITE_ENABLE_SNOWFALL=false to disable.
 export const ENABLE_SNOWFALL = snowFlag === undefined ? true : snowFlag === "true";

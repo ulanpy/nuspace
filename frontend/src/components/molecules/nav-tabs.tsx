@@ -2,7 +2,8 @@
 
 import type React from "react";
 
-import { useLocation, Link } from "react-router-dom";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { cn } from "@/utils/utils";
 
 interface Tab {
@@ -16,8 +17,7 @@ interface NavTabsProps {
 }
 
 export const NavTabs = ({ tabs }: NavTabsProps) => {
-  const location = useLocation();
-  const currentPath = location.pathname;
+  const currentPath = usePathname();
 
   return (
     <nav className="border-b">
@@ -36,7 +36,7 @@ export const NavTabs = ({ tabs }: NavTabsProps) => {
           return (
             <li key={tab.name}>
               <Link
-                to={tab.path}
+                href={tab.path}
                 className={cn(
                   "flex items-center gap-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors",
                   isActive

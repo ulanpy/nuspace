@@ -4,7 +4,7 @@ import * as React from "react";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useTheme } from "../../context/ThemeProviderContext";
+import { useTheme } from '../../context/theme-provider-context';
 
 interface CarouselProps {
   items: {

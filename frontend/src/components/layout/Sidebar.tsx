@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
     Megaphone,
     Calendar,
@@ -58,10 +59,15 @@ import { SnowToggle } from "@/components/molecules/snow-toggle";
 function NuspaceLogo({ collapsed = false }: NuspaceLogoProps) {
     if (collapsed) return null;
 
+    // In Next.js, imported SVGs return an object with src property
+    const logoSrc = typeof NuspaceLogoIcon === 'string' 
+        ? NuspaceLogoIcon 
+        : (NuspaceLogoIcon as { src: string }).src;
+
     return (
         <div className="flex items-center gap-2">
             <img
-                src={NuspaceLogoIcon}
+                src={logoSrc}
                 alt="Nuspace Logo"
                 className="w-7 h-7 object-contain"
             />
@@ -77,21 +83,21 @@ interface SidebarNavProps {
 }
 
 function SidebarNav({ onNavigate, collapsed = false }: SidebarNavProps) {
-    const location = useLocation();
+    const pathname = usePathname();
 
     const isActive = (path: string) => {
         if (path === ROUTES.ANNOUNCEMENTS) {
-            return location.pathname === path;
+            return pathname === path;
         }
-        return location.pathname.startsWith(path);
+        return pathname.startsWith(path);
     };
 
     return (
         <nav className="flex flex-col gap-1">
             {NAV_ITEMS.map((item) => (
-                <NavLink
+                <Link
                     key={item.to}
-                    to={item.to}
+                    href={item.to}
                     onClick={onNavigate}
                     title={collapsed ? item.label : undefined}
                     className={cn(
@@ -104,7 +110,7 @@ function SidebarNav({ onNavigate, collapsed = false }: SidebarNavProps) {
                 >
                     <span className="flex-shrink-0">{item.icon}</span>
                     {!collapsed && <span>{item.label}</span>}
-                </NavLink>
+                </Link>
             ))}
         </nav>
     );
@@ -203,15 +209,24 @@ function SidebarUserFooter({ collapsed = false }: SidebarUserFooterProps) {
 
 export function Sidebar() {
     const [isOpen, setIsOpen] = useState(false);
-    const [isCollapsed, setIsCollapsed] = useState(() => {
-        if (typeof window === "undefined") return false;
-        return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
-    });
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    // Load collapsed state from localStorage after mount to avoid hydration mismatch
+    useEffect(() => {
+        setMounted(true);
+        const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+        if (stored === "true") {
+            setIsCollapsed(true);
+        }
+    }, []);
 
     // Persist collapsed state
     useEffect(() => {
-        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isCollapsed));
-    }, [isCollapsed]);
+        if (mounted) {
+            localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isCollapsed));
+        }
+    }, [isCollapsed, mounted]);
 
     const handleNavigate = () => {
         setIsOpen(false);
@@ -315,12 +330,17 @@ export function Sidebar() {
 
 // Export the collapsed state hook for LoggedInLayout to use
 export function useSidebarCollapsed() {
-    const [isCollapsed, setIsCollapsed] = useState(() => {
-        if (typeof window === "undefined") return false;
-        return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true";
-    });
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
+        setIsCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true");
+    }, []);
+
+    useEffect(() => {
+        if (!mounted) return;
+        
         const handleStorageChange = () => {
             setIsCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true");
         };
@@ -339,7 +359,7 @@ export function useSidebarCollapsed() {
             window.removeEventListener("storage", handleStorageChange);
             clearInterval(interval);
         };
-    }, [isCollapsed]);
+    }, [isCollapsed, mounted]);
 
     return isCollapsed;
 }

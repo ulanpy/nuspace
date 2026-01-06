@@ -1,3 +1,5 @@
+"use client";
+
 import { Alert, AlertTitle, AlertDescription } from "../atoms/alert";
 import { Button } from "../atoms/button";
 interface AuthRequiredAlertProps {

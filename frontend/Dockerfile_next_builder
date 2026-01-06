@@ -1,0 +1,14 @@
+# Production static build Dockerfile for Next.js
+# Replaces Dockerfile_static_builder for Next.js migration
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY frontend/package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code (build is done in the container command)
+COPY frontend .

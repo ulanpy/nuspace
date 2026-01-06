@@ -2,11 +2,11 @@
 
 import { useState, useMemo } from "react";
 import { Calendar, Plus } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "next/navigation";
 
 import { LoginModal } from "@/components/molecules/login-modal";
-import { CommunityCard } from "@/features/communities/components/CommunityCard";
-import { InfiniteList } from "@/components/virtual/InfiniteList";
+import { CommunityCard } from '@/features/communities/components/community-card';
+import { InfiniteList } from '@/components/virtual/infinite-list';
 import { Community, CommunityCategory } from "@/features/shared/campus/types";
 import {
   DropdownMenu,
@@ -17,20 +17,16 @@ import {
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
-import { CommunityModal } from "@/features/communities/components/CommunityModal";
-import { useDebounce } from "@/hooks/useDebounce";
-
-// import { useLocation } from "react-router-dom";
-// import { useUser } from "@/hooks/use-user";
-
+import { CommunityModal } from '@/features/communities/components/community-modal';
+import { useDebounce } from '@/hooks/use-debounce';
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 // import { Badge } from "@/components/atoms/badge";
 
 export default function CommunitiesPage() {
   // const location = useLocation();
   // const { user } = useUser();
-  const [searchParams] = useSearchParams();
-  const initialRecruitmentFilter = searchParams.get("recruitment_status") === "open";
+  const searchParams = useSearchParams();
+  const initialRecruitmentFilter = searchParams?.get("recruitment_status") === "open";
   const [selectedCommunityCategory, setSelectedCommunityCategory] =
     useState<string>("All");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);

@@ -2,19 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import type { StaticImageData } from "next/image";
 
 interface FeatureCarouselProps {
-    images: string[];
+    images: (StaticImageData)[];
 }
 
 export function FeatureCarousel({ images }: FeatureCarouselProps) {
     const [index, setIndex] = useState(0);
 
+    // Helper to get the src string from either string or StaticImageData
+    const getSrc = (img: string | StaticImageData): string => {
+        return typeof img === 'string' ? img : img.src;
+    };
+
     useEffect(() => {
         // Preload images to prevent flickering
-        images.forEach((src) => {
-            const img = new Image();
-            img.src = src;
+        images.forEach((img) => {
+            const preloadImg = new Image();
+            preloadImg.src = getSrc(img);
         });
     }, [images]);
 
@@ -30,7 +36,7 @@ export function FeatureCarousel({ images }: FeatureCarouselProps) {
             <AnimatePresence initial={false} mode="popLayout">
                 <motion.img
                     key={index}
-                    src={images[index]}
+                    src={getSrc(images[index])}
                     alt="Feature preview"
                     className="absolute inset-0 w-full h-full object-cover"
                     initial={{ x: "100%" }}

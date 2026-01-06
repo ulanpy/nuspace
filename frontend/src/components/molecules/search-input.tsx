@@ -3,7 +3,7 @@
 import { Search, X } from "lucide-react";
 import { Input } from "../atoms/input";
 import { useState, useEffect, useRef, KeyboardEvent, ChangeEvent } from "react";
-import { useTheme } from "../../context/ThemeProviderContext";
+import { useTheme } from '../../context/theme-provider-context';
 import { SearchInputProps } from "@/types/search";
 
 export function SearchInput({
