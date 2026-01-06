@@ -7,7 +7,7 @@ import { Badge } from "@/components/atoms/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
 import { Modal } from "@/components/atoms/modal";
 import { MessageCircle, Clock, User, Shield, Settings, ShieldCheck, Info, MessageSquare } from "lucide-react";
-import { useParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { formatDistanceToNow } from "date-fns";
 import { enUS } from "date-fns/locale";
@@ -49,8 +49,12 @@ const getStatusDefinition = (status: string) => {
 };
 
 export default function TicketDetail() {
-  const params = useParams<{ id: string }>();
-  const ticketId = params.id;
+  const pathname = usePathname();
+  // Extract ID from pathname for static export compatibility
+  // Patterns: /sgotinish/sg/ticket/{id} or /sgotinish/student/ticket/{id}
+  const extractedId = pathname?.match(/\/sgotinish\/(?:sg|student)\/ticket\/([^/]+)/)?.[1];
+  // Filter out 'placeholder' - it's the static generation placeholder, not a real ID
+  const ticketId = extractedId && extractedId !== 'placeholder' ? extractedId : undefined;
   const queryClient = useQueryClient();
   const { user } = useUser();
   const [isDelegateModalOpen, setDelegateModalOpen] = useState(false);
