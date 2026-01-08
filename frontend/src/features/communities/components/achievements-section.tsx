@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Card } from "@/components/atoms/card";
 import { Button } from "@/components/atoms/button";
 import { Settings } from "lucide-react";
