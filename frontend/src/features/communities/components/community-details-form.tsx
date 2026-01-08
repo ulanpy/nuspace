@@ -148,7 +148,7 @@ export function CommunityDetailsForm() {
           <Input
             id="instagram_url"
             name="instagram_url"
-            value={formData.instagram_url}
+            value={formData.instagram_url} 
             onChange={handleInputChange}
             disabled={!isFieldEditable("instagram_url")}
           />

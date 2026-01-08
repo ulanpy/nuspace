@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Users, Calendar } from "lucide-react";
+import Image from 'next/image';
+// import { Users, Calendar } from "lucide-react";
 
 import { ROUTES } from "@/data/routes";
 import { Community } from "@/features/shared/campus/types";
@@ -7,6 +8,7 @@ import { Card } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 import { VerificationBadge } from "@/components/molecules/verification-badge";
+
 
 export function CommunityCard({ community }: { community: Community }) {
   const profile = community.media.find(
@@ -21,7 +23,7 @@ export function CommunityCard({ community }: { community: Community }) {
   );
 
   // Format established date
-  const establishedYear = new Date(community.established).getFullYear();
+  // const establishedYear = new Date(community.established).getFullYear();
 
   return (
     <Link
@@ -32,28 +34,31 @@ export function CommunityCard({ community }: { community: Community }) {
     >
       <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 h-full flex flex-col group">
         {/* Banner */}
-        <div className="relative h-20 bg-gradient-to-r from-blue-500 to-purple-600">
-          {banner && (
-            <img
+        <div className="relative w-full aspect-video bg-gradient-to-r from-gray-500 to-white-500 ">
+          {banner ? (
+            <Image
               src={banner.url}
               alt={`${community.name} banner`}
-              className="w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover"
+              width={100}
+              height={100}
             />
-          )}
+          ) : null}
+
           {/* Profile image overlay */}
           <div className="absolute -bottom-6 left-4">
             <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md">
-              <img
+              <Image
                 src={profile?.url || profilePlaceholder}
-                onError={(e) => {
-                  e.currentTarget.src = profilePlaceholder;
-                }}
+                  onError={(e) => (e.currentTarget.src = profilePlaceholder)}
                 alt={community.name}
                 className="object-cover w-full h-full"
+                // placeholder={profilePlaceholder}
               />
             </div>
           </div>
         </div>
+
 
         <div className="pt-8 px-4 pb-4 flex-1">
           {/* Name and verification */}
@@ -73,7 +78,9 @@ export function CommunityCard({ community }: { community: Community }) {
             {community.description}
           </p>
 
-          {/* Community info */}
+          {/* Commented out for future reference if I come up wiht something useful to display here */}
+
+          {/* Community info
           <div className="space-y-1 mb-3">
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Calendar className="h-3 w-3" />
@@ -83,7 +90,7 @@ export function CommunityCard({ community }: { community: Community }) {
               <Users className="h-3 w-3" />
               <span>{community.head_user.name} {community.head_user.surname}</span>
             </div>
-          </div>
+          </div> */}
 
           {/* Badges */}
           <div className="flex flex-wrap gap-1">
@@ -92,8 +99,8 @@ export function CommunityCard({ community }: { community: Community }) {
               {community.category.slice(1)}
             </Badge>
             {community.recruitment_status === "open" && (
-              <Badge 
-                variant="outline" 
+              <Badge
+                variant="outline"
                 className="text-xs px-2 py-0.5 bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800"
               >
                 Recruiting

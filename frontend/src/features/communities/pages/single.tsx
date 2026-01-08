@@ -5,10 +5,11 @@ import {
   Tabs,
   TabsContent,
 } from "@/components/atoms/tabs";
+import Image from "next/image";
 import { Badge } from "@/components/atoms/badge";
 import { VerificationBadge } from "@/components/molecules/verification-badge";
 import { MarkdownContent } from '@/components/molecules/markdown-content';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar";
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar";
 import { EventCard } from '@/features/events/components/event-card';
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
@@ -31,24 +32,24 @@ import {
 
 import { Media } from "@/features/media/types/types";
 import { useCommunity } from "@/features/communities/hooks/use-community";
-import { useInfiniteAchievements } from '@/features/communities/hooks/use-infinite-achievements';
 import { useEvents } from '@/features/events/hooks/use-events'; // Import useEvents
 import { Event } from "@/features/shared/campus/types";
 import { useUser } from "@/hooks/use-user";
 
 import { CommunityModal } from '@/features/communities/components/community-modal';
 import { EventModal } from '@/features/events/components/event-modal';
+import { AchievementsSection } from "../components/achievements-section";
 import { AchievementsModal } from '@/features/communities/components/achievements-modal';
 import { GallerySection } from '@/features/communities/components/gallery-section';
 import { MediaFormat } from "@/features/media/types/types";
 
 // Helpers
-const getUserInitials = (name?: string, surname?: string) => {
-  const first = (name?.trim()?.[0] || "").toUpperCase();
-  const last = (surname?.trim()?.[0] || "").toUpperCase();
-  const initials = `${first}${last}`;
-  return initials || "?";
-};
+// const getUserInitials = (name?: string, surname?: string) => {
+//   const first = (name?.trim()?.[0] || "").toUpperCase();
+//   const last = (surname?.trim()?.[0] || "").toUpperCase();
+//   const initials = `${first}${last}`;
+//   return initials || "?";
+// };
 
 // Reusable EventsGrid component rendered as a horizontal carousel
 const EventsGrid = ({
@@ -110,25 +111,13 @@ export default function CommunityDetailPage() {
 
   const queryClient = useQueryClient();
 
-  // Fetch achievements with infinite scroll using the custom hook
-  const {
-    achievements: allLoadedAchievements,
-    isLoading: isLoadingAchievements,
-    isFetchingNextPage: isFetchingAchievements,
-    hasNextPage: hasMoreAchievements,
-    loadMoreRef: achievementsLoadMoreRef,
-  } = useInfiniteAchievements({
-    communityId: community?.id,
-    size: 20,
-  });
-
   // Use URL search params for tab persistence across page refreshes
   const searchParams = useSearchParams();
   const router = useRouter();
-  const validTabs = ["about", "requests", "events", "achievements", "gallery"];
+  const validTabs = ["about", "requests", "events", "gallery"];
   const tabFromUrl = searchParams?.get("tab");
   const activeTab = validTabs.includes(tabFromUrl || "") ? tabFromUrl! : "about";
-  
+
   const setActiveTab = useCallback((tab: string) => {
     const newParams = new URLSearchParams(searchParams?.toString() || "");
     if (tab === "about") {
@@ -151,10 +140,9 @@ export default function CommunityDetailPage() {
     });
   };
 
-  // Reset achievements pagination when modal closes (after editing)
+  // // Reset achievements pagination when modal closes (after editing)
   useEffect(() => {
     if (!isEditAchievementsModalOpen && community?.id) {
-      // Invalidate achievements cache to refetch fresh data after edits
       queryClient.invalidateQueries({
         queryKey: ["campusCurrent", "community", String(community.id), "achievements"],
       });
@@ -278,11 +266,13 @@ export default function CommunityDetailPage() {
           {/* Profile Header Card with Banner Background - Wallpaper Style */}
           <Card className="mb-6 overflow-hidden shadow-lg relative">
             {/* Banner Background - Responsive letterbox aspect ratios (less vertical height on larger screens) */}
-            <div className="relative w-full aspect-[16/9] md:aspect-[21/9] lg:aspect-[5/2]">
+            <div className="relative w-full aspect-video bg-gradient-to-r from-gray-500 to-white-500 ">
               {banner?.url ? (
-                <img
+                <Image
                   src={banner.url}
                   alt={community.name}
+                  width={100}
+                  height={100}
                   className="w-full h-full object-cover object-center"
                 />
               ) : (
@@ -297,13 +287,13 @@ export default function CommunityDetailPage() {
               {/* Overlay for better text readability */}
               <div className="absolute inset-0 bg-black/20"></div>
             </div>
-            
+
             {/* Profile Content: avatar overlaps, text sits below banner */}
             <div className="relative p-6">
               <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                 {/* Profile Image - Only element overlapping the banner */}
                 <div className="-mt-12 md:-mt-16 w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-white overflow-hidden bg-white shadow-xl flex-shrink-0">
-                  <img
+                  <Image
                     src={profile?.url || profilePlaceholder}
                     onError={(e) => {
                       e.currentTarget.src = profilePlaceholder;
@@ -323,7 +313,7 @@ export default function CommunityDetailPage() {
                       <VerificationBadge size={14} className="mt-2 md:mt-0 md:flex-shrink-0" />
                     )}
                   </h1>
-                  
+
                   {/* Tags */}
                   <div className="flex flex-wrap justify-center md:justify-start items-center gap-2 mb-4">
                     <Badge variant="secondary" className="capitalize font-medium px-3 py-1">
@@ -332,8 +322,8 @@ export default function CommunityDetailPage() {
                     <Badge variant="secondary" className="capitalize font-medium px-3 py-1">
                       {community.type}
                     </Badge>
-                    <Badge 
-                      variant={community.recruitment_status === "open" ? "default" : "outline"} 
+                    <Badge
+                      variant={community.recruitment_status === "open" ? "default" : "outline"}
                       className="capitalize font-medium px-3 py-1"
                     >
                       Recruitment {community.recruitment_status}
@@ -342,12 +332,6 @@ export default function CommunityDetailPage() {
 
                   {/* Quick Info */}
                   <div className="text-sm text-muted-foreground space-y-1">
-                    {community.established && (
-                      <div className="flex items-center justify-center md:justify-start gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>Founded {format(new Date(community.established), "PPP")}</span>
-                      </div>
-                    )}
                     {community.email && (
                       <div className="flex items-center justify-center md:justify-start gap-2">
                         <Mail className="h-4 w-4" />
@@ -397,7 +381,7 @@ export default function CommunityDetailPage() {
                       </Button>
                     );
                   })()}
-                  
+
                   {permissions?.can_edit && (
                     <Button
                       variant="outline"
@@ -413,11 +397,13 @@ export default function CommunityDetailPage() {
             </div>
           </Card>
 
-          {/* Content Layout - LinkedIn Style */}
-            <div className="grid grid-cols-1 lg:grid-cols-[320px,1fr] gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[320px,1fr] gap-6">
             {/* Sidebar */}
             <div className="flex flex-col gap-4">
-              {/* President Card */}
+
+              {/* Commented out for future reference if I come up wiht something useful to display here */}
+
+              {/* President Card
               <Card className="p-0 overflow-hidden order-1 lg:order-1">
                 <div className="p-4 border-b">
                   <h3 className="font-semibold text-lg">President</h3>
@@ -442,7 +428,8 @@ export default function CommunityDetailPage() {
                     </div>
                   </div>
                 </div>
-              </Card>
+              </Card> */}
+
               {/* Sidebar Navigation - after Connect on mobile */}
               <Card className="p-0 overflow-hidden order-3 lg:order-2">
                 <div className="p-4 border-b">
@@ -457,18 +444,16 @@ export default function CommunityDetailPage() {
                         ? [{ value: "requests", label: "Requests", icon: "📝" }]
                         : []),
                       { value: "events", label: "Events", icon: "🎉" },
-                      { value: "achievements", label: "Achievements", icon: "🏆" },
                       { value: "gallery", label: "Gallery", icon: "🖼️" },
                     ] as const
                   ).map((item) => (
                     <button
                       key={item.value}
                       onClick={() => handleNavigate(item.value)}
-                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors hover:bg-muted/50 appearance-none border-0 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-                        activeTab === item.value
-                          ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 active:bg-primary/90"
-                          : "text-foreground active:bg-muted/70 dark:active:bg-muted/30"
-                      }`}
+                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors hover:bg-muted/50 appearance-none border-0 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${activeTab === item.value
+                        ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 active:bg-primary/90"
+                        : "text-foreground active:bg-muted/70 dark:active:bg-muted/30"
+                        }`}
                     >
                       <span className="text-lg">{item.icon}</span>
                       <span className="font-medium truncate">{item.label}</span>
@@ -536,275 +521,173 @@ export default function CommunityDetailPage() {
               {/* Scroll target for smooth navigation */}
               <div ref={contentTopRef} className="h-0 scroll-mt-24 md:scroll-mt-28" />
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              { (isHead || (creatorSub && pendingCount >= 0)) && (
-                <TabsContent value="requests" className="mt-0">
-                  <Card className="p-0 overflow-hidden mb-6">
+                {(isHead || (creatorSub && pendingCount >= 0)) && (
+                  <TabsContent value="requests" className="mt-0">
+                    <Card className="p-0 overflow-hidden mb-6">
+                      <div className="p-6 border-b">
+                        <h2 className="text-2xl font-bold">Requests</h2>
+                      </div>
+                      <div className="p-6">
+                        <div className="flex items-start gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg mb-4">
+                          <Lightbulb className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+                          <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                            {isHead
+                              ? "Event requests are sent by all users. By default, they are not publicly visible. You should review each request and update the status by editing the event. Approved events will be visible to all users."
+                              : "Your event status is pending. The community head will review it and update the status. Approved events will be visible to all users."}
+                          </div>
+                        </div>
+                        <EventsGrid
+                          isLoading={isLoadingPending}
+                          isError={isErrorPending}
+                          events={pendingList}
+                        />
+                      </div>
+                    </Card>
+                  </TabsContent>
+                )}
+
+                <TabsContent value="about" className="mt-0 flex flex-col gap-y-4" >
+                  <Card className="p-0 overflow-hidden">
                     <div className="p-6 border-b">
-                      <h2 className="text-2xl font-bold">Requests</h2>
+                      <h2 className="text-2xl font-bold">About Us</h2>
                     </div>
                     <div className="p-6">
-                      <div className="flex items-start gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg mb-4">
-                        <Lightbulb className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                          {isHead
-                            ? "Event requests are sent by all users. By default, they are not publicly visible. You should review each request and update the status by editing the event. Approved events will be visible to all users."
-                            : "Your event status is pending. The community head will review it and update the status. Approved events will be visible to all users."}
-                        </div>
+                      <div className="prose max-w-none">
+                        <MarkdownContent
+                          content={community.description}
+                          fallback="No description available."
+                        />
                       </div>
-                      <EventsGrid
-                        isLoading={isLoadingPending}
-                        isError={isErrorPending}
-                        events={pendingList}
-                      />
-                    </div>
-                  </Card>
-                </TabsContent>
-              )}
 
-              <TabsContent value="about" className="mt-0">
-                <Card className="p-0 overflow-hidden">
-                  <div className="p-6 border-b">
-                    <h2 className="text-2xl font-bold">About Us</h2>
-                  </div>
-                  <div className="p-6">
-                    <div className="prose max-w-none">
-                      <MarkdownContent 
-                        content={community.description} 
-                        fallback="No description available." 
-                      />
-                    </div>
-                    
-                    {/* Additional Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 pt-6 border-t">
-                      <div className="space-y-4">
-                        <h3 className="font-semibold text-lg">Contact Information</h3>
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-3">
-                            <Mail className="h-5 w-5 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium text-sm">Email</p>
-                              {community.email ? (
-                                <a
-                                  href={`mailto:${community.email}`}
-                                  className="text-sm text-primary hover:underline"
-                                >
-                                  {community.email}
-                                </a>
-                              ) : (
-                                <span className="text-sm text-muted-foreground">
-                                  Not provided
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {community.established && (
+                      {/* Additional Info */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 pt-6 border-t">
+                        <div className="space-y-4">
+                          <h3 className="font-semibold text-lg">Contact Information</h3>
+                          <div className="space-y-3">
                             <div className="flex items-center gap-3">
-                              <Calendar className="h-5 w-5 text-muted-foreground" />
+                              <Mail className="h-5 w-5 text-muted-foreground" />
                               <div>
-                                <p className="font-medium text-sm">Founded</p>
-                                <p className="text-sm">{format(new Date(community.established), "PPP")}</p>
+                                <p className="font-medium text-sm">Email</p>
+                                {community.email ? (
+                                  <a
+                                    href={`mailto:${community.email}`}
+                                    className="text-sm text-primary hover:underline"
+                                  >
+                                    {community.email}
+                                  </a>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">
+                                    Not provided
+                                  </span>
+                                )}
                               </div>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <h3 className="font-semibold text-lg">Community Type</h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">Category</span>
-                            <Badge variant="secondary" className="capitalize">
-                              {community.category}
-                            </Badge>
+                            {community.established && (
+                              <div className="flex items-center gap-3">
+                                <Calendar className="h-5 w-5 text-muted-foreground" />
+                                <div>
+                                  <p className="font-medium text-sm">Founded</p>
+                                  <p className="text-sm">{format(new Date(community.established), "PPP")}</p>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">Type</span>
-                            <Badge variant="secondary" className="capitalize">
-                              {community.type}
-                            </Badge>
+                        </div>
+
+                        <div className="space-y-4">
+                          <h3 className="font-semibold text-lg">Community Type</h3>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">Category</span>
+                              <Badge variant="secondary" className="capitalize">
+                                {community.category}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">Type</span>
+                              <Badge variant="secondary" className="capitalize">
+                                {community.type}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              </TabsContent>
+                  </Card>
 
-              <TabsContent value="events" className="mt-0">
-                <Card className="p-0 overflow-hidden mb-6">
-                  <div className="p-6 border-b">
-                    <h2 className="text-2xl font-bold">Events</h2>
-                  </div>
-                  <div className="p-6">
-                    <div className="space-y-8">
-                      {/* Requests (Pending) - visible to community head or the creator (own requests only) */}
-                      {(isHead ? pendingList.length > 0 : (creatorSub && pendingList.length > 0)) && (
+                  <AchievementsSection
+                    communityId={community.id}
+                    canEdit={Boolean(permissions?.can_edit)}
+                    onEditAchievements={() => setIsEditAchievementsModalOpen(true)}
+                  />
+                </TabsContent>
+
+                <TabsContent value="events" className="mt-0">
+                  <Card className="p-0 overflow-hidden mb-6">
+                    <div className="p-6 border-b">
+                      <h2 className="text-2xl font-bold">Events</h2>
+                    </div>
+                    <div className="p-6">
+                      <div className="space-y-8">
+                        {/* Requests (Pending) - visible to community head or the creator (own requests only) */}
+                        {(isHead ? pendingList.length > 0 : (creatorSub && pendingList.length > 0)) && (
+                          <div>
+                            <h3 className="text-xl font-semibold mb-4">Requests</h3>
+                            <EventsGrid
+                              isLoading={isLoadingPending}
+                              isError={isErrorPending}
+                              events={pendingList}
+                            />
+                          </div>
+                        )}
+
                         <div>
-                          <h3 className="text-xl font-semibold mb-4">Requests</h3>
+                          <h3 className="text-xl font-semibold mb-4">Upcoming Events</h3>
                           <EventsGrid
-                            isLoading={isLoadingPending}
-                            isError={isErrorPending}
-                            events={pendingList}
+                            isLoading={isLoadingUpcoming}
+                            isError={isErrorUpcoming}
+                            events={upcomingList}
                           />
                         </div>
-                      )}
 
-                      <div>
-                        <h3 className="text-xl font-semibold mb-4">Upcoming Events</h3>
-                        <EventsGrid
-                          isLoading={isLoadingUpcoming}
-                          isError={isErrorUpcoming}
-                          events={upcomingList}
-                        />
-                      </div>
-
-                      <div>
-                        <h3 className="text-xl font-semibold mb-4">Past Events</h3>
-                        <EventsGrid
-                          isLoading={isLoadingPast}
-                          isError={isErrorPast}
-                          events={pastList}
-                        />
+                        <div>
+                          <h3 className="text-xl font-semibold mb-4">Past Events</h3>
+                          <EventsGrid
+                            isLoading={isLoadingPast}
+                            isError={isErrorPast}
+                            events={pastList}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
+                  </Card>
 
-                <Card className="mt-8">
-                  <CardHeader className="text-lg font-semibold">
-                    Create event for this community
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      Are you a club member? Create an event for this community!
-                      Then wait for it to get approved by the club's President.
-                    </p>
-                    <Button 
-                      className="w-full"
-                      onClick={() => setIsCreateEventModalOpen(true)}
-                    >
-                      Create Event
-                    </Button>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="achievements" className="mt-0">
-                <Card className="p-0 overflow-hidden">
-                  <div className="p-6 border-b flex justify-between items-center">
-                    <h2 className="text-2xl font-bold">Achievements</h2>
-                    {permissions?.can_edit && (
+                  <Card className="mt-8">
+                    <CardHeader className="text-lg font-semibold">
+                      Create event for this community
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Are you a club member? Create an event for this community!
+                        Then wait for it to get approved by the club's President.
+                      </p>
                       <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsEditAchievementsModalOpen(true)}
+                        className="w-full"
+                        onClick={() => setIsCreateEventModalOpen(true)}
                       >
-                        <Settings className="h-4 w-4 mr-2" />
-                        Edit Achievements
+                        Create Event
                       </Button>
-                    )}
-                  </div>
-                  <div className="p-6">
-                    {(() => {
-                      if (isLoadingAchievements && allLoadedAchievements.length === 0) {
-                        return (
-                          <div className="text-center py-12">
-                            <div className="text-6xl mb-4">⏳</div>
-                            <p className="text-muted-foreground">Loading achievements...</p>
-                          </div>
-                        );
-                      }
+                    </CardContent>
+                  </Card>
+                </TabsContent>
 
-                      if (allLoadedAchievements.length === 0 && !isLoadingAchievements) {
-                        return (
-                          <div className="text-center py-12">
-                            <div className="text-6xl mb-4">🏆</div>
-                            <h3 className="text-xl font-semibold mb-2">No Achievements Yet</h3>
-                            <p className="text-muted-foreground max-w-md mx-auto">
-                              {permissions?.can_edit
-                                ? "Click 'Edit Achievements' to add the community's accomplishments and awards."
-                                : "This community hasn't added any achievements yet."}
-                            </p>
-                          </div>
-                        );
-                      }
-
-                      const currentYear = new Date().getFullYear();
-                      const lastYear = currentYear - 1;
-
-                      return (
-                        <div className="space-y-4">
-                          <div className="space-y-3">
-                            {allLoadedAchievements.map((achievement: any) => {
-                              const isRecent = achievement.year === currentYear || achievement.year === lastYear;
-                              
-                              return (
-                                <div
-                                  key={achievement.id}
-                                  className={`flex items-start gap-4 p-5 rounded-lg border transition-colors ${
-                                    isRecent
-                                      ? "bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 border-amber-200 dark:border-amber-800"
-                                      : "bg-card border-border hover:bg-muted/50"
-                                  }`}
-                                >
-                                  <div className="flex-shrink-0">
-                                    <div className={`rounded-full flex items-center justify-center ${
-                                      isRecent
-                                        ? "w-14 h-14 bg-amber-100 dark:bg-amber-900"
-                                        : "w-12 h-12 bg-muted"
-                                    }`}>
-                                      <span className={isRecent ? "text-3xl" : "text-2xl"}>
-                                        {isRecent ? "🏆" : "🎖️"}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className={`leading-relaxed mb-2 ${
-                                      isRecent
-                                        ? "text-base font-medium text-foreground"
-                                        : "text-base text-muted-foreground"
-                                    }`}>
-                                      {achievement.description}
-                                    </p>
-                                    <Badge 
-                                      variant={isRecent ? "secondary" : "outline"} 
-                                      className="text-xs font-semibold"
-                                    >
-                                      {achievement.year}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          
-                          {hasMoreAchievements && (
-                            <div 
-                              ref={achievementsLoadMoreRef}
-                              className="flex justify-center pt-4"
-                            >
-                              {isFetchingAchievements && (
-                                <div className="text-muted-foreground text-sm">Loading more...</div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="gallery" className="mt-0">
-                <Card className="p-0 overflow-hidden">
+                <TabsContent value="gallery" className="mt-0">
                   <GallerySection
                     communityId={community.id}
                     canEdit={Boolean(permissions?.can_edit)}
                   />
-                </Card>
-              </TabsContent>
-            </Tabs>
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </div>
@@ -833,6 +716,11 @@ export default function CommunityDetailPage() {
         <AchievementsModal
           isOpen={isEditAchievementsModalOpen}
           onClose={() => setIsEditAchievementsModalOpen(false)}
+          onSaved={() => {
+            queryClient.invalidateQueries({
+              queryKey: ["campusCurrent", "community", String(community.id), "achievements"],
+            });
+          }}
           communityId={community.id}
           initialAchievements={community.achievements || []}
         />

@@ -19,10 +19,10 @@ import {
 // Import all the new modular components
 import { UnifiedCommunityMediaUpload } from '@/features/communities/components/unified-community-media-upload';
 import type { CommunityUploadHandle } from '@/features/communities/components/unified-community-media-upload';
-import { CommunityDetailsForm } from '@/features/communities/components/forms/community-details-form';
-import { CommunityDescription } from '@/features/communities/components/forms/community-description';
+import { CommunityDetailsForm } from '@/features/communities/components/community-details-form';
+import { CommunityDescription } from '@/features/communities/components/community-description';
 import { DeleteConfirmation } from '@/components/molecules/delete-confirmation';
-import { CommunityActions } from '@/features/communities/components/forms/community-actions';
+import { CommunityActions } from '@/features/communities/components/community-actions';
 import {
   useCommunityForm,
   CommunityFormProvider,
