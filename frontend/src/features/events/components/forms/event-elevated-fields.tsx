@@ -42,28 +42,6 @@ export function EventElevatedFields() {
           </Select>
         </div>
       )}
-
-      {/* Status */}
-      {permissions?.editable_fields.includes(EventEditableFields.status) && (
-        <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
-          <Select 
-            value={isEditMode && 'status' in formData ? formData.status : ''} 
-            disabled={!isFieldEditable('status')} 
-            onValueChange={(value) => handleSelectChange("status", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select event status" />
-            </SelectTrigger>
-            <SelectContent className="z-[11050]">
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      )}
     </div>
   );
 }

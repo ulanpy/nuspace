@@ -33,14 +33,14 @@ export function CommunityCard({ community }: { community: Community }) {
     >
       <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 h-full flex flex-col group">
         {/* Banner */}
-        <div className="relative w-full aspect-video bg-gradient-to-r from-gray-500 to-white ">
+        <div className="relative w-full aspect-video bg-gradient-to-r from-gray-200 to-gray-500">
           {banner ? (
             <Image
               src={banner.url}
               alt={`${community.name} banner`}
               className="absolute inset-0 w-full h-full object-cover"
-              width={100}
-              height={100}
+              fill
+              className="object-cover object-center"
             />
           ) : null}
 
@@ -49,10 +49,10 @@ export function CommunityCard({ community }: { community: Community }) {
             <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white shadow-md">
               <Image
                 src={profile?.url || profilePlaceholder}
-                  onError={(e) => (e.currentTarget.src = profilePlaceholder)}
+                onError={(e) => (e.currentTarget.src = profilePlaceholder)}
                 alt={community.name}
                 className="object-cover w-full h-full"
-                // placeholder={profilePlaceholder}
+              // placeholder={profilePlaceholder}
               />
             </div>
           </div>
