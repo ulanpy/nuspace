@@ -33,7 +33,7 @@ export function CommunityCard({ community }: { community: Community }) {
     >
       <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 h-full flex flex-col group">
         {/* Banner */}
-        <div className="relative w-full aspect-video bg-gradient-to-r from-gray-500 to-white-500 ">
+        <div className="relative w-full aspect-video bg-gradient-to-r from-gray-500 to-white ">
           {banner ? (
             <Image
               src={banner.url}
@@ -77,7 +77,7 @@ export function CommunityCard({ community }: { community: Community }) {
             {community.description}
           </p>
 
-          {/* Commented out for future reference if I come up wiht something useful to display here */}
+          {/* Commented out for future reference if I come up with something useful to display here */}
 
           {/* Community info
           <div className="space-y-1 mb-3">
