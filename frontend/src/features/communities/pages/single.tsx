@@ -271,9 +271,9 @@ export default function CommunityDetailPage() {
                 <Image
                   src={banner.url}
                   alt={community.name}
-                  width={100}
-                  height={100}
-                  className="w-full h-full object-cover object-center"
+                  fill
+                  sizes="(min-width: 1024px) 1024px, 100vw"
+                  className="object-cover object-center"
                 />
               ) : (
                 <div
