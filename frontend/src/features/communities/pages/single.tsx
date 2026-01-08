@@ -114,7 +114,7 @@ export default function CommunityDetailPage() {
   // Use URL search params for tab persistence across page refreshes
   const searchParams = useSearchParams();
   const router = useRouter();
-  const validTabs = ["about", "requests", "events", "gallery"];
+  const validTabs = ["about", "events", "gallery"];
   const tabFromUrl = searchParams?.get("tab");
   const activeTab = validTabs.includes(tabFromUrl || "") ? tabFromUrl! : "about";
 
@@ -182,21 +182,6 @@ export default function CommunityDetailPage() {
     size: 20,
   });
 
-  // Fetch pending (requests) events
-  const isHead = Boolean(permissions?.can_edit);
-  const creatorSub = user?.user?.sub ?? null;
-  const {
-    events: pendingEvents,
-    isLoading: isLoadingPending,
-    isError: isErrorPending,
-  } = useEvents({
-    event_status: "pending",
-    community_id: community?.id ?? null,
-    event_scope: "community",
-    creator_sub: isHead ? null : creatorSub,
-    size: 20,
-  });
-
   // Fallback: fetch recent community events without date filter, then split client-side
   const { events: recentCommunityEvents } = useEvents({
     community_id: community?.id ?? null,
@@ -208,14 +193,9 @@ export default function CommunityDetailPage() {
     () => upcomingEvents?.items ?? [],
     [upcomingEvents]
   );
-  const pendingList = useMemo(
-    () => pendingEvents?.items ?? [],
-    [pendingEvents]
-  );
+
   const upcomingCount = (upcomingEvents as any)?.items?.length ?? 0;
   const upcomingHasMore = ((upcomingEvents as any)?.total_pages ?? 1) > 1;
-  const pendingCount = (pendingEvents as any)?.items?.length ?? 0;
-  const pendingHasMore = ((pendingEvents as any)?.total_pages ?? 1) > 1;
   const pastList = useMemo(() => {
     const serverPast = pastEvents?.items ?? [];
     if (serverPast.length > 0) return serverPast;
@@ -265,25 +245,15 @@ export default function CommunityDetailPage() {
         <div className="container px-4 md:px-6">
           {/* Profile Header Card with Banner Background - Wallpaper Style */}
           <Card className="mb-6 overflow-hidden shadow-lg relative">
-            {/* Banner Background - Responsive letterbox aspect ratios (less vertical height on larger screens) */}
-            <div className="relative w-full aspect-video bg-gradient-to-r from-gray-500 to-white-500 ">
+            <div className="relative w-full aspect-video bg-gradient-to-r from-gray-200 to-gray-500">
               {banner?.url ? (
                 <Image
                   src={banner.url}
                   alt={community.name}
                   fill
-                  sizes="(min-width: 1024px) 1024px, 100vw"
                   className="object-cover object-center"
                 />
-              ) : (
-                <div
-                  className="w-full h-full"
-                  style={{
-                    background:
-                      "linear-gradient(90deg, #414757 0%, #B5B6BB 100%)",
-                  }}
-                />
-              )}
+              ) : null}
               {/* Overlay for better text readability */}
               <div className="absolute inset-0 bg-black/20"></div>
             </div>
@@ -439,10 +409,6 @@ export default function CommunityDetailPage() {
                   {(
                     [
                       { value: "about", label: "About", icon: "📋" },
-                      // Requests tab shown above Events: visible to head always, or to creator only when they have pending
-                      ...((isHead || (creatorSub && pendingCount > 0))
-                        ? [{ value: "requests", label: "Requests", icon: "📝" }]
-                        : []),
                       { value: "events", label: "Events", icon: "🎉" },
                       { value: "gallery", label: "Gallery", icon: "🖼️" },
                     ] as const
@@ -465,16 +431,6 @@ export default function CommunityDetailPage() {
                           <Clock className="h-3 w-3 animate-pulse" />
                           {upcomingCount}
                           {upcomingHasMore ? "+" : ""}
-                        </span>
-                      )}
-                      {item.value === "requests" && (pendingCount > 0 || isHead) && (
-                        <span
-                          className="ml-auto inline-flex items-center gap-1 h-5 min-w-[1.25rem] px-2 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200"
-                          title={`${pendingCount}${pendingHasMore ? '+' : ''} pending`}
-                        >
-                          <Clock className="h-3 w-3" />
-                          {pendingCount}
-                          {pendingHasMore ? "+" : ""}
                         </span>
                       )}
                     </button>
@@ -521,31 +477,6 @@ export default function CommunityDetailPage() {
               {/* Scroll target for smooth navigation */}
               <div ref={contentTopRef} className="h-0 scroll-mt-24 md:scroll-mt-28" />
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                {(isHead || (creatorSub && pendingCount >= 0)) && (
-                  <TabsContent value="requests" className="mt-0">
-                    <Card className="p-0 overflow-hidden mb-6">
-                      <div className="p-6 border-b">
-                        <h2 className="text-2xl font-bold">Requests</h2>
-                      </div>
-                      <div className="p-6">
-                        <div className="flex items-start gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg mb-4">
-                          <Lightbulb className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-                          <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                            {isHead
-                              ? "Event requests are sent by all users. By default, they are not publicly visible. You should review each request and update the status by editing the event. Approved events will be visible to all users."
-                              : "Your event status is pending. The community head will review it and update the status. Approved events will be visible to all users."}
-                          </div>
-                        </div>
-                        <EventsGrid
-                          isLoading={isLoadingPending}
-                          isError={isErrorPending}
-                          events={pendingList}
-                        />
-                      </div>
-                    </Card>
-                  </TabsContent>
-                )}
-
                 <TabsContent value="about" className="mt-0 flex flex-col gap-y-4" >
                   <Card className="p-0 overflow-hidden">
                     <div className="p-6 border-b">
@@ -629,18 +560,6 @@ export default function CommunityDetailPage() {
                     </div>
                     <div className="p-6">
                       <div className="space-y-8">
-                        {/* Requests (Pending) - visible to community head or the creator (own requests only) */}
-                        {(isHead ? pendingList.length > 0 : (creatorSub && pendingList.length > 0)) && (
-                          <div>
-                            <h3 className="text-xl font-semibold mb-4">Requests</h3>
-                            <EventsGrid
-                              isLoading={isLoadingPending}
-                              isError={isErrorPending}
-                              events={pendingList}
-                            />
-                          </div>
-                        )}
-
                         <div>
                           <h3 className="text-xl font-semibold mb-4">Upcoming Events</h3>
                           <EventsGrid

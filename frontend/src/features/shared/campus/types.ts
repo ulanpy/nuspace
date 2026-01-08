@@ -42,7 +42,6 @@ import { Media } from "@/features/media/types/types";
       description = "description",
       policy = "policy",
       registration_link = "registration_link",
-      status = "status",
       type = "type",
       tag = "tag"
     }
@@ -167,14 +166,6 @@ import { Media } from "@/features/media/types/types";
       total_pages: number;
     }
     
-
-    export enum EventStatus {
-      approved = "approved",
-      pending = "pending",
-      rejected = "rejected",
-      cancelled = "cancelled"
-    }
-    
     export enum EventTag {
       featured = "featured",
       promotional = "promotional",
@@ -206,7 +197,6 @@ import { Media } from "@/features/media/types/types";
       description: string;
       scope: Scope;
       type: EventType;
-      status: EventStatus;
       tag: EventTag;
       created_at: string;
       updated_at: string;
@@ -238,7 +228,6 @@ import { Media } from "@/features/media/types/types";
       description?: string;
       policy?: EventPolicy;
       registration_link?: string;
-      status?: EventStatus;
       type?: EventType;
       tag?: EventTag;
     }

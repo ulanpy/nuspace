@@ -122,11 +122,6 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
           type: formData.type as EventType,
         };
 
-        // Only include status if user has permission to edit it
-        if (permissions?.editable_fields.includes('status' as any)) {
-          editData.status = 'status' in formData ? formData.status : event.status;
-        }
-
         // Only include tag if user has permission to edit it
         if (permissions?.editable_fields.includes('tag' as any)) {
           editData.tag = 'tag' in formData ? formData.tag : event.tag;
@@ -244,15 +239,11 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
           {/* Date and Time */}
           <EventDateTimeSelector />
 
-          {/* Admin Fields (Tag & Status) */}
+          {/* Tag */}
           <EventElevatedFields />
 
           {/* Description */}
           <EventDescription />
-
-
-
-
 
           {/* Delete Confirmation */}
           <DeleteConfirmation

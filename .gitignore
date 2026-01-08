@@ -27,6 +27,7 @@ ssl/
 # Next.js build output
 .next/
 out/
+
 # Static folder pycache
 static/**/__pycache__/
 
@@ -65,3 +66,6 @@ frontend/android
 # Promt files
 .github/prompts
 .kiro/
+
+# Next.js
+./frontend/next-env.d.ts

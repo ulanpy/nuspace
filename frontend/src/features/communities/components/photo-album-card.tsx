@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Card } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
-import { ExternalLink, Image, Calendar, Edit2 } from "lucide-react";
+import { ExternalLink, Calendar, Edit2 } from "lucide-react";
+import Image from "next/image";
 import { PhotoAlbum, PhotoAlbumType } from '../hooks/use-infinite-photo-albums';
 
 interface PhotoAlbumCardProps {
@@ -60,10 +61,11 @@ export function PhotoAlbumCard({ album, communityId, canEdit = false, onEdit }: 
       {/* Thumbnail / Placeholder */}
       <div className="relative aspect-[4/3] bg-muted overflow-hidden">
         {thumbnail && !imageError ? (
-          <img
+          <Image
             src={thumbnail}
             alt={album.album_title || album.description || "Photo album"}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            fill
             onError={() => setImageError(true)}
           />
         ) : (
