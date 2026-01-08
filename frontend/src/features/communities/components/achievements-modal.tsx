@@ -9,7 +9,6 @@ import { Label } from "@/components/atoms/label";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, Plus, Save } from "lucide-react";
 import { campuscurrentAPI } from '@/features/communities/api/communities-api';
-import { useQueryClient } from "@tanstack/react-query";
 
 export interface Achievement {
   id?: number;
@@ -23,6 +22,7 @@ export interface Achievement {
 interface AchievementsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSaved?: () => void;
   communityId: number;
   initialAchievements: Achievement[];
 }
@@ -30,11 +30,11 @@ interface AchievementsModalProps {
 export function AchievementsModal({
   isOpen,
   onClose,
+  onSaved,
   communityId,
   initialAchievements,
 }: AchievementsModalProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [deletedIds, setDeletedIds] = useState<number[]>([]);
@@ -130,11 +130,7 @@ export function AchievementsModal({
         description: "Achievements updated successfully",
       });
 
-      // Invalidate queries to refresh data
-      await queryClient.invalidateQueries({ 
-        queryKey: ["campusCurrent", "community", communityId.toString()] 
-      });
-
+      onSaved?.();
       onClose();
     } catch (error: any) {
       console.error("Error saving achievements:", error);

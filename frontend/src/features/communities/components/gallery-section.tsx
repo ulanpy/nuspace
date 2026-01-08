@@ -11,6 +11,7 @@ import {
 } from "@/components/atoms/select";
 import { Image, Plus, Loader2 } from "lucide-react";
 import { useInfinitePhotoAlbums, PhotoAlbumType, PhotoAlbum } from '../hooks/use-infinite-photo-albums';
+import { Card } from "@/components/atoms/card";
 import { PhotoAlbumCard } from './photo-album-card';
 import { AddAlbumModal } from './add-album-modal';
 import { EditAlbumModal } from './edit-album-modal';
@@ -62,7 +63,7 @@ export function GallerySection({ communityId, canEdit }: GallerySectionProps) {
   }, []);
 
   return (
-    <div className="space-y-4">
+      <Card className="p-0 overflow-hidden">
       {/* Header with Filter and Add Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border-b">
         <div className="flex items-center gap-2">
@@ -187,6 +188,6 @@ export function GallerySection({ communityId, canEdit }: GallerySectionProps) {
           album={editingAlbum}
         />
       )}
-    </div>
+    </Card>
   );
 }
