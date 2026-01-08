@@ -9,7 +9,6 @@ import { Badge } from "@/components/atoms/badge";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 import { VerificationBadge } from "@/components/molecules/verification-badge";
 
-
 export function CommunityCard({ community }: { community: Community }) {
   const profile = community.media.find(
     (media) =>
