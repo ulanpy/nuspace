@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, ArrowRight, Users } from "lucide-react";
@@ -16,14 +15,20 @@ function getGreeting(): string {
     return "Good evening";
 }
 
+function isEventOngoing(event: any) {
+    const now = Date.now();
+    const start = new Date(event.start_datetime).getTime();
+    const end = new Date(event.end_datetime).getTime();
+    return start <= now && end > now;
+}
+
 export default function AnnouncementsPage() {
     const { user } = useUser();
     const greeting = getGreeting();
 
     // Fetch upcoming events
-    const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
     const { events: eventsData, isLoading: eventsLoading } = useEvents({
-        start_date: todayStr,
+        time_filter: "upcoming",
         size: 5
     });
 
@@ -94,7 +99,14 @@ export default function AnnouncementsPage() {
                                             </div>
                                         )}
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="font-medium truncate">{event.name}</h3>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-medium truncate flex-1">{event.name}</h3>
+                                                {isEventOngoing(event) && (
+                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200 flex-shrink-0">
+                                                        Ongoing
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p className="text-sm text-muted-foreground">
                                                 {new Date(event.start_datetime).toLocaleDateString()} • {event.place}
                                             </p>
