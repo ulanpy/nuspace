@@ -6,7 +6,9 @@ import { Calendar, ArrowRight, Users } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 import { useEvents } from '@/features/events/hooks/use-events';
 import { TelegramFeed } from '@/features/announcements/components/telegram-feed';
+import { GalleryCarousel } from '@/features/announcements/components/gallery-carousel';
 import { campuscurrentAPI } from '@/features/communities/api/communities-api';
+import { useState, useEffect } from "react";
 
 function getGreeting(): string {
     const hour = new Date().getHours();
@@ -24,7 +26,11 @@ function isEventOngoing(event: any) {
 
 export default function AnnouncementsPage() {
     const { user } = useUser();
-    const greeting = getGreeting();
+    const [greeting, setGreeting] = useState("Hello");
+    
+    useEffect(() => {
+        setGreeting(getGreeting());
+    }, []);
 
     // Fetch upcoming events
     const { events: eventsData, isLoading: eventsLoading } = useEvents({
@@ -68,7 +74,7 @@ export default function AnnouncementsPage() {
                     {/* Events Widget */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold">Upcoming Events</h2>
+                            <h2 className="text-lg font-semibold">Current Events</h2>
                             <Link
                                 href="/events"
                                 className="text-sm text-primary hover:underline flex items-center gap-1"
@@ -128,10 +134,12 @@ export default function AnnouncementsPage() {
                         )}
                     </div>
 
+                    <GalleryCarousel />
+
                     {/* Communities recruiting now */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold">Communities recruiting now</h2>
+                            <h2 className="text-lg font-semibold">Communities Recruiting Now</h2>
                             <Link
                                 href="/communities?recruitment_status=open"
                                 className="text-sm text-primary hover:underline flex items-center gap-1"
