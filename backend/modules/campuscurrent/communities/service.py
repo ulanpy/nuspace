@@ -348,6 +348,34 @@ class CommunityService:
             return False
         return await self.repo.delete_photo_album(album)
 
+    async def list_all_photo_albums(
+        self,
+        size: int,
+        page: int,
+        album_type: CommunityPhotoAlbumType | None,
+        user: tuple[dict, dict],
+    ) -> schemas.ListPhotoAlbums:
+        """List photo albums from all communities."""
+        albums, count = await self.repo.get_all_photo_albums(
+            size=size, page=page, album_type=album_type
+        )
+        total_pages = response_builder.calculate_pages(count=count, size=size)
+        
+        album_responses = []
+        for album in albums:
+            album_dict = schemas.PhotoAlbumResponse.model_validate(album).model_dump()
+            album_dict["community_name"] = album.community.name if album.community else None
+            album_responses.append(schemas.PhotoAlbumResponse(**album_dict))
+        
+        return schemas.ListPhotoAlbums(
+            albums=album_responses,
+            total_pages=total_pages,
+            total=count,
+            page=page,
+            size=size,
+            has_next=page < total_pages,
+        )
+
     async def refresh_photo_album_metadata(
         self,
         community_id: int,

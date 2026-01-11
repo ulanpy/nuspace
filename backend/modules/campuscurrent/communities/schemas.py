@@ -148,6 +148,11 @@ class PhotoAlbumResponse(PhotoAlbumBase):
     album_date: date | None = None
     created_at: datetime
     updated_at: datetime
+    community_name: str | None = None
+    
+    class Config:
+        from_attributes = True
+        extra = "ignore"
 
 
 class ListPhotoAlbums(BaseModel):
