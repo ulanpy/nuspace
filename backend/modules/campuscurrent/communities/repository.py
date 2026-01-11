@@ -270,3 +270,38 @@ class CommunityRepository:
     async def delete_photo_album(self, album: CommunityPhotoAlbum) -> bool:
         qb = QueryBuilder(session=self.db_session, model=CommunityPhotoAlbum)
         return await qb.delete(target=album)
+
+    async def get_all_photo_albums(
+        self,
+        size: int,
+        page: int,
+        album_type: CommunityPhotoAlbumType | None = None,
+    ) -> Tuple[List[CommunityPhotoAlbum], int]:
+        """Get photo albums from all communities."""
+        qb = QueryBuilder(session=self.db_session, model=CommunityPhotoAlbum)
+        conditions = []
+        
+        if album_type is not None:
+            conditions.append(CommunityPhotoAlbum.album_type == album_type)
+        
+        query = qb.base()
+        if conditions:
+            query = query.filter(*conditions)
+        
+        albums: List[CommunityPhotoAlbum] = (
+            await query
+            .order(CommunityPhotoAlbum.created_at.desc())
+            .paginate(size, page)
+            .all()
+        )
+        
+        # Load community relationship for each album
+        for album in albums:
+            await self.db_session.refresh(album, ["community"])
+        
+        count_query = qb.blank(model=CommunityPhotoAlbum).base(count=True)
+        if conditions:
+            count_query = count_query.filter(*conditions)
+        count: int = await count_query.count()
+        
+        return albums, count

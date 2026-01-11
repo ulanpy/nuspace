@@ -401,6 +401,36 @@ async def delete_achievement(
 
 # ==================== Photo Album Endpoints ====================
 
+@router.get("/photo-albums", response_model=schemas.ListPhotoAlbums)
+async def get_all_photo_albums(
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
+    db_session: AsyncSession = Depends(get_db_session),
+    size: int = Query(20, ge=1, le=100),
+    page: int = 1,
+    album_type: CommunityPhotoAlbumType | None = None,
+) -> schemas.ListPhotoAlbums:
+    """
+    Get all photo albums from all communities.
+
+    **Access Policy:**
+    - All users can access
+
+    **Parameters:**
+    - `size`: Number of albums per page (default: 20)
+    - `page`: Page number (default: 1)
+    - `album_type`: Filter by album type (optional)
+
+    **Returns:**
+    - List of photo albums ordered by creation date (newest first)
+    """
+    community_service = CommunityService(db_session=db_session)
+    return await community_service.list_all_photo_albums(
+        size=size,
+        page=page,
+        album_type=album_type,
+        user=user,
+    )
+
 
 @router.post("/communities/{community_id}/albums", response_model=schemas.PhotoAlbumResponse)
 async def create_photo_album(
