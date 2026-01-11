@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/atoms/button";
 import {
   Select,
@@ -15,6 +15,9 @@ import { Card } from "@/components/atoms/card";
 import { PhotoAlbumCard } from './photo-album-card';
 import { AddAlbumModal } from './add-album-modal';
 import { EditAlbumModal } from './edit-album-modal';
+
+const AUTO_SCROLL_INTERVAL_MS = 4200;
+const AUTO_SCROLL_STEP_PX = 280;
 
 interface GallerySectionProps {
   communityId: number;
@@ -32,6 +35,8 @@ export function GallerySection({ communityId, canEdit }: GallerySectionProps) {
   const [filterType, setFilterType] = useState<string>("all");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingAlbum, setEditingAlbum] = useState<PhotoAlbum | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
 
   const {
     albums,
@@ -62,13 +67,36 @@ export function GallerySection({ communityId, canEdit }: GallerySectionProps) {
     setEditingAlbum(null);
   }, []);
 
+  // Auto-scroll and loop when reaching the end of the list
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container || albums.length === 0) return;
+
+    const id = setInterval(() => {
+      if (isPaused) return;
+      const maxScroll = container.scrollWidth - container.clientWidth;
+      const nearingEnd = container.scrollLeft >= maxScroll - AUTO_SCROLL_STEP_PX;
+
+      if (nearingEnd) {
+        if (hasNextPage && !isFetchingNextPage) {
+          // Load more before looping
+        }
+        container.scrollTo({ left: 0, behavior: "smooth" });
+        return;
+      }
+
+      container.scrollBy({ left: AUTO_SCROLL_STEP_PX, behavior: "smooth" });
+    }, AUTO_SCROLL_INTERVAL_MS);
+
+    return () => clearInterval(id);
+  }, [albums.length, hasNextPage, isFetchingNextPage, isPaused]);
+
   return (
-      <Card className="p-0 overflow-hidden">
+    <Card className="p-0 overflow-hidden">
       {/* Header with Filter and Add Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border-b">
-        <div className="flex items-center gap-2">
-          <Image className="h-5 w-5 text-muted-foreground" />
-          <h3 className="text-lg font-semibold">Gallery</h3>
+        <div className="p-2"> 
+          <h2 className="text-2xl font-bold">Gallery</h2>
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -137,35 +165,35 @@ export function GallerySection({ communityId, canEdit }: GallerySectionProps) {
           </div>
         ) : (
           <>
-            {/* Albums Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {/* Horizontal Auto-Scrolling Carousel */}
+            <div
+              ref={scrollRef}
+              className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory"
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
+              aria-label="Community photo albums carousel"
+            >
               {albums.map((album) => (
-                <PhotoAlbumCard
-                  key={album.id}
-                  album={album}
-                  communityId={communityId}
-                  canEdit={canEdit}
-                  onEdit={handleEditAlbum}
-                />
+                <div key={album.id} className="w-[260px] flex-shrink-0 snap-start">
+                  <PhotoAlbumCard
+                    album={album}
+                    communityId={communityId}
+                    canEdit={canEdit}
+                    onEdit={handleEditAlbum}
+                  />
+                </div>
               ))}
+
+              {hasNextPage && (
+                <div ref={loadMoreRef} className="w-4 flex-shrink-0" aria-hidden />
+              )}
             </div>
 
-            {/* Load More / Infinite Scroll Trigger */}
-            {hasNextPage && (
-              <div
-                ref={loadMoreRef}
-                className="flex items-center justify-center py-8"
-              >
-                {isFetchingNextPage ? (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm">Loading more albums...</span>
-                  </div>
-                ) : (
-                  <span className="text-sm text-muted-foreground">
-                    Scroll to load more
-                  </span>
-                )}
+            {/* Loading More Indicator */}
+            {isFetchingNextPage && (
+              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-2 mt-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading more albums...</span>
               </div>
             )}
           </>

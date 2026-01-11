@@ -4,6 +4,8 @@ import { Button } from "@/components/atoms/button";
 import {
   Tabs,
   TabsContent,
+  TabsList,
+  TabsTrigger,
 } from "@/components/atoms/tabs";
 import Image from "next/image";
 import { Badge } from "@/components/atoms/badge";
@@ -114,7 +116,7 @@ export default function CommunityDetailPage() {
   // Use URL search params for tab persistence across page refreshes
   const searchParams = useSearchParams();
   const router = useRouter();
-  const validTabs = ["about", "events", "gallery"];
+  const validTabs = ["about", "events"];
   const tabFromUrl = searchParams?.get("tab");
   const activeTab = validTabs.includes(tabFromUrl || "") ? tabFromUrl! : "about";
 
@@ -242,7 +244,7 @@ export default function CommunityDetailPage() {
     <div className="flex flex-col min-h-screen">
       {/* <Navbar /> */}
       <main className="flex-grow">
-        <div className="container px-4 md:px-6">
+        <div className="container px-4 md:px-20 lg:px-32">
           {/* Profile Header Card with Banner Background - Wallpaper Style */}
           <Card className="mb-6 overflow-hidden shadow-lg relative">
             <div className="relative w-full aspect-video bg-gradient-to-r from-gray-200 to-gray-500">
@@ -300,12 +302,51 @@ export default function CommunityDetailPage() {
                     </Badge>
                   </div>
 
-                  {/* Quick Info */}
-                  <div className="text-sm text-muted-foreground space-y-1">
+                  {/* Contact Information */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     {community.email && (
                       <div className="flex items-center justify-center md:justify-start gap-2">
-                        <Mail className="h-4 w-4" />
-                        <span>{community.email}</span>
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <a
+                          href={`mailto:${community.email}`}
+                          className="text-primary hover:underline"
+                        >
+                          {community.email}
+                        </a>
+                      </div>
+                    )}
+                    {community.established && (
+                      <div className="flex items-center justify-center md:justify-start gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">
+                          Founded {format(new Date(community.established), "PPP")}
+                        </span>
+                      </div>
+                    )}
+                    {community.instagram_url && (
+                      <div className="flex items-center justify-center md:justify-start gap-2">
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                        <a
+                          href={community.instagram_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          Instagram
+                        </a>
+                      </div>
+                    )}
+                    {community.telegram_url && (
+                      <div className="flex items-center justify-center md:justify-start gap-2">
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                        <a
+                          href={community.telegram_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          Telegram
+                        </a>
                       </div>
                     )}
                   </div>
@@ -367,116 +408,42 @@ export default function CommunityDetailPage() {
             </div>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[320px,1fr] gap-6">
-            {/* Sidebar */}
-            <div className="flex flex-col gap-4">
-
-              {/* Commented out for future reference if I come up wiht something useful to display here */}
-
-              {/* President Card
-              <Card className="p-0 overflow-hidden order-1 lg:order-1">
-                <div className="p-4 border-b">
-                  <h3 className="font-semibold text-lg">President</h3>
-                </div>
-                <div className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-14 w-14">
-                      <AvatarImage src={community.head_user?.picture || ""} />
-                      <AvatarFallback className="text-lg">
-                        {getUserInitials(
-                          community.head_user?.name,
-                          community.head_user?.surname
-                        )}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium text-base">
-                        {(community.head_user?.name || "").trim()}{" "}
-                        {(community.head_user?.surname || "").trim()}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Community Leader</p>
-                    </div>
-                  </div>
-                </div>
-              </Card> */}
-
-              {/* Sidebar Navigation - after Connect on mobile */}
-              <Card className="p-0 overflow-hidden order-3 lg:order-2">
-                <div className="p-4 border-b">
-                  <h3 className="font-semibold text-lg">Navigate</h3>
-                </div>
-                <nav className="p-2">
-                  {(
-                    [
-                      { value: "about", label: "About", icon: "📋" },
-                      { value: "events", label: "Events", icon: "🎉" },
-                      { value: "gallery", label: "Gallery", icon: "🖼️" },
-                    ] as const
-                  ).map((item) => (
-                    <button
-                      key={item.value}
-                      onClick={() => handleNavigate(item.value)}
-                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors hover:bg-muted/50 appearance-none border-0 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${activeTab === item.value
-                        ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 active:bg-primary/90"
-                        : "text-foreground active:bg-muted/70 dark:active:bg-muted/30"
-                        }`}
+          {/* Pill-style Tabbar */}
+          <Tabs value={activeTab} onValueChange={handleNavigate} className="w-full">
+            <div className="flex justify-center mb-6">
+              <TabsList className="inline-flex rounded-full bg-muted/60 p-1">
+                <TabsTrigger
+                  value="about"
+                  className="flex items-center gap-2 rounded-full px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  <Lightbulb className="h-4 w-4" />
+                  <span>About</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="events"
+                  className="flex items-center gap-2 rounded-full px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  <Calendar className="h-4 w-4" />
+                  <span>Events</span>
+                  {(upcomingCount > 0 || upcomingHasMore) && (
+                    <span
+                      className="inline-flex items-center gap-1 h-5 min-w-[1.25rem] px-1.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20"
+                      title={`${upcomingCount}${upcomingHasMore ? '+' : ''} upcoming`}
                     >
-                      <span className="text-lg">{item.icon}</span>
-                      <span className="font-medium truncate">{item.label}</span>
-                      {item.value === "events" && (upcomingCount > 0 || upcomingHasMore) && (
-                        <span
-                          className="ml-auto inline-flex items-center gap-1 h-5 min-w-[1.25rem] px-2 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20"
-                          title={`${upcomingCount}${upcomingHasMore ? '+' : ''} upcoming`}
-                        >
-                          <Clock className="h-3 w-3 animate-pulse" />
-                          {upcomingCount}
-                          {upcomingHasMore ? "+" : ""}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </nav>
-              </Card>
-              {/* Social Links */}
-              {(community.instagram_url || community.telegram_url) && (
-                <Card className="p-0 overflow-hidden order-2 lg:order-3">
-                  <div className="p-4 border-b">
-                    <h3 className="font-semibold text-lg">Connect</h3>
-                  </div>
-                  <div className="p-2">
-                    {community.instagram_url && (
-                      <a
-                        href={community.instagram_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <span className="text-lg">📸</span>
-                        <span className="font-medium">Instagram</span>
-                        <ExternalLink className="h-4 w-4 ml-auto" />
-                      </a>
-                    )}
-                    {community.telegram_url && (
-                      <a
-                        href={community.telegram_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <span className="text-lg">💬</span>
-                        <span className="font-medium">Telegram</span>
-                        <ExternalLink className="h-4 w-4 ml-auto" />
-                      </a>
-                    )}
-                  </div>
-                </Card>
-              )}
+                      <Clock className="h-3 w-3" />
+                      {upcomingCount}{upcomingHasMore ? "+" : ""}
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
             </div>
-            {/* Main Content */}
-            <div className="min-w-0">
-              {/* Scroll target for smooth navigation */}
-              <div ref={contentTopRef} className="h-0 scroll-mt-24 md:scroll-mt-28" />
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+
+            {/* Scroll target for smooth navigation */}
+            <div ref={contentTopRef} className="h-0 scroll-mt-24 md:scroll-mt-28" />
+
+            <div className="w-full">
+              {/* Main Content */}
+              <div className="min-w-0">
                 <TabsContent value="about" className="mt-0 flex flex-col gap-y-4" >
                   <Card className="p-0 overflow-hidden">
                     <div className="p-6 border-b">
@@ -489,62 +456,13 @@ export default function CommunityDetailPage() {
                           fallback="No description available."
                         />
                       </div>
-
-                      {/* Additional Info */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 pt-6 border-t">
-                        <div className="space-y-4">
-                          <h3 className="font-semibold text-lg">Contact Information</h3>
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                              <Mail className="h-5 w-5 text-muted-foreground" />
-                              <div>
-                                <p className="font-medium text-sm">Email</p>
-                                {community.email ? (
-                                  <a
-                                    href={`mailto:${community.email}`}
-                                    className="text-sm text-primary hover:underline"
-                                  >
-                                    {community.email}
-                                  </a>
-                                ) : (
-                                  <span className="text-sm text-muted-foreground">
-                                    Not provided
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            {community.established && (
-                              <div className="flex items-center gap-3">
-                                <Calendar className="h-5 w-5 text-muted-foreground" />
-                                <div>
-                                  <p className="font-medium text-sm">Founded</p>
-                                  <p className="text-sm">{format(new Date(community.established), "PPP")}</p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="space-y-4">
-                          <h3 className="font-semibold text-lg">Community Type</h3>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">Category</span>
-                              <Badge variant="secondary" className="capitalize">
-                                {community.category}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">Type</span>
-                              <Badge variant="secondary" className="capitalize">
-                                {community.type}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </Card>
+
+                  <GallerySection
+                    communityId={community.id}
+                    canEdit={Boolean(permissions?.can_edit)}
+                  />
 
                   <AchievementsSection
                     communityId={community.id}
@@ -599,16 +517,9 @@ export default function CommunityDetailPage() {
                     </CardContent>
                   </Card>
                 </TabsContent>
-
-                <TabsContent value="gallery" className="mt-0">
-                  <GallerySection
-                    communityId={community.id}
-                    canEdit={Boolean(permissions?.can_edit)}
-                  />
-                </TabsContent>
-              </Tabs>
+              </div>
             </div>
-          </div>
+          </Tabs>
         </div>
       </main>
 
