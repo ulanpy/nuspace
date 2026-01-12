@@ -11,6 +11,7 @@ class RejectionOpportunityType(str, Enum):
     INTERNSHIP = "internship"
     SCHOLARSHIP = "scholarship"
     JOB = "job"
+    GRAD_SCHOOL = "grad_school"
     OTHER = "other"
 
 class is_accepted(bool, Enum):

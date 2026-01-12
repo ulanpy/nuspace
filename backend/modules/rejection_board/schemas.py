@@ -37,17 +37,5 @@ class RejectionBoardUpdateDTO(BaseModel):
     is_accepted: is_accepted | None = None
     still_trying: still_trying | None = None
 
-class RejectionBoardResponseDTO(BaseModel):
-    id: int
-    nickname: str
-    title: str
-    reflection: str
-    rejection_opportunity_type: RejectionOpportunityType
-    is_accepted: is_accepted
-    still_trying: still_trying
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        from_attributes = True
-        extra = "ignore"
+class RejectionBoardResponseDTO(RejectionBoardBase):
+    pass
