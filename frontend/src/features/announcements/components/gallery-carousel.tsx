@@ -55,11 +55,12 @@ export function GalleryCarousel() {
       const nearingEnd = container.scrollLeft >= maxScroll - AUTO_SCROLL_STEP_PX;
 
       if (nearingEnd) {
-        if (hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
+          if (hasNextPage) {
+          if (!isFetchingNextPage) {
+            fetchNextPage();
+          }
+          return;
         }
-        container.scrollTo({ left: 0, behavior: "smooth" });
-        return;
       }
 
       container.scrollBy({ left: AUTO_SCROLL_STEP_PX, behavior: "smooth" });
@@ -67,9 +68,6 @@ export function GalleryCarousel() {
 
     return () => clearInterval(id);
   }, [albums.length, fetchNextPage, hasNextPage, isFetchingNextPage, isPaused]);
-
-  // Ensure the carousel loops over the currently loaded items for smooth circulation.
-  const orderedAlbums = useMemo(() => albums, [albums]);
 
   return (
     <div className="space-y-4">
@@ -91,7 +89,7 @@ export function GalleryCarousel() {
           <RefreshCcw className="h-12 w-12 mx-auto text-destructive mb-3" />
           <p className="text-muted-foreground">Could not load photo albums. Please try again.</p>
         </div>
-      ) : orderedAlbums.length === 0 ? (
+      ) : albums.length === 0 ? (
         <div className="p-8 text-center rounded-xl border bg-card">
           <p className="text-muted-foreground">No photo albums available yet.</p>
         </div>
@@ -104,7 +102,7 @@ export function GalleryCarousel() {
             onMouseLeave={() => setIsPaused(false)}
             aria-label="Community photo albums carousel"
           >
-            {orderedAlbums.map((album) => (
+            {albums.map((album) => (
               <div key={album.id} className="w-[260px] flex-shrink-0 snap-start space-y-2">
                 <PhotoAlbumCard album={album} communityId={album.community_id} />
                 <Link

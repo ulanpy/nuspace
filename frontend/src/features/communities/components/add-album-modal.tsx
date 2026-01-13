@@ -144,7 +144,7 @@ export function AddAlbumModal({
         {/* Album Type */}
         <div>
           <Label htmlFor="album-type">Album Type</Label>
-          <Select value={albumType} onValueChange={(value) => setAlbumType(value as PhotoAlbumType)} defaultValue="other">
+          <Select value={albumType} onValueChange={(value) => setAlbumType(value as PhotoAlbumType)}>
             <SelectTrigger className="mt-1">
               <SelectValue />
             </SelectTrigger>
