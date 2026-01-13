@@ -29,7 +29,6 @@ RUN printf '%s\n' '#!/bin/sh' \
   'if [ -z "$URL" ]; then URL="http://localhost:5173"; fi' \
   'export NEXT_PUBLIC_BASE_URL="$URL"' \
   'echo "Using NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL"' \
-  'npm install' \
   'exec npm run dev' > /usr/local/bin/start-frontend.sh \
   && chmod +x /usr/local/bin/start-frontend.sh
 

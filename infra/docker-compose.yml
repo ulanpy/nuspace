@@ -149,7 +149,7 @@ services:
     restart: always
     volumes:
       - ../frontend:/nuros # Mount all project files
-      - frontend-node-modules:/nuros/node_modules # Use named volume for node_modules
+      - /nuros/node_modules # Anonymous volume for dependencies
     environment:
       - WATCHPACK_POLLING=true # Enable polling for file changes (Next.js/Docker-friendly)
       - CHOKIDAR_USEPOLLING=true # Enable polling for file changes (Docker-friendly)
