@@ -428,7 +428,6 @@ async def get_all_photo_albums(
         size=size,
         page=page,
         album_type=album_type,
-        user=user,
     )
 
 
