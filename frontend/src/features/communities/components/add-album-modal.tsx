@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Modal } from "@/components/atoms/modal";
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/atoms/select";
 import { useToast } from "@/hooks/use-toast";
-import { Save, ExternalLink, AlertCircle } from "lucide-react";
+import { Save , AlertCircle } from "lucide-react";
 import { campuscurrentAPI } from '@/features/communities/api/communities-api';
 import { useQueryClient } from "@tanstack/react-query";
 import { PhotoAlbumType } from '../hooks/use-infinite-photo-albums';
@@ -44,16 +44,16 @@ export function AddAlbumModal({
   const [description, setDescription] = useState("");
   const [albumType, setAlbumType] = useState<PhotoAlbumType>("other");
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setAlbumUrl("");
     setDescription("");
     setAlbumType("other");
-  };
+  }, []);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     resetForm();
     onClose();
-  };
+  }, [resetForm, onClose]);
 
   const handleSave = async () => {
     if (!albumUrl.trim()) {
@@ -146,7 +146,7 @@ export function AddAlbumModal({
           <Label htmlFor="album-type">Album Type</Label>
           <Select value={albumType} onValueChange={(value) => setAlbumType(value as PhotoAlbumType)}>
             <SelectTrigger className="mt-1">
-              <SelectValue />
+              <SelectValue placeholder="Select album type" />
             </SelectTrigger>
             <SelectContent>
               {ALBUM_TYPE_OPTIONS.map((option) => (
@@ -170,19 +170,6 @@ export function AddAlbumModal({
             rows={2}
           />
         </div>
-
-        {/* Preview Link */}
-        {albumUrl && (
-          <a
-            href={albumUrl.startsWith("http") ? albumUrl : `https://${albumUrl}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-          >
-            <ExternalLink className="h-3 w-3" />
-            Preview album in new tab
-          </a>
-        )}
 
         {/* Action Buttons */}
         <div className="flex justify-end gap-3 pt-4 border-t">

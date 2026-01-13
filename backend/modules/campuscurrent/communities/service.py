@@ -353,7 +353,6 @@ class CommunityService:
         size: int,
         page: int,
         album_type: CommunityPhotoAlbumType | None,
-        user: tuple[dict, dict],
     ) -> schemas.ListPhotoAlbums:
         """List photo albums from all communities."""
         albums, count = await self.repo.get_all_photo_albums(
@@ -363,9 +362,9 @@ class CommunityService:
         
         album_responses = []
         for album in albums:
-            album_dict = schemas.PhotoAlbumResponse.model_validate(album).model_dump()
-            album_dict["community_name"] = album.community.name if album.community else None
-            album_responses.append(schemas.PhotoAlbumResponse(**album_dict))
+            album_response = schemas.PhotoAlbumResponse.model_validate(album)
+            album_response.community_name = album.community.name if album.community else None
+            album_responses.append(album_response)
         
         return schemas.ListPhotoAlbums(
             albums=album_responses,

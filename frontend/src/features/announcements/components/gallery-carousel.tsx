@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Loader2, RefreshCcw } from "lucide-react";
 import { PhotoAlbumCard } from "@/features/communities/components/photo-album-card";
@@ -55,12 +55,15 @@ export function GalleryCarousel() {
       const nearingEnd = container.scrollLeft >= maxScroll - AUTO_SCROLL_STEP_PX;
 
       if (nearingEnd) {
-          if (hasNextPage) {
+        if (hasNextPage) {
           if (!isFetchingNextPage) {
             fetchNextPage();
           }
-          return;
+        } else {
+          // No more pages to load: loop back to the start of the carousel.
+          container.scrollTo({ left: 0, behavior: "smooth" });
         }
+        return;
       }
 
       container.scrollBy({ left: AUTO_SCROLL_STEP_PX, behavior: "smooth" });
@@ -121,7 +124,7 @@ export function GalleryCarousel() {
           </div>
         </div>
       )}
-      
+
       {isFetchingNextPage && (
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-2">
           <Loader2 className="h-4 w-4 animate-spin" />
