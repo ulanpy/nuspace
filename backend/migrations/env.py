@@ -18,7 +18,11 @@ config = context.config
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # When Alembic is invoked from within the running FastAPI app (e.g. on startup),
+    # the default `disable_existing_loggers=True` will disable Uvicorn/FastAPI loggers
+    # such as `uvicorn.access`, making request logs disappear even though the app works.
+    # Keep existing loggers enabled.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
