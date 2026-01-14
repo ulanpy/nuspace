@@ -164,11 +164,6 @@ export const campuscurrentAPI = {
     });
   },
 
-  refreshAllPhotoAlbums: (communityId: number) => {
-    return apiCall<any>(`/` + Routes.COMMUNITIES + `/${communityId}/albums/refresh`, {
-      method: "POST",
-    });
-  },
 
   getPhotoAlbumsQueryOptions: (communityId: number, page: number = 1, size: number = 20, albumType?: string | null) => {
     return queryOptions({

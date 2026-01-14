@@ -291,13 +291,10 @@ class CommunityRepository:
         albums: List[CommunityPhotoAlbum] = (
             await query
             .order(CommunityPhotoAlbum.created_at.desc())
+            .eager(CommunityPhotoAlbum.community)
             .paginate(size, page)
             .all()
         )
-        
-        # Load community relationship for each album
-        for album in albums:
-            await self.db_session.refresh(album, ["community"])
         
         count_query = qb.blank(model=CommunityPhotoAlbum).base(count=True)
         if conditions:
