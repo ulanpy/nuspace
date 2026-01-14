@@ -16,11 +16,27 @@ type AlbumFeedItem = PhotoAlbum & {
   community_name?: string | null;
 };
 
+type GalleryCarouselInitialPage = {
+  albums?: AlbumFeedItem[];
+  total_pages?: number;
+  page?: number;
+  has_next?: boolean;
+};
+
 /**
  * Horizontal, auto-scrolling carousel that streams photo albums across all communities.
  * Uses infinite scroll (20 per page) and loops when reaching the end of the list.
  */
-export function GalleryCarousel() {
+export function GalleryCarousel({ initialPage }: { initialPage?: GalleryCarouselInitialPage }) {
+  const initialPageData = initialPage
+    ? {
+        items: initialPage.albums ?? [],
+        total_pages: initialPage.total_pages ?? 1,
+        page: initialPage.page ?? 1,
+        has_next: initialPage.has_next ?? false,
+      }
+    : undefined;
+
   const {
     items: albums,
     isLoading,
@@ -39,6 +55,9 @@ export function GalleryCarousel() {
       page: response.page ?? 1,
       has_next: response.has_next ?? false,
     }),
+    // Prevent the initial /photo-albums request when we already have page 1 from the bundle.
+    enabled: !initialPageData,
+    initialPageData,
   });
 
   const scrollRef = useRef<HTMLDivElement | null>(null);

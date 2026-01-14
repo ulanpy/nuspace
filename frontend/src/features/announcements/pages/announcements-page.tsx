@@ -4,11 +4,10 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, ArrowRight, Users } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
-import { useEvents } from '@/features/events/hooks/use-events';
 import { TelegramFeed } from '@/features/announcements/components/telegram-feed';
 import { GalleryCarousel } from '@/features/announcements/components/gallery-carousel';
-import { campuscurrentAPI } from '@/features/communities/api/communities-api';
 import { useState, useEffect } from "react";
+import { useAnnouncementsBundle } from "@/features/announcements/api/use-announcements-bundle";
 
 function getGreeting(): string {
     const hour = new Date().getHours();
@@ -32,21 +31,10 @@ export default function AnnouncementsPage() {
         setGreeting(getGreeting());
     }, []);
 
-    // Fetch upcoming events
-    const { events: eventsData, isLoading: eventsLoading } = useEvents({
-        time_filter: "upcoming",
-        size: 5
-    });
+    const { data: bundle, isLoading: bundleLoading } = useAnnouncementsBundle();
 
-    const upcomingEvents = eventsData?.items || [];
-    const { data: recruitingCommunitiesData, isLoading: recruitingLoading } = useQuery(
-        campuscurrentAPI.getCommunitiesQueryOptions({
-            page: 1,
-            size: 5,
-            recruitment_status: "open",
-        })
-    );
-    const recruitingCommunities = recruitingCommunitiesData?.items ?? [];
+    const upcomingEvents = bundle?.events?.items || [];
+    const recruitingCommunities = bundle?.communities?.items ?? [];
 
     return (
         <div className="container mx-auto px-4 py-8 space-y-8">
@@ -83,7 +71,7 @@ export default function AnnouncementsPage() {
                             </Link>
                         </div>
 
-                        {eventsLoading ? (
+                        {bundleLoading ? (
                             <div className="h-40 rounded-xl bg-muted animate-pulse" />
                         ) : upcomingEvents.length > 0 ? (
                             <div className="space-y-3">
@@ -134,7 +122,7 @@ export default function AnnouncementsPage() {
                         )}
                     </div>
 
-                    <GalleryCarousel />
+                    <GalleryCarousel initialPage={bundle?.photo_albums} />
 
                     {/* Communities recruiting now */}
                     <div className="space-y-4">
@@ -148,7 +136,7 @@ export default function AnnouncementsPage() {
                             </Link>
                         </div>
 
-                        {recruitingLoading ? (
+                        {bundleLoading ? (
                             <div className="space-y-3">
                                 {Array.from({ length: 3 }).map((_, idx) => (
                                     <div key={idx} className="h-20 rounded-xl bg-muted animate-pulse" />

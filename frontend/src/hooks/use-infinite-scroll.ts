@@ -11,6 +11,14 @@ export type InfiniteScrollParams<T> = {
   additionalParams?: Record<string, any>;
   transformResponse?: (response: any) => any;
   enabled?: boolean;
+  /**
+   * Optional initial page data (already in the same shape as the queryFn returns,
+   * i.e. after transformResponse if transformResponse is provided).
+   *
+   * Useful to hydrate an infinite list from a larger "bundle" endpoint and avoid
+   * an extra first-page request.
+   */
+  initialPageData?: any;
 };
 
 export type UseInfiniteScrollReturn<T> = {
@@ -33,6 +41,7 @@ export function useInfiniteScroll<T>({
   additionalParams = {},
   transformResponse,
   enabled = true,
+  initialPageData,
 }: InfiniteScrollParams<T>): UseInfiniteScrollReturn<T> {
   const [internalKeyword, setInternalKeyword] = useState<string>(keyword);
 
@@ -103,6 +112,9 @@ export function useInfiniteScroll<T>({
     },
     initialPageParam: 1,
     enabled,
+    ...(initialPageData
+      ? { initialData: { pages: [initialPageData], pageParams: [1] } }
+      : {}),
   });
 
   const allItems = useMemo<T[]>(() => {
