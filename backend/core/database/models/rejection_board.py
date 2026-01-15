@@ -14,11 +14,11 @@ class RejectionOpportunityType(str, Enum):
     GRAD_SCHOOL = "grad_school"
     OTHER = "other"
 
-class is_accepted(Enum):
+class IsAccepted(Enum):
     YES = True
     NO = False
 
-class still_trying(Enum):
+class StillTrying(Enum):
     YES = True
     NO = False
 
@@ -32,7 +32,11 @@ class RejectionBoard(Base):
     rejection_opportunity_type: Mapped[RejectionOpportunityType] = mapped_column(
         SAEnum(RejectionOpportunityType, name="rejection_opportunity_type"), nullable=False
     )
-    is_accepted: Mapped[is_accepted] = mapped_column(SAEnum(is_accepted, name="is_accepted"), nullable=False)
-    still_trying: Mapped[still_trying] = mapped_column(SAEnum(still_trying, name="still_trying"), nullable=False)
+    is_accepted: Mapped[IsAccepted] = mapped_column(
+        SAEnum(IsAccepted, name="is_accepted"), nullable=False
+    )
+    still_trying: Mapped[StillTrying] = mapped_column(
+        SAEnum(StillTrying, name="still_trying"), nullable=False
+    )
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
-from backend.core.database.models import RejectionOpportunityType, is_accepted, still_trying
+from backend.core.database.models import RejectionOpportunityType, IsAccepted, StillTrying
 
 
 class RejectionBoardBase(BaseModel):
@@ -12,8 +12,8 @@ class RejectionBoardBase(BaseModel):
     title: str
     reflection: str
     rejection_opportunity_type: RejectionOpportunityType
-    is_accepted: is_accepted
-    still_trying: still_trying
+    is_accepted: IsAccepted
+    still_trying: StillTrying
     created_at: datetime
     updated_at: datetime
 
@@ -26,16 +26,16 @@ class RejectionBoardCreateDTO(BaseModel):
     title: str
     reflection: str
     rejection_opportunity_type: RejectionOpportunityType
-    is_accepted: is_accepted
-    still_trying: still_trying
+    is_accepted: IsAccepted
+    still_trying: StillTrying
 
 
 class RejectionBoardUpdateDTO(BaseModel):
     title: str | None = None
     reflection: str | None = None
     rejection_opportunity_type: RejectionOpportunityType | None = None
-    is_accepted: is_accepted | None = None
-    still_trying: still_trying | None = None
+    is_accepted: IsAccepted | None = None
+    still_trying: StillTrying | None = None
 
 
 class RejectionBoardResponseDTO(RejectionBoardBase):
