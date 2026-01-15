@@ -36,6 +36,10 @@ __all__ = [
     "EducationLevel",
     "OpportunityMajor",
     "OpportunityMajorMap",
+    "RejectionBoard",
+    "RejectionOpportunityType",
+    "is_accepted",
+    "still_trying",
 ]
 from .base import Base
 from .community import (
@@ -71,3 +75,4 @@ from .opportunities import (
     OpportunityMajor,
     OpportunityMajorMap,
 )
+from .rejection_board import RejectionBoard, RejectionOpportunityType, is_accepted, still_trying
