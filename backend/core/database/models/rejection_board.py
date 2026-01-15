@@ -14,11 +14,11 @@ class RejectionOpportunityType(str, Enum):
     GRAD_SCHOOL = "grad_school"
     OTHER = "other"
 
-class is_accepted(bool, Enum):
+class is_accepted(Enum):
     YES = True
     NO = False
 
-class still_trying(bool, Enum):
+class still_trying(Enum):
     YES = True
     NO = False
 
