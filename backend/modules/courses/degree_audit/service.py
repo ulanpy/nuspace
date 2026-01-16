@@ -117,6 +117,32 @@ class DegreeAuditService:
         )
         return response
 
+    async def audit_with_pdf(
+        self,
+        *,
+        year: str,
+        major: str,
+        pdf_file: bytes,
+        student_sub: str,
+        session: AsyncSession,
+    ) -> AuditResponse:
+        try:
+            transcript = parse_transcript_bytes(_normalize_pdf_bytes(pdf_file))
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="invalid_transcript_pdf",
+            )
+        response = self._run_audit(transcript, year=year, major=major)
+        await self._save_result(
+            session=session,
+            student_sub=student_sub,
+            year=year,
+            major=major,
+            response=response,
+        )
+        return response
+
     async def get_cached_result(
         self,
         *,
@@ -231,7 +257,23 @@ class DegreeAuditService:
         await session.commit()
 
 
-def _try_b64(value: str) -> bytes | None:
+def _normalize_pdf_bytes(pdf_bytes: bytes) -> bytes:
+    """Normalize JSON/base64 payloads into raw PDF bytes for parsing.
+
+    When the frontend posts JSON, the PDF is base64-encoded and arrives as bytes
+    that begin with the base64 header (e.g. b"JVBER"). This helper decodes
+    base64 when needed so the parser always receives bytes starting with b"%PDF".
+    """
+    if pdf_bytes.startswith(b"%PDF"):
+        return pdf_bytes
+    decoded = _try_b64(pdf_bytes)
+    if decoded and decoded.startswith(b"%PDF"):
+        return decoded
+    return pdf_bytes
+
+
+def _try_b64(value: bytes | str) -> bytes | None:
+    """Best-effort base64 decode helper for PDF payloads."""
     try:
         return base64.b64decode(value, validate=True)
     except Exception:

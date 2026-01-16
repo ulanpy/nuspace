@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class AuditSummary(BaseModel):
@@ -41,6 +41,21 @@ class AuditRequestRegistrar(BaseModel):
     username: str
     password: str
 
+class AuditRequestPDF(BaseModel):
+    year: str
+    major: str
+    pdf_file: bytes = Field(
+        ...,
+        description="Base64-encoded PDF payload (decoded into bytes by Pydantic).",
+        max_length=10 * 1024 * 1024,
+    )
+
+    @field_validator("pdf_file")
+    def validate_pdf_file_size(cls, value: bytes) -> bytes:
+        max_bytes = 10 * 1024 * 1024
+        if len(value) > max_bytes:
+            raise ValueError("pdf_file_too_large")
+        return value
 
 class CatalogYear(BaseModel):
     year: str

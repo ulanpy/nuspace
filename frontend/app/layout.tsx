@@ -3,7 +3,7 @@ import { Providers } from './providers'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'NU Space',
+  title: 'Nuspace',
   description: 'Campus platform for Nazarbayev University',
 }
 

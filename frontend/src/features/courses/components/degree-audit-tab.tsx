@@ -26,6 +26,8 @@ type DegreeAuditTabProps = {
   login: () => void;
 };
 
+const MAX_PDF_BYTES = 10 * 1024 * 1024;
+
 export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
   const username = useMemo(() => {
     const email = user?.email || "";
@@ -49,6 +51,25 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [usePdfUpload, setUsePdfUpload] = useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfError, setPdfError] = useState("");
+
+  const readFileAsBase64 = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.onload = () => {
+        const result = reader.result;
+        if (typeof result !== "string") {
+          reject(new Error("Invalid file result"));
+          return;
+        }
+        const base64 = result.split(",")[1] || "";
+        resolve(base64);
+      };
+      reader.readAsDataURL(file);
+    });
 
   useEffect(() => {
     if (catalogQuery.data?.years?.length) {
@@ -80,14 +101,26 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
     }
   }, [selectedYear, catalogQuery.data, selectedMajor]);
 
-  const auditMutation = useMutation<DegreeAuditResponse, Error, { password: string }>({
-    mutationFn: async ({ password }) => {
+  const auditMutation = useMutation<
+    DegreeAuditResponse,
+    Error,
+    { mode: "registrar"; password: string } | { mode: "pdf"; pdfFile: File }
+  >({
+    mutationFn: async (payload) => {
       if (!selectedYear || !selectedMajor) throw new Error("Please select year and major");
+      if (payload.mode === "pdf") {
+        const pdfBase64 = await readFileAsBase64(payload.pdfFile);
+        return await gradeStatisticsApi.runDegreeAuditFromPdf({
+          year: selectedYear,
+          major: selectedMajor,
+          pdf_file: pdfBase64,
+        });
+      }
       return await gradeStatisticsApi.runDegreeAuditFromRegistrar({
         year: selectedYear,
         major: selectedMajor,
         username,
-        password,
+        password: payload.password,
       });
     },
   });
@@ -134,7 +167,7 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
         <div>
           <p className="text-sm font-semibold text-foreground">Sign in to run degree audit.</p>
           <p className="text-xs text-muted-foreground">
-            We will fetch your transcript from Registrar using your credentials.
+            Use registrar credentials or upload a transcript PDF to run the audit.
           </p>
         </div>
         <Button size="sm" onClick={login} className="h-8 rounded-full px-3 text-xs font-medium">
@@ -157,7 +190,7 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
               </Link>
             </div>
             <p className="text-xs text-muted-foreground">
-              Fetch your registrar transcript and match it against your degree requirements.
+              Match your transcript against your degree requirements with registrar or PDF upload.
             </p>
           </div>
         </div>
@@ -237,6 +270,9 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
                 setIsAuditModalOpen(true);
                 setPassword("");
                 setShowPassword(false);
+                setUsePdfUpload(false);
+                setPdfFile(null);
+                setPdfError("");
                 auditMutation.reset();
               }}
               disabled={!selectedYear || !selectedMajor || !username || catalogQuery.isLoading || auditMutation.isPending}
@@ -252,7 +288,10 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle className="text-sm font-semibold">Audit failed</AlertTitle>
             <AlertDescription className="text-xs">
-              {auditMutation.error?.message || "Unable to fetch transcript from Registrar. Please check your password."}
+              {auditMutation.error?.message ||
+                (usePdfUpload
+                  ? "Unable to parse the PDF transcript. Please upload a valid NU transcript."
+                  : "Unable to fetch transcript from Registrar. Please check your password.")}
             </AlertDescription>
           </Alert>
         )}
@@ -364,6 +403,9 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
             setIsAuditModalOpen(false);
             setPassword("");
             setShowPassword(false);
+            setUsePdfUpload(false);
+            setPdfFile(null);
+            setPdfError("");
           }
         }}
         title="Run degree audit"
@@ -371,49 +413,100 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
         contentClassName="rounded-3xl"
       >
         <div className="space-y-4">
-          <Alert variant="default" className="border-border/60 bg-muted/40">
-            <ShieldCheck className="h-4 w-4" />
-            <AlertTitle className="text-sm font-semibold">We never store your NU Registrar password.</AlertTitle>
-            <AlertDescription className="text-xs text-muted-foreground">
-              Your credentials are sent directly to the registrar via our API just to fetch your transcript for this audit.
-            </AlertDescription>
-          </Alert>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Registrar username</label>
-            <Input value={username} readOnly className="cursor-not-allowed bg-muted/60" />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Registrar password</label>
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(ev) => setPassword(ev.target.value)}
-                placeholder="Enter your registrar password"
-                className="h-11 rounded-xl pr-10"
-                disabled={auditMutation.isPending}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1 h-9 w-9 text-muted-foreground hover:text-foreground"
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  setShowPassword(true);
-                }}
-                onPointerUp={() => setShowPassword(false)}
-                onPointerLeave={() => setShowPassword(false)}
-                onPointerCancel={() => setShowPassword(false)}
-                onBlur={() => setShowPassword(false)}
-                disabled={auditMutation.isPending}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
+          <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/30 px-3 py-2">
+            <div>
+              <p className="text-sm font-medium text-foreground">Manual PDF upload</p>
+              <p className="text-xs text-muted-foreground">Use a transcript PDF instead of registrar credentials.</p>
             </div>
+            <Switch
+              checked={usePdfUpload}
+              onCheckedChange={(checked) => {
+                setUsePdfUpload(checked);
+                setPassword("");
+                setShowPassword(false);
+                setPdfFile(null);
+                setPdfError("");
+              }}
+              disabled={auditMutation.isPending}
+            />
           </div>
+
+          {!usePdfUpload && (
+            <Alert variant="default" className="border-border/60 bg-muted/40">
+              <ShieldCheck className="h-4 w-4" />
+              <AlertTitle className="text-sm font-semibold">We never store your NU Registrar password.</AlertTitle>
+              <AlertDescription className="text-xs text-muted-foreground">
+                Your credentials are sent directly to the registrar via our API just to fetch your transcript for this audit.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {!usePdfUpload ? (
+            <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Registrar username</label>
+                <Input value={username} readOnly className="cursor-not-allowed bg-muted/60" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Registrar password</label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(ev) => setPassword(ev.target.value)}
+                    placeholder="Enter your registrar password"
+                    className="h-11 rounded-xl pr-10"
+                    disabled={auditMutation.isPending}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1 h-9 w-9 text-muted-foreground hover:text-foreground"
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      setShowPassword(true);
+                    }}
+                    onPointerUp={() => setShowPassword(false)}
+                    onPointerLeave={() => setShowPassword(false)}
+                    onPointerCancel={() => setShowPassword(false)}
+                    onBlur={() => setShowPassword(false)}
+                    disabled={auditMutation.isPending}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Transcript PDF</label>
+              <Input
+                type="file"
+                accept="application/pdf"
+                className="h-11 rounded-xl"
+                disabled={auditMutation.isPending}
+                onChange={(ev) => {
+                  const file = ev.target.files?.[0] || null;
+                  if (!file) {
+                    setPdfFile(null);
+                    setPdfError("");
+                    return;
+                  }
+                  if (file.size > MAX_PDF_BYTES) {
+                    setPdfFile(null);
+                    setPdfError("File exceeds 10MB. Please upload a smaller PDF.");
+                    return;
+                  }
+                  setPdfError("");
+                  setPdfFile(file);
+                }}
+              />
+              <p className="text-xs text-muted-foreground">Upload an unofficial NU transcript PDF (max 10MB).</p>
+              {pdfError ? <p className="text-xs text-destructive">{pdfError}</p> : null}
+            </div>
+          )}
 
           <div className="flex items-center justify-end gap-2">
             <Button
@@ -425,6 +518,9 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
                   setIsAuditModalOpen(false);
                   setPassword("");
                   setShowPassword(false);
+                  setUsePdfUpload(false);
+                  setPdfFile(null);
+                  setPdfError("");
                 }
               }}
               disabled={auditMutation.isPending}
@@ -435,12 +531,21 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
               size="sm"
               className="h-9 rounded-full px-3 text-xs font-medium gap-2"
               onClick={async () => {
-                if (!password.trim()) return;
+                if (usePdfUpload && !pdfFile) return;
+                if (!usePdfUpload && !password.trim()) return;
                 try {
-                  await auditMutation.mutateAsync({ password: password.trim() });
+                  if (usePdfUpload) {
+                    if (pdfError) return;
+                    await auditMutation.mutateAsync({ mode: "pdf", pdfFile });
+                  } else {
+                    await auditMutation.mutateAsync({ mode: "registrar", password: password.trim() });
+                  }
                   setIsAuditModalOpen(false);
                   setPassword("");
                   setShowPassword(false);
+                  setUsePdfUpload(false);
+                  setPdfFile(null);
+                  setPdfError("");
                 } catch {
                   // keep modal open to show error
                 }
@@ -448,8 +553,8 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
               disabled={
                 !selectedYear ||
                 !selectedMajor ||
-                !username ||
-                !password.trim() ||
+                (!usePdfUpload && (!username || !password.trim())) ||
+                (usePdfUpload && (!pdfFile || !!pdfError)) ||
                 auditMutation.isPending ||
                 catalogQuery.isLoading
               }

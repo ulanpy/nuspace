@@ -189,4 +189,8 @@ export const gradeStatisticsApi = {
     return await apiCall(`/degree-audit/audit/registrar`, { method: "POST", json: payload });
   },
 
+  runDegreeAuditFromPdf: async (payload: { year: string; major: string; pdf_file: string }) => {
+    return await apiCall(`/degree-audit/audit/pdf`, { method: "POST", json: payload });
+  },
+
 };

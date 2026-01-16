@@ -11,6 +11,7 @@ from backend.modules.courses.degree_audit.schemas import (
     AuditRequestRegistrar,
     AuditResponse,
     CatalogResponse,
+    AuditRequestPDF,
     DegreeRequirement,
 )
 from backend.modules.courses.degree_audit.service import DegreeAuditService
@@ -47,6 +48,27 @@ async def audit_from_registrar(
         major=payload.major,
         username=payload.username if not config.IS_DEBUG else "bauyrzhan.kizatov",
         password=payload.password,
+        student_sub=_creds[1]["sub"],
+        session=db_session,
+    )
+
+
+@router.post(
+    "/audit/pdf",
+    response_model=AuditResponse,
+    summary="Run degree audit using PDF file",
+    status_code=status.HTTP_200_OK,
+)
+async def audit_from_pdf(
+    payload: AuditRequestPDF,
+    _creds: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    db_session: AsyncSession = Depends(get_db_session),
+    service: DegreeAuditService = Depends(get_degree_audit_service),
+) -> AuditResponse:
+    return await service.audit_with_pdf(
+        year=payload.year,
+        major=payload.major,
+        pdf_file=payload.pdf_file,
         student_sub=_creds[1]["sub"],
         session=db_session,
     )
