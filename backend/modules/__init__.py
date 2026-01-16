@@ -6,7 +6,9 @@ from backend.modules.bot.bot import web_router
 
 from .auth import auth
 from .campuscurrent.communities import api as communities_api
+from .campuscurrent.communities import og as communities_og
 from .campuscurrent.events import api as events_api
+from .campuscurrent.events import og as events_og
 from .campuscurrent.profile import api as profile_api
 from .google_bucket import api as google_bucket_api
 from .courses.courses import api as courses_api
@@ -27,7 +29,9 @@ from .rejection_board import api as rejection_board_api
 routers: List[APIRouter] = [
     auth.router,
     communities_api.router,
+    communities_og.router,
     events_api.router,
+    events_og.router,
     profile_api.router,
     search_api.router,
     google_bucket_api.router,

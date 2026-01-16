@@ -38,9 +38,8 @@ export function CommunityCard({ community }: { community: Community }) {
             <Image
               src={banner.url}
               alt={`${community.name} banner`}
-              className="absolute inset-0 w-full h-full object-cover"
               fill
-              className="object-cover object-center"
+              className="absolute inset-0 w-full h-full object-cover object-center"
             />
           ) : null}
 
@@ -51,8 +50,9 @@ export function CommunityCard({ community }: { community: Community }) {
                 src={profile?.url || profilePlaceholder}
                 onError={(e) => (e.currentTarget.src = profilePlaceholder)}
                 alt={community.name}
+                width={48}
+                height={48}
                 className="object-cover w-full h-full"
-              // placeholder={profilePlaceholder}
               />
             </div>
           </div>

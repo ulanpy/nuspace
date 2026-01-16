@@ -264,14 +264,15 @@ export default function CommunityDetailPage() {
             <div className="relative p-6">
               <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                 {/* Profile Image - Only element overlapping the banner */}
-                <div className="-mt-12 md:-mt-16 w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-white overflow-hidden bg-white shadow-xl flex-shrink-0">
+                <div className="-mt-12 md:-mt-16 w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-white overflow-hidden bg-white shadow-xl flex-shrink-0 relative">
                   <Image
                     src={profile?.url || profilePlaceholder}
                     onError={(e) => {
                       e.currentTarget.src = profilePlaceholder;
                     }}
                     alt={community.name}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                 </div>
 

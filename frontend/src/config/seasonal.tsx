@@ -22,22 +22,27 @@ const STORAGE_KEY = "snow-enabled";
 export function SnowProvider({ children }: { children: ReactNode }) {
   const { theme } = useTheme();
 
-  const [enabled, setEnabledState] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved !== null) return saved === "true";
-    // Default: on for dark theme when allowed by env flag
-    return ENABLE_SNOWFALL && theme === "dark";
-  });
+  const [enabled, setEnabledState] = useState<boolean>(false);
 
   useEffect(() => {
     if (!ENABLE_SNOWFALL) {
       setEnabledState(false);
       return;
     }
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(STORAGE_KEY, String(enabled));
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (saved !== null) {
+      setEnabledState(saved === "true");
+      return;
     }
+    // Default: on for dark theme when allowed by env flag
+    setEnabledState(theme === "dark");
+  }, [theme]);
+
+  useEffect(() => {
+    if (!ENABLE_SNOWFALL) return;
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(STORAGE_KEY, String(enabled));
   }, [enabled]);
 
   const value = useMemo(
