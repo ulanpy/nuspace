@@ -90,9 +90,8 @@ class NotificationService(AbstractNotificationService):
 
 
         else:
-            sender = ticket.author
             recipient = message.conversation.sg_member
-            if not (recipient and recipient.telegram_id and sender):
+            if not (recipient and recipient.telegram_id):
                 return
 
         title = "New message received"

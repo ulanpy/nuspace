@@ -24,10 +24,6 @@ export default function SgotinishPage() {
 
   const isSgMember = user && ["boss", "capo", "soldier"].includes(user.role);
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>;
-  }
-
   const handleCreateAppeal = () => {
     if (!user) {
       setIsLoginModalOpen(true);
@@ -66,6 +62,10 @@ export default function SgotinishPage() {
     const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
     router.replace(newUrl);
   }, [activeDashboard, isSgMember, searchParams, router]);
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  }
 
   return (
     <MotionWrapper>

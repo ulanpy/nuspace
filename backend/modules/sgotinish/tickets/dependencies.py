@@ -94,7 +94,9 @@ async def user_exists_or_404_for_ticket_creation(
         HTTPException: 404 if user not found
     """
     qb = QueryBuilder(session=db_session, model=User)
-    if ticket_data.author_sub == "me":
+    if ticket_data.is_anonymous:
+        db_user = await qb.base().filter(User.sub == user[0]["sub"]).first()
+    elif ticket_data.author_sub == "me":
         db_user = await qb.base().filter(User.sub == user[0]["sub"]).first()
     else:
         db_user = await qb.base().filter(User.sub == ticket_data.author_sub).first()

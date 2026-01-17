@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sgotinishApi } from '../api/sgotinish-api';
-import { Message as MessageType, PermissionType, ShortUserResponse, Ticket, SGUserResponse } from "../types";
+import { Message as MessageType, MessageCreatePayload, PermissionType, ShortUserResponse, Ticket, SGUserResponse } from "../types";
 import { useUser } from "@/hooks/use-user";
 import { format } from "date-fns";
 import { enUS } from "date-fns/locale";
@@ -20,9 +20,18 @@ interface MessageProps {
   isTicketAnonymous: boolean;
   participantsMap: Record<string, ShortUserResponse>;
   currentUserSub?: string;
+  ownerHash?: string;
 }
 
-const Message: React.FC<MessageProps> = ({ message, isCurrentUserMessage, ticketAuthor, isTicketAnonymous, participantsMap, currentUserSub }) => {
+const Message: React.FC<MessageProps> = ({
+  message,
+  isCurrentUserMessage,
+  ticketAuthor,
+  isTicketAnonymous,
+  participantsMap,
+  currentUserSub,
+  ownerHash,
+}) => {
   const { ref, inView } = useInView({
     threshold: 0.5,
     triggerOnce: true,
@@ -32,9 +41,9 @@ const Message: React.FC<MessageProps> = ({ message, isCurrentUserMessage, ticket
   const hasMarkedAsReadRef = useRef(false);
 
   const markAsReadMutation = useMutation({
-    mutationFn: () => sgotinishApi.markMessageAsRead(message.id),
+    mutationFn: () => sgotinishApi.markMessageAsRead(message.id, ownerHash),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["messages", message.conversation_id] });
+      queryClient.invalidateQueries({ queryKey: ["messages", message.conversation_id, ownerHash ?? null] });
       queryClient.invalidateQueries({ queryKey: ["ticket"] });
     },
   });
@@ -182,9 +191,16 @@ interface ConversationProps {
         permissions?: Ticket["permissions"];
     };
     canSendMessageOverride?: boolean;
+    ownerHash?: string;
 }
 
-export const Conversation: React.FC<ConversationProps> = ({ conversationId, participants, ticket, canSendMessageOverride }) => {
+export const Conversation: React.FC<ConversationProps> = ({
+  conversationId,
+  participants,
+  ticket,
+  canSendMessageOverride,
+  ownerHash,
+}) => {
     const { user } = useUser();
     const [newMessage, setNewMessage] = React.useState("");
     const queryClient = useQueryClient();
@@ -197,8 +213,9 @@ export const Conversation: React.FC<ConversationProps> = ({ conversationId, part
         isLoading,
         isError,
     } = useInfiniteQuery({
-        queryKey: ["messages", conversationId],
-        queryFn: ({ pageParam = 1 }) => sgotinishApi.getMessages(conversationId, { page: pageParam, size: 20 }),
+        queryKey: ["messages", conversationId, ownerHash ?? null],
+        queryFn: ({ pageParam = 1 }) =>
+          sgotinishApi.getMessages(conversationId, { page: pageParam, size: 20, owner_hash: ownerHash }),
         initialPageParam: 1,
         getNextPageParam: (lastPage, allPages) => {
             if (!lastPage) return undefined;
@@ -226,10 +243,10 @@ export const Conversation: React.FC<ConversationProps> = ({ conversationId, part
     );
 
     const createMessageMutation = useMutation({
-        mutationFn: sgotinishApi.createMessage,
+        mutationFn: (payload: MessageCreatePayload) => sgotinishApi.createMessage(payload, ownerHash),
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
-          queryClient.invalidateQueries({ queryKey: ["ticket", ticket.id] });
+          queryClient.invalidateQueries({ queryKey: ["messages", conversationId, ownerHash ?? null] });
+          queryClient.invalidateQueries({ queryKey: ["ticket"] });
           setNewMessage("");
         },
     });
@@ -296,6 +313,7 @@ export const Conversation: React.FC<ConversationProps> = ({ conversationId, part
                                 isTicketAnonymous={ticket.is_anonymous}
                                 participantsMap={participantsMap}
                                 currentUserSub={user?.sub}
+                                ownerHash={ownerHash}
                             />
                         </div>
                     );

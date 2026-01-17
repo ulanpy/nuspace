@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import { formatDistanceToNow } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { toLocalDate } from "../utils/date";
-import { MessageCircle, Clock } from "lucide-react";
+import { MessageCircle, Clock, Lock } from "lucide-react";
 
 export interface TicketCardProps {
   id: string;
@@ -12,6 +12,7 @@ export interface TicketCardProps {
   status: "open" | "in_progress" | "resolved" | "closed";
   createdAt: Date;
   messageCount?: number;
+  isEncrypted?: boolean;
   onClick?: () => void;
   className?: string;
   variant?: "card" | "flat"; // visual variant
@@ -38,6 +39,7 @@ export function TicketCard({
   status, 
   createdAt, 
   messageCount = 0,
+  isEncrypted = false,
   onClick,
   className,
   variant = "card",
@@ -51,10 +53,16 @@ export function TicketCard({
           </h3>
           <div className="flex-shrink-0">{getStatusBadge(status)}</div>
         </div>
-        <div className="mt-1 flex items-center gap-2 text-[12px] sm:text-xs text-gray-600 dark:text-gray-400">
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] sm:text-xs text-gray-600 dark:text-gray-400">
           <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200">
             {category}
           </span>
+          {isEncrypted && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300">
+              <Lock className="h-3 w-3" />
+              Encrypted
+            </span>
+          )}
           <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
             <Clock className="h-3 w-3 flex-shrink-0" />
             <span>{formatDistanceToNow(toLocalDate(createdAt), { addSuffix: true, locale: enUS })}</span>

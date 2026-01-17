@@ -80,6 +80,7 @@ export interface TicketCreatePayload {
     title: string;
     body: string;
     is_anonymous?: boolean;
+    owner_hash?: string;
 }
 
 export interface TicketUpdatePayload {

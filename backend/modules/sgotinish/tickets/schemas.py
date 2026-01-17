@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 from backend.core.database.models.sgotinish import TicketCategory, TicketStatus
 from typing import Optional, List
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
@@ -78,6 +78,13 @@ class TicketCreateDTO(BaseModel):
         description="Whether the ticket should be anonymous. If true, author_sub will be ignored.",
         examples=[False],
     )
+    owner_hash: Optional[str] = Field(
+        default=None,
+        description="SHA256 hash of the client's secret key for anonymous ticket access.",
+        examples=["2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"],
+        min_length=64,
+        max_length=64,
+    )
 
     @field_validator("title", "body")
     def validate_string_fields(cls, value: str) -> str:
@@ -87,10 +94,40 @@ class TicketCreateDTO(BaseModel):
                 raise ValueError("Field cannot be empty")
         return value
 
+    @field_validator("owner_hash")
+    def validate_owner_hash(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = value.strip().lower()
+        if len(normalized) != 64:
+            raise ValueError("owner_hash must be a 64-character hex SHA256 digest")
+        if any(ch not in "0123456789abcdef" for ch in normalized):
+            raise ValueError("owner_hash must be a hex SHA256 digest")
+        return normalized
+
+    @model_validator(mode="after")
+    def validate_anonymous_fields(self):
+        if self.is_anonymous:
+            if not self.owner_hash:
+                raise ValueError("owner_hash is required for anonymous tickets")
+        else:
+            self.owner_hash = None
+        return self
+
 
 class TicketUpdateDTO(BaseModel):
     """Schema for updating a ticket."""
     status: Optional[TicketStatus] = Field(None, description="Current status of the ticket")
+
+class TicketOwnerHashDTO(BaseModel):
+    owner_hash: str = Field(
+        ...,
+        description="SHA256 hash of the client's secret key for anonymous ticket access.",
+        min_length=64,
+        max_length=64,
+    )
+
+
 
 class DelegateAccessPayload(BaseModel):
     """Schema for delegating ticket access."""

@@ -46,6 +46,7 @@ class Ticket(Base):
         SQLEnum(TicketStatus, name="ticket_status"), default=TicketStatus.open, nullable=False, index=True
     )
     is_anonymous: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    owner_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -92,6 +93,9 @@ class Message(Base):
     conversation = relationship("Conversation", back_populates="messages")
     sender = relationship("User")
     read_statuses = relationship("MessageReadStatus", back_populates="message", cascade="all, delete-orphan")
+    read_statuses_anon = relationship(
+        "MessageReadStatusAnon", back_populates="message", cascade="all, delete-orphan"
+    )
 
 
 class MessageReadStatus(Base):
@@ -107,6 +111,18 @@ class MessageReadStatus(Base):
 
     message = relationship("Message", back_populates="read_statuses")
     user = relationship("User")
+
+
+class MessageReadStatusAnon(Base):
+    __tablename__ = "message_read_status_anon"
+
+    message_id: Mapped[int] = mapped_column(
+        ForeignKey("messages.id", ondelete="CASCADE"), primary_key=True, nullable=False
+    )
+    owner_hash: Mapped[str] = mapped_column(String(64), primary_key=True, nullable=False)
+    read_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    message = relationship("Message", back_populates="read_statuses_anon")
 
 
 class Department(Base):

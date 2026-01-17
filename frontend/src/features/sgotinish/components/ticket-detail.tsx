@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/atoms/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
 import { Modal } from "@/components/atoms/modal";
-import { MessageCircle, Clock, User, Shield, Settings, ShieldCheck, Info, MessageSquare } from "lucide-react";
+import { MessageCircle, Clock, User, Shield, Settings, ShieldCheck, Info, MessageSquare, Lock, Link } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { formatDistanceToNow } from "date-fns";
@@ -17,6 +17,8 @@ import { sgotinishApi } from '../api/sgotinish-api';
 import { useUser } from "@/hooks/use-user";
 import { DelegateModal } from './delegate-modal';
 import { Conversation } from './conversation';
+import { hashTicketKey } from "../utils/ticket-keys";
+import { useToast } from "@/hooks/use-toast";
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -48,33 +50,61 @@ const getStatusDefinition = (status: string) => {
   }
 };
 
-export default function TicketDetail() {
+interface TicketDetailProps {
+  ticketKey?: string;
+}
+
+export default function TicketDetail({ ticketKey }: TicketDetailProps) {
   const searchParams = useSearchParams();
   // Get ID from query parameter for static export compatibility
   // URL format: /sgotinish/sg/ticket/?id=123 or /sgotinish/student/ticket/?id=123
   const ticketId = searchParams.get('id') || undefined;
+  const ticketKeyFromQuery = searchParams.get("key") || searchParams.get("ticket_key") || undefined;
+  const effectiveTicketKey = ticketKey ?? ticketKeyFromQuery;
   const queryClient = useQueryClient();
   const { user } = useUser();
+  const { toast } = useToast();
   const [isDelegateModalOpen, setDelegateModalOpen] = useState(false);
   const [isStatusEditOpen, setStatusEditOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("open");
+  const [ownerHash, setOwnerHash] = useState<string | null>(null);
 
-  console.log("TicketDetail mounted with ticketId:", ticketId, "user:", user);
+  useEffect(() => {
+    let isMounted = true;
+    if (!effectiveTicketKey) {
+      setOwnerHash(null);
+      return () => {
+        isMounted = false;
+      };
+    }
+    hashTicketKey(effectiveTicketKey)
+      .then((hash) => {
+        if (isMounted) setOwnerHash(hash);
+      })
+      .catch(() => {
+        if (isMounted) setOwnerHash(null);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [effectiveTicketKey]);
 
+  const queryKey = useMemo(
+    () => ["ticket", ownerHash ?? ticketId ?? "unknown"],
+    [ownerHash, ticketId],
+  );
   const { data: ticket, isLoading, isError, error } = useQuery({
-    queryKey: ["ticket", ticketId],
+    queryKey,
     queryFn: async () => {
-      console.log("Fetching ticket with ID:", ticketId);
-      try {
-        const result = await sgotinishApi.getTicketById(Number(ticketId));
-        console.log("Ticket fetch successful:", result);
-        return result;
-      } catch (err) {
-        console.error("Ticket fetch failed:", err);
-        throw err;
+      if (ownerHash) {
+        return sgotinishApi.getTicketByOwnerHash(ownerHash);
       }
+      if (!ticketId) {
+        throw new Error("Ticket id is missing");
+      }
+      return sgotinishApi.getTicketById(Number(ticketId));
     },
-    enabled: !!ticketId,
+    enabled: !!ticketId || !!ownerHash,
   });
 
   console.log("TicketDetail - ticketId:", ticketId, "isLoading:", isLoading, "isError:", isError, "error:", error, "ticket:", ticket);
@@ -86,22 +116,55 @@ export default function TicketDetail() {
     }
   }, [ticket?.status]);
 
+  const ticketLink = useMemo(() => {
+    if (!effectiveTicketKey || typeof window === "undefined") return null;
+    return `${window.location.origin}/t?key=${encodeURIComponent(effectiveTicketKey)}`;
+  }, [effectiveTicketKey]);
+
+  const maskedTicketKey = useMemo(() => {
+    if (!effectiveTicketKey) return null;
+    const lastTwo = effectiveTicketKey.slice(-2);
+    return `****${lastTwo}`;
+  }, [effectiveTicketKey]);
+
+  const handleCopyLink = async () => {
+    if (!ticketLink) return;
+    try {
+      await navigator.clipboard.writeText(ticketLink);
+      toast({
+        title: "Link copied",
+        description: "Keep it safe. Anyone with the link can access this ticket.",
+        variant: "success",
+        duration: 6000,
+      });
+    } catch {
+      toast({
+        title: "Copy failed",
+        description: "Please copy the link manually.",
+        variant: "error",
+        duration: 6000,
+      });
+    }
+  };
+
+
   const createConversationMutation = useMutation({
     mutationFn: sgotinishApi.createConversation,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["ticket", ticketId]
+        queryKey,
       });
     },
   });
 
   const updateTicketMutation = useMutation({
-    mutationFn: (status: string) => sgotinishApi.updateTicket(Number(ticketId), {
-      status: status as any
-    }),
+    mutationFn: (status: string) =>
+      sgotinishApi.updateTicket(Number(ticket?.id ?? ticketId), {
+        status: status as any,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["ticket", ticketId]
+        queryKey,
       });
       queryClient.invalidateQueries({
         queryKey: ["sg-tickets"]
@@ -153,6 +216,33 @@ export default function TicketDetail() {
             {getStatusDefinition(ticket.status)}
           </p>
         </div>
+
+        {ticket.is_anonymous && (
+          <div className="mb-6 rounded-md border border-emerald-100 bg-emerald-50/70 p-4 text-xs text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-200">
+            <div className="flex items-start gap-2">
+              <Lock className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600 dark:text-emerald-300" />
+              <div className="space-y-2">
+                <p className="leading-snug">
+                  This ticket keeps your identity hidden. Access is only via the private link,
+                  and we store only a hash of the key. Without the link, access cannot be recovered.
+                </p>
+                {ticketLink && (
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="rounded-md border bg-white/70 px-2 py-1 text-[11px] text-emerald-700 dark:bg-slate-900/50 dark:text-emerald-200">
+                      {maskedTicketKey}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={handleCopyLink}>
+                        <Link className="mr-2 h-3 w-3" />
+                        Copy link
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Ticket Header */}
         <Card className="mb-6 hover:shadow-md transition-shadow">
@@ -258,6 +348,8 @@ export default function TicketDetail() {
               <Conversation
                 conversationId={ticket.conversation.id}
                 participants={conversationParticipants}
+                ownerHash={ownerHash ?? undefined}
+                canSendMessageOverride={Boolean(ownerHash)}
                 ticket={{
                   id: ticket.id,
                   is_anonymous: ticket.is_anonymous,
@@ -285,6 +377,8 @@ export default function TicketDetail() {
                 <Conversation
                   conversationId={legacyConversation.id}
                   participants={legacyConversation.sg_member ? [legacyConversation.sg_member] : []}
+                  ownerHash={ownerHash ?? undefined}
+                  canSendMessageOverride={Boolean(ownerHash)}
                   ticket={{
                     id: ticket.id,
                     is_anonymous: ticket.is_anonymous,

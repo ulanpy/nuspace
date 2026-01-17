@@ -11,7 +11,7 @@ from backend.modules.sgotinish.tickets import dependencies as deps
 from backend.modules.sgotinish.tickets import schemas
 from backend.modules.sgotinish.tickets.policy import TicketPolicy
 from backend.modules.sgotinish.tickets.service import TicketService
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, status as http_status
 
 router = APIRouter(tags=["SGotinish Tickets Routes"])
 
@@ -119,6 +119,20 @@ async def get_ticket(
     response_dto = await ticket_service.get_ticket_by_id(ticket_id=ticket.id, user=user_tuple)
 
     return response_dto
+
+
+@router.post("/tickets/by-owner-hash", response_model=schemas.TicketResponseDTO)
+async def get_ticket_by_owner_hash(
+    payload: schemas.TicketOwnerHashDTO,
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    ticket_service: TicketService = Depends(deps.get_ticket_service),
+) -> schemas.TicketResponseDTO:
+    ticket = await ticket_service.get_ticket_by_owner_hash(payload.owner_hash, user_tuple)
+    if not ticket:
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Ticket not found")
+    return ticket
+
+
 
 
 @router.patch("/tickets/{ticket_id}", response_model=schemas.TicketResponseDTO)

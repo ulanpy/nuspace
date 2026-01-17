@@ -48,6 +48,7 @@ async def create_message(
     service: MessageService = Depends(get_message_service),
     ticket_service: TicketService = Depends(get_ticket_service),
     conversation: Conversation = Depends(get_conversation_from_body_or_404),
+    owner_hash: str | None = Query(default=None),
 ) -> schemas.MessageResponseDTO:
     """
     Creates a new message in a conversation.
@@ -66,8 +67,18 @@ async def create_message(
     # Get ticket access for permission checking
     access = await ticket_service.get_user_ticket_access(conversation.ticket, user_tuple)
     
-    MessagePolicy(user_tuple).check_create(conversation, access)
-    return await service.create_message(message_data=message_data, user=user_tuple)
+    owner_hash_match = bool(
+        owner_hash and conversation.ticket and conversation.ticket.owner_hash == owner_hash
+    )
+    MessagePolicy(user_tuple).check_create(
+        conversation, access, owner_hash_match=owner_hash_match
+    )
+    return await service.create_message(
+        message_data=message_data,
+        user=user_tuple,
+        conversation=conversation,
+        owner_hash=owner_hash if owner_hash_match else None,
+    )
 
 
 @router.get("/messages", response_model=schemas.ListMessageDTO)
@@ -79,6 +90,7 @@ async def get_messages(
     conversation: Conversation = Depends(conversation_exists_or_404),
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
+    owner_hash: str | None = Query(default=None),
 ) -> schemas.ListMessageDTO:
     """
     Retrieves a paginated list of messages with flexible filtering.
@@ -98,7 +110,10 @@ async def get_messages(
     # Get ticket access for permission checking
     access = await ticket_service.get_user_ticket_access(conversation.ticket, user_tuple)
 
-    MessagePolicy(user_tuple).check_read_list(conversation, access)
+    owner_hash_match = bool(
+        owner_hash and conversation.ticket and conversation.ticket.owner_hash == owner_hash
+    )
+    MessagePolicy(user_tuple).check_read_list(conversation, access, owner_hash_match=owner_hash_match)
 
     return await service.get_messages(
         conversation_id=conversation_id, size=size, page=page, user=user_tuple
@@ -111,6 +126,7 @@ async def get_message(
     message: Message = Depends(deps.message_exists_or_404),
     service: MessageService = Depends(get_message_service),
     ticket_service: TicketService = Depends(get_ticket_service),
+    owner_hash: str | None = Query(default=None),
 ) -> schemas.MessageResponseDTO:
     """
     Retrieves a single message by its unique ID.
@@ -128,7 +144,13 @@ async def get_message(
     # Get ticket access for permission checking
     access = await ticket_service.get_user_ticket_access(message.conversation.ticket, user_tuple)
 
-    MessagePolicy(user_tuple).check_read_one(message, access)
+    owner_hash_match = bool(
+        owner_hash
+        and message.conversation
+        and message.conversation.ticket
+        and message.conversation.ticket.owner_hash == owner_hash
+    )
+    MessagePolicy(user_tuple).check_read_one(message, access, owner_hash_match=owner_hash_match)
     return await service.get_message_by_id(message_id=message.id, user=user_tuple)
 
 
@@ -143,6 +165,7 @@ async def mark_message_as_read(
     message: Message = Depends(deps.message_exists_or_404),
     service: MessageService = Depends(get_message_service),
     ticket_service: TicketService = Depends(get_ticket_service),
+    owner_hash: str | None = Query(default=None),
 ) -> schemas.MessageResponseDTO:
     """
     Marks a message as read by the current user.
@@ -159,5 +182,17 @@ async def mark_message_as_read(
     # Get ticket access for permission checking
     access = await ticket_service.get_user_ticket_access(message.conversation.ticket, user_tuple)
 
-    MessagePolicy(user_tuple).check_read_one(message, access)
-    return await service.mark_message_as_read(message=message, user=user_tuple)
+    owner_hash_match = bool(
+        owner_hash
+        and message.conversation
+        and message.conversation.ticket
+        and message.conversation.ticket.owner_hash == owner_hash
+    )
+    MessagePolicy(user_tuple).check_read_one(
+        message, access, owner_hash_match=owner_hash_match
+    )
+    return await service.mark_message_as_read(
+        message=message,
+        user=user_tuple,
+        owner_hash=owner_hash if owner_hash_match else None,
+    )

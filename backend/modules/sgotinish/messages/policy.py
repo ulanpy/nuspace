@@ -14,13 +14,18 @@ from fastapi import status as http_status
 class MessagePolicy(BasePolicy):
     """Permissions for Message resources."""
 
-    def check_read_list(self, conversation: Conversation, access: TicketAccess | None = None):
+    def check_read_list(
+        self,
+        conversation: Conversation,
+        access: TicketAccess | None = None,
+        owner_hash_match: bool = False,
+    ):
         """Check if user can list messages in a conversation."""
         if self.is_admin:
             return
 
         # Check if user is the ticket author
-        if conversation.ticket and self._is_owner(conversation.ticket.author_sub):
+        if conversation.ticket and (self._is_owner(conversation.ticket.author_sub) or owner_hash_match):
             return
 
         # Check if user has at least VIEW permission on the ticket
@@ -35,7 +40,12 @@ class MessagePolicy(BasePolicy):
             status_code=http_status.HTTP_404_NOT_FOUND, detail="Conversation not found"
         )
 
-    def check_read_one(self, message: Message, access: TicketAccess | None = None):
+    def check_read_one(
+        self,
+        message: Message,
+        access: TicketAccess | None = None,
+        owner_hash_match: bool = False,
+    ):
         """Check if user can read a specific message."""
         if self.is_admin:
             return
@@ -44,7 +54,9 @@ class MessagePolicy(BasePolicy):
         if (
             message.conversation
             and message.conversation.ticket
-            and self._is_owner(message.conversation.ticket.author_sub)
+            and (
+                self._is_owner(message.conversation.ticket.author_sub) or owner_hash_match
+            )
         ):
             return
 
@@ -62,6 +74,7 @@ class MessagePolicy(BasePolicy):
         self,
         conversation: Conversation,
         access: TicketAccess | None = None,
+        owner_hash_match: bool = False,
     ):
         """
         Check if user can create a message in a conversation.
@@ -71,7 +84,9 @@ class MessagePolicy(BasePolicy):
             return
 
         # Check if user is the ticket author
-        is_ticket_author = conversation.ticket and self._is_owner(conversation.ticket.author_sub)
+        is_ticket_author = conversation.ticket and (
+            self._is_owner(conversation.ticket.author_sub) or owner_hash_match
+        )
 
         if not (is_ticket_author or (access and access.permission in [
             PermissionType.ASSIGN,

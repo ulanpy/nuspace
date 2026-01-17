@@ -250,6 +250,7 @@ export default function SGDashboard() {
                     status={ticket.status}
                     createdAt={toLocalDate(ticket.created_at)}
                     messageCount={ticket.unread_count}
+                    isEncrypted={ticket.is_anonymous}
                     onClick={() => handleTicketClick(ticket.id)}
                     variant="flat"
                   />

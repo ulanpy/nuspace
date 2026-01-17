@@ -65,9 +65,14 @@ class TicketPolicy(BasePolicy):
             detail="You do not have permission to view this resource.",
         )
 
-    def check_read_one(self, ticket: Ticket, access: TicketAccess | None):
+    def check_read_one(
+        self,
+        ticket: Ticket,
+        access: TicketAccess | None,
+        owner_hash_match: bool = False,
+    ):
         """Check if user can read a specific ticket."""
-        if self.is_admin or self._is_owner(ticket.author_sub):
+        if self.is_admin or self._is_owner(ticket.author_sub) or owner_hash_match:
             return
 
         # Hierarchical check: DELEGATE includes ASSIGN, which includes VIEW.
@@ -85,6 +90,14 @@ class TicketPolicy(BasePolicy):
     def check_create(self, ticket_data: schemas.TicketCreateDTO):
         """Check if user can create a ticket."""
         if self.is_admin:
+            return
+
+        if ticket_data.is_anonymous:
+            if ticket_data.author_sub not in ("me", self.user_sub, None):
+                raise HTTPException(
+                    status_code=http_status.HTTP_403_FORBIDDEN,
+                    detail="You can only create tickets for yourself.",
+                )
             return
 
         if ticket_data.author_sub not in ("me", self.user_sub):

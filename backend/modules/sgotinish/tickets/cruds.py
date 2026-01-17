@@ -2,7 +2,12 @@ from typing import List
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database.models.sgotinish import Conversation, Message, MessageReadStatus
+from backend.core.database.models.sgotinish import (
+    Conversation,
+    Message,
+    MessageReadStatus,
+    MessageReadStatusAnon,
+)
 from backend.core.database.models.sgotinish import Ticket
 
 
@@ -44,6 +49,46 @@ async def get_unread_messages_count_for_tickets(
                 Conversation.ticket_id.in_(ticket_ids),
                 Message.sender_sub != current_user_sub,
                 MessageReadStatus.message_id.is_(None),
+            )
+            .group_by(Conversation.ticket_id)
+        )
+
+        unread_counts_result = await db_session.execute(unread_counts_query)
+        unread_counts_map = {
+            ticket_id: unread_count for ticket_id, unread_count in unread_counts_result
+        }
+    return unread_counts_map
+
+
+async def get_unread_messages_count_for_tickets_by_owner_hash(
+    db_session: AsyncSession,
+    tickets: List[Ticket],
+    owner_hash: str,
+) -> dict[int, int]:
+    """
+    Fetch unread message counts for anonymous ticket owners (by owner_hash).
+    Only SG-member messages should be counted as unread.
+    """
+    unread_counts_map: dict[int, int] = {}
+    if tickets:
+        ticket_ids = [ticket.id for ticket in tickets]
+        unread_counts_query = (
+            select(
+                Conversation.ticket_id,
+                func.count(Message.id).label("unread_count"),
+            )
+            .join(Message, Conversation.id == Message.conversation_id)
+            .outerjoin(
+                MessageReadStatusAnon,
+                and_(
+                    Message.id == MessageReadStatusAnon.message_id,
+                    MessageReadStatusAnon.owner_hash == owner_hash,
+                ),
+            )
+            .where(
+                Conversation.ticket_id.in_(ticket_ids),
+                Message.is_from_sg_member.is_(True),
+                MessageReadStatusAnon.message_id.is_(None),
             )
             .group_by(Conversation.ticket_id)
         )

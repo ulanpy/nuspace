@@ -53,7 +53,7 @@ class MessageCreateDTO(BaseModel):
 
 class _InternalMessageCreateDTO(MessageCreateDTO):
     """Internal schema for creating a message, including server-set fields."""
-    sender_sub: str = Field(
+    sender_sub: Optional[str] = Field(
         default="me",
         description="Sender identifier. Use 'me' for current user",
         examples=["me"],

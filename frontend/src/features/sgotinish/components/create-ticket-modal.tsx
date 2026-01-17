@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
 import { Textarea } from "@/components/atoms/textarea";
@@ -13,6 +13,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { sgotinishApi } from '../api/sgotinish-api';
 import { TicketCategory } from "../types";
 import { Modal } from "@/components/atoms/modal";
+import { generateTicketKey, hashTicketKey } from "../utils/ticket-keys";
+import { useToast } from "@/hooks/use-toast";
 
 interface CreateTicketModalProps {
   isOpen: boolean;
@@ -22,6 +24,10 @@ interface CreateTicketModalProps {
 
 export default function CreateTicketModal({ isOpen, onClose, onSuccess }: CreateTicketModalProps) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const pendingTicketKeyRef = useRef<string | null>(null);
+  const [ticketLink, setTicketLink] = useState<string | null>(null);
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     category: "" as TicketCategory | "",
@@ -31,10 +37,17 @@ export default function CreateTicketModal({ isOpen, onClose, onSuccess }: Create
 
   const createTicketMutation = useMutation({
     mutationFn: sgotinishApi.createTicket,
-    onSuccess: () => {
+    onSuccess: (ticket) => {
       queryClient.invalidateQueries({ 
         predicate: (query) => query.queryKey[0] === "tickets" || query.queryKey[0] === "sg-tickets"
       });
+      if (ticket?.is_anonymous && pendingTicketKeyRef.current) {
+        const ticketKey = pendingTicketKeyRef.current;
+        pendingTicketKeyRef.current = null;
+        const link = `${window.location.origin}/t?key=${encodeURIComponent(ticketKey)}`;
+        setTicketLink(link);
+        setIsLinkModalOpen(true);
+      }
       onSuccess(); // Close modal and trigger any other success actions
       // Reset form after successful submission
       setFormData({
@@ -46,6 +59,7 @@ export default function CreateTicketModal({ isOpen, onClose, onSuccess }: Create
     },
     onError: (error) => {
       console.error("Error creating ticket:", error);
+      pendingTicketKeyRef.current = null;
       // Here you could show a toast notification to the user
     },
   });
@@ -116,23 +130,58 @@ export default function CreateTicketModal({ isOpen, onClose, onSuccess }: Create
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.category) return;
-    createTicketMutation.mutate({
+    const payload = {
       ...formData,
       category: formData.category as TicketCategory,
-    });
+    };
+    if (formData.is_anonymous) {
+      const ticketKey = generateTicketKey();
+      pendingTicketKeyRef.current = ticketKey;
+      payload.owner_hash = await hashTicketKey(ticketKey);
+    }
+    createTicketMutation.mutate(payload);
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCopyLink = async () => {
+    if (!ticketLink) return;
+    try {
+      await navigator.clipboard.writeText(ticketLink);
+      toast({
+        title: "Link copied",
+        description: "Keep it safe. Anyone with the link can access this ticket.",
+        variant: "success",
+        duration: 6000,
+      });
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = ticketLink;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      toast({
+        title: "Link copied",
+        description: "Keep it safe. Anyone with the link can access this ticket.",
+        variant: "success",
+        duration: 6000,
+      });
+    }
   };
   
   const titleMaxLength = 200;
   const bodyMaxLength = 5000;
 
   return (
+    <>
     <Modal isOpen={isOpen} onClose={onClose} title="Create New Appeal">
         <div className="mb-4 flex gap-3 rounded-lg border border-blue-100 bg-blue-50/60 p-4 text-sm text-slate-600 dark:border-blue-900/40 dark:bg-blue-900/20 dark:text-slate-300">
           <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white text-blue-600 shadow-sm dark:bg-slate-900 dark:text-blue-300">
@@ -146,6 +195,22 @@ export default function CreateTicketModal({ isOpen, onClose, onSuccess }: Create
           </div>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Anonymous Option */}
+          <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">
+            <div className="space-y-1">
+              <Label htmlFor="anonymous" className="text-sm font-medium">
+                Submit anonymously
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Your name will not be visible to anyone else.
+              </p>
+            </div>
+            <Switch
+              id="anonymous"
+              checked={formData.is_anonymous}
+              onCheckedChange={(checked) => handleInputChange("is_anonymous", checked)}
+            />
+          </div>
           {/* Title */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
@@ -219,23 +284,6 @@ export default function CreateTicketModal({ isOpen, onClose, onSuccess }: Create
             />
           </div>
 
-          {/* Anonymous Option */}
-          <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-            <div className="space-y-1">
-              <Label htmlFor="anonymous" className="text-sm font-medium">
-                Submit anonymously
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Your name will not be visible to SG representatives.
-              </p>
-            </div>
-            <Switch
-              id="anonymous"
-              checked={formData.is_anonymous}
-              onCheckedChange={(checked) => handleInputChange("is_anonymous", checked)}
-            />
-          </div>
-
           {/* Submit Button */}
           <div className="flex gap-3 pt-4">
             <Button
@@ -266,6 +314,36 @@ export default function CreateTicketModal({ isOpen, onClose, onSuccess }: Create
           </div>
         </form>
     </Modal>
+    <Modal
+      isOpen={isLinkModalOpen}
+      onClose={() => {
+        setIsLinkModalOpen(false);
+        setTicketLink(null);
+      }}
+      title="Your private ticket link"
+    >
+      <div className="space-y-4">
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
+          This link is your only way to access the anonymous ticket. We cannot recover it if lost.
+        </div>
+        <div className="rounded-md border bg-muted/30 p-3 text-sm break-all">
+          {ticketLink}
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIsLinkModalOpen(false);
+              setTicketLink(null);
+            }}
+          >
+            Close
+          </Button>
+          <Button onClick={handleCopyLink}>Copy link</Button>
+        </div>
+      </div>
+    </Modal>
+    </>
   );
 }
 

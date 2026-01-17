@@ -11,7 +11,7 @@ import {
   MessageCreatePayload,
   DelegateAccessPayload,
   Department,
-  SGUser,
+  SGUserResponse,
   MessageListResponse,
 } from "../types";
 
@@ -31,8 +31,17 @@ export const sgotinishApi = {
     return await apiCall(`/tickets`, { method: "POST", json: payload });
   },
 
-  getTicketById: async (ticketId: number): Promise<Ticket> => {
-    return await apiCall(`/tickets/${ticketId}`);
+  getTicketById: async (ticketId: number, ownerHash?: string): Promise<Ticket> => {
+    const suffix = ownerHash ? `?owner_hash=${encodeURIComponent(ownerHash)}` : "";
+    return await apiCall(`/tickets/${ticketId}${suffix}`);
+  },
+
+  getTicketByOwnerHash: async (ownerHash: string): Promise<Ticket> => {
+    return await apiCall(`/tickets/by-owner-hash`, { method: "POST", json: { owner_hash: ownerHash } });
+  },
+
+  lookupTicketsByOwnerHashes: async (ownerHashes: string[]): Promise<TicketListResponse> => {
+    return await apiCall(`/tickets/lookup`, { method: "POST", json: { owner_hashes: ownerHashes } });
   },
 
   updateTicket: async (ticketId: number, payload: TicketUpdatePayload): Promise<Ticket> => {
@@ -51,23 +60,26 @@ export const sgotinishApi = {
   // Messages
   getMessages: async (
     conversationId: number,
-    params?: { page?: number; size?: number },
+    params?: { page?: number; size?: number; owner_hash?: string },
   ): Promise<MessageListResponse> => {
     const qs = new URLSearchParams({
       conversation_id: String(conversationId),
     });
     if (params?.page) qs.set("page", String(params.page));
     if (params?.size) qs.set("size", String(params.size));
+    if (params?.owner_hash) qs.set("owner_hash", params.owner_hash);
     
     return await apiCall(`/messages?${qs.toString()}`);
   },
 
-  createMessage: async (payload: MessageCreatePayload): Promise<Message> => {
-    return await apiCall(`/messages`, { method: "POST", json: payload });
+  createMessage: async (payload: MessageCreatePayload, ownerHash?: string): Promise<Message> => {
+    const suffix = ownerHash ? `?owner_hash=${encodeURIComponent(ownerHash)}` : "";
+    return await apiCall(`/messages${suffix}`, { method: "POST", json: payload });
   },
 
-  markMessageAsRead: async (messageId: number): Promise<Message> => {
-    return await apiCall(`/messages/${messageId}/read`, { method: "POST" });
+  markMessageAsRead: async (messageId: number, ownerHash?: string): Promise<Message> => {
+    const suffix = ownerHash ? `?owner_hash=${encodeURIComponent(ownerHash)}` : "";
+    return await apiCall(`/messages/${messageId}/read${suffix}`, { method: "POST" });
   },
 
   // Delegation
@@ -75,7 +87,7 @@ export const sgotinishApi = {
     return await apiCall(`/sg-delegation/departments`);
   },
 
-  getSgUsers: async (departmentId: number): Promise<SGUser[]> => {
+  getSgUsers: async (departmentId: number): Promise<SGUserResponse[]> => {
     return await apiCall(`/sg-delegation/users?department_id=${departmentId}`);
   },
 

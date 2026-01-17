@@ -2,7 +2,13 @@ from typing import List
 
 from backend.common.cruds import QueryBuilder
 from backend.common.utils import response_builder
-from backend.core.database.models.sgotinish import Conversation, Message, MessageReadStatus, Ticket
+from backend.core.database.models.sgotinish import (
+    Conversation,
+    Message,
+    MessageReadStatus,
+    MessageReadStatusAnon,
+    Ticket,
+)
 from backend.core.database.models.user import User, UserRole
 from backend.common.schemas import ShortUserResponse
 from backend.modules.sgotinish.tickets.schemas import SGUserResponse
@@ -45,10 +51,14 @@ class MessageService:
             dto.sender_sub = None
 
         read_statuses = message.read_statuses
-        if ticket_is_anonymous and ticket_author_sub:
-            read_statuses = [
-                rs for rs in read_statuses if rs.user_sub != ticket_author_sub
-            ]
+        if ticket_is_anonymous:
+            if ticket_author_sub:
+                read_statuses = [
+                    rs for rs in read_statuses if rs.user_sub != ticket_author_sub
+                ]
+            else:
+                # Never expose anonymous author read statuses.
+                read_statuses = list(read_statuses)
 
         sender_response = None
         if not hide_ticket_author_identity and message.sender:
@@ -126,18 +136,23 @@ class MessageService:
         return await self._build_message_response(message, user)
 
     async def create_message(
-        self, message_data: schemas.MessageCreateDTO, user: tuple[dict, dict]
+        self,
+        message_data: schemas.MessageCreateDTO,
+        user: tuple[dict, dict],
+        conversation: Conversation,
+        owner_hash: str | None = None,
     ) -> schemas.MessageResponseDTO:
         user_sub = user[0].get("sub")
         user_role = UserRole(user[1].get("role"))
 
         sg_roles = [UserRole.boss, UserRole.capo, UserRole.soldier, UserRole.admin]
         is_from_sg = user_role in sg_roles
+        is_anonymous_owner = bool(conversation.ticket.is_anonymous and owner_hash)
 
         internal_message_data = schemas._InternalMessageCreateDTO(
             **message_data.model_dump(),
             is_from_sg_member=is_from_sg,
-            sender_sub=user_sub,
+            sender_sub=None if is_anonymous_owner else user_sub,
         )
 
         qb = QueryBuilder(self.db_session, Message)
@@ -147,9 +162,14 @@ class MessageService:
         await self.db_session.flush()
 
         # Automatically mark the message as read for the sender
-        await qb.blank(model=MessageReadStatus).add(
-            schemas.MessageReadStatusCreateDTO(message_id=message.id, user_sub=user_sub)
-        )
+        if is_anonymous_owner:
+            await qb.blank(model=MessageReadStatusAnon).add(
+                MessageReadStatusAnon(message_id=message.id, owner_hash=owner_hash)
+            )
+        else:
+            await qb.blank(model=MessageReadStatus).add(
+                schemas.MessageReadStatusCreateDTO(message_id=message.id, user_sub=user_sub)
+            )
 
         # Reload message with all necessary data for notification AND response
         stmt = (
@@ -175,25 +195,42 @@ class MessageService:
         return await self._build_message_response(full_message, user)
 
     async def mark_message_as_read(
-        self, message: Message, user: tuple[dict, dict]
+        self,
+        message: Message,
+        user: tuple[dict, dict],
+        owner_hash: str | None = None,
     ) -> schemas.MessageResponseDTO:
         user_sub = user[0].get("sub")
         qb = QueryBuilder(self.db_session, MessageReadStatus)
 
-        # Check if already marked as read to avoid duplicates
-        existing_status = await (
-            qb.base()
-            .filter(
-                MessageReadStatus.message_id == message.id,
-                MessageReadStatus.user_sub == user_sub,
+        if message.conversation.ticket.is_anonymous and owner_hash:
+            anon_qb = QueryBuilder(self.db_session, MessageReadStatusAnon)
+            existing_status = await (
+                anon_qb.base()
+                .filter(
+                    MessageReadStatusAnon.message_id == message.id,
+                    MessageReadStatusAnon.owner_hash == owner_hash,
+                )
+                .first()
             )
-            .first()
-        )
-
-        if not existing_status:
-            await qb.add(
-                schemas.MessageReadStatusCreateDTO(message_id=message.id, user_sub=user_sub)
+            if not existing_status:
+                await anon_qb.add(
+                    MessageReadStatusAnon(message_id=message.id, owner_hash=owner_hash)
+                )
+        else:
+            # Check if already marked as read to avoid duplicates
+            existing_status = await (
+                qb.base()
+                .filter(
+                    MessageReadStatus.message_id == message.id,
+                    MessageReadStatus.user_sub == user_sub,
+                )
+                .first()
             )
+            if not existing_status:
+                await qb.add(
+                    schemas.MessageReadStatusCreateDTO(message_id=message.id, user_sub=user_sub)
+                )
 
         # Refetch the message with all relations to build the response
         return await self.get_message_by_id(message.id, user)

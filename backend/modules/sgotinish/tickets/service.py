@@ -67,6 +67,7 @@ class TicketService:
         unread_counts: dict[int, int] | None = None,
         conversation_dtos_map: dict[int, List[schemas.ConversationResponseDTO]] | None = None,
         access_map: dict[int, list[TicketAccess]] | None = None,
+        owner_hash: str | None = None,
     ) -> schemas.TicketResponseDTO:
         """
         Helper to build a detailed ticket response DTO from a Ticket ORM object.
@@ -74,9 +75,14 @@ class TicketService:
         """
         # === Fetch unread counts if not provided (for single ticket case) ===
         if unread_counts is None:
-            unread_counts = await cruds.get_unread_messages_count_for_tickets(
-                db_session=self.db_session, tickets=[ticket], user_sub=user[0].get("sub")
-            )
+            if owner_hash:
+                unread_counts = await cruds.get_unread_messages_count_for_tickets_by_owner_hash(
+                    db_session=self.db_session, tickets=[ticket], owner_hash=owner_hash
+                )
+            else:
+                unread_counts = await cruds.get_unread_messages_count_for_tickets(
+                    db_session=self.db_session, tickets=[ticket], user_sub=user[0].get("sub")
+                )
 
         # === Fetch access rights if not provided (for single ticket case) ===
         if access_map is None:
@@ -240,14 +246,17 @@ class TicketService:
     ) -> schemas.TicketResponseDTO:
         user_sub = user[0].get("sub")
 
-        # The author_sub should always be the authenticated user.
-        # Anonymity is handled at the presentation layer.
-        if ticket_data.author_sub == "me":
-            ticket_data.author_sub = user_sub
-        # Ensure author_sub is set, even if client sends something else for non-admins
-        # (Policy layer should prevent this, but as a safeguard)
-        if ticket_data.author_sub != user_sub and not TicketPolicy(user).is_admin:
-             ticket_data.author_sub = user_sub
+        if ticket_data.is_anonymous:
+            ticket_data.author_sub = None
+        else:
+            # The author_sub should always be the authenticated user.
+            if ticket_data.author_sub == "me":
+                ticket_data.author_sub = user_sub
+            # Ensure author_sub is set, even if client sends something else for non-admins
+            # (Policy layer should prevent this, but as a safeguard)
+            if ticket_data.author_sub != user_sub and not TicketPolicy(user).is_admin:
+                ticket_data.author_sub = user_sub
+            ticket_data.owner_hash = None
 
         qb = QueryBuilder(session=self.db_session, model=Ticket)
         ticket: Ticket = await qb.add(
@@ -322,6 +331,22 @@ class TicketService:
         if not ticket:
             return None
         return await self._build_ticket_response(ticket, user)
+
+    async def get_ticket_by_owner_hash(
+        self, owner_hash: str, user: tuple[dict, dict]
+    ) -> schemas.TicketResponseDTO | None:
+        qb = QueryBuilder(session=self.db_session, model=Ticket)
+        ticket: Ticket | None = await (
+            qb.base()
+            .filter(Ticket.owner_hash == owner_hash)
+            .eager(Ticket.author)
+            .option(selectinload(Ticket.conversations).selectinload(Conversation.sg_member))
+            .first()
+        )
+        if not ticket:
+            return None
+        return await self._build_ticket_response(ticket, user, owner_hash=owner_hash)
+
 
     async def get_user_ticket_access(
         self, ticket: Ticket, user_tuple: tuple[dict, dict]
