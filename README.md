@@ -89,6 +89,7 @@ Access the application at [localhost](http://localhost) to confirm everything is
 - [Monitoring Guide](infra/README.md) - What monitoring service stack is used and their connection details
 - [Terraform Setup](terraform/README.md) - Provision cloud services for stage/production environments by IoC
 - [WireGuard VPN](infra/wireguard/README.md) - Secure VPN access to monitoring tools and internal services
+- [SSH Access](docs/ssh-access.md) - Production/Staging server SSH is available only via VPN and OS Login
 
 ## Contributing
 

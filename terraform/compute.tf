@@ -34,7 +34,8 @@ resource "google_compute_instance" "vm_instance" {
   }
 
   network_interface {
-    network = "default"
+    network    = google_compute_network.main.self_link
+    subnetwork = google_compute_subnetwork.main.self_link
     # Attach the static IP address to the VM's network interface.
     # We get the IP address from the "static_ip" resource we just created.
     access_config {
@@ -69,6 +70,10 @@ resource "google_compute_disk" "new_boot" {
   size  = var.boot_disk_size_gb
   type  = var.boot_disk_type
   image = "debian-cloud/debian-12"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Create boot disk from a snapshot (when requested)
@@ -79,118 +84,9 @@ resource "google_compute_disk" "from_snapshot" {
   type            = var.boot_disk_type
   size            = var.boot_disk_size_gb
   snapshot        = "projects/${var.project_id}/global/snapshots/${var.boot_snapshot_name}"
-}
 
-# Cloudflare IPv4 ranges - https://www.cloudflare.com/ips-v4
-locals {
-  cloudflare_ipv4_ranges = [
-    "173.245.48.0/20",
-    "103.21.244.0/22",
-    "103.22.200.0/22",
-    "103.31.4.0/22",
-    "141.101.64.0/18",
-    "108.162.192.0/18",
-    "190.93.240.0/20",
-    "188.114.96.0/20",
-    "197.234.240.0/22",
-    "198.41.128.0/17",
-    "162.158.0.0/15",
-    "104.16.0.0/13",
-    "104.24.0.0/14",
-    "172.64.0.0/13",
-    "131.0.72.0/22",
-  ]
-
-  cloudflare_ipv6_ranges = [
-    "2400:cb00::/32",
-    "2606:4700::/32",
-    "2803:f800::/32",
-    "2405:b500::/32",
-    "2405:8100::/32",
-    "2a06:98c0::/29",
-    "2c0f:f248::/32",
-  ]
-
-}
-
-# Firewall rule to allow HTTP traffic from Cloudflare only
-resource "google_compute_firewall" "allow_http" {
-  name    = "allow-http-ingress"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["80"]
+  lifecycle {
+    prevent_destroy = true
   }
-
-  source_ranges = local.cloudflare_ipv4_ranges
-  target_tags   = var.vm_instance_tags
 }
 
-# Firewall rule to allow HTTPS traffic from Cloudflare only
-resource "google_compute_firewall" "allow_https" {
-  name    = "allow-https-ingress"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["443"]
-  }
-
-  source_ranges = local.cloudflare_ipv4_ranges
-  target_tags   = var.vm_instance_tags
-}
-
-# Firewall rule to allow ICMP from Cloudflare only
-resource "google_compute_firewall" "allow_icmp" {
-  name    = "allow-icmp-ingress"
-  network = "default"
-
-  allow {
-    protocol = "icmp"
-  }
-
-  source_ranges = local.cloudflare_ipv4_ranges
-  target_tags   = var.vm_instance_tags
-}
-
-# IPv6 firewall rules for Cloudflare
-resource "google_compute_firewall" "allow_http_ipv6" {
-  name    = "allow-http-ingress-ipv6"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["80"]
-  }
-
-  source_ranges = concat(local.cloudflare_ipv6_ranges)
-  target_tags   = var.vm_instance_tags
-}
-
-resource "google_compute_firewall" "allow_https_ipv6" {
-  name    = "allow-https-ingress-ipv6"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["443"]
-  }
-
-  source_ranges = concat(local.cloudflare_ipv6_ranges)
-  target_tags   = var.vm_instance_tags
-}
-
-# Firewall rule to allow WireGuard VPN traffic (UDP 51820) from clients
-resource "google_compute_firewall" "allow_wireguard" {
-  name    = "allow-wireguard-ingress"
-  network = "default"
-
-  allow {
-    protocol = "udp"
-    ports    = ["51820"]
-  }
-
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = var.vm_instance_tags
-}

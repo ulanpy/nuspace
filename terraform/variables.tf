@@ -30,6 +30,30 @@ variable "region" {
   type        = string
 }
 
+variable "network_name" {
+  description = "VPC network name"
+  type        = string
+  default     = "nuspace-vpc"
+}
+
+variable "subnetwork_name" {
+  description = "Subnetwork name"
+  type        = string
+  default     = "nuspace-subnet"
+}
+
+variable "subnetwork_cidr" {
+  description = "CIDR for the subnetwork"
+  type        = string
+  default     = "10.13.0.0/20"
+}
+
+variable "wireguard_subnet_cidr" {
+  description = "CIDR for WireGuard clients"
+  type        = string
+  default     = "10.13.13.0/24"
+}
+
 variable "zone" {
   description = "Zone"
   type        = string

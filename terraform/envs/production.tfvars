@@ -3,8 +3,9 @@ credentials_file = "./creds/production.json"
 
 
 # Boot disk strategy
-use_existing_boot_disk  = false
-use_boot_snapshot       = true
+use_existing_boot_disk  = true
+existing_boot_disk_name = "nuspace-instance-boot"
+use_boot_snapshot       = false
 boot_snapshot_name      = "nuspace-boot-20250901-0012"
 boot_disk_size_gb       = 30
 

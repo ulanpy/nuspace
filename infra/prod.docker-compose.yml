@@ -135,21 +135,6 @@ services:
     command: sh -c "npm run build && rm -rf /output/* && cp -r /app/out/. /output/"
     restart: "no"
 
-  # SSR Alternative: Uncomment to run Next.js server instead of static files
-  # frontend:
-  #   container_name: frontend
-  #   image: kamikadze24/frontendbuilder:latest
-  #   networks:
-  #     - nuros
-  #   depends_on:
-  #     - frontend-builder
-  #   ports:
-  #     - "127.0.0.1:3000:3000"
-  #   environment:
-  #     - NODE_ENV=production
-  #     - PORT=3000
-  #     - HOSTNAME=0.0.0.0
-  #   restart: unless-stopped
 
   loki:
     container_name: loki
