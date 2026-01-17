@@ -244,7 +244,25 @@ export const Conversation: React.FC<ConversationProps> = ({
 
     const createMessageMutation = useMutation({
         mutationFn: (payload: MessageCreatePayload) => sgotinishApi.createMessage(payload, ownerHash),
-        onSuccess: () => {
+        onSuccess: (message) => {
+          queryClient.setQueryData(
+            ["messages", conversationId, ownerHash ?? null],
+            (oldData: any) => {
+              if (!oldData?.pages) return oldData;
+              const pages = [...oldData.pages];
+              if (pages.length === 0) {
+                return oldData;
+              }
+              const lastPageIndex = pages.length - 1;
+              const lastPage = pages[lastPageIndex];
+              const updatedLastPage = {
+                ...lastPage,
+                items: [...(lastPage.items ?? []), message],
+              };
+              pages[lastPageIndex] = updatedLastPage;
+              return { ...oldData, pages };
+            },
+          );
           queryClient.invalidateQueries({ queryKey: ["messages", conversationId, ownerHash ?? null] });
           queryClient.invalidateQueries({ queryKey: ["ticket"] });
           setNewMessage("");

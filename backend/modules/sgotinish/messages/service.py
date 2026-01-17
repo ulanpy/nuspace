@@ -163,8 +163,8 @@ class MessageService:
 
         # Automatically mark the message as read for the sender
         if is_anonymous_owner:
-            await qb.blank(model=MessageReadStatusAnon).add(
-                MessageReadStatusAnon(message_id=message.id, owner_hash=owner_hash)
+            await qb.blank(model=MessageReadStatusAnon).add_orm_list(
+                [MessageReadStatusAnon(message_id=message.id, owner_hash=owner_hash)]
             )
         else:
             await qb.blank(model=MessageReadStatus).add(
@@ -214,8 +214,8 @@ class MessageService:
                 .first()
             )
             if not existing_status:
-                await anon_qb.add(
-                    MessageReadStatusAnon(message_id=message.id, owner_hash=owner_hash)
+                await anon_qb.add_orm_list(
+                    [MessageReadStatusAnon(message_id=message.id, owner_hash=owner_hash)]
                 )
         else:
             # Check if already marked as read to avoid duplicates

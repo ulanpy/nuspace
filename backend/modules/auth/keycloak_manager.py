@@ -106,18 +106,6 @@ class KeyCloakManager(BaseSettings):
         response.raise_for_status()
         return response.json()
 
-    async def fetch_broker_token(self, access_token: str, provider: str = "google") -> dict:
-        """
-        Fetch the downstream identity provider token (e.g., Google access token)
-        associated with the current Keycloak session.
-        """
-        broker_url = f"{self.KEYCLOAK_URL}/realms/{self.REALM}/broker/{provider}/token"
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                broker_url, headers={"Authorization": f"Bearer {access_token}"}
-            )
-        response.raise_for_status()
-        return response.json()
 
     async def exchange_token_for_idp(
         self,
