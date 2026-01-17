@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, BookOpen, Users, Shield, Info } from "lucide-react";
+import { Calendar, BookOpen, Users, Shield, Info, FileX } from "lucide-react";
 import { AppButton } from "../molecules/buttons/app-button";
 import { ROUTES } from "@/data/routes";
 
@@ -60,6 +60,15 @@ export function AppGrid() {
         "radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(37,99,235,0.15) 50%, rgba(29,78,216,0) 100%)",
       iconColor: "text-blue-500",
       delay: 0.35,
+    },
+    {
+      icon: <FileX className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
+      title: "Rejection Board",
+      href: ROUTES.REJECTION_BOARD,
+      gradient:
+        "radial-gradient(circle, rgba(244,63,94,0.25) 0%, rgba(225,29,72,0.12) 50%, rgba(190,18,60,0) 100%)",
+      iconColor: "text-rose-500",
+      delay: 0.45,
     },
   ];
 

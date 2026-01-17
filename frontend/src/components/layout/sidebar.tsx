@@ -11,6 +11,7 @@ import {
     Info,
     Shield,
     Briefcase,
+    FileX,
     Menu,
     LogOut,
     LogIn,
@@ -45,6 +46,7 @@ const NAV_ITEMS: NavItem[] = [
     { to: ROUTES.COURSES, label: "Courses", icon: <BookOpen size={20} /> },
     { to: ROUTES.COMMUNITIES.ROOT, label: "Communities", icon: <Users size={20} /> },
     { to: ROUTES.OPPORTUNITIES.ROOT, label: "Opportunities Digest", icon: <Briefcase size={20} /> },
+    { to: ROUTES.REJECTION_BOARD, label: "Rejection Board", icon: <FileX size={20} /> },
     { to: ROUTES.CONTACTS, label: "Contacts", icon: <Info size={20} /> },
     { to: ROUTES.SGOTINISH.ROOT, label: "Sgotinish", icon: <Shield size={20} /> },
 ];
