@@ -14,13 +14,13 @@ class RejectionOpportunityType(str, Enum):
     GRAD_SCHOOL = "grad_school"
     OTHER = "other"
 
-class IsAccepted(Enum):
-    YES = True
-    NO = False
+class IsAccepted(str, Enum):
+    YES = "YES"
+    NO = "NO"
 
-class StillTrying(Enum):
-    YES = True
-    NO = False
+class StillTrying(str, Enum):
+    YES = "YES"
+    NO = "NO"
 
 class RejectionBoard(Base):
     __tablename__ = "rejection_board"
