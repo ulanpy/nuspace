@@ -89,16 +89,6 @@
   poll: 0
   register: wireguard_job
 
-- name: Recreate wg-easy service
-  ansible.builtin.command: >
-    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-    up -d wg-easy
-
-  when: (wg_easy_changed | default(false)) | bool or (container_analysis is defined and 'wg-easy' in container_analysis.stdout)
-  async: 600
-  poll: 0
-  register: wg_easy_job
-
 - name: Wait for infra services tasks to finish
   ansible.builtin.async_status:
     jid: "{{ item.ansible_job_id }}"
@@ -115,8 +105,7 @@
       loki_job|default({}),
       alloy_job|default({}),
       alertmanager_job|default({}),
-      wireguard_job|default({}),
-      wg_easy_job|default({})
+      wireguard_job|default({})
     ] | selectattr('ansible_job_id', 'defined') | list }}"
 
 - name: Reconcile docker compose changes (definitions only)

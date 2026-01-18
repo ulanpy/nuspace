@@ -271,22 +271,6 @@ services:
       - net.ipv4.conf.all.src_valid_mark=1
     restart: unless-stopped
 
-  wg-easy:
-    image: weejewel/wg-easy:latest
-    container_name: wg-easy
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    networks:
-      - nuros
-    environment:
-      - WG_HOST=vpn.nuspace.kz
-      - PASSWORD=${WG_EASY_PASSWORD}
-    volumes:
-      - ./wireguard/config:/etc/wireguard
-      - /lib/modules:/lib/modules
-    restart: unless-stopped
-
 networks:
   nuros:
     name: nuspace_nuros
