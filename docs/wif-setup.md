@@ -53,3 +53,26 @@ When WIF is working correctly:
 - `gcloud auth list` shows the impersonated service account
 - Cloud Audit Logs attribute actions to the Ansible service account
 - No manual authentication overrides are needed in workflows
+
+## SSH via IAP (for CI/CD)
+
+We use IAP TCP forwarding so GitHub Actions can reach the VM without opening
+SSH to the public internet.
+
+### How it works
+1. GitHub Actions authenticates to GCP using WIF.
+2. The workflow impersonates the Ansible service account.
+3. IAP authorizes a TCP tunnel to the VM (port 22) using IAM.
+
+### Required IAM and firewall
+- `roles/iap.tunnelResourceAccessor` on the Ansible service account
+- `roles/compute.osLogin` or `roles/compute.osAdminLogin`
+- Firewall rule allowing `tcp:22` from `35.235.240.0/20` (IAP range)
+
+### Example command
+```bash
+gcloud compute ssh nuspace-instance \
+  --project=nuspace2025 \
+  --zone=europe-central2-a \
+  --tunnel-through-iap
+```

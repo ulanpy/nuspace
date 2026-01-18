@@ -136,6 +136,21 @@ resource "google_compute_firewall" "allow_ssh" {
   source_ranges = [var.wireguard_subnet_cidr]
 }
 
+# Allow SSH via IAP only (no public 22).
+# Source range is fixed by Google for IAP TCP forwarding.
+resource "google_compute_firewall" "allow_ssh_iap" {
+  name    = "allow-ssh-iap-ingress"
+  network = google_compute_network.main.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22"]
+  }
+
+  source_ranges = ["35.235.240.0/20"]
+  target_tags   = var.vm_instance_tags
+}
+
 resource "google_compute_firewall" "allow_icmp_any" {
   name    = "allow-icmp-ingress-any"
   network = google_compute_network.main.name

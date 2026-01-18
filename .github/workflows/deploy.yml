@@ -197,7 +197,6 @@ jobs:
           unset ACCESS_TOKEN
 
           # Get VM instance details using the service account
-          VM_IP=$(gcloud compute instances describe nuspace-instance --zone=europe-central2-a --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
           VM_NAME="nuspace-instance"
           # Derive OS Login POSIX username from service account unique ID (sa_<uniqueId>)
           SA_UNIQUE_ID=$(gcloud iam service-accounts describe "$WIF_SERVICE_ACCOUNT" --format="value(uniqueId)" || true)
@@ -209,10 +208,10 @@ jobs:
           echo "Using OS Login username: $SA_USERNAME"
           
           # Prime OS Login SSH certificate and verify access
-          gcloud compute ssh "$VM_NAME" --zone=europe-central2-a --command="true" --ssh-flag="-o ConnectTimeout=10" --ssh-key-expire-after=1h --quiet || { echo "OS Login SSH failed. Ensure oslogin API is enabled and roles/compute.osAdminLogin is granted to $WIF_SERVICE_ACCOUNT" >&2; exit 1; }
+          gcloud compute ssh "$VM_NAME" --zone=europe-central2-a --tunnel-through-iap --command="true" --ssh-flag="-o ConnectTimeout=10" --ssh-key-expire-after=1h --quiet || { echo "OS Login SSH failed. Ensure oslogin API is enabled and roles/compute.osAdminLogin is granted to $WIF_SERVICE_ACCOUNT" >&2; exit 1; }
           DOCKER_USERNAME=$(gcloud secrets versions access latest --secret="docker-username")
           DOCKER_PASSWORD=$(gcloud secrets versions access latest --secret="docker-password")
-          echo "ANSIBLE_HOST=$VM_IP" >> $GITHUB_OUTPUT
+          echo "ANSIBLE_HOST=$VM_NAME" >> $GITHUB_OUTPUT
           echo "VM_NAME=$VM_NAME" >> $GITHUB_OUTPUT
           echo "ANSIBLE_USER=$SA_USERNAME" >> $GITHUB_OUTPUT
           echo "DOCKER_USERNAME=$DOCKER_USERNAME" >> $GITHUB_OUTPUT
@@ -223,7 +222,7 @@ jobs:
         id: container_check
         run: |
           # Test connection and check container status using instance name
-          gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --command="docker ps --format 'table {{.Names}}\t{{.Status}}'" --ssh-flag="-o ConnectTimeout=10" --quiet > /tmp/container_status.txt 2>/dev/null || echo "Connection failed" > /tmp/container_status.txt
+          gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --tunnel-through-iap --command="docker ps --format 'table {{.Names}}\t{{.Status}}'" --ssh-flag="-o ConnectTimeout=10" --quiet > /tmp/container_status.txt 2>/dev/null || echo "Connection failed" > /tmp/container_status.txt
           
           # Check if expected containers are running
           if grep -q "fastapi\|nginx\|redis\|rabbitmq\|prometheus\|grafana\|loki\|alloy\|alertmanager\|wireguard" /tmp/container_status.txt; then
@@ -268,7 +267,7 @@ jobs:
                     ansible_host: ${{ steps.secrets.outputs.ANSIBLE_HOST }}
                     ansible_user: ${{ steps.secrets.outputs.ANSIBLE_USER }}
                     ansible_ssh_private_key_file: ~/.ssh/google_compute_engine
-                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o CertificateFile=~/.ssh/google_compute_engine-cert.pub'
+                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o CertificateFile=~/.ssh/google_compute_engine-cert.pub -o ProxyCommand="gcloud compute start-iap-tunnel %h 22 --listen-on-stdin --project ${{ env.GCP_PROJECT }} --zone europe-central2-a"'
                     ansible_become: yes
                     ansible_become_method: sudo
                     ansible_remote_tmp: /tmp
@@ -282,7 +281,7 @@ jobs:
           ANSIBLE_LOCAL_TMP: /tmp
         run: |
           # Test OS Login connection and prepare environment
-          gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --command="echo 'OS Login configured'" --ssh-flag="-o ConnectTimeout=10" --quiet || true
+          gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --tunnel-through-iap --command="echo 'OS Login configured'" --ssh-flag="-o ConnectTimeout=10" --quiet || true
           
           # Run the Ansible playbook
           cd ansible && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook playbook.yml \

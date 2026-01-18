@@ -89,3 +89,11 @@ resource "google_project_service" "oslogin_api" {
   service            = "oslogin.googleapis.com"
   disable_on_destroy = false
 }
+
+# Enable IAP for TCP forwarding (used by gcloud --tunnel-through-iap).
+# This allows GitHub Actions (via WIF + SA) to reach SSH without opening 22 publicly.
+resource "google_project_service" "iap_api" {
+  project            = var.project_id
+  service            = "iap.googleapis.com"
+  disable_on_destroy = false
+}

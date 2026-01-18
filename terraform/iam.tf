@@ -162,6 +162,14 @@ resource "google_project_iam_member" "ansible_os_admin_login" {
   member  = "serviceAccount:${google_service_account.ansible_service_account.email}"
 }
 
+# Allow Ansible SA to use IAP TCP forwarding for SSH.
+# This is the auth side of IAP SSH (gcloud --tunnel-through-iap).
+resource "google_project_iam_member" "ansible_iap_tunnel" {
+  project = var.project_id
+  role    = "roles/iap.tunnelResourceAccessor"
+  member  = "serviceAccount:${google_service_account.ansible_service_account.email}"
+}
+
 # Allow the VM's attached service account to access Secret Manager for secrets access
 resource "google_project_iam_member" "vm_secret_accessor" {
   project = var.project_id
