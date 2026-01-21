@@ -1,8 +1,8 @@
-from datetime import date, datetime 
+from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import Column, Date, DateTime, Enum as SAEnum, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Column, DateTime, Enum as SAEnum, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.core.database.models.base import Base
 
@@ -26,7 +26,6 @@ class RejectionBoard(Base):
     __tablename__ = "rejection_board"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    nickname: Mapped[str] = mapped_column(String(128), nullable=False)
     title: Mapped[str] = mapped_column(String(256), nullable=False)
     reflection: Mapped[str] = mapped_column(Text, nullable=False)
     rejection_opportunity_type: Mapped[RejectionOpportunityType] = mapped_column(

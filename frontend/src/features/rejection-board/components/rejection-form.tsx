@@ -27,6 +27,9 @@ type Props = {
   resetToken?: number;
 };
 
+const TITLE_MAX_LENGTH = 120;
+const REFLECTION_MAX_LENGTH = 800;
+
 const DEFAULT_FORM: RejectionBoardCreatePayload = {
   title: "",
   reflection: "",
@@ -69,8 +72,16 @@ export const RejectionBoardForm = ({
       setError("Please add a short title.");
       return;
     }
+    if (form.title.trim().length > TITLE_MAX_LENGTH) {
+      setError(`Title must be ${TITLE_MAX_LENGTH} characters or fewer.`);
+      return;
+    }
     if (!form.reflection.trim()) {
       setError("Reflection is required.");
+      return;
+    }
+    if (form.reflection.trim().length > REFLECTION_MAX_LENGTH) {
+      setError(`Reflection must be ${REFLECTION_MAX_LENGTH} characters or fewer.`);
       return;
     }
     setError(null);
@@ -90,7 +101,15 @@ export const RejectionBoardForm = ({
           onChange={(event) => handleChange("title", event.target.value)}
           placeholder="Short summary of the outcome"
           disabled={disabled || isSubmitting}
+          className="rounded-xl"
+          maxLength={TITLE_MAX_LENGTH}
         />
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+          <span>Keep it short and specific.</span>
+          <span>
+            {form.title.length}/{TITLE_MAX_LENGTH}
+          </span>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -99,12 +118,16 @@ export const RejectionBoardForm = ({
           value={form.reflection}
           onChange={(event) => handleChange("reflection", event.target.value)}
           placeholder="What happened? What did you learn? Keep it kind and anonymous."
-          className="min-h-[140px]"
+          className="min-h-[140px] rounded-xl"
           disabled={disabled || isSubmitting}
+          maxLength={REFLECTION_MAX_LENGTH}
         />
-        <p className="text-xs text-muted-foreground">
-          Nickname is generated automatically. Please avoid personal details.
-        </p>
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+          <span>Your story is posted completely anonymously.</span>
+          <span>
+            {form.reflection.length}/{REFLECTION_MAX_LENGTH}
+          </span>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -115,7 +138,7 @@ export const RejectionBoardForm = ({
             onValueChange={(value) => handleChange("rejection_opportunity_type", value)}
             disabled={disabled || isSubmitting}
           >
-            <SelectTrigger>
+            <SelectTrigger className="rounded-xl">
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
@@ -130,20 +153,22 @@ export const RejectionBoardForm = ({
 
         <div className="space-y-2">
           <Label>Outcome</Label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 bg-muted/50 p-1 rounded-xl">
             <Button
               type="button"
-              variant={form.is_accepted === "NO" ? "default" : "outline"}
+              variant={form.is_accepted === "NO" ? "default" : "ghost"}
               onClick={() => handleChange("is_accepted", "NO")}
               disabled={disabled || isSubmitting}
+              className="rounded-lg h-9 text-xs"
             >
               Rejected
             </Button>
             <Button
               type="button"
-              variant={form.is_accepted === "YES" ? "default" : "outline"}
+              variant={form.is_accepted === "YES" ? "default" : "ghost"}
               onClick={() => handleChange("is_accepted", "YES")}
               disabled={disabled || isSubmitting}
+              className="rounded-lg h-9 text-xs"
             >
               Accepted
             </Button>
@@ -153,20 +178,22 @@ export const RejectionBoardForm = ({
 
       <div className="space-y-2">
         <Label>Still trying for it?</Label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 bg-muted/50 p-1 rounded-xl">
           <Button
             type="button"
-            variant={form.still_trying === "YES" ? "default" : "outline"}
+            variant={form.still_trying === "YES" ? "default" : "ghost"}
             onClick={() => handleChange("still_trying", "YES")}
             disabled={disabled || isSubmitting}
+            className="rounded-lg h-9 text-xs"
           >
             Still trying
           </Button>
           <Button
             type="button"
-            variant={form.still_trying === "NO" ? "default" : "outline"}
+            variant={form.still_trying === "NO" ? "default" : "ghost"}
             onClick={() => handleChange("still_trying", "NO")}
             disabled={disabled || isSubmitting}
+            className="rounded-lg h-9 text-xs"
           >
             Moved on
           </Button>
@@ -177,11 +204,15 @@ export const RejectionBoardForm = ({
         <p className="text-sm text-destructive">{error}</p>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">
+      <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-4 border-t mt-6">
+        <p className="text-xs text-muted-foreground text-center sm:text-left">
           Be honest, be respectful. We hide all personal identifiers.
         </p>
-        <Button type="submit" disabled={disabled || isSubmitting}>
+        <Button 
+          type="submit" 
+          disabled={disabled || isSubmitting}
+          className="rounded-full px-8 w-full sm:w-auto"
+        >
           {isSubmitting ? "Sharing..." : "Share your story"}
         </Button>
       </div>

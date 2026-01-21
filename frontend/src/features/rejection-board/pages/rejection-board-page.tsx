@@ -1,13 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
-import { FileX, Search, Sparkles, Users } from "lucide-react";
+import { MessageSquarePlus, Info } from "lucide-react";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { Button } from "@/components/atoms/button";
-import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
-import { Badge } from "@/components/atoms/badge";
 import {
   Card,
   CardContent,
@@ -15,16 +13,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/atoms/card";
-import { LoginModal } from "@/components/molecules/login-modal";
+import { Modal } from "@/components/atoms/modal";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/atoms/select";
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/hooks/use-user";
 import { queryClient } from "@/utils/query-client";
 import { createRejectionPost, fetchRejectionBoard } from "../api";
 import {
+  REJECTION_TYPES,
   RejectionBoardCreatePayload,
   RejectionBoardEntry,
   RejectionBoardFilters,
   RejectionBoardListResponse,
+  formatRejectionType,
 } from "../types";
 import { RejectionBoardForm } from "../components/rejection-form";
 import { RejectionCard } from "../components/rejection-card";
@@ -32,17 +38,17 @@ import { RejectionCard } from "../components/rejection-card";
 const PAGE_SIZE = 12;
 
 export default function RejectionBoardPage() {
-  const { user } = useUser();
   const { toast } = useToast();
-  const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const [nicknameInput, setNicknameInput] = useState("");
-  const [latestNickname, setLatestNickname] = useState<string | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [resetToken, setResetToken] = useState(0);
+  const [targetPostId, setTargetPostId] = useState<number | null>(null);
+  const [autoScrollDone, setAutoScrollDone] = useState(false);
 
   const [filters, setFilters] = useState<RejectionBoardFilters>({
-    page: 1,
     size: PAGE_SIZE,
-    nickname: undefined,
+    rejection_opportunity_type: undefined,
+    is_accepted: undefined,
+    still_trying: undefined,
   });
 
   const {
@@ -54,7 +60,15 @@ export default function RejectionBoardPage() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery<RejectionBoardListResponse>({
-    queryKey: ["rejection-board", { nickname: filters.nickname, size: filters.size }],
+    queryKey: [
+      "rejection-board",
+      {
+        size: filters.size,
+        rejection_opportunity_type: filters.rejection_opportunity_type,
+        is_accepted: filters.is_accepted,
+        still_trying: filters.still_trying,
+      },
+    ],
     queryFn: ({ pageParam = 1 }) =>
       fetchRejectionBoard({ ...filters, page: pageParam }),
     initialPageParam: 1,
@@ -70,29 +84,52 @@ export default function RejectionBoardPage() {
   );
 
   const totalPosts = data?.pages?.[0]?.total ?? posts.length;
-  const uniqueNicknames = useMemo(
-    () => new Set(posts.map((post) => post.nickname)).size,
-    [posts],
-  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const match = window.location.hash.match(/post-(\d+)/);
+    if (match) {
+      setTargetPostId(Number(match[1]));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!targetPostId || autoScrollDone) return;
+    const exists = posts.some((post) => post.id === targetPostId);
+    if (exists) {
+      const element = document.getElementById(`post-${targetPostId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        setAutoScrollDone(true);
+      }
+      return;
+    }
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+      return;
+    }
+    setAutoScrollDone(true);
+  }, [
+    targetPostId,
+    autoScrollDone,
+    posts,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  ]);
 
   const createMutation = useMutation({
     mutationFn: createRejectionPost,
-    onSuccess: (post) => {
-      setLatestNickname(post.nickname);
+    onSuccess: () => {
       setResetToken((prev) => prev + 1);
       queryClient.invalidateQueries({ queryKey: ["rejection-board"] });
       toast({
         title: "Story shared",
-        description: `Your anonymous nickname is ${post.nickname}.`,
+        description: "Your story has been posted anonymously.",
         variant: "success",
       });
     },
-    onError: (err: any) => {
-      const status = err?.response?.status;
-      if (status === 401) {
-        setLoginModalOpen(true);
-        return;
-      }
+    onError: () => {
       toast({
         title: "Could not share",
         description: "Please try again in a moment.",
@@ -102,256 +139,248 @@ export default function RejectionBoardPage() {
   });
 
   const handleSubmit = (payload: RejectionBoardCreatePayload) => {
-    if (!user) {
-      setLoginModalOpen(true);
-      return;
-    }
-    createMutation.mutate(payload);
+    createMutation.mutate(payload, {
+      onSuccess: () => {
+        setIsFormOpen(false);
+      },
+    });
   };
-
-  const applyNicknameFilter = () => {
-    const next = nicknameInput.trim();
-    setFilters((prev) => ({
-      ...prev,
-      nickname: next.length ? next : undefined,
-    }));
-  };
-
-  const clearNicknameFilter = () => {
-    setNicknameInput("");
-    setFilters((prev) => ({ ...prev, nickname: undefined }));
-  };
-
-  const handleNicknameClick = (nickname: string) => {
-    setNicknameInput(nickname);
-    setFilters((prev) => ({ ...prev, nickname }));
-  };
-
-  const handleLogin = () => {
-    setLoginModalOpen(false);
-  };
-
-  const hasNicknameFilter = Boolean(filters.nickname);
 
   return (
     <MotionWrapper>
-      <div className="space-y-8">
-        <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-primary/5 via-background to-rose-500/10 p-6 sm:p-8">
-          <div className="absolute -top-16 right-10 h-44 w-44 rounded-full bg-rose-500/10 blur-3xl" />
-          <div className="absolute -bottom-16 left-6 h-44 w-44 rounded-full bg-amber-400/10 blur-3xl" />
-          <div className="relative space-y-4">
-            <Badge className="w-fit bg-background/80 text-foreground border border-border/60">
-              <Sparkles className="mr-2 h-3.5 w-3.5" />
-              Community space
-            </Badge>
-            <div className="space-y-2">
-              <h1 className="text-3xl sm:text-4xl font-bold">
-                Rejection Board
-              </h1>
-              <p className="text-sm sm:text-base text-muted-foreground">
-                LinkedIn is full of highlight reels. This board is the other half of the story:
-                internship, research, and job attempts that did not work out, plus what they taught
-                you. Share the effort, the rejection, and the lesson so others see that success is
-                built on many no's. Anonymous by default.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1">
-                <FileX className="h-3.5 w-3.5 text-rose-500" />
-                Internship + job realities
-              </div>
-              <div className="flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1">
-                <Users className="h-3.5 w-3.5 text-emerald-500" />
-                Find threads by nickname
-              </div>
-              <div className="flex items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1">
-                Anonymous by design
-              </div>
-            </div>
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Rejection Board
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Share your rejection stories anonymously and what they taught you.
+            </p>
           </div>
-        </section>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setIsFormOpen(true)}
+              className="rounded-full px-6 gap-2"
+            >
+              <MessageSquarePlus className="h-4 w-4" />
+              Share Story
+            </Button>
+          </div>
+        </div>
 
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-          <Card className="border-primary/20 shadow-sm">
-            <CardHeader>
-              <CardTitle>Share your story</CardTitle>
-              <CardDescription>
-                Tell the truth about the outcome and what you learned. We keep it anonymous.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <RejectionBoardForm
-                onSubmit={handleSubmit}
-                isSubmitting={createMutation.isPending}
-                disabled={createMutation.isPending}
-                resetToken={resetToken}
-              />
-            </CardContent>
-          </Card>
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {totalPosts} anonymous posts.
+              </p>
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+                <div className="space-y-1 w-full sm:w-auto">
+                  <Label className="text-[11px] text-muted-foreground">Opportunity</Label>
+                  <Select
+                    value={filters.rejection_opportunity_type ?? "all"}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        rejection_opportunity_type: value === "all" ? undefined : value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-full rounded-full text-xs sm:w-[160px]">
+                      <SelectValue placeholder="All types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All types</SelectItem>
+                      {REJECTION_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {formatRejectionType(type)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 w-full sm:w-auto">
+                  <Label className="text-[11px] text-muted-foreground">Outcome</Label>
+                  <Select
+                    value={filters.is_accepted ?? "all"}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        is_accepted: value === "all" ? undefined : value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-full rounded-full text-xs sm:w-[130px]">
+                      <SelectValue placeholder="Any outcome" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Any outcome</SelectItem>
+                      <SelectItem value="NO">Rejected</SelectItem>
+                      <SelectItem value="YES">Accepted</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 w-full sm:w-auto">
+                  <Label className="text-[11px] text-muted-foreground">Status</Label>
+                  <Select
+                    value={filters.still_trying ?? "all"}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        still_trying: value === "all" ? undefined : value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-full rounded-full text-xs sm:w-[130px]">
+                      <SelectValue placeholder="Any status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Any status</SelectItem>
+                      <SelectItem value="YES">Still trying</SelectItem>
+                      <SelectItem value="NO">Moved on</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-full sm:w-auto">
+                  <div className="h-[14px] sm:h-[14px]" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-full rounded-full px-3 text-[11px] sm:w-auto"
+                    onClick={() =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        rejection_opportunity_type: undefined,
+                        is_accepted: undefined,
+                        still_trying: undefined,
+                      }))
+                    }
+                  >
+                    Clear filters
+                  </Button>
+                </div>
+              </div>
+            </div>
 
-          <div className="space-y-4">
-            <Card className="border-border/60">
-              <CardHeader>
-                <CardTitle className="text-lg">How it works</CardTitle>
-                <CardDescription>
-                  We hash your user id into a nickname. The same nickname is used for every post.
-                </CardDescription>
+            {targetPostId ? (
+              <div className="flex flex-col gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  You are viewing a linked story. All posts are still below.
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-full px-3 text-xs"
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      window.history.replaceState({}, "", window.location.pathname);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }
+                    setTargetPostId(null);
+                    setAutoScrollDone(true);
+                  }}
+                >
+                  Back to latest
+                </Button>
+              </div>
+            ) : null}
+
+            <div className="grid gap-4">
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, idx) => (
+                  <div
+                    key={`skeleton-${idx}`}
+                    className="h-40 rounded-2xl border border-border/60 bg-muted/40 animate-pulse"
+                  />
+                ))
+              ) : isError ? (
+                <div className="rounded-2xl border border-border/60 bg-muted/30 p-6 text-sm text-muted-foreground">
+                  <p>We could not load the board right now.</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 rounded-full"
+                    onClick={() => refetch()}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              ) : posts.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+                  No stories yet. Be the first to share.
+                </div>
+              ) : (
+                posts.map((post) => (
+                  <RejectionCard
+                    key={post.id}
+                    post={post}
+                    isHighlighted={post.id === targetPostId}
+                  />
+                ))
+              )}
+            </div>
+
+            {hasNextPage ? (
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                  className="rounded-full"
+                >
+                  {isFetchingNextPage ? "Loading..." : "Load more"}
+                </Button>
+              </div>
+            ) : null}
+          </div>
+
+          <aside className="space-y-4">
+            <Card className="border-border/60 shadow-none">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Info className="h-4 w-4 text-primary" />
+                  How it works
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  LinkedIn is full of highlight reels. This board is the other half of the story.
+                </p>
                 <div className="flex items-start gap-2">
-                  <span className="mt-1 h-2 w-2 rounded-full bg-primary/70" />
-                  Posts are public, but usernames are never exposed.
+                  <div className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/60 shrink-0" />
+                  <span>Posts are completely anonymous. We don't link them to your account.</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="mt-1 h-2 w-2 rounded-full bg-primary/70" />
-                  Click a nickname to see all posts from the same person.
+                  <div className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/60 shrink-0" />
+                  <span>Share your experience to help others see that success is built on many no's.</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="mt-1 h-2 w-2 rounded-full bg-primary/70" />
-                  Keep it kind. Share what you learned, not who rejected you.
+                  <div className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/60 shrink-0" />
+                  <span>Be kind and respectful. Focus on the lesson, not the entity that rejected you.</span>
                 </div>
               </CardContent>
             </Card>
-
-            <Card className="border-dashed border-border/60 bg-muted/40">
-              <CardHeader>
-                <CardTitle className="text-lg">Your anonymous nickname</CardTitle>
-                <CardDescription>
-                  We show this after you share your first post.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-wrap items-center gap-2">
-                {latestNickname ? (
-                  <>
-                    <Badge className="bg-foreground/5 text-foreground border border-border/60">
-                      {latestNickname}
-                    </Badge>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleNicknameClick(latestNickname)}
-                    >
-                      View my posts
-                    </Button>
-                  </>
-                ) : (
-                  <span className="text-sm text-muted-foreground">
-                    Share a post to reveal your nickname.
-                  </span>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        <section className="space-y-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-1">
-              <h2 className="text-xl font-semibold">Latest stories</h2>
-              <p className="text-sm text-muted-foreground">
-                {totalPosts} posts from {uniqueNicknames} anonymous threads.
-              </p>
-            </div>
-
-            <form
-              className="flex w-full flex-col gap-2 sm:flex-row sm:items-end lg:w-auto"
-              onSubmit={(event) => {
-                event.preventDefault();
-                applyNicknameFilter();
-              }}
-            >
-              <div className="space-y-2 sm:min-w-[240px]">
-                <Label>Filter by nickname</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={nicknameInput}
-                    onChange={(event) => setNicknameInput(event.target.value)}
-                    placeholder="anon-xxxxxxxxxx"
-                    className="pl-9"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" type="submit">
-                  Apply
-                </Button>
-                {hasNicknameFilter ? (
-                  <Button variant="ghost" type="button" onClick={clearNicknameFilter}>
-                    Clear
-                  </Button>
-                ) : null}
-              </div>
-            </form>
-          </div>
-
-          {hasNicknameFilter ? (
-            <div className="flex items-center gap-2 text-xs">
-              <Badge className="bg-primary/10 text-primary">
-                Filtered: {filters.nickname}
-              </Badge>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-xs text-muted-foreground"
-                onClick={clearNicknameFilter}
-              >
-                Clear filter
-              </Button>
-            </div>
-          ) : null}
-
-          <div className="grid gap-4">
-            {isLoading ? (
-              Array.from({ length: 4 }).map((_, idx) => (
-                <div
-                  key={`skeleton-${idx}`}
-                  className="h-40 rounded-2xl border border-border/60 bg-muted/40 animate-pulse"
-                />
-              ))
-            ) : isError ? (
-              <div className="rounded-2xl border border-border/60 bg-muted/30 p-6 text-sm text-muted-foreground">
-                <p>We could not load the board right now.</p>
-                <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>
-                  Retry
-                </Button>
-              </div>
-            ) : posts.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-                No stories yet. Be the first to share.
-              </div>
-            ) : (
-              posts.map((post) => (
-                <RejectionCard
-                  key={post.id}
-                  post={post}
-                  onNicknameClick={handleNicknameClick}
-                />
-              ))
-            )}
-          </div>
-
-          {hasNextPage ? (
-            <div className="flex justify-center">
-              <Button
-                variant="outline"
-                onClick={() => fetchNextPage()}
-                disabled={isFetchingNextPage}
-              >
-                {isFetchingNextPage ? "Loading..." : "Load more"}
-              </Button>
-            </div>
-          ) : null}
-        </section>
+          </aside>
+        </div>
       </div>
 
-      <LoginModal
-        isOpen={loginModalOpen}
-        onClose={() => setLoginModalOpen(false)}
-        onSuccess={handleLogin}
-        title="Login required"
-        message="Please sign in to share your story."
-      />
+      <Modal
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        title="Share your story"
+        description="Tell the truth about the outcome and what you learned. Absolute anonymity guaranteed."
+        className="max-w-xl"
+      >
+        <div className="pt-2">
+          <RejectionBoardForm
+            onSubmit={handleSubmit}
+            isSubmitting={createMutation.isPending}
+            disabled={createMutation.isPending}
+            resetToken={resetToken}
+          />
+        </div>
+      </Modal>
     </MotionWrapper>
   );
 }

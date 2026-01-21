@@ -16,8 +16,14 @@ class RejectionBoardRepository:
     ) -> tuple[list[RejectionBoard], int]:
         stmt = select(RejectionBoard)
 
-        if flt.nickname:
-            stmt = stmt.where(RejectionBoard.nickname == flt.nickname)
+        if flt.rejection_opportunity_type:
+            stmt = stmt.where(
+                RejectionBoard.rejection_opportunity_type == flt.rejection_opportunity_type
+            )
+        if flt.is_accepted:
+            stmt = stmt.where(RejectionBoard.is_accepted == flt.is_accepted)
+        if flt.still_trying:
+            stmt = stmt.where(RejectionBoard.still_trying == flt.still_trying)
 
         count_stmt = select(func.count()).select_from(stmt.order_by(None).subquery())
         total_result = await self.db.execute(count_stmt)
@@ -35,10 +41,9 @@ class RejectionBoardRepository:
         self,
         *,
         payload: schemas.RejectionBoardCreateDTO,
-        nickname: str,
     ) -> RejectionBoard:
         data = payload.model_dump()
-        record = RejectionBoard(**data, nickname=nickname)
+        record = RejectionBoard(**data)
         self.db.add(record)
         await self.db.commit()
         await self.db.refresh(record)

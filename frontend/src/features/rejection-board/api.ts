@@ -10,7 +10,11 @@ export const fetchRejectionBoard = async (
   filters: RejectionBoardFilters,
 ): Promise<RejectionBoardListResponse> => {
   const params = new URLSearchParams();
-  if (filters.nickname) params.set("nickname", filters.nickname);
+  if (filters.rejection_opportunity_type) {
+    params.set("rejection_opportunity_type", filters.rejection_opportunity_type);
+  }
+  if (filters.is_accepted) params.set("is_accepted", filters.is_accepted);
+  if (filters.still_trying) params.set("still_trying", filters.still_trying);
   if (filters.page) params.set("page", String(filters.page));
   if (filters.size) params.set("size", String(filters.size));
 

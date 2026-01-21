@@ -8,7 +8,6 @@ from backend.core.database.models import RejectionOpportunityType, IsAccepted, S
 
 class RejectionBoardBase(BaseModel):
     id: int
-    nickname: str
     title: str
     reflection: str
     rejection_opportunity_type: RejectionOpportunityType
@@ -23,16 +22,16 @@ class RejectionBoardBase(BaseModel):
 
 
 class RejectionBoardCreateDTO(BaseModel):
-    title: str
-    reflection: str
+    title: str = Field(max_length=120)
+    reflection: str = Field(max_length=800)
     rejection_opportunity_type: RejectionOpportunityType
     is_accepted: IsAccepted
     still_trying: StillTrying
 
 
 class RejectionBoardUpdateDTO(BaseModel):
-    title: str | None = None
-    reflection: str | None = None
+    title: str | None = Field(default=None, max_length=120)
+    reflection: str | None = Field(default=None, max_length=800)
     rejection_opportunity_type: RejectionOpportunityType | None = None
     is_accepted: IsAccepted | None = None
     still_trying: StillTrying | None = None
@@ -52,6 +51,10 @@ class RejectionBoardListResponse(BaseModel):
 
 
 class RejectionBoardFilter(BaseModel):
-    nickname: str | None = Field(default=None, description="Filter by nickname")
+    rejection_opportunity_type: RejectionOpportunityType | None = Field(
+        default=None, description="Filter by opportunity type"
+    )
+    is_accepted: IsAccepted | None = Field(default=None, description="Filter by outcome")
+    still_trying: StillTrying | None = Field(default=None, description="Filter by still trying flag")
     page: int = Field(default=1, ge=1, description="Page number (1-indexed)")
     size: int = Field(default=15, ge=1, le=100, description="Page size")

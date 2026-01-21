@@ -15,7 +15,6 @@ export type StillTrying = YesNo;
 
 export type RejectionBoardEntry = {
   id: number;
-  nickname: string;
   title: string;
   reflection: string;
   rejection_opportunity_type: RejectionOpportunityType;
@@ -34,7 +33,9 @@ export type RejectionBoardCreatePayload = {
 };
 
 export type RejectionBoardFilters = {
-  nickname?: string;
+  rejection_opportunity_type?: RejectionOpportunityType;
+  is_accepted?: IsAccepted;
+  still_trying?: StillTrying;
   page?: number;
   size?: number;
 };
