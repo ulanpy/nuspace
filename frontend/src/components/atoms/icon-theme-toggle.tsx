@@ -36,7 +36,7 @@ export function IconThemeToggle({ className, collapsed = false, size }: IconThem
                 size="icon"
                 className={cn(
                     "h-8 w-8 text-muted-foreground hover:text-foreground transition-colors overflow-hidden",
-                    collapsed && "h-7 w-7",
+                    collapsed && "h-8 w-8",
                     className
                 )}
                 title="Toggle theme"
@@ -53,7 +53,7 @@ export function IconThemeToggle({ className, collapsed = false, size }: IconThem
             onClick={toggleTheme}
             className={cn(
                 "h-8 w-8 text-muted-foreground hover:text-foreground transition-colors overflow-hidden",
-                collapsed && "h-7 w-7",
+                collapsed && "h-8 w-8",
                 className
             )}
             title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
