@@ -67,13 +67,16 @@ function NuspaceLogo({ collapsed = false }: NuspaceLogoProps) {
         : (NuspaceLogoIcon as { src: string }).src;
 
     return (
-        <div className="flex items-center gap-2">
+        <div className={cn("flex items-center gap-2 overflow-hidden", collapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
             <img
                 src={logoSrc}
                 alt="Nuspace Logo"
                 className="w-7 h-7 object-contain"
             />
-            <span className="font-bold text-xl whitespace-nowrap">Nuspace</span>
+    
+            <span className="font-bold text-xl whitespace-nowrap transition-all duration-300 ease-in-out">
+                Nuspace
+            </span>
         </div>
     );
 }
@@ -104,14 +107,24 @@ function SidebarNav({ onNavigate, collapsed = false }: SidebarNavProps) {
                     title={collapsed ? item.label : undefined}
                     className={cn(
                         "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200",
-                        collapsed ? "px-2 py-2.5 justify-center" : "px-3 py-2.5",
+                        collapsed ? "px-3 py-2.5 overflow-hidden" : "px-3 py-2.5",
                         isActive(item.to)
                             ? "bg-primary/10 text-primary"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     )}
                 >
                     <span className="flex-shrink-0">{item.icon}</span>
-                    {!collapsed && <span>{item.label}</span>}
+                    {
+                        <span
+                            className={cn(
+                                "whitespace-nowrap transition-all duration-300 ease-in-out",
+                                collapsed
+                                    ? "w-0 opacity-0 translate-x-[-10px]"
+                                    : "w-auto opacity-100 translate-x-0"
+                            )}
+                        >
+                            {item.label}
+                        </span>}
                 </Link>
             ))}
         </nav>
@@ -136,6 +149,7 @@ function SidebarUserFooter({ collapsed = false }: SidebarUserFooterProps) {
     const authActionLabel = user ? (isLoggingOut ? "Logging out..." : "Logout") : "Login";
     const AuthIcon = user ? LogOut : LogIn;
 
+    /*
     if (collapsed) {
         return (
             <div className="border-t pt-4 mt-auto flex flex-col items-center gap-2">
@@ -169,24 +183,31 @@ function SidebarUserFooter({ collapsed = false }: SidebarUserFooterProps) {
             </div>
         );
     }
+    */
 
     return (
-        <div className="border-t pt-4 mt-auto">
-            <div className="flex items-center gap-3 px-2 mb-3">
-                {displayUser.picture ? (
-                    <img
-                        src={displayUser.picture}
-                        alt={displayUser.given_name || "User"}
-                        className="w-10 h-10 rounded-full flex-shrink-0"
-                    />
-                ) : (
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-primary font-semibold">
-                            {(displayUser.given_name?.[0] || "U").toUpperCase()}
-                        </span>
-                    </div>
-                )}
-                <div className="flex-1 min-w-0">
+        <div className="border-t pt-4 mt-auto transition-all duration-300 gap-2">
+            <div className="flex items-center gap-3 mb-3 overflow-hidden">
+                <div className="shrink-0 flex items-center justify-center">
+                    {displayUser.picture ? (
+                        <img
+                            src={displayUser.picture}
+                            alt={displayUser.given_name || "User"}
+                            className="w-10 h-10 rounded-full flex-shrink-0"
+                        />
+                    ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span className="text-primary font-semibold">
+                                {(displayUser.given_name?.[0] || "U").toUpperCase()}
+                            </span>
+                        </div>
+                    )}
+                </div>
+                
+                <div className={cn(
+                    "min-w-0 flex flex-col justify-center overflow-hidden transition-all duration-300" /* -flex-1 */,
+                    collapsed ? "w-0 opacity-0" : "w-full opacity-100")}
+                >
                     <p className="font-medium text-sm truncate">
                         {displayUser.given_name} {displayUser.family_name || ""}
                     </p>
@@ -195,15 +216,25 @@ function SidebarUserFooter({ collapsed = false }: SidebarUserFooterProps) {
                     </p>
                 </div>
             </div>
+
             <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
+                className="flex items-center gap-3 justify-start text-muted-foreground hover:text-destructive overflow-hidden w-full transition-all"
                 onClick={handleAuthAction}
                 disabled={isLoggingOut}
             >
-                <AuthIcon size={18} />
-                {authActionLabel}
+                <div className="shrink-0 flex items-center justify-center">
+                    <AuthIcon className="flex-shrink-0" size={18} />
+                </div>
+                <span className={cn(
+                    "whitespace-nowrap transition-all duration-300 ease-in-out",
+                    collapsed 
+                        ? "w-0 opacity-0" 
+                        : "w-auto opacity-100"
+                )}>
+                    {authActionLabel}
+                </span>
             </Button>
         </div>
     );
@@ -280,11 +311,11 @@ export function Sidebar() {
                 )}
             >
                 {/* Header with logo and theme toggle */}
-                <div className={cn("border-b flex items-center justify-between p-6")}>
+                <div className={cn("flex items-center h-[72px] px-3 border-b transition-all overflow-hidden shrink-0", isCollapsed ? "justify-center p-2" : "justify-between p-6")}>
                     <NuspaceLogo collapsed={isCollapsed} />
-                    <div className="flex items-center gap-2 shrink-0">
-                        <IconThemeToggle collapsed={isCollapsed} />
+                    <div className="flex items-center gap-2 shrink-0 transition-all duration-300">
                         {!isCollapsed && <SnowToggle />}
+                        <IconThemeToggle collapsed={isCollapsed} />
                     </div>
                 </div>
 
@@ -294,7 +325,7 @@ export function Sidebar() {
                 </div>
 
                 {/* User footer */}
-                <div className={cn("p-4")}>
+                <div className="transition-all p-3">
                     <SidebarUserFooter collapsed={isCollapsed} />
                 </div>
 
