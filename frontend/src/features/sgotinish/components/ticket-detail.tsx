@@ -169,7 +169,15 @@ export default function TicketDetail({ ticketKey }: TicketDetailProps) {
       queryClient.invalidateQueries({
         queryKey: ["sg-tickets"]
       });
+      queryClient.invalidateQueries({
+        queryKey: ["student-tickets"]
+      });
       setStatusEditOpen(false);
+      toast({
+        title: "Status updated",
+        description: "The ticket status has been successfully updated.",
+        variant: "success",
+      });
     },
   });
 
@@ -210,14 +218,16 @@ export default function TicketDetail({ ticketKey }: TicketDetailProps) {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
 
         {/* Status Definition Tip */}
-        <div className="mb-6 flex items-start gap-2 rounded-md border border-amber-100 bg-amber-50/70 p-3 text-xs text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
-          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-          <p className="leading-snug">
-            {getStatusDefinition(ticket.status)}
-          </p>
-        </div>
+        {!isSgMember && (
+          <div className="mb-6 flex items-start gap-2 rounded-md border border-amber-100 bg-amber-50/70 p-3 text-xs text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
+            <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+            <p className="leading-snug">
+              {getStatusDefinition(ticket.status)}
+            </p>
+          </div>
+        )}
 
-        {ticket.is_anonymous && (
+        {!isSgMember && ticket.is_anonymous && (
           <div className="mb-6 rounded-md border border-emerald-100 bg-emerald-50/70 p-4 text-xs text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-200">
             <div className="flex items-start gap-2">
               <Lock className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600 dark:text-emerald-300" />

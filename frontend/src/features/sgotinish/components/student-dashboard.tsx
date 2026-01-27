@@ -71,7 +71,7 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
     refetch,
   } = useInfiniteQuery({
     queryKey: [
-      "tickets",
+      "student-tickets",
       {
         statusFilter,
         categoryFilter,
