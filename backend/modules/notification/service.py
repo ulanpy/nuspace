@@ -60,6 +60,9 @@ class NotificationService(AbstractNotificationService):
 
     async def notify_ticket_updated(self, ticket: Ticket):
         """Notifies user about a ticket updated."""
+        if ticket.is_anonymous or not ticket.author:
+            return
+
         notifications_data = [
             RequestNotiification(
                 title="Your ticket status has been updated",
@@ -85,7 +88,7 @@ class NotificationService(AbstractNotificationService):
         if message.is_from_sg_member:
             sender = message.conversation.sg_member
             recipient = ticket.author
-            if not (recipient and recipient.telegram_id and sender):
+            if ticket.is_anonymous or not (recipient and recipient.telegram_id and sender):
                 return
 
 

@@ -7,6 +7,7 @@ import { Textarea } from "@/components/atoms/textarea";
 import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/atoms/select";
 import { Label } from "@/components/atoms/label";
 import { Switch } from "@/components/atoms/switch";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/atoms/tooltip";
 import { Send, GraduationCap, Building2, Wrench, AlertTriangle, Lightbulb, HelpCircle, Check, Lock } from "lucide-react";
 import * as RadixSelect from "@radix-ui/react-select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -198,9 +199,31 @@ export default function CreateTicketModal({ isOpen, onClose, onSuccess }: Create
           {/* Anonymous Option */}
           <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">
             <div className="space-y-1">
-              <Label htmlFor="anonymous" className="text-sm font-medium">
-                Submit anonymously
-              </Label>
+              <div className="flex items-center gap-1.5">
+                <Label htmlFor="anonymous" className="text-sm font-medium">
+                  Submit anonymously
+                </Label>
+                <TooltipProvider delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
+                        <HelpCircle className="h-3.5 w-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[280px] p-3 space-y-2">
+                      <p className="font-semibold text-xs">How nuspace blind-link works:</p>
+                      <p className="text-[11px] leading-relaxed">
+                        We use your login only to verify you are a student. In the moment of submission, 
+                        your identity is <strong>permanently detached</strong> from the ticket. 
+                      </p>
+                      <p className="text-[11px] leading-relaxed italic">
+                        Access is granted only via a unique private link. Even database admins cannot 
+                        link this ticket back to your account.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Your name will not be visible to anyone else.
               </p>
@@ -324,7 +347,7 @@ export default function CreateTicketModal({ isOpen, onClose, onSuccess }: Create
     >
       <div className="space-y-4">
         <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
-          This link is your only way to access the anonymous ticket. We cannot recover it if lost.
+          This link is your only way to access the anonymous ticket. We cannot recover it if lost. You must copy it to Saved Messages on Telegram before closing this modal. Later you can access it by clicking on the link in the Saved Messages.
         </div>
         <div className="rounded-md border bg-muted/30 p-3 text-sm break-all">
           {ticketLink}
