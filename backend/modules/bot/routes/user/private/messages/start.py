@@ -13,6 +13,6 @@ router = Router()
 @router.message(CommandStart(deep_link=False))
 async def user_start(m: Message, public_url: str, _: Callable[[str], str], redis: Redis):
     await m.answer(
-        _("Добро пожаловать в NUspace, перейди по ссылке ниже!"),
+        _("Добро пожаловать в nuspace, перейди по ссылке ниже!"),
         reply_markup=kb_url(url=public_url),
     )

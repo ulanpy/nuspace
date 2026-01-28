@@ -20,7 +20,7 @@ export function PrivacyModal({
           <br />
           1.1. This document explains what personal data we collect, how we
           store it, and how we use it in the nuspace.kz service and the
-          @NUspaceBot on Telegram.
+          @nuspaceBot on Telegram.
           <br />
           1.2. The service is non-commercial, designed for Nazarbayev University
           students, and all data are used solely to improve the user experience

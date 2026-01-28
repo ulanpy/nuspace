@@ -3,7 +3,7 @@ import { Mail, Phone, ExternalLink } from 'lucide-react'
 const privacyData = {
   title: 'Privacy Policy for nuspace.kz',
   lastUpdated: '2025-12-25',
-  introduction: 'This document explains what personal data we collect, how we store it, and how we use it in the nuspace.kz service and the @NUspaceBot on Telegram. This service is a non-commercial, student-led project designed specifically for Nazarbayev University students.',
+  introduction: 'This document explains what personal data we collect, how we store it, and how we use it in the nuspace.kz service and the @nuspaceBot on Telegram. This service is a non-commercial, student-led project designed specifically for Nazarbayev University students.',
   sections: [
     {
       id: 1,
@@ -55,7 +55,7 @@ const privacyData = {
     {
       id: 7,
       title: 'Changes to This Policy',
-      description: 'We may update this Privacy Policy to reflect changes in our practices or for legal reasons. Significant updates will be notified via the @NUspaceBot or through a prominent notice on the nuspace.kz homepage.'
+      description: 'We may update this Privacy Policy to reflect changes in our practices or for legal reasons. Significant updates will be notified via the @nuspaceBot or through a prominent notice on the nuspace.kz homepage.'
     }
   ],
   contact: {

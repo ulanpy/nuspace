@@ -3,7 +3,7 @@ import { ExternalLink, Mail, Phone } from 'lucide-react'
 const tosData = {
   title: 'Terms of Service for nuspace.kz',
   lastUpdated: '2025-12-19',
-  introduction: 'Welcome to nuspace.kz. By accessing our website or using the @NUspaceBot, you agree to be bound by these Terms of Service. This is a non-commercial, student-led project created for the Nazarbayev University community.',
+  introduction: 'Welcome to nuspace.kz. By accessing our website or using the @nuspaceBot, you agree to be bound by these Terms of Service. This is a non-commercial, student-led project created for the Nazarbayev University community.',
   sections: [
     {
       id: 1,
@@ -21,7 +21,7 @@ const tosData = {
       description: 'Users agree not to:',
       items: [
         'Attempt to bypass authentication or probe the service for vulnerabilities.',
-        'Use the @NUspaceBot to spam other users or infrastructure.',
+        'Use the @nuspaceBot to spam other users or infrastructure.',
         'Automate access to the site (scraping) without prior administrative consent.',
         'Impersonate other students or university officials.'
       ]

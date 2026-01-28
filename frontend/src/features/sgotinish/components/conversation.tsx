@@ -63,6 +63,28 @@ const Message: React.FC<MessageProps> = ({
   });
 
   const getSenderInfo = () => {
+    // If message is NOT from SG member, it MUST be from the student/author.
+    // We check this first to ensure that if an SG member acts as a student (via anon link),
+    // they are treated as a student in the UI.
+    if (!message.is_from_sg_member) {
+      if (!isTicketAnonymous && ticketAuthor) {
+        return (
+          <>
+            <img src={ticketAuthor.picture} alt={`${ticketAuthor.name} ${ticketAuthor.surname}`} className="h-4 w-4 rounded-full flex-shrink-0" />
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{`${ticketAuthor.name} ${ticketAuthor.surname}`}</span>
+          </>
+        );
+      } else {
+        return (
+          <>
+            <User className="h-4 w-4 flex-shrink-0 text-gray-500" />
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Anonymous Student</span>
+          </>
+        );
+      }
+    }
+
+    // From here on, we know it's a message from an SG member (is_from_sg_member is true)
     if (message.sender) {
       if ("user" in message.sender) {
         const sgSender = message.sender as SGUserResponse;
@@ -131,26 +153,9 @@ const Message: React.FC<MessageProps> = ({
       return (
         <>
           <User className="h-4 w-4 flex-shrink-0 text-gray-500" />
-          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Support Member</span>
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">SG Member</span>
         </>
       );
-    } else {
-      // Message from ticket author - show ticket author info
-      if (!isTicketAnonymous && ticketAuthor) {
-        return (
-          <>
-            <img src={ticketAuthor.picture} alt={`${ticketAuthor.name} ${ticketAuthor.surname}`} className="h-4 w-4 rounded-full flex-shrink-0" />
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{`${ticketAuthor.name} ${ticketAuthor.surname}`}</span>
-          </>
-        );
-      } else {
-        return (
-          <>
-            <User className="h-4 w-4 flex-shrink-0 text-gray-500" />
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Anonymous</span>
-          </>
-        );
-      }
     }
   };
   

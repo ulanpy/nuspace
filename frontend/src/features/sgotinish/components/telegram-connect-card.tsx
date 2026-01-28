@@ -31,7 +31,7 @@ export function TelegramConnectCard({ user, className }: TelegramConnectCardProp
         <div className="space-y-1">
           <h2 className="text-base font-semibold">Connect Telegram to stay updated</h2>
           <p className="text-sm text-blue-900/80 dark:text-blue-100/80">
-            Link your Telegram account to receive updates about your appeals directly from nuspacebot
+            Link your Telegram account to receive updates about your non-anonymous appeals directly from nuspacebot
           </p>
         </div>
       </div>

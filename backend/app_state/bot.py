@@ -40,21 +40,10 @@ async def setup_bot(
     # Routers
     include_routers(app.state.dp)
 
-    # Set Telegram Mini App URL in the chat menu button and configure commands
-    try:
-        web_app_info = WebAppInfo(url=config.HOME_URL)
-        await app.state.bot.set_chat_menu_button(
-            menu_button=MenuButtonWebApp(text="Home", web_app=web_app_info)
-        )
-    except Exception as e:
-        print(f"Failed to set menu button: {e}", flush=True)
-
     try:
         start = BotCommand(command="start", description="start")
-        language = BotCommand(command="language", description="language")
-        notification = BotCommand(command="notification", description="notification")
         await app.state.bot.set_my_commands(
-            commands=[start, language, notification], scope=BotCommandScopeAllPrivateChats()
+            commands=[start], scope=BotCommandScopeAllPrivateChats()
         )
     except Exception as e:
         print(f"Failed to set bot commands: {e}", flush=True)

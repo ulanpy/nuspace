@@ -33,7 +33,7 @@ def notifications_keyboard(
 
 def kb_url(url: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
-        row_width=1, inline_keyboard=[[InlineKeyboardButton(text="NUspace", url=url)]]
+        row_width=1, inline_keyboard=[[InlineKeyboardButton(text="nuspace", url=url)]]
     )
 
 

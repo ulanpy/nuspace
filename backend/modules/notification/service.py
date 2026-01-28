@@ -26,7 +26,7 @@ class NotificationService(AbstractNotificationService):
                 receiver_sub=boss.sub,
                 type=NotificationType.info,
                 telegram_id=boss.telegram_id,
-                url=f"https://t.me/NUspaceBot/app",
+                url=f"{self.infra.config.HOME_URL}/sgotinish/sg/ticket/?id={ticket.id}", # of the form https://nuspace.kz/sgotinish/sg/ticket/?id=17
             )
             for boss in bosses
             if boss.telegram_id
@@ -48,7 +48,7 @@ class NotificationService(AbstractNotificationService):
                 receiver_sub=access.user_sub,
                 type=NotificationType.info,
                 telegram_id=access.user.telegram_id,
-                url=f"https://t.me/NUspaceBot/app",
+                url=f"{self.infra.config.HOME_URL}/sgotinish/sg/ticket/?id={ticket.id}", # of the form https://nuspace.kz/sgotinish/sg/ticket/?id=17
             )
         ]
         if notifications_data:
@@ -71,7 +71,7 @@ class NotificationService(AbstractNotificationService):
                 receiver_sub=ticket.author.sub,
                 type=NotificationType.info,
                 telegram_id=ticket.author.telegram_id,
-                url=f"https://t.me/NUspaceBot/app",
+                url=f"{self.infra.config.HOME_URL}/sgotinish/student/ticket/?id={ticket.id}", # of the form https://nuspace.kz/sgotinish/student/ticket/?id=18
             )
         ]
         if notifications_data:
@@ -108,7 +108,7 @@ class NotificationService(AbstractNotificationService):
                 receiver_sub=recipient.sub,
                 type=NotificationType.info,
                 telegram_id=recipient.telegram_id,
-                url=f"https://t.me/NUspaceBot/app",
+                url=f"{self.infra.config.HOME_URL}/sgotinish/sg/ticket/?id={ticket.id}" if message.is_from_sg_member else f"{self.infra.config.HOME_URL}/sgotinish/student/ticket/?id={ticket.id}", # of the form https://nuspace.kz/sgotinish/sg/ticket/?id=17 or https://nuspace.kz/sgotinish/student/ticket/?id=18
             )
         ]
         if notifications_data:

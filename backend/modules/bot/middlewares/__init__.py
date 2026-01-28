@@ -3,7 +3,7 @@ from google.cloud import storage
 from redis.asyncio import Redis
 
 from backend.core.database.manager import AsyncDatabaseManager
-
+from backend.core.configs.config import config
 from .bucket_client import BucketClientMiddleware
 from .db_session import DatabaseMiddleware
 from .i18n import I18N
@@ -21,7 +21,7 @@ def setup_middlewares(
     middlewares = [
         DatabaseMiddleware(db_manager),
         RedisMiddleware(redis),
-        UrlMiddleware("https://t.me/NUspaceBot/app"),
+        UrlMiddleware(config.HOME_URL),
         I18N(),
         BucketClientMiddleware(storage_client),
     ]

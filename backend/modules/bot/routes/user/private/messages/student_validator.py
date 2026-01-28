@@ -20,7 +20,7 @@ async def student_validator(
 
     user = m.forward_from
     user_exist: bool = await check_user_by_telegram_id(session=db_session, user_id=user.id)
-    answer: str = _("✅Есть в базе NUspace") if user_exist else _("⛔️Нету в базе NUspace")
+    answer: str = _("✅Есть в базе nuspace") if user_exist else _("⛔️Нету в базе nuspace")
     await m.answer(answer)
 
 
@@ -52,5 +52,5 @@ async def handle_user_shared(
     user_shared = m.user_shared
     selected_user = user_shared.user_id
     user_exist: bool = await check_user_by_telegram_id(session=db_session, user_id=selected_user)
-    answer: str = _("✅Есть в базе NUspace") if user_exist else _("⛔️Нету в базе NUspace")
+    answer: str = _("✅Есть в базе nuspace") if user_exist else _("⛔️Нету в базе nuspace")
     await m.answer(answer, reply_markup=ReplyKeyboardRemove())

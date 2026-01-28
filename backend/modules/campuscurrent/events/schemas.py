@@ -36,7 +36,7 @@ class EventCreateRequest(BaseModel):
     policy: RegistrationPolicy = Field(
         ..., description="The policy of the event", example=RegistrationPolicy.open
     )
-    name: str = Field(..., description="The name of the event", example="NUspace 2025")
+    name: str = Field(..., description="The name of the event", example="nuspace 2025")
     place: str = Field(..., description="The place of the event", example="NU 3rd block, 3rd floor")
     start_datetime: datetime = Field(
         ..., description="The start datetime of the event", example="2026-06-12T10:00:00Z"
@@ -45,7 +45,7 @@ class EventCreateRequest(BaseModel):
         ..., description="The end datetime of the event", example="2026-06-12T12:00:00Z"
     )
     description: str = Field(
-        ..., description="The description of the event", example="NUspace is a community event"
+        ..., description="The description of the event", example="nuspace is a community event"
     )
 
     type: EventType = Field(..., description="The type of the event", example=EventType.academic)
@@ -100,7 +100,7 @@ class EnrichedEventCreateRequest(EventCreateRequest):
 
 class EventUpdateRequest(BaseModel):
     name: str | None = Field(
-        default=None, description="The name of the event", example="NUspace 2025"
+        default=None, description="The name of the event", example="nuspace 2025"
     )
     place: str | None = Field(
         default=None, description="The place of the event", example="NU 3rd block, 3rd floor"
@@ -114,7 +114,7 @@ class EventUpdateRequest(BaseModel):
     description: str | None = Field(
         default=None,
         description="The description of the event",
-        example="NUspace is a community event",
+        example="nuspace is a community event",
     )
     policy: RegistrationPolicy | None = Field(
         default=None, description="The policy of the event", example=RegistrationPolicy.open

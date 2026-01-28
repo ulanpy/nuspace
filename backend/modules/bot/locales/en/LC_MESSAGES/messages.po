@@ -12,8 +12,8 @@ msgstr "Your Telegram account is already linked!"
 msgid "Некорректная ссылка"
 msgstr "Invalid link"
 
-msgid "Добро пожаловать в NUspace, перейди по ссылке ниже!"
-msgstr "Welcome to NUspace, follow the link below!"
+msgid "Добро пожаловать в nuspace, перейди по ссылке ниже!"
+msgstr "Welcome to nuspace, follow the link below!"
 
 msgid "Выбери нужный язык!"
 msgstr "Choose your preferred language!"
@@ -30,10 +30,10 @@ msgstr "The character you entered is incorrect!"
 msgid "Язык успешно изменен!"
 msgstr "Language successfully changed!"
 
-msgid "✅Есть в базе NUspace"
+msgid "✅Есть в базе nuspace"
 msgstr "✅User with verified NU-mail"
 
-msgid "⛔️Нету в базе NUspace"
+msgid "⛔️Нету в базе nuspace"
 msgstr "⛔️This Telegram user is not registered with Nuspace. Ask them to register."
 
 msgid "⛔️К сожалению из-за настроек конфиденциальности пользователя это недоступно, но есть другой вариант!"
