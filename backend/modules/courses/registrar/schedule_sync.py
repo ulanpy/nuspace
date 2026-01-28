@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 SCHEDULE_PDF_URL = None  # auto-discover when None
 SCHEDULE_INDEX_UID = "course_schedule_catalog"
 SCHEDULE_PRIMARY_KEY = "id"
-SCHEDULE_REFRESH_INTERVAL_SECONDS = 60 * 60  # 1 hour
+SCHEDULE_REFRESH_INTERVAL_SECONDS = 60 * 60 * 24 # 24 hours
 
 SCHEDULE_SEARCHABLE_ATTRIBUTES: Sequence[str] = (
     "course_code",
