@@ -125,7 +125,6 @@ class TicketPolicy(BasePolicy):
     def check_delegate(self, target_user: User, user_access: TicketAccess | None):
         """Check if the current user can delegate access to the target user."""
         # 1. User must have DELEGATE permission on this ticket.
-        user_department_id = self.user_creds[1]["department_id"]
         if not self.is_admin and (
             not user_access or user_access.permission != PermissionType.DELEGATE
         ):
@@ -135,16 +134,16 @@ class TicketPolicy(BasePolicy):
             )
 
         # 2. Enforce hierarchy rules
-        if self.user_role == UserRole.boss.value or self.is_admin:
+        if self.user_role == UserRole.boss or self.is_admin:
             return  # Boss/Admin can delegate to anyone
 
-        if self.user_role == UserRole.capo.value:
-            if target_user.role != UserRole.soldier.value:
+        if self.user_role == UserRole.capo:
+            if target_user.role != UserRole.soldier:
                 raise HTTPException(
                     status_code=http_status.HTTP_403_FORBIDDEN,
                     detail="Capos can only delegate to Soldiers.",
                 )
-            if target_user.department_id != user_department_id:
+            if target_user.department_id != self.department_id:
                 raise HTTPException(
                     status_code=http_status.HTTP_403_FORBIDDEN,
                     detail="You can only delegate to Soldiers within your own department.",
