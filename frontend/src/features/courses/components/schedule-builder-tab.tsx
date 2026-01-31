@@ -1066,6 +1066,11 @@ const SchedulePreview = ({
                                 {truncateFaculty(section.faculty)}
                               </p>
                             )}
+                            {section.room && (
+                              <p className="truncate text-[9px] text-current opacity-80">
+                                {truncateRoom(section.room)}
+                              </p>
+                            )}
                           </div>
                         );
                       })}
@@ -1445,6 +1450,16 @@ function truncateFaculty(faculty: string | null | undefined): string {
   const maxLength = 24;
   const trimmed = faculty.trim();
   return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength - 1)}…` : trimmed;
+}
+
+function truncateRoom(room: string | null | undefined): string {
+    if (!room) {
+        return "";
+    }
+    if (room.includes("-")) {
+        return room.split("-")[0];
+    }
+    return room.split(/( |cap)/g)[0]
 }
 
 function getDemandLabel(ratio: number): string {
