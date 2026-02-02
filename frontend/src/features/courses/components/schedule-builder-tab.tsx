@@ -544,7 +544,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-6 lg:flex-row">
+      <div className="flex flex-col gap-6 xl:flex-row">
         <aside className="w-full space-y-4 lg:w-80">
         <section className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -765,7 +765,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
         </section>
         </aside>
 
-        <section className="flex-1 rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+        <section className="overflow-x-auto flex-1 rounded-2xl border border-border/60 bg-card p-4 shadow-sm w-[700px] sm:w-vw lg:w-swv">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-base font-semibold">Planner preview</h3>
             {selectedEvents.length > 0 && (
