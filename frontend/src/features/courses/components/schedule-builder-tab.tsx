@@ -765,7 +765,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
         </section>
         </aside>
 
-        <section className="overflow-x-auto flex-1 rounded-2xl border border-border/60 bg-card p-4 shadow-sm w-[700px] sm:w-vw lg:w-swv">
+        <section className="overflow-x-auto flex-1 rounded-2xl border border-border/60 bg-card p-4 shadow-sm w-[700px] sm:w-vw lg:w-full">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-base font-semibold">Planner preview</h3>
             {selectedEvents.length > 0 && (
