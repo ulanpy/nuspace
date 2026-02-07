@@ -2,8 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '@/context/theme-provider-context'
-import { SnowProvider, useSnowEnabled } from '@/config/seasonal'
-import { Snowfall } from '@/components/animations/snowfall'
+import { SnowProvider } from '@/config/seasonal'
 
 // Create QueryClient inside component to avoid sharing state between requests
 function makeQueryClient() {
@@ -31,11 +30,6 @@ function getQueryClient() {
   }
 }
 
-function SnowIfEnabled() {
-  const enabled = useSnowEnabled()
-  return enabled ? <Snowfall /> : null
-}
-
 export function Providers({ children }: { children: React.ReactNode }) {
   // NOTE: Avoid useState when initializing the query client if you don't
   // have a suspense boundary between this and the code that may suspend
@@ -46,10 +40,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="nuspace-ui-theme">
-        <SnowProvider>
-          <SnowIfEnabled />
-          {children}
-        </SnowProvider>
+        <SnowProvider>{children}</SnowProvider>
       </ThemeProvider>
     </QueryClientProvider>
   )

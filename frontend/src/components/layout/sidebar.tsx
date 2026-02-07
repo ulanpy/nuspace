@@ -56,7 +56,6 @@ interface NuspaceLogoProps {
 }
 
 import { IconThemeToggle } from "@/components/atoms/icon-theme-toggle";
-import { SnowToggle } from "@/components/molecules/snow-toggle";
 
 function NuspaceLogo({ collapsed = false }: NuspaceLogoProps) {
     if (collapsed) return null;
@@ -290,7 +289,6 @@ export function Sidebar() {
                                     <NuspaceLogo />
                                     <div className="flex items-center gap-2 shrink-0">
                                         <IconThemeToggle />
-                                        <SnowToggle />
                                     </div>
                                 </SheetTitle>
                             </SheetHeader>
@@ -314,7 +312,6 @@ export function Sidebar() {
                 <div className={cn("flex items-center h-[72px] px-3 border-b transition-all overflow-hidden shrink-0", isCollapsed ? "justify-center p-2" : "justify-between p-6")}>
                     <NuspaceLogo collapsed={isCollapsed} />
                     <div className="flex items-center gap-2 shrink-0 transition-all duration-300">
-                        {!isCollapsed && <SnowToggle />}
                         <IconThemeToggle collapsed={isCollapsed} />
                     </div>
                 </div>
