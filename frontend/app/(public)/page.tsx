@@ -17,10 +17,17 @@ export default function Page() {
 
   useEffect(() => {
     if (!isLoading && user) {
-      router.push('/announcements')
+      router.replace('/announcements')
     }
   }, [user, isLoading, router])
 
-  // Show landing page while loading or if not authenticated
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>
+  }
+
+  if (user) {
+    return null
+  }
+
   return <LandingPageContent />
 }
