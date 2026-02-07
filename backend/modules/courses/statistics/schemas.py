@@ -1,32 +1,29 @@
 from datetime import datetime
 from typing import List
-from fastapi import Query
 from pydantic import BaseModel, Field
-
-
 
 
 class BaseGradeReportSchema(BaseModel):
     id: int
     course_code: str
-    course_title: str
-    section: str
-    term: str
-    grades_count: int
-    avg_gpa: float
-    std_dev: float
-    median_gpa: float
-    pct_A: float
-    pct_B: float
-    pct_C: float
-    pct_D: float
-    pct_F: float
-    pct_P: float
-    pct_I: float
-    pct_AU: float
-    pct_W_AW: float
-    letters_count: int
-    faculty: str
+    course_title: str | None
+    section: str | None
+    term: str | None
+    grades_count: int | None
+    avg_gpa: float | None
+    std_dev: float | None
+    median_gpa: float | None
+    pct_A: float | None
+    pct_B: float | None
+    pct_C: float | None
+    pct_D: float | None
+    pct_F: float | None
+    pct_P: float | None
+    pct_I: float | None
+    pct_AU: float | None
+    pct_W_AW: float | None
+    letters_count: int | None
+    faculty: str | None
     created_at: datetime
     updated_at: datetime
 
