@@ -25,7 +25,7 @@ class MessagePolicy(BasePolicy):
             return
 
         # Check if user is the ticket author
-        if conversation.ticket and (self._is_owner(conversation.ticket.author_sub) or owner_hash_match):
+        if self._is_owner(conversation.ticket.author_sub) or owner_hash_match:
             return
 
         # Check if user has at least VIEW permission on the ticket
@@ -84,9 +84,7 @@ class MessagePolicy(BasePolicy):
             return
 
         # Check if user is the ticket author
-        is_ticket_author = conversation.ticket and (
-            self._is_owner(conversation.ticket.author_sub) or owner_hash_match
-        )
+        is_ticket_author = self._is_owner(conversation.ticket.author_sub) or owner_hash_match
 
         if not (is_ticket_author or (access and access.permission in [
             PermissionType.ASSIGN,

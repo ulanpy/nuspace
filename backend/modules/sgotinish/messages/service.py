@@ -44,6 +44,13 @@ class MessageService:
         hide_ticket_author_identity = ticket_is_anonymous and is_ticket_author_sender
         dto = schemas.MessageResponseDTO.model_validate(message)
 
+        # (Guardrail) затирает данные если сообщение от SG отправлено через анонимную 
+        # Это edge case: анонимный юзер, член SG, создал тикет, отправил сообщение через анонс-ссылку)
+        # В принципе, is_from_sg_member больше не ставится при создании сообщения при анонс-ссылке,
+        # нижестоящая проверка - sanity check
+        if ticket_is_anonymous and message.sender_sub is None and dto.is_from_sg_member:
+            dto.is_from_sg_member = False
+
         if not message.is_from_sg_member and ticket_is_anonymous:
             dto.sender_sub = None
 
@@ -148,6 +155,9 @@ class MessageService:
         sg_roles = [UserRole.boss, UserRole.capo, UserRole.soldier, UserRole.admin]
         is_from_sg = user_role in sg_roles
         is_anonymous_owner = bool(conversation.ticket.is_anonymous and owner_hash)
+        # если сообщение отправлено через анонимную ссылку, то не ставим is_from_sg_member флаг
+        if is_anonymous_owner:
+            is_from_sg = False
 
         internal_message_data = schemas._InternalMessageCreateDTO(
             **message_data.model_dump(),

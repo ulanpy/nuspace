@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from backend.common.dependencies import get_creds_or_401
+from backend.common.dependencies import get_creds_or_401, get_creds_or_guest
 from backend.core.database.models.sgotinish import (
     Ticket,
     TicketAccess,
@@ -124,7 +124,7 @@ async def get_ticket(
 @router.post("/tickets/by-owner-hash", response_model=schemas.TicketResponseDTO)
 async def get_ticket_by_owner_hash(
     payload: schemas.TicketOwnerHashDTO,
-    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     ticket_service: TicketService = Depends(deps.get_ticket_service),
 ) -> schemas.TicketResponseDTO:
     ticket = await ticket_service.get_ticket_by_owner_hash(payload.owner_hash, user_tuple)
