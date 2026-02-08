@@ -135,6 +135,13 @@ class DelegateAccessPayload(BaseModel):
     permission: PermissionType = Field(..., description="The permission level to grant")
 
 
+class TicketAccessEntryDTO(BaseModel):
+    user: ShortUserResponse
+    permission: PermissionType
+    granted_by: Optional[ShortUserResponse] = None
+    granted_at: datetime
+
+
 class TicketResponseDTO(BaseTicket):
     """Complete ticket response with relationships."""
 
@@ -156,6 +163,10 @@ class TicketResponseDTO(BaseTicket):
     )
 
     conversations: List[ConversationResponseDTO] = Field(default=[], description="List of conversations")
+    access_list: List[TicketAccessEntryDTO] = Field(
+        default_factory=list,
+        description="SG access list for this ticket",
+    )
 
 
 class ListTicketDTO(BaseModel):

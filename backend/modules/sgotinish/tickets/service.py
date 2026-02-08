@@ -68,6 +68,7 @@ class TicketService:
         conversation_dtos_map: dict[int, List[schemas.ConversationResponseDTO]] | None = None,
         access_map: dict[int, list[TicketAccess]] | None = None,
         owner_hash: str | None = None,
+        include_access_list: bool = False,
     ) -> schemas.TicketResponseDTO:
         """
         Helper to build a detailed ticket response DTO from a Ticket ORM object.
@@ -105,6 +106,33 @@ class TicketService:
                 )
             )
 
+        access_list: list[TicketAccess] = []
+        policy = TicketPolicy(user)
+        if include_access_list and (
+            policy.is_admin or (access_map and access_map.get(ticket.id))
+        ):
+            access_list = (
+                await QueryBuilder(self.db_session, TicketAccess)
+                .base()
+                .filter(TicketAccess.ticket_id == ticket.id)
+                .eager(TicketAccess.user, TicketAccess.granter)
+                .all()
+            )
+            # Keep only the highest permission per user.
+            permission_rank = {
+                PermissionType.VIEW: 1,
+                PermissionType.ASSIGN: 2,
+                PermissionType.DELEGATE: 3,
+            }
+            highest_access_by_user: dict[str, TicketAccess] = {}
+            for access in access_list:
+                existing = highest_access_by_user.get(access.user_sub)
+                if not existing:
+                    highest_access_by_user[access.user_sub] = access
+                    continue
+                if permission_rank[access.permission] > permission_rank[existing.permission]:
+                    highest_access_by_user[access.user_sub] = access
+            access_list = list(highest_access_by_user.values())
 
         # Handle anonymous author
         author = None
@@ -122,10 +150,21 @@ class TicketService:
             author=author,
             unread_count=unread_counts.get(ticket.id, 0),
             conversations=conversation_dtos_map.get(ticket.id, []),
-            permissions=TicketPolicy(user).get_permissions(
+            permissions=policy.get_permissions(
                 ticket, access_map.get(ticket.id)
             ),
             ticket_access=access_map.get(ticket.id)[0].permission if access_map.get(ticket.id) else None,
+            access_list=[
+                schemas.TicketAccessEntryDTO(
+                    user=ShortUserResponse.model_validate(access.user),
+                    permission=access.permission,
+                    granted_by=ShortUserResponse.model_validate(access.granter)
+                    if access.granter
+                    else None,
+                    granted_at=access.granted_at,
+                )
+                for access in access_list
+            ],
         )
 
     async def get_tickets(
@@ -330,7 +369,7 @@ class TicketService:
         )
         if not ticket:
             return None
-        return await self._build_ticket_response(ticket, user)
+        return await self._build_ticket_response(ticket, user, include_access_list=True)
 
     async def get_ticket_by_owner_hash(
         self, owner_hash: str, user: tuple[dict, dict]
@@ -345,7 +384,9 @@ class TicketService:
         )
         if not ticket:
             return None
-        return await self._build_ticket_response(ticket, user, owner_hash=owner_hash)
+        return await self._build_ticket_response(
+            ticket, user, owner_hash=owner_hash, include_access_list=True
+        )
 
 
     async def get_user_ticket_access(

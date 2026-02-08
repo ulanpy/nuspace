@@ -60,6 +60,7 @@ export interface Ticket {
     unread_count: number;
     conversation: Conversation | null;
     conversations?: LegacyConversation[]; // legacy support until backend returns single conversation
+    access_list?: TicketAccessEntry[];
 }
 
 export interface PaginatedMeta {
@@ -140,6 +141,13 @@ export interface MessageCreatePayload {
 export interface DelegateAccessPayload {
     target_user_sub: string;
     permission: PermissionType;
+}
+
+export interface TicketAccessEntry {
+    user: ShortUserResponse;
+    permission: PermissionType;
+    granted_by?: ShortUserResponse | null;
+    granted_at: string;
 }
 
 export interface Department {

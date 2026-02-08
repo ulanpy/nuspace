@@ -205,6 +205,7 @@ export default function TicketDetail({ ticketKey }: TicketDetailProps) {
 
   const canDelegate = ticket.ticket_access === "delegate";
   const isSgMember = user && ["boss", "capo", "soldier"].includes(user.role);
+  const isSgMemberOrAdmin = user && ["boss", "capo", "soldier", "admin"].includes(user.role);
   const canUpdateStatus =
     isSgMember &&
     (ticket.ticket_access === "assign" || ticket.ticket_access === "delegate");
@@ -328,6 +329,60 @@ export default function TicketDetail({ ticketKey }: TicketDetailProps) {
             </CardFooter>
           )}
         </Card>
+
+        {isSgMemberOrAdmin ? (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Access list
+              </CardTitle>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Members who can view or act on this ticket.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {ticket.access_list?.length ? (
+                ticket.access_list.map((entry) => (
+                  <div
+                    key={`${entry.user.sub}-${entry.permission}`}
+                    className="flex flex-col gap-1 rounded-md border border-muted/60 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      {entry.user.picture ? (
+                        <img
+                          src={entry.user.picture}
+                          alt={`${entry.user.name} ${entry.user.surname}`}
+                          className="h-6 w-6 rounded-full"
+                        />
+                      ) : (
+                        <User className="h-4 w-4 text-gray-500" />
+                      )}
+                      <span className="text-sm text-gray-900 dark:text-gray-100">
+                        {entry.user.name} {entry.user.surname}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                      <Badge variant="secondary" className="uppercase text-[10px]">
+                        {entry.permission}
+                      </Badge>
+                      {entry.granted_by ? (
+                        <span>
+                          Granted by {entry.granted_by.name} {entry.granted_by.surname}
+                        </span>
+                      ) : (
+                        <span>Granted by system</span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-md border border-dashed border-muted/70 px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+                  No SG members have been granted access yet.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : null}
 
         {/* Conversation */}
         {ticket.conversation ? (
