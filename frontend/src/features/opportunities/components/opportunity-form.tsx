@@ -99,9 +99,42 @@ type Props = {
   initial?: Opportunity | null;
   onSubmit: (payload: UpsertOpportunityInput) => void;
   onCancel: () => void;
+  submitError?: string | null;
+  isSubmitting?: boolean;
 };
 
-export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
+const EMPTY_FORM: UpsertOpportunityInput = {
+  name: "",
+  description: "",
+  host: "",
+  link: "",
+  location: "",
+  funding: "",
+  deadline: "",
+};
+
+const toOptionalText = (value: string | null | undefined): string | null => {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const isValidHttpUrl = (value: string): boolean => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+export const OpportunityForm = ({
+  initial,
+  onSubmit,
+  onCancel,
+  submitError = null,
+  isSubmitting = false,
+}: Props) => {
   const typeOptions = OPPORTUNITY_TYPES.map((t) => ({ value: t, label: t.replace(/_/g, " ") }));
   const majorOptions = OPPORTUNITY_MAJORS.map((m) => ({ value: m, label: m }));
   const levelOptions = EDUCATION_LEVELS.map((lvl) => ({
@@ -114,20 +147,13 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
     PhD: [],
   };
 
-  const [form, setForm] = useState<UpsertOpportunityInput>({
-    name: "",
-    description: "",
-    host: "",
-    link: "",
-    location: "",
-    funding: "",
-    deadline: "",
-  });
+  const [form, setForm] = useState<UpsertOpportunityInput>(EMPTY_FORM);
 
   const [selectedTypes, setSelectedTypes] = useState<string[]>([OPPORTUNITY_TYPES[0]]);
   const [selectedMajors, setSelectedMajors] = useState<string[]>([]);
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [eligibilityByLevel, setEligibilityByLevel] = useState<Record<EducationLevel, number[]>>({});
+  const [isYearRound, setIsYearRound] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -141,6 +167,7 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
         funding: initial.funding || "",
         deadline: initial.deadline || "",
       });
+      setIsYearRound(!initial.deadline);
       setSelectedTypes(initial.type ? (Array.isArray(initial.type) ? initial.type : [initial.type]) : [OPPORTUNITY_TYPES[0]]);
       setSelectedMajors(normalizeOpportunityMajors(initial.majors));
       const initialEligibility = (initial as any).eligibilities || initial.eligibility || [];
@@ -159,33 +186,25 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
         }, {}),
       );
     } else {
-      setForm((prev) => ({
-        ...prev,
-        name: "",
-      }));
-      setSelectedTypes([]);
+      setForm(EMPTY_FORM);
+      setIsYearRound(false);
+      setSelectedTypes([OPPORTUNITY_TYPES[0]]);
       setSelectedMajors([]);
       setSelectedLevels([]);
       setEligibilityByLevel({});
     }
+    setFormError(null);
   }, [initial]);
 
   const handleChange = (key: keyof UpsertOpportunityInput, value: string) => {
+    setFormError(null);
     setForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const toggleMajor = (value: OpportunityMajor) => {
-    setForm((prev) => {
-      const current = Array.isArray(prev.majors) ? prev.majors : [];
-      const exists = current.includes(value);
-      const next = exists ? current.filter((m) => m !== value) : [...current, value];
-      return { ...prev, majors: next };
-    });
   };
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const updateDescription = (nextValue: string, selectionStart?: number, selectionEnd?: number) => {
+    setFormError(null);
     setForm((prev) => ({
       ...prev,
       description: nextValue.slice(0, MAX_DESCRIPTION_LENGTH),
@@ -275,8 +294,37 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
     e.preventDefault();
     setFormError(null);
 
+    const name = typeof form.name === "string" ? form.name.trim() : "";
+    if (!name) {
+      setFormError("Please enter a name for the opportunity.");
+      return;
+    }
+
+    const description = typeof form.description === "string" ? form.description.trim() : "";
+    if (!description) {
+      setFormError("Please add a description.");
+      return;
+    }
+
+    if (selectedTypes.length === 0) {
+      setFormError("Please choose an opportunity type.");
+      return;
+    }
+
     if (selectedLevels.length === 0) {
-      setFormError("Select at least one education level");
+      setFormError("Please select at least one education level.");
+      return;
+    }
+
+    const deadline = typeof form.deadline === "string" ? form.deadline.trim() : "";
+    if (!isYearRound && !deadline) {
+      setFormError("Please enter a deadline date or mark this opportunity as year-round.");
+      return;
+    }
+
+    const link = toOptionalText(form.link);
+    if (link && !isValidHttpUrl(link)) {
+      setFormError("Please enter a valid link URL (starting with http:// or https://).");
       return;
     }
 
@@ -296,7 +344,13 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
         : [];
 
     onSubmit({
-      ...form,
+      name,
+      description,
+      host: toOptionalText(form.host),
+      link,
+      location: toOptionalText(form.location),
+      funding: toOptionalText(form.funding),
+      deadline: isYearRound ? null : deadline,
       type: selectedTypes[0] || OPPORTUNITY_TYPES[0],
       majors: selectedMajors,
       eligibilities,
@@ -312,6 +366,7 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
           value={form.name || ""}
           onChange={(e) => handleChange("name", e.target.value)}
           required
+          disabled={isSubmitting}
         />
       </div>
       <div>
@@ -321,6 +376,7 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
           value={form.host || ""}
           onChange={(e) => handleChange("host", e.target.value)}
           placeholder="Organization"
+          disabled={isSubmitting}
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -328,13 +384,19 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
           label="Type"
           options={typeOptions}
           selected={selectedTypes}
-          onChange={(next) => setSelectedTypes(next.slice(-1))} // single select behavior
+          onChange={(next) => {
+            setFormError(null);
+            setSelectedTypes(next.slice(-1));
+          }} // single select behavior
         />
         <MultiCheckboxDropdown
           label="Majors"
           options={majorOptions}
           selected={selectedMajors}
-          onChange={setSelectedMajors}
+          onChange={(next) => {
+            setFormError(null);
+            setSelectedMajors(next);
+          }}
         />
       </div>
 
@@ -344,6 +406,7 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
           options={levelOptions}
           selected={selectedLevels}
           onChange={(next) => {
+            setFormError(null);
             const uniqueNext = Array.from(new Set(next));
             setSelectedLevels(uniqueNext);
             setEligibilityByLevel((prev) => {
@@ -380,12 +443,13 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
                         label="Years"
                         options={options}
                         selected={values.map(String)}
-                        onChange={(next) =>
+                        onChange={(next) => {
+                          setFormError(null);
                           setEligibilityByLevel((prev) => ({
                             ...prev,
                             [level]: next.map((v) => Number(v)),
-                          }))
-                        }
+                          }));
+                        }}
                         placeholder="Select years"
                       />
                     )}
@@ -413,17 +477,44 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
           className="min-h-[120px]"
           maxLength={MAX_DESCRIPTION_LENGTH}
           required
+          disabled={isSubmitting}
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
-          <Label htmlFor="deadline">Deadline</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="deadline">Deadline</Label>
+            <button
+              type="button"
+              className="text-xs text-primary hover:underline"
+              onClick={() => {
+                setFormError(null);
+                setIsYearRound((prev) => {
+                  const next = !prev;
+                  if (next) {
+                    setForm((current) => ({ ...current, deadline: "" }));
+                  }
+                  return next;
+                });
+              }}
+              disabled={isSubmitting}
+            >
+              {isYearRound ? "Set a date instead" : "Mark as year-round"}
+            </button>
+          </div>
           <Input
             id="deadline"
             type="date"
-            value={form.deadline || ""}
-            onChange={(e) => handleChange("deadline", e.target.value)}
+            value={isYearRound ? "" : (form.deadline || "")}
+            onChange={(e) => {
+              setIsYearRound(false);
+              handleChange("deadline", e.target.value);
+            }}
+            disabled={isSubmitting || isYearRound}
           />
+          {isYearRound && (
+            <p className="mt-1 text-xs text-muted-foreground">This opportunity will be shown as year-round.</p>
+          )}
         </div>
         <div>
           <Label htmlFor="funding">Funding</Label>
@@ -431,6 +522,7 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
             id="funding"
             value={form.funding || ""}
             onChange={(e) => handleChange("funding", e.target.value)}
+            disabled={isSubmitting}
           />
         </div>
       </div>
@@ -440,6 +532,7 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
           id="location"
           value={form.location || ""}
           onChange={(e) => handleChange("location", e.target.value)}
+          disabled={isSubmitting}
         />
       </div>
       <div>
@@ -449,15 +542,20 @@ export const OpportunityForm = ({ initial, onSubmit, onCancel }: Props) => {
           value={form.link || ""}
           onChange={(e) => handleChange("link", e.target.value)}
           placeholder="https://..."
+          disabled={isSubmitting}
         />
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
-        {formError && <div className="text-sm text-destructive mr-auto">{formError}</div>}
-        <Button type="button" variant="outline" onClick={onCancel}>
+        {(formError || submitError) && (
+          <div className="text-sm text-destructive mr-auto">{formError || submitError}</div>
+        )}
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button type="submit">{initial ? "Save" : "Create"}</Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (initial ? "Saving..." : "Creating...") : (initial ? "Save" : "Create")}
+        </Button>
       </div>
     </form>
   );
