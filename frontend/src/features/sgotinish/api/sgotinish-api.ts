@@ -13,6 +13,10 @@ import {
   Department,
   SGUserResponse,
   MessageListResponse,
+  SGMemberActionResult,
+  SGMemberResponse,
+  SGMemberSearchResponse,
+  SGMemberUpsertPayload,
 } from "../types";
 
 export const sgotinishApi = {
@@ -93,5 +97,30 @@ export const sgotinishApi = {
 
   delegateAccess: async (ticketId: number, payload: DelegateAccessPayload): Promise<void> => {
     return await apiCall(`/tickets/${ticketId}/delegate`, { method: "POST", json: payload });
+  },
+
+  // SG membership management
+  searchUsersForSg: async (params?: { q?: string; limit?: number }): Promise<SGMemberSearchResponse[]> => {
+    const qs = new URLSearchParams();
+    if (params?.q) qs.set("q", params.q);
+    if (params?.limit) qs.set("limit", String(params.limit));
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return await apiCall(`/sg-members/users${suffix}`);
+  },
+
+  getSgMembers: async (): Promise<SGMemberResponse[]> => {
+    return await apiCall(`/sg-members`);
+  },
+
+  upsertSgMember: async (payload: SGMemberUpsertPayload): Promise<SGMemberResponse> => {
+    return await apiCall(`/sg-members`, { method: "POST", json: payload });
+  },
+
+  removeSgMember: async (targetUserSub: string): Promise<SGMemberActionResult> => {
+    return await apiCall(`/sg-members/${encodeURIComponent(targetUserSub)}`, { method: "DELETE" });
+  },
+
+  withdrawFromSg: async (): Promise<SGMemberActionResult> => {
+    return await apiCall(`/sg-members/withdraw`, { method: "POST" });
   },
 };

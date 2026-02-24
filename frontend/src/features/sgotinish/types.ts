@@ -160,3 +160,39 @@ export interface SGUserResponse {
     department_name: string;
     role: "boss" | "capo" | "soldier" | "admin";
 }
+
+export type SGUser = SGUserResponse;
+
+export type UserRole =
+  | "default"
+  | "admin"
+  | "boss"
+  | "capo"
+  | "soldier"
+  | "community_admin";
+
+export interface SGMemberSearchResponse {
+    user: ShortUserResponse;
+    email: string;
+    role: UserRole;
+    department?: Department | null;
+}
+
+export interface SGMemberResponse {
+    user: ShortUserResponse;
+    email: string;
+    role: "boss" | "capo" | "soldier";
+    department?: Department | null;
+    sg_assigned_at?: string | null;
+    sg_assigned_by?: ShortUserResponse | null;
+}
+
+export interface SGMemberUpsertPayload {
+    target_user_sub: string;
+    role: "boss" | "capo" | "soldier";
+    department_id: number;
+}
+
+export interface SGMemberActionResult {
+    detail: string;
+}
