@@ -64,9 +64,17 @@ type Props = {
   opportunity: Opportunity;
   canManage?: boolean;
   onEdit?: (opp: Opportunity) => void;
+  onDelete?: (opp: Opportunity) => void;
+  isDeleting?: boolean;
 };
 
-export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Props) => {
+export const OpportunityCard = ({
+  opportunity,
+  canManage = false,
+  onEdit,
+  onDelete,
+  isDeleting = false,
+}: Props) => {
   const [expanded, setExpanded] = useState(false);
   const [showAllMajors, setShowAllMajors] = useState(false);
   const showToggle = useMemo(() => (opportunity.description?.length || 0) > 320, [opportunity.description]);
@@ -256,15 +264,28 @@ export const OpportunityCard = ({ opportunity, canManage = false, onEdit }: Prop
               />
               {calendarMutation.isPending ? "Adding..." : "Add to Google Calendar"}
             </Button>
+            {canManage && onEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit(opportunity)}
+                className="whitespace-nowrap"
+              >
+                Edit
+              </Button>
+            )}
+            {canManage && onDelete && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => onDelete(opportunity)}
+                disabled={isDeleting}
+                className="whitespace-nowrap"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </Button>
+            )}
           </div>
-          {canManage && onEdit && (
-            <button
-              onClick={() => onEdit(opportunity)}
-              className="text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-            >
-              Edit
-            </button>
-          )}
         </div>
         {eligibilityText && (
           <div className="pt-2 text-xs text-gray-600 dark:text-gray-300">

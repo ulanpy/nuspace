@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useMutation, useInfiniteQuery } from "@tanstack/react-query";
 import { Search, Loader2, Plus, Eye, EyeOff } from "lucide-react";
-import { createOpportunity, fetchOpportunities, updateOpportunity } from "../api";
+import { createOpportunity, deleteOpportunity, fetchOpportunities, updateOpportunity } from "../api";
 import {
   Opportunity,
   OpportunityFilters,
@@ -25,6 +25,7 @@ import { useUser } from "@/hooks/use-user";
 import { queryClient } from "@/utils/query-client";
 import { Modal } from "@/components/atoms/modal";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/popover";
+import { useToast } from "@/hooks/use-toast";
 
 const ALLOWED_OPPORTUNITY_EMAILS = [
   "ministry.innovations@nu.edu.kz",
@@ -224,8 +225,10 @@ export default function OpportunitiesPage() {
   const [editing, setEditing] = useState<Opportunity | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const { user } = useUser();
+  const { toast } = useToast();
 
   const userEmail = user?.email?.toLowerCase();
   const canManage =
@@ -282,6 +285,34 @@ export default function OpportunitiesPage() {
     },
     onError: async (error) => {
       setSubmitError(await extractMutationErrorMessage(error, "Could not update the opportunity."));
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteOpportunity(id),
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      if (editing?.id === id) {
+        setEditing(null);
+        setIsFormOpen(false);
+        setSubmitError(null);
+      }
+      toast({
+        title: "Opportunity deleted",
+        description: "The opportunity has been removed.",
+        variant: "success",
+      });
+    },
+    onError: async (error) => {
+      const message = await extractMutationErrorMessage(error, "Could not delete the opportunity.");
+      toast({
+        title: "Delete failed",
+        description: message,
+        variant: "error",
+      });
+    },
+    onSettled: () => {
+      setDeletingId(null);
     },
   });
 
@@ -357,6 +388,14 @@ export default function OpportunitiesPage() {
   };
 
   const isSubmittingForm = createMutation.isPending || updateMutation.isPending;
+
+  const handleDeleteOpportunity = (opportunity: Opportunity) => {
+    if (deleteMutation.isPending) return;
+    const confirmed = window.confirm(`Delete "${opportunity.name}"? This action cannot be undone.`);
+    if (!confirmed) return;
+    setDeletingId(opportunity.id);
+    deleteMutation.mutate(opportunity.id);
+  };
 
   return (
     <MotionWrapper>
@@ -516,6 +555,8 @@ export default function OpportunitiesPage() {
                         setEditing(o);
                         setIsFormOpen(true);
                       }}
+                      onDelete={handleDeleteOpportunity}
+                      isDeleting={deletingId === opp.id && deleteMutation.isPending}
                     />
                   ))}
                 </div>
