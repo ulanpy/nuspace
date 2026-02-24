@@ -25,7 +25,6 @@ import { useUser } from "@/hooks/use-user";
 import { queryClient } from "@/utils/query-client";
 import { Modal } from "@/components/atoms/modal";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
 
 const ALLOWED_OPPORTUNITY_EMAILS = [
   "ministry.innovations@nu.edu.kz",
@@ -33,6 +32,83 @@ const ALLOWED_OPPORTUNITY_EMAILS = [
 ] as const;
 
 type OptionItem = { label: string; value: string };
+type FastApiValidationDetail = {
+  loc?: Array<string | number>;
+  msg?: string;
+};
+
+const FASTAPI_SCOPE_KEYS = new Set(["body", "query", "path", "header"]);
+
+const toSentenceCase = (value: string): string => {
+  if (!value) return value;
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+const formatValidationDetail = (item: unknown): string | null => {
+  if (!item || typeof item !== "object") return null;
+  const detail = item as FastApiValidationDetail;
+  const message = typeof detail.msg === "string" ? detail.msg.trim() : "";
+  if (!message) return null;
+
+  const location = Array.isArray(detail.loc)
+    ? detail.loc
+        .filter((part): part is string => typeof part === "string" && !FASTAPI_SCOPE_KEYS.has(part))
+        .map((part) => part.replace(/_/g, " "))
+    : [];
+
+  if (location.length === 0) {
+    return toSentenceCase(message);
+  }
+  return `${toSentenceCase(location.join(" ")).trim()}: ${message}`;
+};
+
+const extractMutationErrorMessage = async (
+  error: unknown,
+  fallback: string,
+): Promise<string> => {
+  const response =
+    typeof error === "object" && error !== null && "response" in error
+      ? (error as { response?: Response }).response
+      : undefined;
+
+  if (response instanceof Response) {
+    try {
+      const cloned = response.clone();
+      const contentType = cloned.headers.get("content-type") || "";
+      const rawText = await cloned.text();
+
+      if (rawText.trim()) {
+        if (contentType.includes("application/json")) {
+          const data = JSON.parse(rawText) as { detail?: unknown };
+          if (typeof data.detail === "string" && data.detail.trim()) {
+            return data.detail.trim();
+          }
+          if (Array.isArray(data.detail)) {
+            const messages = data.detail
+              .map((item) => formatValidationDetail(item))
+              .filter((msg): msg is string => Boolean(msg));
+            if (messages.length > 0) {
+              return Array.from(new Set(messages)).join(". ");
+            }
+          }
+        }
+        return rawText.trim();
+      }
+    } catch {
+      // Keep fallback below.
+    }
+
+    if (response.status === 401) return "Please sign in before creating or editing opportunities.";
+    if (response.status === 403) return "You do not have permission to manage opportunities.";
+    return `${fallback} (HTTP ${response.status})`;
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  return fallback;
+};
 
 const MultiCheckboxDropdown = ({
   label,
@@ -147,6 +223,7 @@ export default function OpportunitiesPage() {
   });
   const [editing, setEditing] = useState<Opportunity | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { user } = useUser();
 
@@ -178,19 +255,33 @@ export default function OpportunitiesPage() {
 
   const createMutation = useMutation({
     mutationFn: (payload: UpsertOpportunityInput) => createOpportunity(payload),
+    onMutate: () => {
+      setSubmitError(null);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["opportunities"] });
       setIsFormOpen(false);
+      setSubmitError(null);
+    },
+    onError: async (error) => {
+      setSubmitError(await extractMutationErrorMessage(error, "Could not create the opportunity."));
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: (payload: { id: number; data: UpsertOpportunityInput }) =>
       updateOpportunity(payload.id, payload.data),
+    onMutate: () => {
+      setSubmitError(null);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["opportunities"] });
       setIsFormOpen(false);
       setEditing(null);
+      setSubmitError(null);
+    },
+    onError: async (error) => {
+      setSubmitError(await extractMutationErrorMessage(error, "Could not update the opportunity."));
     },
   });
 
@@ -257,12 +348,15 @@ export default function OpportunitiesPage() {
   );
 
   const handleSubmitForm = (payload: UpsertOpportunityInput) => {
+    setSubmitError(null);
     if (editing) {
       updateMutation.mutate({ id: editing.id, data: payload });
     } else {
       createMutation.mutate(payload);
     }
   };
+
+  const isSubmittingForm = createMutation.isPending || updateMutation.isPending;
 
   return (
     <MotionWrapper>
@@ -363,7 +457,14 @@ export default function OpportunitiesPage() {
 
             {canManage && (
               <div className="flex h-full flex-col justify-end gap-2 sm:col-span-2 md:col-span-2 lg:col-span-1 lg:col-start-6 items-end">
-                <Button className="flex h-11 w-full items-center justify-center gap-2 whitespace-nowrap text-center" onClick={() => setIsFormOpen(true)}>
+                <Button
+                  className="flex h-11 w-full items-center justify-center gap-2 whitespace-nowrap text-center"
+                  onClick={() => {
+                    setSubmitError(null);
+                    setEditing(null);
+                    setIsFormOpen(true);
+                  }}
+                >
                   <Plus className="h-4 w-4" />
                   Add Opportunity
                 </Button>
@@ -374,14 +475,24 @@ export default function OpportunitiesPage() {
           {canManage && (
             <Modal
               isOpen={isFormOpen}
-              onClose={() => { setIsFormOpen(false); setEditing(null); }}
+              onClose={() => {
+                setIsFormOpen(false);
+                setEditing(null);
+                setSubmitError(null);
+              }}
               title={editing ? "Edit Opportunity" : "Add Opportunity"}
               className="max-w-2xl"
             >
               <OpportunityForm
                 initial={editing}
                 onSubmit={handleSubmitForm}
-                onCancel={() => { setIsFormOpen(false); setEditing(null); }}
+                onCancel={() => {
+                  setIsFormOpen(false);
+                  setEditing(null);
+                  setSubmitError(null);
+                }}
+                submitError={submitError}
+                isSubmitting={isSubmittingForm}
               />
             </Modal>
           )}
@@ -400,7 +511,11 @@ export default function OpportunitiesPage() {
                       key={opp.id}
                       opportunity={opp}
                       canManage={canManage}
-                      onEdit={(o) => { setEditing(o); setIsFormOpen(true); }}
+                      onEdit={(o) => {
+                        setSubmitError(null);
+                        setEditing(o);
+                        setIsFormOpen(true);
+                      }}
                     />
                   ))}
                 </div>
