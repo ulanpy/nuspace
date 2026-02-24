@@ -215,7 +215,7 @@ export default function OpportunitiesPage() {
   const [filters, setFilters] = useState<OpportunityFilters>({
     page: 1,
     size: 15,
-    hide_expired: false,
+    hide_expired: true,
     type: [],
     majors: [],
     education_level: [],
