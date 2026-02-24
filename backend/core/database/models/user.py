@@ -36,10 +36,16 @@ class User(Base):
     picture: Mapped[str] = mapped_column(nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    sg_assigned_at = Column(DateTime, nullable=True, index=True)
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=True, index=True)
 
     # Relationships for SGotinish hierarchy
     department_id: Mapped[int] = mapped_column(ForeignKey("departments.id", ondelete="SET NULL"), nullable=True)
+    sg_assigned_by_sub: Mapped[str | None] = mapped_column(
+        ForeignKey("users.sub", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     department = relationship("Department", back_populates="users", foreign_keys=[department_id])
 
@@ -48,3 +54,4 @@ class User(Base):
     communities = relationship("CommunityMember", back_populates="user")
     templates = relationship("CourseTemplate", back_populates="student")
     student_schedules = relationship("StudentSchedule", back_populates="student", cascade="all, delete-orphan")
+

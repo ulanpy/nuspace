@@ -18,11 +18,11 @@ class BasePolicy:
         self.user_role = UserRole(user_creds[1]["role"])
         self.user_sub = user_creds[0]["sub"]
         self.department_id = user_creds[1].get("department_id")
-        self.is_admin = self.user_role == UserRole.admin.value
+        self.is_admin = self.user_role == UserRole.admin
         self.is_sg_member = self.user_role in [
-            UserRole.boss.value,
-            UserRole.capo.value,
-            UserRole.soldier.value,
+            UserRole.boss,
+            UserRole.capo,
+            UserRole.soldier,
         ]
 
     def _is_owner(self, author_sub: str) -> bool:
