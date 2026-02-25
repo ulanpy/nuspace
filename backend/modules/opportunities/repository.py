@@ -193,7 +193,7 @@ class OpportunitiesRepository:
             major_row = OpportunityMajorMap(opportunity_id=record.id, major=major)
             self.db.add(major_row)
 
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(record, attribute_names=["eligibilities", "majors"])
         return record
 
@@ -232,7 +232,7 @@ class OpportunitiesRepository:
                 major_row = OpportunityMajorMap(opportunity_id=id, major=major)
                 self.db.add(major_row)
 
-        await self.db.commit()
+        await self.db.flush()
         record = await self.get(id)
         await self.db.refresh(record, attribute_names=["eligibilities", "majors"])
         return record
@@ -242,6 +242,6 @@ class OpportunitiesRepository:
         if not record:
             return False
         await self.db.delete(record)
-        await self.db.commit()
+        await self.db.flush()
         return True
 

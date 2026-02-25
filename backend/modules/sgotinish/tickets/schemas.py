@@ -109,6 +109,15 @@ class TicketOwnerHashDTO(BaseModel):
         max_length=64,
     )
 
+    @field_validator("owner_hash")
+    def validate_owner_hash(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if len(normalized) != 64:
+            raise ValueError("owner_hash must be a 64-character hex SHA256 digest")
+        if any(ch not in "0123456789abcdef" for ch in normalized):
+            raise ValueError("owner_hash must be a hex SHA256 digest")
+        return normalized
+
 
 class TicketAccessEntryDTO(BaseModel):
     user: ShortUserResponse

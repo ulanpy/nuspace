@@ -239,7 +239,7 @@ class CommunityRepository:
         """Create a new photo album from dict data."""
         album = CommunityPhotoAlbum(**album_data)
         self.db_session.add(album)
-        await self.db_session.commit()
+        await self.db_session.flush()
         await self.db_session.refresh(album)
         return album
 
@@ -263,7 +263,7 @@ class CommunityRepository:
         for key, value in album_data.items():
             if hasattr(album, key) and value is not None:
                 setattr(album, key, value)
-        await self.db_session.commit()
+        await self.db_session.flush()
         await self.db_session.refresh(album)
         return album
 

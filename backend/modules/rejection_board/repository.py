@@ -45,6 +45,6 @@ class RejectionBoardRepository:
         data = payload.model_dump()
         record = RejectionBoard(**data)
         self.db.add(record)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(record)
         return record
