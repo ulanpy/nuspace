@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, List
 
-from backend.common.cruds import QueryBuilder
 from backend.core.database.models.sgotinish import (
     Conversation,
     Message,
@@ -10,7 +9,7 @@ from backend.core.database.models.sgotinish import (
     TicketAccess,
 )
 from backend.core.database.models.user import User, UserRole
-from sqlalchemy import and_, delete, func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.elements import ColumnElement
@@ -112,131 +111,145 @@ class TicketRepository:
         self.db_session = db_session
 
     async def get_user_by_sub(self, user_sub: str, with_department: bool = False) -> User | None:
-        qb = QueryBuilder(self.db_session, User).base().filter(User.sub == user_sub)
+        stmt = select(User).where(User.sub == user_sub)
         if with_department:
-            qb = qb.eager(User.department)
-        return await qb.first()
+            stmt = stmt.options(selectinload(User.department))
+        result = await self.db_session.execute(stmt)
+        return result.scalars().first()
 
     async def list_ticket_access_by_user_sub(self, user_sub: str) -> list[TicketAccess]:
-        return await (
-            QueryBuilder(self.db_session, TicketAccess)
-            .base()
-            .filter(TicketAccess.user_sub == user_sub)
-            .all()
-        )
+        stmt = select(TicketAccess).where(TicketAccess.user_sub == user_sub)
+        result = await self.db_session.execute(stmt)
+        return list(result.scalars().all())
 
     async def list_ticket_access_for_ticket_and_user(
         self, ticket_id: int, user_sub: str
     ) -> list[TicketAccess]:
-        return await (
-            QueryBuilder(self.db_session, TicketAccess)
-            .base()
-            .filter(TicketAccess.ticket_id == ticket_id, TicketAccess.user_sub == user_sub)
-            .all()
+        stmt = select(TicketAccess).where(
+            TicketAccess.ticket_id == ticket_id,
+            TicketAccess.user_sub == user_sub,
         )
+        result = await self.db_session.execute(stmt)
+        return list(result.scalars().all())
 
     async def get_ticket_access_for_ticket_and_user(
         self, ticket_id: int, user_sub: str
     ) -> TicketAccess | None:
-        return await (
-            QueryBuilder(self.db_session, TicketAccess)
-            .base()
-            .filter(TicketAccess.ticket_id == ticket_id, TicketAccess.user_sub == user_sub)
-            .first()
-        )
+        stmt = select(TicketAccess).where(
+            TicketAccess.ticket_id == ticket_id,
+            TicketAccess.user_sub == user_sub,
+        ).limit(1)
+        result = await self.db_session.execute(stmt)
+        return result.scalars().first()
 
     async def list_ticket_accesses_for_ticket(self, ticket_id: int) -> list[TicketAccess]:
-        return await (
-            QueryBuilder(self.db_session, TicketAccess)
-            .base()
-            .filter(TicketAccess.ticket_id == ticket_id)
-            .eager(TicketAccess.user, TicketAccess.granter)
-            .all()
+        stmt = (
+            select(TicketAccess)
+            .where(TicketAccess.ticket_id == ticket_id)
+            .options(selectinload(TicketAccess.user), selectinload(TicketAccess.granter))
         )
+        result = await self.db_session.execute(stmt)
+        return list(result.scalars().all())
 
     async def list_ticket_accesses_for_tickets_and_user(
         self, ticket_ids: list[int], user_sub: str
     ) -> list[TicketAccess]:
         if not ticket_ids:
             return []
-        return await (
-            QueryBuilder(self.db_session, TicketAccess)
-            .base()
-            .filter(
-                TicketAccess.ticket_id.in_(ticket_ids),
-                TicketAccess.user_sub == user_sub,
-            )
-            .all()
+        stmt = select(TicketAccess).where(
+            TicketAccess.ticket_id.in_(ticket_ids),
+            TicketAccess.user_sub == user_sub,
         )
+        result = await self.db_session.execute(stmt)
+        return list(result.scalars().all())
 
     async def add_ticket_accesses(self, accesses: list[TicketAccess]) -> None:
         if not accesses:
             return
-        await QueryBuilder(self.db_session, TicketAccess).add_orm_list(accesses)
+        self.db_session.add_all(accesses)
+        await self.db_session.flush()
 
     async def count_tickets(self, filters: list[ColumnElement[bool]]) -> int:
-        return await (
-            QueryBuilder(self.db_session, Ticket)
-            .blank(model=Ticket)
-            .base(count=True)
-            .filter(*filters)
-            .count()
-        )
+        stmt = select(func.count()).select_from(Ticket).where(*filters)
+        result = await self.db_session.execute(stmt)
+        return (result.scalar() or 0)
 
     async def list_tickets(
         self, filters: list[ColumnElement[bool]], size: int, page: int
     ) -> list[Ticket]:
-        return await (
-            QueryBuilder(self.db_session, Ticket)
-            .base()
-            .filter(*filters)
-            .eager(Ticket.author)
-            .option(selectinload(Ticket.conversations).selectinload(Conversation.sg_member))
-            .paginate(size, page)
-            .order(Ticket.created_at.desc())
-            .all()
+        offset = (page - 1) * size
+        stmt = (
+            select(Ticket)
+            .where(*filters)
+            .options(
+                selectinload(Ticket.author),
+                selectinload(Ticket.conversations).selectinload(Conversation.sg_member),
+            )
+            .order_by(Ticket.created_at.desc())
+            .limit(size)
+            .offset(offset)
         )
+        result = await self.db_session.execute(stmt)
+        return list(result.scalars().all())
 
     async def create_ticket(self, ticket_data: "schemas.TicketCreateDTO") -> Ticket:
-        return await QueryBuilder(self.db_session, Ticket).add(
-            data=ticket_data,
-            preload=[Ticket.author, Ticket.conversations],
+        instance = Ticket(**ticket_data.model_dump())
+        self.db_session.add(instance)
+        await self.db_session.flush()
+        await self.db_session.refresh(instance)
+        stmt = (
+            select(Ticket)
+            .where(Ticket.id == instance.id)
+            .options(
+                selectinload(Ticket.author),
+                selectinload(Ticket.conversations),
+            )
         )
+        result = await self.db_session.execute(stmt)
+        return result.scalar_one()
 
     async def list_bosses(self) -> list[User]:
-        return await (
-            QueryBuilder(self.db_session, User)
-            .blank(model=User)
-            .base()
-            .filter(User.role == UserRole.boss)
-            .all()
-        )
+        stmt = select(User).where(User.role == UserRole.boss)
+        result = await self.db_session.execute(stmt)
+        return list(result.scalars().all())
 
     async def update_ticket(
         self, ticket: Ticket, ticket_data: "schemas.TicketUpdateDTO"
     ) -> Ticket:
-        return await QueryBuilder(self.db_session, Ticket).update(
-            instance=ticket,
-            update_data=ticket_data,
-            preload=[Ticket.author],
+        data_dict = ticket_data.model_dump(exclude_unset=True)
+        for field, val in data_dict.items():
+            if hasattr(ticket, field):
+                setattr(ticket, field, val)
+        await self.db_session.flush()
+        await self.db_session.refresh(ticket)
+        stmt = (
+            select(Ticket)
+            .where(Ticket.id == ticket.id)
+            .options(selectinload(Ticket.author))
         )
+        result = await self.db_session.execute(stmt)
+        return result.scalar_one()
 
     async def get_ticket_by_id(self, ticket_id: int) -> Ticket | None:
-        return await (
-            QueryBuilder(self.db_session, Ticket)
-            .base()
-            .filter(Ticket.id == ticket_id)
-            .eager(Ticket.author)
-            .option(selectinload(Ticket.conversations).selectinload(Conversation.sg_member))
-            .first()
+        stmt = (
+            select(Ticket)
+            .where(Ticket.id == ticket_id)
+            .options(
+                selectinload(Ticket.author),
+                selectinload(Ticket.conversations).selectinload(Conversation.sg_member),
+            )
         )
+        result = await self.db_session.execute(stmt)
+        return result.scalars().first()
 
     async def get_ticket_by_owner_hash(self, owner_hash: str) -> Ticket | None:
-        return await (
-            QueryBuilder(self.db_session, Ticket)
-            .base()
-            .filter(Ticket.owner_hash == owner_hash)
-            .eager(Ticket.author)
-            .option(selectinload(Ticket.conversations).selectinload(Conversation.sg_member))
-            .first()
+        stmt = (
+            select(Ticket)
+            .where(Ticket.owner_hash == owner_hash)
+            .options(
+                selectinload(Ticket.author),
+                selectinload(Ticket.conversations).selectinload(Conversation.sg_member),
+            )
         )
+        result = await self.db_session.execute(stmt)
+        return result.scalars().first()
