@@ -1,11 +1,9 @@
 from typing import Annotated, List
 
 from backend.common.dependencies import get_creds_or_401
-from backend.core.database.models.sgotinish import Ticket
 from backend.modules.sgotinish.delegation import dependencies as deps
-from backend.modules.sgotinish.delegation.service import DelegationService
 from backend.modules.sgotinish.delegation import schemas
-from backend.modules.sgotinish.tickets.dependencies import get_ticket
+from backend.modules.sgotinish.delegation.service import DelegationService
 from fastapi import APIRouter, Depends, Query, status
 
 router = APIRouter(tags=["SGotinish Delegation Routes"])
@@ -77,11 +75,10 @@ async def delegate_ticket_access(
     ticket_id: int,
     payload: schemas.DelegateAccessPayload,
     user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    ticket: Ticket = Depends(get_ticket),
     delegation_service: DelegationService = Depends(deps.get_delegation_service),
 ):
-    await delegation_service.delegate_ticket_access(
-        ticket=ticket,
+    await delegation_service.delegate_ticket_access_by_id(
+        ticket_id=ticket_id,
         user_tuple=user_tuple,
         payload=payload,
     )

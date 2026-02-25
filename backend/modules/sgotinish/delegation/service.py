@@ -566,3 +566,18 @@ class DelegationService:
             grantee_sub=payload.target_user_sub,
             permission=payload.permission,
         )
+
+    async def delegate_ticket_access_by_id(
+        self,
+        *,
+        ticket_id: int,
+        user_tuple: tuple[dict, dict],
+        payload: schemas.DelegateAccessPayload,
+    ) -> TicketAccess:
+        """Load ticket and delegate access; 404 if ticket not found."""
+        ticket = await self.get_ticket_entity_or_404(ticket_id)
+        return await self.delegate_ticket_access(
+            ticket=ticket,
+            user_tuple=user_tuple,
+            payload=payload,
+        )

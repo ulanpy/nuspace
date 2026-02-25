@@ -24,9 +24,3 @@ def get_ticket_service(
         notification_service=notification_service,
         notion_service=notion_service,
     )
-async def get_ticket(
-    ticket_id: int,
-    ticket_service: TicketService = Depends(get_ticket_service),
-) -> Ticket:
-    """Dependency to validate that a ticket exists and return it."""
-    return await ticket_service.get_ticket_entity_or_404(ticket_id)
