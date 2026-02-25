@@ -1,17 +1,11 @@
 from typing import Annotated
 
 from backend.common.dependencies import get_creds_or_401, get_creds_or_guest
-from backend.core.database.models.sgotinish import (
-    Ticket,
-    TicketAccess,
-    TicketCategory,
-)
-from backend.core.database.models.user import User
+from backend.core.database.models.sgotinish import TicketCategory
 from backend.modules.sgotinish.tickets import dependencies as deps
 from backend.modules.sgotinish.tickets import schemas
-from backend.modules.sgotinish.tickets.policy import TicketPolicy
 from backend.modules.sgotinish.tickets.service import TicketService
-from fastapi import APIRouter, Depends, Query, HTTPException, status as http_status
+from fastapi import APIRouter, Depends, Query
 
 router = APIRouter(tags=["SGotinish Tickets Routes"])
 
@@ -26,7 +20,6 @@ async def create_ticket(
     ticket_data: schemas.TicketCreateDTO,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     ticket_service: TicketService = Depends(deps.get_ticket_service),
-    _: User = Depends(deps.user_exists_or_404_for_ticket_creation),
 ) -> schemas.TicketResponseDTO:
     """
     Creates a new ticket.
@@ -44,8 +37,7 @@ async def create_ticket(
     **Notes:**
     - `author_sub` can be set to "me" to use the current user's sub.
     """
-    TicketPolicy(user).check_create(ticket_data)
-    response_dto: schemas.TicketResponseDTO = await ticket_service.create_ticket(
+    response_dto: schemas.TicketResponseDTO = await ticket_service.create_ticket_authorized(
         ticket_data=ticket_data, user=user
     )
 
@@ -79,8 +71,7 @@ async def get_tickets(
     **Returns:**
     - List of tickets matching the criteria with pagination info
     """
-    TicketPolicy(user_tuple).check_read_list(author_sub=author_sub)
-    response: schemas.ListTicketDTO = await ticket_service.get_tickets(
+    response: schemas.ListTicketDTO = await ticket_service.get_tickets_authorized(
         user=user_tuple,
         size=size,
         page=page,
@@ -93,9 +84,9 @@ async def get_tickets(
 
 @router.get("/tickets/{ticket_id}", response_model=schemas.TicketResponseDTO)
 async def get_ticket(
+    ticket_id: int,
     user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     ticket_service: TicketService = Depends(deps.get_ticket_service),
-    ticket: Ticket = Depends(deps.get_ticket),
 ) -> schemas.TicketResponseDTO:
     """
     Retrieves a single ticket by its unique ID.
@@ -110,13 +101,10 @@ async def get_ticket(
     **Returns:**
     - A detailed ticket object with all its information
     """
-    # Get ticket access manually since we now have a flat dependency structure
-    access: TicketAccess | None = await ticket_service.get_user_ticket_access(ticket, user_tuple)
-
-    policy = TicketPolicy(user_tuple)
-    policy.check_read_one(ticket=ticket, access=access)
-
-    response_dto = await ticket_service.get_ticket_by_id(ticket_id=ticket.id, user=user_tuple)
+    response_dto = await ticket_service.get_ticket_by_id_authorized(
+        ticket_id=ticket_id,
+        user=user_tuple,
+    )
 
     return response_dto
 
@@ -127,31 +115,25 @@ async def get_ticket_by_owner_hash(
     user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     ticket_service: TicketService = Depends(deps.get_ticket_service),
 ) -> schemas.TicketResponseDTO:
-    ticket = await ticket_service.get_ticket_by_owner_hash(payload.owner_hash, user_tuple)
-    if not ticket:
-        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Ticket not found")
-    return ticket
+    return await ticket_service.get_ticket_by_owner_hash_or_404(payload.owner_hash, user_tuple)
 
 
 
 
 @router.patch("/tickets/{ticket_id}", response_model=schemas.TicketResponseDTO)
 async def update_ticket(
+    ticket_id: int,
     ticket_data: schemas.TicketUpdateDTO,
     user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     ticket_service: TicketService = Depends(deps.get_ticket_service),
-    ticket: Ticket = Depends(deps.get_ticket),
 ) -> schemas.TicketResponseDTO:
     """
     Updates a ticket by its unique ID.
     """
-    # Get ticket access manually since we now have a flat dependency structure
-    access: TicketAccess | None = await ticket_service.get_user_ticket_access(ticket, user_tuple)
-
-    TicketPolicy(user_tuple).check_update(ticket, access)
-
-    response_dto = await ticket_service.update_ticket(
-        ticket=ticket, ticket_data=ticket_data, user=user_tuple
+    response_dto = await ticket_service.update_ticket_authorized(
+        ticket_id=ticket_id,
+        ticket_data=ticket_data,
+        user=user_tuple,
     )
 
     return response_dto

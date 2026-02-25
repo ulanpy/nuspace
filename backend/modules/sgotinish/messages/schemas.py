@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
-from backend.modules.sgotinish.tickets.schemas import SGUserResponse
+from backend.modules.sgotinish.delegation.schemas import SGUserResponse
 
 
 

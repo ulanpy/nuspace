@@ -11,7 +11,7 @@ from backend.core.database.models.sgotinish import (
 )
 from backend.core.database.models.user import User, UserRole
 from backend.common.schemas import ShortUserResponse
-from backend.modules.sgotinish.tickets.schemas import SGUserResponse
+from backend.modules.sgotinish.delegation.schemas import SGUserResponse
 from backend.core.database.models.user import UserRole
 from backend.modules.sgotinish.messages import schemas
 from backend.modules.sgotinish.messages.policy import MessagePolicy

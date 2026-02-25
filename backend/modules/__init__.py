@@ -18,7 +18,8 @@ from .courses.templates import api as templates_api
 from .courses.degree_audit import api as degree_audit_api
 from .notification import api as notification_api
 from .search import api as search_api
-from .sgotinish.tickets import tickets_api, delegation_api
+from .sgotinish.tickets import api as tickets_api
+from .sgotinish.delegation import api as delegation_api
 from .sgotinish.conversations import api as conversations_api
 from .sgotinish.messages import api as messages_api
 from .announcements import api as announcements_api
