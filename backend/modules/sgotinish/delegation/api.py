@@ -17,6 +17,33 @@ async def get_departments(
     return await delegation_service.get_departments_authorized(user_tuple)
 
 
+@router.post("/sg-delegation/departments", response_model=schemas.DepartmentResponseDTO)
+async def create_department(
+    payload: schemas.DepartmentCreatePayload,
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    delegation_service: DelegationService = Depends(deps.get_delegation_service),
+):
+    return await delegation_service.create_department_authorized(
+        user=user_tuple,
+        payload=payload,
+    )
+
+
+@router.delete(
+    "/sg-delegation/departments/{department_id}",
+    response_model=schemas.SGMemberActionResult,
+)
+async def delete_department(
+    department_id: int,
+    user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    delegation_service: DelegationService = Depends(deps.get_delegation_service),
+):
+    return await delegation_service.delete_department_authorized(
+        user=user_tuple,
+        department_id=department_id,
+    )
+
+
 @router.get("/sg-delegation/users", response_model=List[schemas.SGUserResponse])
 async def get_sg_users(
     department_id: int,

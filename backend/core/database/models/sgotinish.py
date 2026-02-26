@@ -130,6 +130,7 @@ class Department(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    is_special: Mapped[bool] = mapped_column(default=False, nullable=False)
 
     users = relationship("User", back_populates="department")
 

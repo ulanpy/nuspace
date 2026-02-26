@@ -29,6 +29,23 @@ class DelegationRepository:
         result = await self.db_session.execute(stmt)
         return result.scalars().first()
 
+    async def get_department_by_name(self, name: str) -> Department | None:
+        stmt = select(Department).where(func.lower(Department.name) == name.lower())
+        result = await self.db_session.execute(stmt)
+        return result.scalars().first()
+
+    async def get_max_department_id(self) -> int:
+        result = await self.db_session.execute(select(func.max(Department.id)))
+        return int(result.scalar() or 0)
+
+    async def add_department(self, department: Department) -> Department:
+        self.db_session.add(department)
+        await self.db_session.flush()
+        return department
+
+    async def delete_department(self, department: Department) -> None:
+        await self.db_session.delete(department)
+
     async def get_user_by_sub(self, user_sub: str, with_department: bool = False) -> User | None:
         stmt = select(User).where(User.sub == user_sub)
         if with_department:
@@ -146,7 +163,12 @@ class DelegationRepository:
         return list(result.scalars().all())
 
     async def list_departments(self) -> list[Department]:
-        stmt = select(Department)
+        stmt = select(Department).order_by(Department.id.asc())
+        result = await self.db_session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_users_by_department(self, department_id: int) -> list[User]:
+        stmt = select(User).where(User.department_id == department_id)
         result = await self.db_session.execute(stmt)
         return list(result.scalars().all())
 

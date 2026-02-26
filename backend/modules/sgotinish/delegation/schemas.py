@@ -12,8 +12,16 @@ class DepartmentResponseDTO(BaseModel):
 
     id: int
     name: str
+    is_special: bool = False
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DepartmentCreatePayload(BaseModel):
+    """Payload for creating a new department."""
+
+    name: str = Field(..., min_length=1, max_length=128, description="Department name")
+    is_special: bool = Field(False, description="Whether this department is special")
 
 
 class SGUserResponse(BaseModel):

@@ -11,6 +11,7 @@ import {
   MessageCreatePayload,
   DelegateAccessPayload,
   Department,
+  DepartmentCreatePayload,
   SGUserResponse,
   MessageListResponse,
   SGMemberActionResult,
@@ -89,6 +90,14 @@ export const sgotinishApi = {
   // Delegation
   getDepartments: async (): Promise<Department[]> => {
     return await apiCall(`/sg-delegation/departments`);
+  },
+
+  createDepartment: async (payload: DepartmentCreatePayload): Promise<Department> => {
+    return await apiCall(`/sg-delegation/departments`, { method: "POST", json: payload });
+  },
+
+  deleteDepartment: async (departmentId: number): Promise<SGMemberActionResult> => {
+    return await apiCall(`/sg-delegation/departments/${departmentId}`, { method: "DELETE" });
   },
 
   getSgUsers: async (departmentId: number): Promise<SGUserResponse[]> => {
