@@ -38,7 +38,6 @@ type CabinetWithdrawalResult = {
 };
 
 const SG_DEPARTMENT_ID = 9;
-const SPECIAL_DEPARTMENT_IDS = [11, 10];
 
 const SG_ROLE_OPTIONS: Array<{ value: "boss" | "capo" | "soldier"; label: string }> = [
   { value: "boss", label: "Head" },
@@ -84,6 +83,7 @@ export function SGMembersManagement({ currentUser }: Props) {
 
   const currentRole = currentUser?.role as UserRole | undefined;
   const isBoss = currentRole === "boss";
+  const canManageDepartments = currentRole === "boss" || currentRole === "admin";
   const canManage = currentRole === "boss" || currentRole === "capo" || currentRole === "admin";
   const isSgMember = currentRole === "boss" || currentRole === "capo" || currentRole === "soldier";
   const canViewMembers = canManage || isSgMember;
@@ -98,11 +98,15 @@ export function SGMembersManagement({ currentUser }: Props) {
     isCapo ? currentDepartmentId : null,
   );
   const [deletingSub, setDeletingSub] = useState<string | null>(null);
+  const [isDepartmentManagerOpen, setIsDepartmentManagerOpen] = useState(false);
+  const [newDepartmentName, setNewDepartmentName] = useState("");
+  const [newDepartmentIsSpecial, setNewDepartmentIsSpecial] = useState(false);
+  const [deletingDepartmentId, setDeletingDepartmentId] = useState<number | null>(null);
 
   const { data: departments = [] } = useQuery({
     queryKey: ["sg-members", "departments"],
     queryFn: sgotinishApi.getDepartments,
-    enabled: canManage,
+    enabled: canViewMembers,
   });
 
   const { data: sgMembers = [], isLoading: isLoadingMembers } = useQuery({
@@ -137,8 +141,19 @@ export function SGMembersManagement({ currentUser }: Props) {
     });
   }, [sgMembers]);
 
-  const departmentGroups = useMemo(() => {
+  const departmentNameById = useMemo(() => {
+    return new Map<number, string>(departments.map((department) => [department.id, department.name]));
+  }, [departments]);
+
+  const specialDepartmentDefinitions = useMemo(() => {
+    return departments
+      .filter((department) => department.is_special)
+      .sort((a, b) => b.id - a.id);
+  }, [departments]);
+
+  const { regularDepartmentGroups, specialDepartmentGroups } = useMemo(() => {
     const departmentMap = new Map<number, DepartmentGroup>();
+    const specialDepartmentIds = new Set<number>(specialDepartmentDefinitions.map((department) => department.id));
 
     const ensureGroup = (departmentId: number, departmentName: string) => {
       const existing = departmentMap.get(departmentId);
@@ -159,6 +174,7 @@ export function SGMembersManagement({ currentUser }: Props) {
       const departmentId = member.department?.id ?? -1;
       const departmentName =
         member.department?.name ??
+        departmentNameById.get(departmentId) ??
         (departmentId === SG_DEPARTMENT_ID ? "SG" : departmentId === -1 ? "Unassigned" : "Department");
 
       const group = ensureGroup(departmentId, departmentName);
@@ -173,26 +189,39 @@ export function SGMembersManagement({ currentUser }: Props) {
     const sortMembers = (members: SGMemberResponse[]) =>
       members.sort((a, b) => `${a.user.name} ${a.user.surname}`.localeCompare(`${b.user.name} ${b.user.surname}`));
 
-    const groups = Array.from(departmentMap.values()).map((group) => ({
+    const allGroups = Array.from(departmentMap.values()).map((group) => ({
       ...group,
       capos: sortMembers(group.capos),
       soldiers: sortMembers(group.soldiers),
     }));
 
-    const priority = (departmentId: number) => {
-      const index = SPECIAL_DEPARTMENT_IDS.indexOf(departmentId);
-      return index === -1 ? Number.MAX_SAFE_INTEGER : index;
-    };
+    const specialGroupMap = new Map<number, DepartmentGroup>();
+    for (const group of allGroups) {
+      if (specialDepartmentIds.has(group.id)) {
+        specialGroupMap.set(group.id, group);
+      }
+    }
 
-    return groups
-      .filter((group) => group.id !== SG_DEPARTMENT_ID)
-      .sort((a, b) => {
-        const aPriority = priority(a.id);
-        const bPriority = priority(b.id);
-        if (aPriority !== bPriority) return aPriority - bPriority;
-        return a.name.localeCompare(b.name);
-      });
-  }, [sgMembers]);
+    const specialOrdered = specialDepartmentDefinitions.map((department) => {
+      const existing = specialGroupMap.get(department.id);
+      if (existing) return existing;
+      return {
+        id: department.id,
+        name: department.name,
+        capos: [],
+        soldiers: [],
+      };
+    });
+
+    const regular = allGroups
+      .filter((group) => group.id !== SG_DEPARTMENT_ID && !specialDepartmentIds.has(group.id))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    return {
+      regularDepartmentGroups: regular,
+      specialDepartmentGroups: specialOrdered,
+    };
+  }, [departmentNameById, sgMembers, specialDepartmentDefinitions]);
 
   const cabinetTargets = useMemo(
     () => sgMembers.filter((member) => member.role !== "boss"),
@@ -297,7 +326,7 @@ export function SGMembersManagement({ currentUser }: Props) {
       if (result.failures.length === 0) {
         toast({
           title: "Cabinet withdrawn",
-          description: `${result.removedCount} members were removed. Bosses were kept.`,
+          description: `${result.removedCount} members were removed. Heads were kept.`,
           variant: "success",
         });
         return;
@@ -316,6 +345,54 @@ export function SGMembersManagement({ currentUser }: Props) {
         description: await parseApiError(error, "Could not withdraw cabinet."),
         variant: "error",
       });
+    },
+  });
+
+  const createDepartmentMutation = useMutation({
+    mutationFn: sgotinishApi.createDepartment,
+    onSuccess: (department) => {
+      queryClient.invalidateQueries({ queryKey: ["sg-members", "departments"] });
+      queryClient.invalidateQueries({ queryKey: ["departments"] });
+      queryClient.invalidateQueries({ queryKey: ["sg-members", "list"] });
+      toast({
+        title: "Department created",
+        description: `${department.name} was added successfully.`,
+        variant: "success",
+      });
+      setNewDepartmentName("");
+      setNewDepartmentIsSpecial(false);
+    },
+    onError: async (error) => {
+      toast({
+        title: "Failed to create department",
+        description: await parseApiError(error, "Could not create department."),
+        variant: "error",
+      });
+    },
+  });
+
+  const deleteDepartmentMutation = useMutation({
+    mutationFn: (departmentId: number) => sgotinishApi.deleteDepartment(departmentId),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["sg-members", "departments"] });
+      queryClient.invalidateQueries({ queryKey: ["departments"] });
+      queryClient.invalidateQueries({ queryKey: ["sg-members", "list"] });
+      queryClient.invalidateQueries({ queryKey: ["sg-tickets"] });
+      toast({
+        title: "Department deleted",
+        description: result.detail,
+        variant: "success",
+      });
+    },
+    onError: async (error) => {
+      toast({
+        title: "Failed to delete department",
+        description: await parseApiError(error, "Could not delete department."),
+        variant: "error",
+      });
+    },
+    onSettled: () => {
+      setDeletingDepartmentId(null);
     },
   });
 
@@ -348,9 +425,16 @@ export function SGMembersManagement({ currentUser }: Props) {
     });
   };
 
+  const canCapoRemoveMember = (member: SGMemberResponse) => {
+    if (currentRole !== "capo") return true;
+    if (member.role !== "soldier") return false;
+    if (currentDepartmentId === null) return false;
+    return member.department?.id === currentDepartmentId;
+  };
+
   const removeMember = (member: SGMemberResponse) => {
     if (!canManage || member.user.sub === currentUser?.sub || removeMutation.isPending) return;
-    if (currentRole === "capo" && member.role === "boss") return;
+    if (!canCapoRemoveMember(member)) return;
     const confirmed = window.confirm(`Remove ${member.user.name} ${member.user.surname} from SG?`);
     if (!confirmed) return;
     setDeletingSub(member.user.sub);
@@ -369,19 +453,19 @@ export function SGMembersManagement({ currentUser }: Props) {
     if (cabinetTargets.length === 0) {
       toast({
         title: "No cabinet members",
-        description: "There are no capos or members to withdraw.",
+        description: "There are no executives or members to withdraw.",
         variant: "warning",
       });
       return;
     }
 
     const firstConfirm = window.confirm(
-      `Withdraw cabinet and remove ${cabinetTargets.length} non-boss SG members?`,
+      `Withdraw cabinet and remove ${cabinetTargets.length} non-head SG members?`,
     );
     if (!firstConfirm) return;
 
     const secondConfirm = window.confirm(
-      "This action keeps only bosses. Continue to step 2 confirmation?",
+      "This action keeps only heads. Continue to step 2 confirmation?",
     );
     if (!secondConfirm) return;
 
@@ -393,6 +477,35 @@ export function SGMembersManagement({ currentUser }: Props) {
     withdrawCabinetMutation.mutate(cabinetTargets);
   };
 
+  const createDepartment = () => {
+    if (!canManageDepartments || createDepartmentMutation.isPending) return;
+
+    const normalizedName = newDepartmentName.trim();
+    if (!normalizedName) {
+      toast({
+        title: "Department name required",
+        description: "Enter a department name.",
+        variant: "warning",
+      });
+      return;
+    }
+
+    createDepartmentMutation.mutate({
+      name: normalizedName,
+      is_special: newDepartmentIsSpecial,
+    });
+  };
+
+  const deleteDepartment = (department: Department) => {
+    if (!canManageDepartments || deleteDepartmentMutation.isPending) return;
+    const confirmed = window.confirm(
+      `Delete department "${department.name}"? SG members in this department will be removed from SG.`,
+    );
+    if (!confirmed) return;
+    setDeletingDepartmentId(department.id);
+    deleteDepartmentMutation.mutate(department.id);
+  };
+
   const sgDepartmentName =
     departments.find((department) => department.id === SG_DEPARTMENT_ID)?.name ??
     sgMembers.find((member) => member.department?.id === SG_DEPARTMENT_ID)?.department?.name ??
@@ -402,7 +515,7 @@ export function SGMembersManagement({ currentUser }: Props) {
     const canRemoveMember =
       canManage &&
       member.user.sub !== currentUser?.sub &&
-      !(currentRole === "capo" && member.role === "boss");
+      canCapoRemoveMember(member);
 
     return (
       <div
@@ -434,6 +547,47 @@ export function SGMembersManagement({ currentUser }: Props) {
     );
   };
 
+  const renderDepartmentGroup = (group: DepartmentGroup) => {
+    return (
+      <div className="rounded-lg border border-border/60 p-3 space-y-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold">{group.name}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className="inline-flex items-center gap-1.5 tabular-nums">
+              <span>Executives</span>
+              <span>{group.capos.length}</span>
+            </Badge>
+            <Badge variant="outline" className="inline-flex items-center gap-1.5 tabular-nums">
+              <span>Members</span>
+              <span>{group.soldiers.length}</span>
+            </Badge>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Executives</p>
+            {group.capos.length > 0 ? (
+              group.capos.map((member) => renderMemberRow(member))
+            ) : (
+              <p className="text-sm text-muted-foreground">No executives in this department.</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Members</p>
+            {group.soldiers.length > 0 ? (
+              group.soldiers.map((member) => renderMemberRow(member))
+            ) : (
+              <p className="text-sm text-muted-foreground">No members in this department.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (!canViewMembers) {
     return null;
   }
@@ -449,6 +603,16 @@ export function SGMembersManagement({ currentUser }: Props) {
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {canManageDepartments && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDepartmentManagerOpen((prev) => !prev)}
+                disabled={createDepartmentMutation.isPending || deleteDepartmentMutation.isPending}
+              >
+                {isDepartmentManagerOpen ? "Close Departments" : "Manage Departments"}
+              </Button>
+            )}
             {isBoss && (
               <Button
                 variant="destructive"
@@ -555,7 +719,7 @@ export function SGMembersManagement({ currentUser }: Props) {
                 </Select>
                 {isCapo && (
                   <p className="text-xs text-muted-foreground">
-                    Capos can assign only members in their own department.
+                    Executives can assign only members in their own department.
                   </p>
                 )}
                 {!isCapo && selectedDepartment && (
@@ -572,6 +736,76 @@ export function SGMembersManagement({ currentUser }: Props) {
           </div>
         )}
 
+        {canManageDepartments && isDepartmentManagerOpen && (
+          <div className="rounded-xl border border-border/60 p-4 space-y-4">
+            <h3 className="text-sm font-semibold">Manage Departments</h3>
+
+            <div className="space-y-2">
+              {departments.length > 0 ? (
+                departments.map((department) => (
+                  <div
+                    key={department.id}
+                    className="flex flex-col gap-2 rounded-lg border border-border/60 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{department.name}</span>
+                      {department.is_special && <Badge variant="secondary">Special</Badge>}
+                      {department.id === SG_DEPARTMENT_ID && <Badge variant="outline">Protected</Badge>}
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteDepartment(department)}
+                      disabled={
+                        department.id === SG_DEPARTMENT_ID ||
+                        (deleteDepartmentMutation.isPending && deletingDepartmentId === department.id)
+                      }
+                    >
+                      {department.id === SG_DEPARTMENT_ID
+                        ? "Delete disabled"
+                        : deleteDepartmentMutation.isPending && deletingDepartmentId === department.id
+                        ? "Deleting..."
+                        : "Delete"}
+                    </Button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No departments found.</p>
+              )}
+            </div>
+
+            <div className="rounded-lg border border-border/60 p-3 space-y-3">
+              <p className="text-sm font-semibold">Add Department</p>
+              <div className="space-y-2">
+                <Label htmlFor="new-department-name">Name</Label>
+                <Input
+                  id="new-department-name"
+                  value={newDepartmentName}
+                  onChange={(event) => setNewDepartmentName(event.target.value)}
+                  placeholder="Enter department name"
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={newDepartmentIsSpecial}
+                  onChange={(event) => setNewDepartmentIsSpecial(event.target.checked)}
+                  className="h-4 w-4"
+                />
+                <span>Special department</span>
+              </label>
+              <div className="flex justify-end">
+                <Button
+                  onClick={createDepartment}
+                  disabled={!newDepartmentName.trim() || createDepartmentMutation.isPending}
+                >
+                  {createDepartmentMutation.isPending ? "Creating..." : "Add Department"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-2">
           <h3 className="text-sm font-semibold">SG Hierarchy Tree</h3>
           {isLoadingMembers ? (
@@ -579,63 +813,50 @@ export function SGMembersManagement({ currentUser }: Props) {
           ) : sgMembers.length === 0 ? (
             <div className="text-sm text-muted-foreground">No SG members found.</div>
           ) : (
-            <div className="rounded-xl border border-border/60 p-4 space-y-4">
-              <div className="rounded-lg border border-border/60 bg-muted/20 p-3 space-y-3">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold">{sgDepartmentName}</p>
-                    <p className="text-xs text-muted-foreground">Top SG leadership</p>
+            <div className="space-y-4">
+              <div className="rounded-xl border border-border/60 p-4 space-y-4">
+                <div className="rounded-lg border border-border/60 bg-muted/20 p-3 space-y-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold">{sgDepartmentName}</p>
+                    </div>
+                    <Badge variant="secondary" className="inline-flex items-center gap-1.5 tabular-nums">
+                      <span>Heads</span>
+                      <span>{sortedBosses.length}</span>
+                    </Badge>
                   </div>
-                  <Badge variant="secondary">Bosses: {sortedBosses.length}</Badge>
+                  <div className="space-y-2">
+                    {sortedBosses.length > 0 ? (
+                      sortedBosses.map((member) => renderMemberRow(member))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No heads assigned.</p>
+                    )}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  {sortedBosses.length > 0 ? (
-                    sortedBosses.map((member) => renderMemberRow(member))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No bosses assigned.</p>
-                  )}
-                </div>
+
+                {regularDepartmentGroups.length > 0 ? (
+                  <div className="border-l border-border/60 pl-4 space-y-3">
+                    {regularDepartmentGroups.map((group) => (
+                      <div key={group.id}>{renderDepartmentGroup(group)}</div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No departments under SG yet.</p>
+                )}
               </div>
 
-              {departmentGroups.length > 0 ? (
-                <div className="border-l border-border/60 pl-4 space-y-3">
-                  {departmentGroups.map((group) => (
-                    <div key={group.id} className="rounded-lg border border-border/60 p-3 space-y-3">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="text-sm font-semibold">{group.name}</p>
-                          <p className="text-xs text-muted-foreground">Capos are shown above members.</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">Capos: {group.capos.length}</Badge>
-                          <Badge variant="outline">Members: {group.soldiers.length}</Badge>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                        <div className="space-y-2">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Capos</p>
-                          {group.capos.length > 0 ? (
-                            group.capos.map((member) => renderMemberRow(member))
-                          ) : (
-                            <p className="text-sm text-muted-foreground">No capos in this department.</p>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Members</p>
-                          {group.soldiers.length > 0 ? (
-                            group.soldiers.map((member) => renderMemberRow(member))
-                          ) : (
-                            <p className="text-sm text-muted-foreground">No members in this department.</p>
-                          )}
-                        </div>
-                      </div>
+              <div className="rounded-xl border border-border/60 p-4 space-y-3">
+                <h4 className="text-sm font-semibold">Special Departments</h4>
+                {specialDepartmentGroups.length > 0 ? (
+                  specialDepartmentGroups.map((group) => (
+                    <div key={`special-${group.id}`} className="rounded-lg border border-border/60 bg-muted/10 p-1">
+                      {renderDepartmentGroup(group)}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No departments under SG yet.</p>
-              )}
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No special departments configured.</p>
+                )}
+              </div>
             </div>
           )}
         </div>

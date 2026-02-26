@@ -153,6 +153,12 @@ export interface TicketAccessEntry {
 export interface Department {
     id: number;
     name: string;
+    is_special: boolean;
+}
+
+export interface DepartmentCreatePayload {
+    name: string;
+    is_special: boolean;
 }
 
 export interface SGUserResponse {

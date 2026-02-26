@@ -3,7 +3,13 @@ from datetime import datetime
 from typing import List
 
 from backend.common.schemas import ShortUserResponse
-from backend.core.database.models.sgotinish import Conversation, PermissionType, Ticket, TicketAccess
+from backend.core.database.models.sgotinish import (
+    Conversation,
+    Department,
+    PermissionType,
+    Ticket,
+    TicketAccess,
+)
 from backend.core.database.models.user import User, UserRole
 from backend.modules.sgotinish.delegation import repository, schemas
 from backend.modules.sgotinish.tickets.interfaces import (
@@ -106,6 +112,15 @@ class DelegationService:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to manage SG members.",
+        )
+
+    @staticmethod
+    def _ensure_can_manage_departments(actor_role: UserRole) -> None:
+        if actor_role in {UserRole.admin, UserRole.boss}:
+            return
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to manage departments.",
         )
 
     async def _pick_reassignment_candidate(
@@ -388,11 +403,25 @@ class DelegationService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Target user is not an SG member.",
             )
-        if actor_role == UserRole.capo and target_user.role == UserRole.boss:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Capos cannot remove bosses.",
-            )
+        if actor_role == UserRole.capo:
+            if target_user.role != UserRole.soldier:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Capos can remove only soldiers.",
+                )
+
+            actor_department_id = actor_user.department_id
+            if actor_department_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Your account has no department assigned.",
+                )
+
+            if target_user.department_id != actor_department_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Capos can remove soldiers only in their own department.",
+                )
         if actor_role == UserRole.boss and target_user.role == UserRole.boss:
             actor_boss_time = actor_user.sg_assigned_at or actor_user.created_at or datetime.min
             target_boss_time = target_user.sg_assigned_at or target_user.created_at or datetime.min
@@ -474,6 +503,112 @@ class DelegationService:
     ) -> List[schemas.DepartmentResponseDTO]:
         TicketPolicy(user).check_read_sg_members()
         return await self.get_departments()
+
+    async def create_department(
+        self,
+        *,
+        payload: schemas.DepartmentCreatePayload,
+    ) -> schemas.DepartmentResponseDTO:
+        normalized_name = payload.name.strip()
+        if not normalized_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Department name is required.",
+            )
+
+        existing = await self.repository.get_department_by_name(normalized_name)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Department with this name already exists.",
+            )
+
+        next_department_id = (await self.repository.get_max_department_id()) + 1
+        department = Department(
+            id=next_department_id,
+            name=normalized_name,
+            is_special=payload.is_special,
+        )
+        await self.repository.add_department(department)
+        await self.db_session.commit()
+        return schemas.DepartmentResponseDTO.model_validate(department)
+
+    async def create_department_authorized(
+        self,
+        *,
+        user: tuple[dict, dict],
+        payload: schemas.DepartmentCreatePayload,
+    ) -> schemas.DepartmentResponseDTO:
+        actor_role = self._current_role(user)
+        self._ensure_can_manage_departments(actor_role)
+        return await self.create_department(payload=payload)
+
+    async def delete_department(
+        self,
+        *,
+        actor_sub: str,
+        department_id: int,
+    ) -> schemas.SGMemberActionResult:
+        if department_id == 9:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="SG root department cannot be deleted.",
+            )
+
+        department = await self.repository.get_department_by_id(department_id)
+        if not department:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Department not found",
+            )
+
+        users = await self.repository.list_users_by_department(department_id)
+        sg_users = [user for user in users if user.role in self.SG_MEMBER_ROLES]
+
+        bosses_to_remove = [user for user in sg_users if user.role == UserRole.boss]
+        if bosses_to_remove:
+            total_bosses = await self._count_bosses()
+            if total_bosses - len(bosses_to_remove) <= 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="At least one boss must remain in the system.",
+                )
+
+        for member in sg_users:
+            member.role = UserRole.default
+            member.department_id = None
+            member.sg_assigned_at = None
+            member.sg_assigned_by_sub = None
+
+        for user in users:
+            if user.role in self.SG_MEMBER_ROLES:
+                continue
+            user.department_id = None
+
+        await self.db_session.flush()
+
+        for member in sg_users:
+            await self._reassign_tickets_for_removed_member(
+                removed_user=member,
+                granted_by_sub=actor_sub,
+            )
+
+        await self.repository.delete_department(department)
+        await self.db_session.commit()
+        return schemas.SGMemberActionResult(
+            detail=f"Department deleted. Removed {len(sg_users)} SG member(s) from SG.",
+        )
+
+    async def delete_department_authorized(
+        self,
+        *,
+        user: tuple[dict, dict],
+        department_id: int,
+    ) -> schemas.SGMemberActionResult:
+        actor_sub = self._current_sub(user)
+        actor_role = self._current_role(user)
+        self._ensure_can_manage_departments(actor_role)
+        return await self.delete_department(actor_sub=actor_sub, department_id=department_id)
 
     async def get_sg_users(self, department_id: int) -> List[schemas.SGUserResponse]:
         users = await self.repository.list_sg_users_by_department(department_id)
