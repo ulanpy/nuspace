@@ -11,19 +11,18 @@ from backend.core.database.models.sgotinish import (
     TicketAccess,
 )
 from backend.core.database.models.user import User, UserRole
+from backend.modules.sgotinish.delegation.policy import DelegationPolicy
 from backend.modules.sgotinish.delegation import repository, schemas
 from backend.modules.sgotinish.tickets.interfaces import (
     AbstractNotificationService,
     AbstractNotionService,
 )
-from backend.modules.sgotinish.tickets.policy import TicketPolicy
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class DelegationService:
     SG_MEMBER_ROLES = {UserRole.boss, UserRole.capo, UserRole.soldier}
-    SG_OR_ADMIN_ROLES = {UserRole.admin, UserRole.boss, UserRole.capo, UserRole.soldier}
     PERMISSION_RANK = {
         PermissionType.VIEW: 1,
         PermissionType.ASSIGN: 2,
@@ -42,28 +41,8 @@ class DelegationService:
         self.notion_service = notion_service
 
     @staticmethod
-    def _current_sub(user: tuple[dict, dict]) -> str:
-        sub = user[0].get("sub")
-        if not sub:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Authentication credentials were not provided",
-            )
-        return sub
-
-    @staticmethod
-    def _current_role(user: tuple[dict, dict]) -> UserRole:
-        role_value = user[1].get("role")
-        if not role_value:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Authentication credentials were not provided",
-            )
-        return UserRole(role_value)
-
-    @staticmethod
-    def _is_sg_or_admin_role(role: UserRole) -> bool:
-        return role in {UserRole.admin, UserRole.boss, UserRole.capo, UserRole.soldier}
+    def _policy(user: tuple[dict, dict]) -> DelegationPolicy:
+        return DelegationPolicy(user)
 
     @staticmethod
     def _to_short_user(user: User | None):
@@ -80,49 +59,6 @@ class DelegationService:
                 detail="Department not found",
             )
 
-    async def _ensure_can_manage_membership(
-        self,
-        *,
-        actor_role: UserRole,
-        actor_department_id: int | None,
-        target_role: UserRole,
-        target_department_id: int,
-    ) -> None:
-        if actor_role in {UserRole.admin, UserRole.boss}:
-            return
-
-        if actor_role == UserRole.capo:
-            if target_role != UserRole.soldier:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Capos can assign only the soldier role.",
-                )
-            if actor_department_id is None:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Your account has no department assigned.",
-                )
-            if target_department_id != actor_department_id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Capos can assign members only in their own department.",
-                )
-            return
-
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to manage SG members.",
-        )
-
-    @staticmethod
-    def _ensure_can_manage_departments(actor_role: UserRole) -> None:
-        if actor_role in {UserRole.admin, UserRole.boss}:
-            return
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to manage departments.",
-        )
-
     async def _pick_reassignment_candidate(
         self,
         *,
@@ -133,7 +69,7 @@ class DelegationService:
     ) -> User | None:
         if granter_sub and granter_sub != removed_sub:
             granter = granter_map.get(granter_sub)
-            if granter and self._is_sg_or_admin_role(granter.role):
+            if granter and DelegationPolicy.is_sg_or_admin_role(granter.role):
                 return granter
         return fallback_bosses[0] if fallback_bosses else None
 
@@ -257,12 +193,8 @@ class DelegationService:
         q: str | None,
         limit: int,
     ) -> list[schemas.SGMemberSearchResponseDTO]:
-        actor_role = self._current_role(user)
-        if actor_role not in {UserRole.admin, UserRole.boss, UserRole.capo}:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to manage SG members.",
-            )
+        policy = self._policy(user)
+        policy.check_manage_sg_members()
 
         users = await self.repository.search_users_for_sg(q=q, limit=limit)
 
@@ -285,12 +217,7 @@ class DelegationService:
         *,
         user: tuple[dict, dict],
     ) -> list[schemas.SGMemberResponseDTO]:
-        actor_role = self._current_role(user)
-        if actor_role not in self.SG_OR_ADMIN_ROLES:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to view SG members.",
-            )
+        self._policy(user).check_view_sg_members()
 
         members = await self.repository.list_sg_members(list(self.SG_MEMBER_ROLES))
         role_priority = {UserRole.boss: 0, UserRole.capo: 1, UserRole.soldier: 2}
@@ -313,9 +240,8 @@ class DelegationService:
         user: tuple[dict, dict],
         payload: schemas.SGMemberUpsertPayload,
     ) -> schemas.SGMemberResponseDTO:
-        actor_sub = self._current_sub(user)
-        actor_role = self._current_role(user)
-        actor_department_id = user[1].get("department_id")
+        policy = self._policy(user)
+        actor_sub = policy.user_sub
 
         target_user = await self.repository.get_user_by_sub(
             payload.target_user_sub, with_department=True
@@ -326,27 +252,17 @@ class DelegationService:
                 detail="Target user not found",
             )
 
-        if target_user.role == UserRole.admin:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Admin users cannot be reassigned through SG management.",
-            )
+        policy.check_target_reassignable(target_user)
 
         await self._ensure_department_exists(payload.department_id)
-        await self._ensure_can_manage_membership(
-            actor_role=actor_role,
-            actor_department_id=actor_department_id,
+        policy.check_membership_assignment(
             target_role=payload.role,
             target_department_id=payload.department_id,
         )
 
         if target_user.role == UserRole.boss and payload.role != UserRole.boss:
             remaining_bosses = await self._count_bosses(exclude_sub=target_user.sub)
-            if remaining_bosses <= 0:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="At least one boss must remain in the system.",
-                )
+            DelegationPolicy.check_bosses_can_remain(remaining_bosses)
 
         previous_role = target_user.role
         target_user.role = payload.role
@@ -371,19 +287,9 @@ class DelegationService:
         user: tuple[dict, dict],
         target_user_sub: str,
     ) -> schemas.SGMemberActionResult:
-        actor_sub = self._current_sub(user)
-        actor_role = self._current_role(user)
-
-        if actor_role not in {UserRole.admin, UserRole.boss, UserRole.capo}:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have permission to remove SG members.",
-            )
-        if target_user_sub == actor_sub:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Use self-withdraw to remove your own SG role.",
-            )
+        policy = self._policy(user)
+        actor_sub = policy.user_sub
+        policy.check_remove_request(target_user_sub=target_user_sub)
 
         actor_user = await self.repository.get_user_by_sub(actor_sub)
         if not actor_user:
@@ -398,45 +304,10 @@ class DelegationService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Target user not found",
             )
-        if target_user.role not in self.SG_MEMBER_ROLES:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Target user is not an SG member.",
-            )
-        if actor_role == UserRole.capo:
-            if target_user.role != UserRole.soldier:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Capos can remove only soldiers.",
-                )
-
-            actor_department_id = actor_user.department_id
-            if actor_department_id is None:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Your account has no department assigned.",
-                )
-
-            if target_user.department_id != actor_department_id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Capos can remove soldiers only in their own department.",
-                )
-        if actor_role == UserRole.boss and target_user.role == UserRole.boss:
-            actor_boss_time = actor_user.sg_assigned_at or actor_user.created_at or datetime.min
-            target_boss_time = target_user.sg_assigned_at or target_user.created_at or datetime.min
-            if actor_boss_time > target_boss_time:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You cannot remove a boss who was assigned before you.",
-                )
+        policy.check_remove_target(actor_user=actor_user, target_user=target_user)
         if target_user.role == UserRole.boss:
             remaining_bosses = await self._count_bosses(exclude_sub=target_user.sub)
-            if remaining_bosses <= 0:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="At least one boss must remain in the system.",
-                )
+            DelegationPolicy.check_bosses_can_remain(remaining_bosses)
 
         await self._reassign_tickets_for_removed_member(
             removed_user=target_user,
@@ -456,14 +327,9 @@ class DelegationService:
         *,
         user: tuple[dict, dict],
     ) -> schemas.SGMemberActionResult:
-        actor_sub = self._current_sub(user)
-        actor_role = self._current_role(user)
-
-        if actor_role not in self.SG_MEMBER_ROLES:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Only SG members can withdraw.",
-            )
+        policy = self._policy(user)
+        actor_sub = policy.user_sub
+        policy.check_withdraw_from_sg()
 
         actor_user = await self.repository.get_user_by_sub(actor_sub)
         if not actor_user:
@@ -474,11 +340,10 @@ class DelegationService:
 
         if actor_user.role == UserRole.boss:
             remaining_bosses = await self._count_bosses(exclude_sub=actor_user.sub)
-            if remaining_bosses <= 0:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="You are the last boss. Add another boss before withdrawing.",
-                )
+            DelegationPolicy.check_bosses_can_remain(
+                remaining_bosses,
+                withdrawing_self=True,
+            )
 
         await self._reassign_tickets_for_removed_member(
             removed_user=actor_user,
@@ -501,7 +366,7 @@ class DelegationService:
         self,
         user: tuple[dict, dict],
     ) -> List[schemas.DepartmentResponseDTO]:
-        TicketPolicy(user).check_read_sg_members()
+        self._policy(user).check_view_sg_members()
         return await self.get_departments()
 
     async def create_department(
@@ -539,8 +404,7 @@ class DelegationService:
         user: tuple[dict, dict],
         payload: schemas.DepartmentCreatePayload,
     ) -> schemas.DepartmentResponseDTO:
-        actor_role = self._current_role(user)
-        self._ensure_can_manage_departments(actor_role)
+        self._policy(user).check_manage_departments()
         return await self.create_department(payload=payload)
 
     async def delete_department(
@@ -549,11 +413,7 @@ class DelegationService:
         actor_sub: str,
         department_id: int,
     ) -> schemas.SGMemberActionResult:
-        if department_id == 9:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="SG root department cannot be deleted.",
-            )
+        DelegationPolicy.check_department_deletable(department_id)
 
         department = await self.repository.get_department_by_id(department_id)
         if not department:
@@ -568,11 +428,7 @@ class DelegationService:
         bosses_to_remove = [user for user in sg_users if user.role == UserRole.boss]
         if bosses_to_remove:
             total_bosses = await self._count_bosses()
-            if total_bosses - len(bosses_to_remove) <= 0:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="At least one boss must remain in the system.",
-                )
+            DelegationPolicy.check_bosses_can_remain(total_bosses - len(bosses_to_remove))
 
         for member in sg_users:
             member.role = UserRole.default
@@ -605,10 +461,12 @@ class DelegationService:
         user: tuple[dict, dict],
         department_id: int,
     ) -> schemas.SGMemberActionResult:
-        actor_sub = self._current_sub(user)
-        actor_role = self._current_role(user)
-        self._ensure_can_manage_departments(actor_role)
-        return await self.delete_department(actor_sub=actor_sub, department_id=department_id)
+        policy = self._policy(user)
+        policy.check_manage_departments()
+        return await self.delete_department(
+            actor_sub=policy.user_sub,
+            department_id=department_id,
+        )
 
     async def get_sg_users(self, department_id: int) -> List[schemas.SGUserResponse]:
         users = await self.repository.list_sg_users_by_department(department_id)
@@ -626,7 +484,7 @@ class DelegationService:
         department_id: int,
         user: tuple[dict, dict],
     ) -> List[schemas.SGUserResponse]:
-        TicketPolicy(user).check_read_sg_members()
+        self._policy(user).check_view_sg_members()
         return await self.get_sg_users(department_id=department_id)
 
     async def get_user_entity_or_404(
@@ -689,15 +547,16 @@ class DelegationService:
         user_tuple: tuple[dict, dict],
         payload: schemas.DelegateAccessPayload,
     ) -> TicketAccess:
+        policy = self._policy(user_tuple)
         target_user = await self.get_user_entity_or_404(
             payload.target_user_sub,
             detail="Target user not found",
         )
         user_access = await self.get_user_ticket_access(ticket, user_tuple)
-        TicketPolicy(user_tuple).check_delegate(target_user, user_access)
+        policy.check_delegate_ticket_access(target_user=target_user, user_access=user_access)
         return await self.delegate_access(
             ticket=ticket,
-            granter_sub=self._current_sub(user_tuple),
+            granter_sub=policy.user_sub,
             grantee_sub=payload.target_user_sub,
             permission=payload.permission,
         )
