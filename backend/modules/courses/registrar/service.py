@@ -88,15 +88,35 @@ class RegistrarService:
 
     async def get_active_semester(self) -> SemesterOption:
         """
-        Return the most recent registrar semester (highest numeric value).
+        Return the most recent registrar semester found within the search index.
         Result is cached per service instance to avoid redundant HTTP calls.
         """
         if self._active_semester:
             return self._active_semester
 
-        semesters = await self.list_semesters()
-        if not semesters:
-            raise HTTPException(status_code=503, detail="no_semesters_available")
+        if not self.meilisearch_client:
+            raise HTTPException(status_code=503, detail="Meilisearch client not available")
+
+        # Get a large batch of documents to find all unique terms
+        search_result = await meilisearch_utils.get(
+            client=self.meilisearch_client,
+            storage_name=self.schedule_index_uid,
+            keyword="",
+            page=1,
+            size=1000,  # Get up to 1000 docs to find terms
+        )
+        hits = search_result.get("hits", [])
+        unique_terms: dict[str, str] = {}
+        for hit in hits:
+            term_id = hit.get("term_id")
+            term_label = hit.get("term")
+            if term_id and term_label:
+                unique_terms[str(term_id)] = str(term_label)
+        
+        if not unique_terms:
+            raise HTTPException(status_code=404, detail="No synced registrar semesters found in the index.")
+
+        semesters = [SemesterOption(label=label, value=id) for id, label in unique_terms.items()]
 
         def _semester_sort_key(option: SemesterOption) -> tuple[int, str]:
             try:
