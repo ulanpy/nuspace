@@ -95,6 +95,14 @@ async def sync_schedule_catalog(
 
     documents = await _run_schedule_parser_subprocess(pdf_url, term_label, priority_pdf_url)
 
+    if not documents:
+        logger.warning(
+            "Registrar sync resulted in 0 documents. "
+            "This may be because the source PDF is not yet available for the discovered term. "
+            "Aborting sync to preserve existing data."
+        )
+        return 0
+
     await _recreate_schedule_index(meilisearch_client, documents)
     logger.info("Synced %s registrar schedule entries", len(documents))
     return len(documents)
