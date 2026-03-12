@@ -145,7 +145,11 @@ class DelegationRepository:
         await self.db_session.flush()
         stmt = (
             select(TicketAccess)
-            .where(TicketAccess.id == access.id)
+            .where(
+                TicketAccess.ticket_id == access.ticket_id,
+                TicketAccess.user_sub == access.user_sub,
+                TicketAccess.permission == access.permission,
+            )
             .options(
                 selectinload(TicketAccess.user),
                 selectinload(TicketAccess.granter),
