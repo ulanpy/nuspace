@@ -24,7 +24,6 @@ from .sgotinish.conversations import api as conversations_api
 from .sgotinish.messages import api as messages_api
 from .announcements import api as announcements_api
 from .opportunities import api as opportunities_api
-from .rejection_board import api as rejection_board_api
 # Import all routers from the routes directory
 
 routers: List[APIRouter] = [
@@ -49,5 +48,4 @@ routers: List[APIRouter] = [
     delegation_api.router,
     announcements_api.router,
     opportunities_api.router,
-    rejection_board_api.router,
 ]

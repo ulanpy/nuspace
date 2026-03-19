@@ -1,1 +1,0 @@
-"""Rejection board feature module."""

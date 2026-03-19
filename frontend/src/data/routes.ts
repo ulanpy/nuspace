@@ -26,7 +26,6 @@ export const ROUTES = {
   OPPORTUNITIES: {
     ROOT: "/opportunities",
   },
-  REJECTION_BOARD: "/rejection-board",
   COMMUNITIES: {
     ROOT: "/communities",
     DETAIL: "/communities?id=:id",
