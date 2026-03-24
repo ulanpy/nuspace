@@ -44,6 +44,9 @@ class Config(BaseSettings):
     USE_GCS_EMULATOR: bool  # keep True for local dev; For staging/prod .env will have it False
     GCS_EMULATOR_HOST: str
     INTEGRATION_SECRET: str
+    QUALTRICS_API_TOKEN: str | None = None
+    QUALTRICS_DATA_CENTER_ID: str | None = None
+    QUALTRICS_SURVEY_ID: str | None = None
     # Header mapping for easy reference when setting values
     GCS_METADATA_HEADERS: dict = {
         "filename": "x-goog-meta-filename",
