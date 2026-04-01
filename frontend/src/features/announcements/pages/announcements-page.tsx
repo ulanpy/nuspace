@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
 import { Calendar, ArrowRight, Users } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 import { TelegramFeed } from '@/features/announcements/components/telegram-feed';
 import { GalleryCarousel } from '@/features/announcements/components/gallery-carousel';
 import { useState, useEffect } from "react";
 import { useAnnouncementsBundle } from "@/features/announcements/api/use-announcements-bundle";
+import { PresidentialElectionBanner } from "@/features/elections/presidential-election-banner";
 
 function getGreeting(): string {
     const hour = new Date().getHours();
@@ -38,6 +38,8 @@ export default function AnnouncementsPage() {
 
     return (
         <div className="container mx-auto px-4 py-8 space-y-8">
+            <PresidentialElectionBanner />
+
             {/* Welcome Header */}
             <div className="flex items-center gap-4">
                 {user?.picture && (

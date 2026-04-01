@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-const ELECTION_START_DATE = new Date('2026-04-06T09:00:00');
+const ELECTION_START_DATE = new Date('2026-04-06T10:00:00');
 const ELECTION_END_DATE = new Date('2026-04-06T21:00:00');
 
 const calculateCountdown = () => {

@@ -55,7 +55,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: ROUTES.CONTACTS, label: "Contacts", icon: <Info size={20} /> },
   {
     to: ROUTES.SGOTINISH.ROOT,
-    label: "SG otinish | Elections",
+    label: "SG otinish",
     icon: <Shield size={20} />,
   },
 ];

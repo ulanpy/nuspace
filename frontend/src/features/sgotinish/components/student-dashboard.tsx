@@ -18,10 +18,6 @@ import {
 } from "@/components/atoms/dropdown-menu";
 import { TicketCategory, TicketStatus } from "../types";
 
-import { ElectionCounter } from "@/features/elections/ElectionCounter";
-import { ElectionCountdown } from "./election-countdown";
-import { useElectionCountdown } from "@/features/elections/hooks/use-election-countdown";
-
 interface StudentDashboardProps {
   user: any;
   createAppealButton: React.ReactNode;
@@ -34,18 +30,7 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>("all");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilterValue>("all");
-  const { isElectionStarted, isElectionEnded } = useElectionCountdown();
 
-  const getCountdownTitle = () => {
-    if (isElectionEnded) {
-      return "Election has ended";
-    }
-    if (isElectionStarted) {
-      return "Election ends in";
-    }
-    return "Election starts in";
-  };
-  
   const statusOptions = useMemo(
     () => [
       { value: "all" as StatusFilterValue, label: "All statuses", mobileLabel: "All" },
@@ -182,36 +167,6 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
   return (
     <MotionWrapper>
       <div className="container mx-auto px-4 py-8">
-
-        {/* Elections Section */}
-        <div className="mb-8 p-6 bg-white dark:bg-gray-800 rounded-lg shadow">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start text-center">
-            {/* Voter Turnout Zone */}
-            <div className="md:col-span-1">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Voter Turnout</h3>
-              <div className="flex flex-col mt-6">
-                <span className="text-5xl">
-                  <ElectionCounter />
-                </span>
-                <span className="text-sm mt-0.5">out of 7181</span>
-              </div>
-            </div>
-
-            {/* Countdown Zone */}
-            <div className="md:col-span-2">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{getCountdownTitle()}</h3>
-              <ElectionCountdown />
-            </div>
-
-            {/* Election Date Zone */}
-            <div className="md:col-span-1">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Election Date</h3>
-              <div className="mt-4 text-5xl pt-4">
-                <p>April 6</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Page Header */}
         <div className="mb-6">

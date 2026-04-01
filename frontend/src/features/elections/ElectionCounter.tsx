@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,7 +12,6 @@ export function ElectionCounter() {
   });
 
   const [count, setCount] = useState<number | null>(initialData?.survey_responses ?? null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -25,30 +23,24 @@ export function ElectionCounter() {
     const eventSource = new EventSource(electionsApi.getCounterStreamUrl());
 
     eventSource.onmessage = (event) => {
-      setCount(parseInt(event.data, 10));
+      const raw = (event.data ?? "").trim();
+      if (raw === "") return;
+      const n = Number.parseInt(raw, 10);
+      if (!Number.isFinite(n)) return;
+      setCount(n);
     };
 
-    eventSource.onerror = () => {
-      setError("Error connecting to the server. Please try again later.");
-      eventSource.close();
-    };
+    // Leave `onerror` unset so the browser keeps retrying the SSE (closing in onerror
+    // used to kill the stream and forced the UI to “--” after short blips).
 
     return () => {
       eventSource.close();
     };
   }, []);
 
-  if (error) {
-    return <div className="text-5xl">--</div>;
-  }
-
   if (count === null) {
     return <div>Loading...</div>;
   }
 
-  return (
-    <div className="text-5xl">
-      {count}
-    </div>
-  );
+  return <div className="text-5xl tabular-nums">{count}</div>;
 }
