@@ -1,4 +1,7 @@
 ---
+# Static files are built in GitHub Actions and shipped as a tarball on the controller.
+# `frontend_tarball_path` is set by CI when frontend paths changed; empty skips deploy.
+
 - name: Ensure frontend out directory exists with proper permissions
   ansible.builtin.file:
     path: "/home/{{ ansible_user }}/nuspace/frontend/out"
@@ -6,96 +9,48 @@
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: '0755'
-  when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
+  when: frontend_tarball_path | default('') | length > 0
 
-# SSR Alternative: Use .next directory instead
-# - name: Ensure frontend .next directory exists with proper permissions
-#   ansible.builtin.file:
-#     path: "/home/{{ ansible_user }}/nuspace/frontend/.next"
-#     state: directory
-#     owner: "{{ ansible_user }}"
-#     group: "{{ ansible_user }}"
-#     mode: '0755'
-#   when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
-
-- name: Pull frontend builder image
+- name: Clear previous static export
   ansible.builtin.shell: |
     set -e
-    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml pull frontend-builder
+    rm -rf /home/{{ ansible_user }}/nuspace/frontend/out/*
   args:
     executable: /bin/bash
-  when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
+  when: frontend_tarball_path | default('') | length > 0
 
-- name: Stop and remove old frontend-builder container if running
-  ansible.builtin.shell: |
-    set -e
-    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml rm -f frontend-builder || true
-  args:
-    executable: /bin/bash
-  when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
-
-- name: Run frontend build (frontend-builder)
-  ansible.builtin.shell: |
-    set -e
-    cd /home/{{ ansible_user }}/nuspace/infra
-    echo "Starting frontend build..."
-    {{ compose_cmd }} -f prod.docker-compose.yml run --rm frontend-builder
-    echo "Frontend build completed"
-    ls -la ../frontend/out/
-  args:
-    executable: /bin/bash
-  when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
-  register: frontend_build_result
+- name: Unpack frontend build from CI runner to VM
+  ansible.builtin.unarchive:
+    src: "{{ frontend_tarball_path }}"
+    dest: "/home/{{ ansible_user }}/nuspace/frontend/out"
+    remote_src: false
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  when: frontend_tarball_path | default('') | length > 0
 
 - name: Verify out files were created
   ansible.builtin.stat:
     path: "/home/{{ ansible_user }}/nuspace/frontend/out/index.html"
   register: dist_check
-  when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
-
-# SSR Alternative: Check for standalone build instead
-# - name: Verify standalone build was created
-#   ansible.builtin.stat:
-#     path: "/home/{{ ansible_user }}/nuspace/frontend/.next/standalone/server.js"
-#   register: dist_check
-#   when: (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
+  when: frontend_tarball_path | default('') | length > 0
 
 - name: Fail if out files are missing
   ansible.builtin.fail:
-    msg: "Frontend build failed - out/index.html not found. Build output: {{ frontend_build_result.stdout | default('No output') }}"
-  when: 
-    - (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
+    msg: "Frontend artifact missing index.html after unpack."
+  when:
+    - frontend_tarball_path | default('') | length > 0
     - not dist_check.stat.exists
 
-# SSR Alternative: Check for standalone server.js instead
-# - name: Fail if standalone build files are missing
-#   ansible.builtin.fail:
-#     msg: "Frontend build failed - .next/standalone/server.js not found. Build output: {{ frontend_build_result.stdout | default('No output') }}"
-#   when: 
-#     - (frontend_changed | default(false)) | bool or (force_frontend_build | default(false)) | bool
-#     - not dist_check.stat.exists
-
-- name: Show frontend build success message
+- name: Show frontend deploy success message
   ansible.builtin.debug:
-    msg: "Frontend build completed successfully. New out files are ready."
-
-# SSR Alternative: Start the frontend Next.js server
-# - name: Start frontend Next.js server
-#   ansible.builtin.command: >
-#     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-#     up --no-deps -d frontend
-#   when: 
-#     - (frontend_changed | default(false)) | bool or 
-#       (force_frontend_build | default(false)) | bool
+    msg: "Frontend static files from CI are deployed under frontend/out."
+  when: frontend_tarball_path | default('') | length > 0
 
 - name: Recreate nginx service to pick up new out files
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up --no-deps -d nginx
-  when: 
-    - (nginx_changed | default(false)) | bool or 
+  when:
+    - (nginx_changed | default(false)) | bool or
       (container_analysis is defined and 'nginx' in container_analysis.stdout) or
-      (frontend_changed | default(false)) | bool or 
-      (force_frontend_build | default(false)) | bool
-
-
+      (frontend_tarball_path | default('') | length > 0)

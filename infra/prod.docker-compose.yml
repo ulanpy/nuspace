@@ -71,8 +71,6 @@ services:
       - ../ssl/cloudflare.crt:/etc/ssl/cloudflare/origin.crt
       - ../ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key
       - ./nginx/vpn-index.html:/etc/nginx/vpn-index.html:ro
-    depends_on:
-      - frontend-builder
     # SSR Alternative: Change depends_on to frontend and remove out volume
     # depends_on:
     #   - frontend
@@ -123,18 +121,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-
-  frontend-builder:
-    container_name: frontend-builder
-    image: kamikadze24/frontendbuilder:latest
-    networks:
-      - nuros
-    user: "0:0"
-    volumes:
-      - ../frontend/out:/output
-    command: sh -c "npm run build && rm -rf /output/* && cp -r /app/out/. /output/"
-    restart: "no"
-
 
   loki:
     container_name: loki
