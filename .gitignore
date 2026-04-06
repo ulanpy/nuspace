@@ -69,3 +69,6 @@ frontend/android
 
 # Next.js
 ./frontend/next-env.d.ts
+
+# Grade pipeline: local PDF inputs (pdfs/ stays in repo via pdfs/.gitkeep)
+backend/modules/courses/csv_parsers/pdfs/*.pdf

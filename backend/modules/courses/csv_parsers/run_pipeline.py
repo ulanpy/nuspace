@@ -1,12 +1,71 @@
 import argparse
 import csv
 import re
+import shutil
 import subprocess
+import sys
+import tempfile
 from pathlib import Path
+
+_PARSER_DIR = Path(__file__).resolve().parent
+CSVS_DIR = _PARSER_DIR / "csvs"
+DEFAULT_PDF_DIR = _PARSER_DIR / "pdfs"
+
+_RE_FALL = re.compile(r"\bFall\s+(\d{4})\b", re.I)
+_RE_SPRING = re.compile(r"\bSpring\s+(\d{4})\b", re.I)
+_TERM_CODE = re.compile(r"^(FA|SP)20\d{2}$")
+
+
+def _pdftotext_stdout(pdf: Path, max_chars: int = 20000) -> str:
+    exe = shutil.which("pdftotext")
+    if not exe:
+        return ""
+    r = subprocess.run(
+        [exe, "-layout", str(pdf), "-"],
+        capture_output=True,
+        text=True,
+    )
+    if r.returncode != 0:
+        return ""
+    return (r.stdout or "")[:max_chars]
+
+
+def detect_term_from_pdfs(pdf_dir: Path) -> str | None:
+    """Return FA#### or SP#### if exactly one term is found across PDFs."""
+    pdfs = sorted(pdf_dir.glob("*.pdf"))
+    if not pdfs:
+        return None
+    codes: set[str] = set()
+    for pdf in pdfs[:12]:
+        text = _pdftotext_stdout(pdf)
+        for m in _RE_FALL.finditer(text):
+            codes.add(f"FA{m.group(1)}")
+        for m in _RE_SPRING.finditer(text):
+            codes.add(f"SP{m.group(1)}")
+    if len(codes) == 1:
+        return next(iter(codes))
+    return None
+
+
+def _print_mismatches_stderr(rows: list) -> None:
+    if not rows:
+        return
+    print(f"\nMismatches (no faculty): {len(rows)} rows", file=sys.stderr)
+    for r in rows:
+        title = (r.get("course_title") or "")[:72]
+        print(
+            f"  {r.get('course_code','')!s} | sec {r.get('section','')!s} | {title}",
+            file=sys.stderr,
+        )
 
 
 def run_pdftotext(pdf: Path, out_txt: Path):
-    subprocess.run(["pdftotext", "-layout", str(pdf), str(out_txt)], check=True)
+    exe = shutil.which("pdftotext")
+    if not exe:
+        raise RuntimeError(
+            "pdftotext not found on PATH. Install poppler (e.g. poppler-utils / apk add poppler-utils)."
+        )
+    subprocess.run([exe, "-layout", str(pdf), str(out_txt)], check=True)
 
 
 def convert_pdfs(pdf_dir: Path, txt_dir: Path):
@@ -187,6 +246,8 @@ def write_csv(path: Path, rows):
 def split_instructors(csv_path: Path):
     with csv_path.open(newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
+    if not rows:
+        return
 
     def split_faculty(fac: str):
         parts = [p.strip() for p in (fac or "").split(",")]
@@ -212,6 +273,8 @@ def split_instructors(csv_path: Path):
 def normalize_courses(csv_path: Path, schedule_rows):
     with csv_path.open(newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
+    if not rows:
+        return
     out = []
     for r in rows:
         code = (r.get("course_code") or "").strip()
@@ -237,40 +300,100 @@ def normalize_courses(csv_path: Path, schedule_rows):
             w.writerow(r)
 
 
-def main():
-    ap = argparse.ArgumentParser(description="Shareable grade extraction pipeline")
-    ap.add_argument("--pdf-dir", required=True)
-    ap.add_argument("--schedule", required=True)
-    ap.add_argument("--term", required=True)
-    ap.add_argument("--work", default=".work_txt")
-    ap.add_argument("--out", default="../grades_with_professors.csv")
-    ap.add_argument("--mismatches", default="../grades_with_professors_mismatches.csv")
-    args = ap.parse_args()
+def _repo_root() -> Path:
+    # .../nuros/backend/modules/courses/csv_parsers/run_pipeline.py -> /nuros
+    return Path(__file__).resolve().parents[4]
 
-    pdf_dir = Path(args.pdf_dir)
-    txt_dir = Path(args.work)
-    schedule_csv = Path(args.schedule)
-    out_csv = Path(args.out)
-    mismatches_csv = Path(args.mismatches)
 
-    convert_pdfs(pdf_dir, txt_dir)
+def _ensure_repo_on_syspath() -> None:
+    root = _repo_root()
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+
+
+def run_pipeline_steps(
+    *,
+    pdf_dir: Path,
+    schedule_csv: Path,
+    term: str,
+    work_txt_dir: Path,
+    out_csv: Path,
+) -> None:
+    convert_pdfs(pdf_dir, work_txt_dir)
     grade_rows = []
-    for txt in sorted(txt_dir.glob("*.txt")):
+    for txt in sorted(work_txt_dir.glob("*.txt")):
         with txt.open(encoding="utf-8") as f:
             grade_rows.extend(parse_grade_text(f.read()))
 
     schedule_rows = load_schedule(schedule_csv)
-    joined = join_with_schedule(grade_rows, schedule_rows, args.term)
+    joined = join_with_schedule(grade_rows, schedule_rows, term)
+    if not grade_rows:
+        print(
+            "Warning: parsed 0 grade rows from PDFs (check PDFs, pdftotext -layout, or regex).",
+            file=sys.stderr,
+        )
     write_csv(out_csv, joined)
 
-    # mismatches: empty faculty
     mismatches = [r for r in joined if not (r.get("faculty") or "").strip()]
-    write_csv(mismatches_csv, mismatches)
+    _print_mismatches_stderr(mismatches)
 
-    # Normalize course codes/titles and split instructors
     normalize_courses(out_csv, schedule_rows)
     split_instructors(out_csv)
-    print(f"Pipeline complete. See {out_csv} and {mismatches_csv}.")
+    print(f"Wrote {out_csv}")
+
+
+def main():
+    ap = argparse.ArgumentParser(
+        description=(
+            "Put NU grade-report PDFs in csv_parsers/pdfs/, run this script from repo root. "
+            "Registrar schedule is fetched to a temp file (nothing saved on disk). "
+            "Term is detected from PDF text (Fall/Spring + year) unless you pass --term."
+        )
+    )
+    ap.add_argument(
+        "--term",
+        default=None,
+        help="Optional: FA2025 or SP2025 if auto-detection fails or is ambiguous",
+    )
+    args = ap.parse_args()
+
+    pdf_dir = DEFAULT_PDF_DIR.resolve()
+    if not pdf_dir.is_dir():
+        ap.error(f"PDF directory is missing or not a directory: {pdf_dir}")
+
+    if args.term:
+        term = args.term.strip().upper()
+        if not _TERM_CODE.match(term):
+            ap.error("--term must look like FA2025 or SP2025")
+    else:
+        term = detect_term_from_pdfs(pdf_dir)
+        if not term:
+            ap.error(
+                "Could not infer a single term from PDFs (look for 'Fall YYYY' / 'Spring YYYY'). "
+                "Pass --term FA2025 or SP2025."
+            )
+
+    CSVS_DIR.mkdir(parents=True, exist_ok=True)
+    out_csv = CSVS_DIR / f"{term}.csv"
+
+    _ensure_repo_on_syspath()
+    from backend.modules.courses.csv_parsers.registrar_schedule_fetch import (
+        fetch_registrar_schedule_csv,
+        term_code_to_registrar_label,
+    )
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        schedule_csv = tmp_path / "school_schedule_by_term.csv"
+        txt_dir = tmp_path / "work_txt"
+        fetch_registrar_schedule_csv(term_code_to_registrar_label(term), schedule_csv)
+        run_pipeline_steps(
+            pdf_dir=pdf_dir,
+            schedule_csv=schedule_csv,
+            term=term,
+            work_txt_dir=txt_dir,
+            out_csv=out_csv,
+        )
 
 
 if __name__ == "__main__":

@@ -9,6 +9,39 @@ from backend.core.database.models.grade_report import GradeReport
 
 logger = logging.getLogger(__name__)
 
+_CSVS_DIR = Path(__file__).resolve().parent / "csvs"
+
+
+def resolve_grades_csv_path(csv_arg: str) -> Path:
+    """
+    Resolve a grades CSV path: file must exist under ``csvs/`` next to this module.
+    A single path component (e.g. ``FA2025.csv`` or ``grades.csv``) is resolved as
+    ``csvs/<name>``.
+    """
+    raw = (csv_arg or "").strip()
+    if not raw:
+        raise ValueError("CSV filename or path is required.")
+
+    p = Path(raw)
+    if len(p.parts) == 1 and not raw.startswith(("/", "\\")):
+        p = _CSVS_DIR / p.name
+    else:
+        p = p.expanduser()
+
+    resolved = p.resolve()
+    csvs = _CSVS_DIR.resolve()
+    try:
+        resolved.relative_to(csvs)
+    except ValueError as e:
+        raise ValueError(
+            f"CSV must be inside {csvs} (got {resolved}). "
+            "Pass a basename or a path under csvs/."
+        ) from e
+
+    if not resolved.is_file():
+        raise FileNotFoundError(f"CSV not found: {resolved}")
+    return resolved
+
 
 def convert_csv_value(value: str, field_type: str) -> Any:
     """
@@ -147,44 +180,41 @@ async def dump_csv_to_database(
             raise
 
 
-async def dump_grades_csv(
-    csv_file_path: str = "grades_sp2025.csv", batch_size: int = 100
-) -> Dict[str, int]:
+async def dump_grades_csv(csv_file_path: str, batch_size: int = 100) -> Dict[str, int]:
     """
-    Convenience function to dump the grades CSV file to the database.
+    Load a grades CSV from ``csvs/`` into the database.
 
     Args:
-        csv_file_path: Path to the grades CSV file (defaults to the provided file)
+        csv_file_path: Path or basename; must resolve to an existing file under ``csvs/``.
         batch_size: Number of records to process in each batch
 
     Returns:
         Dictionary with statistics: {'inserted': int, 'errors': int}
     """
+    resolved = resolve_grades_csv_path(csv_file_path)
 
     # Create database manager
     db_manager = AsyncDatabaseManager()
 
     try:
         return await dump_csv_to_database(
-            csv_file_path=csv_file_path, db_manager=db_manager, batch_size=batch_size
+            csv_file_path=str(resolved), db_manager=db_manager, batch_size=batch_size
         )
     finally:
         await db_manager.async_engine.dispose()
 
 
-async def analyze_csv_duplicates(csv_file_path: str = "grades_sp2025.csv") -> Dict[str, Any]:
+async def analyze_csv_duplicates(csv_file_path: str) -> Dict[str, Any]:
     """
     Analyze the CSV file to identify duplicate patterns and provide insights.
 
     Args:
-        csv_file_path: Path to the CSV file
+        csv_file_path: Same rules as :func:`resolve_grades_csv_path`.
 
     Returns:
         Dictionary with analysis results
     """
-    csv_path = Path(csv_file_path)
-    if not csv_path.exists():
-        raise FileNotFoundError(f"CSV file not found: {csv_file_path}")
+    csv_path = resolve_grades_csv_path(csv_file_path)
 
     analysis = {
         "total_rows": 0,
@@ -266,48 +296,50 @@ async def analyze_csv_duplicates(csv_file_path: str = "grades_sp2025.csv") -> Di
     return analysis
 
 
-# Example usage function
-async def example_usage():
-    """
-    Example of how to use the CSV dump utility.
-    """
-    try:
-        # First, analyze the CSV to understand duplicates
-        print("Analyzing CSV duplicates...")
-        analysis = await analyze_csv_duplicates("grades_sp2025.csv")
-
-        print("\nCSV Analysis Results:")
-        print(f"Total rows: {analysis['total_rows']}")
-        print(
-            f"Unique course+section+term combinations: {analysis['unique_course_section_term_count']}"
-        )
-        print(
-            f"Unique course+section+term+faculty combinations: {analysis['unique_course_section_term_faculty_count']}"
-        )
-        print(
-            f"Course+section+term combinations with multiple faculty: {len(analysis['duplicate_course_section_term'])}"
-        )
-
-        if analysis["sample_duplicates"]:
-            print("\nSample duplicates (course+section+term with multiple faculty):")
-            for sample in analysis["sample_duplicates"][:3]:
-                print(
-                    f"  {sample['course_code']} {sample['section']} {sample['term']} - {sample['faculty']}"
-                )
-
-        # Dump the CSV file to database
-        print("\nDumping CSV to database...")
-        stats = await dump_grades_csv(csv_file_path="grades_sp2025.csv", batch_size=50)
-
-        print("\nCSV dump completed successfully!")
-        print(f"Records inserted: {stats['inserted']}")
-        print(f"Errors: {stats['errors']}")
-
-    except Exception as e:
-        print(f"Error during CSV dump: {e}")
-
-
 if __name__ == "__main__":
+    import argparse
     import asyncio
+    import sys
 
-    asyncio.run(example_usage())
+    parser = argparse.ArgumentParser(
+        description="Load grades CSV into PostgreSQL. File must be under csv_parsers/csvs/."
+    )
+    parser.add_argument(
+        "csv_file",
+        help="Basename (e.g. FA2025.csv) or path under csvs/.",
+    )
+    parser.add_argument(
+        "--analyze",
+        action="store_true",
+        help="Only print duplicate analysis; do not write to the database.",
+    )
+    args = parser.parse_args()
+
+    async def _run():
+        try:
+            if args.analyze:
+                analysis = await analyze_csv_duplicates(args.csv_file)
+                print(f"Total rows: {analysis['total_rows']}")
+                print(
+                    "Unique course+section+term:",
+                    analysis["unique_course_section_term_count"],
+                )
+                print(
+                    "Unique course+section+term+faculty:",
+                    analysis["unique_course_section_term_faculty_count"],
+                )
+                if analysis["sample_duplicates"]:
+                    print("Sample duplicates:")
+                    for sample in analysis["sample_duplicates"][:5]:
+                        print(
+                            f"  {sample['course_code']} {sample['section']} "
+                            f"{sample['term']} — {sample['faculty']}"
+                        )
+            else:
+                stats = await dump_grades_csv(csv_file_path=args.csv_file)
+                print(f"Inserted: {stats['inserted']}, errors: {stats['errors']}")
+        except (ValueError, FileNotFoundError) as e:
+            print(f"Error: {e}", file=sys.stderr)
+            raise SystemExit(1) from e
+
+    asyncio.run(_run())

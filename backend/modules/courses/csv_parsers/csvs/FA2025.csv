@@ -1,0 +1,678 @@
+course_code,course_title,section,grades_count,avg_gpa,std_dev,median_gpa,pct_A,pct_B,pct_C,pct_D,pct_F,pct_P,pct_I,pct_AU,pct_W_AW,letters_count,term,faculty
+BBA 208,Data Analytics forBusiness,1L,7,3.57,0.37,3.67,44.4,33.3,0.0,0.0,0.0,0.0,0.0,0.0,22.2,9,FA2025,AssemSeidalina
+BBA 208,Data Analytics forBusiness,1L,7,3.57,0.37,3.67,44.4,33.3,0.0,0.0,0.0,0.0,0.0,0.0,22.2,9,FA2025,MiratAkshalov
+BBA 208,Data Analytics forBusiness,1L,7,3.57,0.37,3.67,44.4,33.3,0.0,0.0,0.0,0.0,0.0,0.0,22.2,9,FA2025,Jaehyeon Kim
+BBA 210,Fundamentals ofMarketing,1L,7,3.67,0.34,3.67,50.0,37.5,0.0,0.0,0.0,0.0,0.0,0.0,12.5,8,FA2025,Mirat Akshalov
+BBA 210,Fundamentals ofMarketing,1L,7,3.67,0.34,3.67,50.0,37.5,0.0,0.0,0.0,0.0,0.0,0.0,12.5,8,FA2025,Mustafa Karatas
+BBA 230,Entrepreneurship,1L,7,3.71,0.3,3.67,62.5,25.0,0.0,0.0,0.0,0.0,0.0,0.0,12.5,8,FA2025,Mirat Akshalov
+BBA 230,Entrepreneurship,1L,7,3.71,0.3,3.67,62.5,25.0,0.0,0.0,0.0,0.0,0.0,0.0,12.5,8,FA2025,Jiyang Dong
+BUS 101,Core Course in Business,1L,539,3.53,0.47,3.67,62.8,33.3,2.2,0.0,0.4,0.0,0.0,0.0,1.3,546,FA2025,Mirat Akshalov
+BUS 101,Core Course in Business,1L,539,3.53,0.47,3.67,62.8,33.3,2.2,0.0,0.4,0.0,0.0,0.0,1.3,546,FA2025,SaniyaBarbolova
+BUS 101,Core Course in Business,1L,539,3.53,0.47,3.67,62.8,33.3,2.2,0.0,0.4,0.0,0.0,0.0,1.3,546,FA2025,ZharaskhanTemirkhanov
+BUS 101,Core Course in Business,1L,539,3.53,0.47,3.67,62.8,33.3,2.2,0.0,0.4,0.0,0.0,0.0,1.3,546,FA2025,MoldirKaiynbayeva
+BUS 101,Core Course in Business,1L,539,3.53,0.47,3.67,62.8,33.3,2.2,0.0,0.4,0.0,0.0,0.0,1.3,546,FA2025,Raola Yerbolat
+CHME 200,Basic Principles andCalculations in ChemicalEngineering,1L,30,3.09,0.95,3.33,43.3,40.0,6.7,6.7,3.3,0.0,0.0,0.0,0.0,30,FA2025,Cevat Erisken
+CHME 201,Chemical EngineeringThermodynamics,1L,30,2.8,0.81,3.0,16.7,66.7,10.0,3.3,3.3,0.0,0.0,0.0,0.0,30,FA2025,Nurxat Nuraje
+CHME 222,Inorganic and AnalyticalChemistry,1L,31,3.34,0.59,3.67,51.6,38.7,9.7,0.0,0.0,0.0,0.0,0.0,0.0,31,FA2025,AlmagulMentbayeva
+CHME 222,Inorganic and AnalyticalChemistry,1L,31,3.34,0.59,3.67,51.6,38.7,9.7,0.0,0.0,0.0,0.0,0.0,0.0,31,FA2025,LyazzatMukhangaliyeva
+CHME 300,Heat and Mass Transfer,1L,23,2.84,0.75,3.0,21.7,47.8,21.7,8.7,0.0,0.0,0.0,0.0,0.0,23,FA2025,Sergey Spotar
+CHME 301,Applied Mathematics forProcess Design,1L,29,2.97,1.0,3.33,26.7,53.3,6.7,3.3,6.7,0.0,0.0,0.0,3.3,30,FA2025,Boris Golman
+CHME 301,Applied Mathematics forProcess Design,1L,29,2.97,1.0,3.33,26.7,53.3,6.7,3.3,6.7,0.0,0.0,0.0,3.3,30,FA2025,SabinaKhamzina
+CHME 302,Instrumental Methods ofAnalysis for Engineers,1L,22,2.79,0.68,3.0,8.3,58.3,16.7,8.3,0.0,0.0,0.0,0.0,8.3,24,FA2025,Chang-Keun Lim
+CHME 351,Environment andDevelopment,1L,18,3.43,0.47,3.67,55.0,30.0,5.0,0.0,0.0,0.0,0.0,0.0,10.0,20,FA2025,StavrosPoulopoulos
+CHME 353,ElectrochemicalEngineering,1L,20,3.62,0.49,3.67,75.0,25.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,AzharMukasheva
+CHME 354,Introduction toMetallurgy,1L,32,3.8,0.32,4.0,81.2,18.8,0.0,0.0,0.0,0.0,0.0,0.0,0.0,32,FA2025,Aishuak Konarov
+CHME 400,Process Design andSimulation,1L,48,3.04,0.46,3.0,12.5,79.2,6.2,2.1,0.0,0.0,0.0,0.0,0.0,48,FA2025,Dhawal Shah
+CHME 401,Chemical EngineeringLab II,1Lb,14,3.84,0.17,3.84,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,14,FA2025,AzharMukasheva
+CHME 401,Chemical EngineeringLab II,2Lb,13,3.67,0.0,3.67,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,13,FA2025,AzharMukasheva
+CHME 401,Chemical EngineeringLab II,3Lb,14,3.98,0.09,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,14,FA2025,AzharMukasheva
+CHME 401,Chemical EngineeringLab II,4Lb,7,3.67,0.33,3.67,85.7,14.3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,7,FA2025,AzharMukasheva
+CHME 453,Multiphase Systems,1L,32,3.19,0.62,3.33,25.0,65.6,6.2,3.1,0.0,0.0,0.0,0.0,0.0,32,FA2025,Sergey Spotar
+CEE 200,Structural Mechanics I,1L,64,2.35,0.94,2.33,14.1,32.8,35.9,12.5,4.7,0.0,0.0,0.0,0.0,64,FA2025,ElnaraKussinova
+CEE 200,Structural Mechanics I,2L,75,2.51,0.93,2.67,11.7,42.9,32.5,5.2,5.2,0.0,0.0,0.0,2.6,77,FA2025,Asma Perveen
+CEE 201,Environmental Chemistry,1L,66,2.83,0.76,3.0,19.7,50.0,27.3,1.5,1.5,0.0,0.0,0.0,0.0,66,FA2025,Mert Guney
+CEE 204,Civil Engineering CADand Surveying,1L,65,2.99,0.57,3.0,16.7,63.6,16.7,1.5,0.0,0.0,1.5,0.0,0.0,66,FA2025,BakhytAubakirova
+CEE 300,Structural Design –Concrete,1L,59,2.19,1.11,2.0,15.6,21.9,32.8,14.1,7.8,0.0,0.0,0.0,7.8,64,FA2025,Shazim Memon
+CEE 302,Geotechnical Engineering,1L,55,2.96,0.5,3.0,8.9,71.4,17.9,0.0,0.0,0.0,0.0,0.0,1.8,56,FA2025,Sung Moon
+CEE 304,Fluid Mechanics,1L,53,3.22,0.72,3.33,42.6,40.7,11.1,3.7,0.0,0.0,0.0,0.0,1.9,54,FA2025,Ferhat Karaca
+CEE 306,Civil EngineeringMaterials,1L,53,3.27,0.36,3.33,25.9,70.4,1.9,0.0,0.0,0.0,0.0,0.0,1.9,54,FA2025,Chang Shon
+CEE 401,Construction Technologyand Management,1L,66,3.13,0.49,3.16,26.9,61.2,10.4,0.0,0.0,0.0,0.0,0.0,1.5,67,FA2025,Abid Nadeem
+CEE 450,Behavior and Design ofStructural System,1L,19,2.98,0.53,3.0,15.0,65.0,15.0,0.0,0.0,0.0,0.0,0.0,5.0,20,FA2025,Dichuan Zhang
+CEE 460,Water Supply andDistribution Management,1L,46,3.53,0.61,3.67,67.4,23.9,8.7,0.0,0.0,0.0,0.0,0.0,0.0,46,FA2025,Ferhat Karaca
+CEE 462,Pavement Design andPerformance,1L,27,2.74,0.49,2.67,3.4,65.5,20.7,3.4,0.0,0.0,0.0,0.0,6.9,29,FA2025,Chang Shon
+CEE 463,Individual ResearchProject in Civil &EnvironmentalEngineering 1,1L,15,3.47,0.99,3.67,64.7,17.6,0.0,0.0,5.9,0.0,0.0,0.0,11.8,17,FA2025,Jong Kim
+CEE 463,Individual ResearchProject in Civil &EnvironmentalEngineering 1,1L,15,3.47,0.99,3.67,64.7,17.6,0.0,0.0,5.9,0.0,0.0,0.0,11.8,17,FA2025,BakhytAubakirova
+CEE 467,Building InformationModelling forGeotechnical Engineering,1L,42,3.68,0.37,3.67,78.6,19.0,2.4,0.0,0.0,0.0,0.0,0.0,0.0,42,FA2025,AlfrendoSatyanaga
+ELCE 200,Circuits Theory I,1L,81,2.29,0.83,2.33,6.2,34.6,48.1,7.4,3.7,0.0,0.0,0.0,0.0,81,FA2025,GalymzhanNauryzbayev
+ELCE 203,Signals and Systems,1L,37,3.39,0.43,3.33,45.0,42.5,5.0,0.0,0.0,0.0,0.0,0.0,7.5,40,FA2025,MuhammadAkhtar
+ELCE 203L,Signals and SystemsLaboratory,2Lb,33,3.35,0.36,3.33,30.6,58.3,2.8,0.0,0.0,0.0,0.0,0.0,8.3,36,FA2025,ShyngysSalakchinov
+ELCE 203,Signals and Systems,1L,70,2.25,1.07,2.33,9.1,28.6,36.4,7.8,9.1,0.0,0.0,0.0,9.1,77,FA2025,MuhammadAkhtar
+ELCE 204,Solid State Devices,1L,15,3.85,0.17,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,15,FA2025,Annie Ng
+ELCE 204,Solid State Devices,1L,18,3.04,0.94,3.33,38.9,38.9,16.7,0.0,5.6,0.0,0.0,0.0,0.0,18,FA2025,Annie Ng
+ELCE 205,Discrete Mathematics,1L,74,3.46,0.67,3.67,58.1,36.5,2.7,1.4,1.4,0.0,0.0,0.0,0.0,74,FA2025,Carlo Molardi
+ELCE 301L,Electronic CircuitsLaboratory,1Lb,15,3.65,0.54,3.67,75.0,12.5,6.2,0.0,0.0,0.0,0.0,0.0,6.2,16,FA2025,GulsimKulsharova
+ELCE 301L,Electronic CircuitsLaboratory,2Lb,29,3.92,0.14,4.0,96.7,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3.3,30,FA2025,GulsimKulsharova
+ELCE 301,Electronic Circuits,1L,43,3.12,0.89,3.33,38.6,43.2,9.1,4.5,2.3,0.0,0.0,0.0,2.3,44,FA2025,MohammadHashmi
+ELCE 304,Computer Networks,1L,28,3.91,0.18,4.0,90.0,3.3,0.0,0.0,0.0,0.0,0.0,0.0,6.7,30,FA2025,Refik Kizilirmak
+ELCE 304L,Computer NetworksLaboratory,2Lb,17,3.76,0.33,4.0,76.5,23.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,17,FA2025,Refik Kizilirmak
+ELCE 304,Computer Networks,1L,43,3.12,0.61,3.33,28.3,47.8,15.2,2.2,0.0,0.0,0.0,0.0,6.5,46,FA2025,Refik Kizilirmak
+ELCE 306,Linear Control Theory,1L,43,3.22,0.73,3.33,34.1,52.3,9.1,0.0,2.3,0.0,0.0,0.0,2.3,44,FA2025,Refik Kizilirmak
+ELCE 307,Digital Signal Processing,1L,14,3.38,0.37,3.5,46.7,46.7,0.0,0.0,0.0,0.0,0.0,0.0,6.7,15,FA2025,MuhammadAkhtar
+ELCE 307,Digital Signal Processing,1L,14,2.98,0.66,3.0,26.7,40.0,26.7,0.0,0.0,0.0,0.0,0.0,6.7,15,FA2025,MuhammadAkhtar
+ELCE 352,Applied SimulationLaboratory,1Lb,25,3.61,0.89,4.0,84.0,8.0,4.0,0.0,4.0,0.0,0.0,0.0,0.0,25,FA2025,AinurRakhymbay
+ELCE 352,Applied SimulationLaboratory,2Lb,11,3.48,0.66,3.67,58.3,16.7,16.7,0.0,0.0,0.0,0.0,0.0,8.3,12,FA2025,AinurRakhymbay
+ELCE 354,Power Electronics,1L,24,2.38,1.22,2.67,24.0,28.0,28.0,4.0,12.0,0.0,0.0,0.0,4.0,25,FA2025,AinurRakhymbay
+ELCE 355,Power SystemsProtection,1L,5,3.0,1.06,3.33,40.0,40.0,0.0,20.0,0.0,0.0,0.0,0.0,0.0,5,FA2025,AinurRakhymbay
+ELCE 455,Machine Learning withPython,1L,35,3.4,0.74,3.67,52.5,20.0,15.0,0.0,0.0,0.0,0.0,0.0,12.5,40,FA2025,Mehdi Shafiee
+ELCE 462,Wireless Networks,1L,7,3.33,0.43,3.33,28.6,71.4,0.0,0.0,0.0,0.0,0.0,0.0,0.0,7,FA2025,Behrouz Maham
+ELCE 463,Network Science:Methods and Applications,1L,14,2.62,1.14,3.0,20.0,33.3,26.7,6.7,6.7,0.0,0.0,0.0,6.7,15,FA2025,AinurRakhymbay
+ELCE 463,Network Science:Methods and Applications,1L,14,2.62,1.14,3.0,20.0,33.3,26.7,6.7,6.7,0.0,0.0,0.0,6.7,15,FA2025,Aresh Dadlani
+ELCE 466,RF and MicrowaveCircuits,1L,19,3.3,0.77,3.33,45.0,35.0,10.0,5.0,0.0,0.0,0.0,0.0,5.0,20,FA2025,MohammadHashmi
+ENG 101,Programming forEngineers,1L,279,3.34,0.68,3.33,49.1,41.3,7.8,0.0,1.1,0.0,0.0,0.0,0.7,281,FA2025,SultangaliArzykulov
+ENG 100,Introduction toEngineering,1L,301,3.57,0.3,3.67,67.0,31.7,0.7,0.0,0.0,0.0,0.0,0.0,0.7,303,FA2025,GulnurKalimuldina
+ENG 100,Introduction toEngineering,1L,301,3.57,0.3,3.67,67.0,31.7,0.7,0.0,0.0,0.0,0.0,0.0,0.7,303,FA2025,AssiyaYermukhambetova
+ENG 100,Introduction toEngineering,1L,301,3.57,0.3,3.67,67.0,31.7,0.7,0.0,0.0,0.0,0.0,0.0,0.7,303,FA2025,GulsimKulsharova
+ENG 100,Introduction toEngineering,1L,301,3.57,0.3,3.67,67.0,31.7,0.7,0.0,0.0,0.0,0.0,0.0,0.7,303,FA2025,Woojin Lee
+ENG 200,Engineering MathematicsIII (Differential Equationsand Linear Algebra),1L,72,2.88,0.88,3.0,26.0,41.1,26.0,2.7,2.7,0.0,1.4,0.0,0.0,73,FA2025,ElnaraKussinova
+ENG 200,Engineering MathematicsIII (Differential Equationsand Linear Algebra),2L,32,2.76,0.78,3.0,15.6,50.0,31.2,0.0,3.1,0.0,0.0,0.0,0.0,32,FA2025,Yanwei Wang
+ENG 200,Engineering MathematicsIII (Differential Equationsand Linear Algebra),3L,70,3.34,0.59,3.33,46.5,43.7,7.0,1.4,0.0,0.0,0.0,0.0,1.4,71,FA2025,Dmitriy Sizov
+ENG 200,Engineering MathematicsIII (Differential Equationsand Linear Algebra),4L,59,3.72,0.33,3.67,72.9,27.1,0.0,0.0,0.0,0.0,0.0,0.0,0.0,59,FA2025,Daniele Tosi
+ENG 200,Engineering MathematicsIII (Differential Equationsand Linear Algebra),5L,48,2.69,0.95,2.67,24.5,38.8,24.5,6.1,4.1,0.0,0.0,0.0,2.0,49,FA2025,Prashant Jamwal
+MAE 201,Computer Aided Design,1L,75,3.1,0.61,3.33,24.7,62.3,9.1,0.0,1.3,0.0,0.0,0.0,2.6,77,FA2025,KonstantinosKostas
+MAE 202,Environmental Science,1L,74,3.0,0.54,3.0,18.4,56.6,22.4,0.0,0.0,0.0,0.0,0.0,2.6,76,FA2025,GulnurKalimuldina
+MAE 300,Fluid Mechanics I,1L,64,2.53,0.88,2.67,9.4,43.8,35.9,6.2,4.7,0.0,0.0,0.0,0.0,64,FA2025,Sergey Spotar
+MAE 301,EngineeringThermodynamics,1L,64,2.17,0.88,2.33,1.6,40.6,35.9,15.6,6.2,0.0,0.0,0.0,0.0,64,FA2025,Amgad Salama
+MAE 303,Control Systems,1L,61,2.48,0.79,2.67,9.8,42.6,39.3,4.9,3.3,0.0,0.0,0.0,0.0,61,FA2025,Md. Hazrat Ali
+MAE 307,Engineering Dynamics II,1L,59,2.71,0.73,2.67,6.8,64.4,22.0,5.1,1.7,0.0,0.0,0.0,0.0,59,FA2025,Sherif Gouda
+MAE 400,Heat Transfer,1L,46,3.33,0.47,3.33,44.7,46.8,6.4,0.0,0.0,0.0,0.0,0.0,2.1,47,FA2025,YerbolSarbassov
+MAE 401,Mechanical SystemsDesign,1L,45,3.27,0.29,3.33,26.1,71.7,0.0,0.0,0.0,0.0,0.0,0.0,2.2,46,FA2025,Didier Talamona
+MAE 450,Additive Manufacturing,1L,14,3.05,0.34,3.0,14.3,85.7,0.0,0.0,0.0,0.0,0.0,0.0,0.0,14,FA2025,Didier Talamona
+MAE 455,Flight Performance andMechanics,1L,8,2.92,0.61,3.0,11.1,55.6,22.2,0.0,0.0,0.0,0.0,0.0,11.1,9,FA2025,AltayZhakatayev
+MAE 455,Flight Performance andMechanics,1L,8,2.92,0.61,3.0,11.1,55.6,22.2,0.0,0.0,0.0,0.0,0.0,11.1,9,FA2025,Dmitriy Sizov
+MAE 467,"Heating, Ventilating andAir Conditioning",1L,27,2.88,0.59,3.0,11.1,74.1,7.4,7.4,0.0,0.0,0.0,0.0,0.0,27,FA2025,YerbolSarbassov
+MAE 468,Introduction toAerospace Propulsion.,1L,16,3.08,0.41,3.0,17.6,76.5,0.0,0.0,0.0,0.0,0.0,0.0,5.9,17,FA2025,AltayZhakatayev
+CSCI 111,Web Programming andProblem Solving,1L,29,3.48,0.5,3.67,53.3,40.0,3.3,0.0,0.0,0.0,0.0,0.0,3.3,30,FA2025,Irina Dolzhikova
+CSCI 111,Web Programming andProblem Solving,2L,26,3.46,0.6,3.67,45.2,35.5,3.2,0.0,0.0,0.0,0.0,0.0,16.1,31,FA2025,TalgatManglayev
+CSCI 111,Web Programming andProblem Solving,3L,26,3.15,0.49,3.0,24.1,58.6,6.9,0.0,0.0,0.0,0.0,0.0,10.3,29,FA2025,SyedMuhammadUmair Arif
+CSCI 115,ProgrammingFundamentals,1L,96,2.91,0.75,3.0,20.0,54.0,19.0,1.0,2.0,0.0,0.0,0.0,4.0,100,FA2025,Minho Lee
+CSCI 115,ProgrammingFundamentals,2L,100,3.01,0.63,3.0,24.0,57.0,17.0,2.0,0.0,0.0,0.0,0.0,0.0,100,FA2025,Sain Saginbekov
+CSCI 115,ProgrammingFundamentals,3L,94,2.84,0.69,3.0,13.3,57.1,22.4,2.0,1.0,0.0,0.0,0.0,4.1,98,FA2025,SaidaMussakhojayeva
+CSCI 115,ProgrammingFundamentals,4L,97,2.94,0.65,3.0,18.6,59.8,19.6,1.0,1.0,0.0,0.0,0.0,0.0,97,FA2025,Anwar Ghani
+CSCI 151,Programming forScientists and Engineers,1L,98,2.77,1.27,3.33,38.4,28.3,15.2,6.1,11.1,0.0,0.0,0.0,1.0,99,FA2025,Antonio Cerone
+CSCI 151,Programming forScientists and Engineers,2L,130,2.48,1.42,3.0,33.8,23.3,15.8,7.5,17.3,0.0,0.8,0.0,1.5,133,FA2025,ShinnazarSeytnazarov
+CSCI 151,Programming forScientists and Engineers,3L,97,2.63,1.42,3.33,39.8,22.4,17.3,2.0,17.3,0.0,0.0,0.0,1.0,98,FA2025,MuhammedDemirci
+CSCI 231,Computer Systems andOrganization,1L,89,2.39,1.18,2.67,19.4,28.6,20.4,13.3,9.2,0.0,0.0,0.0,9.2,98,FA2025,ShinnazarSeytnazarov
+CSCI 231,Computer Systems andOrganization,2L,83,2.19,1.03,2.33,6.2,33.3,29.2,9.4,8.3,0.0,0.0,0.0,13.5,96,FA2025,Hashim Ali
+CSCI 231,Computer Systems andOrganization,3L,46,1.99,1.09,2.0,10.2,22.4,36.7,12.2,12.2,0.0,0.0,0.0,6.1,49,FA2025,Hari Mohan Rai
+CSCI 235,Programming Languages,1L,146,2.66,0.84,3.0,10.7,53.3,24.0,6.0,3.3,0.0,0.0,0.0,2.7,150,FA2025,Ben Tyler
+CSCI 235,Programming Languages,2L,88,2.57,0.83,2.67,10.2,48.9,31.8,5.7,3.4,0.0,0.0,0.0,0.0,88,FA2025,Jean MarieGuillaumeGerard deNivelle
+CSCI 281,Human-ComputerInteraction,1L,12,1.83,1.13,2.0,6.2,12.5,31.2,12.5,12.5,0.0,0.0,0.0,25.0,16,FA2025,Antonio Cerone
+CSCI 341,Database Systems,1L,91,2.58,0.59,2.67,4.3,53.8,35.5,4.3,0.0,0.0,0.0,0.0,2.2,93,FA2025,MeiramMurzabulatov
+CSCI 341,Database Systems,2L,93,2.7,0.77,3.0,12.8,53.2,25.5,6.4,1.1,0.0,0.0,0.0,1.1,94,FA2025,Adnan Yazici
+CSCI 341,Database Systems,3L,72,2.65,0.79,2.84,11.0,53.4,24.7,8.2,1.4,0.0,0.0,0.0,1.4,73,FA2025,Yesdaulet Izenov
+CSCI 344,Data Mining and DecisionSupport,1L,27,2.74,0.79,3.0,7.4,70.4,14.8,3.7,3.7,0.0,0.0,0.0,0.0,27,FA2025,Jurn Gyu Park
+CSCI 355,Compiler Construction,1L,20,1.8,1.39,1.67,13.0,17.4,17.4,17.4,21.7,0.0,0.0,0.0,13.0,23,FA2025,Jean MarieGuillaumeGerard deNivelle
+CSCI 361,Software Engineering,1L,132,3.61,0.43,3.67,66.7,28.9,1.5,0.7,0.0,0.0,0.0,0.0,2.2,135,FA2025,AskarBoranbayev
+CSCI 361,Software Engineering,2L,127,3.7,0.4,4.0,78.0,19.7,2.4,0.0,0.0,0.0,0.0,0.0,0.0,127,FA2025,AskarBoranbayev
+CSCI 364,Software Architectureand Design,1L,43,2.78,0.67,3.0,15.6,44.4,31.1,4.4,0.0,0.0,0.0,0.0,4.4,45,FA2025,Marko Ristin
+CSCI 390,Artificial Intelligence,1L,92,2.74,0.71,3.0,10.5,54.7,27.4,3.2,1.1,0.0,0.0,0.0,3.2,95,FA2025,Anh Tu Nguyen
+CSCI 390,Artificial Intelligence,2L,93,2.82,0.71,3.0,14.0,60.2,20.4,4.3,1.1,0.0,0.0,0.0,0.0,93,FA2025,Minho Lee
+CSCI 390,Artificial Intelligence,3L,79,3.01,0.67,3.0,17.5,66.2,12.5,1.2,1.2,0.0,0.0,0.0,1.2,80,FA2025,Khalil Khan
+CSCI 393,Introduction to NaturalLanguage Processing,1L,43,3.02,0.75,3.33,22.4,44.9,18.4,0.0,2.0,0.0,0.0,8.2,4.1,49,FA2025,Lisa Chalaguine
+CSCI 408,Senior Project I,1L,235,3.79,0.23,3.67,91.5,8.1,0.0,0.0,0.0,0.0,0.0,0.0,0.4,236,FA2025,AskarBoranbayev
+CSCI 408,Senior Project I,1L,235,3.79,0.23,3.67,91.5,8.1,0.0,0.0,0.0,0.0,0.0,0.0,0.4,236,FA2025,Enver Ever
+CSCI 423,Introduction to ParallelSystems and GPUProgramming,1L,19,3.32,0.56,3.33,42.9,38.1,9.5,0.0,0.0,0.0,0.0,0.0,9.5,21,FA2025,TalgatManglayev
+CSCI 434,Information Security,1L,41,3.01,0.67,3.0,20.9,58.1,14.0,0.0,2.3,0.0,0.0,0.0,4.7,43,FA2025,Anwar Ghani
+CSCI 437,Internet of Things:Technologies andApplications,1L,38,2.81,0.87,3.0,17.5,55.0,10.0,12.5,0.0,0.0,0.0,0.0,5.0,40,FA2025,DimitriosZormpas
+CSCI 447,Machine Learning:Theory and Practice,1L,37,3.49,0.7,3.67,67.6,29.7,0.0,0.0,2.7,0.0,0.0,0.0,0.0,37,FA2025,Hari Mohan Rai
+CSCI 471,Complexity andComputability,1L,19,2.28,1.35,2.33,15.4,19.2,15.4,11.5,11.5,0.0,0.0,0.0,26.9,26,FA2025,MeiramMurzabulatov
+CSCI 494,Deep Learning,1L,72,3.26,0.51,3.33,25.6,61.5,5.1,0.0,0.0,0.0,0.0,3.8,3.8,78,FA2025,Siamac Fazli
+ROBT 201,Mechanics: Statics andDynamics,1L,63,3.14,0.69,3.33,37.5,43.8,17.2,0.0,0.0,0.0,0.0,0.0,1.6,64,FA2025,AibekNiyetkaliyev
+ROBT 203,Electrical and ElectronicCircuits I with Lab,1L,34,2.32,0.96,1.84,17.6,17.6,55.9,8.8,0.0,0.0,0.0,0.0,0.0,34,FA2025,Ton Duc Do
+ROBT 205,Signals and Sensing withLab,1Lb,39,2.97,0.89,3.33,35.9,33.3,20.5,10.3,0.0,0.0,0.0,0.0,0.0,39,FA2025,TogzhanSyrymova
+ROBT 301,Mechanical Design withCAD and MachiningLaboratory,1L,26,3.13,0.72,3.33,38.5,42.3,19.2,0.0,0.0,0.0,0.0,0.0,0.0,26,FA2025,AibekNiyetkaliyev
+ROBT 303,Linear Control Theorywith Lab,1L,24,2.11,1.4,2.16,19.2,23.1,19.2,11.5,19.2,0.0,0.0,0.0,7.7,26,FA2025,Tohid Alizadeh
+ROBT 310,Image Processing,1L,32,3.34,0.91,3.67,63.6,21.2,6.1,3.0,3.0,0.0,0.0,0.0,3.0,33,FA2025,ZhanatKappassov
+ROBT 403,"Robotics II: Control,Modeling and Learningwith Laboratory",1L,16,2.9,0.89,3.0,29.4,41.2,11.8,11.8,0.0,0.0,0.0,0.0,5.9,17,FA2025,Tohid Alizadeh
+ROBT 407,Machine Learning withApplications,1L,34,3.24,0.59,3.33,38.2,50.0,8.8,2.9,0.0,0.0,0.0,0.0,0.0,34,FA2025,BerdakhAbibullaev
+ROBT 491,Capstone Project I,1L,16,3.73,0.39,3.84,87.5,12.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,16,FA2025,TogzhanSyrymova
+PETE 201,Fluid Mechanics andThermodynamics,1L,33,3.19,0.66,3.33,33.3,54.5,9.1,3.0,0.0,0.0,0.0,0.0,0.0,33,FA2025,Shams Kalam
+PETE 301,Numerical Methods forPetroleum Engineers,1L,28,3.16,0.62,3.33,35.7,53.6,10.7,0.0,0.0,0.0,0.0,0.0,0.0,28,FA2025,SagynOmirbekov
+PETE 302,Reservoir Engineering Iwith Laboratory works,1L,27,3.35,0.54,3.33,44.4,48.1,7.4,0.0,0.0,0.0,0.0,0.0,0.0,27,FA2025,Masoud Riazi
+PETE 303,Well Logging andFormation Evaluation,1L,29,2.63,0.66,2.67,3.4,58.6,31.0,6.9,0.0,0.0,0.0,0.0,0.0,29,FA2025,Ali Shafiei
+PETE 304,Well Completion andStimulation,1L,31,3.16,0.62,3.33,35.5,48.4,16.1,0.0,0.0,0.0,0.0,0.0,0.0,31,FA2025,Irawan Sonny
+PETE 405,Enhanced Oil Recovery,1L,14,3.24,0.24,3.33,14.3,85.7,0.0,0.0,0.0,0.0,0.0,0.0,0.0,14,FA2025,PeymanPourafshary
+PETE 409,Surface Facilities,1L,13,3.61,0.3,3.67,53.8,46.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,13,FA2025,Mian UmerShafiq
+GEOL 201,Mineralogy,1L,18,2.63,0.79,2.67,22.2,33.3,38.9,5.6,0.0,0.0,0.0,0.0,0.0,18,FA2025,Kamal Regmi
+GEOL 202,Geologic Maps and Cross-Sections,1L,10,2.5,0.76,2.5,10.0,40.0,40.0,10.0,0.0,0.0,0.0,0.0,0.0,10,FA2025,Jovid Aminov
+GEOL 203,Sedimentary petrology,1L,12,3.28,0.62,3.5,46.2,30.8,15.4,0.0,0.0,0.0,0.0,0.0,7.7,13,FA2025,Jovid Aminov
+GEOL 207,Geomorphology,1L,10,3.0,0.63,3.16,20.0,60.0,20.0,0.0,0.0,0.0,0.0,0.0,0.0,10,FA2025,Medet Junussov
+GEOL 302,Thermodynamics andGeochemistry,1L,11,2.88,0.6,3.0,7.7,61.5,15.4,0.0,0.0,0.0,0.0,0.0,15.4,13,FA2025,Kamal Regmi
+GEOL 303,Structural Geology andTectonics,1L,13,3.08,0.68,3.33,35.7,42.9,14.3,0.0,0.0,0.0,0.0,0.0,7.1,14,FA2025,SebastianusWillem JosefDen Brok
+GEOL 305,Geology of ore deposits,1L,23,3.1,0.56,3.33,25.0,62.5,8.3,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,GeorgeMathews
+GEOL 310,Field Geology,2,1,13,3.49,0.42,3.33,46.2,53.8,0.0,0.0,0.0,0.0,0.0,0.0,0,FA2025,
+GEOL 401,Petroleum Geology andGeochemistry,1L,27,2.9,0.68,3.0,22.2,48.1,29.6,0.0,0.0,0.0,0.0,0.0,0.0,27,FA2025,Milovan Fustic
+GEOL 402,Water ResourceManagement,1L,16,2.98,0.58,3.0,31.2,43.8,25.0,0.0,0.0,0.0,0.0,0.0,0.0,16,FA2025,MarzhanBaigaliyeva
+GEOL 404,Research Project I,1P,12,3.42,0.62,3.5,50.0,41.7,8.3,0.0,0.0,0.0,0.0,0.0,0.0,12,FA2025,SebastianusWillem JosefDen Brok
+MINE 301,Mine Surveying andGeographic InformationSystems,1L,18,3.5,0.33,3.33,36.8,57.9,0.0,0.0,0.0,0.0,0.0,5.3,0.0,19,FA2025,Emil Bayramov
+MINE 302,Geomechanics,1L,12,2.36,0.87,2.67,0.0,58.3,33.3,0.0,8.3,0.0,0.0,0.0,0.0,12,FA2025,FidelisSuorineni
+MINE 401,Mining GeotechnicalEngineering,1L,10,2.7,1.08,2.84,20.0,60.0,10.0,0.0,10.0,0.0,0.0,0.0,0.0,10,FA2025,Ali Mortazavi
+MINE 402,Mine Planning,1L,9,2.93,0.7,3.0,22.2,55.6,22.2,0.0,0.0,0.0,0.0,0.0,0.0,9,FA2025,NasserMadaniesfahani
+MINE 403,Coal Mining,1L,9,2.52,0.88,2.33,11.1,33.3,44.4,11.1,0.0,0.0,0.0,0.0,0.0,9,FA2025,FidelisSuorineni
+MINE 405,Mine Ventilation,1L,10,2.87,1.08,3.33,20.0,70.0,0.0,0.0,10.0,0.0,0.0,0.0,0.0,10,FA2025,Sergei Sabanov
+MINE 489,Mine Design Project I,1S,9,3.3,0.26,3.33,22.2,77.8,0.0,0.0,0.0,0.0,0.0,0.0,0.0,9,FA2025,Sergei Sabanov
+SMG 200/ECON 220,Resource Economics,1L,25,2.67,0.78,3.0,8.0,64.0,16.0,12.0,0.0,0.0,0.0,0.0,0.0,25,FA2025,ZaureshAtakhanova
+SMG 200/ECON 220,Resource Economics,2L,27,2.85,0.5,3.0,7.1,67.9,21.4,0.0,0.0,0.0,0.0,0.0,3.6,28,FA2025,ZaureshAtakhanova
+SMG 100,Introduction to NaturalResources Extraction,1L,97,2.97,0.62,3.0,21.6,57.7,20.6,0.0,0.0,0.0,0.0,0.0,0.0,97,FA2025,Randy Hazlett
+SMG 200/ECON 220,Resource Economics,1L,25,2.67,0.78,3.0,8.0,64.0,16.0,12.0,0.0,0.0,0.0,0.0,0.0,25,FA2025,ZaureshAtakhanova
+SMG 200/ECON 220,Resource Economics,2L,27,2.85,0.5,3.0,7.1,67.9,21.4,0.0,0.0,0.0,0.0,0.0,3.6,28,FA2025,ZaureshAtakhanova
+SMG 210,Strength of Materials,1L,36,2.86,0.83,3.0,18.9,48.6,27.0,0.0,2.7,0.0,0.0,0.0,2.7,37,FA2025,Amoussou CoffiAdoko
+BIOL 101,Introductory Biology,1L,88,2.91,0.71,3.0,20.9,50.5,19.8,5.5,0.0,0.0,0.0,0.0,3.3,91,FA2025,Sergey Yegorov
+BIOL 101,Introductory Biology,2L,84,2.71,0.73,2.67,11.5,55.2,25.3,3.4,1.1,0.0,0.0,0.0,3.4,87,FA2025,Burkitkan Akbay
+BIOL 101,Introductory Biology,3L,85,2.91,0.73,3.0,21.6,52.3,19.3,2.3,1.1,0.0,0.0,0.0,3.4,88,FA2025,ZarinaSautbayeva
+BIOL 101,Introductory Biology,4L,88,2.76,0.59,2.84,8.9,57.8,28.9,2.2,0.0,0.0,0.0,0.0,2.2,90,FA2025,NurtilekGalimov
+BIOL 101,Introductory Biology,5L,83,2.87,0.58,3.0,10.7,61.9,25.0,1.2,0.0,0.0,0.0,0.0,1.2,84,FA2025,RadmirSarsenov
+BIOL 105,General Biology,1L,89,2.74,0.68,2.67,14.1,48.9,30.4,3.3,0.0,0.0,1.1,0.0,2.2,92,FA2025,RadmirSarsenov
+BIOL 110,Modern Biology I,1L,13,2.82,0.74,3.0,15.4,53.8,30.8,0.0,0.0,0.0,0.0,0.0,0.0,13,FA2025,OlenaFilchakova
+BIOL 120L,Modern Biology IILaboratory,1Lb,17,3.35,0.48,3.33,47.1,47.1,5.9,0.0,0.0,0.0,0.0,0.0,0.0,17,FA2025,ZarinaSautbayeva
+BIOL 120L,Modern Biology IILaboratory,2Lb,16,3.44,0.29,3.33,43.8,56.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,16,FA2025,NurtilekGalimov
+BIOL 120L,Modern Biology IILaboratory,3Lb,17,3.39,0.61,3.67,52.9,41.2,0.0,5.9,0.0,0.0,0.0,0.0,0.0,17,FA2025,ZarinaSautbayeva
+BIOL 120L,Modern Biology IILaboratory,4Lb,7,3.0,0.0,3.0,0.0,87.5,0.0,0.0,0.0,0.0,0.0,0.0,12.5,8,FA2025,RadmirSarsenov
+BIOL 120,Modern Biology II,1L,65,2.42,0.88,2.33,9.0,37.3,38.8,9.0,3.0,0.0,0.0,0.0,3.0,67,FA2025,Alexandr Pak
+BIOL 230,Human Anatomy andPhysiology I,1L,36,3.22,0.44,3.33,30.6,66.7,2.8,0.0,0.0,0.0,0.0,0.0,0.0,36,FA2025,Tursonjan Tokay
+BIOL 301,Molecular Cell Biology,1L,38,3.26,0.47,3.33,34.2,60.5,5.3,0.0,0.0,0.0,0.0,0.0,0.0,38,FA2025,Ivan Vorobyev
+BIOL 305,Introduction toMicrobiology,1L,19,2.91,0.79,3.0,10.5,78.9,5.3,0.0,5.3,0.0,0.0,0.0,0.0,19,FA2025,DamiraKanayeva
+BIOL 305L,Introduction toMicrobiology Laboratory,2Lb,18,3.15,0.64,3.33,38.9,44.4,16.7,0.0,0.0,0.0,0.0,0.0,0.0,18,FA2025,NurtilekGalimov
+BIOL 305L,Introduction toMicrobiology Laboratory,3Lb,14,3.36,0.55,3.5,46.7,33.3,13.3,0.0,0.0,0.0,0.0,0.0,6.7,15,FA2025,Burkitkan Akbay
+BIOL 305,Introduction toMicrobiology,1L,46,3.09,0.53,3.16,21.7,60.9,17.4,0.0,0.0,0.0,0.0,0.0,0.0,46,FA2025,DamiraKanayeva
+BIOL 310,Immunology,1L,7,3.76,0.37,4.0,85.7,14.3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,7,FA2025,Timo Burster
+BIOL 320,Developmental Biology,1L,7,3.71,0.62,4.0,85.7,0.0,14.3,0.0,0.0,0.0,0.0,0.0,0.0,7,FA2025,ZhanatMuminova
+BIOL 321,Bioethics,1L,15,3.05,0.37,3.0,13.3,86.7,0.0,0.0,0.0,0.0,0.0,0.0,0.0,15,FA2025,Otilia Nuta
+BIOL 340,Introduction toBioinformatics with Lab,1L,15,3.78,0.27,4.0,80.0,20.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,15,FA2025,Ulykbek Kairov
+BIOL 341,Biochemistry I,1L,43,3.64,0.44,3.67,72.1,25.6,2.3,0.0,0.0,0.0,0.0,0.0,0.0,43,FA2025,Timo Burster
+BIOL 355,Critical ResearchReasoning,1L,13,3.46,0.22,3.33,42.9,50.0,0.0,0.0,0.0,0.0,0.0,0.0,7.1,14,FA2025,yingqiu Xie
+BIOL 355,Critical ResearchReasoning,3L,16,3.19,0.32,3.16,18.8,81.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,16,FA2025,yingqiu Xie
+BIOL 355,Critical ResearchReasoning,4L,50,3.86,0.16,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,50,FA2025,Jeanette KunzHalder
+BIOL 355,Critical ResearchReasoning,4L,50,3.86,0.16,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,50,FA2025,KamilyaKokabi
+BIOL 363,Structural Bioinformatics,1L,24,4.0,0.0,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,24,FA2025,FerdinandMolnar
+BIOL 370,Genetics,1L,38,3.5,0.67,3.67,65.8,23.7,10.5,0.0,0.0,0.0,0.0,0.0,0.0,38,FA2025,ZhanatMuminova
+BIOL 380,Biology of Behavior,1L,32,3.33,0.4,3.33,37.5,62.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,32,FA2025,Tursonjan Tokay
+BIOL 385,Cell signaling: principlesand mechanisms,1L,30,2.99,0.81,3.0,30.0,53.3,13.3,0.0,3.3,0.0,0.0,0.0,0.0,30,FA2025,Alexandr Pak
+BIOL 452,Biology of Cancer,1L,43,3.41,0.33,3.33,36.4,59.1,2.3,0.0,0.0,0.0,0.0,0.0,2.3,44,FA2025,EugenePonomarev
+BIOL 456,Biology Research Design,2S,20,3.3,0.36,3.33,28.6,61.9,4.8,0.0,0.0,0.0,0.0,0.0,4.8,21,FA2025,Tri Pham
+BIOL 456,Biology Research Design,4S,32,3.55,0.48,3.67,65.6,31.2,3.1,0.0,0.0,0.0,0.0,0.0,0.0,32,FA2025,EugenePonomarev
+BIOL 460,Human Parasitology,1L,23,3.68,0.52,4.0,78.3,17.4,4.3,0.0,0.0,0.0,0.0,0.0,0.0,23,FA2025,ZhanatMuminova
+CHEM 100,Introduction to Chemistry,1L,68,3.27,0.56,3.33,41.4,45.7,10.0,0.0,0.0,0.0,0.0,0.0,2.9,70,FA2025,ZhannatAshikbayeva
+CHEM 100,Introduction to Chemistry,2L,50,3.45,0.57,3.67,60.0,32.0,8.0,0.0,0.0,0.0,0.0,0.0,0.0,50,FA2025,ZhannatAshikbayeva
+CHEM 101L,General Chemistry I lab,1ChLb,21,2.98,0.76,3.0,29.2,33.3,25.0,0.0,0.0,0.0,0.0,0.0,12.5,24,FA2025,Roza Oztopcu
+CHEM 101L,General Chemistry I lab,3ChLb,16,2.81,0.76,2.84,23.5,29.4,35.3,5.9,0.0,0.0,0.0,0.0,5.9,17,FA2025,Roza Oztopcu
+CHEM 101L,General Chemistry I lab,4ChLb,21,2.86,0.86,3.0,13.0,60.9,13.0,0.0,4.3,0.0,0.0,0.0,8.7,23,FA2025,AisuluZhanbossinova
+CHEM 101L,General Chemistry I lab,5ChLb,10,3.07,0.58,3.16,27.3,45.5,18.2,0.0,0.0,0.0,0.0,0.0,9.1,11,FA2025,SandugashKalybekkyzy
+CHEM 101L,General Chemistry I lab,6ChLb,11,3.03,0.5,3.0,16.7,66.7,8.3,0.0,0.0,0.0,0.0,0.0,8.3,12,FA2025,Rauan Smail
+CHEM 101L,General Chemistry I lab,7ChLb,22,2.82,0.75,2.84,21.7,47.8,21.7,4.3,0.0,0.0,0.0,0.0,4.3,23,FA2025,Roza Oztopcu
+CHEM 101L,General Chemistry I lab,8ChLb,10,3.13,0.48,3.16,27.3,54.5,9.1,0.0,0.0,0.0,0.0,0.0,9.1,11,FA2025,Aliya Toleuova
+CHEM 101L,General Chemistry I lab,9ChLb,11,3.0,0.58,3.0,15.4,53.8,15.4,0.0,0.0,0.0,0.0,0.0,15.4,13,FA2025,AkmaralSuleimenova
+CHEM 101L,General Chemistry I lab,10ChLb,20,3.18,0.6,3.33,28.6,52.4,14.3,0.0,0.0,0.0,0.0,0.0,4.8,21,FA2025,AkmaralSuleimenova
+CHEM 101L,General Chemistry I lab,11ChLb,17,2.86,0.46,3.0,5.9,76.5,17.6,0.0,0.0,0.0,0.0,0.0,0.0,17,FA2025,ZhannatAshikbayeva
+CHEM 101L,General Chemistry I lab,12ChLb,13,2.87,0.73,3.0,5.9,52.9,11.8,5.9,0.0,0.0,0.0,0.0,23.5,17,FA2025,Rauan Smail
+CHEM 101L,General Chemistry I lab,13ChLb,14,3.28,0.5,3.33,26.7,60.0,6.7,0.0,0.0,0.0,0.0,0.0,6.7,15,FA2025,Rauan Smail
+CHEM 101,General Chemistry I,1L,27,1.9,1.01,1.67,5.9,14.7,38.2,11.8,8.8,0.0,2.9,0.0,17.6,34,FA2025,Khalil Amro
+CHEM 101,General Chemistry I,2L,65,2.55,0.74,2.67,9.2,46.2,36.9,6.2,1.5,0.0,0.0,0.0,0.0,65,FA2025,AisuluZhanbossinova
+CHEM 101,General Chemistry I,3L,52,1.89,1.13,2.0,6.6,19.7,29.5,16.4,13.1,0.0,0.0,0.0,14.8,61,FA2025,AigerimGalyamova
+CHEM 101,General Chemistry I,4L,64,2.58,0.8,2.67,9.1,51.5,25.8,9.1,1.5,0.0,0.0,0.0,3.0,66,FA2025,AkmaralSuleimenova
+CHEM 101,General Chemistry I,5L,62,2.06,0.86,2.0,6.2,18.8,48.4,18.8,4.7,0.0,0.0,0.0,3.1,64,FA2025,Roza Oztopcu
+CHEM 101,General Chemistry I,6L,62,2.24,0.87,2.33,6.2,37.5,32.8,17.2,3.1,0.0,0.0,0.0,3.1,64,FA2025,Rauan Smail
+CHEM 102,General Chemistry II,1L,8,2.16,0.47,2.16,0.0,12.5,75.0,12.5,0.0,0.0,0.0,0.0,0.0,8,FA2025,Aliya Toleuova
+CHEM 104,Introduction to Physicaland Chemical Sciences,1L,58,3.45,0.79,3.84,56.9,32.8,6.9,1.7,1.7,0.0,0.0,0.0,0.0,58,FA2025,Timur Atabaev
+CHEM 211L,Organic Chemistry I Lab,2Lb,22,3.44,0.47,3.5,47.8,43.5,4.3,0.0,0.0,0.0,0.0,0.0,4.3,23,FA2025,Ozgur Oztopcu
+CHEM 211L,Organic Chemistry I Lab,3Lb,21,3.64,0.48,3.67,81.0,14.3,4.8,0.0,0.0,0.0,0.0,0.0,0.0,21,FA2025,Ozgur Oztopcu
+CHEM 211L,Organic Chemistry I Lab,4Lb,6,2.83,1.17,3.0,33.3,33.3,16.7,16.7,0.0,0.0,0.0,0.0,0.0,6,FA2025,Ellina Mun
+CHEM 211L,Organic Chemistry I Lab,5Lb,8,3.79,0.17,3.67,88.9,0.0,0.0,0.0,0.0,0.0,0.0,0.0,11.1,9,FA2025,Ozgur Oztopcu
+CHEM 211,Organic Chemistry I,1L,19,2.54,1.14,2.67,21.1,36.8,31.6,0.0,10.5,0.0,0.0,0.0,0.0,19,FA2025,AhmedElkamhawy
+CHEM 211,Organic Chemistry I,2L,39,3.13,0.8,3.33,41.0,46.2,10.3,0.0,2.6,0.0,0.0,0.0,0.0,39,FA2025,IrshadKammakakam
+CHEM 211,Organic Chemistry I,3L,34,2.91,0.85,3.0,26.5,52.9,11.8,5.9,2.9,0.0,0.0,0.0,0.0,34,FA2025,IrshadKammakakam
+CHEM 211,Organic Chemistry I,4L,11,1.91,1.77,1.67,25.0,16.7,8.3,8.3,33.3,0.0,0.0,0.0,8.3,12,FA2025,SalimgereyAdilov
+CHEM 212L,Organic Chemistry II Lab,1ChLb,12,3.03,0.58,3.0,25.0,58.3,16.7,0.0,0.0,0.0,0.0,0.0,0.0,12,FA2025,DavitHayrapetyan
+CHEM 212,Organic Chemistry II,1L,14,1.81,1.51,1.84,20.0,6.7,26.7,13.3,26.7,0.0,0.0,0.0,6.7,15,FA2025,DavitHayrapetyan
+CHEM 220,Quantitative ChemicalAnalysis,1L,24,2.81,0.92,3.16,20.8,50.0,20.8,4.2,4.2,0.0,0.0,0.0,0.0,24,FA2025,RostislavBukasov
+CHEM 220,Quantitative ChemicalAnalysis,1L,32,2.98,0.76,2.84,28.1,40.6,28.1,3.1,0.0,0.0,0.0,0.0,0.0,32,FA2025,RostislavBukasov
+CHEM 331L,Physical Chemistry Lab,1ChLb,22,2.89,1.24,3.33,21.7,60.9,0.0,0.0,13.0,0.0,0.0,0.0,4.3,23,FA2025,Haiyan Fan
+CHEM 331,Physical Chemistry I,1L,25,2.59,0.56,2.67,3.7,55.6,29.6,3.7,0.0,0.0,0.0,3.7,3.7,27,FA2025,Haiyan Fan
+CHEM 341,Biochemistry I,1L,32,2.42,0.7,2.5,6.2,43.8,43.8,3.1,3.1,0.0,0.0,0.0,0.0,32,FA2025,AhmedElkamhawy
+CHEM 350,Advanced InorganicChemistry,1L,24,2.88,0.59,3.0,16.7,58.3,25.0,0.0,0.0,0.0,0.0,0.0,0.0,24,FA2025,AndreyKhalimon
+CHEM 350,Advanced InorganicChemistry,1L,26,2.59,0.62,2.33,11.5,34.6,53.8,0.0,0.0,0.0,0.0,0.0,0.0,26,FA2025,AndreyKhalimon
+CHEM 410,Structural Spectroscopy,1L,11,3.27,0.68,3.0,41.7,33.3,16.7,0.0,0.0,0.0,0.0,0.0,8.3,12,FA2025,SalimgereyAdilov
+CHEM 432,Introduction toCheminformatics andComputer aided drugdesign,1L,5,3.8,0.18,3.67,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,5,FA2025,Mannix Balanay
+CHEM 440,Pharmaceutical andMedicinal Chemistry,1L,27,2.69,0.71,2.67,11.1,44.4,40.7,3.7,0.0,0.0,0.0,0.0,0.0,27,FA2025,Ellina Mun
+CHEM 440,Pharmaceutical andMedicinal Chemistry,1L,27,2.69,0.71,2.67,11.1,44.4,40.7,3.7,0.0,0.0,0.0,0.0,0.0,27,FA2025,AhmedElkamhawy
+CHEM 471,Environmental Chemistry,1L,27,3.57,0.24,3.67,53.6,42.9,0.0,0.0,0.0,0.0,0.0,0.0,3.6,28,FA2025,Mannix Balanay
+CHEM 488,Directed Research I,1Lb,16,3.56,0.4,3.5,47.1,47.1,0.0,0.0,0.0,0.0,0.0,0.0,5.9,17,FA2025,Timur Atabaev
+MATH 161,Calculus I,1L,269,2.49,1.16,2.67,19.2,39.9,22.9,5.9,11.4,0.0,0.0,0.0,0.7,271,FA2025,AchenefTesfahun
+MATH 161,Calculus I,2L,269,2.61,1.05,2.67,20.7,42.1,22.1,7.4,7.0,0.0,0.4,0.0,0.4,271,FA2025,AchenefTesfahun
+MATH 161,Calculus I,3L,261,2.29,1.12,2.67,10.7,39.6,27.4,6.3,12.6,0.0,0.0,0.0,3.3,270,FA2025,ArdakKashkynbayev
+MATH 161,Calculus I,4L,262,2.14,1.18,2.33,10.4,33.2,30.6,7.8,15.7,0.0,0.0,0.0,2.2,268,FA2025,Yerlan Amanbek
+MATH 162,Calculus II,1L,84,1.77,1.17,2.0,6.3,18.9,24.2,24.2,14.7,0.0,0.0,0.0,11.6,95,FA2025,BibinurShupeyeva
+MATH 251,Discrete Mathematics,1L,60,2.8,0.93,2.84,25.0,32.4,26.5,1.5,2.9,0.0,0.0,0.0,11.8,68,FA2025,ZhanbotaMyrzakul
+MATH 251,Discrete Mathematics,2L,97,3.06,0.96,3.33,43.3,32.0,18.6,2.1,4.1,0.0,0.0,0.0,0.0,97,FA2025,CatalinaTroshev
+MATH 251,Discrete Mathematics,3L,56,3.14,0.96,3.33,46.4,33.9,14.3,1.8,3.6,0.0,0.0,0.0,0.0,56,FA2025,CatalinaTroshev
+MATH 251,Discrete Mathematics,4L,58,3.0,0.85,3.0,31.8,37.9,13.6,1.5,3.0,0.0,0.0,0.0,12.1,66,FA2025,ZhanbotaMyrzakul
+MATH 263,Calculus III,1L,67,3.04,0.68,3.0,27.9,47.1,20.6,2.9,0.0,0.0,0.0,0.0,1.5,68,FA2025,AndreyMelnikov
+MATH 263,Calculus III,2L,61,2.93,0.75,3.0,25.8,51.6,14.5,6.5,0.0,0.0,0.0,0.0,1.6,62,FA2025,AndreyMelnikov
+MATH 263,Calculus III,3L,63,2.92,1.04,3.33,33.8,36.9,18.5,1.5,6.2,0.0,0.0,0.0,3.1,65,FA2025,Amin Esfahani
+MATH 273,Linear Algebra withApplications,2L,90,2.76,0.62,2.84,10.9,52.2,32.6,2.2,0.0,0.0,0.0,0.0,2.2,92,FA2025,Viktor Ten
+MATH 273,Linear Algebra withApplications,4L,58,2.78,0.93,3.0,23.3,38.3,26.7,5.0,3.3,0.0,0.0,0.0,3.3,60,FA2025,ZhanbotaMyrzakul
+MATH 273,Linear Algebra withApplications,5L,48,2.77,0.99,3.0,22.0,44.0,18.0,8.0,4.0,0.0,0.0,0.0,4.0,50,FA2025,ZhansayaTleuliyeva
+MATH 273,Linear Algebra withApplications,6L,49,2.69,0.96,2.67,22.0,44.0,18.0,12.0,2.0,0.0,0.0,0.0,2.0,50,FA2025,ZhansayaTleuliyeva
+MATH 273,Linear Algebra withApplications,7L,59,2.71,0.9,3.0,13.6,51.5,16.7,3.0,4.5,0.0,0.0,0.0,10.6,66,FA2025,ZhansayaTleuliyeva
+MATH 274,Introduction toDifferential Equations,1L,53,2.27,1.44,2.67,26.7,18.3,15.0,11.7,16.7,0.0,0.0,0.0,11.7,60,FA2025,Adilet Otemissov
+MATH 274,Introduction toDifferential Equations,2L,43,2.31,1.26,2.33,16.7,27.1,27.1,6.2,12.5,0.0,0.0,0.0,10.4,48,FA2025,AigerimMadiyeva
+MATH 274,Introduction toDifferential Equations,3L,69,2.57,1.01,2.67,18.6,37.1,28.6,10.0,4.3,0.0,0.0,0.0,1.4,70,FA2025,AigerimMadiyeva
+MATH 301,Introduction to NumberTheory,1L,38,2.44,1.25,2.5,18.5,16.7,22.2,5.6,7.4,0.0,0.0,0.0,29.6,54,FA2025,DurvudkhanSuragan
+MATH 302,Abstract Algebra I,1L,29,1.93,1.32,2.33,13.9,13.9,30.6,2.8,19.4,0.0,0.0,0.0,19.4,36,FA2025,Manat Mustafa
+MATH 302,Abstract Algebra I,2L,59,2.12,1.04,2.33,6.6,31.1,41.0,6.6,11.5,0.0,0.0,0.0,3.3,61,FA2025,ZhibekKadyrsizova
+MATH 310,Applied StatisticalMethods,1L,69,2.99,0.87,3.33,24.4,32.2,14.4,4.4,1.1,0.0,0.0,0.0,23.3,90,FA2025,BibinurShupeyeva
+MATH 321,Probability,1L,58,3.04,0.94,3.33,40.0,40.0,8.3,6.7,1.7,0.0,0.0,0.0,3.3,60,FA2025,Erum Rehman
+MATH 321,Probability,2L,84,3.22,0.62,3.33,42.9,41.7,14.3,1.2,0.0,0.0,0.0,0.0,0.0,84,FA2025,Viktor Ten
+MATH 321,Probability,3L,55,3.49,0.48,3.67,51.8,44.6,1.8,0.0,0.0,0.0,0.0,0.0,1.8,56,FA2025,Viktor Ten
+MATH 322,Mathematical Statistics,1L,57,3.04,0.78,3.0,28.3,50.0,15.0,0.0,1.7,0.0,0.0,0.0,5.0,60,FA2025,Erum Rehman
+MATH 322,Mathematical Statistics,2L,54,3.07,0.81,3.0,32.1,44.6,16.1,1.8,1.8,0.0,0.0,0.0,3.6,56,FA2025,Kerem Ugurlu
+MATH 323,Actuarial Mathematics I,1L,66,3.32,0.67,3.5,50.0,37.9,10.6,0.0,1.5,0.0,0.0,0.0,0.0,66,FA2025,Dongming Wei
+MATH 351,Numerical Methods withApplications,1L,58,3.46,0.59,3.67,65.0,21.7,10.0,0.0,0.0,0.0,0.0,0.0,3.3,60,FA2025,Piotr SebastianSkrzypacz
+MATH 361,Real Analysis I,1L,49,1.68,1.41,1.67,15.5,10.3,17.2,17.2,24.1,0.0,0.0,0.0,15.5,58,FA2025,Alejandro JavierCastro Castilla
+MATH 371,Introduction toMathematical Biology,1L,51,2.8,0.86,3.0,20.8,41.5,28.3,3.8,1.9,0.0,0.0,0.0,3.8,53,FA2025,ArdakKashkynbayev
+MATH 417,Cryptography,1L,13,2.69,1.35,3.0,16.0,20.0,8.0,0.0,8.0,0.0,0.0,0.0,48.0,25,FA2025,Manat Mustafa
+MATH 424,Mathematical Finance,1L,64,2.57,1.05,2.67,13.6,43.9,28.8,3.0,7.6,0.0,0.0,0.0,3.0,66,FA2025,Tolga Etgu
+MATH 425,Stochastic Processes,1L,56,2.15,1.24,2.0,17.7,19.4,30.6,9.7,12.9,0.0,0.0,0.0,9.7,62,FA2025,Kerem Ugurlu
+MATH 446,Time Series Analysis,1L,70,3.73,0.27,3.67,77.1,22.9,0.0,0.0,0.0,0.0,0.0,0.0,0.0,70,FA2025,Piotr SebastianSkrzypacz
+MATH 449,Statistical Programming,1L,60,3.53,0.66,3.67,70.0,23.3,3.3,3.3,0.0,0.0,0.0,0.0,0.0,60,FA2025,RustemTakhanov
+MATH 471,Nonlinear DifferentialEquations,1L,48,2.66,0.97,2.84,20.4,31.5,33.3,0.0,3.7,0.0,0.0,0.0,11.1,54,FA2025,AdilbekKairzhan
+MATH 477,Applied Finite ElementMethods,1L,61,3.01,0.85,3.33,29.5,44.3,21.3,1.6,3.3,0.0,0.0,0.0,0.0,61,FA2025,Dongming Wei
+MATH 480,Complex Analysis,1L,49,2.84,0.93,2.67,23.5,43.1,23.5,2.0,3.9,0.0,0.0,0.0,3.9,51,FA2025,Amin Esfahani
+MATH 481,Partial DifferentialEquations,1L,17,2.75,0.95,3.0,17.6,52.9,23.5,0.0,5.9,0.0,0.0,0.0,0.0,17,FA2025,AdilbekKairzhan
+MATH 490,Special Topics inMathematics I,1L,8,2.29,0.93,2.33,0.0,37.5,37.5,25.0,0.0,0.0,0.0,0.0,0.0,8,FA2025,ZhibekKadyrsizova
+MATH 490,Special Topics inMathematics I,2L,5,3.8,0.3,4.0,80.0,20.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,5,FA2025,Eunghyun Lee
+MATH 497,Directed Study inMathematics I,1L,4,3.5,0.58,3.5,40.0,40.0,0.0,0.0,0.0,0.0,0.0,0.0,20.0,5,FA2025,ZhibekKadyrsizova
+PHYS 161,Physics I for Scientistsand Engineers withLaboratory,1L,170,3.07,0.71,3.0,23.6,61.5,9.8,1.7,1.1,0.0,0.0,0.0,2.3,174,FA2025,Kyunghwan Oh
+PHYS 161,Physics I for Scientistsand Engineers withLaboratory,2L,171,3.08,0.71,3.0,25.3,58.6,10.9,2.3,1.1,0.0,0.0,0.0,1.7,174,FA2025,ErnazarAbdikamalov
+PHYS 161,Physics I for Scientistsand Engineers withLaboratory,3L,173,2.95,0.89,3.0,22.5,59.0,8.4,3.4,3.9,0.0,0.0,0.0,2.8,178,FA2025,AlexanderTikhonov
+PHYS 161,Physics I for Scientistsand Engineers withLaboratory,4L,176,3.06,0.73,3.0,27.1,55.9,14.1,1.1,1.1,0.0,0.0,0.0,0.6,177,FA2025,ZhandosUtegulov
+PHYS 161,Physics I for Scientistsand Engineers withLaboratory,5L,169,3.04,0.66,3.0,19.9,68.4,7.0,2.3,1.2,0.0,0.0,0.0,1.2,171,FA2025,Marat Kaikanov
+PHYS 201,Introductory Astronomy I,1L,33,2.68,1.02,3.0,11.4,45.5,9.1,2.3,6.8,0.0,0.0,0.0,25.0,44,FA2025,Dana Alina
+PHYS 221,Classical Mechanics I,1L,17,3.08,1.14,3.33,35.0,35.0,5.0,5.0,5.0,0.0,0.0,0.0,15.0,20,FA2025,DanieleMalafarina
+PHYS 221,Classical Mechanics I,1L,17,3.08,1.14,3.33,35.0,35.0,5.0,5.0,5.0,0.0,0.0,0.0,15.0,20,FA2025,RaynerRodriguezGuzman
+PHYS 250,Introduction to NuclearScience and Technology,1L,37,3.65,0.69,4.0,67.5,22.5,0.0,0.0,2.5,0.0,0.0,0.0,7.5,40,FA2025,RaynerRodriguezGuzman
+PHYS 261,Modern Physics withlaboratory,1L,21,2.64,0.97,2.67,26.1,30.4,21.7,13.0,0.0,0.0,0.0,0.0,8.7,23,FA2025,AskhatJumabekov
+PHYS 315,Applied MathematicalMethods,1L,19,2.81,1.17,3.0,40.0,20.0,20.0,10.0,5.0,0.0,0.0,0.0,5.0,20,FA2025,Michael Good
+PHYS 361,ClassicalElectrodynamics I,1L,6,3.61,0.33,3.5,50.0,50.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,6,FA2025,BakhtiyarOrazbayev
+PHYS 395,Research Methods,1L,6,3.33,0.96,3.84,66.7,16.7,16.7,0.0,0.0,0.0,0.0,0.0,0.0,6,FA2025,AntonDesyatnikov
+PHYS 421,Parallel Computing,1L,13,3.62,0.36,3.67,64.3,28.6,0.0,0.0,0.0,0.0,0.0,7.1,0.0,14,FA2025,Sergiy Bubin
+PHYS 421,Parallel Computing,1L,13,3.62,0.36,3.67,64.3,28.6,0.0,0.0,0.0,0.0,0.0,7.1,0.0,14,FA2025,BekdauletShukirgaliyev
+PHYS 452,Quantum Mechanics II,1L,11,2.85,1.11,3.0,18.2,63.6,9.1,0.0,9.1,0.0,0.0,0.0,0.0,11,FA2025,Sergiy Bubin
+PHYS 463,Astrophysics and GeneralRelativity,1L,5,2.33,1.51,3.0,16.7,33.3,16.7,0.0,16.7,0.0,0.0,0.0,16.7,6,FA2025,DanieleMalafarina
+ECON 101,Introduction toMicroeconomics,1L,168,2.94,0.9,3.33,27.2,46.2,18.9,4.7,2.4,0.0,0.0,0.0,0.6,169,FA2025,AigerimSarsenbayeva
+ECON 101,Introduction toMicroeconomics,2L,164,2.72,0.85,3.0,15.3,48.2,26.5,3.5,2.9,0.0,0.0,0.0,3.5,170,FA2025,LeventKockesen
+ECON 102,Introduction toMacroeconomics,1L,161,2.76,0.9,3.0,20.6,42.9,23.5,4.7,2.9,0.0,0.0,0.0,5.3,170,FA2025,DanaBazarkulova
+ECON 120,Managerial Economics,1L,184,2.92,0.86,3.0,27.0,46.6,16.9,4.8,2.1,0.0,0.0,0.0,2.6,189,FA2025,AigerimSarsenbayeva
+ECON 201,IntermediateMicroeconomics,1L,130,2.56,0.97,2.67,19.1,35.1,34.4,7.6,3.1,0.0,0.0,0.0,0.8,131,FA2025,Oleg Rubanov
+ECON 211,Economic Statistics,1L,129,2.76,0.82,3.0,15.8,50.4,22.6,7.5,0.8,0.0,0.0,0.0,3.0,133,FA2025,Vladyslav Nora
+ECON 301,Econometrics I,1L,129,2.67,0.86,2.67,14.6,50.8,27.7,1.5,4.6,0.0,0.0,0.0,0.8,130,FA2025,Nino Buliskeria
+ECON 302,Game Theory andEconomic Analysis,1L,26,2.42,1.04,2.5,23.1,26.9,38.5,7.7,3.8,0.0,0.0,0.0,0.0,26,FA2025,Okan Yilankaya
+ECON 302,Game Theory andEconomic Analysis,2L,23,2.04,1.26,2.33,12.0,32.0,20.0,12.0,16.0,0.0,0.0,0.0,8.0,25,FA2025,Okan Yilankaya
+ECON 305,AdvancedMicroeconomics,1L,31,2.58,1.11,2.67,18.8,43.8,18.8,9.4,6.2,0.0,3.1,0.0,0.0,32,FA2025,Oleg Rubanov
+ECON 325,International Trade,2L,36,2.58,0.79,2.67,13.9,38.9,44.4,0.0,2.8,0.0,0.0,0.0,0.0,36,FA2025,AndreyTkachenko
+ECON 325,International Trade,3L,35,2.33,1.15,2.33,17.1,31.4,34.3,5.7,11.4,0.0,0.0,0.0,0.0,35,FA2025,AndreyTkachenko
+ECON 326,The Economics ofFinancial Markets,1L,38,2.42,0.97,2.67,12.2,36.6,24.4,17.1,2.4,0.0,0.0,0.0,7.3,41,FA2025,Giulio Seccia
+ECON 333,Political Economy,1L,28,2.52,0.86,2.33,12.5,28.1,43.8,0.0,3.1,0.0,0.0,0.0,12.5,32,FA2025,Ahmet Altinok
+ECON 333,Political Economy,2L,31,2.59,0.8,2.67,14.3,31.4,37.1,2.9,2.9,0.0,0.0,0.0,11.4,35,FA2025,Ahmet Altinok
+ECON 403,Introduction to ContractTheory and Auctions,1L,16,3.12,1.08,3.34,50.0,25.0,18.8,0.0,6.2,0.0,0.0,0.0,0.0,16,FA2025,Alejandro MeloPonce
+ECON 403,Introduction to ContractTheory and Auctions,2L,11,3.06,1.2,3.67,54.5,27.3,9.1,0.0,9.1,0.0,0.0,0.0,0.0,11,FA2025,Alejandro MeloPonce
+ECON 414,Advanced MonetaryPolicy,1L,29,3.25,0.59,3.33,40.0,40.0,16.7,0.0,0.0,0.0,0.0,0.0,3.3,30,FA2025,Ali Elminejad
+ECON 414,Advanced MonetaryPolicy,2L,21,3.08,0.72,3.33,38.1,38.1,23.8,0.0,0.0,0.0,0.0,0.0,0.0,21,FA2025,Ali Elminejad
+ECON 418,Corporate Finance andGovernance,1L,36,2.87,0.62,3.0,13.9,63.9,22.2,0.0,0.0,0.0,0.0,0.0,0.0,36,FA2025,Mehmet Demir
+ECON 418,Corporate Finance andGovernance,2L,30,2.97,0.66,3.0,23.3,50.0,26.7,0.0,0.0,0.0,0.0,0.0,0.0,30,FA2025,Mehmet Demir
+ECON 433,Econometrics II PanelData,2L,35,2.72,0.72,2.67,20.0,40.0,40.0,0.0,0.0,0.0,0.0,0.0,0.0,35,FA2025,Rajarshi Bhowal
+ECON 433,Econometrics II PanelData,3L,27,2.99,0.79,3.0,29.6,44.4,22.2,3.7,0.0,0.0,0.0,0.0,0.0,27,FA2025,Rajarshi Bhowal
+ECON 449,QuantitativeMacroeconomics,1L,18,2.87,0.74,2.67,33.3,27.8,38.9,0.0,0.0,0.0,0.0,0.0,0.0,18,FA2025,Ali Elminejad
+HST 100,History of Kazakhstan,1L,20,2.68,0.69,3.0,5.0,50.0,40.0,5.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,RozaliyaGaripova
+HST 100,History of Kazakhstan,2S,20,2.5,1.06,3.0,5.0,60.0,20.0,5.0,10.0,0.0,0.0,0.0,0.0,20,FA2025,DianaKopbayeva
+HST 100,History of Kazakhstan,3S,19,3.0,0.9,3.33,40.0,30.0,20.0,5.0,0.0,0.0,0.0,0.0,5.0,20,FA2025,Aybike Tezel
+HST 100,History of Kazakhstan,4S,19,2.35,0.56,2.33,0.0,45.0,45.0,5.0,0.0,0.0,0.0,0.0,5.0,20,FA2025,DianaKopbayeva
+HST 100,History of Kazakhstan,5S,19,2.33,1.08,2.67,10.0,40.0,25.0,10.0,10.0,0.0,0.0,0.0,5.0,20,FA2025,DianaKopbayeva
+HST 100,History of Kazakhstan,6S,24,2.96,0.77,3.16,29.2,45.8,25.0,0.0,0.0,0.0,0.0,0.0,0.0,24,FA2025,Halit Akarca
+HST 100,History of Kazakhstan,7S,23,2.7,1.29,3.0,29.2,37.5,12.5,4.2,12.5,0.0,0.0,0.0,4.2,24,FA2025,MollieArbuthnot
+HST 100,History of Kazakhstan,8S,24,2.71,0.74,3.0,12.5,50.0,33.3,4.2,0.0,0.0,0.0,0.0,0.0,24,FA2025,MollieArbuthnot
+HST 100,History of Kazakhstan,9S,18,2.95,1.01,3.0,35.0,35.0,15.0,0.0,5.0,0.0,0.0,0.0,10.0,20,FA2025,Aybike Tezel
+HST 100,History of Kazakhstan,10S,22,3.27,0.5,3.33,29.2,54.2,8.3,0.0,0.0,0.0,0.0,0.0,8.3,24,FA2025,MeiramgulKussainova
+HST 100,History of Kazakhstan,11S,23,3.29,0.51,3.33,37.5,50.0,8.3,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,MeiramgulKussainova
+HST 100,History of Kazakhstan,12S,25,2.85,0.92,3.33,24.0,48.0,24.0,0.0,4.0,0.0,0.0,0.0,0.0,25,FA2025,Halit Akarca
+HST 100,History of Kazakhstan,13S,19,2.77,0.94,2.67,20.0,45.0,25.0,0.0,5.0,0.0,0.0,0.0,5.0,20,FA2025,Aybike Tezel
+HST 100,History of Kazakhstan,14S,19,2.09,0.98,2.33,0.0,40.0,40.0,0.0,15.0,0.0,0.0,0.0,5.0,20,FA2025,DianaKopbayeva
+HST 100,History of Kazakhstan,15S,23,2.7,0.61,2.67,8.3,54.2,29.2,4.2,0.0,0.0,0.0,0.0,4.2,24,FA2025,RozaliyaGaripova
+HST 100,History of Kazakhstan,16S,24,2.39,1.02,2.5,12.5,37.5,29.2,16.7,4.2,0.0,0.0,0.0,0.0,24,FA2025,RozaliyaGaripova
+HST 100,History of Kazakhstan,17S,23,2.8,0.94,3.0,20.8,45.8,25.0,0.0,4.2,0.0,0.0,0.0,4.2,24,FA2025,RozaliyaGaripova
+HST 100,History of Kazakhstan,19S,22,2.73,0.94,3.0,16.7,41.7,25.0,4.2,4.2,0.0,0.0,0.0,8.3,24,FA2025,MollieArbuthnot
+HST 100,History of Kazakhstan,20S,20,2.92,1.07,3.33,35.0,40.0,15.0,5.0,5.0,0.0,0.0,0.0,0.0,20,FA2025,Aybike Tezel
+HST 100,History of Kazakhstan,21S,21,2.94,0.85,3.0,26.1,47.8,13.0,0.0,4.3,0.0,0.0,0.0,8.7,23,FA2025,Halit Akarca
+HST 100,History of Kazakhstan,22S,19,2.98,0.85,3.0,30.0,30.0,35.0,0.0,0.0,0.0,0.0,0.0,5.0,20,FA2025,Aybike Tezel
+HST 100,History of Kazakhstan,23S,20,3.1,0.9,3.33,30.0,55.0,10.0,0.0,5.0,0.0,0.0,0.0,0.0,20,FA2025,Aybike Tezel
+HST 100,History of Kazakhstan,24S,23,2.17,1.16,2.33,8.7,39.1,26.1,13.0,13.0,0.0,0.0,0.0,0.0,23,FA2025,DianaKopbayeva
+HST 100,History of Kazakhstan,25S,19,3.18,0.65,3.33,35.0,50.0,10.0,0.0,0.0,0.0,0.0,0.0,5.0,20,FA2025,Aybike Tezel
+HST 100,History of Kazakhstan,26S,19,2.56,1.0,2.67,15.8,36.8,36.8,5.3,5.3,0.0,0.0,0.0,0.0,19,FA2025,Aybike Tezel
+HST 100,History of Kazakhstan,27S,19,2.97,0.76,3.0,25.0,50.0,15.0,5.0,0.0,0.0,0.0,0.0,5.0,20,FA2025,Aybike Tezel
+HST 100,History of Kazakhstan,28S,23,2.01,1.17,2.0,16.7,8.3,45.8,12.5,12.5,0.0,0.0,0.0,4.2,24,FA2025,RozaliyaGaripova
+HST 100,History of Kazakhstan,29S,24,2.51,1.01,2.67,16.7,37.5,33.3,4.2,8.3,0.0,0.0,0.0,0.0,24,FA2025,RozaliyaGaripova
+HST 100,History of Kazakhstan,30S,23,2.17,1.07,2.33,16.7,20.8,29.2,20.8,8.3,0.0,0.0,0.0,4.2,24,FA2025,RozaliyaGaripova
+HST 100,History of Kazakhstan,31S,24,3.42,0.45,3.33,37.5,58.3,4.2,0.0,0.0,0.0,0.0,0.0,0.0,24,FA2025,MeiramgulKussainova
+HST 100,History of Kazakhstan,32S,18,2.5,0.87,2.84,5.3,47.4,31.6,5.3,5.3,0.0,0.0,0.0,5.3,19,FA2025,DianaKopbayeva
+HST 100,History of Kazakhstan,33S,17,2.24,0.98,2.33,5.6,33.3,44.4,0.0,11.1,0.0,0.0,0.0,5.6,18,FA2025,DianaKopbayeva
+HST 104,Central Asian History II(1700 - 1991),1L,26,2.31,0.61,2.33,3.3,30.0,43.3,10.0,0.0,0.0,0.0,0.0,13.3,30,FA2025,DianaKopbayeva
+HST 110/REL 110,Introduction to WorldReligions,1L,89,2.85,0.87,3.0,22.2,43.4,17.2,4.0,3.0,0.0,0.0,0.0,10.1,99,FA2025,NikolayTsyrempilov
+HST 121,World History I (to 1500),1L,31,3.53,0.23,3.67,64.5,35.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,31,FA2025,Di Lu
+HST 124,Introduction to theHistory of Medicine,1L,29,3.52,0.23,3.67,58.1,35.5,0.0,0.0,0.0,0.0,0.0,0.0,6.5,31,FA2025,Di Lu
+HST 435,Stalinist Central Asia,1S,15,3.18,0.43,3.0,25.0,68.8,0.0,0.0,0.0,0.0,0.0,0.0,6.2,16,FA2025,MollieArbuthnot
+HST 498,Directed Reading,1IS,21,3.29,0.9,3.67,61.9,28.6,4.8,0.0,4.8,0.0,0.0,0.0,0.0,21,FA2025,Curtis Murphy
+PHIL 131,Introduction toContemporary PoliticalPhilosophy,1L,27,2.79,1.05,3.0,23.3,40.0,16.7,3.3,6.7,0.0,0.0,0.0,10.0,30,FA2025,Siegfried VanDuffel
+PHIL 160,Philosophy of Religion,1L,40,3.17,0.61,3.33,30.2,53.5,9.3,0.0,0.0,0.0,0.0,0.0,7.0,43,FA2025,Ted Parent
+PHIL 210,Ethics,11L,49,2.85,0.7,3.0,10.0,70.0,14.0,2.0,2.0,0.0,0.0,0.0,2.0,50,FA2025,JamesHutchinson
+PHIL 210,Ethics,3L,49,2.91,0.69,3.0,18.0,60.0,18.0,0.0,2.0,0.0,0.0,0.0,2.0,50,FA2025,Bakinaz Abdalla
+PHIL 210,Ethics,4L,36,2.73,0.79,2.67,16.7,52.8,22.2,5.6,2.8,0.0,0.0,0.0,0.0,36,FA2025,Bakinaz Abdalla
+PHIL 210,Ethics,5L,37,3.05,0.7,3.0,27.5,45.0,20.0,0.0,0.0,0.0,0.0,0.0,7.5,40,FA2025,Donovan Cox
+PHIL 210,Ethics,7L,39,3.1,0.56,3.0,27.5,52.5,17.5,0.0,0.0,0.0,0.0,0.0,2.5,40,FA2025,Donovan Cox
+PHIL 210,Ethics,8L,34,1.92,1.56,1.67,23.1,10.3,17.9,10.3,25.6,0.0,2.6,0.0,10.3,39,FA2025,Chandler Hatch
+PHIL 210,Ethics,9L,50,3.2,0.67,3.33,34.0,58.0,6.0,0.0,2.0,0.0,0.0,0.0,0.0,50,FA2025,MatthewHeeney
+PHIL 210,Ethics,10L,37,3.05,0.65,3.0,22.5,50.0,17.5,2.5,0.0,0.0,0.0,0.0,7.5,40,FA2025,Donovan Cox
+PHIL 210,Ethics,11L,45,2.87,0.74,3.0,14.3,46.9,28.6,2.0,0.0,0.0,0.0,0.0,8.2,49,FA2025,JamesHutchinson
+PHIL 210,Ethics,12L,48,2.97,0.76,3.0,18.0,64.0,8.0,4.0,2.0,0.0,0.0,0.0,4.0,50,FA2025,Bakinaz Abdalla
+PHIL 210,Ethics,13L,40,2.87,1.22,3.33,37.0,21.7,17.4,4.3,6.5,0.0,0.0,0.0,13.0,46,FA2025,Mihnea Capraru
+PHIL 210,Ethics,14L,38,3.19,0.55,3.33,35.0,47.5,10.0,2.5,0.0,0.0,0.0,0.0,5.0,40,FA2025,Donovan Cox
+PHIL 210,Ethics,16L,45,3.13,0.57,3.33,28.0,48.0,14.0,0.0,0.0,0.0,0.0,0.0,10.0,50,FA2025,MatthewHeeney
+PHIL 232,Philosophy of Law,1L,18,2.8,1.13,3.0,25.0,25.0,16.7,4.2,4.2,0.0,4.2,0.0,20.8,24,FA2025,Siegfried VanDuffel
+PHIL 362,Philosophy of Mind,1L,24,2.72,1.08,2.5,37.5,12.5,41.7,4.2,4.2,0.0,0.0,0.0,0.0,24,FA2025,Mihnea Capraru
+PHIL 383,Kant’s Critique of PureReason,1L,19,2.07,1.63,2.33,30.4,4.3,17.4,4.3,26.1,0.0,0.0,0.0,17.4,23,FA2025,Chandler Hatch
+PHIL 399,Special Topics inPhilosophy,1L,20,3.02,0.59,3.0,21.7,43.5,21.7,0.0,0.0,0.0,0.0,0.0,13.0,23,FA2025,JamesHutchinson
+REL 212,Buddhist ReligiousTraditions,1L,29,2.99,0.66,3.0,26.7,40.0,30.0,0.0,0.0,0.0,0.0,0.0,3.3,30,FA2025,NikolayTsyrempilov
+KAZ 201,Academic Kazakh I,1L,16,2.86,0.6,2.84,18.8,56.2,25.0,0.0,0.0,0.0,0.0,0.0,0.0,16,FA2025,Aidar Balabekov
+KAZ 201,Academic Kazakh I,2L,16,2.79,0.87,3.0,6.2,68.8,18.8,0.0,6.2,0.0,0.0,0.0,0.0,16,FA2025,Aidar Balabekov
+KAZ 201,Academic Kazakh I,3L,14,2.59,0.67,2.5,6.7,40.0,40.0,6.7,0.0,0.0,0.0,0.0,6.7,15,FA2025,Kulyan Kopesh
+KAZ 201,Academic Kazakh I,4L,14,2.62,0.87,3.0,0.0,56.2,25.0,0.0,6.2,0.0,0.0,0.0,12.5,16,FA2025,Aidar Balabekov
+KAZ 201,Academic Kazakh I,5L,14,3.19,0.47,3.0,42.9,50.0,7.1,0.0,0.0,0.0,0.0,0.0,0.0,14,FA2025,Kulyan Kopesh
+KAZ 201,Academic Kazakh I,6L,14,3.29,0.55,3.33,37.5,37.5,12.5,0.0,0.0,0.0,0.0,0.0,12.5,16,FA2025,GulzhamilyaShalabayeva
+KAZ 202,Academic Kazakh II,1L,14,2.55,1.0,2.84,6.2,62.5,6.2,6.2,6.2,0.0,0.0,0.0,12.5,16,FA2025,RaushanMyrzabekova
+KAZ 202,Academic Kazakh II,2L,12,2.5,1.23,2.84,12.5,37.5,6.2,12.5,6.2,0.0,0.0,0.0,25.0,16,FA2025,RaushanMyrzabekova
+KAZ 202,Academic Kazakh II,3L,13,3.0,0.96,3.33,20.0,60.0,0.0,0.0,6.7,0.0,0.0,0.0,13.3,15,FA2025,BakytAkbuzauova
+KAZ 202,Academic Kazakh II,4L,14,2.88,0.91,3.0,12.5,62.5,6.2,0.0,6.2,0.0,0.0,0.0,12.5,16,FA2025,BakytAkbuzauova
+KAZ 202,Academic Kazakh II,5L,15,3.05,0.6,3.0,25.0,56.2,12.5,0.0,0.0,0.0,0.0,0.0,6.2,16,FA2025,BakytAkbuzauova
+KAZ 202,Academic Kazakh II,7L,15,3.2,0.55,3.33,25.0,56.2,12.5,0.0,0.0,0.0,0.0,0.0,6.2,16,FA2025,GulzhamilyaShalabayeva
+KAZ 202,Academic Kazakh II,8L,15,3.47,0.57,3.67,50.0,37.5,6.2,0.0,0.0,0.0,0.0,0.0,6.2,16,FA2025,GulzhamilyaShalabayeva
+KAZ 202,Academic Kazakh II,10L,12,2.55,0.97,2.67,7.7,46.2,30.8,0.0,7.7,0.0,0.0,0.0,7.7,13,FA2025,RaushanMyrzabekova
+KAZ 300,Kazakh Studies in thePost-Colonial Era,1L,145,3.5,0.35,3.67,53.6,41.1,1.3,0.0,0.0,0.0,0.0,0.0,4.0,151,FA2025,Uli Schamiloglu
+KAZ 300,Kazakh Studies in thePost-Colonial Era,1L,145,3.5,0.35,3.67,53.6,41.1,1.3,0.0,0.0,0.0,0.0,0.0,4.0,151,FA2025,MoldiyarYergebekov
+KAZ 313,Kazakh for Business,1S,28,2.66,0.92,2.84,16.1,45.2,19.4,6.5,3.2,0.0,0.0,0.0,9.7,31,FA2025,SamalAbzhanova
+KAZ 313,Kazakh for Business,2S,35,3.46,0.74,3.67,61.1,30.6,2.8,0.0,2.8,0.0,0.0,0.0,2.8,36,FA2025,ZeinekhanKuzekova
+KAZ 313,Kazakh for Business,3S,30,3.03,0.87,3.16,25.8,58.1,6.5,3.2,3.2,0.0,0.0,0.0,3.2,31,FA2025,SamalAbzhanova
+KAZ 313,Kazakh for Business,4S,32,3.54,0.32,3.33,37.5,62.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,32,FA2025,ZeinepZhumatayeva
+KAZ 313,Kazakh for Business,5S,32,3.3,0.79,3.33,43.8,50.0,0.0,3.1,3.1,0.0,0.0,0.0,0.0,32,FA2025,GulnaraOmarbekova
+KAZ 313,Kazakh for Business,6S,30,3.4,0.43,3.33,32.3,61.3,3.2,0.0,0.0,0.0,0.0,0.0,3.2,31,FA2025,ZeinepZhumatayeva
+KAZ 349,Kazakh Mythology,1L,33,3.33,0.43,3.33,37.1,54.3,2.9,0.0,0.0,0.0,0.0,0.0,5.7,35,FA2025,ZhanarBaiteliyeva
+KAZ 350,Kazakh Literature,1S,31,3.14,0.59,3.33,31.2,56.2,9.4,0.0,0.0,0.0,0.0,0.0,3.1,32,FA2025,Mustafa Shokay
+KAZ 350,Kazakh Literature,2S,29,2.82,0.57,3.0,3.1,65.6,18.8,3.1,0.0,0.0,3.1,0.0,6.2,32,FA2025,Mustafa Shokay
+KAZ 350,Kazakh Literature,3S,30,2.89,0.71,3.0,15.6,62.5,9.4,6.2,0.0,0.0,0.0,0.0,6.2,32,FA2025,Mustafa Shokay
+KAZ 350,Kazakh Literature,4S,32,3.1,0.58,3.33,25.0,65.6,6.2,3.1,0.0,0.0,0.0,0.0,0.0,32,FA2025,Mustafa Shokay
+KAZ 351,Kazakh Short Stories,1S,30,3.23,0.63,3.33,40.0,46.7,13.3,0.0,0.0,0.0,0.0,0.0,0.0,30,FA2025,ZhanarAbdigapparova
+KAZ 356,Kazakh Music History,1S,39,3.65,0.33,3.67,64.1,35.9,0.0,0.0,0.0,0.0,0.0,0.0,0.0,39,FA2025,MeiramgulKussainova
+KAZ 357,Literature of Alash,1L,33,3.23,0.64,3.33,44.1,38.2,14.7,0.0,0.0,0.0,0.0,0.0,2.9,34,FA2025,ZhanarAbdigapparova
+KAZ 357,Literature of Alash,2L,24,3.39,0.29,3.33,21.4,64.3,0.0,0.0,0.0,0.0,0.0,0.0,14.3,28,FA2025,Aigul Ismakova
+KAZ 359,Professional Kazakh forMedicine,1L,30,3.19,0.43,3.33,23.3,70.0,6.7,0.0,0.0,0.0,0.0,0.0,0.0,30,FA2025,Kulyan Kopesh
+KAZ 359,Professional Kazakh forMedicine,2L,30,3.29,0.44,3.33,26.7,70.0,3.3,0.0,0.0,0.0,0.0,0.0,0.0,30,FA2025,Kulyan Kopesh
+KAZ 363,Language andGlobalization,1S,31,3.45,0.32,3.33,41.9,58.1,0.0,0.0,0.0,0.0,0.0,0.0,0.0,31,FA2025,GulnaraOmarbekova
+KAZ 363,Language andGlobalization,2S,30,3.15,0.93,3.33,43.3,46.7,3.3,0.0,6.7,0.0,0.0,0.0,0.0,30,FA2025,GulnaraOmarbekova
+KAZ 366,Kazakh Language forEngineers,1S,35,3.45,0.29,3.33,42.9,57.1,0.0,0.0,0.0,0.0,0.0,0.0,0.0,35,FA2025,ZhaziraAgabekova
+KAZ 368,Onomastics: History andFunction of Names,1L,33,3.42,0.41,3.33,38.9,47.2,5.6,0.0,0.0,0.0,0.0,0.0,8.3,36,FA2025,ZhaziraAgabekova
+KAZ 371,Contemporary KazakhLiterature,1L,30,2.96,0.82,3.33,30.0,40.0,23.3,6.7,0.0,0.0,0.0,0.0,0.0,30,FA2025,Yermek Adayeva
+KAZ 371,Contemporary KazakhLiterature,2L,27,3.16,0.81,3.33,42.9,35.7,14.3,3.6,0.0,0.0,0.0,0.0,3.6,28,FA2025,Yermek Adayeva
+KAZ 371,Contemporary KazakhLiterature,3L,30,3.09,0.73,3.0,38.7,32.3,25.8,0.0,0.0,0.0,0.0,0.0,3.2,31,FA2025,Yermek Adayeva
+KAZ 371,Contemporary KazakhLiterature,4L,24,2.96,1.13,3.5,40.0,20.0,10.0,6.7,3.3,0.0,3.3,0.0,16.7,30,FA2025,Yermek Adayeva
+KAZ 372,Language and ethnicity,1L,29,3.25,0.58,3.33,36.7,50.0,10.0,0.0,0.0,0.0,0.0,0.0,3.3,30,FA2025,ZhanarBaiteliyeva
+KAZ 373,Kazakh Terminology,1S,35,3.06,0.51,3.0,20.0,71.4,5.7,2.9,0.0,0.0,0.0,0.0,0.0,35,FA2025,Sarkyt Aliszhan
+KAZ 374,Kazakh Diplomacy,1S,32,3.47,0.39,3.67,53.1,43.8,3.1,0.0,0.0,0.0,0.0,0.0,0.0,32,FA2025,ZeinekhanKuzekova
+KAZ 376,Language and Culture,1S,33,3.13,0.49,3.33,17.6,76.5,0.0,2.9,0.0,0.0,0.0,0.0,2.9,34,FA2025,Sarkyt Aliszhan
+KAZ 377,InterculturalCommunication throughFilm,1S,32,3.45,0.36,3.33,31.4,60.0,0.0,0.0,0.0,0.0,0.0,0.0,8.6,35,FA2025,ZeinepZhumatayeva
+KAZ 378,Kazakh for Social Science,1L,26,3.36,0.46,3.33,37.0,55.6,3.7,0.0,0.0,0.0,0.0,0.0,3.7,27,FA2025,SamalAbzhanova
+KAZ 378,Kazakh for Social Science,2L,27,3.22,0.57,3.33,33.3,46.7,10.0,0.0,0.0,0.0,0.0,0.0,10.0,30,FA2025,SamalAbzhanova
+KAZ 410,Kazakh literature of theXV-XIX centuries,1L,12,3.47,0.33,3.33,35.7,50.0,0.0,0.0,0.0,0.0,0.0,0.0,14.3,14,FA2025,Aigul Ismakova
+KFL 101,Elementary Kazakh as aForeign Language I,1L,16,3.35,0.76,3.5,47.1,41.2,0.0,5.9,0.0,0.0,0.0,0.0,5.9,17,FA2025,RaushanMyrzabekova
+TUR 230,Literatures of CentralAsia,2L,40,2.34,0.89,2.33,12.5,30.0,45.0,10.0,2.5,0.0,0.0,0.0,0.0,40,FA2025,Uli Schamiloglu
+TUR 231,Istanbul in Literature andCulture,1L,39,3.19,0.57,3.0,31.7,51.2,12.2,0.0,0.0,0.0,0.0,0.0,4.9,41,FA2025,Funda Guven
+TUR 451,The Turkish Novel,1L,15,3.58,0.41,3.67,56.2,37.5,0.0,0.0,0.0,0.0,0.0,0.0,6.2,16,FA2025,Funda Guven
+CHN 101,Beginning Mandarin I,1L,26,3.51,0.46,3.67,59.3,33.3,3.7,0.0,0.0,0.0,0.0,0.0,3.7,27,FA2025,Lili Zhang
+CHN 101,Beginning Mandarin I,2L,23,3.49,0.46,3.67,54.2,37.5,4.2,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,Lili Zhang
+CHN 202,Intermediate Mandarin II,1L,15,3.38,0.33,3.33,46.7,53.3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,15,FA2025,Lili Zhang
+DUT 101,Beginning Dutch I,1L,22,2.88,0.62,3.0,8.7,60.9,26.1,0.0,0.0,0.0,0.0,0.0,4.3,23,FA2025,BastiaanLohmann
+DUT 101,Beginning Dutch I,2L,23,3.03,0.41,3.0,8.7,87.0,4.3,0.0,0.0,0.0,0.0,0.0,0.0,23,FA2025,BastiaanLohmann
+DUT 101,Beginning Dutch I,3L,16,2.98,0.51,3.16,5.6,72.2,11.1,0.0,0.0,0.0,0.0,5.6,5.6,18,FA2025,BastiaanLohmann
+GER 101,Beginning German,1L,24,3.11,0.89,3.33,45.8,41.7,4.2,4.2,4.2,0.0,0.0,0.0,0.0,24,FA2025,Florian Kuechler
+GER 101,Beginning German,2L,24,3.24,0.63,3.33,45.8,37.5,16.7,0.0,0.0,0.0,0.0,0.0,0.0,24,FA2025,Florian Kuechler
+GER 201,Intermediate German I,1L,18,3.3,0.48,3.33,33.3,61.1,5.6,0.0,0.0,0.0,0.0,0.0,0.0,18,FA2025,Florian Kuechler
+KOR 101,Beginning Korean I,1L,23,3.87,0.26,4.0,87.5,8.3,0.0,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,Joomi Kong
+KOR 101,Beginning Korean I,2L,23,3.78,0.26,4.0,82.6,17.4,0.0,0.0,0.0,0.0,0.0,0.0,0.0,23,FA2025,Joomi Kong
+KOR 101,Beginning Korean I,3L,24,3.86,0.22,4.0,91.7,8.3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,24,FA2025,Joomi Kong
+KOR 201,Intermediate Korean I,1L,24,3.86,0.29,4.0,91.7,8.3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,24,FA2025,Joomi Kong
+LING 131,Introduction toLinguistics,1L,71,2.58,0.91,2.67,6.8,55.4,24.3,2.7,6.8,0.0,1.4,0.0,2.7,74,FA2025,Olga Potanina
+LING 270,Languages of Eurasia,1L,15,3.04,0.98,3.33,17.6,52.9,11.8,0.0,5.9,0.0,0.0,0.0,11.8,17,FA2025,Benjamin Brosig
+LING 273,Survey of ResearchMethods in Linguistics,1L,25,3.08,0.74,3.0,28.0,64.0,4.0,0.0,4.0,0.0,0.0,0.0,0.0,25,FA2025,AndreyFilchenko
+LING 273,Survey of ResearchMethods in Linguistics,1L,25,3.08,0.74,3.0,28.0,64.0,4.0,0.0,4.0,0.0,0.0,0.0,0.0,25,FA2025,NikolayMikhailov
+LING 277,Language Diversity andLanguage Universals,2L,24,3.08,0.62,3.33,15.4,69.2,3.8,3.8,0.0,0.0,0.0,0.0,7.7,26,FA2025,Olga Potanina
+LING 278,Sounds of the World’sLanguages,1L,36,3.23,0.75,3.33,47.2,41.7,5.6,5.6,0.0,0.0,0.0,0.0,0.0,36,FA2025,Clinton Parker
+LING 350,Introduction toGenerative Syntax,1L,37,3.12,0.75,3.33,32.4,45.9,18.9,2.7,0.0,0.0,0.0,0.0,0.0,37,FA2025,Clinton Parker
+LING 431,Statistics andcomputational methods inLinguistics,1L,20,3.08,0.96,3.33,40.0,35.0,15.0,10.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,NikolayMikhailov
+PER 101,Beginning Persian I,2L,24,3.65,0.48,3.84,76.0,20.0,0.0,0.0,0.0,0.0,0.0,0.0,4.0,25,FA2025,Marzieh SadatRazavi
+PER 101,Beginning Persian I,3L,20,3.43,0.55,3.5,45.5,36.4,9.1,0.0,0.0,0.0,0.0,0.0,9.1,22,FA2025,Marzieh SadatRazavi
+POL 101,Beginning Polish,1L,22,3.62,0.45,3.67,69.6,26.1,0.0,0.0,0.0,0.0,0.0,0.0,4.3,23,FA2025,Katarzyna Galaj
+POL 101,Beginning Polish,2L,23,3.55,0.57,3.67,62.5,29.2,4.2,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,Katarzyna Galaj
+POL 102,Beginning Polish II,2L,16,3.44,0.5,3.5,50.0,43.8,6.2,0.0,0.0,0.0,0.0,0.0,0.0,16,FA2025,Katarzyna Galaj
+RFL 211,East in Soviet Russian-language culture: originand fate,1L,6,3.89,0.17,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,6,FA2025,YuliyaKozitskaya
+RFL 213,Soviet Everyday Lifethrough Cinema,1L,5,4.0,0.0,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,5,FA2025,AleksandrGrishin
+RFL 303,Intensive AdvancedRussian,1L,5,3.8,0.18,3.67,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,5,FA2025,AndreyFilchenko
+SPA 101,Beginning Spanish I,1L,25,3.76,0.23,3.67,88.0,12.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,25,FA2025,Edyta Denst-Garcia
+SPA 101,Beginning Spanish I,2L,20,3.68,0.32,3.67,66.7,16.7,0.0,0.0,0.0,0.0,0.0,0.0,16.7,24,FA2025,Edyta Denst-Garcia
+SPA 101,Beginning Spanish I,3L,24,3.58,0.36,3.67,60.0,36.0,0.0,0.0,0.0,0.0,0.0,0.0,4.0,25,FA2025,Arturo Bellido
+SPA 201,Intermediate Spanish I,1L,13,3.46,0.48,3.67,50.0,42.9,0.0,0.0,0.0,0.0,0.0,0.0,7.1,14,FA2025,Arturo Bellido
+SPA 201,Intermediate Spanish I,2L,25,3.61,0.36,3.67,72.0,28.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,25,FA2025,Arturo Bellido
+SPA 314,Advanced SpanishGrammar andComposition,1L,31,3.09,0.5,3.0,22.6,64.5,12.9,0.0,0.0,0.0,0.0,0.0,0.0,31,FA2025,Edyta Denst-Garcia
+WLL 110,Introduction to LiteraryStudies,1L,117,3.32,0.59,3.33,39.2,53.3,3.3,0.0,1.7,0.0,0.0,0.0,2.5,120,FA2025,Jenni Lehtinen
+WLL 201,World Literature I,1L,30,3.03,0.58,3.0,22.6,61.3,9.7,3.2,0.0,0.0,0.0,0.0,3.2,31,FA2025,Gabriel McGuire
+WLL 209,Introduction toTranslation Studies,1L,25,3.43,0.49,3.67,52.0,44.0,4.0,0.0,0.0,0.0,0.0,0.0,0.0,25,FA2025,Amanda Murphy
+WLL 218,Renaissance in Italy andBeyond,1L,28,3.32,0.61,3.67,51.7,31.0,13.8,0.0,0.0,0.0,0.0,0.0,3.4,29,FA2025,Maria Rybakova
+WLL 244,Survey of Nineteenth-Century RussianLiterature,1L,24,2.56,1.13,2.67,19.2,34.6,26.9,3.8,7.7,0.0,0.0,3.8,3.8,26,FA2025,YuliyaKozitskaya
+WLL 333,Literary Modernism:Tradition and Innovation,1L,25,2.99,0.82,3.33,36.0,36.0,28.0,0.0,0.0,0.0,0.0,0.0,0.0,25,FA2025,Ivan Delazari
+WLL 340,The image of the East inRussophone literatureand culture: genesis andmeaning,1L,28,2.63,1.17,3.0,28.6,32.1,14.3,21.4,3.6,0.0,0.0,0.0,0.0,28,FA2025,YuliyaKozitskaya
+WLL 399,Independent Study,3L,4,3.34,0.47,3.5,33.3,33.3,0.0,0.0,0.0,0.0,0.0,16.7,16.7,6,FA2025,Florian Kuechler
+WLL 410,Literary Theory,1L,24,3.25,0.54,3.33,36.0,52.0,8.0,0.0,0.0,0.0,0.0,0.0,4.0,25,FA2025,Ivan Delazari
+WLL 498,"Languages, Linguistics,and Literatures CapstoneI",1R,20,3.52,0.33,3.5,50.0,50.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,Amanda Murphy
+PLS 100,Introduction to thePolitics of Central Asia,1L,116,3.22,0.6,3.33,38.8,47.1,8.3,0.8,0.8,0.0,0.0,0.0,4.1,121,FA2025,SabinaInsebayeva
+PLS 101,Introduction to PoliticalScience,1L,101,3.25,0.65,3.33,35.0,57.3,1.9,1.9,1.9,0.0,0.0,0.0,1.9,103,FA2025,Neil Collins
+PLS 120,Introduction to PoliticalTheory,1L,77,3.04,0.53,3.0,16.2,71.2,7.5,0.0,1.2,0.0,0.0,0.0,3.8,80,FA2025,Brian Smith
+PLS 140,Introduction toComparative Politics,1L,112,2.81,0.65,3.0,12.6,54.6,24.4,2.5,0.0,0.0,0.0,0.0,5.9,119,FA2025,Caress Schenk
+PLS 150,Introduction toInternational Relations,1L,109,3.05,0.82,3.33,27.6,41.5,15.4,2.4,1.6,0.0,0.0,0.0,11.4,123,FA2025,Maja Savevska
+PLS 210,Political ScienceResearch Methods,1L,27,2.98,0.63,3.0,20.7,55.2,13.8,3.4,0.0,0.0,0.0,0.0,6.9,29,FA2025,Alexei Trochev
+PLS 210,Political ScienceResearch Methods,2L,32,3.46,0.76,3.67,65.6,28.1,3.1,0.0,3.1,0.0,0.0,0.0,0.0,32,FA2025,Dinara Pisareva
+PLS 211,Quantitative Methods,1L,27,2.07,1.03,2.33,6.9,31.0,34.5,10.3,10.3,0.0,0.0,0.0,6.9,29,FA2025,Chunho Park
+PLS 211,Quantitative Methods,2L,26,2.31,0.92,2.33,3.4,37.9,34.5,6.9,6.9,0.0,0.0,0.0,10.3,29,FA2025,Ho Koh
+PLS 330,Politics and Governanceof Eurasia,1L,22,3.38,0.6,3.33,40.9,54.5,0.0,4.5,0.0,0.0,0.0,0.0,0.0,22,FA2025,Andrey Semenov
+PLS 338,U.S. Government andPolitics,1L,21,3.36,0.21,3.33,23.8,76.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,21,FA2025,Neil Collins
+PLS 341,Politics of Development,1L,8,3.08,0.97,3.5,44.4,22.2,22.2,0.0,0.0,0.0,0.0,11.1,0.0,9,FA2025,Bimal Adhikari
+PLS 352,International RelationsTheory,1L,19,3.88,0.23,4.0,89.5,10.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,19,FA2025,Dinara Pisareva
+PLS 354,Introduction toInternational Law,1L,19,3.09,0.59,3.0,30.0,50.0,15.0,0.0,0.0,0.0,0.0,5.0,0.0,20,FA2025,Alexei Trochev
+PLS 356,International Politics ofthe Korean Peninsula,1L,18,3.74,0.51,4.0,77.8,16.7,5.6,0.0,0.0,0.0,0.0,0.0,0.0,18,FA2025,Chun YoungPark
+PLS 360,Foreign Policy Analysis,1L,14,2.57,1.27,2.84,21.4,42.9,21.4,0.0,14.3,0.0,0.0,0.0,0.0,14,FA2025,Bimal Adhikari
+PLS 370,"Law, Politics and Society",1L,18,3.2,0.6,3.16,33.3,50.0,16.7,0.0,0.0,0.0,0.0,0.0,0.0,18,FA2025,Alexei Trochev
+PLS 416,Experimental PoliticalScience,1L,11,3.76,0.34,4.0,81.8,18.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,11,FA2025,Ho Koh
+PLS 424,Issues in the Philosophyof Social Science,1S,14,4.0,0.0,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,14,FA2025,Dinara Pisareva
+PLS 426,"Hannah Arendt on Power,Violence, and Revolution",1L,9,3.26,0.52,3.33,30.0,50.0,10.0,0.0,0.0,0.0,0.0,0.0,10.0,10,FA2025,Brian Smith
+PLS 431,Politics and Governanceof the Russian Federation,1L,15,3.64,0.37,3.67,66.7,33.3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,15,FA2025,Andrey Semenov
+PLS 432,ComparativeDemocratization,1S,12,2.95,0.76,3.0,33.3,50.0,8.3,8.3,0.0,0.0,0.0,0.0,0.0,12,FA2025,Chunho Park
+PLS 441,Advanced Topics inComparative Politics,1L,8,3.46,0.31,3.67,62.5,37.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,8,FA2025,BerikbolDukeyev
+PLS 460,Environmental Politics,1L,9,3.37,0.39,3.67,50.0,40.0,0.0,0.0,0.0,0.0,0.0,0.0,10.0,10,FA2025,Jessica Neafie
+PLS 463,NGO Politics,1L,12,3.42,0.35,3.5,50.0,50.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,12,FA2025,Chun YoungPark
+ANT 101,Being Human: AnIntroduction to FourField Anthropology,1L,149,3.07,0.68,3.33,27.3,50.0,20.7,0.7,0.7,0.0,0.0,0.0,0.7,150,FA2025,Russell Zanca
+ANT 160,Introduction to BiologicalAnthropology,1L,93,2.64,0.91,2.67,19.6,38.1,29.9,4.1,4.1,0.0,0.0,0.0,4.1,97,FA2025,Reed Coil
+ANT 214/SOC 214,Qualitative Methods,1S,26,3.24,0.48,3.33,30.8,65.4,3.8,0.0,0.0,0.0,0.0,0.0,0.0,26,FA2025,KarinaMatkarimova
+ANT 214/SOC 214,Qualitative Methods,2S,24,3.22,0.91,3.33,36.0,48.0,8.0,0.0,4.0,0.0,0.0,0.0,4.0,25,FA2025,KarinaMatkarimova
+ANT 240,Laboratory Methods inArchaeology,1L,14,3.22,0.5,3.33,40.0,40.0,13.3,0.0,0.0,0.0,0.0,0.0,6.7,15,FA2025,Abay Namen
+ANT 285/SOC 212,Food and Society,1L,26,3.18,0.85,3.33,34.6,50.0,11.5,0.0,3.8,0.0,0.0,0.0,0.0,26,FA2025,KatherineErdman
+ANT 333,Anthropology of Space,2L,16,2.77,1.3,3.16,36.8,21.1,15.8,0.0,10.5,0.0,0.0,0.0,15.8,19,FA2025,Reed Coil
+ANT 475,Digital Ethnographies,1S,11,3.18,0.81,3.33,38.5,38.5,0.0,7.7,0.0,0.0,0.0,7.7,7.7,13,FA2025,PhilippSchroeder
+ANT 482/SOC 482,"Climate Change, FutureEnergy and Sustainability",1S,20,3.23,0.53,3.33,30.0,65.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,PhilippSchroeder
+ANT 482/SOC 482,"Climate Change, FutureEnergy and Sustainability",2S,20,2.43,1.31,2.84,25.0,35.0,15.0,10.0,15.0,0.0,0.0,0.0,0.0,20,FA2025,PhilippSchroeder
+SOC 101,Introduction to Sociology,1L,96,2.88,0.88,3.0,22.8,48.5,17.8,2.0,4.0,0.0,0.0,0.0,5.0,101,FA2025,DanaBurkhanova
+SOC 101,Introduction to Sociology,1L,96,2.88,0.88,3.0,22.8,48.5,17.8,2.0,4.0,0.0,0.0,0.0,5.0,101,FA2025,Ana CristinaHenriquesMarques
+SOC 201,Social Science ResearchMethods,2L,23,2.91,0.85,3.0,20.0,48.0,20.0,0.0,4.0,0.0,0.0,0.0,8.0,25,FA2025,KatherineErdman
+SOC 201,Social Science ResearchMethods,3L,24,2.96,1.15,3.33,34.6,30.8,19.2,0.0,7.7,0.0,0.0,0.0,7.7,26,FA2025,KatherineErdman
+SOC 203,Quantitative Methods inSociology,1L,25,3.15,0.83,3.0,36.0,60.0,0.0,0.0,4.0,0.0,0.0,0.0,0.0,25,FA2025,DarkhanMedeuov
+SOC 203,Quantitative Methods inSociology,2L,23,3.74,0.39,4.0,79.2,16.7,0.0,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,DarkhanMedeuov
+SOC 203,Quantitative Methods inSociology,3L,23,1.83,1.07,2.0,12.5,4.2,54.2,12.5,12.5,0.0,0.0,0.0,4.2,24,FA2025,Mariya Safonova
+SOC 203,Quantitative Methods inSociology,4L,22,1.74,1.05,1.67,4.0,16.0,40.0,16.0,12.0,0.0,0.0,0.0,12.0,25,FA2025,Mariya Safonova
+SOC 210,Gender and Society,1L,26,3.14,0.65,3.0,34.6,46.2,19.2,0.0,0.0,0.0,0.0,0.0,0.0,26,FA2025,Ana CristinaHenriquesMarques
+SOC 220,"Science, Technology, andSociety",1L,25,3.4,1.11,4.0,61.5,23.1,3.8,0.0,7.7,0.0,0.0,0.0,3.8,26,FA2025,DarkhanMedeuov
+SOC 221,International Migration,1L,25,3.31,0.49,3.33,32.0,64.0,4.0,0.0,0.0,0.0,0.0,0.0,0.0,25,FA2025,SaltanatAkhmetova
+SOC 223,Social Movements: HowPeople Make Change,1L,28,2.46,0.96,2.5,10.7,39.3,35.7,10.7,3.6,0.0,0.0,0.0,0.0,28,FA2025,MatveyLomonosov
+SOC 301,Classical SociologicalTheory,1L,25,2.75,0.57,2.67,8.0,60.0,32.0,0.0,0.0,0.0,0.0,0.0,0.0,25,FA2025,DanaBurkhanova
+SOC 301,Classical SociologicalTheory,2L,26,2.74,0.6,2.84,7.4,59.3,29.6,0.0,0.0,0.0,0.0,0.0,3.7,27,FA2025,Mikhail Sokolov
+SOC 310,Social Inequality,1L,25,3.19,0.85,3.33,48.0,36.0,12.0,0.0,4.0,0.0,0.0,0.0,0.0,25,FA2025,Ana CristinaHenriquesMarques
+SOC 313,Social Foundations ofEducation,1L,27,2.82,0.87,3.0,18.5,63.0,11.1,3.7,3.7,0.0,0.0,0.0,0.0,27,FA2025,KarinaMatkarimova
+SOC 350,Digital Deviance,1L,25,3.48,0.32,3.33,44.0,56.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,25,FA2025,SaltanatAkhmetova
+SOC 399,Special Topics inSociology,1L,21,2.57,1.46,2.67,39.1,8.7,17.4,17.4,8.7,0.0,0.0,0.0,8.7,23,FA2025,Mariya Safonova
+SOC 399,Special Topics inSociology,2L,22,2.67,1.57,3.67,48.0,8.0,12.0,4.0,16.0,0.0,0.0,0.0,12.0,25,FA2025,Mariya Safonova
+SOC 475,Sociology of Consumption,1L,23,2.74,0.64,3.0,13.0,56.5,26.1,4.3,0.0,0.0,0.0,0.0,0.0,23,FA2025,Mikhail Sokolov
+SOC 485,Statistics and MachineLearning for SocialReform,1L,13,3.03,0.75,3.0,23.1,53.8,23.1,0.0,0.0,0.0,0.0,0.0,0.0,13,FA2025,MatveyLomonosov
+SOC 498,Capstone Seminar Part I,1CP,21,3.56,0.36,3.67,71.4,28.6,0.0,0.0,0.0,0.0,0.0,0.0,0.0,21,FA2025,DanaBurkhanova
+HST 375/TUR 375/ANT 375/SOC 375,Inner Asian Frontiers ofChina: A CulturalPerspective,1L,24,3.46,0.5,3.67,56.0,40.0,0.0,0.0,0.0,0.0,0.0,0.0,4.0,25,FA2025,U Kim
+HST 271/TUR 271,History of the OttomanEmpire,1L,50,3.53,0.56,3.67,62.0,32.0,4.0,2.0,0.0,0.0,0.0,0.0,0.0,50,FA2025,Halit Akarca
+HST 274/WLL 274,Texts and Contexts,1L,27,3.17,0.64,3.33,46.4,32.1,17.9,0.0,0.0,0.0,0.0,0.0,3.6,28,FA2025,Curtis Murphy
+TUR 280/LING 280,Introduction to TurkicHistorical andComparative Linguistics,1L,32,3.3,0.63,3.33,43.8,37.5,18.8,0.0,0.0,0.0,0.0,0.0,0.0,32,FA2025,WulidanayiJumabay
+TUR 480/LING 480,Selective reading ofhistorical Turkicliterature,1L,26,2.73,1.31,3.33,38.5,26.9,19.2,3.8,11.5,0.0,0.0,0.0,0.0,26,FA2025,WulidanayiJumabay
+WCS 101,Communication andSociety,1L,63,3.29,0.71,3.33,35.1,41.6,2.6,1.3,1.3,0.0,0.0,0.0,18.2,77,FA2025,Thomas Duke
+WCS 150,Rhetoric and Composition,1L,20,3.82,0.41,4.0,85.0,10.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,J.C. Ross
+WCS 150,Rhetoric and Composition,21L,20,3.17,0.49,3.33,20.0,75.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,Jane Hoelker
+WCS 150,Rhetoric and Composition,38L,19,2.56,1.19,3.0,5.0,65.0,10.0,0.0,15.0,0.0,0.0,0.0,5.0,20,FA2025,Nurly Marshal
+WCS 150,Rhetoric and Composition,41L,19,2.7,0.8,3.0,0.0,75.0,15.0,0.0,5.0,0.0,0.0,0.0,5.0,20,FA2025,Gulden Issina
+WCS 150,Rhetoric and Composition,5L,17,2.96,0.53,3.0,16.7,55.6,22.2,0.0,0.0,0.0,0.0,0.0,5.6,18,FA2025,NicholasWalmsley
+WCS 150,Rhetoric and Composition,6L,20,2.7,0.76,3.0,10.0,50.0,30.0,10.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,Adam Hefty
+WCS 150,Rhetoric and Composition,7L,18,2.48,0.83,2.5,10.5,36.8,36.8,10.5,0.0,0.0,0.0,0.0,5.3,19,FA2025,Adam Hefty
+WCS 150,Rhetoric and Composition,8L,20,3.15,0.76,3.33,10.0,85.0,0.0,0.0,5.0,0.0,0.0,0.0,0.0,20,FA2025,AndrewDrybrough
+WCS 150,Rhetoric and Composition,9L,19,3.33,0.4,3.33,35.0,55.0,5.0,0.0,0.0,0.0,0.0,0.0,5.0,20,FA2025,Fariza Tolesh
+WCS 150,Rhetoric and Composition,10L,20,2.87,0.73,3.0,20.0,55.0,20.0,5.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,Elizabeth Abele
+WCS 150,Rhetoric and Composition,11L,19,3.12,0.42,3.0,25.0,65.0,5.0,0.0,0.0,0.0,0.0,0.0,5.0,20,FA2025,Elizabeth Abele
+WCS 150,Rhetoric and Composition,12L,20,2.78,0.91,3.0,20.0,50.0,25.0,0.0,5.0,0.0,0.0,0.0,0.0,20,FA2025,Elizabeth Abele
+WCS 150,Rhetoric and Composition,13L,17,2.04,1.27,2.33,0.0,40.0,25.0,0.0,20.0,0.0,0.0,0.0,15.0,20,FA2025,BellidoLanguasco
+WCS 150,Rhetoric and Composition,14L,15,2.76,0.53,2.67,5.0,45.0,25.0,0.0,0.0,0.0,0.0,0.0,25.0,20,FA2025,BellidoLanguasco
+WCS 150,Rhetoric and Composition,15L,20,2.77,0.91,2.84,15.0,60.0,15.0,5.0,5.0,0.0,0.0,0.0,0.0,20,FA2025,BellidoLanguasco
+WCS 150,Rhetoric and Composition,16L,18,3.24,0.52,3.33,35.0,45.0,10.0,0.0,0.0,0.0,0.0,0.0,10.0,20,FA2025,Ian AlbertPeterkin Jr
+WCS 150,Rhetoric and Composition,17L,18,3.24,0.69,3.5,45.0,35.0,10.0,0.0,0.0,0.0,0.0,0.0,10.0,20,FA2025,Ian AlbertPeterkin Jr
+WCS 150,Rhetoric and Composition,18L,19,3.23,0.89,3.67,52.6,42.1,0.0,0.0,5.3,0.0,0.0,0.0,0.0,19,FA2025,Fariza Tolesh
+WCS 150,Rhetoric and Composition,19L,20,3.38,0.38,3.33,35.0,65.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,BenjaminGibbon
+WCS 150,Rhetoric and Composition,20L,20,3.22,0.41,3.33,30.0,65.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,Nurly Marshal
+WCS 150,Rhetoric and Composition,21L,20,3.22,0.38,3.33,20.0,75.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,Jane Hoelker
+WCS 150,Rhetoric and Composition,22L,17,3.24,0.37,3.33,20.0,65.0,0.0,0.0,0.0,0.0,0.0,0.0,15.0,20,FA2025,Jane Hoelker
+WCS 150,Rhetoric and Composition,23L,14,3.4,0.46,3.33,37.5,50.0,0.0,0.0,0.0,0.0,0.0,0.0,12.5,16,FA2025,Jane Hoelker
+WCS 150,Rhetoric and Composition,24L,20,3.43,0.25,3.33,45.0,55.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,Jeremy RichardSpring
+WCS 150,Rhetoric and Composition,25L,20,3.25,0.49,3.33,30.0,65.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,Marina Zaffari
+WCS 150,Rhetoric and Composition,26L,20,3.43,0.31,3.33,30.0,70.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,Marina Zaffari
+WCS 150,Rhetoric and Composition,27L,19,3.02,0.84,3.33,30.0,45.0,10.0,10.0,0.0,0.0,0.0,0.0,5.0,20,FA2025,Marina Zaffari
+WCS 150,Rhetoric and Composition,28L,18,2.63,0.89,2.84,10.0,60.0,10.0,5.0,5.0,0.0,5.0,0.0,5.0,20,FA2025,Michael Jones
+WCS 150,Rhetoric and Composition,29L,19,2.67,0.68,2.67,15.8,52.6,31.6,0.0,0.0,0.0,0.0,0.0,0.0,19,FA2025,Michael Jones
+WCS 150,Rhetoric and Composition,30L,21,2.62,0.88,2.67,19.0,42.9,33.3,0.0,4.8,0.0,0.0,0.0,0.0,21,FA2025,Olga Campbell-Thomson
+WCS 150,Rhetoric and Composition,31L,20,3.27,0.53,3.33,30.0,60.0,10.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,Olga Campbell-Thomson
+WCS 150,Rhetoric and Composition,32L,20,3.03,0.92,3.33,35.0,40.0,20.0,0.0,5.0,0.0,0.0,0.0,0.0,20,FA2025,Shahreen BintiMat Nayan
+WCS 150,Rhetoric and Composition,33L,20,2.92,0.66,3.0,25.0,35.0,40.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,Shahreen BintiMat Nayan
+WCS 150,Rhetoric and Composition,34L,19,3.26,0.48,3.33,42.1,47.4,10.5,0.0,0.0,0.0,0.0,0.0,0.0,19,FA2025,BenjaminGibbon
+WCS 150,Rhetoric and Composition,35L,20,3.02,0.54,3.0,10.0,75.0,15.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,James Swider
+WCS 150,Rhetoric and Composition,36L,20,3.02,0.89,3.33,30.0,55.0,10.0,0.0,5.0,0.0,0.0,0.0,0.0,20,FA2025,BenjaminGibbon
+WCS 150,Rhetoric and Composition,37L,20,3.2,0.86,3.33,35.0,55.0,5.0,0.0,5.0,0.0,0.0,0.0,0.0,20,FA2025,Fariza Tolesh
+WCS 150,Rhetoric and Composition,38L,20,3.42,0.26,3.33,35.0,65.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,Nurly Marshal
+WCS 150,Rhetoric and Composition,39L,19,3.33,0.46,3.33,31.6,63.2,5.3,0.0,0.0,0.0,0.0,0.0,0.0,19,FA2025,Nurly Marshal
+WCS 150,Rhetoric and Composition,40L,20,3.43,0.87,3.67,65.0,30.0,0.0,0.0,5.0,0.0,0.0,0.0,0.0,20,FA2025,J.C. Ross
+WCS 150,Rhetoric and Composition,41L,18,3.11,0.62,3.33,25.0,50.0,15.0,0.0,0.0,0.0,0.0,0.0,10.0,20,FA2025,Gulden Issina
+WCS 150,Rhetoric and Composition,42L,19,3.16,0.86,3.33,25.0,65.0,0.0,0.0,5.0,0.0,0.0,0.0,5.0,20,FA2025,Gulden Issina
+WCS 150,Rhetoric and Composition,43L,19,3.67,0.43,3.67,75.0,15.0,5.0,0.0,0.0,0.0,0.0,0.0,5.0,20,FA2025,J.C. Ross
+WCS 200,Introduction to PublicSpeaking,1L,23,2.97,0.41,3.0,4.2,79.2,12.5,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,Samira Esat
+WCS 200,Introduction to PublicSpeaking,2L,22,3.04,0.44,3.16,4.2,79.2,8.3,0.0,0.0,0.0,0.0,0.0,8.3,24,FA2025,Samira Esat
+WCS 200,Introduction to PublicSpeaking,3L,23,3.07,0.36,3.0,8.3,79.2,8.3,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,Samira Esat
+WCS 200,Introduction to PublicSpeaking,4L,23,3.23,0.35,3.33,25.0,70.8,0.0,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,Tiffany Moore
+WCS 200,Introduction to PublicSpeaking,5L,23,3.44,0.46,3.67,50.0,41.7,4.2,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,Tiffany Moore
+WCS 200,Introduction to PublicSpeaking,6L,24,3.28,0.39,3.33,37.5,62.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,24,FA2025,Thomas CarlHughes
+WCS 200,Introduction to PublicSpeaking,7L,24,2.97,0.69,3.0,4.2,87.5,4.2,0.0,4.2,0.0,0.0,0.0,0.0,24,FA2025,Thomas CarlHughes
+WCS 201,Introduction toJournalism,1L,29,3.42,0.22,3.33,36.7,60.0,0.0,0.0,0.0,0.0,0.0,0.0,3.3,30,FA2025,Thomas CarlHughes
+WCS 203,InterpersonalCommunication,1L,29,3.55,0.27,3.67,50.0,46.7,0.0,0.0,0.0,0.0,0.0,0.0,3.3,30,FA2025,Tiffany Moore
+WCS 210,Technical andProfessional Writing,10L,24,3.24,0.29,3.33,20.8,79.2,0.0,0.0,0.0,0.0,0.0,0.0,0.0,24,FA2025,James Nielsen
+WCS 210,Technical andProfessional Writing,2L,23,3.2,0.48,3.33,29.2,62.5,4.2,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,Gamze Oncul
+WCS 210,Technical andProfessional Writing,3L,23,3.29,0.43,3.33,37.5,54.2,4.2,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,Gamze Oncul
+WCS 210,Technical andProfessional Writing,4L,22,2.86,0.62,2.67,20.8,50.0,20.8,0.0,0.0,0.0,0.0,0.0,8.3,24,FA2025,Gamze Oncul
+WCS 210,Technical andProfessional Writing,5L,24,2.99,0.36,3.0,4.2,91.7,4.2,0.0,0.0,0.0,0.0,0.0,0.0,24,FA2025,James Nielsen
+WCS 210,Technical andProfessional Writing,6L,20,3.07,0.61,3.16,20.8,54.2,4.2,4.2,0.0,0.0,0.0,0.0,16.7,24,FA2025,James Nielsen
+WCS 210,Technical andProfessional Writing,7L,24,3.18,0.42,3.33,16.7,79.2,4.2,0.0,0.0,0.0,0.0,0.0,0.0,24,FA2025,Shane Coates
+WCS 210,Technical andProfessional Writing,8L,22,3.32,0.19,3.33,12.5,79.2,0.0,0.0,0.0,0.0,0.0,0.0,8.3,24,FA2025,Shane Coates
+WCS 210,Technical andProfessional Writing,9L,24,3.4,0.24,3.33,36.0,60.0,0.0,0.0,0.0,0.0,0.0,0.0,4.0,25,FA2025,Shane Coates
+WCS 210,Technical andProfessional Writing,10L,22,3.14,0.53,3.16,25.0,58.3,8.3,0.0,0.0,0.0,0.0,0.0,8.3,24,FA2025,James Nielsen
+WCS 230,"Say What you Mean:Clarity, Precision, andStyle in Academic Writing",1L,22,3.06,0.51,3.0,16.7,66.7,8.3,0.0,0.0,0.0,0.0,0.0,8.3,24,FA2025,ZhanarKabylbekova
+WCS 230,"Say What you Mean:Clarity, Precision, andStyle in Academic Writing",2L,24,3.21,0.56,3.33,33.3,50.0,16.7,0.0,0.0,0.0,0.0,0.0,0.0,24,FA2025,ZhanarKabylbekova
+WCS 230,"Say What you Mean:Clarity, Precision, andStyle in Academic Writing",3L,23,3.64,0.4,3.67,62.5,33.3,0.0,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,Marilyn Plumlee
+WCS 230,"Say What you Mean:Clarity, Precision, andStyle in Academic Writing",4L,22,3.58,0.53,3.67,66.7,20.8,4.2,0.0,0.0,0.0,0.0,0.0,8.3,24,FA2025,Marilyn Plumlee
+WCS 230,"Say What you Mean:Clarity, Precision, andStyle in Academic Writing",5L,24,3.19,0.47,3.33,25.0,66.7,8.3,0.0,0.0,0.0,0.0,0.0,0.0,24,FA2025,ZhanarKabylbekova
+WCS 240,Writing for Digital Media,1L,23,2.77,0.6,2.67,16.7,37.5,41.7,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,Brandon Brock
+WCS 240,Writing for Digital Media,2L,20,2.63,0.88,2.67,13.6,36.4,36.4,0.0,4.5,0.0,0.0,0.0,9.1,22,FA2025,Brandon Brock
+WCS 240,Writing for Digital Media,3L,23,3.35,0.26,3.33,25.0,70.8,0.0,0.0,0.0,0.0,0.0,0.0,4.2,24,FA2025,James Swider
+WCS 240,Writing for Digital Media,4L,24,3.17,0.55,3.33,25.0,66.7,4.2,4.2,0.0,0.0,0.0,0.0,0.0,24,FA2025,Michael Jones
+WCS 250,Advanced Rhetoric andComposition,1L,24,2.8,1.07,3.0,25.0,41.7,25.0,0.0,8.3,0.0,0.0,0.0,0.0,24,FA2025,Arlyce Menzies
+WCS 250,Advanced Rhetoric andComposition,2L,23,2.93,0.9,3.33,20.8,50.0,20.8,0.0,4.2,0.0,0.0,0.0,4.2,24,FA2025,Arlyce Menzies
+WCS 270,Academic andProfessionalPresentations,1L,35,3.43,0.29,3.33,41.7,55.6,0.0,0.0,0.0,0.0,0.0,0.0,2.8,36,FA2025,Yamen Rahvan
+WCS 270,Academic andProfessionalPresentations,2L,36,3.44,0.69,3.67,52.8,44.4,0.0,0.0,2.8,0.0,0.0,0.0,0.0,36,FA2025,Thomas Duke
+WCS 390,Writing Fellows I –Composition andCollaboration in Theoryand Practice,1L,14,3.98,0.09,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,14,FA2025,Marilyn Plumlee
+WLL 171/ANT 175,Introduction to LinguisticAnthropology,1L,79,3.27,0.8,3.67,50.0,35.4,7.3,1.2,2.4,0.0,0.0,0.0,3.7,82,FA2025,U Kim
+WLL 235/WCS 260,Creative Writing:Introduction to FictionWriting I,1L,17,2.61,1.21,3.0,20.0,40.0,15.0,0.0,10.0,0.0,0.0,0.0,15.0,20,FA2025,Jonathan Dupuy
+WLL 235/WCS 260,Creative Writing:Introduction to FictionWriting I,2L,18,3.13,0.91,3.33,35.0,45.0,5.0,0.0,5.0,0.0,0.0,0.0,10.0,20,FA2025,Jonathan Dupuy
+WLL 235/WCS 260,Creative Writing:Introduction to FictionWriting I,3L,20,3.15,0.81,3.16,35.0,55.0,5.0,5.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,Ian AlbertPeterkin Jr
+WLL 360/WCS 360,Poetry Writing Seminar,1L,16,3.35,0.82,3.67,56.2,31.2,6.2,6.2,0.0,0.0,0.0,0.0,0.0,16,FA2025,Arlyce Menzies
+WLL 377/PHIL 377,Philosophy and Tragedy,1L,15,3.42,0.35,3.67,56.2,37.5,0.0,0.0,0.0,0.0,0.0,0.0,6.2,16,FA2025,MatthewHeeney
+WLL 385/ANT 385,Postcolonial Theory andits Applications inEurasia,1L,20,3.33,0.47,3.33,40.0,55.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,20,FA2025,Alima Bissenova
+WLL 462/WCS 462,Creative Nonfiction,1S,24,3.89,0.25,4.0,84.6,7.7,0.0,0.0,0.0,0.0,0.0,3.8,3.8,26,FA2025,Maria Rybakova
+WLL 465/WCS 465,Creative Writing:Autofiction,1S,15,3.31,0.71,3.67,60.0,20.0,20.0,0.0,0.0,0.0,0.0,0.0,0.0,15,FA2025,Jonathan Dupuy
+NUR 205,Psychology for the HealthPractitioner,1L,5,3.47,0.19,3.33,40.0,60.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,5,FA2025,Ejercito Balay-Odao
+NUR 221,Nursing Research:Introduction to CriticalAppraisal and Evidence-Based Practice,1L,5,3.4,0.15,3.33,20.0,80.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,5,FA2025,Jonas Cruz
+NUR 302,Physical AssessmentAcross the Lifespan,1L,42,3.28,0.45,3.33,38.1,52.4,9.5,0.0,0.0,0.0,0.0,0.0,0.0,42,FA2025,AinettaNurmagambetova
+NUR 302,Physical AssessmentAcross the Lifespan,1L,42,3.28,0.45,3.33,38.1,52.4,9.5,0.0,0.0,0.0,0.0,0.0,0.0,42,FA2025,JosephAlmazan
+NUR 302,Physical AssessmentAcross the Lifespan,1L,42,3.28,0.45,3.33,38.1,52.4,9.5,0.0,0.0,0.0,0.0,0.0,0.0,42,FA2025,JamilyaSaparbay
+NUR 303,Nursing Care of OlderAdults,1L,42,3.52,0.38,3.67,59.5,40.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,42,FA2025,Joseph Almazan
+NUR 304,Introduction to BasicStatistics for EvidenceBased Practice,1L,42,3.15,0.35,3.16,11.9,85.7,2.4,0.0,0.0,0.0,0.0,0.0,0.0,42,FA2025,Nancy Stitt
+NUR 304,Introduction to BasicStatistics for EvidenceBased Practice,1L,42,3.15,0.35,3.16,11.9,85.7,2.4,0.0,0.0,0.0,0.0,0.0,0.0,42,FA2025,Aizada Badiyeva
+NUR 308,EnhancedCommunication inProfessional Nursing,1L,42,3.78,0.24,3.67,90.5,9.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,42,FA2025,Nancy Stitt
+NUR 308,EnhancedCommunication inProfessional Nursing,1L,42,3.78,0.24,3.67,90.5,9.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,42,FA2025,AnargulKuntuganova
+NUR 311C,Obstetric Nursing +Clinical,1ClinPract,5,3.87,0.18,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,5,FA2025,Paolo Colet
+NUR 312C,Pediatric Nursing +Clinical: Care of Childrenand Families,1ClinPract,5,4.0,0.0,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,5,FA2025,Ruslan Bilal
+NUR 312C,Pediatric Nursing +Clinical: Care of Childrenand Families,1ClinPract,5,4.0,0.0,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,5,FA2025,Joseph Almazan
+NUR 401,Education: Principles andPractice for Teaching inNursing,1L,35,3.31,0.44,3.33,37.1,57.1,5.7,0.0,0.0,0.0,0.0,0.0,0.0,35,FA2025,Nancy Stitt
+NUR 401,Education: Principles andPractice for Teaching inNursing,1L,35,3.31,0.44,3.33,37.1,57.1,5.7,0.0,0.0,0.0,0.0,0.0,0.0,35,FA2025,AnargulKuntuganova
+NUR 403,Data Analytics for QualityImprovement inHealthcare,1L,35,3.34,0.6,3.67,71.4,14.3,14.3,0.0,0.0,0.0,0.0,0.0,0.0,35,FA2025,Paolo Colet
+NUR 404,Community and HomeHealth Nursing,1L,35,3.28,0.47,3.33,34.3,60.0,5.7,0.0,0.0,0.0,0.0,0.0,0.0,35,FA2025,AnargulKuntuganova
+NUR 406.1,Medical-SurgicalNursing: ComplexSurgical Management,1L,35,3.28,0.36,3.33,25.7,71.4,2.9,0.0,0.0,0.0,0.0,0.0,0.0,35,FA2025,Ejercito Balay-Odao
+NUSM 101,Introduction to Medicine,1L,150,3.09,0.69,3.33,29.7,49.0,16.1,0.6,1.3,0.0,0.0,0.0,3.2,155,FA2025,Arman Saparov
+NUSM 101,Introduction to Medicine,1L,150,3.09,0.69,3.33,29.7,49.0,16.1,0.6,1.3,0.0,0.0,0.0,3.2,155,FA2025,MatthewNaanlep Tanko
+NUSM 102,Biology for Medicalstudents I with Lab,1L,144,2.69,0.73,2.67,12.7,49.3,28.7,4.0,1.3,0.0,0.7,0.0,3.3,150,FA2025,Larisa Lezina
+NUSM 301,"Introduction toImmunology,Microbiology andGenetics",1L,50,3.07,0.48,3.0,18.0,66.0,16.0,0.0,0.0,0.0,0.0,0.0,0.0,50,FA2025,Arman Saparov
+NUSM 301,"Introduction toImmunology,Microbiology andGenetics",1L,50,3.07,0.48,3.0,18.0,66.0,16.0,0.0,0.0,0.0,0.0,0.0,0.0,50,FA2025,Jeanette KunzHalder
+NUSM 301,"Introduction toImmunology,Microbiology andGenetics",1L,50,3.07,0.48,3.0,18.0,66.0,16.0,0.0,0.0,0.0,0.0,0.0,0.0,50,FA2025,DenisBulanin
+NUSM 301,"Introduction toImmunology,Microbiology andGenetics",1L,50,3.07,0.48,3.0,18.0,66.0,16.0,0.0,0.0,0.0,0.0,0.0,0.0,50,FA2025,PrimSingh
+NUSM 301,"Introduction toImmunology,Microbiology andGenetics",1L,50,3.07,0.48,3.0,18.0,66.0,16.0,0.0,0.0,0.0,0.0,0.0,0.0,50,FA2025,SanjaTerzic
+NUSM 301,"Introduction toImmunology,Microbiology andGenetics",1L,50,3.07,0.48,3.0,18.0,66.0,16.0,0.0,0.0,0.0,0.0,0.0,0.0,50,FA2025,SyedHani HassanAbidi
+NUSM 301,"Introduction toImmunology,Microbiology andGenetics",1L,50,3.07,0.48,3.0,18.0,66.0,16.0,0.0,0.0,0.0,0.0,0.0,0.0,50,FA2025,LarisaLezina
+NUSM 302,Introduction to Statisticsfor Evidence-BasedPractice,1L,50,3.59,0.39,3.67,66.0,34.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,50,FA2025,YuliyaSemenova
+NUSM 303,Introduction to Anatomyand Histology,1L,50,2.93,0.57,3.0,14.0,66.0,20.0,0.0,0.0,0.0,0.0,0.0,0.0,50,FA2025,MatthewNaanlep Tanko
+NUSM 303,Introduction to Anatomyand Histology,1L,50,2.93,0.57,3.0,14.0,66.0,20.0,0.0,0.0,0.0,0.0,0.0,0.0,50,FA2025,Srinivasa Bolla
+NUSM 402,Medical Anatomy,1L,30,2.84,0.76,3.0,16.1,51.6,25.8,3.2,0.0,0.0,0.0,0.0,3.2,31,FA2025,LyazzatToleubekova
+NUSM 402,Medical Anatomy,1L,30,2.84,0.76,3.0,16.1,51.6,25.8,3.2,0.0,0.0,0.0,0.0,3.2,31,FA2025,Srinivasa Bolla
+NUSM 403,Human Genetics,1L,30,2.64,0.53,2.67,3.2,58.1,32.3,3.2,0.0,0.0,0.0,0.0,3.2,31,FA2025,Denis Bulanin
+NUSM 403,Human Genetics,1L,30,2.64,0.53,2.67,3.2,58.1,32.3,3.2,0.0,0.0,0.0,0.0,3.2,31,FA2025,Prim Singh
+NUSM 405,Fuel Metabolism,1L,30,2.67,0.56,2.67,0.0,61.3,32.3,3.2,0.0,0.0,0.0,0.0,3.2,31,FA2025,Denis Bulanin
+NUSM 405,Fuel Metabolism,1L,30,2.67,0.56,2.67,0.0,61.3,32.3,3.2,0.0,0.0,0.0,0.0,3.2,31,FA2025,Agata NataszaBurska
+NUSM 408,Pharmacology,1L,30,3.01,0.56,3.33,12.9,64.5,16.1,3.2,0.0,0.0,0.0,0.0,3.2,31,FA2025,MohamadAljofan
+NUSM 408,Pharmacology,1L,30,3.01,0.56,3.33,12.9,64.5,16.1,3.2,0.0,0.0,0.0,0.0,3.2,31,FA2025,VladimirSurov
