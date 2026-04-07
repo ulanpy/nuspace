@@ -12,11 +12,10 @@ from pathlib import Path
 from typing import Iterable
 
 import httpx
-
 from backend.modules.courses.registrar.parsers.schedule_pdf_parser import parse_schedule_pdf
 
 TERM_PATTERN = re.compile(
-    r"(?P<label>(Spring|Fall)\s+(?P<year>\d{4})).*?termid=(?P<termid>\d+)",
+    r"(?P<label>(Spring|Summer|Fall)\s+(?P<year>\d{4})).*?termid=(?P<termid>\d+)",
     re.IGNORECASE | re.DOTALL,
 )
 REGISTRAR_DISCOVERY_PAGES = [
@@ -66,12 +65,21 @@ def _get_with_retries(
 
 
 def term_code_to_registrar_label(term_code: str) -> str:
-    """FA2025 -> Fall 2025, SP2025 -> Spring 2025."""
     t = term_code.strip().upper()
-    m = re.fullmatch(r"(FA|SP)(\d{4})", t)
+    m = re.fullmatch(r"(FA|SP|SU)(\d{4})", t)
     if not m:
-        raise ValueError(f"Invalid term code {term_code!r}; expected FA#### or SP####")
-    season = "Fall" if m.group(1) == "FA" else "Spring"
+        raise ValueError(
+            f"Invalid term code {term_code!r}; expected FA####, SP#### or SU####"
+        )
+    
+    code = m.group(1)
+    if code == "FA":
+        season = "Fall"
+    elif code == "SP":
+        season = "Spring"
+    else:
+        season = "Summer"
+        
     return f"{season} {m.group(2)}"
 
 
