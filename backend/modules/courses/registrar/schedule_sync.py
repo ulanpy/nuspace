@@ -11,8 +11,6 @@ from typing import Sequence
 import httpx
 from httpx import AsyncClient
 
-from backend.modules.courses.registrar.parsers.schedule_pdf_parser import parse_schedule_pdf
-
 logger = logging.getLogger(__name__)
 
 SCHEDULE_PDF_URL = None  # auto-discover when None
@@ -154,10 +152,10 @@ async def _run_schedule_parser_subprocess(
 
 
 _TERM_PATTERN = re.compile(
-    r"(?P<label>(Spring|Fall)\s+(?P<year>\d{4})).*?termid=(?P<termid>\d+)",
+    r"(?P<label>(Spring|Summer|Fall)\s+(?P<year>\d{4})).*?termid=(?P<termid>\d+)",
     re.IGNORECASE | re.DOTALL,
 )
-_SEASON_ORDER = {"Spring": 1, "Summer": 2, "Fall": 3, "Winter": 0}
+_SEASON_ORDER = {"Spring": 0, "Summer": 1, "Fall": 2}
 _DISCOVERY_PAGES = [
     "https://registrar.nu.edu.kz/course-schedules",
     "https://registrar.nu.edu.kz/course-requirements",
