@@ -24,26 +24,54 @@ class AuditRequirementResult(BaseModel):
     note: str
 
 
-class AuditResponse(BaseModel):
-    year: str
-    major: str
+class AuditProgramResult(BaseModel):
+    name: str
+    type: str
     results: List[AuditRequirementResult]
     summary: Optional[AuditSummary] = None
     warnings: List[str] = []
+
+class TCMapping(BaseModel):
+    original_code: str = Field(
+        ...,
+        description="Transfer course code from transcript. Code only.",
+        examples=["HST 152"],
+    )
+    mapped_code: str = Field(
+        ...,
+        description="NU course code. Use department + space + number, e.g. HST 152.",
+        examples=["HST 152"],
+    )
+    mapped_credits: float
+
+class TCCourse(BaseModel):
+    code: str
+    title: str
+    credits: float
+
+class AuditResponse(BaseModel):
+    year: str
+    majors: List[str] = []
+    minors: List[str] = []
+    audits: List[AuditProgramResult] = []
+    unmapped_tc_courses: List[TCCourse] = []
     csv_base64: Optional[str] = Field(
         None, description="Optional base64 CSV of the audit results"
     )
 
-
 class AuditRequestRegistrar(BaseModel):
     year: str
-    major: str
+    majors: List[str]
+    minors: List[str] = []
     username: str
     password: str
+    tc_mappings: List[TCMapping] = []
 
 class AuditRequestPDF(BaseModel):
     year: str
-    major: str
+    majors: List[str]
+    minors: List[str] = []
+    tc_mappings: List[TCMapping] = []
     pdf_file: bytes = Field(
         ...,
         description="Base64-encoded PDF payload (decoded into bytes by Pydantic).",
@@ -61,9 +89,9 @@ class CatalogYear(BaseModel):
     year: str
     majors: List[str]
 
-
 class CatalogResponse(BaseModel):
     years: List[CatalogYear]
+    minors: List[str] = []
 
 
 class DegreeRequirement(BaseModel):
@@ -75,4 +103,3 @@ class DegreeRequirement(BaseModel):
     options: List[str]
     must_haves: List[str]
     excepts: List[str]
-

@@ -378,6 +378,7 @@ export interface DegreeAuditCatalogYear {
 
 export interface DegreeAuditCatalogResponse {
   years: DegreeAuditCatalogYear[];
+  minors: string[];
 }
 
 export interface DegreeAuditResultRow {
@@ -399,11 +400,31 @@ export interface DegreeAuditSummary {
   total_taken: string;
 }
 
-export interface DegreeAuditResponse {
-  year: string;
-  major: string;
+export interface DegreeAuditProgramResult {
+  name: string;
+  type: string;
   results: DegreeAuditResultRow[];
   summary?: DegreeAuditSummary | null;
   warnings: string[];
+}
+
+export interface DegreeAuditTCCourse {
+  code: string;
+  title: string;
+  credits: number;
+}
+
+export interface DegreeAuditTCMapping {
+  original_code: string;
+  mapped_code: string;
+  mapped_credits: number;
+}
+
+export interface DegreeAuditResponse {
+  year: string;
+  majors: string[];
+  minors: string[];
+  audits: DegreeAuditProgramResult[];
+  unmapped_tc_courses?: DegreeAuditTCCourse[];
   csv_base64?: string | null;
 }

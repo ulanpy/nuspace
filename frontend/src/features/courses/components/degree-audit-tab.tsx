@@ -11,6 +11,8 @@ import {
   DegreeAuditResponse,
   DegreeAuditCatalogResponse,
   DegreeAuditResultRow,
+  DegreeAuditTCCourse,
+  DegreeAuditTCMapping,
 } from "../types";
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
@@ -27,6 +29,38 @@ type DegreeAuditTabProps = {
 };
 
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
+
+type TcMappingRowState = {
+  key: string;
+  originalCode: string;
+  originalTitle: string;
+  mappedCode: string;
+  mappedCredits: string;
+};
+
+type PendingAuditState =
+  | { mode: "registrar"; password: string }
+  | { mode: "pdf"; pdfFile: File };
+
+function unmappedTcToRows(courses: DegreeAuditTCCourse[]): TcMappingRowState[] {
+  return courses.map((row, i) => ({
+    key: `${i}-${row.code}-${row.title}`,
+    originalCode: row.code,
+    originalTitle: row.title,
+    mappedCode: "",
+    mappedCredits: String(row.credits),
+  }));
+}
+
+function rowsToTcMappings(rows: TcMappingRowState[]): DegreeAuditTCMapping[] {
+  return rows
+    .filter((r) => r.mappedCode.trim())
+    .map((r) => ({
+      original_code: r.originalCode,
+      mapped_code: r.mappedCode.trim(),
+      mapped_credits: Number.parseFloat(String(r.mappedCredits).replace(",", ".")) || 0,
+    }));
+}
 
 export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
   const username = useMemo(() => {
@@ -46,7 +80,9 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
   });
 
   const [selectedYear, setSelectedYear] = useState("");
-  const [selectedMajor, setSelectedMajor] = useState("");
+  const [selectedMajors, setSelectedMajors] = useState<string[]>([""]);
+  const [selectedMinors, setSelectedMinors] = useState<string[]>([]);
+  const [activeAuditIndex, setActiveAuditIndex] = useState<number>(0);
   const [showReqModal, setShowReqModal] = useState(false);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [password, setPassword] = useState("");
@@ -54,6 +90,9 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
   const [usePdfUpload, setUsePdfUpload] = useState(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfError, setPdfError] = useState("");
+  const [tcModalOpen, setTcModalOpen] = useState(false);
+  const [pendingAudit, setPendingAudit] = useState<PendingAuditState | null>(null);
+  const [tcMappingRows, setTcMappingRows] = useState<TcMappingRowState[]>([]);
 
   const readFileAsBase64 = (file: File) =>
     new Promise<string>((resolve, reject) => {
@@ -83,10 +122,16 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
       }
       const targetYear = cached?.year || catalogQuery.data.years[0]?.year;
       const majors = catalogQuery.data.years.find((y) => y.year === targetYear)?.majors || [];
-      if (cached?.major && majors.includes(cached.major)) {
-        setSelectedMajor(cached.major);
+      
+      if (cached?.majors?.length) {
+        setSelectedMajors(cached.majors.filter((m) => majors.includes(m)));
       } else {
-        setSelectedMajor((prev) => (majors.includes(prev) ? prev : majors[0] || ""));
+        setSelectedMajors((prev) => (majors.includes(prev[0]) ? prev : [majors[0] || ""]));
+      }
+
+      if (cached?.minors?.length) {
+        const validMinors = catalogQuery.data.minors || [];
+        setSelectedMinors(cached.minors.filter((m) => validMinors.includes(m)));
       }
     }
   }, [catalogQuery.data, cachedQuery.data]);
@@ -95,47 +140,77 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
     if (catalogQuery.data?.years?.length && selectedYear) {
       const yearEntry = catalogQuery.data.years.find((y) => y.year === selectedYear);
       const majors = yearEntry?.majors || [];
-      if (!majors.includes(selectedMajor)) {
-        setSelectedMajor(majors[0] || "");
-      }
+      setSelectedMajors((prev) => {
+        const valid = prev.filter((m) => majors.includes(m));
+        if (valid.length === 0) return [majors[0] || ""];
+        return valid;
+      });
     }
-  }, [selectedYear, catalogQuery.data, selectedMajor]);
+  }, [selectedYear, catalogQuery.data]);
 
   const auditMutation = useMutation<
     DegreeAuditResponse,
     Error,
-    { mode: "registrar"; password: string } | { mode: "pdf"; pdfFile: File }
+    | { mode: "registrar"; password: string; tc_mappings?: DegreeAuditTCMapping[] }
+    | { mode: "pdf"; pdfFile: File; tc_mappings?: DegreeAuditTCMapping[] }
   >({
     mutationFn: async (payload) => {
-      if (!selectedYear || !selectedMajor) throw new Error("Please select year and major");
+      const validMajors = selectedMajors.filter(Boolean);
+      const validMinors = selectedMinors.filter(Boolean);
+      if (!selectedYear || !validMajors.length) throw new Error("Please select year and at least one major");
+      const tc = payload.tc_mappings?.length ? payload.tc_mappings : undefined;
       if (payload.mode === "pdf") {
         const pdfBase64 = await readFileAsBase64(payload.pdfFile);
         return await gradeStatisticsApi.runDegreeAuditFromPdf({
           year: selectedYear,
-          major: selectedMajor,
+          majors: validMajors,
+          minors: validMinors,
           pdf_file: pdfBase64,
+          tc_mappings: tc,
         });
       }
       return await gradeStatisticsApi.runDegreeAuditFromRegistrar({
         year: selectedYear,
-        major: selectedMajor,
+        majors: validMajors,
+        minors: validMinors,
         username,
         password: payload.password,
+        tc_mappings: tc,
       });
     },
   });
 
+  const patchTcMappingRow = (key: string, partial: Partial<Omit<TcMappingRowState, "key">>) => {
+    setTcMappingRows((rows) => rows.map((r) => (r.key === key ? { ...r, ...partial } : r)));
+  };
+
+  const hasTcMappingInput = useMemo(
+    () => tcMappingRows.some((r) => r.mappedCode.trim()),
+    [tcMappingRows],
+  );
+
+  const activeAudit = useMemo(() => {
+    const audits = (auditMutation.data || cachedQuery.data)?.audits || [];
+    return audits[activeAuditIndex] || audits[0] || null;
+  }, [auditMutation.data, cachedQuery.data, activeAuditIndex]);
+
   const requirementsQuery = useQuery({
-    queryKey: ["degree-reqs", selectedYear, selectedMajor],
-    queryFn: () => gradeStatisticsApi.getDegreeRequirements({ year: selectedYear, major: selectedMajor }),
+    queryKey: ["degree-reqs", selectedYear, activeAudit?.name, activeAudit?.type],
+    queryFn: () => gradeStatisticsApi.getDegreeRequirements({ 
+      year: selectedYear, 
+      name: activeAudit?.name || "", 
+      type: activeAudit?.type || "major" 
+    }),
     enabled: false,
   });
 
   const currentYearMajors =
     catalogQuery.data?.years.find((y) => y.year === selectedYear)?.majors || [];
+  const currentMinors = catalogQuery.data?.minors || [];
   const [statusSort, setStatusSort] = useState<"default" | "satisfied-first" | "pending-first">("default");
+  
   const sortedResults = useMemo(() => {
-    const rows = (auditMutation.data || cachedQuery.data)?.results || [];
+    const rows = activeAudit?.results || [];
     if (statusSort === "default") return rows;
     const order =
       statusSort === "satisfied-first" ? { Satisfied: 0, Pending: 1 } : { Pending: 0, Satisfied: 1 };
@@ -145,7 +220,7 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
       if (av !== bv) return av - bv;
       return a.course_code.localeCompare(b.course_code);
     });
-  }, [auditMutation.data, cachedQuery.data, statusSort]);
+  }, [activeAudit, statusSort]);
 
   const handleDownloadCsv = () => {
     const b64 = (auditMutation.data || cachedQuery.data)?.csv_base64;
@@ -239,25 +314,112 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-foreground">Majors</label>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => setSelectedMajors((prev) => [...prev, ""])}
+              >
+                + Add Major
+              </Button>
+            </div>
+            {selectedMajors.map((major, idx) => (
+              <div key={`major-${idx}`} className="flex items-center gap-2">
+                <Select
+                  value={major}
+                  onValueChange={(val) => {
+                    const newMajors = [...selectedMajors];
+                    newMajors[idx] = val;
+                    setSelectedMajors(newMajors);
+                  }}
+                  disabled={!currentYearMajors.length || catalogQuery.isLoading}
+                >
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder={`Major ${idx + 1}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currentYearMajors.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedMajors.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive flex-shrink-0"
+                    onClick={() => {
+                      const newMajors = [...selectedMajors];
+                      newMajors.splice(idx, 1);
+                      setSelectedMajors(newMajors);
+                    }}
+                  >
+                    ×
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Major</label>
-            <Select
-              value={selectedMajor}
-              onValueChange={setSelectedMajor}
-              disabled={!currentYearMajors.length || catalogQuery.isLoading}
-            >
-              <SelectTrigger className="rounded-xl">
-                <SelectValue placeholder="Select major" />
-              </SelectTrigger>
-              <SelectContent>
-                {currentYearMajors.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-foreground">Minors</label>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => setSelectedMinors((prev) => [...prev, ""])}
+              >
+                + Add Minor
+              </Button>
+            </div>
+            {selectedMinors.map((minor, idx) => (
+              <div key={`minor-${idx}`} className="flex items-center gap-2">
+                <Select
+                  value={minor}
+                  onValueChange={(val) => {
+                    const newMinors = [...selectedMinors];
+                    newMinors[idx] = val;
+                    setSelectedMinors(newMinors);
+                  }}
+                  disabled={!currentMinors.length || catalogQuery.isLoading}
+                >
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder={`Minor ${idx + 1}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {currentMinors.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive flex-shrink-0"
+                  onClick={() => {
+                    const newMinors = [...selectedMinors];
+                    newMinors.splice(idx, 1);
+                    setSelectedMinors(newMinors);
+                  }}
+                >
+                  ×
+                </Button>
+              </div>
+            ))}
+            {selectedMinors.length === 0 && (
+              <div className="text-xs text-muted-foreground pt-2">No minors added.</div>
+            )}
           </div>
         </div>
 
@@ -273,9 +435,12 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
                 setUsePdfUpload(false);
                 setPdfFile(null);
                 setPdfError("");
+                setTcModalOpen(false);
+                setPendingAudit(null);
+                setTcMappingRows([]);
                 auditMutation.reset();
               }}
-              disabled={!selectedYear || !selectedMajor || !username || catalogQuery.isLoading || auditMutation.isPending}
+              disabled={!selectedYear || !selectedMajors[0] || !username || catalogQuery.isLoading || auditMutation.isPending}
             >
               {auditMutation.isPending ? "Running..." : "Run audit"}
               <GraduationCap className={cn("h-4 w-4", auditMutation.isPending && "animate-spin")} />
@@ -307,21 +472,51 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
             </AlertDescription>
           </Alert>
         ) : null}
+
+        {auditMutation.data?.unmapped_tc_courses && auditMutation.data.unmapped_tc_courses.length > 0 ? (
+          <Alert variant="default" className="border-sky-300/60 bg-sky-50/90 text-sky-950">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle className="text-sm font-semibold">Transfer credits (TC)</AlertTitle>
+            <AlertDescription className="text-xs space-y-1">
+              <p>
+                Your transcript still has one or more TC lines that are not mapped to an NU course code. TC grades are
+                treated as pass, but requirement matching uses course codes. Run the audit again and use the mapping
+                step, or leave them as-is if you prefer.
+              </p>
+            </AlertDescription>
+          </Alert>
+        ) : null}
       </div>
 
       {(auditMutation.data || cachedQuery.data) && (
         <div className="space-y-3">
           <div className="flex items-center gap-3 flex-wrap">
             <h3 className="text-sm font-semibold text-foreground">Results</h3>
-            {(auditMutation.data || cachedQuery.data)?.summary && (
+            <Select
+              value={activeAuditIndex.toString()}
+              onValueChange={(val) => setActiveAuditIndex(parseInt(val, 10))}
+            >
+              <SelectTrigger className="w-auto min-w-[240px] max-w-[400px] h-8 rounded-full text-xs bg-primary text-primary-foreground border-primary hover:bg-primary/90">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(auditMutation.data || cachedQuery.data)?.audits.map((a, idx) => (
+                  <SelectItem key={idx} value={idx.toString()}>
+                    {a.type === "major" ? "Major" : "Minor"} - {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {activeAudit?.summary && (
               <div className="flex gap-2 flex-wrap text-xs">
-                <Badge variant="outline">Required: {(auditMutation.data || cachedQuery.data)?.summary?.total_required}</Badge>
-                <Badge variant="outline">Applied: {(auditMutation.data || cachedQuery.data)?.summary?.total_applied}</Badge>
-                <Badge variant="outline">Remaining: {(auditMutation.data || cachedQuery.data)?.summary?.total_remaining}</Badge>
-                <Badge variant="outline">Taken: {(auditMutation.data || cachedQuery.data)?.summary?.total_taken}</Badge>
+                <Badge variant="outline">Required: {activeAudit.summary.total_required}</Badge>
+                <Badge variant="outline">Applied: {activeAudit.summary.total_applied}</Badge>
+                <Badge variant="outline">Remaining: {activeAudit.summary.total_remaining}</Badge>
+                <Badge variant="outline">Taken: {activeAudit.summary.total_taken}</Badge>
               </div>
             )}
-            <div className="flex gap-2 flex-wrap items-center">
+            <div className="flex gap-2 flex-wrap items-center ml-auto">
               <Button variant="ghost" size="sm" className="gap-1" onClick={handleDownloadCsv} disabled={!(auditMutation.data || cachedQuery.data)?.csv_base64}>
                 <FileDown className="h-4 w-4" /> Download CSV
               </Button>
@@ -331,11 +526,11 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
                 className="gap-1"
                 onClick={() => {
                   setShowReqModal(true);
-                  if (selectedYear && selectedMajor) {
+                  if (selectedYear && activeAudit?.name) {
                     requirementsQuery.refetch();
                   }
                 }}
-                disabled={!selectedYear || !selectedMajor}
+                disabled={!selectedYear || !activeAudit?.name}
               >
                 <ListChecks className="h-4 w-4" /> View requirements
               </Button>
@@ -533,12 +728,20 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
               onClick={async () => {
                 if (usePdfUpload && !pdfFile) return;
                 if (!usePdfUpload && !password.trim()) return;
+                const pwd = password.trim();
                 try {
-                  if (usePdfUpload) {
-                    if (pdfError) return;
-                    await auditMutation.mutateAsync({ mode: "pdf", pdfFile });
-                  } else {
-                    await auditMutation.mutateAsync({ mode: "registrar", password: password.trim() });
+                  const data: DegreeAuditResponse = usePdfUpload
+                    ? await auditMutation.mutateAsync({ mode: "pdf", pdfFile: pdfFile! })
+                    : await auditMutation.mutateAsync({ mode: "registrar", password: pwd });
+                  const unmapped = data.unmapped_tc_courses ?? [];
+                  if (unmapped.length) {
+                    if (usePdfUpload) {
+                      setPendingAudit({ mode: "pdf", pdfFile: pdfFile! });
+                    } else {
+                      setPendingAudit({ mode: "registrar", password: pwd });
+                    }
+                    setTcMappingRows(unmappedTcToRows(unmapped));
+                    setTcModalOpen(true);
                   }
                   setIsAuditModalOpen(false);
                   setPassword("");
@@ -552,7 +755,7 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
               }}
               disabled={
                 !selectedYear ||
-                !selectedMajor ||
+                !selectedMajors[0] ||
                 (!usePdfUpload && (!username || !password.trim())) ||
                 (usePdfUpload && (!pdfFile || !!pdfError)) ||
                 auditMutation.isPending ||
@@ -576,7 +779,7 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
           <div className="flex items-center justify-between text-sm">
             <div>
               <p className="font-semibold text-foreground">
-                {selectedMajor || "Major"} · {selectedYear || "Year"}
+                {activeAudit?.name || "Program"} · {selectedYear || "Year"}
               </p>
             </div>
             {requirementsQuery.isLoading && <span className="text-xs text-muted-foreground">Loading...</span>}
@@ -621,6 +824,127 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
               </tbody>
             </table>
           </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={tcModalOpen}
+        onClose={() => {
+          if (!auditMutation.isPending) {
+            setTcModalOpen(false);
+            setPendingAudit(null);
+            setTcMappingRows([]);
+          }
+        }}
+        title="Map transfer credits (TC)"
+        className="max-w-3xl"
+        contentClassName="rounded-3xl"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            TC grades are treated as pass. Enter only an NU course code for each transfer line so requirements can match.
+            Use department + space + number, for example: HST 152. Lowercase input also works. Leave rows blank to skip
+            mapping for that line.
+          </p>
+          <div className="overflow-auto rounded-xl border border-border/60 max-h-[min(420px,55vh)]">
+            <table className="min-w-full text-sm">
+              <thead className="bg-muted/50 sticky top-0 z-[1]">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">Original course</th>
+                  <th className="px-3 py-2 text-left font-medium">NU course</th>
+                  <th className="px-3 py-2 text-left font-medium w-[88px]">Credits</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tcMappingRows.map((row) => (
+                  <tr key={row.key} className="border-t border-border/60 align-top">
+                    <td className="px-3 py-2">
+                      <div className="font-medium text-foreground">{row.originalTitle || "—"}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{row.originalCode}</div>
+                    </td>
+                    <td className="px-3 py-2 space-y-1.5">
+                      <Input
+                        value={row.mappedCode}
+                        onChange={(e) => patchTcMappingRow(row.key, { mappedCode: e.target.value })}
+                        placeholder="Code, e.g. HST 152"
+                        className="h-9 rounded-lg text-xs"
+                        disabled={auditMutation.isPending}
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <Input
+                        value={row.mappedCredits}
+                        onChange={(e) => patchTcMappingRow(row.key, { mappedCredits: e.target.value })}
+                        inputMode="decimal"
+                        className="h-9 rounded-lg text-xs"
+                        disabled={auditMutation.isPending}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 rounded-full px-3 text-xs font-medium"
+              onClick={() => {
+                if (!auditMutation.isPending) {
+                  setTcModalOpen(false);
+                  setPendingAudit(null);
+                  setTcMappingRows([]);
+                }
+              }}
+              disabled={auditMutation.isPending}
+            >
+              Skip
+            </Button>
+            <Button
+              size="sm"
+              className="h-9 rounded-full px-3 text-xs font-medium gap-2"
+              disabled={!pendingAudit || !hasTcMappingInput || auditMutation.isPending}
+              onClick={async () => {
+                if (!pendingAudit) return;
+                const mappings = rowsToTcMappings(tcMappingRows);
+                if (!mappings.length) return;
+                try {
+                  let data: DegreeAuditResponse;
+                  if (pendingAudit.mode === "pdf") {
+                    data = await auditMutation.mutateAsync({
+                      mode: "pdf",
+                      pdfFile: pendingAudit.pdfFile,
+                      tc_mappings: mappings,
+                    });
+                  } else {
+                    data = await auditMutation.mutateAsync({
+                      mode: "registrar",
+                      password: pendingAudit.password,
+                      tc_mappings: mappings,
+                    });
+                  }
+                  if (data.unmapped_tc_courses?.length) {
+                    setTcMappingRows(unmappedTcToRows(data.unmapped_tc_courses));
+                  } else {
+                    setTcModalOpen(false);
+                    setPendingAudit(null);
+                    setTcMappingRows([]);
+                  }
+                } catch {
+                  // error surface via auditMutation.isError
+                }
+              }}
+            >
+              {auditMutation.isPending ? "Running..." : "Apply and re-run audit"}
+              <GraduationCap className={cn("h-4 w-4", auditMutation.isPending && "animate-spin")} />
+            </Button>
+          </div>
+          {auditMutation.isError ? (
+            <p className="text-xs text-destructive">
+              {auditMutation.error?.message || "Audit failed. Check your transcript or credentials and try again."}
+            </p>
+          ) : null}
         </div>
       </Modal>
     </div>
