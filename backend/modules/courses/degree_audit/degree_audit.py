@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import copy
 import csv
 import io
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from backend.modules.courses.degree_audit.transcript_parser import Course, Transcript
 
@@ -28,6 +29,10 @@ GRADE_ORDER = [
 GRADE_RANK = {g: i for i, g in enumerate(GRADE_ORDER)}
 NON_APPLICABLE_GRADES = {"AU", "AW", "I", "IP", "W"}
 
+# Sentinel used to mark slash-joined expansions from special tables (pools),
+# as opposed to slash-joined course aliases like "ANT 385/WLL 385".
+_POOL_SEP = " |POOL| "
+
 
 @dataclass
 class Requirement:
@@ -39,6 +44,7 @@ class Requirement:
     comments: str
     options: List[str]
     must_haves: List[str]
+    must_have_grades: List[str]  # per-must-have grade thresholds; falls back to min_grade if empty
     excepts: List[str]
 
 
@@ -55,7 +61,7 @@ class RequirementResult:
 def _normalize_major_name(stem: str) -> str:
     prefix = "Degree audit requirments for all majors - "
     if stem.startswith(prefix):
-        stem = stem[len(prefix) :]
+        stem = stem[len(prefix):]
     stem = stem.split("__", 1)[0]
     return stem.replace("_", " ").strip()
 
@@ -63,6 +69,24 @@ def _normalize_major_name(stem: str) -> str:
 def _extract_year_from_stem(stem: str) -> Optional[str]:
     m = re.search(r"__(\d{4})$", stem)
     return m.group(1) if m else None
+
+
+def discover_minor_requirements(base: Path = REQUIREMENTS_BASE) -> Dict[str, Path]:
+    """Return mapping of minor name -> CSV path."""
+    minors: Dict[str, Path] = {}
+    minor_dir = base / "Minor"
+    if not minor_dir.exists():
+        return minors
+
+    for csv_path in minor_dir.glob("*.csv"):
+        stem = csv_path.stem
+        if stem.startswith("Minor degree audit_"):
+            name = stem[len("Minor degree audit_"):].strip()
+        else:
+            name = stem.strip()
+        minors[name] = csv_path
+
+    return dict(sorted(minors.items(), key=lambda item: item[0].lower()))
 
 
 def discover_requirements_by_year(base: Path = REQUIREMENTS_BASE) -> Dict[str, Dict[str, Path]]:
@@ -109,14 +133,60 @@ def normalize_grade(grade: str) -> str:
     cleaned = cleaned.replace("*", "")
     if cleaned in NON_APPLICABLE_GRADES:
         return cleaned
-    if cleaned in {"PASS", "FAIL", "P", "F"}:
-        return "PASS" if cleaned in {"PASS", "P"} else "FAIL"
+    if cleaned in {"PASS", "FAIL", "P", "F", "TC"}:
+        return "PASS" if cleaned in {"PASS", "P", "TC"} else "FAIL"
     cleaned = re.sub(r"[^A-Z+-]", "", cleaned)
     return cleaned or grade.upper()
 
 
 def is_non_applicable_grade(grade: str) -> bool:
     return normalize_grade(grade) in NON_APPLICABLE_GRADES
+
+
+def _is_tc_grade(grade: str) -> bool:
+    return grade.strip().upper() == "TC"
+
+
+def list_transfer_credit_lines(transcript: Transcript) -> List[Tuple[str, str, float]]:
+    """Return (code, title, credits) for each row with TC (transfer credit) grade."""
+    rows: List[Tuple[str, str, float]] = []
+    for sem in transcript.semesters:
+        for c in sem.courses:
+            if _is_tc_grade(c.grade):
+                rows.append((c.code, c.title, float(c.credits)))
+    return rows
+
+
+def apply_transfer_credit_mappings(transcript: Transcript, mappings: Sequence[Any]) -> Transcript:
+    """Deep-copy transcript and replace TC rows per user mappings (matched by code only)."""
+    t = copy.deepcopy(transcript)
+    used_positions: set[Tuple[int, int]] = set()
+    for m in mappings:
+        mapped_code = (getattr(m, "mapped_code", None) or "").strip()
+        if not mapped_code:
+            continue
+        try:
+            mapped_credits = float(getattr(m, "mapped_credits", 0) or 0)
+        except (TypeError, ValueError):
+            mapped_credits = 0.0
+        orig_code = _normalized_code(getattr(m, "original_code", "") or "")
+        if not orig_code:
+            continue
+        for si, sem in enumerate(t.semesters):
+            for ci, course in enumerate(sem.courses):
+                key = (si, ci)
+                if key in used_positions:
+                    continue
+                if not _is_tc_grade(course.grade):
+                    continue
+                if _normalized_code(course.code) != orig_code:
+                    continue
+                course.code = _normalized_code(mapped_code)
+                course.credits = mapped_credits
+                course.grade = "PASS"
+                used_positions.add(key)
+                break
+    return t
 
 
 def format_credit(value) -> str:
@@ -164,17 +234,14 @@ def grade_meets(grade: str, min_grade: str) -> bool:
 
     # Handle PASS/FAIL semantics.
     if g == "PASS":
-        # Passing counts for any min grade threshold.
         return True
     if g == "FAIL":
         return False
     if req == "PASS":
-        # Only explicit pass or letter at/above D counts.
         if g in {"PASS", "FAIL"}:
             return g == "PASS"
         req = "D"
     if g not in GRADE_RANK or req not in GRADE_RANK:
-        # Fall back to direct equality if we cannot rank
         return g == req
     return GRADE_RANK[g] >= GRADE_RANK[req]
 
@@ -234,33 +301,78 @@ def load_special_requirements(
     return mapping
 
 
-def load_requirements(path: Path, special_dir: Path | None = None, *, admission_year: str | None = None) -> List[Requirement]:
+def load_requirements(
+    path: Path,
+    special_dir: Path | None = None,
+    *,
+    admission_year: str | None = None,
+) -> List[Requirement]:
     rows: List[Requirement] = []
     special_map = load_special_requirements(
         special_dir or (REQUIREMENTS_BASE / "additional_tables"), year=admission_year
     )
 
-    def expand_special(cell: str) -> List[str]:
-        token = (cell or "").strip()
+    def expand_special(token: str) -> Tuple[List[str], bool]:
+        """Return (expanded_values, was_expanded_from_special_table).
+
+        was_expanded_from_special_table=True means the token was a special-table
+        key (like DSMATH) and the result is a pool of interchangeable courses.
+        False means the token was a literal course code (possibly with slash
+        aliases like ANT 385/WLL 385) and the slash must be preserved as an alias
+        separator, not treated as a pool.
+        """
+        token = (token or "").strip()
         if not token:
-            return []
+            return [], False
         key = token.upper()
         if key in special_map:
-            return special_map[key]
+            return special_map[key], True
         if " " in token:
             prefix, remainder = token.split(" ", 1)
             pref_up = prefix.upper()
             remainder = remainder.strip().upper()
             if pref_up in special_map and remainder:
                 expanded = [f"{val} {remainder}".strip() for val in special_map[pref_up]]
-                return expanded
-        return [token]
+                return expanded, True
+        return [token], False
 
-    def option_value(cell: str) -> str:
-        expanded = expand_special(cell)
-        if not expanded:
-            return ""
-        return " / ".join(expanded)
+    def encode_option(cell: str) -> str:
+        """Expand a single option cell (which may be comma-separated tokens).
+
+        Splits by comma BEFORE expanding, so "DSECON, DSMATH" correctly
+        produces two AND-components instead of being looked up as one unknown key.
+
+        Pool expansions (from special tables) use _POOL_SEP so the engine can
+        later distinguish them from literal slash aliases like ANT 385/WLL 385.
+        """
+        parts = [p.strip() for p in (cell or "").split(",") if p.strip()]
+        encoded_parts: List[str] = []
+        for part in parts:
+            expanded, is_pool = expand_special(part)
+            if not expanded:
+                continue
+            if is_pool:
+                # Join with pool separator so the engine treats them as a
+                # bucket of interchangeable courses, not course aliases.
+                encoded_parts.append(_POOL_SEP.join(expanded))
+            else:
+                # Literal course code(s) — keep original slash aliases intact.
+                encoded_parts.append(expanded[0])
+        return ", ".join(encoded_parts)
+
+    def encode_must_have(cell: str) -> List[str]:
+        """Expand a must-have cell into a list of encoded patterns."""
+        parts = [p.strip() for p in (cell or "").split(",") if p.strip()]
+        result: List[str] = []
+        for part in parts:
+            expanded, is_pool = expand_special(part)
+            if not expanded:
+                continue
+            if is_pool:
+                result.append(_POOL_SEP.join(expanded))
+            else:
+                result.append(expanded[0])
+        return result
 
     with path.open(newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
@@ -269,11 +381,12 @@ def load_requirements(path: Path, special_dir: Path | None = None, *, admission_
             course_code = (lowered.get("course_code") or "").strip()
             if not course_code:
                 continue
+
             option_cols = [k for k in raw.keys() if k and k.lower().startswith("option")]
             option_cols.sort(key=_column_sort_key)
             options: List[str] = []
             for col in option_cols:
-                val = option_value(raw.get(col) or "")
+                val = encode_option(raw.get(col) or "")
                 if val:
                     options.append(val)
 
@@ -281,17 +394,25 @@ def load_requirements(path: Path, special_dir: Path | None = None, *, admission_
             must_cols.sort(key=_column_sort_key)
             must_haves: List[str] = []
             for col in must_cols:
-                for val in expand_special(raw.get(col) or ""):
-                    if val:
-                        must_haves.append(val)
+                must_haves.extend(encode_must_have(raw.get(col) or ""))
+
+            must_grade_cols = [k for k in raw.keys() if k and k.lower().startswith("must have grade")]
+            must_grade_cols.sort(key=_column_sort_key)
+            must_have_grades: List[str] = []
+            for col in must_grade_cols:
+                val = (raw.get(col) or "").strip()
+                must_have_grades.append(val)
 
             except_cols = [k for k in raw.keys() if k and k.lower().startswith("except")]
             except_cols.sort(key=_column_sort_key)
             excepts: List[str] = []
             for col in except_cols:
-                for val in expand_special(raw.get(col) or ""):
-                    if val:
-                        excepts.extend([v.strip() for v in val.split(",") if v.strip()])
+                parts = [p.strip() for p in (raw.get(col) or "").split(",") if p.strip()]
+                for part in parts:
+                    expanded, _ = expand_special(part)
+                    for val in expanded:
+                        if val:
+                            excepts.append(val.strip())
 
             rows.append(
                 Requirement(
@@ -303,6 +424,7 @@ def load_requirements(path: Path, special_dir: Path | None = None, *, admission_
                     comments=(lowered.get("comments") or "").strip(),
                     options=options,
                     must_haves=must_haves,
+                    must_have_grades=must_have_grades,
                     excepts=excepts,
                 )
             )
@@ -313,6 +435,11 @@ def _normalized_code(code: str) -> str:
     cleaned = re.sub(r"\s+", " ", code.strip().upper())
     # Allow trailing dash/slash suffix like "NUR 213/C" by flattening to "NUR 213C".
     cleaned = re.sub(r"([0-9X]{3})\s*[-/]\s*([A-Z])$", r"\1\2", cleaned)
+    # Canonicalize simple codes to "DEPT 123" so matching is consistent with user input.
+    m = re.fullmatch(r"([A-Z]+)\s*([0-9X]{3})([A-Z]*)", cleaned)
+    if m:
+        suffix = m.group(3)
+        return f"{m.group(1)} {m.group(2)}{suffix}".strip()
     return cleaned
 
 
@@ -335,7 +462,34 @@ def _parse_range_pattern(pattern: str) -> Optional[Tuple[str, str, str]]:
 
 
 def _pattern_aliases(pattern: str) -> List[str]:
+    """Split slash-separated course aliases (e.g. ANT 385/WLL 385).
+
+    Pool patterns (joined with _POOL_SEP) are NOT aliases — they are handled
+    separately as buckets and should never be passed here as a combined string.
+    """
     return [p.strip() for p in (pattern or "").split("/") if p and p.strip()]
+
+
+def _pool_members(pattern: str) -> List[str]:
+    """Return pool members if this pattern was expanded from a special table, else empty list."""
+    if _POOL_SEP in pattern:
+        return [p.strip() for p in pattern.split(_POOL_SEP) if p.strip()]
+    return []
+
+
+def _is_pool_pattern(pattern: str) -> bool:
+    return _POOL_SEP in pattern
+
+
+def _is_wildcard_pattern(pat: str) -> bool:
+    """True for patterns with XX/XXX wildcards like BIOL 3XX."""
+    up = pat.strip().upper()
+    return "XX" in up or "XXX" in up
+
+
+def _is_bucket_pattern(pat: str) -> bool:
+    """True for wildcard patterns OR pool-expanded patterns (from special tables)."""
+    return _is_wildcard_pattern(pat) or _is_pool_pattern(pat)
 
 
 def _is_excluded_course(course_code: str, excluded_patterns: Sequence[str]) -> bool:
@@ -353,6 +507,11 @@ def _is_excluded_course(course_code: str, excluded_patterns: Sequence[str]) -> b
 
 
 def course_matches_pattern(course_code: str, pattern: str) -> bool:
+    # Pool patterns: match if the course matches any member of the pool.
+    members = _pool_members(pattern)
+    if members:
+        return any(course_matches_pattern(course_code, m) for m in members)
+
     rng = _parse_range_pattern(pattern)
     if rng:
         dept, start_num, end_num = rng
@@ -394,7 +553,8 @@ def course_matches_pattern(course_code: str, pattern: str) -> bool:
 
 
 def _split_alternative_group(cell: str) -> List[str]:
-    """Split a requirement cell into AND components, preserving slash-separated aliases."""
+    """Split a requirement cell into AND components, preserving slash-separated aliases
+    and pool patterns (which contain _POOL_SEP and must not be further split)."""
     return [part.strip() for part in cell.split(",") if part.strip()]
 
 
@@ -409,7 +569,10 @@ def _candidate_courses(
     flex_scores: Optional[List[int]] = None,
 ) -> List[int]:
     candidates: List[int] = []
-    aliases = _pattern_aliases(pattern) or [pattern]
+    # Pool patterns match against any member; alias patterns use slash-split.
+    pool = _pool_members(pattern)
+    aliases = pool if pool else (_pattern_aliases(pattern) or [pattern])
+
     for idx, course in enumerate(courses):
         if idx in blocked_indices:
             continue
@@ -423,12 +586,64 @@ def _candidate_courses(
             continue
         if any(course_matches_pattern(course.code, alias) for alias in aliases):
             candidates.append(idx)
+
     def _sort_key(i: int) -> Tuple[int, int]:
         flex = flex_scores[i] if flex_scores and i < len(flex_scores) else 0
         return (flex, -i if prefer_latest else i)
 
     candidates.sort(key=_sort_key)
     return candidates
+
+
+def _fill_bucket(
+    courses: List[Course],
+    remaining: List[float],
+    used_indices: set,
+    patterns: Sequence[str],
+    credits_needed: float,
+    min_grade: str,
+    excluded_patterns: Sequence[str],
+    flex_scores: Optional[List[int]] = None,
+) -> Tuple[bool, List[Tuple[int, float]], float]:
+    """Fill credits from a pool of patterns (OR semantics) until credits_needed is met.
+
+    Used for:
+    - Single wildcard pattern: BIOL 3XX needing 18 credits
+    - Multi wildcard patterns: SOC XXX, ECON XXX needing 12 credits
+    - Pool patterns from special tables: DSMATH needing 12 credits
+    - Explicit course lists acting as OR-bucket: ANT 110, ANT 140, ANT 175 needing 12 credits
+    """
+    seen: set = set()
+    combined_candidates: List[int] = []
+    for pat in patterns:
+        cand = _candidate_courses(
+            courses,
+            remaining,
+            used_indices,
+            pat,
+            min_grade,
+            excluded_patterns,
+            prefer_latest=not pat.strip().upper().startswith("ANY"),
+            flex_scores=flex_scores,
+        )
+        for idx in cand:
+            if idx not in seen:
+                seen.add(idx)
+                combined_candidates.append(idx)
+
+    temp_used: List[Tuple[int, float]] = []
+    total_credits = 0.0
+    for idx in combined_candidates:
+        available = remaining[idx]
+        consume = min(available, credits_needed - total_credits)
+        if consume <= 0:
+            continue
+        temp_used.append((idx, consume))
+        total_credits += consume
+        if total_credits >= credits_needed:
+            break
+
+    return total_credits >= credits_needed, temp_used, total_credits
 
 
 def _match_group(
@@ -441,102 +656,80 @@ def _match_group(
     excluded_patterns: Sequence[str],
     flex_scores: Optional[List[int]] = None,
 ) -> Tuple[bool, List[Tuple[int, float]], float, str]:
-    """Try to satisfy an AND-group of patterns, consuming courses if successful."""
-    temp_used: List[Tuple[int, float]] = []
-    total_credits = 0.0
+    """Try to satisfy an AND-group of patterns, consuming courses if successful.
+
+    Pattern types and their semantics:
+    - Single pattern, credits_needed > 0  → fill bucket from that pattern
+    - All patterns are buckets (wildcard/pool), credits_needed > 0 → OR-bucket across all
+    - Mixed or multi explicit patterns → AND group (each pattern needs one distinct course)
+    - Explicit course list pooled by caller → treated as single OR-bucket
+    """
     patterns = list(patterns)
 
-    def _is_bucket(p: str) -> bool:
-        up = p.strip().upper()
-        return "XX" in up or "XXX" in up
-
-    # Bucket requirement like BIOL 3XX 18 credits: single pattern with XX and credit need.
-    if len(patterns) == 1 and ("XX" in patterns[0] or "XXX" in patterns[0]) and credits_needed > 0:
-        pat = patterns[0]
-        candidates = _candidate_courses(
-            courses,
-            remaining,
-            used_indices,
-            pat,
-            min_grade,
-            excluded_patterns,
-            prefer_latest=not pat.strip().upper().startswith("ANY"),
-            flex_scores=flex_scores,
+    # ── Single pattern with credit target: always treat as a fill-bucket ──────
+    # This covers: "BIOL 3XX" 18cr, "ANT XXX" 12cr, pool pattern 12cr,
+    # AND explicit course list pre-pooled into one pattern by audit_transcript.
+    if len(patterns) == 1 and credits_needed > 0:
+        ok, temp_used, total = _fill_bucket(
+            courses, remaining, used_indices,
+            [patterns[0]], credits_needed, min_grade, excluded_patterns, flex_scores,
         )
-        for idx in candidates:
-            available = remaining[idx]
-            consume = min(available, credits_needed - total_credits)
-            if consume <= 0:
-                continue
-            temp_used.append((idx, consume))
-            total_credits += consume
-            if total_credits >= credits_needed:
-                break
-        if total_credits >= credits_needed:
-            return True, temp_used, total_credits, ""
-        return False, temp_used, total_credits, "Not enough credits in bucket"
+        if ok:
+            return True, temp_used, total, ""
+        return False, temp_used, total, "Not enough credits in bucket"
 
-    # Multi-pattern bucket (OR across patterns) e.g., "SOC XXX, ECON XXX, ANT XXX" with a credit target.
-    if credits_needed > 0 and all(_is_bucket(pat) for pat in patterns):
-        seen = set()
-        combined_candidates: List[int] = []
-        for pat in patterns:
-            cand = _candidate_courses(
-                courses,
-                remaining,
-                used_indices,
-                pat,
-                min_grade,
-                excluded_patterns,
-                prefer_latest=not pat.strip().upper().startswith("ANY"),
-                flex_scores=flex_scores,
-            )
-            for idx in cand:
-                if idx not in seen:
-                    seen.add(idx)
-                    combined_candidates.append(idx)
-        for idx in combined_candidates:
-            available = remaining[idx]
-            consume = min(available, credits_needed - total_credits)
-            if consume <= 0:
-                continue
-            temp_used.append((idx, consume))
-            total_credits += consume
-            if total_credits >= credits_needed:
-                break
-        if total_credits >= credits_needed:
-            return True, temp_used, total_credits, ""
-        return False, temp_used, total_credits, "Not enough credits in bucket"
+   # Any multi-pattern group with a credit target: OR-bucket across all
+    if credits_needed > 0:
+        ok, temp_used, total = _fill_bucket(
+            courses, remaining, used_indices,
+            patterns, credits_needed, min_grade, excluded_patterns, flex_scores,
+        )
+        if ok:
+            return True, temp_used, total, ""
+        return False, temp_used, total, "Not enough credits in bucket"
 
-    # Standard AND group
+    # ── Standard AND group: each pattern satisfied by a distinct course ────────
+    temp_used: List[Tuple[int, float]] = []
+    total_credits = 0.0
     missing: List[str] = []
+
     for pat in patterns:
-        # Handle slash-separated aliases (OR within a component)
-        aliases = [p.strip() for p in pat.split("/") if p.strip()]
-        matched_idx: Optional[int] = None
-        for alias in aliases:
+        if _is_pool_pattern(pat):
+            # Pool pattern within AND group: pick one course from the pool.
             cand = _candidate_courses(
-                courses,
-                remaining,
+                courses, remaining,
                 used_indices.union({idx for idx, _ in temp_used}),
-                alias,
-                min_grade,
-                excluded_patterns,
-                prefer_latest=not alias.strip().upper().startswith("ANY"),
-                flex_scores=flex_scores,
+                pat, min_grade, excluded_patterns,
+                prefer_latest=True, flex_scores=flex_scores,
             )
-            if cand:
-                matched_idx = cand[0]
-                break
-        if matched_idx is None:
-            missing.append(pat)
-            continue
+            if not cand:
+                missing.append(pat)
+                continue
+            matched_idx: Optional[int] = cand[0]
+        else:
+            # Slash-separated aliases: OR within this AND component.
+            aliases = [p.strip() for p in pat.split("/") if p.strip()]
+            matched_idx = None
+            for alias in aliases:
+                cand = _candidate_courses(
+                    courses, remaining,
+                    used_indices.union({idx for idx, _ in temp_used}),
+                    alias, min_grade, excluded_patterns,
+                    prefer_latest=not alias.strip().upper().startswith("ANY"),
+                    flex_scores=flex_scores,
+                )
+                if cand:
+                    matched_idx = cand[0]
+                    break
+            if matched_idx is None:
+                missing.append(pat)
+                continue
+
         available = remaining[matched_idx]
         consume = min(available, credits_needed - total_credits) if credits_needed > 0 else available
         temp_used.append((matched_idx, consume))
         total_credits += consume
 
-    # If credits_needed is specified for fixed-course groups, ensure threshold.
     if missing or (credits_needed and total_credits < credits_needed):
         note = f"Missing {missing[0]}" if missing else "Insufficient credits"
         return False, temp_used, total_credits, note
@@ -544,7 +737,9 @@ def _match_group(
     return True, temp_used, total_credits, ""
 
 
-def audit_transcript(transcript: Transcript, requirements: List[Requirement], expected_major: str) -> List[RequirementResult]:
+def audit_transcript(
+    transcript: Transcript, requirements: List[Requirement], expected_major: str
+) -> List[RequirementResult]:
     # We no longer block audits on major mismatch; allow auditing any transcript against any major.
 
     def pattern_priority(pattern: str) -> Tuple[int, int]:
@@ -560,7 +755,7 @@ def audit_transcript(transcript: Transcript, requirements: List[Requirement], ex
         pri = pattern_priority(primary)
         return (pri[0], pri[1], original_index)
 
-    ordered_reqs = [r for r in requirements if r.course_code.strip()]  # keep only with course codes
+    ordered_reqs = [r for r in requirements if r.course_code.strip()]
     ordered_reqs = [
         r
         for _, r in sorted(
@@ -569,18 +764,16 @@ def audit_transcript(transcript: Transcript, requirements: List[Requirement], ex
         )
     ]
 
-    # Keep only last attempt per course code.
     all_courses: List[Course] = []
     for sem in transcript.semesters:
         all_courses.extend(sem.courses)
 
-    # Handle repeats: if a course is marked as retaken (grade contains **), keep only the latest attempt.
-    # Otherwise, keep all occurrences (some courses are intentionally taken multiple times).
+    # Handle repeats: keep only last attempt for retaken courses (marked **).
     by_code: Dict[str, List[int]] = {}
     for idx, course in enumerate(all_courses):
         by_code.setdefault(_normalized_code(course.code), []).append(idx)
 
-    keep_indices: set[int] = set()
+    keep_indices: set = set()
     for code, idxs in by_code.items():
         has_retake_flag = any("**" in (all_courses[i].grade or "") for i in idxs)
         if has_retake_flag:
@@ -589,14 +782,15 @@ def audit_transcript(transcript: Transcript, requirements: List[Requirement], ex
             keep_indices.update(idxs)
 
     courses: List[Course] = [c for idx, c in enumerate(all_courses) if idx in keep_indices]
-
     remaining_credits = [c.credits for c in courses]
-    # Compute flexibility: how many different requirement patterns a course can satisfy.
+
+    # Compute flexibility scores: how many requirement patterns each course can satisfy.
     all_patterns: List[str] = []
     for req in ordered_reqs:
         sources = req.options if req.options else [req.course_code]
         for src in sources:
             all_patterns.extend(_split_alternative_group(src))
+
     flex_scores: List[int] = []
     for course in courses:
         flex = 0
@@ -604,17 +798,34 @@ def audit_transcript(transcript: Transcript, requirements: List[Requirement], ex
             if course_matches_pattern(course.code, pat):
                 flex += 1
         flex_scores.append(flex)
+
     used_indices: set = set()
     reserved_indices: set = set()
     results: List[RequirementResult] = []
 
     for req in ordered_reqs:
-        # Build alternatives. For credit buckets with only bucket-style patterns, pool them into one OR-bucket.
         options_split = [_split_alternative_group(opt) for opt in req.options] if req.options else []
-        def is_bucket_pattern(pat: str) -> bool:
-            up = pat.upper()
-            return "XX" in up or "XXX" in up
-        if req.credits_need > 0 and options_split and all(is_bucket_pattern(p) for group in options_split for p in group):
+
+        # Determine how to build alternatives list.
+        #
+        # Case 1: All options are single bucket patterns (wildcard/pool) → pool into one OR-bucket.
+        #   e.g. Option1=ECON XXX, Option2=SOC XXX, Option3=DSMATH(pool)
+        #
+        # Case 2: All options are single explicit courses and credits_need > 0 → pool into OR-bucket.
+        #   e.g. Option1=ANT 110, Option2=ANT 140, Option3=ANT 175 needing 12 credits.
+        #   The intent is "pick any of these until credits are filled", not "need all of them".
+        #
+        # Case 3: Options have comma-separated AND components → keep as separate alternatives (OR between rows).
+        #   e.g. Option1="DSECON, DSMATH", Option2="DSECON, DSPLS"
+        #
+        # Case 4: Mixed → keep as separate alternatives, each tried independently.
+
+        all_single = all(len(group) == 1 for group in options_split)
+        all_buckets = all_single and all(_is_bucket_pattern(p) for group in options_split for p in group)
+        all_explicit = all_single and all(not _is_bucket_pattern(p) for group in options_split for p in group)
+
+        if req.credits_need > 0 and options_split and (all_buckets or all_explicit):
+            # Pool all single-pattern options into one combined OR-bucket.
             alternatives: List[List[str]] = [[p for group in options_split for p in group]]
         else:
             alternatives = options_split if options_split else []
@@ -643,10 +854,20 @@ def audit_transcript(transcript: Transcript, requirements: List[Requirement], ex
             if ok and req.must_haves:
                 has_must = False
                 for idx, _ in temp_used:
-                    for must_pat in req.must_haves:
-                        if any(course_matches_pattern(courses[idx].code, alias) for alias in _pattern_aliases(must_pat)):
-                            has_must = True
-                            break
+                    for i, must_pat in enumerate(req.must_haves):
+                        # Use per-must-have grade if specified, else fall back to row's min_grade.
+                        must_grade = (
+                            req.must_have_grades[i].strip()
+                            if i < len(req.must_have_grades) and req.must_have_grades[i].strip()
+                            else req.min_grade
+                        )
+                        if any(
+                            course_matches_pattern(courses[idx].code, alias)
+                            for alias in _pattern_aliases(must_pat)
+                        ):
+                            if grade_meets(courses[idx].grade, must_grade):
+                                has_must = True
+                                break
                     if has_must:
                         break
                 if not has_must:
@@ -654,6 +875,7 @@ def audit_transcript(transcript: Transcript, requirements: List[Requirement], ex
                     alt_note = "Missing must-have option"
                     temp_used = []
                     creds = 0.0
+
             if ok:
                 matched = True
                 best_used = temp_used
@@ -684,7 +906,10 @@ def audit_transcript(transcript: Transcript, requirements: List[Requirement], ex
                 if remaining_credits[idx] <= 0:
                     used_indices.add(idx)
 
-        used_codes = [f"{courses[i].code} ({format_credit(consumed)} credits)" for i, consumed in best_used]
+        used_codes = [
+            f"{courses[i].code} ({format_credit(consumed)} credits)"
+            for i, consumed in best_used
+        ]
         results.append(
             RequirementResult(
                 requirement=req,
@@ -696,10 +921,15 @@ def audit_transcript(transcript: Transcript, requirements: List[Requirement], ex
             )
         )
 
-        # If a requirement has only a single explicit option, reserve matching courses for later rows.
+        # Reserve courses for single-explicit-option requirements so later rows don't steal them.
         if len(alternatives) == 1 and len(alternatives[0]) == 1:
             pattern = alternatives[0][0].strip()
-            if pattern and "XX" not in pattern.upper() and not pattern.upper().startswith("ANY"):
+            if (
+                pattern
+                and not _is_wildcard_pattern(pattern)
+                and not pattern.upper().startswith("ANY")
+                and not _is_pool_pattern(pattern)
+            ):
                 aliases = _pattern_aliases(pattern)
                 for idx, course in enumerate(courses):
                     if idx in used_indices or idx in reserved_indices:
@@ -730,7 +960,9 @@ def _totals_row(summary: Dict[str, str] | None) -> Optional[Dict[str, object]]:
     }
 
 
-def write_audit_csv(results: Iterable[RequirementResult], path: Path, summary: Dict[str, str] | None = None) -> None:
+def write_audit_csv(
+    results: Iterable[RequirementResult], path: Path, summary: Dict[str, str] | None = None
+) -> None:
     fieldnames = [
         "course_code",
         "course_name",
@@ -769,7 +1001,9 @@ def write_audit_csv(results: Iterable[RequirementResult], path: Path, summary: D
             writer.writerow(totals_row)
 
 
-def audit_results_to_csv_string(results: Iterable[RequirementResult], summary: Dict[str, str] | None = None) -> str:
+def audit_results_to_csv_string(
+    results: Iterable[RequirementResult], summary: Dict[str, str] | None = None
+) -> str:
     """Serialize audit results to a CSV string (same ordering as write_audit_csv)."""
     fieldnames = [
         "course_code",

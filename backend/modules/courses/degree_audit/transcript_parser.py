@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, asdict
+import tempfile
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from pypdf import PdfReader
-import tempfile
 
 SEMESTER_HEADER_RE = re.compile(r"^(Fall|Spring|Summer|Winter)\s+\d{4}$")
 COURSE_CODE_RE = re.compile(
@@ -16,6 +16,21 @@ COURSE_RE = re.compile(
     r"^([A-Z]{2,4}\s*\d{3}[A-Z]?(?:[-/][A-Z])?(?:/[A-Z]{2,4}\s*\d{3}[A-Z]?(?:[-/][A-Z])?)*?)\s+"
     r"(.*?)\s+"
     r"((?:PASS|FAIL)|[A-Z]{1,3}[+-]?\*{0,2})\s+"
+    r"(\d+(?:\.\d+)?)\s+"
+    r"(\d+(?:\.\d+)?|[Nn]/?[Aa])$"
+)
+COURSE_ENTRY_RE = re.compile(
+    r"([A-Z]{2,4}\s*\d{3}[A-Z]?(?:[-/][A-Z])?(?:/[A-Z]{2,4}\s*\d{3}[A-Z]?(?:[-/][A-Z])?)*?)\s+"
+    r"(.*?)\s+"
+    r"((?:PASS|FAIL)|[A-Z]{1,3}[+-]?\*{0,2})\s+"
+    r"(\d+(?:\.\d+)?)\s+"
+    r"(\d+(?:\.\d+)?|[Nn]/?[Aa])"
+    r"(?=\s+[A-Z]{2,4}\s*\d{3}[A-Z]?(?:[-/][A-Z])?(?:/[A-Z]{2,4}\s*\d{3}[A-Z]?(?:[-/][A-Z])?)*\s+|\s*$)"
+)
+TRANSFER_COURSE_RE = re.compile(
+    r"^T\s*-\s*([A-Z]{2,5}\s*\d{3,4}[A-Z]?)\s+"
+    r"(.*?)\s+"
+    r"((?:PASS|FAIL|TC)|[A-Z]{1,3}[+-]?\*{0,2})\s+"
     r"(\d+(?:\.\d+)?)\s+"
     r"(\d+(?:\.\d+)?|[Nn]/?[Aa])$"
 )
@@ -88,11 +103,12 @@ def find_semester_spans(lines: List[str]) -> List[Tuple[str, int, int]]:
 
 
 def is_header_line(line: str) -> bool:
-    return line in {
-        "Course Code Course Title Grade Credits",
-        "ECTS",
-        "Grade",
-        "Points",
+    normalized = re.sub(r"\s+", " ", line.strip()).lower()
+    return normalized in {
+        "course code course title grade credits",
+        "ects",
+        "grade",
+        "points",
     }
 
 
@@ -118,7 +134,12 @@ def parse_course_segment(segment: List[str]) -> Course:
     match = COURSE_RE.match(combined)
     if not match:
         raise ValueError(f"Could not parse course segment: {combined}")
-    code, title, grade, credits, grade_points_raw = match.groups()
+    return _build_course(*match.groups())
+
+
+def _build_course(
+    code: str, title: str, grade: str, credits: str, grade_points_raw: str
+) -> Course:
     try:
         grade_points = float(grade_points_raw)
     except Exception:
@@ -130,6 +151,43 @@ def parse_course_segment(segment: List[str]) -> Course:
         credits=float(credits),
         grade_points=grade_points,
     )
+
+
+def parse_courses(course_lines: List[str]) -> List[Course]:
+    """Parse course rows, including PDF-extracted lines that contain multiple courses."""
+    courses: List[Course] = []
+    regular_buffer: List[str] = []
+    for raw_line in course_lines:
+        line = re.sub(r"\s+", " ", raw_line.strip())
+        if not line:
+            continue
+        transfer_match = TRANSFER_COURSE_RE.match(line)
+        if transfer_match:
+            if regular_buffer:
+                courses.extend(_parse_regular_courses(regular_buffer))
+                regular_buffer = []
+            code, title, grade, credits, grade_points = transfer_match.groups()
+            courses.append(_build_course(code, title, grade, credits, grade_points))
+            continue
+        regular_buffer.append(line)
+
+    if regular_buffer:
+        courses.extend(_parse_regular_courses(regular_buffer))
+    return courses
+
+
+def _parse_regular_courses(course_lines: List[str]) -> List[Course]:
+    blob = " ".join(line.strip() for line in course_lines if line.strip())
+    blob = re.sub(r"\s+", " ", blob).strip()
+    if not blob:
+        return []
+
+    matches = list(COURSE_ENTRY_RE.finditer(blob))
+    if matches:
+        return [_build_course(*match.groups()) for match in matches]
+
+    segments = split_course_segments(course_lines)
+    return [parse_course_segment(segment) for segment in segments]
 
 
 def parse_gpa_block(lines: List[str]) -> Tuple[Optional[float], Optional[float], Optional[float]]:
@@ -149,9 +207,12 @@ def _extract_number(blob: str, pattern: str) -> Optional[float]:
 
 def parse_semester_block(name: str, lines: List[str]) -> Semester:
     gpa_index = next((i for i, line in enumerate(lines) if line.startswith("Semester GPA")), len(lines))
-    course_lines = [line for line in lines[:gpa_index] if not is_header_line(line)]
-    segments = split_course_segments(course_lines)
-    courses = [parse_course_segment(segment) for segment in segments]
+    course_lines = [
+        line
+        for line in lines[:gpa_index]
+        if not is_header_line(line) and not line.strip().lower().startswith("transferred courses from")
+    ]
+    courses = parse_courses(course_lines)
     gpa_block = lines[gpa_index:] if gpa_index < len(lines) else []
     sem_gpa, credits_enrolled, credits_earned = parse_gpa_block(gpa_block)
     return Semester(

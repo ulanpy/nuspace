@@ -25,6 +25,7 @@ import {
   TemplateResponse,
   TemplateUpdatePayload,
   GoogleCalendarExportResponse,
+  DegreeAuditTCMapping,
 } from "../types";
 
 export const gradeStatisticsApi = {
@@ -173,23 +174,32 @@ export const gradeStatisticsApi = {
     return await apiCall(url);
   },
 
-  getDegreeRequirements: async (params: { year: string; major: string }) => {
+  getDegreeRequirements: async (params: { year: string; name: string; type: string }) => {
     const search = new URLSearchParams();
     search.append("year", params.year);
-    search.append("major", params.major);
+    search.append("name", params.name);
+    search.append("type", params.type);
     return await apiCall(`/degree-audit/requirements?${search.toString()}`);
   },
 
   runDegreeAuditFromRegistrar: async (payload: {
     year: string;
-    major: string;
-    username: string;
-    password: string;
+    majors: string[];
+    minors: string[];
+    username?: string;
+    password?: string;
+    tc_mappings?: DegreeAuditTCMapping[];
   }) => {
     return await apiCall(`/degree-audit/audit/registrar`, { method: "POST", json: payload });
   },
 
-  runDegreeAuditFromPdf: async (payload: { year: string; major: string; pdf_file: string }) => {
+  runDegreeAuditFromPdf: async (payload: {
+    year: string;
+    majors: string[];
+    minors: string[];
+    pdf_file: string;
+    tc_mappings?: DegreeAuditTCMapping[];
+  }) => {
     return await apiCall(`/degree-audit/audit/pdf`, { method: "POST", json: payload });
   },
 

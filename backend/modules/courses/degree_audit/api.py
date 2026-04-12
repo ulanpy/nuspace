@@ -2,20 +2,20 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.common.dependencies import get_creds_or_401, get_db_session
+from backend.core.configs.config import config
 from backend.modules.courses.degree_audit.dependencies import get_degree_audit_service
 from backend.modules.courses.degree_audit.schemas import (
+    AuditRequestPDF,
     AuditRequestRegistrar,
     AuditResponse,
     CatalogResponse,
-    AuditRequestPDF,
     DegreeRequirement,
 )
 from backend.modules.courses.degree_audit.service import DegreeAuditService
-from backend.core.configs.config import config
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
 router = APIRouter(prefix="/degree-audit", tags=["Degree Audit"])
 
 
@@ -45,11 +45,13 @@ async def audit_from_registrar(
 ) -> AuditResponse:
     return await service.audit_with_registrar(
         year=payload.year,
-        major=payload.major,
+        majors=payload.majors,
+        minors=payload.minors,
         username=payload.username if not config.IS_DEBUG else "bauyrzhan.kizatov",
         password=payload.password,
         student_sub=_creds[1]["sub"],
         session=db_session,
+        tc_mappings=payload.tc_mappings,
     )
 
 
@@ -67,10 +69,12 @@ async def audit_from_pdf(
 ) -> AuditResponse:
     return await service.audit_with_pdf(
         year=payload.year,
-        major=payload.major,
+        majors=payload.majors,
+        minors=payload.minors,
         pdf_file=payload.pdf_file,
         student_sub=_creds[1]["sub"],
         session=db_session,
+        tc_mappings=payload.tc_mappings,
     )
 
 
@@ -81,11 +85,12 @@ async def audit_from_pdf(
 )
 async def get_degree_requirements(
     year: str,
-    major: str,
-    _creds: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    name: str,
+    type: str = "major",
+    _creds: Annotated[tuple[dict, dict], Depends(get_creds_or_401)] = None,
     service: DegreeAuditService = Depends(get_degree_audit_service),
 ) -> list[DegreeRequirement]:
-    return service.get_requirements(year=year, major=major)
+    return service.get_requirements(year=year, name=name, type=type)
 
 
 @router.get(
