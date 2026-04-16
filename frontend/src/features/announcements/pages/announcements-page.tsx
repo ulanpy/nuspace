@@ -9,6 +9,9 @@ import { useState, useEffect } from "react";
 import { useAnnouncementsBundle } from "@/features/announcements/api/use-announcements-bundle";
 import { PresidentialElectionBanner } from "@/features/elections/presidential-election-banner";
 
+/** Flip to `true` when you want the election block back on announcements. */
+const SHOW_PRESIDENTIAL_ELECTION_BANNER = false;
+
 function getGreeting(): string {
     const hour = new Date().getHours();
     if (hour < 12) return "Good morning";
@@ -38,7 +41,7 @@ export default function AnnouncementsPage() {
 
     return (
         <div className="container mx-auto px-4 py-8 space-y-8">
-            <PresidentialElectionBanner />
+            {SHOW_PRESIDENTIAL_ELECTION_BANNER ? <PresidentialElectionBanner /> : null}
 
             {/* Welcome Header */}
             <div className="flex items-center gap-4">
