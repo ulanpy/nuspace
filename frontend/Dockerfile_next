@@ -16,7 +16,7 @@ RUN npm install
 # Copy the rest of the project files
 COPY frontend .
 
-# Script to resolve quick tunnel URL from cloudflared metrics and export for Next.js
+# Script to resolve quick tunnel URL for Vite dev server
 RUN printf '%s\n' '#!/bin/sh' \
   'set -e' \
   'cd /nuros' \
@@ -27,13 +27,13 @@ RUN printf '%s\n' '#!/bin/sh' \
   '  sleep 2' \
   'done' \
   'if [ -z "$URL" ]; then URL="http://localhost:5173"; fi' \
-  'export NEXT_PUBLIC_BASE_URL="$URL"' \
-  'echo "Using NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL"' \
+  'export VITE_BASE_URL="$URL"' \
+  'echo "Using VITE_BASE_URL=$VITE_BASE_URL"' \
   'exec npm run dev' > /usr/local/bin/start-frontend.sh \
   && chmod +x /usr/local/bin/start-frontend.sh
 
 # Expose port 5173 for compatibility with existing nginx config
 EXPOSE 5173
 
-# Start Next.js dev server
+# Start Vite dev server
 CMD ["/usr/local/bin/start-frontend.sh"]

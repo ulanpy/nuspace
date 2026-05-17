@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, BookOpenCheck } from "lucide-react";
-import Link from "next/link";
+import Link from "@/router/link";
 
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { Button } from "@/components/atoms/button";

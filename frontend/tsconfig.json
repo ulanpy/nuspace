@@ -17,11 +17,6 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -33,17 +28,9 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "app",
-    "next-env.d.ts",
     "src",
-    "src/types",
-    "dist/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "/tmp/out/types/**/*.ts",
-    "/tmp/out/dev/types/**/*.ts"
+    "vite.config.ts",
+    "src/types"
   ],
   "exclude": [
     "node_modules"

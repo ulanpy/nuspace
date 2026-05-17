@@ -7,7 +7,7 @@ import { Badge } from "@/components/atoms/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
 import { Modal } from "@/components/atoms/modal";
 import { MessageCircle, Clock, User, Shield, Settings, ShieldCheck, Info, MessageSquare, Lock, Link } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams } from "@/router/navigation";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { formatDistanceToNow } from "date-fns";
 import { enUS } from "date-fns/locale";

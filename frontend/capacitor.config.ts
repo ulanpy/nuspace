@@ -3,10 +3,9 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'kz.nuspace.mobile',
   appName: 'nuspace',
-  webDir: '.next',
+  webDir: 'out',
   server: {
-    // For Capacitor, we use the production server URL since Next.js 
-    // without static export requires a running server
+    // In native shells we load the hosted SPA by default.
     url: process.env.CAPACITOR_SERVER ?? 'https://nuspace.kz',
     cleartext: true
   },

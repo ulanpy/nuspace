@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "@/router/navigation";
 import { ROUTES } from "@/data/routes";
 
 type BackHandler = () => void;

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { StaticImageData } from "next/image";
+import type { StaticImageData } from "@/router/image";
 
 interface FeatureCarouselProps {
     images: (StaticImageData)[];

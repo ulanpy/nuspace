@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Link from "@/router/link";
+import { usePathname } from "@/router/navigation";
 import {
   Calendar,
   BookOpen,

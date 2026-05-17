@@ -8,7 +8,7 @@ import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram
 import { TelegramStatus } from "@/components/molecules/telegram-status";
 import { LogOut, User, Users, Plus } from "lucide-react";
 import { useUserCommunities } from "@/features/communities/hooks/use-user-communities";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/router/navigation";
 import { ROUTES } from "@/data/routes";
 import { Community } from "@/features/shared/campus/types";
 import { MediaFormat } from "@/features/media/types/types";

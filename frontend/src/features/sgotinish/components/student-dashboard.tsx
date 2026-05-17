@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TicketCard } from './ticket-card';
 import { Button } from "@/components/atoms/button";
 import { ChevronDown, Filter, Folder, Search } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/router/navigation";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { ROUTES } from "@/data/routes";
 import { useInfiniteQuery } from "@tanstack/react-query";

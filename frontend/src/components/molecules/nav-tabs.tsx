@@ -2,8 +2,8 @@
 
 import type React from "react";
 
-import { usePathname } from "next/navigation";
-import Link from "next/link";
+import { usePathname } from "@/router/navigation";
+import Link from "@/router/link";
 import { cn } from "@/utils/utils";
 
 interface Tab {

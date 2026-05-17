@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Link from "@/router/link";
+import { usePathname } from "@/router/navigation";
 import { PiUserCircle, PiUserCircleFill } from "react-icons/pi";
 import { ROUTES } from "@/data/routes";
 

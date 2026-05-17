@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/router/navigation";
 import { Button } from "../atoms/button";
 
 export function GeneralSection({

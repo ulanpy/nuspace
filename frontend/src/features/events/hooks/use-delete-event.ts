@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/router/navigation";
 import { campuscurrentAPI } from '@/features/events/api/events-api';
 import { useToast } from "@/hooks/use-toast";
 

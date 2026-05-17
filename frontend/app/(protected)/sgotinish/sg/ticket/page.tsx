@@ -8,7 +8,7 @@
  * 
  * Note: This page only renders ticket details. For ticket list, navigate to /sgotinish/sg/
  */
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams } from '@/router/navigation'
 import { Suspense } from 'react'
 import TicketDetailPageContent from '@/features/sgotinish/pages/ticket-detail-page'
 

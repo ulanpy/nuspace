@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { campuscurrentAPI } from '../api/communities-api';
-import { useSearchParams } from "next/navigation";
+import { useSearchParams } from "@/router/navigation";
 import { Community, CommunityPermissions } from "@/features/shared/campus/types";
 
 export const useCommunity = () => {

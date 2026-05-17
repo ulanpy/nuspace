@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "@/router/navigation";
 import { useTheme } from '../../context/theme-provider-context';
 
 export interface PaginationProps {

@@ -13,5 +13,5 @@ services:
     build:
       context: ..
       dockerfile: frontend/Dockerfile_next_builder
-    command: sh -c "npm run build" # Run build command on container start
+    command: sh -c "npm run build" # Build Vite static bundle into frontend/out
     restart: "no"

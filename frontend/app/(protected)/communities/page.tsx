@@ -9,7 +9,7 @@
  * 
  * This avoids dynamic route segments which require generateStaticParams with output: 'export'.
  */
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams } from '@/router/navigation'
 import { Suspense } from 'react'
 import CommunitiesListPage from '@/features/communities/pages/list'
 import CommunityDetailPage from '@/features/communities/pages/single'

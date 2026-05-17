@@ -3,7 +3,7 @@
 // components/molecules/SliderContainer.tsx
 import { useRef, useState, ReactNode, useEffect } from "react"; // useEffect қосылды
 import { Button } from "../atoms/button";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/router/navigation";
 
 interface SliderContainerProps {
   title?: string;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "@/router/navigation";
 import { useTheme } from '../../context/theme-provider-context';
 import { ChevronDown, Filter } from "lucide-react";
 

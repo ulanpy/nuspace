@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Calendar, Plus } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams } from "@/router/navigation";
 
 import { LoginModal } from "@/components/molecules/login-modal";
 import { CommunityCard } from '@/features/communities/components/community-card';

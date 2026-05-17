@@ -1,7 +1,7 @@
 'use client'
 
 import { ArrowRight, Calendar, Users, Sparkles, Library, Shield, Phone } from 'lucide-react'
-import Link from 'next/link'
+import Link from '@/router/link'
 import { Button } from '@/components/atoms/button'
 import { useUser } from '@/hooks/use-user'
 import { FeatureCarousel } from '@/components/molecules/feature-carousel'

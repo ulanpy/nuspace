@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams } from '@/router/navigation'
 import TicketDetail from '@/features/sgotinish/components/ticket-detail'
 
 function TicketContent() {

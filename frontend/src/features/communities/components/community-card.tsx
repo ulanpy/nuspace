@@ -1,5 +1,5 @@
-import Link from "next/link";
-import Image from 'next/image';
+import Link from "@/router/link";
+import Image from '@/router/image';
 // import { Users, Calendar } from "lucide-react";
 
 import { ROUTES } from "@/data/routes";

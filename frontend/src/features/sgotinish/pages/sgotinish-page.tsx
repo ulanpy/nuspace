@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "@/router/navigation";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import StudentDashboard from '../components/student-dashboard';
 import SGDashboard from '../components/sg-dashboard';

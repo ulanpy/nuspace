@@ -7,7 +7,7 @@
  * Following Next.js App Router convention: app/ for routing, src/pages/ for page content.
  */
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/router/navigation'
 import LandingPageContent from '@/page-components/landing-page'
 import { useUser } from '@/hooks/use-user'
 

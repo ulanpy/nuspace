@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+import Link from "@/router/link";
 import { useTheme } from '../../../context/theme-provider-context';
 
 interface AppButtonProps {

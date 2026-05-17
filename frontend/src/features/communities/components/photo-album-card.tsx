@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Card } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
-import { ExternalLink, Calendar, Edit2 } from "lucide-react";
-import Image from "next/image";
+import { ExternalLink, Calendar, Edit2, Image as ImageIcon } from "lucide-react";
+import Image from "@/router/image";
 import { PhotoAlbum, PhotoAlbumType } from '../hooks/use-infinite-photo-albums';
 
 interface PhotoAlbumCardProps {
@@ -70,7 +70,7 @@ export function PhotoAlbumCard({ album, communityId, canEdit = false, onEdit }: 
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted-foreground/10">
-            <Image className="h-12 w-12 text-muted-foreground/40" />
+            <ImageIcon className="h-12 w-12 text-muted-foreground/40" />
           </div>
         )}
         

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TicketCard } from './ticket-card';
 import { Button } from "@/components/atoms/button";
 import { Filter, Folder, CheckCircle, ChevronDown } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/router/navigation";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
 import { ROUTES } from "@/data/routes";
 import { useUser } from "@/hooks/use-user";

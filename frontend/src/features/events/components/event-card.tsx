@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/router/link";
 import { Calendar, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";

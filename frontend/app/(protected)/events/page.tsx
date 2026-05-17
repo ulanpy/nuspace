@@ -7,7 +7,7 @@
  * - /events/ → Shows list view
  * - /events/?id=123 → Shows detail view for event 123
  */
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams } from '@/router/navigation'
 import { Suspense } from 'react'
 import EventsListPage from '@/features/events/pages/list'
 import EventDetailPage from '@/features/events/pages/single'

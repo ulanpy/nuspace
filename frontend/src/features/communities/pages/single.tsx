@@ -7,7 +7,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/atoms/tabs";
-import Image from "next/image";
+import Image from "@/router/image";
 import { Badge } from "@/components/atoms/badge";
 import { VerificationBadge } from "@/components/molecules/verification-badge";
 import { MarkdownContent } from '@/components/molecules/markdown-content';
@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "@/router/navigation";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 

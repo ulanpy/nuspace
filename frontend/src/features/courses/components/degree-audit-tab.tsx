@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { GraduationCap, AlertCircle, ShieldCheck, Eye, EyeOff, FileDown, ListChecks, ArrowUpDown } from "lucide-react";
-import Link from "next/link";
+import Link from "@/router/link";
 import { ROUTES } from "@/data/routes";
 
 import { gradeStatisticsApi } from '../api/grade-statistics-api';

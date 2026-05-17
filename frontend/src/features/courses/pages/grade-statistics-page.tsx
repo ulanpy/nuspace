@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "@/router/navigation";
 import { BookOpen, BarChart3, CalendarDays, GraduationCap } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 

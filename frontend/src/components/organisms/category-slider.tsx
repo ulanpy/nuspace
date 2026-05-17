@@ -1,5 +1,5 @@
 "use client";;
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/router/navigation";
 import { CategoryGrid } from "./category-grid";
 
 import type { JSX } from "react";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import Link from "@/router/link";
 import { ArrowRight, Loader2, RefreshCcw } from "lucide-react";
 import { PhotoAlbumCard } from "@/features/communities/components/photo-album-card";
 import { PhotoAlbum } from "@/features/communities/hooks/use-infinite-photo-albums";

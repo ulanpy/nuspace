@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/router/navigation";
 import { ROUTES } from "@/data/routes";
 import { useToast } from "@/hooks/use-toast";
 import { addToGoogleCalendar as addToGoogleCalendarUtil } from "@/features/events/utils/calendar";

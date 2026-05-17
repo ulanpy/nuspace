@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { campuscurrentAPI } from '../api/events-api';
-import { useSearchParams } from "next/navigation";
+import { useSearchParams } from "@/router/navigation";
 
 export const useEvent = () => {
   const searchParams = useSearchParams();

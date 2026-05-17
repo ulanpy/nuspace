@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/router/link";
 import { Calendar, ArrowRight, Users } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 import { TelegramFeed } from '@/features/announcements/components/telegram-feed';
 import { GalleryCarousel } from '@/features/announcements/components/gallery-carousel';
-import { useState, useEffect } from "react";
 import { useAnnouncementsBundle } from "@/features/announcements/api/use-announcements-bundle";
 import { PresidentialElectionBanner } from "@/features/elections/presidential-election-banner";
 
@@ -28,11 +27,7 @@ function isEventOngoing(event: any) {
 
 export default function AnnouncementsPage() {
     const { user } = useUser();
-    const [greeting, setGreeting] = useState("Hello");
-    
-    useEffect(() => {
-        setGreeting(getGreeting());
-    }, []);
+    const greeting = getGreeting();
 
     const { data: bundle, isLoading: bundleLoading } = useAnnouncementsBundle();
 
