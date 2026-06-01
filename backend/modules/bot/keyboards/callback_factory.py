@@ -14,3 +14,7 @@ class Languages(CallbackData, prefix="language"):
 
 class NotificationAction(CallbackData, prefix="notif"):
     action: NotificationEnum
+
+
+class CourseGradesPage(CallbackData, prefix="cgr"):
+    page: int

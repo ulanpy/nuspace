@@ -1,6 +1,7 @@
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types.bot_command import BotCommand
+from aiogram.types.bot_command_scope_all_group_chats import BotCommandScopeAllGroupChats
 from aiogram.types.bot_command_scope_all_private_chats import BotCommandScopeAllPrivateChats
 from aiogram.types.bot_command_scope_chat import BotCommandScopeChat
 from aiogram.types.menu_button_web_app import MenuButtonWebApp
@@ -37,6 +38,7 @@ async def setup_bot(
         redis=app.state.redis,
         db_manager=app.state.db_manager,
         storage_client=app.state.storage_client,
+        meilisearch_client=app.state.meilisearch_client,
     )
 
     # Routers
@@ -44,8 +46,12 @@ async def setup_bot(
 
     try:
         start = BotCommand(command="start", description="start")
+        course = BotCommand(command="course", description="Course grade statistics")
         await app.state.bot.set_my_commands(
-            commands=[start], scope=BotCommandScopeAllPrivateChats()
+            commands=[start, course], scope=BotCommandScopeAllPrivateChats()
+        )
+        await app.state.bot.set_my_commands(
+            commands=[course], scope=BotCommandScopeAllGroupChats()
         )
         killswitch = BotCommand(command="killswitch", description="Anti-spam: ban new members")
         await app.state.bot.set_my_commands(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { BarChart3 } from "lucide-react";
 import { SearchableInfiniteList } from '@/components/virtual/searchable-infinite-list';
 import { usePreSearchGrades } from '../api/hooks/use-pre-search-grades';
@@ -18,10 +18,15 @@ import { Label } from "@/components/atoms/label";
 
 const MAX_SELECTIONS = 8;
 
-export function CourseStatsTab() {
+export function CourseStatsTab({ initialKeyword = "" }: { initialKeyword?: string }) {
   const [selected, setSelected] = useState<GradeStatistics[]>([]);
   const [selectedTerm, setSelectedTerm] = useState<string | undefined>(undefined);
+  const [searchKeyword, setSearchKeyword] = useState(initialKeyword);
   const { terms, isLoading: isLoadingTerms } = useGradeTerms();
+
+  useEffect(() => {
+    setSearchKeyword(initialKeyword);
+  }, [initialKeyword]);
 
   const termOptions = useMemo(() => ["all", ...terms], [terms]);
 
@@ -68,7 +73,9 @@ export function CourseStatsTab() {
         queryKey={["courses"]}
         apiEndpoint="/grades"
         size={12}
+        keyword={searchKeyword}
         additionalParams={{ term: selectedTerm }}
+        onSearchChange={setSearchKeyword}
         renderItem={(gradeReport: GradeStatistics) => (
           <div key={gradeReport.id} className="h-full">
             <GradeStatisticsCard

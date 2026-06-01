@@ -105,6 +105,8 @@ export default function GradeStatisticsPage() {
     }
   }, [searchParams]);
 
+  const courseStatsKeyword = searchParams.get("keyword") ?? "";
+
   useEffect(() => {
     const tabElement = tabRefs.current[activeTab];
     if (tabElement) {
@@ -162,7 +164,7 @@ export default function GradeStatisticsPage() {
           </TabsContent>
 
           <TabsContent value="course-stats">
-            <CourseStatsTab />
+            <CourseStatsTab initialKeyword={courseStatsKeyword} />
           </TabsContent>
 
           <TabsContent value="schedule-builder">
