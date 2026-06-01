@@ -43,6 +43,7 @@ dependencies = [
     "orjson>=3.11.3",
     "pdfplumber>=0.11.8",
     "pypdf>=5.1.0",
+    "cachetools>=7.1.4",
 ]
 
 [dependency-groups]
