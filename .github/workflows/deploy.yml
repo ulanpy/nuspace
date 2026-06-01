@@ -133,22 +133,21 @@ jobs:
       - name: Select GCP project and WIF provider based on branch
         run: |
           if [ "${GITHUB_REF_NAME}" = "main" ]; then
-            GCP_PROJECT="nuspace2025"
-            echo "GCP_PROJECT=${GCP_PROJECT}" >> $GITHUB_ENV
+            DEPLOY_GCP_PROJECT="nuspace2025"
+            echo "DEPLOY_GCP_PROJECT=${DEPLOY_GCP_PROJECT}" >> $GITHUB_ENV
             echo "WIF_PROVIDER=projects/283390667737/locations/global/workloadIdentityPools/github-actions/providers/github-oidc" >> $GITHUB_ENV
             echo "WIF_SERVICE_ACCOUNT=nuspace-ansible-sa@nuspace2025.iam.gserviceaccount.com" >> $GITHUB_ENV
           else
-            GCP_PROJECT="nuspace-staging"
-            echo "GCP_PROJECT=${GCP_PROJECT}" >> $GITHUB_ENV
+            DEPLOY_GCP_PROJECT="nuspace-staging"
+            echo "DEPLOY_GCP_PROJECT=${DEPLOY_GCP_PROJECT}" >> $GITHUB_ENV
             echo "WIF_PROVIDER=projects/139212374894/locations/global/workloadIdentityPools/github-actions/providers/github-oidc" >> $GITHUB_ENV
             echo "WIF_SERVICE_ACCOUNT=nuspace-ansible-sa@nuspace-staging.iam.gserviceaccount.com" >> $GITHUB_ENV
           fi
-          echo "ANSIBLE_GCP_PROJECT=${GCP_PROJECT}" >> $GITHUB_ENV
 
       - name: Authenticate to Google Cloud via Workload Identity Federation
         uses: google-github-actions/auth@v2
         with:
-          project_id: ${{ env.GCP_PROJECT }}
+          project_id: ${{ env.DEPLOY_GCP_PROJECT }}
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
           service_account: ${{ env.WIF_SERVICE_ACCOUNT }}
           token_format: 'access_token'
@@ -158,7 +157,11 @@ jobs:
 
       - name: Set gcloud project
         run: |
-          gcloud config set project "$GCP_PROJECT"
+          if [ -z "$DEPLOY_GCP_PROJECT" ]; then
+            echo "DEPLOY_GCP_PROJECT is empty after WIF auth" >&2
+            exit 1
+          fi
+          gcloud config set project "$DEPLOY_GCP_PROJECT"
 
       - name: Get VM information and Docker credentials from Secret Manager
         id: secrets
@@ -284,7 +287,7 @@ jobs:
                     ansible_host: ${{ steps.secrets.outputs.ANSIBLE_HOST }}
                     ansible_user: ${{ steps.secrets.outputs.ANSIBLE_USER }}
                     ansible_ssh_private_key_file: ~/.ssh/google_compute_engine
-                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o CertificateFile=~/.ssh/google_compute_engine-cert.pub -o ProxyCommand="gcloud compute start-iap-tunnel %h 22 --listen-on-stdin --project ${{ env.GCP_PROJECT }} --zone europe-central2-a"'
+                    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o CertificateFile=~/.ssh/google_compute_engine-cert.pub -o ProxyCommand="gcloud compute start-iap-tunnel %h 22 --listen-on-stdin --project ${{ env.DEPLOY_GCP_PROJECT }} --zone europe-central2-a"'
                     ansible_become: yes
                     ansible_become_method: sudo
                     ansible_remote_tmp: /tmp
@@ -303,12 +306,12 @@ jobs:
           # Run the Ansible playbook
           cd ansible && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook playbook.yml \
             --inventory inventory.yml \
-            --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ steps.secrets.outputs.ANSIBLE_USER }} docker_user=${{ steps.secrets.outputs.DOCKER_USERNAME }} docker_pass=${{ steps.secrets.outputs.DOCKER_PASSWORD }} gcp_project=${{ env.GCP_PROJECT }} github_ref_name=${{ github.ref_name }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} meilisearch_changed=${{ steps.changes.outputs.meilisearch }} compose_changed=${{ steps.changes.outputs.compose }} frontend_tarball_path='${{ steps.fe_artifact.outputs.path }}'"
+            --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ steps.secrets.outputs.ANSIBLE_USER }} docker_user=${{ steps.secrets.outputs.DOCKER_USERNAME }} docker_pass=${{ steps.secrets.outputs.DOCKER_PASSWORD }} gcp_project=${{ env.DEPLOY_GCP_PROJECT }} github_ref_name=${{ github.ref_name }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} meilisearch_changed=${{ steps.changes.outputs.meilisearch }} compose_changed=${{ steps.changes.outputs.compose }} frontend_tarball_path='${{ steps.fe_artifact.outputs.path }}'"
 
       - name: Cleanup OS Login SSH key
         if: always()
         run: |
-          gcloud config set project "$GCP_PROJECT"
+          gcloud config set project "$DEPLOY_GCP_PROJECT"
           gcloud config set account "$WIF_SERVICE_ACCOUNT"
           if [ -f "$HOME/.ssh/google_compute_engine.pub" ]; then
             echo "Removing OS Login SSH key for $WIF_SERVICE_ACCOUNT"
