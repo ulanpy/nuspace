@@ -2,11 +2,13 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types.bot_command import BotCommand
 from aiogram.types.bot_command_scope_all_private_chats import BotCommandScopeAllPrivateChats
+from aiogram.types.bot_command_scope_chat import BotCommandScopeChat
 from aiogram.types.menu_button_web_app import MenuButtonWebApp
 from aiogram.types.web_app_info import WebAppInfo
 from fastapi import FastAPI
 
 from backend.core.configs.config import config
+from backend.modules.bot.consts import DEV_CHAT_ID
 from backend.modules.bot.middlewares import setup_middlewares
 from backend.modules.bot.routes import include_routers
 
@@ -44,6 +46,10 @@ async def setup_bot(
         start = BotCommand(command="start", description="start")
         await app.state.bot.set_my_commands(
             commands=[start], scope=BotCommandScopeAllPrivateChats()
+        )
+        killswitch = BotCommand(command="killswitch", description="Anti-spam: ban new members")
+        await app.state.bot.set_my_commands(
+            commands=[killswitch], scope=BotCommandScopeChat(chat_id=DEV_CHAT_ID)
         )
     except Exception as e:
         print(f"Failed to set bot commands: {e}", flush=True)
