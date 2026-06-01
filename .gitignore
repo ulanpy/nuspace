@@ -6,6 +6,7 @@
 
 # Virtual environment
 venv/
+.venv/
 
 # Terraform credentials and state files
 **/terraform.json

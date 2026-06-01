@@ -9,13 +9,12 @@ ENV TZ=UTC \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/nuros \
-    POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=0 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
 
 WORKDIR /nuros
-ENV PATH="/root/.local/bin:${PATH}"
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 RUN apk -u add \
     build-base \
@@ -25,18 +24,18 @@ RUN apk -u add \
     g++ \
     musl-dev \
     linux-headers \
-    && pip install --no-cache-dir poetry 
+    bash
 
+COPY backend/pyproject.toml backend/uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
 
-COPY backend/pyproject.toml backend/poetry.lock ./
-COPY backend/start.sh /
-RUN poetry install --no-root --no-cache
+ENV PATH="/nuros/.venv/bin:${PATH}"
 
 COPY .. .
 
 COPY backend/start.sh /
-RUN sed -i 's/\r$//' /start.sh 
+RUN sed -i 's/\r$//' /start.sh
 RUN chmod +x /start.sh
-RUN apk add --no-cache bash
+
 # Run the script to decide the server behavior based on IS_DEBUG
 CMD ["/start.sh"]
