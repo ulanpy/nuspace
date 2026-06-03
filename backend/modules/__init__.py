@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from backend.modules.bot.bot import web_router
 
-from .auth import auth
+from .auth import api as auth_api
 from .campuscurrent.communities import api as communities_api
 from .campuscurrent.communities import og as communities_og
 from .campuscurrent.events import api as events_api
@@ -28,7 +28,7 @@ from .elections import api as elections_api
 # Import all routers from the routes directory
 
 routers: List[APIRouter] = [
-    auth.router,
+    auth_api.router,
     communities_api.router,
     communities_og.router,
     events_api.router,

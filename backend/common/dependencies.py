@@ -5,11 +5,9 @@ from backend.core.configs.config import config
 from backend.core.database.manager import AsyncDatabaseManager
 from backend.core.database.models import User, UserRole
 from backend.modules.auth.app_token import AppTokenManager
+from backend.modules.auth.cookies import set_kc_auth_cookies
 from backend.modules.auth.keycloak_manager import KeyCloakManager
-from backend.modules.auth.utils import (
-    get_mock_user_by_sub,  # dev-only helper
-    set_kc_auth_cookies,
-)
+from backend.modules.auth.mock import get_mock_user_by_sub  # dev-only helper
 from fastapi import Cookie, Depends, HTTPException, Request, Response, status
 from jose import JWTError, jwt
 from jwt import ExpiredSignatureError as PyJWTExpiredSignatureError

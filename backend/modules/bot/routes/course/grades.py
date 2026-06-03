@@ -28,7 +28,7 @@ async def course_command(
 ) -> None:
     keyword = (command.args or "").strip()
     if not keyword:
-        await message.answer("Использование: /course CODE\nПример: /course MATH101")
+        await message.answer("Использование: /course CODE\nПример: /course MATH 161")
         return
 
     await send_grades_page(
