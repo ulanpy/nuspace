@@ -9,6 +9,7 @@ from jose import JWTError
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import config
 from backend.core.database.models.user import UserRole, UserScope
 from backend.modules.auth.app_token import AppTokenManager
@@ -22,6 +23,8 @@ from backend.modules.auth.mock import build_mock_creds, get_mock_user_by_sub
 from backend.modules.auth.oauth import exchange_code_for_credentials
 from backend.modules.auth.repository import UserRepository
 from backend.modules.auth.schemas import CurrentUserResponse, UserSchema
+
+OAUTH_ORIGIN_KEY_PREFIX = "oauth_origin:"
 
 
 class AuthService:
@@ -41,15 +44,21 @@ class AuthService:
         redis: Redis,
         state: str | None,
         return_to: str | None,
+        app_base_url: str,
     ) -> str:
-        if state:
-            return state
-        state = secrets.token_urlsafe(32)
+        if not state:
+            state = secrets.token_urlsafe(32)
         await redis.setex(f"csrf:{state}", 600, return_to or "/")
+        await redis.setex(f"{OAUTH_ORIGIN_KEY_PREFIX}{state}", 600, app_base_url)
         return state
 
-    def build_mock_callback_url(self, state: str, mock_user: str | None) -> str:
-        cb = self.kc_manager.KEYCLOAK_REDIRECT_URI
+    def build_mock_callback_url(
+        self,
+        app_base_url: str,
+        state: str,
+        mock_user: str | None,
+    ) -> str:
+        cb = self.kc_manager.redirect_uri(app_base_url)
         sep = "&" if "?" in cb else "?"
         callback_url = f"{cb}{sep}state={state}"
         if mock_user:
@@ -70,7 +79,13 @@ class AuthService:
         unset_kc_auth_cookies(response)
         response.delete_cookie(key=config.COOKIE_APP_NAME)
 
-    def get_authorize_redirect(self, request: Request, state: str, reauth: bool | None):
+    def get_authorize_redirect(
+        self,
+        request: Request,
+        state: str,
+        app_base_url: str,
+        reauth: bool | None,
+    ):
         options: dict = {}
         if reauth:
             options["kc_idp_hint"] = "google"
@@ -79,13 +94,17 @@ class AuthService:
         provider = getattr(self.kc_manager.oauth, self.kc_manager.__class__.__name__.lower())
         return provider.authorize_redirect(
             request,
-            self.kc_manager.KEYCLOAK_REDIRECT_URI,
+            self.kc_manager.redirect_uri(app_base_url),
             state=state,
             **options,
         )
 
-    def resolve_redirect_url(self, csrf_return_to: bytes | str | None) -> str:
-        redirect_url = config.HOME_URL
+    @staticmethod
+    def resolve_redirect_url(
+        csrf_return_to: bytes | str | None,
+        app_base_url: str,
+    ) -> str:
+        redirect_url = app_base_url
         if not csrf_return_to:
             return redirect_url
 
@@ -106,8 +125,18 @@ class AuthService:
             and parsed_return_to.path.startswith("/")
             and not parsed_return_to.path.startswith("//")
         ):
-            redirect_url = urljoin(config.HOME_URL, csrf_return_to_str)
+            redirect_url = urljoin(f"{app_base_url.rstrip('/')}/", csrf_return_to_str)
         return redirect_url
+
+    async def pop_oauth_origin(self, redis: Redis, state: str) -> str | None:
+        origin_key = f"{OAUTH_ORIGIN_KEY_PREFIX}{state}"
+        origin_raw = await redis.get(origin_key)
+        await redis.delete(origin_key)
+        if origin_raw is None:
+            return None
+        if isinstance(origin_raw, (bytes, bytearray)):
+            return origin_raw.decode("utf-8").strip()
+        return str(origin_raw).strip()
 
     def seed_debug_oauth_state(self, request: Request, state: str) -> None:
         if config.IS_DEBUG and not config.MOCK_KEYCLOAK:
@@ -142,14 +171,17 @@ class AuthService:
         if csrf_return_to is None:
             raise HTTPException(status_code=400, detail="Invalid or expired state")
 
-        redirect_url = self.resolve_redirect_url(csrf_return_to)
+        app_base_url = await self.pop_oauth_origin(redis, state) or request_app_base_url(
+            request, config
+        )
+        redirect_url = self.resolve_redirect_url(csrf_return_to, app_base_url)
 
         code_key: str | None = None
         if code:
             code_key = f"kc_code:{code}"
             if await redis.exists(code_key):
                 await redis.delete(csrf_key)
-                return RedirectResponse(url=config.HOME_URL, status_code=303)
+                return RedirectResponse(url=app_base_url, status_code=303)
 
         self.seed_debug_oauth_state(request, state)
 

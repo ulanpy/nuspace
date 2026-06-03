@@ -2,11 +2,10 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types.bot_command import BotCommand
 from aiogram.types.bot_command_scope_all_private_chats import BotCommandScopeAllPrivateChats
-from fastapi import FastAPI
-
 from backend.core.configs.config import config
 from backend.modules.bot.middlewares import setup_middlewares
 from backend.modules.bot.routes import include_routers
+from fastapi import FastAPI
 
 
 async def initialize_bot(
@@ -18,7 +17,7 @@ async def initialize_bot(
 
     setup_middlewares(
         dp=app.state.dp,
-        url=config.HOME_URL,
+        url=config.PUBLIC_WEBHOOK_URL,
         redis=app.state.redis,
         db_manager=app.state.db_manager,
         storage_client=app.state.storage_client,
@@ -28,9 +27,9 @@ async def initialize_bot(
     include_routers(app.state.dp)
 
     # await set_commands(app.state.bot)
-    print(f"webhook {config.HOME_URL}", flush=True)
+    print(f"webhook {config.PUBLIC_WEBHOOK_URL}", flush=True)
     await app.state.bot.set_webhook(
-        url=f"{config.HOME_URL}/api/webhook",
+        url=f"{config.PUBLIC_WEBHOOK_URL}/api/webhook",
         drop_pending_updates=True,
         allowed_updates=app.state.dp.resolve_used_update_types(),
         secret_token=config.TG_WEBHOOK_SECRET_TOKEN,

@@ -4,8 +4,6 @@ from aiogram.types.bot_command import BotCommand
 from aiogram.types.bot_command_scope_all_group_chats import BotCommandScopeAllGroupChats
 from aiogram.types.bot_command_scope_all_private_chats import BotCommandScopeAllPrivateChats
 from aiogram.types.bot_command_scope_chat import BotCommandScopeChat
-from aiogram.types.menu_button_web_app import MenuButtonWebApp
-from aiogram.types.web_app_info import WebAppInfo
 from fastapi import FastAPI
 
 from backend.core.configs.config import config
@@ -34,7 +32,7 @@ async def setup_bot(
 
     setup_middlewares(
         dp=app.state.dp,
-        url=config.HOME_URL,
+        url=config.PUBLIC_WEBHOOK_URL,
         redis=app.state.redis,
         db_manager=app.state.db_manager,
         storage_client=app.state.storage_client,
@@ -62,9 +60,9 @@ async def setup_bot(
 
     # set webhook
     try:
-        print(f"Setting webhook to {config.HOME_URL}/api/webhook", flush=True)
+        print(f"Setting webhook to {config.PUBLIC_WEBHOOK_URL}/api/webhook", flush=True)
         await app.state.bot.set_webhook(
-            url=f"{config.HOME_URL}/api/webhook",
+            url=f"{config.PUBLIC_WEBHOOK_URL}/api/webhook",
             drop_pending_updates=True,
             allowed_updates=app.state.dp.resolve_used_update_types(),
             secret_token=config.TG_WEBHOOK_SECRET_TOKEN,
@@ -72,7 +70,7 @@ async def setup_bot(
         print("Webhook set successfully", flush=True)
         return
     except Exception as e:
-        print(f"Failed to set webhook {config.HOME_URL}/api/webhook: {e}", flush=True)
+        print(f"Failed to set webhook {config.PUBLIC_WEBHOOK_URL}/api/webhook: {e}", flush=True)
 
 
 async def cleanup_bot(app: FastAPI):

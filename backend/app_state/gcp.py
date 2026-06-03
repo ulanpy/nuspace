@@ -177,7 +177,7 @@ def setup_gcp(app: FastAPI) -> None:
         return
 
     push_config = pubsub_v1.types.PushConfig(  # type: ignore
-        push_endpoint=f"{config.HOME_URL}/api/bucket/gcs-hook",
+        push_endpoint=f"{config.PUBLIC_WEBHOOK_URL}/api/bucket/gcs-hook",
         oidc_token=pubsub_v1.types.PushConfig.OidcToken(
             service_account_email=config.PUSH_AUTH_SERVICE_ACCOUNT,
             audience=config.PUSH_AUTH_AUDIENCE,

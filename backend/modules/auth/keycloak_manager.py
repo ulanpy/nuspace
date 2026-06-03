@@ -9,7 +9,7 @@ from jose import jwt
 from jwt import PyJWKClient
 from pydantic_settings import BaseSettings
 
-from backend.core.configs.config import ENV_DIR, config
+from backend.core.configs.config import ENV_DIR
 
 load_dotenv(ENV_DIR)
 
@@ -27,9 +27,9 @@ class KeyCloakManager(BaseSettings):
     _jwks_client: PyJWKClient | None = None
     _jwks_cache = TTLCache(maxsize=1, ttl=3600)  # Cache JWKS for 1 hour
 
-    @cached_property
-    def KEYCLOAK_REDIRECT_URI(self):
-        return f"{config.HOME_URL}/api/auth/callback"
+    @staticmethod
+    def redirect_uri(app_base_url: str) -> str:
+        return f"{app_base_url.rstrip('/')}/api/auth/callback"
 
     @cached_property
     def JWKS_URI(self):

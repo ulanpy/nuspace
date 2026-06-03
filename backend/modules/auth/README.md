@@ -17,6 +17,16 @@ OAuth login (Keycloak + Google), application JWT tokens, and user upsert.
 | `cookies.py` | Auth cookie helpers |
 | `mock.py` | Dev-only mock users (`MOCK_KEYCLOAK`) |
 
+## Dev URLs
+
+| Config | Purpose |
+|--------|---------|
+| `DEV_APP_URL` / `HOME_URL` | Default browser origin (`http://localhost`) when no request context |
+| Request `Host` / `X-Forwarded-*` | OAuth redirect and post-login return (localhost vs tunnel) |
+| `PUBLIC_WEBHOOK_URL` | Telegram webhook, GCS Pub/Sub push, shareable TG notification links |
+
+Login from `http://localhost` stays on localhost; login from a shared tunnel URL uses that tunnel for callbacks. Webhooks always target the cloudflared URL when it is up.
+
 ## Flow
 
 1. `GET /api/login` → Keycloak (or mock callback in dev).

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_creds_or_401, get_db_session
+from backend.common.request_url import request_app_base_url
 from backend.common.utils.enums import ResourceAction
 from backend.core.configs.config import Config
 from backend.core.database.models.media import Media
@@ -86,9 +87,9 @@ async def generate_upload_url(
         }
 
         if config.USE_GCS_EMULATOR:
-            # Route uploads via backend proxy to emulator to avoid CORS/method issues
+            app_base_url = request_app_base_url(request, config)
             signed_url = (
-                f"{config.HOME_URL}/api/bucket/local-upload/{config.BUCKET_NAME}/{filename}"
+                f"{app_base_url}/api/bucket/local-upload/{config.BUCKET_NAME}/{filename}"
             )
             # In local dev, write the media record immediately (no Pub/Sub push)
             media_metadata = schemas.MediaMetadata(

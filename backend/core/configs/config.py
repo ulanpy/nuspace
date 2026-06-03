@@ -33,6 +33,7 @@ class Config(BaseSettings):
     TELEGRAM_BOT_TOKEN: str
     TG_WEBHOOK_SECRET_TOKEN: str
     NUSPACE: str
+    DEV_APP_URL: str = "http://localhost"
     GCP_PROJECT_ID: str
     GCP_TOPIC_ID: str
     PUSH_AUTH_SERVICE_ACCOUNT: str
@@ -88,7 +89,23 @@ class Config(BaseSettings):
 
     @cached_property
     def HOME_URL(self) -> str:
-        return self.NUSPACE if not self.IS_DEBUG else self.DISCOVERED_TUNNEL_URL
+        """Default browser app origin when no request context (dev: localhost)."""
+        if not self.IS_DEBUG:
+            return self.NUSPACE.rstrip("/")
+        return self.DEV_APP_URL.rstrip("/")
+
+    @cached_property
+    def PUBLIC_WEBHOOK_URL(self) -> str:
+        """
+        Inbound webhooks (Telegram, GCS Pub/Sub push) and shareable external links in dev.
+        Uses the cloudflared quick-tunnel URL when available; falls back to HOME_URL.
+        """
+        if not self.IS_DEBUG:
+            return self.NUSPACE.rstrip("/")
+        tunnel_url = self.discover_tunnel_url()
+        if tunnel_url:
+            return tunnel_url.rstrip("/")
+        return self.HOME_URL
 
     @cached_property
     def DATABASE_URL(self) -> str:
@@ -111,30 +128,29 @@ class Config(BaseSettings):
         - Used to generate blob filename for the media upload.
         - Used to validate if the GCS event belongs to the current backend service.
         """
-        raw_url = self.NUSPACE if not self.IS_DEBUG else self.DISCOVERED_TUNNEL_URL
-        # Support either https or http while tunnel is undiscovered
+        raw_url = self.PUBLIC_WEBHOOK_URL
         if "://" in raw_url:
-            return raw_url.split("://", 1)[1]  # e.g. https://nuspace.kz -> nuspace.kz
-        else:
-            # raise error if not a valid url
-            raise ValueError(f"Invalid URL: {raw_url}")
+            return raw_url.split("://", 1)[1]
+        raise ValueError(f"Invalid URL: {raw_url}")
 
-    @property
-    def DISCOVERED_TUNNEL_URL(self) -> str:
+    def discover_tunnel_url(self) -> str | None:
         """
-        Resolve the public dev URL.
-        - Parse quick tunnel hostname from cloudflared metrics (http://cloudflared:2000/metrics)
+        Resolve the public dev URL from cloudflared metrics (http://cloudflared:2000/metrics).
         """
         try:
             resp = requests.get("http://cloudflared:2000/metrics", timeout=10)
             if resp.status_code == 200:
-                # Prefer explicit userHostname label exposed by metrics
-                m = re.search(r'userHostname="(https://[^"\\]+)"', resp.text)
-                if m:
-                    url = m.group(1)
-                    return url
+                match = re.search(r'userHostname="(https://[^"\\]+)"', resp.text)
+                if match:
+                    return match.group(1)
         except Exception as e:
             print(f"Failed to discover tunnel URL: {e}", flush=True)
+        return None
+
+    @property
+    def DISCOVERED_TUNNEL_URL(self) -> str | None:
+        """Backward-compatible alias for tunnel discovery."""
+        return self.discover_tunnel_url()
 
 
 config = Config()

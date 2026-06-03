@@ -1,10 +1,10 @@
+import httpx
 from aiogram import Dispatcher
+from backend.core.configs.config import config
+from backend.core.database.manager import AsyncDatabaseManager
 from google.cloud import storage
 from redis.asyncio import Redis
-import httpx
 
-from backend.core.database.manager import AsyncDatabaseManager
-from backend.core.configs.config import config
 from .bucket_client import BucketClientMiddleware
 from .db_session import DatabaseMiddleware
 from .i18n import I18N
@@ -24,7 +24,7 @@ def setup_middlewares(
     middlewares = [
         DatabaseMiddleware(db_manager),
         RedisMiddleware(redis),
-        UrlMiddleware(config.HOME_URL),
+        UrlMiddleware(config.PUBLIC_WEBHOOK_URL),
         I18N(),
         BucketClientMiddleware(storage_client),
         MeilisearchMiddleware(meilisearch_client),

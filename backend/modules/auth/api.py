@@ -8,6 +8,7 @@ from jose import JWTError
 from redis.asyncio import Redis
 
 from backend.common.dependencies import get_creds_or_401
+from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import config
 from backend.modules.auth import dependencies as deps
 from backend.modules.auth.cookies import (
@@ -31,11 +32,12 @@ async def login(
     mock_user: str | None = "2",
     reauth: bool | None = None,
 ):
-    state = await auth_service.ensure_login_state(redis, state, return_to)
+    app_base_url = request_app_base_url(request, config)
+    state = await auth_service.ensure_login_state(redis, state, return_to, app_base_url)
 
     if config.MOCK_KEYCLOAK:
         return RedirectResponse(
-            url=auth_service.build_mock_callback_url(state, mock_user),
+            url=auth_service.build_mock_callback_url(app_base_url, state, mock_user),
             status_code=303,
         )
 
@@ -44,7 +46,7 @@ async def login(
         response = RedirectResponse(url="/", status_code=303)
         await auth_service.prepare_reauth(request, response, refresh_token)
 
-    return await auth_service.get_authorize_redirect(request, state, reauth)
+    return await auth_service.get_authorize_redirect(request, state, app_base_url, reauth)
 
 
 @router.get("/auth/callback")

@@ -3,7 +3,6 @@ from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
-
 from backend.core.database.manager import AsyncDatabaseManager
 
 
