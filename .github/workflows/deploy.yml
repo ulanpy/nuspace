@@ -74,8 +74,8 @@ jobs:
         if: steps.changes.outputs.backend == 'true'
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./backend/Dockerfile
+          context: backend
+          file: Dockerfile
           push: true
           tags: kamikadze24/fastapi:${{ steps.meta.outputs.version }}
           labels: ${{ steps.meta.outputs.labels }}

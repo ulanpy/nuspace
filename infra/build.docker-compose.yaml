@@ -3,8 +3,8 @@ services:
     image: kamikadze24/fastapi:${TAG}
 
     build:
-      context: ..
-      dockerfile: backend/Dockerfile
+      context: ../backend
+      dockerfile: Dockerfile
       args:
         IS_DEBUG: ${IS_DEBUG:-true} # Default to 'true' if not set
 

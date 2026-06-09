@@ -12,8 +12,6 @@ ENV TZ=UTC \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy
 
-WORKDIR /nuros
-
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 RUN apk -u add \
@@ -26,16 +24,19 @@ RUN apk -u add \
     linux-headers \
     bash
 
-COPY backend/pyproject.toml backend/uv.lock ./
+WORKDIR /nuros/backend
+
+COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
-ENV PATH="/nuros/.venv/bin:${PATH}"
+ENV PATH="/nuros/backend/.venv/bin:${PATH}"
 
-COPY .. .
+COPY . ./
 
-COPY backend/start.sh /
-RUN sed -i 's/\r$//' /start.sh
-RUN chmod +x /start.sh
+COPY start.sh /start.sh
+RUN sed -i 's/\r$//' /start.sh && chmod +x /start.sh
+
+WORKDIR /nuros
 
 # Run the script to decide the server behavior based on IS_DEBUG
 CMD ["/start.sh"]

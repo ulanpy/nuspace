@@ -1,1 +1,7 @@
 node_modules
+frontend/node_modules
+.git
+**/.venv
+infra
+ansible
+ssl

@@ -15,16 +15,16 @@ services:
   fastapi:
     container_name: fastapi
     build:
-      context: ..
-      dockerfile: backend/Dockerfile
+      context: ../backend
+      dockerfile: Dockerfile
       args:
         IS_DEBUG: ${IS_DEBUG:-true} # Default to 'true' if not set
     networks:
       - nuros
     restart: always
     volumes:
-      - ..:/nuros # Sync local backend folder with container's /nuros
-      - cursor-server:/root/.cursor-server
+      - ../backend:/nuros/backend # Hot-reload backend code only
+      - fastapi-venv:/nuros/backend/.venv # Preserve image venv (bind mount hides it otherwise)
       - .env:/.env:ro
     depends_on:
       - postgres
@@ -289,6 +289,7 @@ networks:
     driver: bridge
 
 volumes:
+  fastapi-venv:
   postgres-data:
   redis-data:
     driver: local
