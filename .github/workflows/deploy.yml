@@ -14,6 +14,11 @@ jobs:
       contents: read
     env:
       GCLOUD_VERSION: '472.0.0'
+      # Keep deploy target values in job env so both ${{ env.* }} expressions
+      # and shell $VAR references see the same non-empty values from job start.
+      DEPLOY_GCP_PROJECT: ${{ github.ref_name == 'main' && 'nuspace2025' || 'nuspace-staging' }}
+      WIF_PROVIDER: ${{ github.ref_name == 'main' && 'projects/283390667737/locations/global/workloadIdentityPools/github-actions/providers/github-oidc' || 'projects/139212374894/locations/global/workloadIdentityPools/github-actions/providers/github-oidc' }}
+      WIF_SERVICE_ACCOUNT: ${{ github.ref_name == 'main' && 'nuspace-ansible-sa@nuspace2025.iam.gserviceaccount.com' || 'nuspace-ansible-sa@nuspace-staging.iam.gserviceaccount.com' }}
 
     steps:
       - name: Checkout code
@@ -130,19 +135,13 @@ jobs:
           fi
           echo "$HOME/google-cloud-sdk/bin" >> $GITHUB_PATH
 
-      - name: Select GCP project and WIF provider based on branch
+      - name: Validate selected GCP deploy target
         run: |
-          if [ "${GITHUB_REF_NAME}" = "main" ]; then
-            DEPLOY_GCP_PROJECT="nuspace2025"
-            echo "DEPLOY_GCP_PROJECT=${DEPLOY_GCP_PROJECT}" >> $GITHUB_ENV
-            echo "WIF_PROVIDER=projects/283390667737/locations/global/workloadIdentityPools/github-actions/providers/github-oidc" >> $GITHUB_ENV
-            echo "WIF_SERVICE_ACCOUNT=nuspace-ansible-sa@nuspace2025.iam.gserviceaccount.com" >> $GITHUB_ENV
-          else
-            DEPLOY_GCP_PROJECT="nuspace-staging"
-            echo "DEPLOY_GCP_PROJECT=${DEPLOY_GCP_PROJECT}" >> $GITHUB_ENV
-            echo "WIF_PROVIDER=projects/139212374894/locations/global/workloadIdentityPools/github-actions/providers/github-oidc" >> $GITHUB_ENV
-            echo "WIF_SERVICE_ACCOUNT=nuspace-ansible-sa@nuspace-staging.iam.gserviceaccount.com" >> $GITHUB_ENV
+          if [ -z "$DEPLOY_GCP_PROJECT" ] || [ -z "$WIF_PROVIDER" ] || [ -z "$WIF_SERVICE_ACCOUNT" ]; then
+            echo "GCP deploy target env is incomplete" >&2
+            exit 1
           fi
+          echo "Deploying ${GITHUB_REF_NAME} to ${DEPLOY_GCP_PROJECT} as ${WIF_SERVICE_ACCOUNT}"
 
       - name: Authenticate to Google Cloud via Workload Identity Federation
         uses: google-github-actions/auth@v2
@@ -311,6 +310,14 @@ jobs:
       - name: Cleanup OS Login SSH key
         if: always()
         run: |
+          if [ -z "$DEPLOY_GCP_PROJECT" ] || [ -z "$WIF_SERVICE_ACCOUNT" ]; then
+            echo "Skipping OS Login cleanup because deploy target env is incomplete."
+            exit 0
+          fi
+          if ! command -v gcloud >/dev/null 2>&1; then
+            echo "Skipping OS Login cleanup because gcloud is not installed."
+            exit 0
+          fi
           gcloud config set project "$DEPLOY_GCP_PROJECT"
           gcloud config set account "$WIF_SERVICE_ACCOUNT"
           if [ -f "$HOME/.ssh/google_compute_engine.pub" ]; then
