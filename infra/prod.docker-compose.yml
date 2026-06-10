@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17
+    image: kamikadze24/postgres-walg:latest
     networks:
       - nuros
     restart: always
@@ -11,8 +11,52 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+      WALG_GS_PREFIX: gs://${BACKUPS_BUCKET_NAME}/wal-g/main
+    # GCE VM is bound to nuspace-vm-sa (no JSON key in the container). wal-g uses Google
+    # Application Default Credentials: its client library calls the VM metadata server at
+    # metadata.google.internal to get a short-lived OAuth token, then uploads WAL via wal-push.
+    # extra_hosts is required because the Docker bridge network does not resolve that hostname.
+    extra_hosts:
+      - "metadata.google.internal:169.254.169.254"
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=wal-g wal-push %p
+      - -c
+      - archive_timeout=3600
     volumes:
       - postgres-data:/var/lib/postgresql/data
+
+  backup:
+    image: kamikadze24/nuspace-backup:latest
+    container_name: backup
+    init: true
+    networks:
+      - nuros
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      WALG_GS_PREFIX: gs://${BACKUPS_BUCKET_NAME}/wal-g/main
+      BACKUPS_BUCKET_NAME: ${BACKUPS_BUCKET_NAME}
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      # Local backup-push reads PGDATA; remote mode needs replication in pg_hba.
+      - postgres-data:/var/lib/postgresql/data:ro
+    # Same metadata route as postgres: wal-g backup-push uses ADC (library → metadata → token).
+    # pg_dump upload is explicit: scripts/pg-dump-backup.sh curls metadata for a token, then
+    # POSTs the gzip file to the GCS JSON API. extra_hosts makes metadata.google.internal reachable.
+    extra_hosts:
+      - "metadata.google.internal:169.254.169.254"
 
   fastapi:
     container_name: fastapi

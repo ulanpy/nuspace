@@ -21,6 +21,8 @@ static_ip_name   = "nuspace-static-ip"
 media_bucket_name = "nuspace-media-staging"
 logs_bucket_name  = "nuspace-logs-staging"
 
+backups_bucket_name = "nuspace-backups-staging"
+
 # Pub/Sub
 topic_name          = "gcs-object-created"
 subscription_name   = "gcs-object-created-sub"

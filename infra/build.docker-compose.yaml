@@ -15,3 +15,13 @@ services:
       dockerfile: frontend/Dockerfile_next_builder
     command: sh -c "npm run build" # Build Vite static bundle into frontend/out
     restart: "no"
+
+  postgres:
+    image: kamikadze24/postgres-walg:${TAG}
+    build:
+      context: ./postgres
+
+  backup:
+    image: kamikadze24/nuspace-backup:${TAG}
+    build:
+      context: ./backup

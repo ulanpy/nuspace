@@ -108,6 +108,16 @@
       wireguard_job|default({})
     ] | selectattr('ansible_job_id', 'defined') | list }}"
 
+- name: Pull postgres and backup images when compose changed
+  ansible.builtin.shell: |
+    #!/bin/bash
+    set -e
+    COMPOSE_FILE="/home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml"
+    {{ compose_cmd }} -f "$COMPOSE_FILE" pull postgres backup
+  args:
+    executable: /bin/bash
+  when: (compose_changed | default(false)) | bool
+
 - name: Reconcile docker compose changes (definitions only)
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml

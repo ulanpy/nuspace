@@ -56,6 +56,8 @@ jobs:
               - 'infra/wireguard/**'
             compose:
               - 'infra/prod.docker-compose.yml'
+              - 'infra/postgres/**'
+              - 'infra/backup/**'
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -86,6 +88,30 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=fastapi
           cache-to: type=gha,mode=max,scope=fastapi
+
+      - name: Build and Push Postgres WAL-G Image
+        if: steps.changes.outputs.compose == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: infra/postgres
+          file: infra/postgres/Dockerfile
+          push: true
+          tags: kamikadze24/postgres-walg:${{ steps.meta.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=postgres-walg
+          cache-to: type=gha,mode=max,scope=postgres-walg
+
+      - name: Build and Push Backup Sidecar Image
+        if: steps.changes.outputs.compose == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: infra/backup
+          file: infra/backup/Dockerfile
+          push: true
+          tags: kamikadze24/nuspace-backup:${{ steps.meta.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=nuspace-backup
+          cache-to: type=gha,mode=max,scope=nuspace-backup
 
       # --- Frontend static export (Vite SPA) — built on the runner, not on the VM ---
       - name: Set up Node.js for frontend build
@@ -244,7 +270,7 @@ jobs:
           gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --tunnel-through-iap --command="docker ps --format 'table {{.Names}}\t{{.Status}}'" --ssh-flag="-o ConnectTimeout=10" --quiet > /tmp/container_status.txt 2>/dev/null || echo "Connection failed" > /tmp/container_status.txt
           
           # Check if expected containers are running
-          if grep -q "fastapi\|nginx\|redis\|rabbitmq\|prometheus\|grafana\|loki\|alloy\|alertmanager\|wireguard" /tmp/container_status.txt; then
+          if grep -q "fastapi\|nginx\|postgres\|backup\|redis\|rabbitmq\|prometheus\|grafana\|loki\|alloy\|alertmanager\|wireguard" /tmp/container_status.txt; then
             echo "containers_running=true" >> $GITHUB_OUTPUT
           else
             echo "containers_running=false" >> $GITHUB_OUTPUT

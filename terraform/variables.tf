@@ -94,6 +94,17 @@ variable "logs_bucket_name" {
   type        = string
 }
 
+variable "backups_bucket_name" {
+  description = "GCS bucket for WAL-G (prefix wal-g/) and pg_dump (prefix pg-dump/) backups"
+  type        = string
+}
+
+variable "backup_bucket_region" {
+  description = "Region for backup buckets (co-locate with VM when possible)"
+  type        = string
+  default     = null
+}
+
 
 
 variable "media_migration_region" {

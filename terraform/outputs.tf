@@ -31,6 +31,16 @@ output "logs_bucket_url" {
   description = "URL of the logs bucket"
 }
 
+output "backups_bucket_name" {
+  value       = google_storage_bucket.backups.name
+  description = "GCS bucket for WAL-G and pg_dump backups"
+}
+
+output "backups_bucket_url" {
+  value       = format("gs://%s", google_storage_bucket.backups.name)
+  description = "GCS URL for backups (wal-g/ and pg-dump/ prefixes)"
+}
+
 # Ansible service account information
 output "ansible_service_account_email" {
   value = google_service_account.ansible_service_account.email
