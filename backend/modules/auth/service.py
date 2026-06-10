@@ -179,6 +179,13 @@ class AuthService:
             sub=sub,
         )
 
+    async def resolve_user_profile(self, access_token: str, kc_principal: dict) -> dict:
+        """Merge JWT claims with Keycloak userinfo when profile fields are missing."""
+        if kc_principal.get("email") and kc_principal.get("sub"):
+            return kc_principal
+        userinfo = await self.kc_manager.fetch_userinfo(access_token)
+        return {**kc_principal, **userinfo}
+
     async def ensure_user_from_kc_principal(self, kc_principal: dict):
         user = await self.user_repository.get_by_sub(kc_principal["sub"])
         if user:
@@ -186,6 +193,16 @@ class AuthService:
         return await self.user_repository.upsert(
             self.user_schema_from_kc_principal(kc_principal)
         )
+
+    async def ensure_user_from_access_token(
+        self, access_token: str, kc_principal: dict
+    ):
+        profile = (
+            kc_principal
+            if config.MOCK_KEYCLOAK
+            else await self.resolve_user_profile(access_token, kc_principal)
+        )
+        return await self.ensure_user_from_kc_principal(profile)
 
     async def complete_oauth_callback(
         self,
@@ -271,14 +288,13 @@ class AuthService:
         else:
             new_kc_creds = await self.kc_manager.refresh_access_token(kc_refresh_token)
 
+        access_token = new_kc_creds["access_token"]
         if config.MOCK_KEYCLOAK:
             kc_principal = new_kc_creds["userinfo"]
         else:
-            kc_principal = await self.kc_manager.validate_keycloak_token(
-                new_kc_creds["access_token"]
-            )
+            kc_principal = await self.kc_manager.validate_keycloak_token(access_token)
 
-        await self.ensure_user_from_kc_principal(kc_principal)
+        await self.ensure_user_from_access_token(access_token, kc_principal)
         new_app_token_str, new_app_claims = await self.app_token_manager.create_app_token(
             kc_principal["sub"], self.db_session
         )

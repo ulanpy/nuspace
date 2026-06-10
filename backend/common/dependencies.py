@@ -8,7 +8,6 @@ from backend.modules.auth.app_token import AppTokenManager
 from backend.modules.auth.cookies import set_kc_auth_cookies
 from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.auth.mock import get_mock_user_by_sub  # dev-only helper
-from backend.modules.auth.repository import UserRepository
 from backend.modules.auth.service import AuthService
 from fastapi import Cookie, Depends, HTTPException, Request, Response, status
 from jose import JWTError, jwt
@@ -137,6 +136,12 @@ async def get_creds_or_401(
             detail="Could not establish Keycloak principal.",
         )
 
+    auth_service = AuthService(db_session, kc_manager, app_token_manager)
+    try:
+        await auth_service.ensure_user_from_access_token(access_token, kc_principal)
+    except HTTPException:
+        raise
+
     app_principal: dict | None = None
     issue_new_app_token = False
 
@@ -157,11 +162,6 @@ async def get_creds_or_401(
 
     if issue_new_app_token:
         try:
-            user_repo = UserRepository(db_session)
-            if not await user_repo.get_by_sub(kc_principal["sub"]):
-                await user_repo.upsert(
-                    AuthService.user_schema_from_kc_principal(kc_principal)
-                )
             new_app_token_str, new_app_claims = await app_token_manager.create_app_token(
                 kc_principal["sub"], db_session
             )
@@ -174,12 +174,11 @@ async def get_creds_or_401(
                 max_age=app_token_manager.token_expiry.total_seconds(),
             )
             app_principal = new_app_claims
+        except HTTPException:
+            raise
         except Exception as e:
-            # Log this error, but decide if it's critical to halt the request
-            # For now, we'll proceed without a valid app_principal if creation fails
-            # Consider raising an error if app_token is strictly required
             print(f"Error creating app token: {str(e)}")  # Replace with proper logging
-            app_principal = {}  # Or None, depending on how you want to handle this
+            app_principal = {}
 
     if (
         not app_principal
