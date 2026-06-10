@@ -8,6 +8,8 @@ from backend.modules.auth.app_token import AppTokenManager
 from backend.modules.auth.cookies import set_kc_auth_cookies
 from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.auth.mock import get_mock_user_by_sub  # dev-only helper
+from backend.modules.auth.repository import UserRepository
+from backend.modules.auth.service import AuthService
 from fastapi import Cookie, Depends, HTTPException, Request, Response, status
 from jose import JWTError, jwt
 from jwt import ExpiredSignatureError as PyJWTExpiredSignatureError
@@ -155,6 +157,11 @@ async def get_creds_or_401(
 
     if issue_new_app_token:
         try:
+            user_repo = UserRepository(db_session)
+            if not await user_repo.get_by_sub(kc_principal["sub"]):
+                await user_repo.upsert(
+                    AuthService.user_schema_from_kc_principal(kc_principal)
+                )
             new_app_token_str, new_app_claims = await app_token_manager.create_app_token(
                 kc_principal["sub"], db_session
             )

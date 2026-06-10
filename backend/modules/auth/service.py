@@ -149,14 +149,42 @@ class AuthService:
         userinfo = creds.get("userinfo")
         if not userinfo:
             raise HTTPException(status_code=401, detail="Unable to obtain userinfo from provider")
+        return AuthService.user_schema_from_kc_principal(userinfo)
+
+    @staticmethod
+    def user_schema_from_kc_principal(kc_principal: dict) -> UserSchema:
+        email = kc_principal.get("email")
+        sub = kc_principal.get("sub")
+        if not email or not sub:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Keycloak token is missing required user claims (email, sub)",
+            )
+
+        given_name = kc_principal.get("given_name")
+        family_name = kc_principal.get("family_name")
+        if not given_name or not family_name:
+            full_name = (kc_principal.get("name") or "").strip()
+            parts = full_name.split() if full_name else []
+            given_name = given_name or (parts[0] if parts else "User")
+            family_name = family_name or (parts[-1] if len(parts) > 1 else "")
+
         return UserSchema(
-            email=userinfo["email"],
+            email=email,
             role=UserRole.default,
             scope=UserScope.allowed,
-            name=userinfo["given_name"],
-            surname=userinfo["family_name"],
-            picture=userinfo["picture"],
-            sub=userinfo["sub"],
+            name=given_name,
+            surname=family_name,
+            picture=kc_principal.get("picture") or "",
+            sub=sub,
+        )
+
+    async def ensure_user_from_kc_principal(self, kc_principal: dict):
+        user = await self.user_repository.get_by_sub(kc_principal["sub"])
+        if user:
+            return user
+        return await self.user_repository.upsert(
+            self.user_schema_from_kc_principal(kc_principal)
         )
 
     async def complete_oauth_callback(
@@ -244,15 +272,15 @@ class AuthService:
             new_kc_creds = await self.kc_manager.refresh_access_token(kc_refresh_token)
 
         if config.MOCK_KEYCLOAK:
-            kc_principal_sub = new_kc_creds["userinfo"]["sub"]
+            kc_principal = new_kc_creds["userinfo"]
         else:
             kc_principal = await self.kc_manager.validate_keycloak_token(
                 new_kc_creds["access_token"]
             )
-            kc_principal_sub = kc_principal["sub"]
 
+        await self.ensure_user_from_kc_principal(kc_principal)
         new_app_token_str, new_app_claims = await self.app_token_manager.create_app_token(
-            kc_principal_sub, self.db_session
+            kc_principal["sub"], self.db_session
         )
         return new_kc_creds, new_app_claims, new_app_token_str
 
