@@ -80,7 +80,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: backend
-          file: Dockerfile
+          file: backend/Dockerfile
           push: true
           tags: kamikadze24/fastapi:${{ steps.meta.outputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
