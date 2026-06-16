@@ -4,9 +4,9 @@
 resource "google_compute_address" "static_ip" {
   # We make sure this resource depends on the Compute API being enabled first.
   depends_on = [google_project_service.compute_api]
-  
+
   # Give the static IP a meaningful name
-  name   = var.static_ip_name
+  name = var.static_ip_name
   # It needs to be in the same region as the VM.
   region = var.region
 }
@@ -16,9 +16,9 @@ resource "google_compute_instance" "vm_instance" {
   # We make sure this resource depends on the Compute API being enabled first.
   depends_on = [google_project_service.compute_api]
 
-  name         = var.vm_name
-  machine_type = var.vm_machine_type
-  zone         = var.zone
+  name                      = var.vm_name
+  machine_type              = var.vm_machine_type
+  zone                      = var.zone
   allow_stopping_for_update = true
 
   # Attach the service account to the VM for automatic authentication
@@ -78,12 +78,12 @@ resource "google_compute_disk" "new_boot" {
 
 # Create boot disk from a snapshot (when requested)
 resource "google_compute_disk" "from_snapshot" {
-  count           = var.use_boot_snapshot && !var.use_existing_boot_disk ? 1 : 0
-  name            = "${var.vm_name}-boot"
-  zone            = var.zone
-  type            = var.boot_disk_type
-  size            = var.boot_disk_size_gb
-  snapshot        = "projects/${var.project_id}/global/snapshots/${var.boot_snapshot_name}"
+  count    = var.use_boot_snapshot && !var.use_existing_boot_disk ? 1 : 0
+  name     = "${var.vm_name}-boot"
+  zone     = var.zone
+  type     = var.boot_disk_type
+  size     = var.boot_disk_size_gb
+  snapshot = "projects/${var.project_id}/global/snapshots/${var.boot_snapshot_name}"
 
   lifecycle {
     prevent_destroy = true

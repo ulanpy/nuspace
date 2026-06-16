@@ -9,9 +9,9 @@ boot_disk_size_gb      = 30
 boot_disk_type         = "pd-standard"
 
 
-project_id  = "nuspace-staging"
-region      = "europe-central2"
-zone        = "europe-central2-a"
+project_id = "nuspace-staging"
+region     = "europe-central2"
+zone       = "europe-central2-a"
 
 vm_name          = "nuspace-instance"
 vm_machine_type  = "e2-medium"
@@ -28,7 +28,6 @@ topic_name          = "gcs-object-created"
 subscription_name   = "gcs-object-created-sub"
 subscription_suffix = "staging"
 
-# Push subscription
 push_endpoint                   = "https://stage.nuspace.kz/api/bucket/gcs-hook"
 push_auth_service_account_email = "nuspace-vm-sa@nuspace-staging.iam.gserviceaccount.com"
 push_auth_audience              = "nuspace"
@@ -39,7 +38,7 @@ ansible_account_id = "nuspace-ansible-sa"
 signing_account_id = "nuspace-signing-sa"
 
 
-media_migration_region      = "europe-central2"
+media_migration_region = "europe-central2"
 
 # WIF: GitHub repo allowed to impersonate (format: owner/repo)
 github_repository = "ulanpy/nuspace"

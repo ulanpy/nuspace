@@ -46,7 +46,7 @@ resource "google_storage_bucket" "logs_bucket" {
   depends_on = [google_project_service.storage_api]
 
   name          = var.logs_bucket_name
-  location      = "US-CENTRAL1"  # Match existing bucket location
+  location      = "US-CENTRAL1" # Match existing bucket location
   storage_class = "STANDARD"
 
   # Keep bucket private with uniform access and prevent public ACLs
@@ -59,7 +59,7 @@ resource "google_storage_bucket" "logs_bucket" {
   # Lifecycle rule for log retention (matches existing: 7 days)
   lifecycle_rule {
     condition {
-      age = 7  # Delete logs older than 7 days
+      age = 7 # Delete logs older than 7 days
     }
     action {
       type = "Delete"

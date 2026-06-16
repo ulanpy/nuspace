@@ -8,15 +8,14 @@ resource "google_service_account" "vm_service_account" {
   description  = "Service account for VM with bucket access and CORS management permissions"
 }
 
+# Dedicated SA for GCS V4 signed URLs (upload/download). JSON key lives in Secret Manager;
+# FastAPI signs blobs locally with the private key (no IAM SignBlob impersonation — that was
+# too slow per request). Narrower than VM SA (objectAdmin only): smaller blast radius if leaked.
 resource "google_service_account" "signing_service_account" {
   depends_on   = [google_project_service.iam_api]
   account_id   = var.signing_account_id
   display_name = "Nuspace Signing Service Account"
-  description  = "Dedicated service account for signing GCS URLs"
-}
-
-locals {
-  push_auth_service_account_id = var.push_auth_service_account_email != "" ? "projects/${var.project_id}/serviceAccounts/${var.push_auth_service_account_email}" : google_service_account.vm_service_account.name
+  description  = "Signs GCS V4 URLs locally via JSON key; objectAdmin only (not VM SA)"
 }
 
 resource "google_project_iam_member" "signing_service_account_storage_object_admin" {
@@ -25,41 +24,16 @@ resource "google_project_iam_member" "signing_service_account_storage_object_adm
   member  = "serviceAccount:${google_service_account.signing_service_account.email}"
 }
 
-resource "google_storage_bucket_iam_member" "signing_service_account_bucket_admin" {
-  bucket = google_storage_bucket.media_bucket_target.name
-  role   = "roles/storage.legacyBucketOwner"
-  member = "serviceAccount:${google_service_account.signing_service_account.email}"
-}
-
 resource "google_project_iam_member" "signing_service_account_pubsub_editor" {
   project = var.project_id
   role    = "roles/pubsub.editor"
   member  = "serviceAccount:${google_service_account.signing_service_account.email}"
 }
 
-resource "google_service_account_iam_member" "push_auth_token_creator" {
-  service_account_id = local.push_auth_service_account_id
-  role               = "roles/iam.serviceAccountTokenCreator"
-  member             = "serviceAccount:${google_service_account.signing_service_account.email}"
-}
-
-resource "google_service_account_iam_member" "push_auth_act_as" {
-  service_account_id = local.push_auth_service_account_id
-  role               = "roles/iam.serviceAccountUser"
-  member             = "serviceAccount:${google_service_account.signing_service_account.email}"
-}
-
 # Grant the VM service account Storage Admin role for bucket management (CORS, policies, etc.)
 resource "google_project_iam_member" "storage_admin" {
   project = var.project_id
   role    = "roles/storage.admin"
-  member  = "serviceAccount:${google_service_account.vm_service_account.email}"
-}
-
-# Grant the VM service account Pub/Sub Subscriber role for GCS notifications
-resource "google_project_iam_member" "pubsub_subscriber" {
-  project = var.project_id
-  role    = "roles/pubsub.subscriber"
   member  = "serviceAccount:${google_service_account.vm_service_account.email}"
 }
 
@@ -74,7 +48,7 @@ resource "google_project_iam_member" "pubsub_editor" {
 
 # Create a service account for Ansible deployment
 resource "google_service_account" "ansible_service_account" {
-  depends_on = [google_project_service.iam_api]
+  depends_on   = [google_project_service.iam_api]
   account_id   = var.ansible_account_id
   display_name = "Nuspace Ansible Service Account"
   description  = "Service account for Ansible deployment and VM access"
@@ -100,12 +74,12 @@ resource "google_iam_workload_identity_pool_provider" "github_provider" {
   display_name                       = "GitHub OIDC Provider"
   description                        = "Trusts tokens from token.actions.githubusercontent.com"
   attribute_mapping = {
-    "google.subject"            = "assertion.sub"
-    "attribute.repository"      = "assertion.repository"
-    "attribute.repository_owner"= "assertion.repository_owner"
-    "attribute.ref"             = "assertion.ref"
-    "attribute.actor"           = "assertion.actor"
-    "attribute.workflow"        = "assertion.workflow"
+    "google.subject"             = "assertion.sub"
+    "attribute.repository"       = "assertion.repository"
+    "attribute.repository_owner" = "assertion.repository_owner"
+    "attribute.ref"              = "assertion.ref"
+    "attribute.actor"            = "assertion.actor"
+    "attribute.workflow"         = "assertion.workflow"
   }
 
   attribute_condition = format(
@@ -115,7 +89,7 @@ resource "google_iam_workload_identity_pool_provider" "github_provider" {
   )
 
   oidc {
-    issuer_uri        = "https://token.actions.githubusercontent.com"
+    issuer_uri = "https://token.actions.githubusercontent.com"
   }
 }
 
@@ -184,20 +158,6 @@ resource "google_service_account_iam_member" "push_sa_token_creator" {
   service_account_id = google_service_account.vm_service_account.name
   role               = "roles/iam.serviceAccountTokenCreator"
   member             = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-pubsub.iam.gserviceaccount.com"
-}
-
-# Allow the VM service account to impersonate itself for signed URL generation
-resource "google_service_account_iam_member" "vm_sa_token_creator" {
-  service_account_id = google_service_account.vm_service_account.name
-  role               = "roles/iam.serviceAccountTokenCreator"
-  member             = "serviceAccount:${google_service_account.vm_service_account.email}"
-}
-
-# Allow the VM service account to act as the push auth service account (self in this setup)
-resource "google_service_account_iam_member" "vm_sa_act_as_self" {
-  service_account_id = google_service_account.vm_service_account.name
-  role               = "roles/iam.serviceAccountUser"
-  member             = "serviceAccount:${google_service_account.vm_service_account.email}"
 }
 
 resource "google_service_account_key" "signing_service_account_key" {

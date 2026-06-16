@@ -8,6 +8,7 @@ variable "push_endpoint" {
 variable "push_auth_service_account_email" {
   description = "Service account email to sign OIDC tokens for Pub/Sub push (defaults to VM SA)"
   type        = string
+  default     = ""
 }
 
 variable "push_auth_audience" {
@@ -133,7 +134,7 @@ variable "topic_name" {
 }
 
 variable "subscription_name" {
-  description = "Subscription name"
+  description = "Subscription name prefix (suffix from subscription_suffix)"
   type        = string
 }
 

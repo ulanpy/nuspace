@@ -26,9 +26,3 @@ resource "google_storage_bucket" "backups" {
     }
   }
 }
-
-resource "google_storage_bucket_iam_member" "vm_backups_admin" {
-  bucket = google_storage_bucket.backups.name
-  role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:${google_service_account.vm_service_account.email}"
-}

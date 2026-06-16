@@ -16,18 +16,18 @@ output "media_bucket_url" {
 
 # Service account information
 output "vm_service_account_email" {
-  value = google_service_account.vm_service_account.email
+  value       = google_service_account.vm_service_account.email
   description = "Email of the service account attached to the VM"
 }
 
 # Logs bucket information
 output "logs_bucket_name" {
-  value = google_storage_bucket.logs_bucket.name
+  value       = google_storage_bucket.logs_bucket.name
   description = "Name of the logs bucket"
 }
 
 output "logs_bucket_url" {
-  value = format("gs://%s", google_storage_bucket.logs_bucket.name)
+  value       = format("gs://%s", google_storage_bucket.logs_bucket.name)
   description = "URL of the logs bucket"
 }
 
@@ -43,7 +43,7 @@ output "backups_bucket_url" {
 
 # Ansible service account information
 output "ansible_service_account_email" {
-  value = google_service_account.ansible_service_account.email
+  value       = google_service_account.ansible_service_account.email
   description = "Email of the Ansible service account"
 }
 

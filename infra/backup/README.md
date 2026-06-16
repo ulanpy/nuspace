@@ -23,11 +23,12 @@
                     └──────────────────┬───────────────────┘    wal-g/main/
                                        │ :5432
                     ┌──────────────────▼───────────────────┐
-                    │  backup (kamikadze24/nuspace-backup)     │
-                    │  supercronic (расписание в crontab)  │
+                    │  backup (kamikadze24/nuspace-backup) │
+                    │  volume: postgres-data (ro)         │
+                    │  supercronic v0.2.46 + crontab      │
                     │                                      │
-                    │  04:00 UTC  → wal-g backup-push ─────┼──► GCS wal-g/main/
-                    │  */6 h      → pg_dump + upload ──────┼──► GCS pg-dump/...
+                    │  04:00 UTC  → backup-push (PGDATA) ──┼──► GCS wal-g/main/
+                    │  */6 h      → pg_dump → postgres ────┼──► GCS pg-dump/...
                     └──────────────────────────────────────┘
 
 GCS auth: VM service account через metadata server
@@ -39,11 +40,12 @@ GCS auth: VM service account через metadata server
 | Контейнер | Операция | Когда |
 |-----------|----------|-------|
 | `postgres` | `wal-g wal-push` | Постоянно, на каждый готовый WAL-сегмент (~16 MB, `archive_timeout=1h`) |
-| `backup` | `wal-g backup-push` | Ежедневно **04:00 UTC** |
-| `backup` | `pg_dump` → GCS | Каждые **6 часов** (00:00, 06:00, 12:00, 18:00 UTC) |
+| `backup` | `wal-g backup-push $PGDATA` | Ежедневно **04:00 UTC** (читает volume `postgres-data` локально) |
+| `backup` | `pg_dump` → GCS | Каждые **6 часов** (00:00, 06:00, 12:00, 18:00 UTC), подключение к `postgres:5432` |
 
-`wal-push` вызывается **внутри** postgres (shell `archive_command`).  
-`backup-push` и `pg_dump` — из sidecar по сети `postgres:5432`.
+`wal-push` вызывается **внутри** postgres (`archive_command`).  
+`backup-push` — из sidecar по **смонтированному PGDATA** (+ TCP к postgres для `pg_start_backup`).  
+`pg_dump` — из sidecar по сети `postgres:5432`.
 
 ## GCS bucket
 
@@ -59,11 +61,13 @@ GCS auth: VM service account через metadata server
 ```
 gs://nuspace-backups-prod/
 ├── wal-g/main/                          ← WAL-G (WAL + base backups)
-│   ├── wal_...                          ← WAL segments (wal-push)
-│   └── basebackups_...                  ← base backups (backup-push)
-└── pg-dump/postgres/<DB_NAME>/          ← логические дампы
+│   ├── wal_005/                         ← WAL segments (wal-push), файлы *.lz4
+│   └── basebackups_005/                 ← base backups (backup-push)
+└── pg-dump/postgres/<DB_NAME>/          ← логические дампы (prod: nuspace)
     └── 2026-06-10T12-00-00Z.dump.gz
 ```
+
+WAL-G сжимает данные алгоритмом **LZ4** (расширение `.lz4` в GCS — не класс storage, а compression).
 
 Terraform: `terraform/backups.tf`, переменная `backups_bucket_name` в `terraform/envs/*.tfvars`.
 
@@ -114,9 +118,14 @@ archive_timeout=3600
 - Storage: `WALG_GS_PREFIX` (префикс в GCS)
 - Credentials: ADC через metadata VM SA (`nuspace-vm-sa@...`)
 
-### Расписание sidecar
+### Sidecar `backup`
 
-Планировщик: **supercronic** внутри контейнера `backup` (не cron на хосте).  
+- Базовый образ: `postgres:17-bookworm` (bash, `pg_dump`, `pg_isready`)
+- `init: true` в compose (docker-init как PID 1)
+- Планировщик: **supercronic v0.2.46+** (`/usr/local/bin/supercronic`; v0.2.33 ломается как PID 1)
+- Volume: `postgres-data:/var/lib/postgresql/data:ro` + `PGDATA` для `backup-push`
+- Скрипты экспортируют libpq: `PGUSER`, `PGDATABASE`, `PGPASSWORD` из `DB_*` (`scripts/common.sh`)
+
 Расписание: `infra/backup/crontab`.
 
 | Задача | Когда (UTC) | Скрипт |
@@ -160,18 +169,25 @@ docker logs backup --tail 100
 # WAL-G: список base backups в GCS
 docker exec backup wal-g backup-list
 
-# pg_dump в GCS
-gcloud storage ls gs://nuspace-backups-prod/pg-dump/postgres/
+# pg_dump в GCS (<DB_NAME> — значение DB_NAME из .env, на prod: nuspace)
+gcloud storage ls gs://nuspace-backups-prod/pg-dump/postgres/<DB_NAME>/
+
+# WAL-сегменты и base backups
+gcloud storage ls gs://nuspace-backups-prod/wal-g/main/wal_005/
+gcloud storage ls gs://nuspace-backups-prod/wal-g/main/basebackups_005/
 
 # Postgres archiving (ошибки archive_command)
 docker logs postgres 2>&1 | grep -i archive
 
-# Ручной прогон
-docker exec backup /scripts/walg-backup-push.sh
-docker exec backup /scripts/pg-dump-backup.sh
+# Ручной прогон (через скрипты — выставляют PGUSER и PGDATA)
+docker exec backup /bin/bash /scripts/walg-backup-push.sh
+docker exec backup /bin/bash /scripts/pg-dump-backup.sh
 ```
 
-Успешный `pg_dump` пишет в лог: `pg_dump backup uploaded to gs://...`.
+Успешный `pg_dump` пишет в лог: `pg_dump backup uploaded to gs://...`.  
+Успешный `backup-push` пишет: `Wrote backup with name base_...` и `WAL-G backup-push completed`.
+
+> Не запускай `wal-g backup-push` напрямую без скрипта — без `PGUSER` wal-g попытается войти как `root`.
 
 ## Восстановление
 
@@ -179,41 +195,68 @@ docker exec backup /scripts/pg-dump-backup.sh
 
 ### Вариант A — pg_dump (проще)
 
+Точность: до момента создания дампа (не до секунды, как PITR).
+
 ```bash
-# Скачать дамп
-gcloud storage cp gs://nuspace-backups-prod/pg-dump/postgres/postgres/<TIMESTAMP>.dump.gz /tmp/
+# Скачать дамп (<DB_NAME> — из .env, на prod: nuspace)
+gcloud storage cp \
+  gs://nuspace-backups-prod/pg-dump/postgres/<DB_NAME>/<TIMESTAMP>.dump.gz /tmp/
 
 docker compose -f prod.docker-compose.yml stop fastapi
 
 gunzip -c /tmp/<TIMESTAMP>.dump.gz > /tmp/restore.dump
 
-# Пересоздать БД (ОСТОРОЖНО: уничтожает текущие данные)
+# Пересоздать БД (ОСТОРОЖНО: уничтожает текущие данные; <DB_USER>/<DB_NAME> — из .env)
 docker compose -f prod.docker-compose.yml exec -T postgres \
-  psql -U postgres -c "DROP DATABASE postgres WITH (FORCE);"
+  psql -U <DB_USER> -c "DROP DATABASE \"<DB_NAME>\" WITH (FORCE);"
 docker compose -f prod.docker-compose.yml exec -T postgres \
-  psql -U postgres -c "CREATE DATABASE postgres;"
+  psql -U <DB_USER> -c "CREATE DATABASE \"<DB_NAME>\";"
 
 docker compose -f prod.docker-compose.yml exec -T postgres \
-  pg_restore -U postgres -d postgres --no-owner --no-acl < /tmp/restore.dump
+  pg_restore -U <DB_USER> -d <DB_NAME> --no-owner --no-acl < /tmp/restore.dump
 
 docker compose -f prod.docker-compose.yml start fastapi
 ```
 
 ### Вариант B — WAL-G (PITR)
 
-См. официальную документацию WAL-G: [PostgreSQL backups](https://github.com/wal-g/wal-g#postgresql).
+См. [WAL-G PostgreSQL](https://github.com/wal-g/wal-g/blob/master/docs/PostgreSQL.md).
 
-Общая схема:
+Нужны **оба** слоя: base backup (`backup-push`) **и** WAL после него (`wal-push` в `wal_005/`).
 
-1. Остановить postgres, очистить `postgres-data` (или новый volume)
-2. `wal-g backup-fetch <BACKUP_NAME> /var/lib/postgresql/data`
-3. Создать `recovery.conf` / signal file с `recovery_target_time` (PG17: через `postgresql.auto.conf`)
-4. Запустить postgres в recovery mode
-5. После recovery — promote
+Postgres накатывает WAL сам: для каждого сегмента вызывает `restore_command` → `wal-g wal-fetch` тянет файл из GCS.  
+Остановиться можно **не только в конце цепочки** — задай `recovery_target_time`, `recovery_target_lsn` или `recovery_target_name` в `postgresql.auto.conf`.
 
-Команды выполнять в контейнере с `wal-g` и доступом к volume + `WALG_GS_PREFIX`.
+```bash
+# 1. Имя backup из backup-list
+docker exec backup wal-g backup-list
+# пример: base_000000010000000000000008
 
-Для PITR нужны **и** base backup (`backup-push`), **и** непрерывный WAL (`wal-push`).
+# 2. Остановить зависимые сервисы и postgres
+docker compose -f prod.docker-compose.yml stop fastapi backup
+docker compose -f prod.docker-compose.yml stop postgres
+
+# 3. Очистить PGDATA (ОСТОРОЖНО) или поднять на отдельной recovery VM
+#    Команды ниже — внутри контейнера postgres или backup с volume + WALG_GS_PREFIX
+
+wal-g backup-fetch base_000000010000000000000008 /var/lib/postgresql/data
+
+touch /var/lib/postgresql/data/recovery.signal
+cat >> /var/lib/postgresql/data/postgresql.auto.conf <<'EOF'
+restore_command = 'wal-g wal-fetch "%f" "%p"'
+recovery_target_time = '2026-06-11 08:30:00+00'
+recovery_target_action = 'promote'
+EOF
+
+# 4. Запустить postgres — recovery mode, накат WAL до recovery_target_time
+docker compose -f prod.docker-compose.yml start postgres
+docker logs -f postgres   # ждать consistent recovery / promote
+
+# 5. Проверить и поднять приложение
+docker compose -f prod.docker-compose.yml start fastapi backup
+```
+
+Без `recovery_target_*` Postgres накатит **все** доступные WAL из GCS (максимально свежее состояние).
 
 ## Troubleshooting
 
@@ -221,7 +264,9 @@ docker compose -f prod.docker-compose.yml start fastapi
 |---------|-------------------|---------------|
 | Нет новых файлов в `pg-dump/` | Sidecar упал, нет env, GCS auth | `docker logs backup`, `BACKUPS_BUCKET_NAME` в `.env` |
 | Нет `wal-g/main/` в GCS | `archive_command` падает | `docker logs postgres`, metadata доступен из контейнера |
-| `backup-push` failed | Нет PGDATA mount, remote mode без replication в pg_hba | `docker exec backup wal-g backup-push /var/lib/postgresql/data` |
+| `backup-push` failed | Нет PGDATA mount → remote mode без replication в pg_hba | `docker exec backup ls /var/lib/postgresql/data/PG_VERSION`; затем `/bin/bash /scripts/walg-backup-push.sh` |
+| `user=root` при wal-g | Запуск wal-g без скрипта (нет PGUSER) | Только через `/bin/bash /scripts/walg-backup-push.sh` |
+| backup Restarting, `Failed to fork exec` | supercronic v0.2.33 как PID 1 | Образ с v0.2.46+ и CMD `/usr/local/bin/supercronic` |
 | Бэкапы есть, но старые | Lifecycle 30d | `gcloud storage ls` с датами |
 | После `down -v` пустая БД | Volume удалён локально | Восстановление **только из GCS**, не с диска |
 | Диск VM полон | WAL копятся локально при сбое archive | `docker exec postgres du -sh /var/lib/postgresql/data/pg_wal` |
@@ -247,7 +292,7 @@ docker exec backup curl -s -H "Metadata-Flavor: Google" \
 infra/
 ├── postgres/Dockerfile          # postgres:17 + wal-g
 ├── backup/
-│   ├── Dockerfile               # sidecar: wal-g, pg_dump, supercronic
+│   ├── Dockerfile               # postgres:17-bookworm + wal-g, pg_dump, supercronic
 │   ├── crontab                  # расписание
 │   ├── scripts/
 │   │   ├── common.sh
@@ -261,4 +306,4 @@ terraform/backups.tf             # GCS bucket + IAM
 
 ## История решения
 
-Система внедрена после инцидента 2025-06-09: `docker compose down -v` удалил `postgres-data`. Keycloak-сессии пережили wipe, локальная БД — нет. Off-site бэкапы в GCS закрывают этот класс потерь.
+Система внедрена после инцидента 2026-06-09: `docker compose down -v` удалил `postgres-data`. Keycloak-сессии пережили wipe, локальная БД — нет. Off-site бэкапы в GCS закрывают этот класс потерь.
