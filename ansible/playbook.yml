@@ -43,7 +43,7 @@
       ansible.builtin.include_role:
         name: frontend
 
-    - name: Infra services (redis, rabbitmq, prometheus, grafana, loki, alloy, alertmanager, wireguard, meilisearch)
+    - name: Infra services (redis, rabbitmq, prometheus, grafana, loki, alloy, alertmanager, wg-easy, meilisearch)
       ansible.builtin.include_role:
         name: infra_services
 

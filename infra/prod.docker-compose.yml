@@ -104,7 +104,8 @@ services:
     container_name: nginx
     image: nginx:latest
     networks:
-      - nuros
+      nuros:
+        ipv4_address: 172.28.0.8
     restart: always
     ports:
       - "80:80"
@@ -161,7 +162,7 @@ services:
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
 
     healthcheck:
-      test: ["CMD", "rabbitmq", "status"]
+      test: [ "CMD", "rabbitmq", "status" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -226,7 +227,7 @@ services:
       - "./grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"
       - "./grafana/provisioning/alerting/alerts.yaml:/etc/grafana/provisioning/alerting/alerts.yaml"
       - "./scripts/start-grafana.sh:/start-grafana.sh"
-    entrypoint: ["/bin/sh", "/start-grafana.sh"]
+    entrypoint: [ "/bin/sh", "/start-grafana.sh" ]
     restart: unless-stopped
     deploy:
       resources:
@@ -237,7 +238,6 @@ services:
       - nuros
     depends_on:
       - alloy
-
 
   alloy:
     container_name: alloy
@@ -257,7 +257,6 @@ services:
       - prometheus
       - loki
 
-
   alertmanager:
     container_name: alertmanager
     image: prom/alertmanager:latest
@@ -267,39 +266,35 @@ services:
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
-    entrypoint: ["/bin/sh", "/start-alertmanager.sh"]
+    entrypoint: [ "/bin/sh", "/start-alertmanager.sh" ]
     restart: unless-stopped
     networks:
       - nuros
 
-  wireguard:
-    image: lscr.io/linuxserver/wireguard:latest
-    container_name: wireguard
+  wg-easy:
+    image: ghcr.io/wg-easy/wg-easy:15
+    container_name: wg-easy
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
     networks:
-      - nuros
+      # - nuros
+      nuros:
+        ipv4_address: 172.28.0.5
     environment:
-      - PUID=3182562138
-      - PGID=1007
-      - TZ=Etc/UTC
-      - SERVERURL=vpn.nuspace.kz
-      - PEERS=10
-      - PEERDNS=1.1.1.1
-      - INTERNAL_SUBNET=10.13.13.0/24
-      - ALLOWEDIPS=0.0.0.0/0
-      - LOG_CONFS=true
+      - INSECURE=true
+      # - PORT=51821
+      # - HOST=localhost
     volumes:
-      - ./wireguard/config:/config
-      - ./wireguard/hooks:/custom-cont-init.d:ro
-      - /lib/modules:/lib/modules
+      - ./wg-easy:/etc/wireguard
+      - /lib/modules:/lib/modules:ro
     ports:
-      - 51820:51820/udp
-    # Avoid static IP conflicts, rely on dynamic DHCP in bridge network
-    sysctls:
-      - net.ipv4.conf.all.src_valid_mark=1
+      - "51820:51820/udp"
+      - "127.0.0.1:51821:51821/tcp"
     restart: unless-stopped
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
 
 networks:
   nuros:
