@@ -9,9 +9,17 @@
 ## Table of Contents
 
 - [Nuspace.kz](#nuspacekz)
+  - [Table of Contents](#table-of-contents)
   - [Tech Stack](#tech-stack)
+    - [Backend](#backend)
+    - [Frontend](#frontend)
+    - [DevOps \& Infrastructure](#devops--infrastructure)
   - [Prerequisites](#prerequisites)
   - [Quick Start](#quick-start)
+    - [1. Clone the Repository](#1-clone-the-repository)
+    - [2. Configure Environment Variables](#2-configure-environment-variables)
+    - [3. Build and Run](#3-build-and-run)
+    - [4. Verify Setup](#4-verify-setup)
   - [Documentation](#documentation)
   - [Contributing](#contributing)
   - [License](#license)
@@ -88,7 +96,6 @@ Access the application at [localhost](http://localhost) to confirm everything is
 - [Workload Identity Federation](docs/wif-setup.md) - GitHub Actions authentication with GCP for CI/CD pipeline
 - [Monitoring Guide](infra/README.md) - What monitoring service stack is used and their connection details
 - [Terraform Setup](terraform/README.md) - Provision cloud services for stage/production environments by IoC
-- [WireGuard VPN](infra/wireguard/README.md) - Secure VPN access to monitoring tools and internal services
 - [SSH Access](docs/ssh-access.md) - Production/Staging server SSH is available only via VPN and OS Login
 
 ## Contributing

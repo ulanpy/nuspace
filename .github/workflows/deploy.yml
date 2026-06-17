@@ -52,8 +52,8 @@ jobs:
               - 'infra/alloy/**'
             alertmanager:
               - 'infra/alertmanager/**'
-            wireguard:
-              - 'infra/wireguard/**'
+            wg-easy:
+              - 'infra/wg-easy/**'
             compose:
               - 'infra/prod.docker-compose.yml'
               - 'infra/postgres/**'
@@ -270,14 +270,14 @@ jobs:
           gcloud compute ssh ${{ steps.secrets.outputs.VM_NAME }} --zone=europe-central2-a --tunnel-through-iap --command="docker ps --format 'table {{.Names}}\t{{.Status}}'" --ssh-flag="-o ConnectTimeout=10" --quiet > /tmp/container_status.txt 2>/dev/null || echo "Connection failed" > /tmp/container_status.txt
           
           # Check if expected containers are running
-          if grep -q "fastapi\|nginx\|postgres\|backup\|redis\|rabbitmq\|prometheus\|grafana\|loki\|alloy\|alertmanager\|wireguard" /tmp/container_status.txt; then
+          if grep -q "fastapi\|nginx\|postgres\|backup\|redis\|rabbitmq\|prometheus\|grafana\|loki\|alloy\|alertmanager\|wg-easy" /tmp/container_status.txt; then
             echo "containers_running=true" >> $GITHUB_OUTPUT
           else
             echo "containers_running=false" >> $GITHUB_OUTPUT
           fi
           
           # Always run if there are code changes
-          if [[ "${{ steps.changes.outputs.backend }}" == "true" || "${{ steps.changes.outputs.frontend }}" == "true" || "${{ steps.changes.outputs.nginx }}" == "true" || "${{ steps.changes.outputs.redis }}" == "true" || "${{ steps.changes.outputs.rabbitmq }}" == "true" || "${{ steps.changes.outputs.prometheus }}" == "true" || "${{ steps.changes.outputs.grafana }}" == "true" || "${{ steps.changes.outputs.loki }}" == "true" || "${{ steps.changes.outputs.alloy }}" == "true" || "${{ steps.changes.outputs.alertmanager }}" == "true" || "${{ steps.changes.outputs.wireguard }}" == "true" || "${{ steps.changes.outputs.compose }}" == "true" ]]; then
+          if [[ "${{ steps.changes.outputs.backend }}" == "true" || "${{ steps.changes.outputs.frontend }}" == "true" || "${{ steps.changes.outputs.nginx }}" == "true" || "${{ steps.changes.outputs.redis }}" == "true" || "${{ steps.changes.outputs.rabbitmq }}" == "true" || "${{ steps.changes.outputs.prometheus }}" == "true" || "${{ steps.changes.outputs.grafana }}" == "true" || "${{ steps.changes.outputs.loki }}" == "true" || "${{ steps.changes.outputs.alloy }}" == "true" || "${{ steps.changes.outputs.alertmanager }}" == "true" || "${{ steps.changes.outputs.wg-easy }}" == "true" || "${{ steps.changes.outputs.compose }}" == "true" ]]; then
             echo "should_deploy=true" >> $GITHUB_OUTPUT
           else
             echo "should_deploy=false" >> $GITHUB_OUTPUT
@@ -331,7 +331,7 @@ jobs:
           # Run the Ansible playbook
           cd ansible && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook playbook.yml \
             --inventory inventory.yml \
-            --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ steps.secrets.outputs.ANSIBLE_USER }} docker_user=${{ steps.secrets.outputs.DOCKER_USERNAME }} docker_pass=${{ steps.secrets.outputs.DOCKER_PASSWORD }} gcp_project=${{ env.DEPLOY_GCP_PROJECT }} github_ref_name=${{ github.ref_name }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wireguard_changed=${{ steps.changes.outputs.wireguard }} meilisearch_changed=${{ steps.changes.outputs.meilisearch }} compose_changed=${{ steps.changes.outputs.compose }} frontend_tarball_path='${{ steps.fe_artifact.outputs.path }}'"
+            --extra-vars "docker_image_tag=${{ steps.meta.outputs.version }} ansible_user_var=${{ steps.secrets.outputs.ANSIBLE_USER }} docker_user=${{ steps.secrets.outputs.DOCKER_USERNAME }} docker_pass=${{ steps.secrets.outputs.DOCKER_PASSWORD }} gcp_project=${{ env.DEPLOY_GCP_PROJECT }} github_ref_name=${{ github.ref_name }} backend_changed=${{ steps.changes.outputs.backend }} frontend_changed=${{ steps.changes.outputs.frontend }} nginx_changed=${{ steps.changes.outputs.nginx }} redis_changed=${{ steps.changes.outputs.redis }} rabbitmq_changed=${{ steps.changes.outputs.rabbitmq }} prometheus_changed=${{ steps.changes.outputs.prometheus }} grafana_changed=${{ steps.changes.outputs.grafana }} loki_changed=${{ steps.changes.outputs.loki }} alloy_changed=${{ steps.changes.outputs.alloy }} alertmanager_changed=${{ steps.changes.outputs.alertmanager }} wg-easy_changed=${{ steps.changes.outputs.wg-easy }} meilisearch_changed=${{ steps.changes.outputs.meilisearch }} compose_changed=${{ steps.changes.outputs.compose }} frontend_tarball_path='${{ steps.fe_artifact.outputs.path }}'"
 
       - name: Cleanup OS Login SSH key
         if: always()
