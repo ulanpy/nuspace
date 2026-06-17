@@ -84,7 +84,7 @@
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
     up -d wg-easy
 
-  when: (wg-easy_changed | default(false)) | bool or (container_analysis is defined and 'wg-easy' in container_analysis.stdout)
+  when: (wg_easy_changed | default(false)) | bool or (container_analysis is defined and 'wg-easy' in container_analysis.stdout)
   async: 600
   poll: 0
   register: wg_easy_job

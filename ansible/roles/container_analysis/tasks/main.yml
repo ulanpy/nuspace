@@ -29,7 +29,7 @@
         NEED_RESTART="${NEED_RESTART} ${container}"
       elif [[ "${ALERTMANAGER_CHANGED:-false}" == "true" && "$container" == "alertmanager" ]]; then
         NEED_RESTART="${NEED_RESTART} ${container}"
-      elif [[ "${WG-EASY_CHANGED:-false}" == "true" && "$container" == "wg-easy" ]]; then
+      elif [[ "${WG_EASY_CHANGED:-false}" == "true" && "$container" == "wg-easy" ]]; then
         NEED_RESTART="${NEED_RESTART} ${container}"
       elif [[ "${MEILISEARCH_CHANGED:-false}" == "true" && "$container" == "meilisearch" ]]; then
         NEED_RESTART="${NEED_RESTART} ${container}"
