@@ -1,20 +1,24 @@
 import asyncio
-from datetime import date, datetime, time, timedelta, timezone
-from zoneinfo import ZoneInfo
+import base64
 import re
+from datetime import date, datetime, time, timedelta, timezone
 from typing import List, Tuple
-
-import httpx
+from zoneinfo import ZoneInfo
 
 from backend.common.schemas import Infra
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.grade_report import Course, CourseItem, StudentCourse, StudentSchedule
+from backend.core.database.models.grade_report import (
+    Course,
+    CourseItem,
+    StudentCourse,
+    StudentSchedule,
+)
 from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.courses.courses import schemas
 from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
 from backend.modules.courses.courses.repository import CourseRepository
-from backend.modules.courses.registrar.service import RegistrarService
+from backend.modules.courses.registrar.parsers.registrar_parser import parse_personal_schedule_pdf
 from backend.modules.courses.registrar.schedule_sync import SCHEDULE_INDEX_UID
 from backend.modules.courses.registrar.schemas import (
     CourseSearchRequest,
@@ -23,6 +27,7 @@ from backend.modules.courses.registrar.schemas import (
     SemesterOption,
     UserScheduleItem,
 )
+from backend.modules.courses.registrar.service import RegistrarService
 
 
 class StudentCourseService:
@@ -454,7 +459,28 @@ class StudentCourseService:
             username=username,
             password=password
         )
-        
+        return await self._sync_courses_from_schedule_response(
+            student_sub=student_sub,
+            schedule_response=schedule_response,
+        )
+
+    async def sync_courses_from_schedule_pdf(
+        self,
+        student_sub: str,
+        pdf_file: bytes,
+    ) -> schemas.RegistrarSyncResponse:
+        schedule_response = parse_personal_schedule_pdf(_normalize_pdf_bytes(pdf_file))
+        return await self._sync_courses_from_schedule_response(
+            student_sub=student_sub,
+            schedule_response=schedule_response,
+        )
+
+    async def _sync_courses_from_schedule_response(
+        self,
+        *,
+        student_sub: str,
+        schedule_response: ScheduleResponse,
+    ) -> schemas.RegistrarSyncResponse:
         # Get semesters to determine current term
         semesters: list[SemesterOption] = await self._registrar_service.list_semesters()
         current_term_value = self._determine_current_semester(
@@ -483,6 +509,12 @@ class StudentCourseService:
                 if not normalized_code:
                     continue
                 schedule_codes.add(normalized_code)
+        # Add online classes to schedule codes
+        for course_code in schedule_response.preferences.classes:
+            normalized_code = self._normalize_course_code(course_code)
+            if not normalized_code:
+                continue
+            schedule_codes.add(normalized_code)
 
         
         
@@ -822,3 +854,13 @@ class StudentCourseService:
             lookup_errors=lookup_errors,
             google_errors=google_errors,
         )
+
+
+def _normalize_pdf_bytes(pdf_bytes: bytes) -> bytes:
+    if pdf_bytes.startswith(b"%PDF"):
+        return pdf_bytes
+    try:
+        decoded = base64.b64decode(pdf_bytes, validate=True)
+    except Exception:
+        return pdf_bytes
+    return decoded if decoded.startswith(b"%PDF") else pdf_bytes

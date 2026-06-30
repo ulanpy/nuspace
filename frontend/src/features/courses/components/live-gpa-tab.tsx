@@ -34,6 +34,7 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
     templates,
     sharing,
     syncCourses,
+    syncCoursesFromPdf,
   } = viewModel;
 
   const { toast } = useToast();
@@ -88,6 +89,7 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <SynchronizeCoursesControl
               onSync={syncCourses}
+              onSyncPdf={syncCoursesFromPdf}
               userEmail={userEmail}
             />
             <Button

@@ -9,19 +9,18 @@ GitHub: https://github.com/superhooman/crashed.nu
 from typing import Annotated, List
 
 import httpx
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.common.dependencies import get_creds_or_401, get_db_session, get_infra
 from backend.common.schemas import Infra
+from backend.core.configs.config import config
 from backend.core.database.models.grade_report import CourseItem
 from backend.modules.courses.courses import dependencies as deps
 from backend.modules.courses.courses import schemas
+from backend.modules.courses.courses.dependencies import get_student_course_service
+from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
 from backend.modules.courses.courses.policy import CourseItemPolicy, StudentCoursePolicy
 from backend.modules.courses.courses.service import StudentCourseService
-from backend.modules.courses.courses.dependencies import get_student_course_service
-from backend.core.configs.config import config
-from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(tags=["Student Courses"])
 
@@ -54,7 +53,9 @@ async def sync_courses_from_registrar(
     """
     try:
         student_sub = user[0].get("sub")
-        student_username = user[0].get("email").split("@")[0] if not config.IS_DEBUG else "ulan.sharipov"
+        student_username = (
+            user[0].get("email").split("@")[0] if not config.IS_DEBUG else "ulan.sharipov"
+        )
         sync_result = await service.sync_courses_from_registrar(
             student_sub=student_sub,
             password=data.password,
@@ -73,6 +74,32 @@ async def sync_courses_from_registrar(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
     
+
+
+@router.post("/registered_courses/sync/pdf", response_model=schemas.RegistrarSyncResponse)
+async def sync_courses_from_schedule_pdf(
+    data: schemas.RegistrarSyncPdfRequest,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    service: StudentCourseService = Depends(get_student_course_service),
+):
+    """
+    Sync registered courses from an uploaded registrar personal schedule PDF.
+    """
+    try:
+        student_sub = user[0].get("sub")
+        return await service.sync_courses_from_schedule_pdf(
+            student_sub=student_sub,
+            pdf_file=data.pdf_file,
+        )
+
+    except CourseLookupError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    except SemesterResolutionError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/registered_courses", response_model=List[schemas.RegisteredCourseResponse])

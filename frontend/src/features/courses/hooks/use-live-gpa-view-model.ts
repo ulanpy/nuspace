@@ -465,6 +465,30 @@ export function useLiveGpaViewModel(user: NullableUser) {
     [],
   );
 
+  const handleSyncCoursesFromPdf = useCallback(
+    async (pdfFileBase64: string): Promise<RegistrarSyncResponse> => {
+      setScheduleLoading(true);
+      try {
+        const result = await gradeStatisticsApi.syncRegistrarCoursesFromPdf({
+          pdf_file: pdfFileBase64,
+        });
+        setRegisteredCourses(result.synced_courses);
+        if (result.schedule) {
+          setScheduleData(result.schedule);
+          setScheduleMeta((prev) => ({
+            term_label: result.term_label ?? prev?.term_label ?? null,
+            term_value: result.term_value ?? prev?.term_value ?? null,
+            last_synced_at: result.last_synced_at ?? new Date().toISOString(),
+          }));
+        }
+        return result;
+      } finally {
+        setScheduleLoading(false);
+      }
+    },
+    [],
+  );
+
   const openSchedule = useCallback(() => setIsScheduleOpen(true), []);
   const closeSchedule = useCallback(() => setIsScheduleOpen(false), []);
 
@@ -737,6 +761,7 @@ export function useLiveGpaViewModel(user: NullableUser) {
       isSubmitting: isSharing,
     },
     syncCourses: handleSyncCourses,
+    syncCoursesFromPdf: handleSyncCoursesFromPdf,
   };
 }
 

@@ -2,7 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { GraduationCap, AlertCircle, ShieldCheck, Eye, EyeOff, FileDown, ListChecks, ArrowUpDown } from "lucide-react";
+import {
+  GraduationCap,
+  AlertCircle,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+  FileDown,
+  ListChecks,
+  ArrowUpDown,
+  ChevronDown,
+  Upload,
+} from "lucide-react";
 import Link from "@/router/link";
 import { ROUTES } from "@/data/routes";
 
@@ -17,9 +28,14 @@ import {
 import { Button } from "@/components/atoms/button";
 import { Input } from "@/components/atoms/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/atoms/dropdown-menu";
 import { Alert, AlertDescription, AlertTitle } from "@/components/atoms/alert";
 import { Badge } from "@/components/atoms/badge";
-import { Switch } from "@/components/atoms/switch";
 import { cn } from "@/utils/utils";
 import { Modal } from "@/components/atoms/modal";
 
@@ -29,6 +45,7 @@ type DegreeAuditTabProps = {
 };
 
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
+type AuditInputMode = "registrar" | "pdf";
 
 type TcMappingRowState = {
   key: string;
@@ -87,12 +104,13 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [usePdfUpload, setUsePdfUpload] = useState(false);
+  const [auditInputMode, setAuditInputMode] = useState<AuditInputMode>("registrar");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfError, setPdfError] = useState("");
   const [tcModalOpen, setTcModalOpen] = useState(false);
   const [pendingAudit, setPendingAudit] = useState<PendingAuditState | null>(null);
   const [tcMappingRows, setTcMappingRows] = useState<TcMappingRowState[]>([]);
+  const usePdfUpload = auditInputMode === "pdf";
 
   const readFileAsBase64 = (file: File) =>
     new Promise<string>((resolve, reject) => {
@@ -208,6 +226,22 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
     catalogQuery.data?.years.find((y) => y.year === selectedYear)?.majors || [];
   const currentMinors = catalogQuery.data?.minors || [];
   const [statusSort, setStatusSort] = useState<"default" | "satisfied-first" | "pending-first">("default");
+
+  const openAuditModal = (mode: AuditInputMode = "registrar") => {
+    setIsAuditModalOpen(true);
+    setPassword("");
+    setShowPassword(false);
+    setAuditInputMode(mode);
+    setPdfFile(null);
+    setPdfError("");
+    setTcModalOpen(false);
+    setPendingAudit(null);
+    setTcMappingRows([]);
+    auditMutation.reset();
+  };
+
+  const canOpenAudit =
+    Boolean(selectedYear && selectedMajors[0]) && !catalogQuery.isLoading && !auditMutation.isPending;
   
   const sortedResults = useMemo(() => {
     const rows = activeAudit?.results || [];
@@ -425,26 +459,35 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
 
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex gap-2">
-            <Button
-              size="sm"
-              className="h-8 rounded-full px-3 text-xs font-medium gap-2"
-              onClick={() => {
-                setIsAuditModalOpen(true);
-                setPassword("");
-                setShowPassword(false);
-                setUsePdfUpload(false);
-                setPdfFile(null);
-                setPdfError("");
-                setTcModalOpen(false);
-                setPendingAudit(null);
-                setTcMappingRows([]);
-                auditMutation.reset();
-              }}
-              disabled={!selectedYear || !selectedMajors[0] || !username || catalogQuery.isLoading || auditMutation.isPending}
-            >
-              {auditMutation.isPending ? "Running..." : "Run audit"}
-              <GraduationCap className={cn("h-4 w-4", auditMutation.isPending && "animate-spin")} />
-            </Button>
+            <div className="inline-flex overflow-hidden rounded-full">
+              <Button
+                size="sm"
+                className="h-8 rounded-none rounded-l-full px-3 text-xs font-medium gap-2"
+                onClick={() => openAuditModal("registrar")}
+                disabled={!canOpenAudit || !username}
+              >
+                {auditMutation.isPending ? "Running..." : "Run audit"}
+                <GraduationCap className={cn("h-4 w-4", auditMutation.isPending && "animate-spin")} />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    className="h-8 rounded-none rounded-r-full border-l border-primary-foreground/20 px-2"
+                    disabled={!canOpenAudit}
+                    aria-label="More audit options"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="z-[11050]">
+                  <DropdownMenuItem onClick={() => openAuditModal("pdf")} className="gap-2">
+                    <Upload className="h-4 w-4" />
+                    Run audit from file
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
@@ -598,7 +641,7 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
             setIsAuditModalOpen(false);
             setPassword("");
             setShowPassword(false);
-            setUsePdfUpload(false);
+            setAuditInputMode("registrar");
             setPdfFile(null);
             setPdfError("");
           }
@@ -608,24 +651,6 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
         contentClassName="rounded-3xl"
       >
         <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/30 px-3 py-2">
-            <div>
-              <p className="text-sm font-medium text-foreground">Manual PDF upload</p>
-              <p className="text-xs text-muted-foreground">Use a transcript PDF instead of registrar credentials.</p>
-            </div>
-            <Switch
-              checked={usePdfUpload}
-              onCheckedChange={(checked) => {
-                setUsePdfUpload(checked);
-                setPassword("");
-                setShowPassword(false);
-                setPdfFile(null);
-                setPdfError("");
-              }}
-              disabled={auditMutation.isPending}
-            />
-          </div>
-
           {!usePdfUpload && (
             <Alert variant="default" className="border-border/60 bg-muted/40">
               <ShieldCheck className="h-4 w-4" />
@@ -713,7 +738,7 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
                   setIsAuditModalOpen(false);
                   setPassword("");
                   setShowPassword(false);
-                  setUsePdfUpload(false);
+                  setAuditInputMode("registrar");
                   setPdfFile(null);
                   setPdfError("");
                 }
@@ -746,7 +771,7 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
                   setIsAuditModalOpen(false);
                   setPassword("");
                   setShowPassword(false);
-                  setUsePdfUpload(false);
+                  setAuditInputMode("registrar");
                   setPdfFile(null);
                   setPdfError("");
                 } catch {

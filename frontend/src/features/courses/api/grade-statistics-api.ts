@@ -56,6 +56,10 @@ export const gradeStatisticsApi = {
     return await apiCall(`/registered_courses/sync`, { method: 'POST', json: payload });
   },
 
+  syncRegistrarCoursesFromPdf: async (payload: { pdf_file: string }): Promise<RegistrarSyncResponse> => {
+    return await apiCall(`/registered_courses/sync/pdf`, { method: 'POST', json: payload });
+  },
+
   getSchedule: async (): Promise<StudentScheduleResponse | null> => {
     const response = await apiCall<StudentScheduleResponse | null>(`/registered_courses/schedule`);
     return response ?? null;

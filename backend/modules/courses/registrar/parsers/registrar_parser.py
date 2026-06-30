@@ -1,7 +1,36 @@
-from typing import Any
-from backend.modules.courses.registrar.schemas import ScheduleResponse
+import io
 import re
 from html import unescape
+from typing import Any
+
+import pdfplumber
+from backend.modules.courses.registrar.schemas import ScheduleResponse
+
+COLORS = [
+    "#DA3A2D",
+    "#EC804F",
+    "#ECC059",
+    "#7BCA8F",
+    "#65A6DA",
+    "#9060EE",
+    "#3F51B5",
+    "#8E24AA",
+    "#616161",
+]
+
+WEEKDAYS = [
+    "MONDAY",
+    "TUESDAY",
+    "WEDNESDAY",
+    "THURSDAY",
+    "FRIDAY",
+    "SATURDAY",
+    "SUNDAY",
+]
+
+COURSE_CODE_SEARCH_PATTERN = re.compile(
+    r"(?P<codes>[A-Z]{2,}\s*\d{2,}[A-Z]?(?:\s*/\s*[A-Z]{2,}\s*\d{2,}[A-Z]?)*)(?:\s+|$)"
+)
 
 
 def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
@@ -27,28 +56,6 @@ def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
     preferences = {"classes": [], "colors": {}}
 
     entries = data if isinstance(data, list) else data.get("data", [])
-    colors = [
-        "#DA3A2D",
-        "#EC804F",
-        "#ECC059",
-        "#7BCA8F",
-        "#65A6DA",
-        "#9060EE",
-        "#3F51B5",
-        "#8E24AA",
-        "#616161",
-    ]
-
-    weekdays = [
-        "MONDAY",
-        "TUESDAY",
-        "WEDNESDAY",
-        "THURSDAY",
-        "FRIDAY",
-        "SATURDAY",
-        "SUNDAY",
-    ]
-
     br_pattern = re.compile(r"<\s*br\s*/?\s*>", re.IGNORECASE)
     tag_pattern = re.compile(r"<[^>]+>")
     whitespace_pattern = re.compile(r"\s+")
@@ -76,6 +83,23 @@ def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
                 lines.append(normalized)
         return lines
 
+    def add_class_preference(course_code: str) -> None:
+        if course_code and course_code not in preferences["classes"]:
+            preferences["classes"].append(course_code)
+
+    def normalize_course_code(raw_code: str) -> str:
+        normalized_code = re.sub(r"\s*/\s*", "/", raw_code)
+        return whitespace_pattern.sub(" ", normalized_code).strip()
+
+    def extract_course_codes(lines: list[str]) -> list[str]:
+        course_codes: list[str] = []
+        for line in lines:
+            for match in COURSE_CODE_SEARCH_PATTERN.finditer(line):
+                course_code = normalize_course_code(match.group("codes"))
+                if course_code and course_code not in course_codes:
+                    course_codes.append(course_code)
+        return course_codes
+
     def parse_day(entry: str) -> dict[str, Any]:
         if not entry or not entry.strip():
             raise ValueError("Empty schedule entry")
@@ -93,9 +117,7 @@ def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
         course_match = None
         if code_match:
             raw_code = code_match.group("codes")
-            normalized_code = re.sub(r"\s*/\s*", "/", raw_code)
-            normalized_code = whitespace_pattern.sub(" ", normalized_code).strip()
-            course_code = normalized_code
+            course_code = normalize_course_code(raw_code)
             label = header_stripped[code_match.end():].strip()
         else:
             course_match = re.match(r"([A-Z]{2,}\s*\d{2,}[A-Z]?)\s*(.*)", header_stripped)
@@ -106,7 +128,14 @@ def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
                 course_code = re.sub(r"\W+", "_", header_stripped).strip("_").upper()
                 label = header_stripped
 
-        time_line = next((line for line in lines[1:] if re.search(r"\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}", line)), "")
+        time_line = next(
+            (
+                line
+                for line in lines[1:]
+                if re.search(r"\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}", line)
+            ),
+            "",
+        )
         if not time_line:
             raise ValueError("Missing time information in schedule entry")
 
@@ -128,8 +157,40 @@ def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
             "time": time_info,
         }
 
+    def parse_online_classes(value: Any) -> None:
+        if isinstance(value, str):
+            lines = normalize_html_block(value)
+            for course_code in extract_course_codes(lines):
+                add_class_preference(course_code)
+            return
+        if isinstance(value, list):
+            for item in value:
+                parse_online_classes(item)
+            return
+        if isinstance(value, dict):
+            for item in value.values():
+                parse_online_classes(item)
+
+    def scan_online_sections(value: Any, *, in_online_section: bool = False) -> None:
+        if isinstance(value, dict):
+            for key, item in value.items():
+                key_is_online = "ONLINE" in str(key).upper()
+                scan_online_sections(
+                    item,
+                    in_online_section=in_online_section or key_is_online,
+                )
+            return
+        if isinstance(value, list):
+            for item in value:
+                scan_online_sections(item, in_online_section=in_online_section)
+            return
+        if isinstance(value, str) and (
+            in_online_section or "ONLINE CLASSES" in value.upper()
+        ):
+            parse_online_classes(value)
+
     for entry in entries:
-        for index, day in enumerate(weekdays):
+        for index, day in enumerate(WEEKDAYS):
             day_value = entry.get(day)
             if not day_value:
                 continue
@@ -138,17 +199,132 @@ def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
             except ValueError:
                 continue
             week[index].append(item)
-            if item["course_code"] not in preferences["classes"]:
-                preferences["classes"].append(item["course_code"])
+            add_class_preference(item["course_code"])
 
-    color_cycle = (color for color in colors)
+        for key, value in entry.items():
+            if "ONLINE" in str(key).upper() and value:
+                parse_online_classes(value)
+
+    scan_online_sections(data)
+
+    color_cycle = (color for color in COLORS)
     for course_code in preferences["classes"]:
         try:
             color = next(color_cycle)
         except StopIteration:
-            color_cycle = (color for color in colors)
+            color_cycle = (color for color in COLORS)
             color = next(color_cycle)
         preferences["colors"][course_code] = color
 
     return ScheduleResponse(data=week, preferences=preferences)
 
+
+def parse_personal_schedule_pdf(pdf_file: bytes) -> ScheduleResponse:
+    """Parse a registrar personal schedule PDF into the same shape as getTimetable."""
+    text_parts: list[str] = []
+    with pdfplumber.open(io.BytesIO(pdf_file)) as pdf:
+        for page in pdf.pages:
+            text_parts.append(page.extract_text() or "")
+    text = "\n".join(text_parts)
+    normalized_text = re.sub(r"\s+", " ", text).upper()
+    if "PERSONAL TIMETABLE" in normalized_text:
+        raise ValueError("invalid_schedule_pdf_personal_timetable")
+    if "PERSONAL SCHEDULE" not in normalized_text:
+        raise ValueError("invalid_schedule_pdf")
+    return _parse_personal_schedule_text(text)
+
+
+def _parse_personal_schedule_text(text: str) -> ScheduleResponse:
+    if "PERSONAL TIMETABLE" in re.sub(r"\s+", " ", text).upper():
+        raise ValueError("invalid_schedule_pdf_personal_timetable")
+
+    week: list[list[dict[str, Any]]] = [[] for _ in range(7)]
+    preferences = {"classes": [], "colors": {}}
+    current_day: int | None = None
+    whitespace_pattern = re.compile(r"\s+")
+    time_row_pattern = re.compile(
+        r"^(?P<start>\d{1,2}:\d{2})\s*(?P<start_ampm>AM|PM)\s+"
+        r"(?P<end>\d{1,2}:\d{2})\s*(?P<end_ampm>AM|PM)\s+(?P<body>.+)$",
+        re.IGNORECASE,
+    )
+
+    def add_class_preference(course_code: str) -> None:
+        if course_code and course_code not in preferences["classes"]:
+            preferences["classes"].append(course_code)
+
+    def normalize_line(line: str) -> str:
+        return whitespace_pattern.sub(" ", line).strip()
+
+    def normalize_course_code(raw_code: str) -> str:
+        normalized_code = re.sub(r"\s*/\s*", "/", raw_code)
+        return whitespace_pattern.sub(" ", normalized_code).strip()
+
+    def parse_12h(value: str, ampm: str) -> dict[str, int]:
+        hours, minutes = map(int, value.split(":"))
+        marker = ampm.upper()
+        if marker == "PM" and hours != 12:
+            hours += 12
+        elif marker == "AM" and hours == 12:
+            hours = 0
+        return {"hh": hours, "mm": minutes}
+
+    def add_codes_from_line(line: str) -> None:
+        for match in COURSE_CODE_SEARCH_PATTERN.finditer(line):
+            add_class_preference(normalize_course_code(match.group("codes")))
+
+    for raw_line in text.splitlines():
+        line = normalize_line(raw_line)
+        if not line:
+            continue
+        upper_line = line.upper()
+        if upper_line == "ONLINE CLASSES":
+            current_day = None
+            continue
+        if upper_line in WEEKDAYS:
+            current_day = WEEKDAYS.index(upper_line)
+            continue
+
+        add_codes_from_line(line)
+        time_match = time_row_pattern.match(line)
+        if current_day is None or not time_match:
+            continue
+
+        body = time_match.group("body")
+        code_match = COURSE_CODE_SEARCH_PATTERN.search(body)
+        if not code_match:
+            continue
+
+        course_code = normalize_course_code(code_match.group("codes"))
+        room = body[: code_match.start()].strip()
+        label = body[code_match.end() :].strip()
+        week[current_day].append(
+            {
+                "label": label,
+                "title": label,
+                "info": "",
+                "teacher": "",
+                "cab": room,
+                "course_code": course_code,
+                "time": {
+                    "start": parse_12h(
+                        time_match.group("start"),
+                        time_match.group("start_ampm"),
+                    ),
+                    "end": parse_12h(
+                        time_match.group("end"),
+                        time_match.group("end_ampm"),
+                    ),
+                },
+            }
+        )
+
+    color_cycle = (color for color in COLORS)
+    for course_code in preferences["classes"]:
+        try:
+            color = next(color_cycle)
+        except StopIteration:
+            color_cycle = (color for color in COLORS)
+            color = next(color_cycle)
+        preferences["colors"][course_code] = color
+
+    return ScheduleResponse(data=week, preferences=preferences)

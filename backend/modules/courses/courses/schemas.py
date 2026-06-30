@@ -1,14 +1,13 @@
 from datetime import datetime
 from typing import Any, List
 
-from fastapi import Query
-from pydantic import BaseModel, Field
-
 from backend.modules.courses.registrar.schemas import (
     SchedulePreferences,
     ScheduleResponse,
     UserScheduleItem,
 )
+from fastapi import Query
+from pydantic import BaseModel, Field
 
 
 class CourseCreate(BaseModel):
@@ -138,6 +137,14 @@ class ListBaseCourseResponse(BaseModel):
 
 class RegistrarSyncRequest(BaseModel):
     password: str = Field(min_length=1, description="Registrar password")
+
+
+class RegistrarSyncPdfRequest(BaseModel):
+    pdf_file: bytes = Field(
+        ...,
+        description="Base64-encoded registrar personal schedule PDF.",
+        max_length=10 * 1024 * 1024,
+    )
 
 
 class RegistrarSyncResponse(BaseModel):

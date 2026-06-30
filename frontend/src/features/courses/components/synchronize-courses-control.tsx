@@ -7,29 +7,56 @@ import { Modal } from "@/components/atoms/modal";
 import { Input } from "@/components/atoms/input";
 import { Badge } from "@/components/atoms/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/atoms/alert";
-import { RefreshCcw, AlertCircle, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/atoms/dropdown-menu";
+import { RefreshCcw, AlertCircle, ShieldCheck, Eye, EyeOff, Upload, ChevronDown } from "lucide-react";
 import { RegistrarSyncResponse } from "../types";
 import { gradeStatisticsApi } from '../api/grade-statistics-api';
 import { useToast } from "@/hooks/use-toast";
 import GoogleCalendarIcon from "@/assets/svg/google_calendar_icon.svg";
 
+const MAX_PDF_BYTES = 10 * 1024 * 1024;
+type SyncMode = "registrar" | "pdf";
+
 interface SynchronizeCoursesControlProps {
   onSync: (password: string) => Promise<RegistrarSyncResponse>;
+  onSyncPdf: (pdfFileBase64: string) => Promise<RegistrarSyncResponse>;
   userEmail: string;
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      resolve(result.includes(",") ? result.split(",", 2)[1] : result);
+    };
+    reader.onerror = () => reject(reader.error || new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
 }
 
 export function SynchronizeCoursesControl({
   onSync,
+  onSyncPdf,
   userEmail,
 }: SynchronizeCoursesControlProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [syncMode, setSyncMode] = useState<SyncMode>("registrar");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfError, setPdfError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [syncResult, setSyncResult] = useState<RegistrarSyncResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const { toast } = useToast();
+  const usePdfUpload = syncMode === "pdf";
 
   const username = useMemo(() => {
     if (!userEmail) return "";
@@ -37,9 +64,12 @@ export function SynchronizeCoursesControl({
     return name || "";
   }, [userEmail]);
 
-  const handleOpen = () => {
+  const handleOpen = (mode: SyncMode = "registrar") => {
     setPassword("");
     setShowPassword(false);
+    setSyncMode(mode);
+    setPdfFile(null);
+    setPdfError("");
     setSyncResult(null);
     setError(null);
     setIsModalOpen(true);
@@ -51,18 +81,28 @@ export function SynchronizeCoursesControl({
   };
 
   const handleSubmit = async () => {
-    if (!password.trim()) {
+    if (usePdfUpload && !pdfFile) {
+      setError("Schedule PDF is required");
+      return;
+    }
+    if (!usePdfUpload && !password.trim()) {
       setError("Password is required");
       return;
     }
     setIsSubmitting(true);
     setError(null);
     try {
-      const result = await onSync(password.trim());
+      const result = usePdfUpload
+        ? await onSyncPdf(await fileToBase64(pdfFile!))
+        : await onSync(password.trim());
       setSyncResult(result);
     } catch (err) {
       console.error("Failed to sync courses", err);
-      setError("Failed to sync courses. Please double-check your password and try again. If the problem persists, please contact us");
+      setError(
+        usePdfUpload
+          ? "Failed to sync courses from PDF. Please upload the Registrar Personal Schedule PDF, not Personal Timetable."
+          : "Failed to sync courses. Please double-check your password and try again. If the problem persists, please contact us"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -128,10 +168,33 @@ export function SynchronizeCoursesControl({
 
   return (
     <>
-      <Button size="sm" onClick={handleOpen} className="rounded-full px-4 font-medium gap-2">
-        <RefreshCcw className="h-4 w-4" />
-        Sync
-      </Button>
+      <div className="inline-flex overflow-hidden rounded-full">
+        <Button
+          size="sm"
+          onClick={() => handleOpen("registrar")}
+          className="rounded-none rounded-l-full px-4 font-medium gap-2"
+        >
+          <RefreshCcw className="h-4 w-4" />
+          Sync
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="sm"
+              className="rounded-none rounded-r-full border-l border-primary-foreground/20 px-2"
+              aria-label="More sync options"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="z-[11050]">
+            <DropdownMenuItem onClick={() => handleOpen("pdf")} className="gap-2">
+              <Upload className="h-4 w-4" />
+              Sync from file
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       <Modal
         isOpen={isModalOpen}
         onClose={handleClose}
@@ -140,53 +203,89 @@ export function SynchronizeCoursesControl({
         contentClassName="rounded-3xl"
       >
         <div className="space-y-5">
-          <Alert variant="default" className="border-border/60 bg-muted/40">
-            <ShieldCheck className="h-4 w-4" />
-            <AlertTitle className="text-sm font-semibold">We never store your NU Registrar password.</AlertTitle>
-            <AlertDescription className="text-xs text-muted-foreground">
-              Your credentials are sent directly to the registrar via our API just to fetch your courses and schedule.
-            </AlertDescription>
-          </Alert>
+          {!usePdfUpload && (
+            <Alert variant="default" className="border-border/60 bg-muted/40">
+              <ShieldCheck className="h-4 w-4" />
+              <AlertTitle className="text-sm font-semibold">We never store your NU Registrar password.</AlertTitle>
+              <AlertDescription className="text-xs text-muted-foreground">
+                Your credentials are sent directly to the registrar via our API just to fetch your courses and schedule.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <form action="/registered_courses/sync" method="POST" onSubmit={(ev) => {ev.preventDefault(); handleSubmit()}}>
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-foreground">Registrar username</label>
-                <Input value={username} readOnly className="cursor-not-allowed bg-muted/60" />
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-foreground">Registrar password</label>
-                <div className="relative">
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Enter your registrar password"
-                    className="h-11 rounded-xl pr-10"
-                    disabled={isSubmitting}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1 h-9 w-9 text-muted-foreground hover:text-foreground"
-                    onPointerDown={handleRevealPointerDown}
-                    onPointerUp={handleRevealPointerUp}
-                    onPointerLeave={handleRevealPointerUp}
-                    onPointerCancel={handleRevealPointerUp}
-                    onBlur={handleRevealPointerUp}
-                    onKeyDown={handleRevealKeyDown}
-                    onKeyUp={handleRevealKeyUp}
-                    disabled={isSubmitting}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
+            {!usePdfUpload ? (
+              <>
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-foreground">Registrar username</label>
+                  <Input value={username} readOnly className="cursor-not-allowed bg-muted/60" />
                 </div>
+
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-foreground">Registrar password</label>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="Enter your registrar password"
+                      className="h-11 rounded-xl pr-10"
+                      disabled={isSubmitting}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1 h-9 w-9 text-muted-foreground hover:text-foreground"
+                      onPointerDown={handleRevealPointerDown}
+                      onPointerUp={handleRevealPointerUp}
+                      onPointerLeave={handleRevealPointerUp}
+                      onPointerCancel={handleRevealPointerUp}
+                      onBlur={handleRevealPointerUp}
+                      onKeyDown={handleRevealKeyDown}
+                      onKeyUp={handleRevealKeyUp}
+                      disabled={isSubmitting}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground">Registrar Personal Schedule PDF</label>
+                <Input
+                  type="file"
+                  accept="application/pdf"
+                  className="h-11 rounded-xl"
+                  disabled={isSubmitting}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] || null;
+                    if (!file) {
+                      setPdfFile(null);
+                      setPdfError("");
+                      return;
+                    }
+                    if (file.size > MAX_PDF_BYTES) {
+                      setPdfFile(null);
+                      setPdfError("File exceeds 10MB. Please upload a smaller PDF.");
+                      return;
+                    }
+                    setPdfError("");
+                    setPdfFile(file);
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Upload the file titled <span className="font-semibold">Personal Schedule</span> from Registrar.
+                  Do not upload <span className="font-semibold">Personal Timetable</span>; it misses data needed for course sync.
+                </p>
+                {pdfError ? <p className="text-xs text-destructive">{pdfError}</p> : null}
               </div>
+            )}
 
           {error && (
             <Alert variant="destructive" className="my-2 border-destructive/50 bg-destructive/10 text-destructive">
@@ -254,11 +353,27 @@ export function SynchronizeCoursesControl({
             <Button
               size="sm"
               // onClick={}
-              disabled={isSubmitting || !password.trim()}
+              disabled={
+                isSubmitting ||
+                (usePdfUpload ? !pdfFile || Boolean(pdfError) : !password.trim())
+              }
               className="gap-2"
             >
-              <input type="submit" value={isSubmitting ? "Syncing…" : "Sync"} />
-              <RefreshCcw className={`h-4 w-4 ${isSubmitting ? "animate-spin" : ""}`} />
+              <input
+                type="submit"
+                value={
+                  isSubmitting
+                    ? "Syncing…"
+                    : usePdfUpload
+                      ? "Sync from PDF"
+                      : "Sync"
+                }
+              />
+              {usePdfUpload ? (
+                <Upload className={`h-4 w-4 ${isSubmitting ? "animate-pulse" : ""}`} />
+              ) : (
+                <RefreshCcw className={`h-4 w-4 ${isSubmitting ? "animate-spin" : ""}`} />
+              )}
             </Button>
             </div>
           </form>
