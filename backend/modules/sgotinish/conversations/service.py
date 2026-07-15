@@ -1,13 +1,13 @@
 from backend.core.database.models.sgotinish import Conversation, Message
 from backend.common.schemas import ShortUserResponse
-from backend.common.cruds import QueryBuilder
 from backend.common.utils import response_builder
 from backend.modules.sgotinish.conversations import schemas
 from backend.modules.sgotinish.conversations.policy import ConversationPolicy
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from typing import List
 from backend.core.database.models.sgotinish import Ticket
-from sqlalchemy import func
 from backend.modules.sgotinish.tickets.interfaces import AbstractConversationService
 from backend.modules.sgotinish.tickets import schemas as ticket_schemas
 
@@ -29,19 +29,15 @@ class ConversationService(AbstractConversationService):
         if not all_conversations:
             return {ticket.id: [] for ticket in tickets}
 
-        # Batch fetch message counts for all conversations
         conversation_ids = [conv.id for conv in all_conversations]
-        message_counts_result = await (
-            QueryBuilder(self.db_session, Message)
-            .base()
-            .attributes(Message.conversation_id, func.count(Message.id))
-            .filter(Message.conversation_id.in_(conversation_ids))
+        count_stmt = (
+            select(Message.conversation_id, func.count(Message.id))
+            .where(Message.conversation_id.in_(conversation_ids))
             .group_by(Message.conversation_id)
-            .all()
         )
-        message_counts_map = dict(message_counts_result)
+        count_result = await self.db_session.execute(count_stmt)
+        message_counts_map = dict(count_result.all())
 
-        # Build DTOs and map them back to ticket IDs
         ticket_to_conv_dtos = {ticket.id: [] for ticket in tickets}
         for conv in all_conversations:
             sg_member = (
@@ -66,11 +62,20 @@ class ConversationService(AbstractConversationService):
         user_sub = user[0].get("sub")
         conversation_data = schemas._ConversationCreateDTO(**conversation_data.model_dump(), sg_member_sub=user_sub)
         
-        qb = QueryBuilder(session=self.db_session, model=Conversation)
-        conversation: Conversation = await qb.add(
-            data=conversation_data,
-            preload=[Conversation.ticket, Conversation.sg_member],
+        conversation = Conversation(**conversation_data.model_dump())
+        self.db_session.add(conversation)
+        await self.db_session.flush()
+
+        stmt = (
+            select(Conversation)
+            .where(Conversation.id == conversation.id)
+            .options(
+                selectinload(Conversation.ticket),
+                selectinload(Conversation.sg_member),
+            )
         )
+        result = await self.db_session.execute(stmt)
+        conversation = result.scalars().one()
 
         sg_member = (
             ShortUserResponse.model_validate(conversation.sg_member)
@@ -93,16 +98,29 @@ class ConversationService(AbstractConversationService):
         conversation_data: schemas.ConversationUpdateDTO,
         user: tuple[dict, dict],
     ) -> schemas.ConversationResponseDTO:
-        qb = QueryBuilder(session=self.db_session, model=Conversation)
-        updated_conversation: Conversation = await qb.update(
-            instance=conversation,
-            update_data=conversation_data,
-            preload=[Conversation.ticket, Conversation.sg_member],
-        )
+        for field, value in conversation_data.model_dump(exclude_unset=True).items():
+            if hasattr(conversation, field):
+                setattr(conversation, field, value)
+        await self.db_session.flush()
 
-        message_count = await qb.blank(model=Message).base(count=True).filter(
-            Message.conversation_id == updated_conversation.id
-        ).count()
+        stmt = (
+            select(Conversation)
+            .where(Conversation.id == conversation.id)
+            .options(
+                selectinload(Conversation.ticket),
+                selectinload(Conversation.sg_member),
+            )
+        )
+        result = await self.db_session.execute(stmt)
+        updated_conversation = result.scalars().one()
+
+        count_stmt = (
+            select(func.count())
+            .select_from(Message)
+            .where(Message.conversation_id == updated_conversation.id)
+        )
+        count_result = await self.db_session.execute(count_stmt)
+        message_count = count_result.scalar() or 0
 
         sg_member = (
             ShortUserResponse.model_validate(updated_conversation.sg_member)

@@ -1,8 +1,9 @@
 from typing import List
 
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from backend.common.cruds import QueryBuilder
 from backend.common.utils import response_builder
 from backend.core.database.models.grade_report import CourseItem, CourseTemplate, StudentCourse, TemplateItem
 from backend.modules.courses.courses import schemas as student_course_schemas
@@ -13,6 +14,19 @@ class TemplateService:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
+    async def _load_template(self, template_id: int) -> CourseTemplate:
+        stmt = (
+            select(CourseTemplate)
+            .where(CourseTemplate.id == template_id)
+            .options(
+                selectinload(CourseTemplate.items),
+                selectinload(CourseTemplate.student),
+            )
+            .order_by(CourseTemplate.created_at.desc())
+        )
+        result = await self.db_session.execute(stmt)
+        return result.scalars().one()
+
     async def add_template(
         self,
         payload: schemas.TemplateCreate,
@@ -20,31 +34,23 @@ class TemplateService:
     ) -> schemas.TemplateResponse:
         if payload.student_sub == "me":
             payload.student_sub = user[0].get("sub")
-        # === Create new template ===
-        qb = QueryBuilder(session=self.db_session, model=CourseTemplate)
-        # Create template data without template_items for the CourseTemplate model
         template_data = schemas._TemplateCreateData(
             course_id=payload.course_id,
             student_sub=payload.student_sub
         )
-        template: CourseTemplate = await qb.add(data=template_data)
+        template = CourseTemplate(**template_data.model_dump())
+        self.db_session.add(template)
+        await self.db_session.flush()
 
-        # === Insert template items ===
-        items_with_template_id: List[schemas._TemplateItemCreateData] = []
+        items: List[TemplateItem] = []
         for item in payload.template_items:
             item_data = item.model_dump()
             item_data["template_id"] = template.id
-            items_with_template_id.append(schemas._TemplateItemCreateData(**item_data))
-        
-        await qb.blank(model=TemplateItem).add(data=items_with_template_id)
-        template: CourseTemplate = (await qb
-        .blank(model=CourseTemplate)
-        .base()
-        .filter(CourseTemplate.id == template.id)
-        .eager(CourseTemplate.items, CourseTemplate.student)
-        .order(CourseTemplate.created_at.desc())
-        .first()
-        )
+            items.append(TemplateItem(**item_data))
+        self.db_session.add_all(items)
+        await self.db_session.flush()
+
+        template = await self._load_template(template.id)
         template_responses = await self._build_template_responses([template], user)
         return template_responses[0]
 
@@ -55,45 +61,37 @@ class TemplateService:
         user: tuple[dict, dict],
     ) -> schemas.TemplateResponse:
 
-        # Clear existing items if new ones provided
         if payload.template_items is not None:
-            qb = QueryBuilder(session=self.db_session, model=TemplateItem)
-            current_items: List[TemplateItem] = (
-                await qb
-                .base()
-                .filter(TemplateItem.template_id == template.id)
-                .order(TemplateItem.created_at.asc())
-                .all()
+            current_stmt = (
+                select(TemplateItem)
+                .where(TemplateItem.template_id == template.id)
+                .order_by(TemplateItem.created_at.asc())
             )
-            await qb.delete(target=current_items)
+            current_result = await self.db_session.execute(current_stmt)
+            current_items: List[TemplateItem] = list(current_result.scalars().all())
+            for item in current_items:
+                await self.db_session.delete(item)
+            await self.db_session.flush()
 
-            # Insert new items
-            created_items: List[schemas._TemplateItemCreateData] = []
+            new_items: List[TemplateItem] = []
             for item in payload.template_items:
                 item_data = item.model_dump()
                 item_data["template_id"] = template.id
-                created_items.append(schemas._TemplateItemCreateData(**item_data))
+                new_items.append(TemplateItem(**item_data))
+            self.db_session.add_all(new_items)
+            await self.db_session.flush()
 
-            await qb.blank(model=TemplateItem).add(data=created_items)
-            
-            template: CourseTemplate = (await qb
-                .blank(model=CourseTemplate)
-                .base()
-                .filter(CourseTemplate.id == template.id)
-                .eager(CourseTemplate.items, CourseTemplate.student)
-                .order(CourseTemplate.created_at.desc())
-                .first()
-                )
+            template = await self._load_template(template.id)
 
         template_responses = await self._build_template_responses([template], user)
         return template_responses[0]
 
     async def delete_template(self, template: CourseTemplate) -> bool:
-        tmpl_qb = QueryBuilder(session=self.db_session, model=CourseTemplate)
-        deleted = await tmpl_qb.delete(target=template)
-        if not deleted:
+        try:
+            await self.db_session.delete(template)
+            return True
+        except Exception:
             return False
-        return True
 
     async def import_template_into_student_course(
         self,
@@ -102,36 +100,35 @@ class TemplateService:
         student_course: StudentCourse,
     ) -> schemas.TemplateImportResponse:
         """Replace student's course items with template items."""
-        # remove existing course items
-        course_item_qb = QueryBuilder(session=self.db_session, model=CourseItem)
-        existing_items: List[CourseItem] = (
-            await course_item_qb
-            .base()
-            .filter(CourseItem.student_course_id == student_course.id)
-            .all()
+        existing_stmt = select(CourseItem).where(
+            CourseItem.student_course_id == student_course.id
         )
+        existing_result = await self.db_session.execute(existing_stmt)
+        existing_items: List[CourseItem] = list(existing_result.scalars().all())
+        for item in existing_items:
+            await self.db_session.delete(item)
         if existing_items:
-            await course_item_qb.delete(target=existing_items)
+            await self.db_session.flush()
 
         if not template.items:
             return schemas.TemplateImportResponse(student_course_id=student_course.id, items=[])
 
-        # build new course items based on template
-        new_items_data: List[student_course_schemas.CourseItemCreate] = []
+        created_items: List[CourseItem] = []
         for item in template.items:
-            new_items_data.append(
-                student_course_schemas.CourseItemCreate(
-                    student_course_id=student_course.id,
-                    item_name=item.item_name,
-                    total_weight_pct=float(item.total_weight_pct)
-                    if item.total_weight_pct is not None
-                    else None,
-                    obtained_score=None,
-                    max_score=None,
-                )
+            course_item = CourseItem(
+                student_course_id=student_course.id,
+                item_name=item.item_name,
+                total_weight_pct=float(item.total_weight_pct)
+                if item.total_weight_pct is not None
+                else None,
+                obtained_score=None,
+                max_score=None,
             )
-
-        created_items: List[CourseItem] = await course_item_qb.add(data=new_items_data)
+            created_items.append(course_item)
+        self.db_session.add_all(created_items)
+        await self.db_session.flush()
+        for item in created_items:
+            await self.db_session.refresh(item)
 
         response_items = [
             student_course_schemas.BaseCourseItem.model_validate(item)
@@ -146,16 +143,17 @@ class TemplateService:
     async def get_template_by_id(
         self, template_id: int, user: tuple[dict, dict]
     ) -> schemas.TemplateResponse | None:
-        qb = QueryBuilder(session=self.db_session, model=CourseTemplate)
-
-        template: CourseTemplate | None = (
-            await qb
-            .base()
-            .filter(CourseTemplate.id == template_id)
-            .eager(CourseTemplate.items, CourseTemplate.student)
-            .order(CourseTemplate.created_at.desc())
-            .first()
+        stmt = (
+            select(CourseTemplate)
+            .where(CourseTemplate.id == template_id)
+            .options(
+                selectinload(CourseTemplate.items),
+                selectinload(CourseTemplate.student),
+            )
+            .order_by(CourseTemplate.created_at.desc())
         )
+        result = await self.db_session.execute(stmt)
+        template: CourseTemplate | None = result.scalars().first()
 
         if template is None:
             return None
@@ -171,17 +169,24 @@ class TemplateService:
         if course_id is not None:
             filters.append(CourseTemplate.course_id == course_id)
 
-        qb = QueryBuilder(session=self.db_session, model=CourseTemplate)
-        templates: List[CourseTemplate] = (
-            await qb.base()
-            .filter(*filters)
-            .paginate(size, page)
-            .eager(CourseTemplate.items, CourseTemplate.student)
-            .order(CourseTemplate.created_at.desc())
-            .all()
+        page_num = max(1, page or 1)
+        stmt = (
+            select(CourseTemplate)
+            .where(*filters)
+            .options(
+                selectinload(CourseTemplate.items),
+                selectinload(CourseTemplate.student),
+            )
+            .order_by(CourseTemplate.created_at.desc())
+            .offset((page_num - 1) * size)
+            .limit(size)
         )
+        result = await self.db_session.execute(stmt)
+        templates: List[CourseTemplate] = list(result.scalars().all())
 
-        count: int = await qb.blank(model=CourseTemplate).base(count=True).filter(*filters).count()
+        count_stmt = select(func.count()).select_from(CourseTemplate).where(*filters)
+        count_result = await self.db_session.execute(count_stmt)
+        count: int = count_result.scalar() or 0
         total_pages: int = response_builder.calculate_pages(count=count, size=size)
 
         template_responses = await self._build_template_responses(templates, user)
@@ -202,7 +207,6 @@ class TemplateService:
 
         template_responses: List[schemas.TemplateResponse] = []
         for template in templates:
-            # Items are already eagerly loaded via QueryBuilder.eager(CourseTemplate.items)
             template_items_schema: List[schemas.BaseTemplateItem] = [
                 schemas.BaseTemplateItem.model_validate(item) for item in template.items
             ]

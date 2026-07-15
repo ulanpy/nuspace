@@ -5,9 +5,9 @@ from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from google.cloud.exceptions import NotFound
 from google.cloud.storage import Bucket
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_creds_or_401, get_db_session
 from backend.common.request_url import request_app_base_url
 from backend.common.utils.enums import ResourceAction
@@ -106,13 +106,19 @@ async def generate_upload_url(
                 Media.entity_id == media_metadata.entity_id,
                 Media.media_format == media_metadata.media_format,
             ]
-            qb = QueryBuilder(db_session, Media)
-            existing: Media | None = await qb.base().filter(*filters).first()
+            stmt = select(Media).where(*filters)
+            result = await db_session.execute(stmt)
+            existing: Media | None = result.scalars().first()
             try:
                 if existing:
-                    await qb.update(instance=existing, update_data=media_metadata)
+                    for field, value in media_metadata.model_dump().items():
+                        if hasattr(existing, field):
+                            setattr(existing, field, value)
+                    await db_session.flush()
                 else:
-                    await qb.add(data=media_metadata)
+                    media = Media(**media_metadata.model_dump())
+                    db_session.add(media)
+                    await db_session.flush()
             except Exception:
                 # Best-effort only in local mode; still return URL
                 pass
@@ -165,13 +171,19 @@ async def gcs_webhook(
         Media.entity_id == media_metadata.entity_id,
         Media.media_format == media_metadata.media_format,
     ]
-    qb = QueryBuilder(db_session, Media)
-    media: Media | None = await qb.base().filter(*filters).first()
+    stmt = select(Media).where(*filters)
+    result = await db_session.execute(stmt)
+    media: Media | None = result.scalars().first()
     try:
         if media:
-            await qb.update(instance=media, update_data=media_metadata)
+            for field, value in media_metadata.model_dump().items():
+                if hasattr(media, field):
+                    setattr(media, field, value)
+            await db_session.flush()
         else:
-            await qb.add(data=media_metadata)
+            new_media = Media(**media_metadata.model_dump())
+            db_session.add(new_media)
+            await db_session.flush()
     except Exception:
         # just ack message but log this error in future
         return {"status": "ok"}
@@ -203,8 +215,7 @@ async def delete_bucket_object(
     )
     try:
         blob.delete()
-        qb = QueryBuilder(db_session, Media)
-        await qb.delete(target=media)
+        await db_session.delete(media)
         return {"status": "success", "deleted": filename}
     except NotFound:
         raise HTTPException(status_code=404, detail="File not found")

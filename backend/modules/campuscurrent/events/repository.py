@@ -1,10 +1,10 @@
 from typing import List, Tuple
 
 from httpx import AsyncClient
-from sqlalchemy import and_, func, or_
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from backend.common.cruds import QueryBuilder
 from backend.common.utils import meilisearch
 from backend.core.database.models import Event
 from backend.core.database.models.common_enums import EntityType
@@ -19,21 +19,39 @@ class EventRepository:
     async def create_event(
         self, event_data: schemas.EnrichedEventCreateRequest
     ) -> Event:
-        qb = QueryBuilder(session=self.db_session, model=Event)
-        return await qb.add(
-            data=event_data,
-            preload=[Event.creator, Event.community, Event.collaborators],
+        event = Event(**event_data.model_dump())
+        self.db_session.add(event)
+        await self.db_session.flush()
+        stmt = (
+            select(Event)
+            .where(Event.id == event.id)
+            .options(
+                selectinload(Event.creator),
+                selectinload(Event.community),
+                selectinload(Event.collaborators),
+            )
         )
+        result = await self.db_session.execute(stmt)
+        return result.scalars().one()
 
     async def update_event(
         self, event: Event, event_data: schemas.EventUpdateRequest
     ) -> Event:
-        qb = QueryBuilder(session=self.db_session, model=Event)
-        return await qb.update(
-            instance=event,
-            update_data=event_data,
-            preload=[Event.creator, Event.community, Event.collaborators],
+        for field, value in event_data.model_dump(exclude_unset=True).items():
+            if hasattr(event, field):
+                setattr(event, field, value)
+        await self.db_session.flush()
+        stmt = (
+            select(Event)
+            .where(Event.id == event.id)
+            .options(
+                selectinload(Event.creator),
+                selectinload(Event.community),
+                selectinload(Event.collaborators),
+            )
         )
+        result = await self.db_session.execute(stmt)
+        return result.scalars().one()
 
     async def upsert_search(self, meilisearch_client: AsyncClient, event: Event) -> None:
         await meilisearch.upsert(
@@ -60,19 +78,26 @@ class EventRepository:
     async def delete_event_and_media(
         self, event: Event, media_objects: List[Media]
     ) -> Tuple[bool, bool]:
-        qb = QueryBuilder(session=self.db_session, model=Event)
-        event_deleted: bool = await qb.blank(Event).delete(target=event)
-        media_deleted: bool = await qb.blank(Media).delete(target=media_objects)
-        return event_deleted, media_deleted
+        try:
+            await self.db_session.delete(event)
+            for media in media_objects:
+                await self.db_session.delete(media)
+            return True, True
+        except Exception:
+            return False, False
 
     async def get_event_by_id(self, event_id: int) -> Event | None:
-        qb = QueryBuilder(session=self.db_session, model=Event)
-        return (
-            await qb.base()
-            .filter(Event.id == event_id)
-            .eager(Event.community, Event.creator, Event.collaborators)
-            .first()
+        stmt = (
+            select(Event)
+            .where(Event.id == event_id)
+            .options(
+                selectinload(Event.community),
+                selectinload(Event.creator),
+                selectinload(Event.collaborators),
+            )
         )
+        result = await self.db_session.execute(stmt)
+        return result.scalars().first()
 
     async def list_events(
         self,
@@ -80,7 +105,6 @@ class EventRepository:
         creator_sub: str | None,
         meilisearch_client: AsyncClient,
     ) -> Tuple[List[Event], int, bool]:
-        qb = QueryBuilder(session=self.db_session, model=Event)
         meili_result: dict | None = None
         keyword_no_results = False
 
@@ -127,24 +151,29 @@ class EventRepository:
             if event_filter.end_date:
                 filters.append(func.date(Event.start_datetime) <= event_filter.end_date)
 
-        events: List[Event] = (
-            await qb.base()
-            .filter(*filters)
-            .eager(Event.creator, Event.community, Event.collaborators)
-            .paginate(
-                event_filter.size if not event_filter.keyword else None,
-                event_filter.page if not event_filter.keyword else None,
+        stmt = (
+            select(Event)
+            .where(*filters)
+            .options(
+                selectinload(Event.creator),
+                selectinload(Event.community),
+                selectinload(Event.collaborators),
             )
-            .order(Event.start_datetime.asc())
-            .all()
+            .order_by(Event.start_datetime.asc())
         )
+        if not event_filter.keyword:
+            page = max(1, event_filter.page or 1)
+            stmt = stmt.offset((page - 1) * event_filter.size).limit(event_filter.size)
+
+        result = await self.db_session.execute(stmt)
+        events: List[Event] = list(result.scalars().all())
 
         if event_filter.keyword and meili_result is not None:
             count: int = meili_result.get("estimatedTotalHits", 0)
         else:
-            count: int = (
-                await qb.blank(model=Event).base(count=True).filter(*filters).count()
-            )
+            count_stmt = select(func.count()).select_from(Event).where(*filters)
+            count_result = await self.db_session.execute(count_stmt)
+            count = count_result.scalar() or 0
 
         return events, count, keyword_no_results
 
@@ -174,7 +203,9 @@ class EventRepository:
                 community_conditions.append(Media.media_format.in_(community_media_formats))
             media_conditions.append(and_(*community_conditions))
 
-        qb = QueryBuilder(session=self.db_session, model=Media)
-        return (
-            await qb.base().filter(or_(*media_conditions)).all() if media_conditions else []
-        )
+        if not media_conditions:
+            return []
+
+        stmt = select(Media).where(or_(*media_conditions))
+        result = await self.db_session.execute(stmt)
+        return list(result.scalars().all())

@@ -1,6 +1,5 @@
 from typing import Union, List
 import datetime
-from backend.common.cruds import QueryBuilder
 from backend.common.utils.response_builder import build_schema
 from backend.core.database.models.notification import Notification
 from backend.modules.notification import schemas
@@ -38,8 +37,12 @@ async def send(
         if notification_data.telegram_id is None:
             return None
 
-        qb: QueryBuilder = QueryBuilder(session=session, model=Notification)
-        notification: Notification = await qb.add(data=notification_data)
+        data = notification_data.model_dump()
+        data["tg_id"] = data.pop("telegram_id")
+        notification = Notification(**data)
+        session.add(notification)
+        await session.flush()
+        await session.refresh(notification)
 
         switch: bool = not await infra.redis.exists(
             f"notification:{notification_data.telegram_id}"
@@ -53,9 +56,6 @@ async def send(
         return modified_notification
     
     # Handle list of notifications
-    qb: QueryBuilder = QueryBuilder(session=session, model=Notification)
-    
-    # Convert schema objects to ORM model instances
     notification_instances = []
     for notification_schema in notification_data:
         if notification_schema.telegram_id is None:
@@ -74,8 +74,10 @@ async def send(
     if not notification_instances:
         return []
 
-    # Add instances to database (add_orm_list doesn't return the instances)
-    await qb.add_orm_list(notification_instances)
+    session.add_all(notification_instances)
+    await session.flush()
+    for notification_instance in notification_instances:
+        await session.refresh(notification_instance)
     
     modified_notifications: List[schemas._RequestNotification] = []
     
@@ -86,9 +88,8 @@ async def send(
         switch: bool = not await infra.redis.exists(
             f"notification:{notification_schema.telegram_id}"
         )
-        # Create a BaseNotification from the schema for build_schema
         base_notification = schemas.BaseNotification(
-            id=0,  # Temporary ID, not used in the final result
+            id=0,
             title=notification_schema.title,
             message=notification_schema.message,
             notification_source=notification_schema.notification_source,

@@ -1,6 +1,5 @@
 from typing import List
 
-from backend.common.cruds import QueryBuilder
 from backend.common.utils import response_builder
 from backend.core.database.models.sgotinish import (
     Conversation,
@@ -165,21 +164,19 @@ class MessageService:
             sender_sub=None if is_anonymous_owner else user_sub,
         )
 
-        qb = QueryBuilder(self.db_session, Message)
-        message = await qb.add(
-            data=internal_message_data,
-        )
+        message = Message(**internal_message_data.model_dump())
+        self.db_session.add(message)
         await self.db_session.flush()
+        await self.db_session.refresh(message)
 
-        # Automatically mark the message as read for the sender
         if is_anonymous_owner:
-            await qb.blank(model=MessageReadStatusAnon).add_orm_list(
-                [MessageReadStatusAnon(message_id=message.id, owner_hash=owner_hash)]
-            )
+            read_status = MessageReadStatusAnon(message_id=message.id, owner_hash=owner_hash)
+            self.db_session.add(read_status)
+            await self.db_session.flush()
         else:
-            await qb.blank(model=MessageReadStatus).add(
-                schemas.MessageReadStatusCreateDTO(message_id=message.id, user_sub=user_sub)
-            )
+            read_status = MessageReadStatus(message_id=message.id, user_sub=user_sub)
+            self.db_session.add(read_status)
+            await self.db_session.flush()
 
         # Reload message with all necessary data for notification AND response
         stmt = (
@@ -211,36 +208,28 @@ class MessageService:
         owner_hash: str | None = None,
     ) -> schemas.MessageResponseDTO:
         user_sub = user[0].get("sub")
-        qb = QueryBuilder(self.db_session, MessageReadStatus)
-
         if message.conversation.ticket.is_anonymous and owner_hash:
-            anon_qb = QueryBuilder(self.db_session, MessageReadStatusAnon)
-            existing_status = await (
-                anon_qb.base()
-                .filter(
-                    MessageReadStatusAnon.message_id == message.id,
-                    MessageReadStatusAnon.owner_hash == owner_hash,
-                )
-                .first()
+            existing_stmt = select(MessageReadStatusAnon).where(
+                MessageReadStatusAnon.message_id == message.id,
+                MessageReadStatusAnon.owner_hash == owner_hash,
             )
+            existing_result = await self.db_session.execute(existing_stmt)
+            existing_status = existing_result.scalars().first()
             if not existing_status:
-                await anon_qb.add_orm_list(
-                    [MessageReadStatusAnon(message_id=message.id, owner_hash=owner_hash)]
-                )
+                read_status = MessageReadStatusAnon(message_id=message.id, owner_hash=owner_hash)
+                self.db_session.add(read_status)
+                await self.db_session.flush()
         else:
-            # Check if already marked as read to avoid duplicates
-            existing_status = await (
-                qb.base()
-                .filter(
-                    MessageReadStatus.message_id == message.id,
-                    MessageReadStatus.user_sub == user_sub,
-                )
-                .first()
+            existing_stmt = select(MessageReadStatus).where(
+                MessageReadStatus.message_id == message.id,
+                MessageReadStatus.user_sub == user_sub,
             )
+            existing_result = await self.db_session.execute(existing_stmt)
+            existing_status = existing_result.scalars().first()
             if not existing_status:
-                await qb.add(
-                    schemas.MessageReadStatusCreateDTO(message_id=message.id, user_sub=user_sub)
-                )
+                read_status = MessageReadStatus(message_id=message.id, user_sub=user_sub)
+                self.db_session.add(read_status)
+                await self.db_session.flush()
 
         # Refetch the message with all relations to build the response
         return await self.get_message_by_id(message.id, user)

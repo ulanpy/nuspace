@@ -18,17 +18,13 @@ async def list_grade_terms(
     Returns distinct grade report terms (e.g., FA2024, SP2025) for filtering.
     """
 
-    from backend.common.cruds import QueryBuilder
+    from sqlalchemy import select
+
     from backend.core.database.models.grade_report import GradeReport
 
-    qb = QueryBuilder(session=db_session, model=GradeReport)
-    terms: List[str] = (
-        await qb.base()
-        .attributes(GradeReport.term)
-        .distinct(GradeReport.term)
-        .order(GradeReport.term.desc())
-        .all()
-    )
+    stmt = select(GradeReport.term).distinct().order_by(GradeReport.term.desc())
+    result = await db_session.execute(stmt)
+    terms: List[str] = list(result.scalars().all())
 
     # Remove null/empty terms that may exist in legacy data
     filtered_terms = [term for term in terms if term]

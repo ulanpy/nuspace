@@ -1,7 +1,7 @@
 from backend.core.database.models.sgotinish import Message
-from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_db_session
 from fastapi import Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from backend.core.database.models.sgotinish import Conversation
@@ -25,15 +25,17 @@ async def message_exists_or_404(
     Raises:
         HTTPException: 404 if message not found
     """
-    qb = QueryBuilder(session=db_session, model=Message)
-    message = (
-        await qb.base()
-        .eager(Message.conversation, Message.sender)
-        .option(selectinload(Message.conversation).selectinload(Conversation.ticket))
-        .filter(Message.id == message_id)
-        .first()
+    stmt = (
+        select(Message)
+        .where(Message.id == message_id)
+        .options(
+            selectinload(Message.conversation),
+            selectinload(Message.sender),
+            selectinload(Message.conversation).selectinload(Conversation.ticket),
+        )
     )
+    result = await db_session.execute(stmt)
+    message = result.scalars().first()
     if not message:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
     return message
-

@@ -1,8 +1,9 @@
 from backend.core.database.models.sgotinish import Ticket, Conversation
-from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_db_session
 from fastapi import Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from backend.modules.sgotinish.messages.schemas import MessageCreateDTO
 
@@ -34,12 +35,13 @@ async def validate_ticket_exists_or_404(
     Raises:
         HTTPException: 404 if ticket not found
     """
-    qb = QueryBuilder(session=db_session, model=Ticket)
-    ticket = (
-        await qb.base()
-        .filter(Ticket.id == conversation_data.ticket_id)
-        .eager(Ticket.conversations)
-        .first())
+    stmt = (
+        select(Ticket)
+        .where(Ticket.id == conversation_data.ticket_id)
+        .options(selectinload(Ticket.conversations))
+    )
+    result = await db_session.execute(stmt)
+    ticket = result.scalars().first()
     
     if not ticket:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
@@ -63,13 +65,16 @@ async def conversation_exists_or_404(
     Raises:
         HTTPException: 404 if conversation not found
     """
-    qb = QueryBuilder(session=db_session, model=Conversation)
-    conversation = (
-        await qb.base()
-        .eager(Conversation.ticket, Conversation.sg_member)
-        .filter(Conversation.id == conversation_id)
-        .first()
+    stmt = (
+        select(Conversation)
+        .where(Conversation.id == conversation_id)
+        .options(
+            selectinload(Conversation.ticket),
+            selectinload(Conversation.sg_member),
+        )
     )
+    result = await db_session.execute(stmt)
+    conversation = result.scalars().first()
     if not conversation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found"
@@ -86,4 +91,3 @@ async def get_conversation_from_body_or_404(
     Dependency to validate that a conversation from a request body exists and return it.
     """
     return await conversation_exists_or_404(message_data.conversation_id, db_session)
-

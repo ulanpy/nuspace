@@ -4,9 +4,9 @@ import json
 from fastapi import Depends, HTTPException, Request, status
 from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2 import id_token
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.cruds import QueryBuilder
 from backend.common.dependencies import get_db_session
 from backend.core.configs.config import Config
 from backend.core.database.models import (
@@ -91,9 +91,9 @@ async def media_exists_or_404(
     media_id: int,
     db_session: AsyncSession = Depends(get_db_session),
 ) -> Media:
-    qb = QueryBuilder(session=db_session, model=Media)
-
-    media: Media | None = await qb.base().filter(Media.id == media_id).first()
+    stmt = select(Media).where(Media.id == media_id)
+    result = await db_session.execute(stmt)
+    media: Media | None = result.scalars().first()
 
     if not media:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media not found")
@@ -119,10 +119,9 @@ async def check_resource(
         HTTPException 404 if the parent resource or its owner cannot be determined.
         HTTPException 400 for unsupported entity types.
     """
-    qb = QueryBuilder(session=db_session, model=Media)
-
-    # First get the media object
-    media: Media | None = await qb.base().filter(Media.id == media_id).first()
+    stmt = select(Media).where(Media.id == media_id)
+    result = await db_session.execute(stmt)
+    media: Media | None = result.scalars().first()
     if not media:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media not found")
 
@@ -130,30 +129,27 @@ async def check_resource(
     entity_id = media.entity_id
 
     if entity_type == EntityType.community_events:
-        qb_event = QueryBuilder(session=db_session, model=Event)
-        event: Event | None = await qb_event.base().filter(Event.id == entity_id).first()
+        event_stmt = select(Event).where(Event.id == entity_id)
+        event_result = await db_session.execute(event_stmt)
+        event: Event | None = event_result.scalars().first()
         if not event:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
         if event.creator_sub:
             return event.creator_sub, media
-        # Fallback to community head if no creator_sub
         if event.community_id is not None:
-            qb_community = QueryBuilder(session=db_session, model=Community)
-            community: Community | None = (
-                await qb_community.base().filter(Community.id == event.community_id).first()
-            )
+            community_stmt = select(Community).where(Community.id == event.community_id)
+            community_result = await db_session.execute(community_stmt)
+            community: Community | None = community_result.scalars().first()
             if community and community.head:
                 return community.head, media
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event owner not found")
 
     if entity_type == EntityType.communities:
-        qb_community = QueryBuilder(session=db_session, model=Community)
-        community: Community | None = (
-            await qb_community.base().filter(Community.id == entity_id).first()
-        )
+        community_stmt = select(Community).where(Community.id == entity_id)
+        community_result = await db_session.execute(community_stmt)
+        community: Community | None = community_result.scalars().first()
         if not community or not community.head:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Community not found")
         return community.head, media
 
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported entity type")
-

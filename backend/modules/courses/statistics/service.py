@@ -1,10 +1,9 @@
 from typing import List
 
 import httpx
-from sqlalchemy import case
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.cruds import QueryBuilder
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.grade_report import GradeReport
@@ -47,7 +46,6 @@ async def list_grade_reports(
     if keyword:
         conditions.append(GradeReport.id.in_(grade_report_ids))
 
-    qb = QueryBuilder(session=session, model=GradeReport)
     if keyword:
         order_clause = case(
             *[
@@ -56,20 +54,27 @@ async def list_grade_reports(
             ],
             else_=len(grade_report_ids),
         )
-        grades: List[GradeReport] = await qb.base().filter(*conditions).order(order_clause).all()
+        stmt = select(GradeReport).where(*conditions).order_by(order_clause)
+        result = await session.execute(stmt)
+        grades: List[GradeReport] = list(result.scalars().all())
     else:
-        grades = (
-            await qb.base()
-            .filter(*conditions)
-            .paginate(size, page)
-            .order(GradeReport.created_at.desc())
-            .all()
+        page_num = max(1, page or 1)
+        stmt = (
+            select(GradeReport)
+            .where(*conditions)
+            .order_by(GradeReport.created_at.desc())
+            .offset((page_num - 1) * size)
+            .limit(size)
         )
+        result = await session.execute(stmt)
+        grades = list(result.scalars().all())
 
     if keyword:
         count = meili_result.get("estimatedTotalHits", 0)
     else:
-        count: int = await qb.blank(model=GradeReport).base(count=True).filter(*conditions).count()
+        count_stmt = select(func.count()).select_from(GradeReport).where(*conditions)
+        count_result = await session.execute(count_stmt)
+        count: int = count_result.scalar() or 0
 
     total_pages: int = response_builder.calculate_pages(count=count, size=size)
 
