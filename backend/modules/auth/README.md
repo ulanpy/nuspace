@@ -9,7 +9,7 @@ OAuth login (Keycloak + Google), application JWT tokens, and user upsert.
 | `api.py` | HTTP routes |
 | `service.py` | Login, callback, refresh, `/me`, logout |
 | `repository.py` | User upsert and lookups |
-| `dependencies.py` | FastAPI `Depends` for `AuthService` and infra |
+| `dependencies.py` | FastAPI `Depends`: auth (`get_creds_or_401`, `get_creds_or_guest`), `AuthService`, infra |
 | `schemas.py` | Request/response DTOs |
 | `keycloak_manager.py` | Keycloak OAuth client and JWT validation |
 | `app_token.py` | Application JWT minting and validation |
@@ -31,6 +31,6 @@ Login from `http://localhost` stays on localhost; login from a shared tunnel URL
 
 1. `GET /api/login` → Keycloak (or mock callback in dev).
 2. `GET /api/auth/callback` → exchange code, upsert user, set cookies.
-3. Protected routes use `get_creds_or_401` in `backend/common/dependencies.py` (Keycloak + app token cookies).
+3. Protected routes use `get_creds_or_401` / `get_creds_or_guest` in `backend/modules/auth/dependencies.py` (Keycloak + app token cookies).
 
 Global auth dependencies (`KeyCloakManager`, `AppTokenManager`) are initialized in `backend/lifespan.py` on `app.state`.

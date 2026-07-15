@@ -5,7 +5,7 @@ from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from google.cloud.storage import Bucket
 
-from backend.common.dependencies import get_creds_or_401
+from backend.modules.auth.dependencies import get_creds_or_401
 from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import Config
 from backend.modules.google_bucket import dependencies as deps

@@ -1,6 +1,6 @@
 from typing import Annotated, List
 
-from backend.common.dependencies import get_creds_or_401
+from backend.modules.auth.dependencies import get_creds_or_401
 from backend.modules.sgotinish.delegation import dependencies as deps
 from backend.modules.sgotinish.delegation import schemas
 from backend.modules.sgotinish.delegation.service import DelegationService

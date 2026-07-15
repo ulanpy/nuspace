@@ -1,6 +1,9 @@
 from typing import Annotated
 
-from backend.common.dependencies import get_creds_or_401, get_creds_or_guest
+from backend.modules.auth.dependencies import (
+    get_creds_or_401,
+    get_creds_or_guest,
+)
 from backend.core.database.models.sgotinish import TicketCategory
 from backend.modules.sgotinish.tickets import dependencies as deps
 from backend.modules.sgotinish.tickets import schemas

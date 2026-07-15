@@ -1,11 +1,19 @@
-from fastapi import Depends, Request
-from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Annotated
 
 from backend.common.dependencies import get_db_session
+from backend.core.configs.config import config
+from backend.core.database.models import User, UserRole
 from backend.modules.auth.app_token import AppTokenManager
+from backend.modules.auth.cookies import set_kc_auth_cookies
 from backend.modules.auth.keycloak_manager import KeyCloakManager
+from backend.modules.auth.mock import get_mock_user_by_sub  # dev-only helper
 from backend.modules.auth.service import AuthService
+from fastapi import Cookie, Depends, HTTPException, Request, Response, status
+from jose import JWTError, jwt
+from jwt import ExpiredSignatureError as PyJWTExpiredSignatureError
+from redis.asyncio import Redis
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 def get_keycloak_manager(request: Request) -> KeyCloakManager:
@@ -30,3 +38,184 @@ def get_auth_service(
         kc_manager=kc_manager,
         app_token_manager=app_token_manager,
     )
+
+
+async def get_creds_or_401(
+    request: Request,
+    response: Response,
+    db_session: AsyncSession = Depends(get_db_session),
+    access_token: Annotated[str | None, Cookie(alias=config.COOKIE_ACCESS_NAME)] = None,
+    refresh_token: Annotated[str | None, Cookie(alias=config.COOKIE_REFRESH_NAME)] = None,
+    app_token_cookie: Annotated[str | None, Cookie(alias=config.COOKIE_APP_NAME)] = None,
+) -> tuple[dict, dict]:
+    """
+    Authenticates a user by validating Keycloak and application-specific tokens.
+
+    Returns a tuple (kc_principal, app_principal).
+
+    Raises:
+        HTTPException 401 for Keycloak token issues, 403 if app token cannot be established.
+    """
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access and/or refresh token cookie(s)",
+        )
+
+    kc_manager: KeyCloakManager = request.app.state.kc_manager
+    app_token_manager: AppTokenManager = request.app.state.app_token_manager
+
+    kc_principal: dict | None = None
+    keycloak_token_refreshed = False
+
+    if not access_token:
+        try:
+            new_kc_creds = await request.app.state.kc_manager.refresh_access_token(refresh_token)
+            set_kc_auth_cookies(response, new_kc_creds)
+            access_token = new_kc_creds["access_token"]
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Failed to refresh Keycloak token: {str(e)}",
+            )
+
+    if config.MOCK_KEYCLOAK:
+        sub = access_token.removeprefix("mock_access_")
+        u = get_mock_user_by_sub(sub)
+        kc_principal = {
+            "sub": u["sub"],
+            "email": u["email"],
+            "given_name": u["given_name"],
+            "family_name": u["family_name"],
+            "name": f"{u['given_name']} {u['family_name']}",
+        }
+    else:
+        try:
+            kc_principal = await kc_manager.validate_keycloak_token(access_token)
+        except jwt.ExpiredSignatureError:
+            try:
+                new_kc_creds = await kc_manager.refresh_access_token(refresh_token)
+                set_kc_auth_cookies(response, new_kc_creds)
+                access_token = new_kc_creds["access_token"]
+                kc_principal = await kc_manager.validate_keycloak_token(access_token)
+                keycloak_token_refreshed = True
+            except Exception as e:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"Failed to refresh Keycloak token: {str(e)}",
+                )
+        except JWTError as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid Keycloak token: {str(e)}",
+            )
+
+    if not kc_principal:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not establish Keycloak principal.",
+        )
+
+    auth_service = AuthService(db_session, kc_manager, app_token_manager)
+    try:
+        await auth_service.ensure_user_from_access_token(access_token, kc_principal)
+    except HTTPException:
+        raise
+
+    app_principal: dict | None = None
+    issue_new_app_token = False
+
+    if keycloak_token_refreshed:
+        issue_new_app_token = True
+    elif not app_token_cookie:
+        issue_new_app_token = True
+    else:
+        try:
+            app_principal = app_token_manager.validate_app_token(app_token_cookie)
+            if app_principal.get("sub") != kc_principal.get("sub"):
+                issue_new_app_token = True
+        except PyJWTExpiredSignatureError:
+            issue_new_app_token = True
+        except JWTError:
+            issue_new_app_token = True
+
+    if issue_new_app_token:
+        try:
+            new_app_token_str, new_app_claims = await app_token_manager.create_app_token(
+                kc_principal["sub"], db_session
+            )
+            response.set_cookie(
+                key=config.COOKIE_APP_NAME,
+                value=new_app_token_str,
+                httponly=True,
+                secure=not config.IS_DEBUG,
+                samesite="Lax",
+                max_age=app_token_manager.token_expiry.total_seconds(),
+            )
+            app_principal = new_app_claims
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Error creating app token: {str(e)}")
+            app_principal = {}
+
+    if not app_principal:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Application access denied: App token could not be established.",
+        )
+
+    return kc_principal, app_principal
+
+
+async def get_creds_or_guest(
+    request: Request,
+    response: Response,
+    db_session: AsyncSession = Depends(get_db_session),
+    access_token: Annotated[str | None, Cookie(alias=config.COOKIE_ACCESS_NAME)] = None,
+    refresh_token: Annotated[str | None, Cookie(alias=config.COOKIE_REFRESH_NAME)] = None,
+    app_token_cookie: Annotated[str | None, Cookie(alias=config.COOKIE_APP_NAME)] = None,
+) -> tuple[dict, dict]:
+    """Like get_creds_or_401, but returns guest principals when unauthenticated."""
+    guest_kc = {"sub": "guest"}
+    guest_app = {"role": UserRole.default.value, "communities": [], "is_guest": True}
+
+    if not access_token or not refresh_token:
+        return guest_kc, guest_app
+
+    try:
+        return await get_creds_or_401(
+            request=request,
+            response=response,
+            db_session=db_session,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            app_token_cookie=app_token_cookie,
+        )
+    except Exception:
+        return guest_kc, guest_app
+
+
+async def check_tg(
+    user: Annotated[dict, Depends(get_creds_or_401)],
+    db_session: AsyncSession = Depends(get_db_session),
+) -> bool:
+    sub = user[0].get("sub")
+    result = await db_session.execute(select(User.telegram_id).filter_by(sub=sub))
+    tg_id = result.scalars().first()
+
+    if not tg_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Telegram not linked")
+    return True
+
+
+async def check_role(
+    user: Annotated[dict, Depends(get_creds_or_401)],
+    db_session: AsyncSession = Depends(get_db_session),
+) -> UserRole:
+    sub = user[0].get("sub")
+    result = await db_session.execute(select(User.role).filter_by(sub=sub))
+    role = result.scalars().first()
+    if not role:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not found")
+    return role

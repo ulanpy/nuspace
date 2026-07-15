@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from backend.common.dependencies import get_creds_or_401
+from backend.modules.auth.dependencies import get_creds_or_401
 from backend.core.database.models.grade_report import CourseTemplate, StudentCourse
 from backend.modules.courses.templates import schemas
 from backend.modules.courses.templates.policy import TemplatePolicy

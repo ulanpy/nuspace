@@ -4,7 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import get_creds_or_guest, get_db_session, get_infra
+from backend.common.dependencies import (
+    get_db_session,
+    get_infra,
+)
+from backend.modules.auth.dependencies import get_creds_or_guest
 from backend.common.schemas import Infra
 from backend.modules.campuscurrent.communities import dependencies as deps
 from backend.modules.campuscurrent.communities.service import CommunityService

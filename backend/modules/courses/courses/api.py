@@ -9,7 +9,11 @@ GitHub: https://github.com/superhooman/crashed.nu
 from typing import Annotated, List
 
 import httpx
-from backend.common.dependencies import get_creds_or_401, get_db_session, get_infra
+from backend.common.dependencies import (
+    get_db_session,
+    get_infra,
+)
+from backend.modules.auth.dependencies import get_creds_or_401
 from backend.common.schemas import Infra
 from backend.core.configs.config import config
 from backend.core.database.models.grade_report import CourseItem

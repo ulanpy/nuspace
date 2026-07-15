@@ -2,7 +2,7 @@ from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, Query
 
-from backend.common.dependencies import get_creds_or_401
+from backend.modules.auth.dependencies import get_creds_or_401
 from backend.modules.courses.planner.dependencies import get_planner_service
 from backend.modules.courses.planner.schemas import (
     PlannerAutoBuildResponse,

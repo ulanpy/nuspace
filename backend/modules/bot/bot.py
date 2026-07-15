@@ -5,7 +5,8 @@ from aiogram.utils.deep_linking import create_start_link
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import get_creds_or_401, get_db_session
+from backend.common.dependencies import get_db_session
+from backend.modules.auth.dependencies import get_creds_or_401
 from backend.core.configs.config import config
 
 web_router = APIRouter(tags=["Bot Routes"])

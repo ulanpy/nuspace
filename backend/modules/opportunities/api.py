@@ -3,7 +3,7 @@ from typing import Annotated
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status, Cookie
 
-from backend.common.dependencies import get_creds_or_401
+from backend.modules.auth.dependencies import get_creds_or_401
 from backend.modules.opportunities import schemas
 from backend.modules.opportunities.policy import OpportunityPolicy
 from backend.modules.opportunities.service import OpportunitiesDigestService

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from backend.common.dependencies import get_creds_or_401, get_db_session
+from backend.common.dependencies import get_db_session
+from backend.modules.auth.dependencies import get_creds_or_401
 from backend.core.configs.config import config
 from backend.modules.courses.degree_audit.dependencies import get_degree_audit_service
 from backend.modules.courses.degree_audit.schemas import (

@@ -4,10 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import (
-    get_creds_or_401,
-    get_creds_or_guest,
     get_db_session,
     get_infra,
+)
+from backend.modules.auth.dependencies import (
+    get_creds_or_401,
+    get_creds_or_guest,
 )
 from backend.common.schemas import Infra
 from backend.core.database.models import Event, User

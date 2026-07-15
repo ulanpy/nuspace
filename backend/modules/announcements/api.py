@@ -4,7 +4,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import get_creds_or_guest, get_db_session, get_infra
+from backend.common.dependencies import (
+    get_db_session,
+    get_infra,
+)
+from backend.modules.auth.dependencies import get_creds_or_guest
 from backend.common.schemas import Infra
 from backend.modules.announcements import schemas
 from backend.modules.announcements.service import (

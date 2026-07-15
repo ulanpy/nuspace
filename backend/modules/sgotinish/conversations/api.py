@@ -1,8 +1,6 @@
 from typing import Annotated
 
-from backend.common.dependencies import (
-    get_creds_or_401,
-)
+from backend.modules.auth.dependencies import get_creds_or_401
 from backend.core.database.models.sgotinish import (
     Conversation,
     Ticket,

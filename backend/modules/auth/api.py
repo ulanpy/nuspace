@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from jose import JWTError
 from redis.asyncio import Redis
 
-from backend.common.dependencies import get_creds_or_401
+from backend.modules.auth.dependencies import get_creds_or_401
 from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import config
 from backend.modules.auth import dependencies as deps
