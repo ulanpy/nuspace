@@ -41,5 +41,5 @@ def get_opportunities_digest_service(
     return OpportunitiesDigestService(
         db_session=db,
         meilisearch_client=infra.meilisearch_client,
-        calendar_service=calendar_service,
+        calendar_sync=calendar_service,
     )

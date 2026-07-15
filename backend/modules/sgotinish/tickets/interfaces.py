@@ -1,48 +1,25 @@
-from abc import ABC, abstractmethod
-from typing import List
+from __future__ import annotations
 
-from backend.core.database.models.sgotinish import Ticket, TicketAccess, Message
+from typing import Protocol
+
+from backend.core.database.models.sgotinish import Message, Ticket
 from backend.core.database.models.user import User
 from backend.modules.sgotinish.tickets import schemas
 
 
-class AbstractNotificationService(ABC):
-    @abstractmethod
-    async def notify_new_ticket_to_bosses(self, ticket: Ticket, bosses: List[User]) -> None:
-        """Notifies bosses about a new ticket."""
-        pass
+class TicketNotifier(Protocol):
+    async def notify_new_ticket_to_bosses(self, ticket: Ticket, bosses: list[User]) -> None: ...
 
-    async def notify_ticket_access_granted(self, ticket: Ticket, access: TicketAccess) -> None:
-        """Notifies user about a ticket access granted."""
-        pass
+    async def notify_ticket_updated(self, ticket: Ticket) -> None: ...
 
-    @abstractmethod
-    async def notify_ticket_updated(self, ticket: Ticket) -> None:
-        """Notifies user about a ticket updated."""
-        pass
-
-    @abstractmethod
-    async def notify_new_message(self, message: Message) -> None:
-        """Notifies user about a new message."""
-        pass
+    async def notify_new_message(self, message: Message) -> None: ...
 
 
-class AbstractNotionService(ABC):
-    @abstractmethod
-    async def notify_notion(self, ticket: Ticket) -> None:
-        """Syncs newly created ticket with Notion page of Student Government."""
-        pass
+class TicketNotionSync(Protocol):
+    async def update_notion(self, ticket: Ticket) -> None: ...
 
-    @abstractmethod
-    async def update_notion(self, ticket: Ticket) -> None:
-        """Updates existing Notion page when ticket is modified."""
-        pass
 
-class AbstractConversationService(ABC):
-    @abstractmethod
+class TicketConversationLookup(Protocol):
     async def get_conversation_dtos_for_tickets(
-        self, tickets: List[Ticket], user: tuple[dict, dict]
-    ) -> dict[int, List[schemas.ConversationResponseDTO]]:
-        """Gets conversation DTOs for a list of tickets."""
-        pass
-
+        self, tickets: list[Ticket], user: tuple[dict, dict]
+    ) -> dict[int, list[schemas.ConversationResponseDTO]]: ...

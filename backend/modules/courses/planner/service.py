@@ -23,7 +23,8 @@ from backend.modules.courses.registrar.schemas import (
     CourseSearchResponse,
     SemesterOption,
 )
-from backend.modules.courses.registrar.service import CoursePriorityRecord, RegistrarService
+from backend.modules.courses.planner.interfaces import CourseCatalogLookup
+from backend.modules.courses.registrar.service import CoursePriorityRecord
 
 from backend.core.database.models.grade_report import (
     PlannerSchedule,
@@ -36,12 +37,12 @@ class PlannerService:
     def __init__(
         self,
         repository: PlannerRepository,
-        registrar_service: RegistrarService,
+        course_catalog: CourseCatalogLookup,
     ):
         self.repository = repository
-        self.registrar_service = registrar_service
+        self.course_catalog = course_catalog
         self.autobuilder = PlannerAutoBuilder()
-        self.serializer = PlannerSerializer(registrar_service)
+        self.serializer = PlannerSerializer(course_catalog)
         self._active_semester: SemesterOption | None = None
 
     async def _get_or_create_schedule(self, student_sub: str) -> PlannerSchedule:
@@ -89,7 +90,7 @@ class PlannerService:
             page=page,
             size=size,
         )
-        registrar_response = await self.registrar_service.search_courses(request)
+        registrar_response = await self.course_catalog.search_courses(request)
         return self._build_planner_search_response(registrar_response)
 
     async def reset(
@@ -167,7 +168,7 @@ class PlannerService:
             course.term_label = active_term.label
 
         if refresh or not course.sections:
-            registrar_sections = await self.registrar_service.get_course_schedule(
+            registrar_sections = await self.course_catalog.get_course_schedule(
                 course_code=course.course_code,
                 term=term_value,
             )
@@ -324,7 +325,7 @@ class PlannerService:
     # ----- Internal helpers ----- #
     async def _get_active_semester(self) -> SemesterOption:
         if self._active_semester is None:
-            self._active_semester = await self.registrar_service.get_active_semester()
+            self._active_semester = await self.course_catalog.get_active_semester()
         return self._active_semester
 
     async def _serialize_schedule_with_counts(
@@ -333,7 +334,7 @@ class PlannerService:
     ) -> PlannerScheduleResponse:
         course_ids = [course.id for course in schedule.courses]
         selection_counts = await self.repository.get_selection_counts_for_courses(course_ids)
-        priority_map = await self.registrar_service.fetch_course_priorities(
+        priority_map = await self.course_catalog.fetch_course_priorities(
             [course.course_code for course in schedule.courses]
         )
         term_label_fallback = (await self._get_active_semester()).label
@@ -351,7 +352,7 @@ class PlannerService:
     ) -> PlannerCourseResponse:
         selection_counts = await self.repository.get_selection_counts_for_courses([course.id])
         if priority_map is None:
-            priority_map = await self.registrar_service.fetch_course_priorities([course.course_code])
+            priority_map = await self.course_catalog.fetch_course_priorities([course.course_code])
         term_label_fallback = (await self._get_active_semester()).label
         return self.serializer.serialize_course(
             course,
@@ -390,7 +391,7 @@ class PlannerService:
         course_code: str,
         term_value: str,
     ) -> Optional[CourseSummary]:
-        normalized_target = self.registrar_service.normalize_course_code(course_code)
+        normalized_target = self.course_catalog.normalize_course_code(course_code)
         request = CourseSearchRequest(
             course_code=course_code,
             term=term_value,
@@ -398,7 +399,7 @@ class PlannerService:
             size=1,
         )
         try:
-            response = await self.registrar_service.search_courses(request)
+            response = await self.course_catalog.search_courses(request)
         except HTTPException as exc:
             if exc.status_code not in (502, 504):
                 raise
@@ -407,7 +408,7 @@ class PlannerService:
         if response:
             for item in response.items:
                 if (
-                    self.registrar_service.normalize_course_code(item.course_code)
+                    self.course_catalog.normalize_course_code(item.course_code)
                     == normalized_target
                 ):
                     return item

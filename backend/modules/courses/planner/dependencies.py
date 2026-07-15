@@ -14,5 +14,5 @@ async def get_planner_service(
 ) -> PlannerService:
     repository = PlannerRepository(db_session)
     registrar_service = RegistrarService(meilisearch_client=infra.meilisearch_client)
-    return PlannerService(repository=repository, registrar_service=registrar_service)
+    return PlannerService(repository=repository, course_catalog=registrar_service)
 

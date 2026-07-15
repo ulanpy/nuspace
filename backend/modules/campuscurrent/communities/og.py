@@ -2,14 +2,11 @@ from html import escape
 
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import HTMLResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import (
-    get_db_session,
-    get_infra,
-)
+from backend.common.dependencies import get_infra
 from backend.modules.auth.dependencies import get_creds_or_guest
 from backend.common.schemas import Infra
+from backend.modules.campuscurrent.communities.dependencies import get_community_service
 from backend.modules.campuscurrent.communities.service import CommunityService
 
 router = APIRouter(tags=["Communities OG"])
@@ -106,10 +103,9 @@ async def get_community_og_by_query(
     request: Request,
     id: int,
     user=Depends(get_creds_or_guest),
-    db_session: AsyncSession = Depends(get_db_session),
     infra: Infra = Depends(get_infra),
+    community_service: CommunityService = Depends(get_community_service),
 ) -> HTMLResponse:
-    community_service = CommunityService(db_session=db_session)
     community_response = await community_service.get_community_response(
         infra=infra, community_id=id, user=user
     )

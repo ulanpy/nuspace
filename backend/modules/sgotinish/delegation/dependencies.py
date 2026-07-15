@@ -10,10 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 def get_delegation_service(
     db_session: AsyncSession = Depends(get_db_session), infra: Infra = Depends(get_infra)
 ) -> DelegationService:
-    notification_service = NotificationService(db_session, infra)
-    notion_service = NotionService(db_session, infra)
+    access_notifier = NotificationService(db_session, infra)
+    notion_sync = NotionService(db_session, infra)
     return DelegationService(
         db_session=db_session,
-        notification_service=notification_service,
-        notion_service=notion_service,
+        access_notifier=access_notifier,
+        notion_sync=notion_sync,
     )

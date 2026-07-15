@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.common.schemas import Infra
 from backend.core.database.models.sgotinish import Ticket
 from backend.modules.notion import schemas, utils
-from backend.modules.sgotinish.tickets.interfaces import AbstractNotionService
 from backend.modules.notion.consts import (
     NOTION_SYNC_REDIS_PREFIX,
     NOTION_SYNC_TTL_SECONDS,
@@ -17,7 +16,7 @@ from backend.modules.notion.consts import (
 
 
 
-class NotionService(AbstractNotionService):
+class NotionService:
     """
     Service responsible for orchestrating Notion sync operations.
     """

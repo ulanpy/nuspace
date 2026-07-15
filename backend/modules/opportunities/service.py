@@ -5,7 +5,7 @@ from backend.core.database.models import Opportunity, OpportunityEligibility, Op
 from backend.common.utils import response_builder
 from backend.modules.opportunities import schemas
 from backend.modules.opportunities.repository import OpportunitiesRepository
-from backend.modules.calendar.google_calendar_service import GoogleCalendarService
+from backend.modules.opportunities.interfaces import CalendarEventSync
 from datetime import timedelta
 
 
@@ -20,10 +20,10 @@ class OpportunitiesDigestService:
         db_session: AsyncSession,
         meilisearch_client=None,
         repo: OpportunitiesRepository | None = None,
-        calendar_service: GoogleCalendarService | None = None,
+        calendar_sync: CalendarEventSync | None = None,
     ):
         self.repo = repo or OpportunitiesRepository(db_session, meilisearch_client=meilisearch_client)
-        self.calendar_service = calendar_service
+        self.calendar_sync = calendar_sync
 
     async def _build_opportunity_responses(
         self,
@@ -93,7 +93,7 @@ class OpportunitiesDigestService:
         kc_access_token: str | None,
         kc_refresh_token: str | None,
     ) -> schemas.OpportunityCalendarResponse:
-        if not self.calendar_service:
+        if not self.calendar_sync:
             raise ValueError("Calendar service is not configured")
 
         record = await self.repo.get(opportunity_id)
@@ -131,7 +131,7 @@ class OpportunitiesDigestService:
             },
         }
 
-        created, updated, deleted, google_errors = await self.calendar_service.sync_events(
+        created, updated, deleted, google_errors = await self.calendar_sync.sync_events(
             desired_events=[event],
             kc_access_token=kc_access_token,
             kc_refresh_token=kc_refresh_token,

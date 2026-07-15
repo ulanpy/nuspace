@@ -10,15 +10,20 @@ from backend.core.database.models import Event
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
 from backend.modules.campuscurrent.events import schemas, utils
+from backend.modules.campuscurrent.events.interfaces import MediaAttachmentResolver
 from backend.modules.campuscurrent.events.policy import EventPolicy
 from backend.modules.campuscurrent.events.repository import EventRepository
-from backend.modules.media.dependencies import build_media_service
-from backend.modules.media.repository import MediaRepository
 
 
 class EventService:
-    def __init__(self, db_session: AsyncSession, repo: EventRepository | None = None):
+    def __init__(
+        self,
+        db_session: AsyncSession,
+        media_attachment_resolver: MediaAttachmentResolver,
+        repo: EventRepository | None = None,
+    ):
         self.db_session = db_session
+        self.media_attachment_resolver = media_attachment_resolver
         self.repo = repo or EventRepository(db_session)
 
     async def _get_event_or_404(self, event_id: int) -> Event:
@@ -80,9 +85,7 @@ class EventService:
         event: Event,
         media_ids: List[int],
     ) -> None:
-        media_service = build_media_service(self.db_session, infra)
-        media_repo = MediaRepository(self.db_session)
-        media_objects = await media_repo.list_by_ids(media_ids)
+        media_objects = await self.media_attachment_resolver.list_by_ids(media_ids)
 
         found_ids = {media.id for media in media_objects}
         missing = set(media_ids) - found_ids
@@ -102,7 +105,7 @@ class EventService:
                     detail="Media does not belong to this event",
                 )
 
-        await media_service.delete_many(media_objects)
+        await self.media_attachment_resolver.delete_many(media_objects)
 
     async def delete_event(
         self, infra: Infra, event_id: int, user: tuple[dict, dict]
@@ -110,9 +113,8 @@ class EventService:
         event = await self._get_event_or_404(event_id)
         EventPolicy(user=user).check_delete(event=event)
 
-        media_service = build_media_service(self.db_session, infra)
         media_objects: List[Media] = await self.repo.list_media(event_ids=[event.id])
-        await media_service.delete_many(media_objects)
+        await self.media_attachment_resolver.delete_many(media_objects)
 
         event_deleted, _ = await self.repo.delete_event_and_media(
             event=event, media_objects=[]
@@ -145,8 +147,7 @@ class EventService:
             community_media_formats=[MediaFormat.profile, MediaFormat.banner],
         )
 
-        media_service = build_media_service(self.db_session, infra)
-        url_map = await media_service.build_url_map(all_media_objs)
+        url_map = await self.media_attachment_resolver.build_url_map(all_media_objs)
 
         event_media_by_id = defaultdict(list)
         community_media_by_id = defaultdict(list)
@@ -159,12 +160,12 @@ class EventService:
         event_responses: List[schemas.EventResponse] = []
         for event in events:
             event_media_objects: List[Media] = event_media_by_id.get(event.id, [])
-            event_media_responses = media_service.to_responses(event_media_objects, url_map)
+            event_media_responses = self.media_attachment_resolver.to_responses(event_media_objects, url_map)
 
             community_media_objects: List[Media] = (
                 community_media_by_id.get(event.community_id, []) if event.community_id else []
             )
-            community_media_responses = media_service.to_responses(
+            community_media_responses = self.media_attachment_resolver.to_responses(
                 community_media_objects, url_map
             )
 

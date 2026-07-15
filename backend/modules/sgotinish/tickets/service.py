@@ -12,9 +12,9 @@ from backend.core.database.models.sgotinish import (
 from backend.core.database.models.user import User, UserRole
 from backend.modules.sgotinish.tickets import repository, schemas
 from backend.modules.sgotinish.tickets.interfaces import (
-    AbstractConversationService,
-    AbstractNotificationService,
-    AbstractNotionService,
+    TicketConversationLookup,
+    TicketNotifier,
+    TicketNotionSync,
 )
 from backend.modules.sgotinish.tickets.policy import TicketPolicy
 from fastapi import HTTPException, status
@@ -28,15 +28,15 @@ class TicketService:
     def __init__(
         self,
         db_session: AsyncSession,
-        conversation_service: AbstractConversationService,
-        notification_service: AbstractNotificationService,
-        notion_service: AbstractNotionService | None = None,
+        ticket_notifier: TicketNotifier,
+        ticket_conversations: TicketConversationLookup | None = None,
+        ticket_notion_sync: TicketNotionSync | None = None,
     ):
         self.db_session = db_session
         self.repository = repository.TicketRepository(db_session)
-        self.conversation_service = conversation_service
-        self.notification_service = notification_service
-        self.notion_service = notion_service
+        self.ticket_conversations = ticket_conversations
+        self.ticket_notifier = ticket_notifier
+        self.ticket_notion_sync = ticket_notion_sync
 
     async def _build_ticket_response(
         self,
@@ -74,7 +74,7 @@ class TicketService:
         # === Build conversation DTOs if not provided (for single ticket case) ===
         if conversation_dtos_map is None:
             conversation_dtos_map = (
-                await self.conversation_service.get_conversation_dtos_for_tickets(
+                await self.ticket_conversations.get_conversation_dtos_for_tickets(
                     tickets=[ticket], user=user
                 )
             )
@@ -198,7 +198,7 @@ class TicketService:
             db_session=self.db_session, tickets=tickets, user_sub=user_sub
         )
         conversation_dtos_map: dict[int, List[schemas.ConversationResponseDTO]] = (
-            await self.conversation_service.get_conversation_dtos_for_tickets(
+            await self.ticket_conversations.get_conversation_dtos_for_tickets(
                 tickets=tickets, user=user
             )
         )
@@ -259,7 +259,7 @@ class TicketService:
             ]
             await self.repository.add_ticket_accesses(access_records)
             # Delegate notification to the NotificationService
-            await self.notification_service.notify_new_ticket_to_bosses(
+            await self.ticket_notifier.notify_new_ticket_to_bosses(
                 ticket, bosses
             )
 
@@ -280,10 +280,10 @@ class TicketService:
         # Reload the ticket with all necessary relationships
         ticket = await self.repository.get_ticket_by_id(ticket.id)
 
-        await self.notification_service.notify_ticket_updated(ticket)
+        await self.ticket_notifier.notify_ticket_updated(ticket)
         
         try:
-            await self.notion_service.update_notion(ticket)
+            await self.ticket_notion_sync.update_notion(ticket)
         except Exception:
             import logging
             logger = logging.getLogger(__name__)

@@ -9,7 +9,7 @@ OAuth login (Keycloak + Google), application JWT tokens, and user upsert.
 | `api.py` | HTTP routes |
 | `service.py` | Login, callback, refresh, `/me`, logout |
 | `repository.py` | User upsert and lookups |
-| `dependencies.py` | FastAPI `Depends`: auth (`get_creds_or_401`, `get_creds_or_guest`), `AuthService`, infra |
+| `dependencies.py` | FastAPI `Depends`: cookie auth (`get_creds_or_401`, `get_creds_or_guest`), `AuthService` wiring |
 | `schemas.py` | Request/response DTOs |
 | `keycloak_manager.py` | Keycloak OAuth client and JWT validation |
 | `app_token.py` | Application JWT minting and validation |

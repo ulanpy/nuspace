@@ -4,21 +4,23 @@ from backend.core.database.models.sgotinish import Conversation, Message, Ticket
 from backend.common.schemas import ShortUserResponse
 from backend.common.utils import response_builder
 from backend.modules.sgotinish.conversations import schemas
+from backend.modules.sgotinish.conversations.interfaces import TicketAccessChecker
 from backend.modules.sgotinish.conversations.policy import ConversationPolicy
-from backend.modules.sgotinish.tickets.interfaces import AbstractConversationService
 from backend.modules.sgotinish.tickets import schemas as ticket_schemas
-from backend.modules.sgotinish.tickets.service import TicketService
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 
-class ConversationService(AbstractConversationService):
-
-
-    def __init__(self, db_session: AsyncSession):
+class ConversationService:
+    def __init__(
+        self,
+        db_session: AsyncSession,
+        ticket_access: TicketAccessChecker,
+    ):
         self.db_session = db_session
+        self.ticket_access = ticket_access
 
     async def _get_ticket_or_404(self, ticket_id: int) -> Ticket:
         stmt = (
@@ -89,10 +91,9 @@ class ConversationService(AbstractConversationService):
         self,
         conversation_data: schemas.ConversationCreateDTO,
         user: tuple[dict, dict],
-        ticket_service: TicketService,
     ) -> schemas.ConversationResponseDTO:
         ticket = await self._get_ticket_or_404(conversation_data.ticket_id)
-        access = await ticket_service.get_user_ticket_access(ticket, user)
+        access = await self.ticket_access.get_user_ticket_access(ticket, user)
         ConversationPolicy(user).check_create(ticket, access)
 
         user_sub = user[0].get("sub")
@@ -133,10 +134,9 @@ class ConversationService(AbstractConversationService):
         conversation_id: int,
         conversation_data: schemas.ConversationUpdateDTO,
         user: tuple[dict, dict],
-        ticket_service: TicketService,
     ) -> schemas.ConversationResponseDTO:
         conversation = await self._get_conversation_or_404(conversation_id)
-        access = await ticket_service.get_user_ticket_access(conversation.ticket, user)
+        access = await self.ticket_access.get_user_ticket_access(conversation.ticket, user)
         ConversationPolicy(user).check_update(access)
 
         for field, value in conversation_data.model_dump(exclude_unset=True).items():

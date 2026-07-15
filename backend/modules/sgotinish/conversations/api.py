@@ -4,8 +4,6 @@ from backend.modules.auth.dependencies import get_creds_or_401
 from backend.modules.sgotinish.conversations import dependencies as deps
 from backend.modules.sgotinish.conversations import schemas
 from backend.modules.sgotinish.conversations.service import ConversationService
-from backend.modules.sgotinish.tickets.dependencies import get_ticket_service
-from backend.modules.sgotinish.tickets.service import TicketService
 from fastapi import APIRouter, Depends
 
 router = APIRouter(tags=["SGotinish Conversations Routes"])
@@ -21,7 +19,6 @@ async def create_conversation(
     conversation_data: schemas.ConversationCreateDTO,
     user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     service: ConversationService = Depends(deps.get_conversation_service),
-    ticket_service: TicketService = Depends(get_ticket_service),
 ) -> schemas.ConversationResponseDTO:
     """
     Creates a new conversation for a ticket.
@@ -40,7 +37,6 @@ async def create_conversation(
     return await service.create_conversation(
         conversation_data=conversation_data,
         user=user_tuple,
-        ticket_service=ticket_service,
     )
 
 
@@ -50,7 +46,6 @@ async def update_conversation(
     conversation_data: schemas.ConversationUpdateDTO,
     user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     service: ConversationService = Depends(deps.get_conversation_service),
-    ticket_service: TicketService = Depends(get_ticket_service),
 ) -> schemas.ConversationResponseDTO:
     """
     Updates fields of an existing conversation.
@@ -70,5 +65,4 @@ async def update_conversation(
         conversation_id=conversation_id,
         conversation_data=conversation_data,
         user=user_tuple,
-        ticket_service=ticket_service,
     )

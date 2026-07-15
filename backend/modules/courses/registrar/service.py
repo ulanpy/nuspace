@@ -16,7 +16,10 @@ from backend.modules.courses.registrar.schemas import (
     SemesterOption,
 )
 from backend.modules.courses.registrar.clients.registrar_client import RegistrarClient
-from backend.modules.courses.registrar.parsers.registrar_parser import parse_schedule
+from backend.modules.courses.registrar.parsers.registrar_parser import (
+    parse_personal_schedule_pdf,
+    parse_schedule,
+)
 from backend.modules.courses.registrar.clients.public_course_catalog import (
     PublicCourseCatalogClient,
 )
@@ -62,6 +65,9 @@ class RegistrarService:
             raw = await client.fetch_schedule(username=username, password=password)
         schedule: ScheduleResponse = parse_schedule(raw)
         return schedule
+
+    def parse_schedule_pdf(self, pdf_file: bytes) -> ScheduleResponse:
+        return parse_personal_schedule_pdf(pdf_file)
 
     async def list_semesters(self) -> list[SemesterOption]:
         async with self.public_client_factory() as client:

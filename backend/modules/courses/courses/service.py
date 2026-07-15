@@ -18,8 +18,6 @@ from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.courses.courses import schemas
 from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
 from backend.modules.courses.courses.repository import CourseRepository
-from backend.modules.courses.registrar.parsers.registrar_parser import parse_personal_schedule_pdf
-from backend.modules.courses.registrar.schedule_sync import SCHEDULE_INDEX_UID
 from backend.modules.courses.registrar.schemas import (
     CourseSearchRequest,
     SchedulePreferences,
@@ -27,7 +25,7 @@ from backend.modules.courses.registrar.schemas import (
     SemesterOption,
     UserScheduleItem,
 )
-from backend.modules.courses.registrar.service import RegistrarService
+from backend.modules.courses.courses.interfaces import CalendarEventSync, StudentScheduleRegistrar
 from fastapi import HTTPException, status
 from backend.modules.courses.courses.policy import CourseItemPolicy, StudentCoursePolicy
 
@@ -36,17 +34,17 @@ class StudentCourseService:
     def __init__(
         self,
         repository: CourseRepository,
-        registrar_service: RegistrarService,
+        registrar: StudentScheduleRegistrar,
         *,
         infra: Infra | None = None,
         kc_manager: KeyCloakManager | None = None,
-        calendar_service=None,
+        calendar_sync: CalendarEventSync | None = None,
     ):
         self.repository = repository
-        self._registrar_service = registrar_service
+        self._registrar = registrar
         self.infra = infra
         self.kc_manager = kc_manager
-        self.calendar_service = calendar_service
+        self.calendar_sync = calendar_sync
 
     async def _get_course_item_or_404(self, item_id: int) -> CourseItem:
         item = await self.repository.get_course_item_by_id(item_id)
@@ -382,7 +380,7 @@ class StudentCourseService:
                 
                 page=1,
             )
-            search_response = await self._registrar_service.search_courses_pcc(search_request)
+            search_response = await self._registrar.search_courses_pcc(search_request)
 
             for item in search_response.items:
                 normalized_item_code = self._normalize_course_code(item.course_code)
@@ -400,7 +398,7 @@ class StudentCourseService:
                     term=fallback_term_value,
                     page=1,
                 )
-                fallback_response = await self._registrar_service.search_courses_pcc(fallback_request)
+                fallback_response = await self._registrar.search_courses_pcc(fallback_request)
                 for item in fallback_response.items:
                     normalized_item_code = self._normalize_course_code(item.course_code)
                     if normalized_item_code == candidate:
@@ -419,7 +417,7 @@ class StudentCourseService:
                     term=None,
                     page=1,
                 )
-                any_term_response = await self._registrar_service.search_courses_pcc(any_term_request)
+                any_term_response = await self._registrar.search_courses_pcc(any_term_request)
                 for item in any_term_response.items:
                     normalized_item_code = self._normalize_course_code(item.course_code)
                     if normalized_item_code == candidate:
@@ -491,7 +489,7 @@ class StudentCourseService:
             RegistrarSyncResponse containing course list and sync statistics
         """
         # Get student's schedule from registrar
-        schedule_response: ScheduleResponse = await self._registrar_service.sync_schedule(
+        schedule_response: ScheduleResponse = await self._registrar.sync_schedule(
             username=username,
             password=password
         )
@@ -505,7 +503,9 @@ class StudentCourseService:
         student_sub: str,
         pdf_file: bytes,
     ) -> schemas.RegistrarSyncResponse:
-        schedule_response = parse_personal_schedule_pdf(_normalize_pdf_bytes(pdf_file))
+        schedule_response = self._registrar.parse_schedule_pdf(
+            _normalize_pdf_bytes(pdf_file)
+        )
         return await self._sync_courses_from_schedule_response(
             student_sub=student_sub,
             schedule_response=schedule_response,
@@ -518,7 +518,7 @@ class StudentCourseService:
         schedule_response: ScheduleResponse,
     ) -> schemas.RegistrarSyncResponse:
         # Get semesters to determine current term
-        semesters: list[SemesterOption] = await self._registrar_service.list_semesters()
+        semesters: list[SemesterOption] = await self._registrar.list_semesters()
         current_term_value = self._determine_current_semester(
             semesters=semesters,
             current_date=datetime.now()
@@ -707,7 +707,7 @@ class StudentCourseService:
         Push the student's weekly schedule to Google Calendar by enriching
         entries with start/end dates from the Meilisearch schedule index.
         """
-        if not self.calendar_service:
+        if not self.calendar_sync:
             raise ValueError("Calendar service is not configured")
 
         active_infra = infra or self.infra
@@ -734,7 +734,7 @@ class StudentCourseService:
         async def fetch_course_window(normalized_code: str, raw_code: str):
             search_result = await meilisearch.get(
                 client=active_infra.meilisearch_client,
-                storage_name=SCHEDULE_INDEX_UID,
+                storage_name=self._registrar.schedule_index_uid,
                 keyword=raw_code,
                 page=1,
                 size=3,
@@ -877,7 +877,7 @@ class StudentCourseService:
                 google_errors=["no_events_to_create"],
             )
 
-        created, updated, deleted, google_errors = await self.calendar_service.sync_events(
+        created, updated, deleted, google_errors = await self.calendar_sync.sync_events(
             desired_events=events,
             kc_access_token=kc_access_token,
             kc_refresh_token=kc_refresh_token,

@@ -7,8 +7,6 @@ from backend.modules.auth.dependencies import (
 from backend.modules.sgotinish.messages import dependencies as deps
 from backend.modules.sgotinish.messages import schemas
 from backend.modules.sgotinish.messages.service import MessageService
-from backend.modules.sgotinish.tickets.dependencies import get_ticket_service
-from backend.modules.sgotinish.tickets.service import TicketService
 from fastapi import APIRouter, Depends, Query
 
 router = APIRouter(tags=["SGotinish Messages Routes"])
@@ -24,7 +22,6 @@ async def create_message(
     message_data: schemas.MessageCreateDTO,
     user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     service: MessageService = Depends(deps.get_message_service),
-    ticket_service: TicketService = Depends(get_ticket_service),
     owner_hash: str | None = Query(default=None),
 ) -> schemas.MessageResponseDTO:
     """
@@ -44,7 +41,6 @@ async def create_message(
     return await service.create_message(
         message_data=message_data,
         user=user_tuple,
-        ticket_service=ticket_service,
         owner_hash=owner_hash,
     )
 
@@ -54,7 +50,6 @@ async def get_messages(
     conversation_id: int,
     user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     service: MessageService = Depends(deps.get_message_service),
-    ticket_service: TicketService = Depends(get_ticket_service),
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     owner_hash: str | None = Query(default=None),
@@ -79,7 +74,6 @@ async def get_messages(
         size=size,
         page=page,
         user=user_tuple,
-        ticket_service=ticket_service,
         owner_hash=owner_hash,
     )
 
@@ -89,7 +83,6 @@ async def get_message(
     message_id: int,
     user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     service: MessageService = Depends(deps.get_message_service),
-    ticket_service: TicketService = Depends(get_ticket_service),
     owner_hash: str | None = Query(default=None),
 ) -> schemas.MessageResponseDTO:
     """
@@ -108,7 +101,6 @@ async def get_message(
     return await service.get_message_by_id(
         message_id=message_id,
         user=user_tuple,
-        ticket_service=ticket_service,
         owner_hash=owner_hash,
     )
 
@@ -123,24 +115,23 @@ async def mark_message_as_read(
     message_id: int,
     user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     service: MessageService = Depends(deps.get_message_service),
-    ticket_service: TicketService = Depends(get_ticket_service),
     owner_hash: str | None = Query(default=None),
 ) -> schemas.MessageResponseDTO:
     """
     Marks a message as read by the current user.
 
     **Access Policy:**
-    - Users can mark messages as read if they have access to the conversation
+    - SG members and admins can mark any message as read
+    - Regular users can only mark messages in conversations for their tickets
 
     **Parameters:**
-    - `message_id`: The ID of the message to mark as read
+    - `message_id`: The unique identifier of the message to mark as read
 
     **Returns:**
-    - The updated message with its read status information
+    - Updated message with read status
     """
     return await service.mark_message_as_read(
         message_id=message_id,
         user=user_tuple,
-        ticket_service=ticket_service,
         owner_hash=owner_hash,
     )

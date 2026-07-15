@@ -204,6 +204,24 @@ class AuthService:
         )
         return await self.ensure_user_from_kc_principal(profile)
 
+    async def ensure_telegram_linked(self, sub: str) -> bool:
+        user = await self.user_repository.get_by_sub(sub)
+        if not user or not user.telegram_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Telegram not linked",
+            )
+        return True
+
+    async def get_user_role_or_403(self, sub: str) -> UserRole:
+        user = await self.user_repository.get_by_sub(sub)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User not found",
+            )
+        return user.role
+
     async def complete_oauth_callback(
         self,
         request: Request,

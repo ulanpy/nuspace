@@ -12,15 +12,13 @@ from backend.modules.courses.planner.schemas import (
     PlannerScheduleResponse,
     PlannerSectionResponse,
 )
-from backend.modules.courses.registrar.service import (
-    CoursePriorityRecord,
-    RegistrarService,
-)
+from backend.modules.courses.planner.interfaces import CourseCatalogLookup
+from backend.modules.courses.registrar.service import CoursePriorityRecord
 
 
 class PlannerSerializer:
-    def __init__(self, registrar_service: RegistrarService) -> None:
-        self.registrar_service = registrar_service
+    def __init__(self, course_catalog: CourseCatalogLookup) -> None:
+        self.course_catalog = course_catalog
 
     def serialize_schedule(
         self,
@@ -53,7 +51,7 @@ class PlannerSerializer:
     ) -> PlannerCourseResponse:
         selection_counts = selection_counts or {}
         priority_map = priority_map or {}
-        normalized_code = self.registrar_service.normalize_course_code(course.course_code)
+        normalized_code = self.course_catalog.normalize_course_code(course.course_code)
         priority_record = priority_map.get(normalized_code)
         term_label = (course.term_label or "").strip()
         if not term_label or term_label.lower() == "unknown term":

@@ -2,10 +2,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import (
-    get_db_session,
     get_infra,
 )
 from backend.modules.auth.dependencies import (
@@ -20,6 +18,7 @@ from backend.core.database.models.community import (
     CommunityType,
 )
 from backend.modules.campuscurrent.communities import schemas
+from backend.modules.campuscurrent.communities.dependencies import get_community_service
 from backend.modules.campuscurrent.communities.service import CommunityService
 
 router = APIRouter(tags=["Community Routes"])
@@ -30,8 +29,8 @@ async def add_community(
     request: Request,
     community_data: schemas.CommunityCreateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
     infra: Infra = Depends(get_infra),
+    community_service: CommunityService = Depends(get_community_service),
 ) -> schemas.CommunityResponse:
     """
     Create a new community. Any registered user can create communities.
@@ -50,7 +49,6 @@ async def add_community(
     - The community is indexed in Meilisearch after creation.
     - Users can only set themselves as the head of the community.
     """
-    community_service = CommunityService(db_session=db_session)
     try:
         return await community_service.create_community(
             infra=infra, community_data=community_data, user=user
@@ -76,8 +74,8 @@ async def get_communities(
         default=None,
         description=("if 'me' then current user's sub will be used"),
     ),
-    db_session: AsyncSession = Depends(get_db_session),
     infra: Infra = Depends(get_infra),
+    community_service: CommunityService = Depends(get_community_service),
     keyword: str | None = Query(
         default=None, description="Search keyword for community name or description"
     ),
@@ -105,7 +103,6 @@ async def get_communities(
     - Results are ordered by creation date (newest first)
     - Each community includes its associated media in profile format
     """
-    community_service = CommunityService(db_session=db_session)
     return await community_service.list_communities(
         infra=infra,
         user=user,
@@ -124,8 +121,8 @@ async def get_community(
     request: Request,
     community_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    db_session: AsyncSession = Depends(get_db_session),
     infra: Infra = Depends(get_infra),
+    community_service: CommunityService = Depends(get_community_service),
 ) -> schemas.CommunityResponse:
     """
     Retrieves a specific community by ID.
@@ -144,7 +141,6 @@ async def get_community(
     - Returns 404 if community is not found
     - Returns 500 on internal error
     """
-    community_service = CommunityService(db_session=db_session)
     return await community_service.get_community_response(
         infra=infra, community_id=community_id, user=user
     )
@@ -156,8 +152,8 @@ async def update_community(
     community_id: int,
     new_data: schemas.CommunityUpdateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
     infra: Infra = Depends(get_infra),
+    community_service: CommunityService = Depends(get_community_service),
 ) -> schemas.CommunityResponse:
     """
     Updates fields of an existing community.
@@ -176,7 +172,6 @@ async def update_community(
     - Returns 403 if user is not the head of the community and is not an admin
     - Returns 500 on internal error
     """
-    community_service = CommunityService(db_session=db_session)
     return await community_service.update_community(
         infra=infra, community_id=community_id, new_data=new_data, user=user
     )
@@ -187,8 +182,8 @@ async def delete_community(
     request: Request,
     community_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
     infra: Infra = Depends(get_infra),
+    community_service: CommunityService = Depends(get_community_service),
 ):
     """
     Deletes a specific community.
@@ -211,7 +206,6 @@ async def delete_community(
     - Returns 404 if the community is not found
     - Returns 500 on internal error
     """
-    community_service = CommunityService(db_session=db_session)
     await community_service.delete_community(
         infra=infra, community_id=community_id, user=user
     )
@@ -224,7 +218,7 @@ async def create_achievement(
     community_id: int,
     achievement_data: schemas.AchievementCreateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
+    community_service: CommunityService = Depends(get_community_service),
 ) -> schemas.AchievementResponse:
     """
     Create a new achievement for a community.
@@ -243,7 +237,6 @@ async def create_achievement(
     - 403 if user doesn't have permission
     - 404 if community not found
     """
-    community_service = CommunityService(db_session=db_session)
     return await community_service.create_achievement(
         community_id=community_id,
         achievement_data=achievement_data,
@@ -255,7 +248,7 @@ async def create_achievement(
 async def get_achievements(
     community_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    db_session: AsyncSession = Depends(get_db_session),
+    community_service: CommunityService = Depends(get_community_service),
     size: int = Query(100, ge=1, le=200),
     page: int = 1,
 ) -> schemas.ListAchievements:
@@ -273,7 +266,6 @@ async def get_achievements(
     **Returns:**
     - List of achievements ordered by year (descending)
     """
-    community_service = CommunityService(db_session=db_session)
     return await community_service.list_achievements(
         community_id=community_id, size=size, page=page, user=user
     )
@@ -285,7 +277,7 @@ async def update_achievement(
     achievement_id: int,
     achievement_data: schemas.AchievementUpdateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
+    community_service: CommunityService = Depends(get_community_service),
 ) -> schemas.AchievementResponse:
     """
     Update an achievement.
@@ -305,7 +297,6 @@ async def update_achievement(
     - 403 if user doesn't have permission
     - 404 if achievement or community not found
     """
-    community_service = CommunityService(db_session=db_session)
     return await community_service.update_achievement(
         community_id=community_id,
         achievement_id=achievement_id,
@@ -319,7 +310,7 @@ async def delete_achievement(
     community_id: int,
     achievement_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
+    community_service: CommunityService = Depends(get_community_service),
 ):
     """
     Delete an achievement.
@@ -338,7 +329,6 @@ async def delete_achievement(
     - 403 if user doesn't have permission
     - 404 if achievement or community not found
     """
-    community_service = CommunityService(db_session=db_session)
     await community_service.delete_achievement(
         community_id=community_id,
         achievement_id=achievement_id,
@@ -351,7 +341,7 @@ async def delete_achievement(
 @router.get("/photo-albums", response_model=schemas.ListPhotoAlbums)
 async def get_all_photo_albums(
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    db_session: AsyncSession = Depends(get_db_session),
+    community_service: CommunityService = Depends(get_community_service),
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     album_type: CommunityPhotoAlbumType | None = None,
@@ -370,7 +360,6 @@ async def get_all_photo_albums(
     **Returns:**
     - List of photo albums ordered by creation date (newest first)
     """
-    community_service = CommunityService(db_session=db_session)
     return await community_service.list_all_photo_albums(
         size=size,
         page=page,
@@ -383,7 +372,7 @@ async def create_photo_album(
     community_id: int,
     album_data: schemas.PhotoAlbumCreateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
+    community_service: CommunityService = Depends(get_community_service),
 ) -> schemas.PhotoAlbumResponse:
     """
     Create a new photo album for a community.
@@ -402,7 +391,6 @@ async def create_photo_album(
     - 403 if user doesn't have permission
     - 404 if community not found
     """
-    community_service = CommunityService(db_session=db_session)
     return await community_service.create_photo_album(
         community_id=community_id,
         album_data=album_data,
@@ -414,7 +402,7 @@ async def create_photo_album(
 async def get_photo_albums(
     community_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    db_session: AsyncSession = Depends(get_db_session),
+    community_service: CommunityService = Depends(get_community_service),
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     album_type: CommunityPhotoAlbumType | None = None,
@@ -434,7 +422,6 @@ async def get_photo_albums(
     **Returns:**
     - List of photo albums ordered by creation date (newest first)
     """
-    community_service = CommunityService(db_session=db_session)
     return await community_service.list_photo_albums(
         community_id=community_id,
         size=size,
@@ -450,7 +437,7 @@ async def update_photo_album(
     album_id: int,
     album_data: schemas.PhotoAlbumUpdateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
+    community_service: CommunityService = Depends(get_community_service),
 ) -> schemas.PhotoAlbumResponse:
     """
     Update a photo album.
@@ -470,7 +457,6 @@ async def update_photo_album(
     - 403 if user doesn't have permission
     - 404 if album or community not found
     """
-    community_service = CommunityService(db_session=db_session)
     return await community_service.update_photo_album(
         community_id=community_id,
         album_id=album_id,
@@ -484,7 +470,7 @@ async def delete_photo_album(
     community_id: int,
     album_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
+    community_service: CommunityService = Depends(get_community_service),
 ):
     """
     Delete a photo album.
@@ -503,7 +489,6 @@ async def delete_photo_album(
     - 403 if user doesn't have permission
     - 404 if album or community not found
     """
-    community_service = CommunityService(db_session=db_session)
     await community_service.delete_photo_album(
         community_id=community_id,
         album_id=album_id,
@@ -516,7 +501,7 @@ async def refresh_photo_album_metadata(
     community_id: int,
     album_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
+    community_service: CommunityService = Depends(get_community_service),
 ) -> schemas.PhotoAlbumResponse:
     """
     Refresh album metadata from Google Photos.
@@ -535,7 +520,6 @@ async def refresh_photo_album_metadata(
     - 403 if user doesn't have permission
     - 404 if album or community not found
     """
-    community_service = CommunityService(db_session=db_session)
     return await community_service.refresh_photo_album_metadata(
         community_id=community_id,
         album_id=album_id,
@@ -547,7 +531,7 @@ async def refresh_photo_album_metadata(
 async def refresh_all_photo_albums(
     community_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
+    community_service: CommunityService = Depends(get_community_service),
 ) -> dict:
     """
     Refresh metadata for all photo albums in a community.
@@ -565,7 +549,6 @@ async def refresh_all_photo_albums(
     - 403 if user doesn't have permission
     - 404 if community not found
     """
-    community_service = CommunityService(db_session=db_session)
     return await community_service.refresh_all_photo_albums(
         community_id=community_id,
         user=user,

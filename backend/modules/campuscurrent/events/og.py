@@ -2,14 +2,11 @@ from html import escape
 
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import HTMLResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import (
-    get_db_session,
-    get_infra,
-)
+from backend.common.dependencies import get_infra
 from backend.modules.auth.dependencies import get_creds_or_guest
 from backend.common.schemas import Infra
+from backend.modules.campuscurrent.events.dependencies import get_event_service
 from backend.modules.campuscurrent.events.service import EventService
 
 router = APIRouter(tags=["Events OG"])
@@ -98,10 +95,9 @@ async def get_event_og_by_query(
     request: Request,
     id: int,
     user=Depends(get_creds_or_guest),
-    db_session: AsyncSession = Depends(get_db_session),
     infra: Infra = Depends(get_infra),
+    event_service: EventService = Depends(get_event_service),
 ) -> HTMLResponse:
-    event_service = EventService(db_session=db_session)
     event_response = await event_service.get_event_by_id(
         infra=infra, event_id=id, user=user
     )

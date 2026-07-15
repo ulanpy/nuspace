@@ -15,8 +15,7 @@ from backend.modules.sgotinish.delegation.schemas import SGUserResponse
 from backend.core.database.models.user import UserRole
 from backend.modules.sgotinish.messages import schemas
 from backend.modules.sgotinish.messages.policy import MessagePolicy
-from backend.modules.sgotinish.tickets.interfaces import AbstractNotificationService
-from backend.modules.sgotinish.tickets.service import TicketService
+from backend.modules.sgotinish.messages.interfaces import NewMessageNotifier, TicketAccessChecker
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -26,10 +25,12 @@ class MessageService:
     def __init__(
         self,
         db_session: AsyncSession,
-        notification_service: AbstractNotificationService,
+        message_notifier: NewMessageNotifier,
+        ticket_access: TicketAccessChecker,
     ):
         self.db_session = db_session
-        self.notification_service = notification_service
+        self.message_notifier = message_notifier
+        self.ticket_access = ticket_access
 
     async def _get_conversation_or_404(self, conversation_id: int) -> Conversation:
         stmt = (
@@ -132,11 +133,10 @@ class MessageService:
         size: int,
         page: int,
         user: tuple[dict, dict],
-        ticket_service: TicketService,
         owner_hash: str | None = None,
     ) -> schemas.ListMessageDTO:
         conversation = await self._get_conversation_or_404(conversation_id)
-        access = await ticket_service.get_user_ticket_access(conversation.ticket, user)
+        access = await self.ticket_access.get_user_ticket_access(conversation.ticket, user)
         owner_hash_match = self._owner_hash_match(conversation, owner_hash)
         MessagePolicy(user).check_read_list(
             conversation, access, owner_hash_match=owner_hash_match
@@ -181,11 +181,10 @@ class MessageService:
         self,
         message_id: int,
         user: tuple[dict, dict],
-        ticket_service: TicketService,
         owner_hash: str | None = None,
     ) -> schemas.MessageResponseDTO:
         message = await self._get_message_or_404(message_id)
-        access = await ticket_service.get_user_ticket_access(message.conversation.ticket, user)
+        access = await self.ticket_access.get_user_ticket_access(message.conversation.ticket, user)
         owner_hash_match = self._owner_hash_match(message.conversation, owner_hash)
         MessagePolicy(user).check_read_one(
             message, access, owner_hash_match=owner_hash_match
@@ -196,11 +195,10 @@ class MessageService:
         self,
         message_data: schemas.MessageCreateDTO,
         user: tuple[dict, dict],
-        ticket_service: TicketService,
         owner_hash: str | None = None,
     ) -> schemas.MessageResponseDTO:
         conversation = await self._get_conversation_or_404(message_data.conversation_id)
-        access = await ticket_service.get_user_ticket_access(conversation.ticket, user)
+        access = await self.ticket_access.get_user_ticket_access(conversation.ticket, user)
         owner_hash_match = self._owner_hash_match(conversation, owner_hash)
         MessagePolicy(user).check_create(
             conversation, access, owner_hash_match=owner_hash_match
@@ -255,7 +253,7 @@ class MessageService:
         result = await self.db_session.execute(stmt)
         full_message = result.scalar_one()
 
-        await self.notification_service.notify_new_message(full_message)
+        await self.message_notifier.notify_new_message(full_message)
 
         # Use the fully loaded message for the response as well
         return await self._build_message_response(full_message, user)
@@ -264,11 +262,10 @@ class MessageService:
         self,
         message_id: int,
         user: tuple[dict, dict],
-        ticket_service: TicketService,
         owner_hash: str | None = None,
     ) -> schemas.MessageResponseDTO:
         message = await self._get_message_or_404(message_id)
-        access = await ticket_service.get_user_ticket_access(message.conversation.ticket, user)
+        access = await self.ticket_access.get_user_ticket_access(message.conversation.ticket, user)
         owner_hash_match = self._owner_hash_match(message.conversation, owner_hash)
         MessagePolicy(user).check_read_one(
             message, access, owner_hash_match=owner_hash_match
@@ -299,5 +296,5 @@ class MessageService:
                 await self.db_session.flush()
 
         return await self.get_message_by_id(
-            message.id, user, ticket_service, owner_hash=owner_hash if owner_hash_match else None
+            message.id, user, owner_hash=owner_hash if owner_hash_match else None
         )

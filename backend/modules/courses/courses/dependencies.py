@@ -20,8 +20,8 @@ async def get_student_course_service(
     calendar_service = GoogleCalendarService(kc_manager=kc_manager) if kc_manager else None
     return StudentCourseService(
         repository=repository,
-        registrar_service=RegistrarService(meilisearch_client=infra.meilisearch_client),
+        registrar=RegistrarService(meilisearch_client=infra.meilisearch_client),
         infra=infra,
         kc_manager=kc_manager,
-        calendar_service=calendar_service,
+        calendar_sync=calendar_service,
     )

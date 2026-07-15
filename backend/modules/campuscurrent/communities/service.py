@@ -18,13 +18,12 @@ from backend.core.database.models.community import (
 )
 from backend.core.database.models.media import Media, MediaFormat
 from backend.modules.campuscurrent.communities import schemas
+from backend.modules.campuscurrent.communities.interfaces import MediaAttachmentResolver
 from backend.modules.campuscurrent.communities.policy import CommunityPolicy
 from backend.modules.campuscurrent.communities.repository import CommunityRepository
 from backend.modules.campuscurrent.communities.utils import get_community_permissions
 from backend.modules.campuscurrent.communities.google_photos_utils import fetch_google_photos_metadata
 from backend.common.utils.enums import ResourceAction
-from backend.modules.media.dependencies import build_media_service
-from backend.modules.media.repository import MediaRepository
 from backend.modules.media.schemas import MediaResponse
 
 
@@ -32,9 +31,11 @@ class CommunityService:
     def __init__(
         self,
         db_session: AsyncSession,
+        media_attachment_resolver: MediaAttachmentResolver,
         repo: CommunityRepository | None = None,
     ):
         self.db_session = db_session
+        self.media_attachment_resolver = media_attachment_resolver
         self.repo = repo or CommunityRepository(db_session)
 
     async def _get_community_or_404(self, community_id: int) -> Community:
@@ -63,12 +64,11 @@ class CommunityService:
         community: Community = await self.repo.add_community(community_data)
         await self.repo.upsert_search(infra.meilisearch_client, community)
 
-        media_service = build_media_service(self.db_session, infra)
         media_objs: List[Media] = await self.repo.list_media(
             community_ids=[community.id],
             media_formats=[MediaFormat.profile, MediaFormat.banner],
         )
-        media_results: List[List[MediaResponse]] = await media_service.map_to_resources(
+        media_results: List[List[MediaResponse]] = await self.media_attachment_resolver.map_to_resources(
             media_objects=media_objs, resources=[community]
         )
 
@@ -107,9 +107,7 @@ class CommunityService:
         community: Community,
         media_ids: List[int],
     ) -> None:
-        media_service = build_media_service(self.db_session, infra)
-        media_repo = MediaRepository(self.db_session)
-        media_objects = await media_repo.list_by_ids(media_ids)
+        media_objects = await self.media_attachment_resolver.list_by_ids(media_ids)
 
         found_ids = {media.id for media in media_objects}
         missing = set(media_ids) - found_ids
@@ -126,7 +124,7 @@ class CommunityService:
                     detail="Media does not belong to this community",
                 )
 
-        await media_service.delete_many(media_objects)
+        await self.media_attachment_resolver.delete_many(media_objects)
 
     async def delete_community(
         self, infra: Infra, community_id: int, user: tuple[dict, dict]
@@ -136,9 +134,8 @@ class CommunityService:
             action=ResourceAction.DELETE, community=community
         )
 
-        media_service = build_media_service(self.db_session, infra)
         media_objects: List[Media] = await self.repo.list_media(community_ids=[community.id])
-        await media_service.delete_many(media_objects)
+        await self.media_attachment_resolver.delete_many(media_objects)
 
         deleted_community = await self.repo.delete_community(community)
         if not deleted_community:
@@ -186,12 +183,11 @@ class CommunityService:
                 has_next=False,
             )
 
-        media_service = build_media_service(self.db_session, infra)
         media_objs: List[Media] = await self.repo.list_media(
             community_ids=[community.id for community in communities],
             media_formats=[MediaFormat.profile, MediaFormat.banner],
         )
-        media_results: List[List[MediaResponse]] = await media_service.map_to_resources(
+        media_results: List[List[MediaResponse]] = await self.media_attachment_resolver.map_to_resources(
             media_objects=media_objs, resources=communities
         )
 
@@ -230,12 +226,11 @@ class CommunityService:
         # Ensure needed relations are loaded to avoid lazy-load in response building
         await self.repo.load_relations(community, ["head_user", "achievements"])
 
-        media_service = build_media_service(self.db_session, infra)
         media_objs: List[Media] = await self.repo.list_media(
             community_ids=[community.id],
             media_formats=[MediaFormat.profile, MediaFormat.banner],
         )
-        media_results: List[List[MediaResponse]] = await media_service.map_to_resources(
+        media_results: List[List[MediaResponse]] = await self.media_attachment_resolver.map_to_resources(
             media_objects=media_objs, resources=[community]
         )
 

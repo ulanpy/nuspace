@@ -13,10 +13,7 @@ from backend.core.database.models.sgotinish import (
 from backend.core.database.models.user import User, UserRole
 from backend.modules.sgotinish.delegation.policy import DelegationPolicy
 from backend.modules.sgotinish.delegation import repository, schemas
-from backend.modules.sgotinish.tickets.interfaces import (
-    AbstractNotificationService,
-    AbstractNotionService,
-)
+from backend.modules.sgotinish.delegation.interfaces import DelegationAccessNotifier, DelegationNotionSync
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,13 +29,13 @@ class DelegationService:
     def __init__(
         self,
         db_session: AsyncSession,
-        notification_service: AbstractNotificationService,
-        notion_service: AbstractNotionService | None = None,
+        access_notifier: DelegationAccessNotifier,
+        notion_sync: DelegationNotionSync | None = None,
     ):
         self.db_session = db_session
         self.repository = repository.DelegationRepository(db_session)
-        self.notification_service = notification_service
-        self.notion_service = notion_service
+        self.access_notifier = access_notifier
+        self.notion_sync = notion_sync
 
     @staticmethod
     def _policy(user: tuple[dict, dict]) -> DelegationPolicy:
@@ -535,9 +532,9 @@ class DelegationService:
         )
 
         await self.repository.add_delegated_access(new_access)
-        await self.notification_service.notify_ticket_access_granted(ticket, new_access)
-        if self.notion_service:
-            await self.notion_service.notify_notion(ticket)
+        await self.access_notifier.notify_ticket_access_granted(ticket, new_access)
+        if self.notion_sync:
+            await self.notion_sync.notify_notion(ticket)
         return new_access
 
     async def delegate_ticket_access(

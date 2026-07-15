@@ -8,10 +8,9 @@ from backend.core.database.models.common_enums import EntityType, NotificationTy
 from backend.core.database.models.sgotinish import Ticket, TicketAccess, Message
 from backend.core.database.models.user import User
 from backend.modules.notification.schemas import RequestNotiification
-from backend.modules.sgotinish.tickets.interfaces import AbstractNotificationService
 
 
-class NotificationService(AbstractNotificationService):
+class NotificationService:
     def __init__(self, session: AsyncSession, infra: Infra):
         self.session = session
         self.infra = infra

@@ -1,4 +1,4 @@
-"""Ports consumed by the media module."""
+"""Interfaces for the media module."""
 
 from __future__ import annotations
 
@@ -14,3 +14,4 @@ class ObjectStorage(Protocol):
 
     async def delete_objects(self, filenames: list[str]) -> None:
         """Delete multiple stored objects."""
+

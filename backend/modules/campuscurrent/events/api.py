@@ -1,18 +1,15 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.dependencies import (
-    get_db_session,
-    get_infra,
-)
+from backend.common.dependencies import get_infra
 from backend.modules.auth.dependencies import (
     get_creds_or_401,
     get_creds_or_guest,
 )
 from backend.common.schemas import Infra
 from backend.modules.campuscurrent.events import schemas
+from backend.modules.campuscurrent.events.dependencies import get_event_service
 from backend.modules.campuscurrent.events.service import EventService
 
 router = APIRouter(tags=["Events Routes"])
@@ -21,9 +18,9 @@ router = APIRouter(tags=["Events Routes"])
 @router.get("/events", response_model=schemas.ListEventResponse)
 async def get_events(
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    db_session: AsyncSession = Depends(get_db_session),
     event_filter: schemas.EventFilter = Depends(),
     infra: Infra = Depends(get_infra),
+    event_service: EventService = Depends(get_event_service),
 ) -> schemas.ListEventResponse:
     """
     Retrieves a paginated list of events with flexible filtering.
@@ -69,7 +66,6 @@ async def get_events(
     - Results are ordered by start_datetime by default
     - Returns 404 if specified community_id doesn't exist
     """
-    event_service = EventService(db_session=db_session)
     return await event_service.get_events(
         user=user,
         event_filter=event_filter,
@@ -81,8 +77,8 @@ async def get_events(
 async def add_event(
     event_data: schemas.EventCreateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
     infra: Infra = Depends(get_infra),
+    event_service: EventService = Depends(get_event_service),
 ) -> schemas.EventResponse:
     """
     Creates a new event.
@@ -118,7 +114,6 @@ async def add_event(
     - `creator_sub` can be `me` to indicate the authenticated user
     - `community_id` is optional, if not provided the event is personal
     """
-    event_service = EventService(db_session=db_session)
     return await event_service.add_event(infra=infra, event_data=event_data, user=user)
 
 
@@ -127,8 +122,8 @@ async def update_event(
     event_id: int,
     event_data: schemas.EventUpdateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
     infra: Infra = Depends(get_infra),
+    event_service: EventService = Depends(get_event_service),
 ) -> schemas.EventResponse:
     """
     Updates fields of an existing event.
@@ -157,7 +152,6 @@ async def update_event(
     - Returns 400 if user tries to update status without proper permissions
     - Returns 500 on internal error
     """
-    event_service = EventService(db_session=db_session)
     return await event_service.update_event(
         infra=infra, event_id=event_id, event_data=event_data, user=user
     )
@@ -167,8 +161,8 @@ async def update_event(
 async def delete_event(
     event_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
     infra: Infra = Depends(get_infra),
+    event_service: EventService = Depends(get_event_service),
 ):
     """
     Deletes a specific event.
@@ -194,7 +188,6 @@ async def delete_event(
     - Returns 403 if user doesn't have permission
     - Returns 500 on internal error
     """
-    event_service = EventService(db_session=db_session)
     await event_service.delete_event(infra=infra, event_id=event_id, user=user)
     return status.HTTP_204_NO_CONTENT
 
@@ -203,8 +196,8 @@ async def delete_event(
 async def get_event(
     event_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    db_session: AsyncSession = Depends(get_db_session),
     infra: Infra = Depends(get_infra),
+    event_service: EventService = Depends(get_event_service),
 ) -> schemas.EventResponse:
     """
     Retrieves a single event by its unique ID.
@@ -224,5 +217,4 @@ async def get_event(
     - Returns 404 if event is not found
     - Returns 500 on internal error
     """
-    event_service = EventService(db_session=db_session)
     return await event_service.get_event_by_id(infra=infra, event_id=event_id, user=user)

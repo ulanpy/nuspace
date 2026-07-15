@@ -1,20 +1,14 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, Query
 
-from backend.common.dependencies import (
-    get_db_session,
-    get_infra,
-)
+from backend.common.dependencies import get_infra
 from backend.modules.auth.dependencies import get_creds_or_guest
 from backend.common.schemas import Infra
 from backend.modules.announcements import schemas
-from backend.modules.announcements.service import (
-    get_announcements_bundle,
-    get_latest_telegram_post_id,
-)
+from backend.modules.announcements.dependencies import get_announcements_service
+from backend.modules.announcements.service import AnnouncementsService, get_latest_telegram_post_id
 
 router = APIRouter(
     prefix="/announcements",
@@ -32,10 +26,9 @@ async def get_announcements_from_telegram():
 
 @router.get("/bundle", response_model=schemas.AnnouncementsBundleResponse)
 async def get_announcements_bundle_route(
-    request: Request,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    db_session: AsyncSession = Depends(get_db_session),
     infra: Infra = Depends(get_infra),
+    service: AnnouncementsService = Depends(get_announcements_service),
     photo_albums_page: int = Query(1, ge=1),
     photo_albums_size: int = Query(20, ge=1, le=100),
     communities_page: int = Query(1, ge=1),
@@ -51,9 +44,8 @@ async def get_announcements_bundle_route(
     - recruiting communities: page=1 size=5 (open)
     - events: page=1 size=5 (approved + upcoming)
     """
-    return await get_announcements_bundle(
+    return await service.get_bundle(
         infra=infra,
-        db_session=db_session,
         user=user,
         photo_albums_page=photo_albums_page,
         photo_albums_size=photo_albums_size,

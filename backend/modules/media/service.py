@@ -37,6 +37,9 @@ class MediaService:
         for media in media_objects:
             await self.repository.delete(media)
 
+    async def list_by_ids(self, media_ids: list[int]) -> list[Media]:
+        return await self.repository.list_by_ids(media_ids)
+
     async def build_url_map(self, media_objects: List[Media]) -> dict[int, str]:
         if not media_objects:
             return {}

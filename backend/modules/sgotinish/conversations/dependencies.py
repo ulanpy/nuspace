@@ -1,11 +1,10 @@
-from backend.common.dependencies import get_db_session
-from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.modules.sgotinish.conversations.service import ConversationService
+from backend.modules.sgotinish.tickets.dependencies import get_ticket_service
+from backend.modules.sgotinish.tickets.service import TicketService
+from fastapi import Depends
 
 
 def get_conversation_service(
-    db_session: AsyncSession = Depends(get_db_session),
+    ticket_service: TicketService = Depends(get_ticket_service),
 ) -> ConversationService:
-    return ConversationService(db_session)
+    return ticket_service.conversation_service
