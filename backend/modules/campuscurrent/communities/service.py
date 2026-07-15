@@ -1,10 +1,12 @@
 from typing import List
 from datetime import datetime
 
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.schemas import Infra, MediaResponse, ShortUserResponse
+from backend.common.schemas import Infra, ShortUserResponse
 from backend.common.utils import response_builder
+from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.community import (
     Community,
     CommunityAchievements,
@@ -19,7 +21,9 @@ from backend.modules.campuscurrent.communities import schemas
 from backend.modules.campuscurrent.communities.repository import CommunityRepository
 from backend.modules.campuscurrent.communities.utils import get_community_permissions
 from backend.modules.campuscurrent.communities.google_photos_utils import fetch_google_photos_metadata
-from backend.modules.google_bucket.utils import batch_delete_blobs
+from backend.modules.media.dependencies import build_media_service
+from backend.modules.media.repository import MediaRepository
+from backend.modules.media.schemas import MediaResponse
 
 
 class CommunityService:
@@ -41,12 +45,13 @@ class CommunityService:
         community: Community = await self.repo.add_community(community_data)
         await self.repo.upsert_search(infra.meilisearch_client, community)
 
+        media_service = build_media_service(self.db_session, infra)
         media_objs: List[Media] = await self.repo.list_media(
             community_ids=[community.id],
             media_formats=[MediaFormat.profile, MediaFormat.banner],
         )
-        media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-            infra=infra, media_objects=media_objs, resources=[community]
+        media_results: List[List[MediaResponse]] = await media_service.map_to_resources(
+            media_objects=media_objs, resources=[community]
         )
 
         return response_builder.build_schema(
@@ -64,21 +69,52 @@ class CommunityService:
         new_data: schemas.CommunityUpdateRequest,
         user: tuple[dict, dict],
     ) -> schemas.CommunityResponse:
+        media_ids_to_delete = new_data.media_ids_to_delete or []
         community = await self.repo.update_community(community=community, new_data=new_data)
         await self.repo.upsert_search(infra.meilisearch_client, community)
 
+        if media_ids_to_delete:
+            await self._delete_community_media(infra, community, media_ids_to_delete)
+
         return await self._build_community_response(community, infra, user)
+
+    async def _delete_community_media(
+        self,
+        infra: Infra,
+        community: Community,
+        media_ids: List[int],
+    ) -> None:
+        media_service = build_media_service(self.db_session, infra)
+        media_repo = MediaRepository(self.db_session)
+        media_objects = await media_repo.list_by_ids(media_ids)
+
+        found_ids = {media.id for media in media_objects}
+        missing = set(media_ids) - found_ids
+        if missing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Media not found: {sorted(missing)}",
+            )
+
+        for media in media_objects:
+            if media.entity_type != EntityType.communities or media.entity_id != community.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Media does not belong to this community",
+                )
+
+        await media_service.delete_many(media_objects)
 
     async def delete_community(
         self, infra: Infra, community: Community, community_id: int, user: tuple[dict, dict]
     ) -> bool:
+        media_service = build_media_service(self.db_session, infra)
         media_objects: List[Media] = await self.repo.list_media(community_ids=[community.id])
-        await batch_delete_blobs(infra.storage_client, infra.config, media_objects)
+        await media_service.delete_many(media_objects)
 
-        deleted_media = await self.repo.delete_media(media_objects)
         deleted_community = await self.repo.delete_community(community)
 
-        if not deleted_media or not deleted_community:
+        if not deleted_community:
             return False
 
         await self.repo.delete_from_search(infra.meilisearch_client, community_id)
@@ -120,12 +156,13 @@ class CommunityService:
                 has_next=False,
             )
 
+        media_service = build_media_service(self.db_session, infra)
         media_objs: List[Media] = await self.repo.list_media(
             community_ids=[community.id for community in communities],
             media_formats=[MediaFormat.profile, MediaFormat.banner],
         )
-        media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-            infra=infra, media_objects=media_objs, resources=communities
+        media_results: List[List[MediaResponse]] = await media_service.map_to_resources(
+            media_objects=media_objs, resources=communities
         )
 
         community_responses: List[schemas.CommunityResponse] = [
@@ -159,12 +196,13 @@ class CommunityService:
         # Ensure needed relations are loaded to avoid lazy-load in response building
         await self.repo.load_relations(community, ["head_user", "achievements"])
 
+        media_service = build_media_service(self.db_session, infra)
         media_objs: List[Media] = await self.repo.list_media(
             community_ids=[community.id],
             media_formats=[MediaFormat.profile, MediaFormat.banner],
         )
-        media_results: List[List[MediaResponse]] = await response_builder.map_media_to_resources(
-            infra=infra, media_objects=media_objs, resources=[community]
+        media_results: List[List[MediaResponse]] = await media_service.map_to_resources(
+            media_objects=media_objs, resources=[community]
         )
 
         return response_builder.build_schema(

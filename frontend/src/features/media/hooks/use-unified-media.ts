@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useUnifiedMediaContext } from '@/features/media/context/unified-media-context';
-import { mediaApi } from '@/features/media/api/media-api';
 import { compressMedia } from "@/features/media/utils/compress-media";
 import { getSignedUrls } from "@/features/media/utils/get-signed-urls";
 import { uploadMedia } from "@/features/media/utils/upload-media";
@@ -32,7 +31,6 @@ export interface UnifiedMediaHookReturn {
   
   // Upload operations
   uploadFiles: (options: UploadMediaOptions) => Promise<boolean>;
-  deleteMarkedMedia: () => Promise<boolean>;
   
   // Edit operations
   initializeExistingMedia: (media: any[]) => void;
@@ -66,8 +64,6 @@ export function useUnifiedMedia(): UnifiedMediaHookReturn {
     removeFile,
     clearFiles,
     setOriginalMedia,
-    markForDeletion,
-    unmarkForDeletion,
     setUploading,
     setProgress,
     setDragging,
@@ -198,36 +194,6 @@ export function useUnifiedMedia(): UnifiedMediaHookReturn {
     }
   }, [mediaFiles, setUploading, setProgress, toast]);
 
-  const deleteMarkedMedia = useCallback(async (): Promise<boolean> => {
-    if (mediaToDelete.length === 0) {
-      return true;
-    }
-
-    try {
-      const success = await mediaApi.deleteMedia(mediaToDelete);
-      
-      if (success) {
-        // Clear deletion marks locally so repeated submits don't re-delete
-        mediaToDelete.forEach((id) => unmarkForDeletion(id));
-        toast({
-          title: "Media deleted",
-          description: `${mediaToDelete.length} media item(s) deleted successfully.`,
-        });
-        return true;
-      } else {
-        throw new Error("Deletion failed");
-      }
-    } catch (error) {
-      console.error("Media deletion failed:", error);
-      toast({
-        title: "Deletion failed",
-        description: "Failed to delete media items. Please try again.",
-        variant: "destructive",
-      });
-      return false;
-    }
-  }, [mediaToDelete, unmarkForDeletion, toast]);
-
   // Edit operations
   const initializeExistingMedia = useCallback((media: any[]) => {
     setOriginalMedia(media);
@@ -322,7 +288,6 @@ export function useUnifiedMedia(): UnifiedMediaHookReturn {
     
     // Upload operations
     uploadFiles,
-    deleteMarkedMedia,
     
     // Edit operations
     initializeExistingMedia,

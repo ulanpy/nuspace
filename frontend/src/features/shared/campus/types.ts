@@ -230,6 +230,7 @@ import { Media } from "@/features/media/types/types";
       registration_link?: string;
       type?: EventType;
       tag?: EventTag;
+      media_ids_to_delete?: number[];
     }
 
     export interface CreateCommunityData {
@@ -255,4 +256,5 @@ import { Media } from "@/features/media/types/types";
       description?: string;
       telegram_url?: string;
       instagram_url?: string;
+      media_ids_to_delete?: number[];
     }

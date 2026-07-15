@@ -1,24 +1,12 @@
 from typing import List
 
 from backend.core.configs.config import Config
-from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.media import MediaFormat
 from google.auth.credentials import Credentials
 from google.cloud import storage
 from httpx import AsyncClient
 from redis.asyncio import Redis
 from faststream.rabbit import RabbitBroker
 from pydantic import BaseModel
-
-
-class MediaResponse(BaseModel):
-    id: int
-    url: str
-    mime_type: str
-    entity_type: EntityType
-    entity_id: int
-    media_format: MediaFormat
-    media_order: int
 
 
 class ShortUserResponse(BaseModel):

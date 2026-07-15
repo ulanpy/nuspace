@@ -4,7 +4,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from backend.common.schemas import MediaResponse, ResourcePermissions, ShortUserResponse
+from backend.common.schemas import ResourcePermissions, ShortUserResponse
+from backend.modules.media.schemas import MediaResponse
 from backend.core.database.models import (
     EventScope,
     EventStatus,
@@ -135,6 +136,11 @@ class EventUpdateRequest(BaseModel):
     # admin only fields
     tag: EventTag | None = Field(
         default=None, description="The tag of the event. Admin only", example=None
+    )
+
+    media_ids_to_delete: list[int] | None = Field(
+        default=None,
+        description="IDs of media attachments to delete as part of this update",
     )
 
     @field_validator("end_datetime")

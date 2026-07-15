@@ -39,7 +39,9 @@ class CommunityRepository:
         return result.scalars().one()
 
     async def update_community(self, community: Community, new_data) -> Community:
-        for field, value in new_data.model_dump(exclude_unset=True).items():
+        for field, value in new_data.model_dump(
+            exclude_unset=True, exclude={"media_ids_to_delete"}
+        ).items():
             if hasattr(community, field):
                 setattr(community, field, value)
         await self.db_session.flush()

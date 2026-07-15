@@ -1,9 +1,10 @@
 from collections import defaultdict
 from typing import List
 
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.common.schemas import Infra, MediaResponse
+from backend.common.schemas import Infra
 from backend.common.utils import response_builder
 from backend.core.database.models import Event
 from backend.core.database.models.common_enums import EntityType
@@ -11,10 +12,8 @@ from backend.core.database.models.media import Media, MediaFormat
 from backend.modules.campuscurrent.events import schemas, utils
 from backend.modules.campuscurrent.events.policy import EventPolicy
 from backend.modules.campuscurrent.events.repository import EventRepository
-from backend.modules.google_bucket.utils import (
-    batch_delete_blobs,
-    generate_batch_download_urls,
-)
+from backend.modules.media.dependencies import build_media_service
+from backend.modules.media.repository import MediaRepository
 
 
 class EventService:
@@ -45,21 +44,55 @@ class EventService:
         event_data: schemas.EventUpdateRequest,
         user: tuple[dict, dict],
     ) -> schemas.EventResponse:
+        media_ids_to_delete = event_data.media_ids_to_delete or []
         event: Event = await self.repo.update_event(event=event, event_data=event_data)
         await self.repo.upsert_search(infra.meilisearch_client, event)
+
+        if media_ids_to_delete:
+            await self._delete_event_media(infra, event, media_ids_to_delete)
 
         event_responses = await self._build_event_responses([event], infra, user)
         return event_responses[0]
 
+    async def _delete_event_media(
+        self,
+        infra: Infra,
+        event: Event,
+        media_ids: List[int],
+    ) -> None:
+        media_service = build_media_service(self.db_session, infra)
+        media_repo = MediaRepository(self.db_session)
+        media_objects = await media_repo.list_by_ids(media_ids)
+
+        found_ids = {media.id for media in media_objects}
+        missing = set(media_ids) - found_ids
+        if missing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Media not found: {sorted(missing)}",
+            )
+
+        for media in media_objects:
+            if (
+                media.entity_type != EntityType.community_events
+                or media.entity_id != event.id
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Media does not belong to this event",
+                )
+
+        await media_service.delete_many(media_objects)
+
     async def delete_event(self, infra: Infra, event: Event, event_id: int) -> bool:
+        media_service = build_media_service(self.db_session, infra)
         media_objects: List[Media] = await self.repo.list_media(event_ids=[event.id])
-        await batch_delete_blobs(infra.storage_client, infra.config, media_objects)
+        await media_service.delete_many(media_objects)
 
-        event_deleted, media_deleted = await self.repo.delete_event_and_media(
-            event=event, media_objects=media_objects
+        event_deleted, _ = await self.repo.delete_event_and_media(
+            event=event, media_objects=[]
         )
-
-        if not event_deleted or not media_deleted:
+        if not event_deleted:
             return False
 
         await self.repo.delete_from_search(
@@ -88,16 +121,8 @@ class EventService:
             community_media_formats=[MediaFormat.profile, MediaFormat.banner],
         )
 
-        media_to_url = {}
-        if all_media_objs:
-            all_filenames: List[str] = [media.name for media in all_media_objs]
-            all_url_data = await generate_batch_download_urls(
-                infra.storage_client, infra.config, infra.signing_credentials, all_filenames
-            )
-            media_to_url = {
-                media: url_data["signed_url"]
-                for media, url_data in zip(all_media_objs, all_url_data)
-            }
+        media_service = build_media_service(self.db_session, infra)
+        url_map = await media_service.build_url_map(all_media_objs)
 
         event_media_by_id = defaultdict(list)
         community_media_by_id = defaultdict(list)
@@ -110,34 +135,14 @@ class EventService:
         event_responses: List[schemas.EventResponse] = []
         for event in events:
             event_media_objects: List[Media] = event_media_by_id.get(event.id, [])
-            event_media_responses: List[MediaResponse] = [
-                MediaResponse(
-                    id=media.id,
-                    url=media_to_url.get(media, ""),
-                    mime_type=media.mime_type,
-                    entity_type=media.entity_type,
-                    entity_id=media.entity_id,
-                    media_format=media.media_format,
-                    media_order=media.media_order,
-                )
-                for media in event_media_objects
-            ]
+            event_media_responses = media_service.to_responses(event_media_objects, url_map)
 
             community_media_objects: List[Media] = (
                 community_media_by_id.get(event.community_id, []) if event.community_id else []
             )
-            community_media_responses = [
-                MediaResponse(
-                    id=media.id,
-                    url=media_to_url.get(media, ""),
-                    mime_type=media.mime_type,
-                    entity_type=media.entity_type,
-                    entity_id=media.entity_id,
-                    media_format=media.media_format,
-                    media_order=media.media_order,
-                )
-                for media in community_media_objects
-            ]
+            community_media_responses = media_service.to_responses(
+                community_media_objects, url_map
+            )
 
             event_responses.append(
                 response_builder.build_schema(

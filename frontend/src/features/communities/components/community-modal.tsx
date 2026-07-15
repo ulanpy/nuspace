@@ -129,6 +129,11 @@ export function CommunityModal({
       }
 
       if (isEditMode && community) {
+        const mediaIdsToDelete = [
+          ...(profilesRef.current?.getMarkedForDeletion() ?? []),
+          ...(bannersRef.current?.getMarkedForDeletion() ?? []),
+        ];
+
         // Update existing community
         const editData: EditCommunityData = {
           name: formData.name,
@@ -138,6 +143,9 @@ export function CommunityModal({
           established: (formData as EditCommunityData).established,
           telegram_url: formData.telegram_url,
           instagram_url: formData.instagram_url,
+          ...(mediaIdsToDelete.length > 0
+            ? { media_ids_to_delete: mediaIdsToDelete }
+            : {}),
         };
 
         // Only include recruitment_link when status is open and link is non-empty
@@ -147,43 +155,43 @@ export function CommunityModal({
 
         const updated = await handleUpdate(community.id.toString(), editData);
         operationSucceeded = Boolean(updated);
-        if (operationSucceeded) {
+        if (operationSucceeded && updated) {
+          profilesRef.current?.clearMarkedForDeletion();
+          bannersRef.current?.clearMarkedForDeletion();
           resetForm();
           onClose();
+
+          // Upload new media in background; deletes already handled by PATCH
+          void (async () => {
+            try {
+              await profilesRef.current?.upload(updated.id);
+            } catch (mediaError) {
+              console.warn("Profile media ops failed:", mediaError);
+            }
+          })();
+
+          void (async () => {
+            try {
+              await bannersRef.current?.upload(updated.id);
+            } catch (mediaError) {
+              console.warn("Banner media ops failed:", mediaError);
+            }
+          })();
+
+          // Refresh queries immediately and poll in background (do not block modal close)
+          queryClient.invalidateQueries({
+            queryKey: ["campusCurrent", "communities"],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["campusCurrent", "community", updated.id.toString()],
+          });
+          void pollForCommunityImages(
+            updated.id,
+            queryClient,
+            "campusCurrent",
+            campuscurrentAPI.getCommunityQueryOptions
+          );
         }
- 
-        // Run media operations in background; do not block modal close
-        void (async () => {
-          try {
-            await profilesRef.current?.deleteMarked();
-            await profilesRef.current?.upload(updated.id);
-          } catch (mediaError) {
-            console.warn("Profile media ops failed:", mediaError);
-          }
-        })();
-
-        void (async () => {
-          try {
-            await bannersRef.current?.deleteMarked();
-            await bannersRef.current?.upload(updated.id);
-          } catch (mediaError) {
-            console.warn("Banner media ops failed:", mediaError);
-          }
-        })();
-
-        // Refresh queries immediately and poll in background (do not block modal close)
-        queryClient.invalidateQueries({
-          queryKey: ["campusCurrent", "communities"],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["campusCurrent", "community", updated.id.toString()],
-        });
-        void pollForCommunityImages(
-          updated.id,
-          queryClient,
-          "campusCurrent",
-          campuscurrentAPI.getCommunityQueryOptions
-        );
       } else {
         // Create new community
         const createData: CreateCommunityData = {

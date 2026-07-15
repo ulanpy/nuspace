@@ -37,7 +37,9 @@ class EventRepository:
     async def update_event(
         self, event: Event, event_data: schemas.EventUpdateRequest
     ) -> Event:
-        for field, value in event_data.model_dump(exclude_unset=True).items():
+        for field, value in event_data.model_dump(
+            exclude_unset=True, exclude={"media_ids_to_delete"}
+        ).items():
             if hasattr(event, field):
                 setattr(event, field, value)
         await self.db_session.flush()

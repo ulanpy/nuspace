@@ -4,7 +4,8 @@ from typing import List
 from fastapi import Query
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, field_serializer, field_validator
 
-from backend.common.schemas import MediaResponse, ResourcePermissions, ShortUserResponse
+from backend.common.schemas import ResourcePermissions, ShortUserResponse
+from backend.modules.media.schemas import MediaResponse
 from backend.core.database.models.community import (
     CommunityCategory,
     CommunityPhotoAlbumType,
@@ -317,6 +318,11 @@ class CommunityUpdateRequest(BaseModel):
         default=None,
         description="The Instagram URL of the community",
         example="https://www.instagram.com/nufencingclub",
+    )
+
+    media_ids_to_delete: list[int] | None = Field(
+        default=None,
+        description="IDs of media attachments to delete as part of this update",
     )
 
     @field_validator("name", "description", "telegram_url", "instagram_url")

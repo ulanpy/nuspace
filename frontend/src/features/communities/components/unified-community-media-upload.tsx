@@ -12,7 +12,8 @@ import { useUpdateCommunity } from '@/features/communities/hooks/use-update-comm
 
 export type CommunityUploadHandle = {
   upload: (entityId: number) => Promise<boolean>;
-  deleteMarked: () => Promise<boolean>;
+  getMarkedForDeletion: () => number[];
+  clearMarkedForDeletion: () => void;
   hasPending: () => boolean;
 };
 
@@ -20,8 +21,8 @@ export type CommunityUploadHandle = {
 const CommunityMediaUploadBridge = forwardRef<CommunityUploadHandle, { type: 'communityProfiles' | 'communityBanners' }>(
   function CommunityMediaUploadBridge({ type }, ref) {
     const { isEditMode, community } = useCommunityForm();
-    const { uploadFiles, deleteMarkedMedia, initializeExistingMedia, mediaFiles, mediaToDelete, isUploading } = useUnifiedMedia();
-    const { config } = useUnifiedMediaContext();
+    const { uploadFiles, initializeExistingMedia, mediaFiles, mediaToDelete, isUploading } = useUnifiedMedia();
+    const { config, unmarkForDeletion } = useUnifiedMediaContext();
     const { uploadProgress: createProgress } = useCreateCommunity();
     const { uploadProgress: updateProgress } = useUpdateCommunity();
 
@@ -46,8 +47,9 @@ const CommunityMediaUploadBridge = forwardRef<CommunityUploadHandle, { type: 'co
           mediaFormat: config.mediaFormat,
         });
       },
-      deleteMarked: async () => {
-        return deleteMarkedMedia();
+      getMarkedForDeletion: () => mediaToDelete,
+      clearMarkedForDeletion: () => {
+        mediaToDelete.forEach((id) => unmarkForDeletion(id));
       },
       hasPending: () => {
         return mediaFiles.length > 0 || mediaToDelete.length > 0;

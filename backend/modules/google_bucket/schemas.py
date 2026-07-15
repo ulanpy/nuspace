@@ -25,15 +25,6 @@ class SignedUrlResponse(BaseModel):
     mime_type: str
 
 
-class MediaMetadata(BaseModel):
-    name: str
-    mime_type: str
-    entity_type: EntityType
-    entity_id: int
-    media_format: MediaFormat
-    media_order: int
-
-
 class ConfirmUploadRequest(BaseModel):
     filename: str
     url: HttpUrl
