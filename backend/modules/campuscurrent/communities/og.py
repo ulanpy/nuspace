@@ -1,6 +1,6 @@
 from html import escape
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,7 +10,6 @@ from backend.common.dependencies import (
 )
 from backend.modules.auth.dependencies import get_creds_or_guest
 from backend.common.schemas import Infra
-from backend.modules.campuscurrent.communities import dependencies as deps
 from backend.modules.campuscurrent.communities.service import CommunityService
 
 router = APIRouter(tags=["Communities OG"])
@@ -110,13 +109,10 @@ async def get_community_og_by_query(
     db_session: AsyncSession = Depends(get_db_session),
     infra: Infra = Depends(get_infra),
 ) -> HTMLResponse:
-    community = await deps.community_exists_or_404(community_id=id, db_session=db_session)
     community_service = CommunityService(db_session=db_session)
     community_response = await community_service.get_community_response(
-        infra=infra, community=community, user=user
+        infra=infra, community_id=id, user=user
     )
-    if community_response is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Community not found")
 
     html = _build_community_html(community_response, request)
     return HTMLResponse(content=html, status_code=status.HTTP_200_OK)

@@ -18,9 +18,11 @@ from backend.core.database.models.community import (
 )
 from backend.core.database.models.media import Media, MediaFormat
 from backend.modules.campuscurrent.communities import schemas
+from backend.modules.campuscurrent.communities.policy import CommunityPolicy
 from backend.modules.campuscurrent.communities.repository import CommunityRepository
 from backend.modules.campuscurrent.communities.utils import get_community_permissions
 from backend.modules.campuscurrent.communities.google_photos_utils import fetch_google_photos_metadata
+from backend.common.utils.enums import ResourceAction
 from backend.modules.media.dependencies import build_media_service
 from backend.modules.media.repository import MediaRepository
 from backend.modules.media.schemas import MediaResponse
@@ -35,12 +37,28 @@ class CommunityService:
         self.db_session = db_session
         self.repo = repo or CommunityRepository(db_session)
 
+    async def _get_community_or_404(self, community_id: int) -> Community:
+        community = await self.repo.get_by_id(community_id)
+        if community is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
+            )
+        return community
+
+    async def _ensure_user_exists(self, sub: str) -> None:
+        if await self.repo.get_user_by_sub(sub) is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
     async def create_community(
         self, infra: Infra, community_data: schemas.CommunityCreateRequest, user: tuple[dict, dict]
     ) -> schemas.CommunityResponse:
-        community_data.head = (
-            user[0].get("sub") if community_data.head == "me" else community_data.head
+        await CommunityPolicy(user=user).check_permission(
+            action=ResourceAction.CREATE, community_data=community_data
         )
+
+        head_sub = user[0].get("sub") if community_data.head == "me" else community_data.head
+        await self._ensure_user_exists(head_sub)
+        community_data.head = head_sub
 
         community: Community = await self.repo.add_community(community_data)
         await self.repo.upsert_search(infra.meilisearch_client, community)
@@ -65,10 +83,15 @@ class CommunityService:
     async def update_community(
         self,
         infra: Infra,
-        community: Community,
+        community_id: int,
         new_data: schemas.CommunityUpdateRequest,
         user: tuple[dict, dict],
     ) -> schemas.CommunityResponse:
+        community = await self._get_community_or_404(community_id)
+        await CommunityPolicy(user=user).check_permission(
+            action=ResourceAction.UPDATE, community=community, community_data=new_data
+        )
+
         media_ids_to_delete = new_data.media_ids_to_delete or []
         community = await self.repo.update_community(community=community, new_data=new_data)
         await self.repo.upsert_search(infra.meilisearch_client, community)
@@ -106,19 +129,24 @@ class CommunityService:
         await media_service.delete_many(media_objects)
 
     async def delete_community(
-        self, infra: Infra, community: Community, community_id: int, user: tuple[dict, dict]
-    ) -> bool:
+        self, infra: Infra, community_id: int, user: tuple[dict, dict]
+    ) -> None:
+        community = await self._get_community_or_404(community_id)
+        await CommunityPolicy(user=user).check_permission(
+            action=ResourceAction.DELETE, community=community
+        )
+
         media_service = build_media_service(self.db_session, infra)
         media_objects: List[Media] = await self.repo.list_media(community_ids=[community.id])
         await media_service.delete_many(media_objects)
 
         deleted_community = await self.repo.delete_community(community)
-
         if not deleted_community:
-            return False
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
+            )
 
         await self.repo.delete_from_search(infra.meilisearch_client, community_id)
-        return True
 
     async def list_communities(
         self,
@@ -133,6 +161,8 @@ class CommunityService:
         head_sub: str | None,
         keyword: str | None,
     ) -> schemas.ListCommunity:
+        await CommunityPolicy(user=user).check_permission(action=ResourceAction.READ)
+
         head_sub = user[0].get("sub") if head_sub == "me" else head_sub
 
         communities, count, keyword_no_results = await self.repo.list_communities(
@@ -186,8 +216,12 @@ class CommunityService:
         )
 
     async def get_community_response(
-        self, infra: Infra, community: Community, user: tuple[dict, dict]
+        self, infra: Infra, community_id: int, user: tuple[dict, dict]
     ) -> schemas.CommunityResponse:
+        community = await self._get_community_or_404(community_id)
+        await CommunityPolicy(user=user).check_permission(
+            action=ResourceAction.READ, community=community
+        )
         return await self._build_community_response(community, infra, user)
 
     async def _build_community_response(
@@ -220,6 +254,11 @@ class CommunityService:
         achievement_data: schemas.AchievementCreateRequest,
         user: tuple[dict, dict],
     ) -> schemas.AchievementResponse:
+        community = await self._get_community_or_404(community_id)
+        await CommunityPolicy(user=user).check_permission(
+            action=ResourceAction.UPDATE, community=community
+        )
+
         achievement_data.community_id = community_id
         achievement = await self.repo.create_achievement(achievement_data)
         return schemas.AchievementResponse.model_validate(achievement)
@@ -231,6 +270,11 @@ class CommunityService:
         page: int,
         user: tuple[dict, dict],
     ) -> schemas.ListAchievements:
+        community = await self._get_community_or_404(community_id)
+        await CommunityPolicy(user=user).check_permission(
+            action=ResourceAction.READ, community=community
+        )
+
         achievements, count = await self.repo.get_achievements(
             community_id=community_id, size=size, page=page
         )
@@ -250,9 +294,17 @@ class CommunityService:
         achievement_data: schemas.AchievementUpdateRequest,
         user: tuple[dict, dict],
     ) -> schemas.AchievementResponse:
+        community = await self._get_community_or_404(community_id)
+        await CommunityPolicy(user=user).check_permission(
+            action=ResourceAction.UPDATE, community=community
+        )
+
         achievement = await self.repo.get_achievement(community_id, achievement_id)
         if achievement is None:
-            return None
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Achievement with id {achievement_id} not found in community {community_id}",
+            )
         achievement = await self.repo.update_achievement(
             achievement=achievement, achievement_data=achievement_data
         )
@@ -263,11 +315,19 @@ class CommunityService:
         community_id: int,
         achievement_id: int,
         user: tuple[dict, dict],
-    ) -> bool:
+    ) -> None:
+        community = await self._get_community_or_404(community_id)
+        await CommunityPolicy(user=user).check_permission(
+            action=ResourceAction.UPDATE, community=community
+        )
+
         achievement = await self.repo.get_achievement(community_id, achievement_id)
         if achievement is None:
-            return False
-        return await self.repo.delete_achievement(achievement)
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Achievement with id {achievement_id} not found in community {community_id}",
+            )
+        await self.repo.delete_achievement(achievement)
 
     # Photo Album operations
     async def create_photo_album(
@@ -276,6 +336,11 @@ class CommunityService:
         album_data: schemas.PhotoAlbumCreateRequest,
         user: tuple[dict, dict],
     ) -> schemas.PhotoAlbumResponse:
+        community = await self._get_community_or_404(community_id)
+        await CommunityPolicy(user=user).check_permission(
+            action=ResourceAction.UPDATE, community=community
+        )
+
         album_data.community_id = community_id
         
         # Create album first without metadata
@@ -327,6 +392,11 @@ class CommunityService:
         album_type: CommunityPhotoAlbumType | None,
         user: tuple[dict, dict],
     ) -> schemas.ListPhotoAlbums:
+        community = await self._get_community_or_404(community_id)
+        await CommunityPolicy(user=user).check_permission(
+            action=ResourceAction.READ, community=community
+        )
+
         albums, count = await self.repo.get_photo_albums(
             community_id=community_id, size=size, page=page, album_type=album_type
         )
@@ -349,10 +419,18 @@ class CommunityService:
         album_id: int,
         album_data: schemas.PhotoAlbumUpdateRequest,
         user: tuple[dict, dict],
-    ) -> schemas.PhotoAlbumResponse | None:
+    ) -> schemas.PhotoAlbumResponse:
+        community = await self._get_community_or_404(community_id)
+        await CommunityPolicy(user=user).check_permission(
+            action=ResourceAction.UPDATE, community=community
+        )
+
         album = await self.repo.get_photo_album(community_id, album_id)
         if album is None:
-            return None
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Photo album with id {album_id} not found in community {community_id}",
+            )
         
         album_data_dict = album_data.model_dump(exclude_unset=True)
         
@@ -380,11 +458,19 @@ class CommunityService:
         community_id: int,
         album_id: int,
         user: tuple[dict, dict],
-    ) -> bool:
+    ) -> None:
+        community = await self._get_community_or_404(community_id)
+        await CommunityPolicy(user=user).check_permission(
+            action=ResourceAction.UPDATE, community=community
+        )
+
         album = await self.repo.get_photo_album(community_id, album_id)
         if album is None:
-            return False
-        return await self.repo.delete_photo_album(album)
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Photo album with id {album_id} not found in community {community_id}",
+            )
+        await self.repo.delete_photo_album(album)
 
     async def list_all_photo_albums(
         self,
@@ -418,11 +504,19 @@ class CommunityService:
         community_id: int,
         album_id: int,
         user: tuple[dict, dict],
-    ) -> schemas.PhotoAlbumResponse | None:
+    ) -> schemas.PhotoAlbumResponse:
         """Refresh album metadata from Google Photos."""
+        community = await self._get_community_or_404(community_id)
+        await CommunityPolicy(user=user).check_permission(
+            action=ResourceAction.UPDATE, community=community
+        )
+
         album = await self.repo.get_photo_album(community_id, album_id)
         if album is None:
-            return None
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Photo album with id {album_id} not found in community {community_id}",
+            )
         
         # Fetch fresh metadata
         metadata = await fetch_google_photos_metadata(album.album_url)
@@ -455,4 +549,32 @@ class CommunityService:
         
         album = await self.repo.update_photo_album(album=album, album_data=update_data)
         return schemas.PhotoAlbumResponse.model_validate(album)
+
+    async def refresh_all_photo_albums(
+        self,
+        community_id: int,
+        user: tuple[dict, dict],
+    ) -> dict:
+        community = await self._get_community_or_404(community_id)
+        await CommunityPolicy(user=user).check_permission(
+            action=ResourceAction.UPDATE, community=community
+        )
+
+        albums, total = await self.repo.get_photo_albums(
+            community_id=community_id, size=1000, page=1, album_type=None
+        )
+        success = 0
+        errors = 0
+        for album in albums:
+            try:
+                await self.refresh_photo_album_metadata(
+                    community_id=community_id,
+                    album_id=album.id,
+                    user=user,
+                )
+                success += 1
+            except Exception:
+                errors += 1
+
+        return {"total": total, "success": success, "error": errors}
 

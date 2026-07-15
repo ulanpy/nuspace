@@ -9,6 +9,7 @@ from backend.common.utils import meilisearch
 from backend.core.database.models import Event
 from backend.core.database.models.common_enums import EntityType
 from backend.core.database.models.media import Media, MediaFormat
+from backend.core.database.models.user import User
 from backend.modules.campuscurrent.events import schemas, utils
 
 
@@ -98,6 +99,11 @@ class EventRepository:
                 selectinload(Event.collaborators),
             )
         )
+        result = await self.db_session.execute(stmt)
+        return result.scalars().first()
+
+    async def get_user_by_sub(self, sub: str) -> User | None:
+        stmt = select(User).where(User.sub == sub)
         result = await self.db_session.execute(stmt)
         return result.scalars().first()
 

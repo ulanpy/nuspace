@@ -1,15 +1,17 @@
-from backend.core.database.models.sgotinish import Conversation, Message
+from typing import List
+
+from backend.core.database.models.sgotinish import Conversation, Message, Ticket
 from backend.common.schemas import ShortUserResponse
 from backend.common.utils import response_builder
 from backend.modules.sgotinish.conversations import schemas
 from backend.modules.sgotinish.conversations.policy import ConversationPolicy
+from backend.modules.sgotinish.tickets.interfaces import AbstractConversationService
+from backend.modules.sgotinish.tickets import schemas as ticket_schemas
+from backend.modules.sgotinish.tickets.service import TicketService
+from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from typing import List
-from backend.core.database.models.sgotinish import Ticket
-from backend.modules.sgotinish.tickets.interfaces import AbstractConversationService
-from backend.modules.sgotinish.tickets import schemas as ticket_schemas
 
 
 class ConversationService(AbstractConversationService):
@@ -18,6 +20,34 @@ class ConversationService(AbstractConversationService):
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
+    async def _get_ticket_or_404(self, ticket_id: int) -> Ticket:
+        stmt = (
+            select(Ticket)
+            .where(Ticket.id == ticket_id)
+            .options(selectinload(Ticket.conversations))
+        )
+        result = await self.db_session.execute(stmt)
+        ticket = result.scalars().first()
+        if ticket is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
+        return ticket
+
+    async def _get_conversation_or_404(self, conversation_id: int) -> Conversation:
+        stmt = (
+            select(Conversation)
+            .where(Conversation.id == conversation_id)
+            .options(
+                selectinload(Conversation.ticket),
+                selectinload(Conversation.sg_member),
+            )
+        )
+        result = await self.db_session.execute(stmt)
+        conversation = result.scalars().first()
+        if conversation is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found"
+            )
+        return conversation
 
     async def get_conversation_dtos_for_tickets(
         self, tickets: List[Ticket], user: tuple[dict, dict]
@@ -56,9 +86,15 @@ class ConversationService(AbstractConversationService):
 
 
     async def create_conversation(
-        self, conversation_data: schemas.ConversationCreateDTO, user: tuple[dict, dict]
+        self,
+        conversation_data: schemas.ConversationCreateDTO,
+        user: tuple[dict, dict],
+        ticket_service: TicketService,
     ) -> schemas.ConversationResponseDTO:
-    
+        ticket = await self._get_ticket_or_404(conversation_data.ticket_id)
+        access = await ticket_service.get_user_ticket_access(ticket, user)
+        ConversationPolicy(user).check_create(ticket, access)
+
         user_sub = user[0].get("sub")
         conversation_data = schemas._ConversationCreateDTO(**conversation_data.model_dump(), sg_member_sub=user_sub)
         
@@ -94,10 +130,15 @@ class ConversationService(AbstractConversationService):
 
     async def update_conversation(
         self,
-        conversation: Conversation,
+        conversation_id: int,
         conversation_data: schemas.ConversationUpdateDTO,
         user: tuple[dict, dict],
+        ticket_service: TicketService,
     ) -> schemas.ConversationResponseDTO:
+        conversation = await self._get_conversation_or_404(conversation_id)
+        access = await ticket_service.get_user_ticket_access(conversation.ticket, user)
+        ConversationPolicy(user).check_update(access)
+
         for field, value in conversation_data.model_dump(exclude_unset=True).items():
             if hasattr(conversation, field):
                 setattr(conversation, field, value)

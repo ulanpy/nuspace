@@ -17,6 +17,7 @@ from backend.core.database.models.community import (
     CommunityType,
 )
 from backend.core.database.models.media import Media, MediaFormat
+from backend.core.database.models.user import User
 
 
 class CommunityRepository:
@@ -342,3 +343,17 @@ class CommunityRepository:
         count: int = count_result.scalar() or 0
 
         return albums, count
+
+    async def get_by_id(self, community_id: int) -> Community | None:
+        stmt = (
+            select(Community)
+            .where(Community.id == community_id)
+            .options(selectinload(Community.head_user))
+        )
+        result = await self.db_session.execute(stmt)
+        return result.scalars().first()
+
+    async def get_user_by_sub(self, sub: str) -> User | None:
+        stmt = select(User).where(User.sub == sub)
+        result = await self.db_session.execute(stmt)
+        return result.scalars().first()

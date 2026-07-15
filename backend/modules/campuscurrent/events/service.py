@@ -21,12 +21,29 @@ class EventService:
         self.db_session = db_session
         self.repo = repo or EventRepository(db_session)
 
+    async def _get_event_or_404(self, event_id: int) -> Event:
+        event = await self.repo.get_event_by_id(event_id)
+        if event is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        return event
+
+    async def _ensure_user_exists(self, sub: str) -> None:
+        if await self.repo.get_user_by_sub(sub) is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
     async def add_event(
         self,
         infra: Infra,
         event_data: schemas.EventCreateRequest,
         user: tuple[dict, dict],
     ) -> schemas.EventResponse:
+        EventPolicy(user=user).check_create(event_data)
+
+        creator_sub = (
+            user[0].get("sub") if event_data.creator_sub == "me" else event_data.creator_sub
+        )
+        await self._ensure_user_exists(creator_sub)
+
         event_data: schemas.EnrichedEventCreateRequest = await utils.EventEnrichmentService(
             user=user
         ).enrich_event_data(event_data)
@@ -40,10 +57,13 @@ class EventService:
     async def update_event(
         self,
         infra: Infra,
-        event: Event,
+        event_id: int,
         event_data: schemas.EventUpdateRequest,
         user: tuple[dict, dict],
     ) -> schemas.EventResponse:
+        event = await self._get_event_or_404(event_id)
+        EventPolicy(user=user).check_update(event=event, event_data=event_data)
+
         media_ids_to_delete = event_data.media_ids_to_delete or []
         event: Event = await self.repo.update_event(event=event, event_data=event_data)
         await self.repo.upsert_search(infra.meilisearch_client, event)
@@ -84,7 +104,12 @@ class EventService:
 
         await media_service.delete_many(media_objects)
 
-    async def delete_event(self, infra: Infra, event: Event, event_id: int) -> bool:
+    async def delete_event(
+        self, infra: Infra, event_id: int, user: tuple[dict, dict]
+    ) -> None:
+        event = await self._get_event_or_404(event_id)
+        EventPolicy(user=user).check_delete(event=event)
+
         media_service = build_media_service(self.db_session, infra)
         media_objects: List[Media] = await self.repo.list_media(event_ids=[event.id])
         await media_service.delete_many(media_objects)
@@ -93,12 +118,11 @@ class EventService:
             event=event, media_objects=[]
         )
         if not event_deleted:
-            return False
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
         await self.repo.delete_from_search(
             meilisearch_client=infra.meilisearch_client, event_id=event_id
         )
-        return True
 
     async def _build_event_responses(
         self,
@@ -167,17 +191,23 @@ class EventService:
 
     async def get_event_by_id(
         self, infra: Infra, event_id: int, user: tuple[dict, dict]
-    ) -> schemas.EventResponse | None:
-        event: Event | None = await self.repo.get_event_by_id(event_id)
-        if event is None:
-            return None
+    ) -> schemas.EventResponse:
+        event = await self._get_event_or_404(event_id)
+        EventPolicy(user=user).check_read_one(event=event)
 
         event_responses = await self._build_event_responses([event], infra, user)
-        return event_responses[0] if event_responses else None
+        return event_responses[0]
 
     async def get_events(
         self, user: tuple[dict, dict], event_filter: schemas.EventFilter, infra: Infra
     ) -> schemas.ListEventResponse:
+        EventPolicy(user=user).check_read_list(
+            creator_sub=event_filter.creator_sub,
+            event_status=event_filter.event_status,
+            community_id=event_filter.community_id,
+            event_scope=event_filter.event_scope,
+        )
+
         creator_sub = (
             user[0].get("sub") if event_filter.creator_sub == "me" else event_filter.creator_sub
         )

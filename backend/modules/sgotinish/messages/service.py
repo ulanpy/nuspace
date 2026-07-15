@@ -1,5 +1,6 @@
 from typing import List
 
+from fastapi import HTTPException, status
 from backend.common.utils import response_builder
 from backend.core.database.models.sgotinish import (
     Conversation,
@@ -15,6 +16,7 @@ from backend.core.database.models.user import UserRole
 from backend.modules.sgotinish.messages import schemas
 from backend.modules.sgotinish.messages.policy import MessagePolicy
 from backend.modules.sgotinish.tickets.interfaces import AbstractNotificationService
+from backend.modules.sgotinish.tickets.service import TicketService
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -28,6 +30,43 @@ class MessageService:
     ):
         self.db_session = db_session
         self.notification_service = notification_service
+
+    async def _get_conversation_or_404(self, conversation_id: int) -> Conversation:
+        stmt = (
+            select(Conversation)
+            .where(Conversation.id == conversation_id)
+            .options(
+                selectinload(Conversation.ticket),
+                selectinload(Conversation.sg_member),
+            )
+        )
+        result = await self.db_session.execute(stmt)
+        conversation = result.scalars().first()
+        if conversation is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found"
+            )
+        return conversation
+
+    async def _get_message_or_404(self, message_id: int) -> Message:
+        stmt = (
+            select(Message)
+            .where(Message.id == message_id)
+            .options(
+                selectinload(Message.conversation).selectinload(Conversation.ticket),
+                selectinload(Message.read_statuses),
+                selectinload(Message.sender).selectinload(User.department),
+            )
+        )
+        result = await self.db_session.execute(stmt)
+        message = result.scalars().first()
+        if message is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
+        return message
+
+    @staticmethod
+    def _owner_hash_match(conversation: Conversation, owner_hash: str | None) -> bool:
+        return bool(owner_hash and conversation.ticket.owner_hash == owner_hash)
 
     async def _build_message_response(
         self, message: Message, user: tuple[dict, dict]
@@ -88,8 +127,21 @@ class MessageService:
         )
 
     async def get_messages(
-        self, conversation_id: int, size: int, page: int, user: tuple[dict, dict]
+        self,
+        conversation_id: int,
+        size: int,
+        page: int,
+        user: tuple[dict, dict],
+        ticket_service: TicketService,
+        owner_hash: str | None = None,
     ) -> schemas.ListMessageDTO:
+        conversation = await self._get_conversation_or_404(conversation_id)
+        access = await ticket_service.get_user_ticket_access(conversation.ticket, user)
+        owner_hash_match = self._owner_hash_match(conversation, owner_hash)
+        MessagePolicy(user).check_read_list(
+            conversation, access, owner_hash_match=owner_hash_match
+        )
+
         stmt = (
             select(Message)
             .where(Message.conversation_id == conversation_id)
@@ -126,34 +178,41 @@ class MessageService:
         )
 
     async def get_message_by_id(
-        self, message_id: int, user: tuple[dict, dict]
+        self,
+        message_id: int,
+        user: tuple[dict, dict],
+        ticket_service: TicketService,
+        owner_hash: str | None = None,
     ) -> schemas.MessageResponseDTO:
-        stmt = (
-            select(Message)
-            .where(Message.id == message_id)
-            .options(
-                selectinload(Message.conversation).selectinload(Conversation.ticket),
-                selectinload(Message.read_statuses),
-                selectinload(Message.sender).selectinload(User.department),
-            )
+        message = await self._get_message_or_404(message_id)
+        access = await ticket_service.get_user_ticket_access(message.conversation.ticket, user)
+        owner_hash_match = self._owner_hash_match(message.conversation, owner_hash)
+        MessagePolicy(user).check_read_one(
+            message, access, owner_hash_match=owner_hash_match
         )
-        result = await self.db_session.execute(stmt)
-        message = result.scalars().first()
         return await self._build_message_response(message, user)
 
     async def create_message(
         self,
         message_data: schemas.MessageCreateDTO,
         user: tuple[dict, dict],
-        conversation: Conversation,
+        ticket_service: TicketService,
         owner_hash: str | None = None,
     ) -> schemas.MessageResponseDTO:
+        conversation = await self._get_conversation_or_404(message_data.conversation_id)
+        access = await ticket_service.get_user_ticket_access(conversation.ticket, user)
+        owner_hash_match = self._owner_hash_match(conversation, owner_hash)
+        MessagePolicy(user).check_create(
+            conversation, access, owner_hash_match=owner_hash_match
+        )
+
         user_sub = user[0].get("sub")
         user_role = UserRole(user[1].get("role"))
 
         sg_roles = [UserRole.boss, UserRole.capo, UserRole.soldier, UserRole.admin]
         is_from_sg = user_role in sg_roles
-        is_anonymous_owner = bool(conversation.ticket.is_anonymous and owner_hash)
+        is_anonymous_owner = owner_hash_match
+        effective_owner_hash = owner_hash if owner_hash_match else None
         # если сообщение отправлено через анонимную ссылку, то не ставим is_from_sg_member флаг
         if is_anonymous_owner:
             is_from_sg = False
@@ -170,7 +229,7 @@ class MessageService:
         await self.db_session.refresh(message)
 
         if is_anonymous_owner:
-            read_status = MessageReadStatusAnon(message_id=message.id, owner_hash=owner_hash)
+            read_status = MessageReadStatusAnon(message_id=message.id, owner_hash=effective_owner_hash)
             self.db_session.add(read_status)
             await self.db_session.flush()
         else:
@@ -203,12 +262,20 @@ class MessageService:
 
     async def mark_message_as_read(
         self,
-        message: Message,
+        message_id: int,
         user: tuple[dict, dict],
+        ticket_service: TicketService,
         owner_hash: str | None = None,
     ) -> schemas.MessageResponseDTO:
+        message = await self._get_message_or_404(message_id)
+        access = await ticket_service.get_user_ticket_access(message.conversation.ticket, user)
+        owner_hash_match = self._owner_hash_match(message.conversation, owner_hash)
+        MessagePolicy(user).check_read_one(
+            message, access, owner_hash_match=owner_hash_match
+        )
+
         user_sub = user[0].get("sub")
-        if message.conversation.ticket.is_anonymous and owner_hash:
+        if message.conversation.ticket.is_anonymous and owner_hash_match:
             existing_stmt = select(MessageReadStatusAnon).where(
                 MessageReadStatusAnon.message_id == message.id,
                 MessageReadStatusAnon.owner_hash == owner_hash,
@@ -231,5 +298,6 @@ class MessageService:
                 self.db_session.add(read_status)
                 await self.db_session.flush()
 
-        # Refetch the message with all relations to build the response
-        return await self.get_message_by_id(message.id, user)
+        return await self.get_message_by_id(
+            message.id, user, ticket_service, owner_hash=owner_hash if owner_hash_match else None
+        )

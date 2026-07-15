@@ -1,5 +1,6 @@
 from typing import List
 
+from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -8,11 +9,53 @@ from backend.common.utils import response_builder
 from backend.core.database.models.grade_report import CourseItem, CourseTemplate, StudentCourse, TemplateItem
 from backend.modules.courses.courses import schemas as student_course_schemas
 from backend.modules.courses.templates import schemas
+from backend.modules.courses.templates.policy import TemplatePolicy
 
 
 class TemplateService:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
+
+    async def _get_template_or_404(self, template_id: int) -> CourseTemplate:
+        stmt = (
+            select(CourseTemplate)
+            .where(CourseTemplate.id == template_id)
+            .options(
+                selectinload(CourseTemplate.student),
+                selectinload(CourseTemplate.items),
+            )
+        )
+        result = await self.db_session.execute(stmt)
+        template = result.scalars().first()
+        if template is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
+        return template
+
+    async def _get_student_course_or_404(self, student_course_id: int) -> StudentCourse:
+        stmt = select(StudentCourse).where(StudentCourse.id == student_course_id)
+        result = await self.db_session.execute(stmt)
+        student_course = result.scalars().first()
+        if student_course is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Student course registration not found",
+            )
+        return student_course
+
+    async def _ensure_template_not_exists(
+        self, payload: schemas.TemplateCreate, user: tuple[dict, dict]
+    ) -> None:
+        student_sub = user[0].get("sub")
+        stmt = select(CourseTemplate).where(
+            CourseTemplate.course_id == payload.course_id,
+            CourseTemplate.student_sub == student_sub,
+        )
+        result = await self.db_session.execute(stmt)
+        if result.scalars().first() is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Template for course {payload.course_id} already exists",
+            )
 
     async def _load_template(self, template_id: int) -> CourseTemplate:
         stmt = (
@@ -32,6 +75,9 @@ class TemplateService:
         payload: schemas.TemplateCreate,
         user: tuple[dict, dict],
     ) -> schemas.TemplateResponse:
+        TemplatePolicy(user=user).check_create(payload)
+        await self._ensure_template_not_exists(payload, user)
+
         if payload.student_sub == "me":
             payload.student_sub = user[0].get("sub")
         template_data = schemas._TemplateCreateData(
@@ -56,10 +102,12 @@ class TemplateService:
 
     async def update_template(
         self,
-        template: CourseTemplate,
+        template_id: int,
         payload: schemas.TemplateUpdate,
         user: tuple[dict, dict],
     ) -> schemas.TemplateResponse:
+        template = await self._get_template_or_404(template_id)
+        TemplatePolicy(user=user).check_update(template, payload)
 
         if payload.template_items is not None:
             current_stmt = (
@@ -86,20 +134,23 @@ class TemplateService:
         template_responses = await self._build_template_responses([template], user)
         return template_responses[0]
 
-    async def delete_template(self, template: CourseTemplate) -> bool:
-        try:
-            await self.db_session.delete(template)
-            return True
-        except Exception:
-            return False
+    async def delete_template(self, template_id: int, user: tuple[dict, dict]) -> None:
+        template = await self._get_template_or_404(template_id)
+        TemplatePolicy(user=user).check_delete(template)
+        await self.db_session.delete(template)
 
     async def import_template_into_student_course(
         self,
         *,
-        template: CourseTemplate,
-        student_course: StudentCourse,
+        template_id: int,
+        student_course_id: int,
+        user: tuple[dict, dict],
     ) -> schemas.TemplateImportResponse:
         """Replace student's course items with template items."""
+        template = await self._get_template_or_404(template_id)
+        student_course = await self._get_student_course_or_404(student_course_id)
+        TemplatePolicy(user=user).check_import(template, student_course)
+
         existing_stmt = select(CourseItem).where(
             CourseItem.student_course_id == student_course.id
         )
@@ -142,28 +193,17 @@ class TemplateService:
 
     async def get_template_by_id(
         self, template_id: int, user: tuple[dict, dict]
-    ) -> schemas.TemplateResponse | None:
-        stmt = (
-            select(CourseTemplate)
-            .where(CourseTemplate.id == template_id)
-            .options(
-                selectinload(CourseTemplate.items),
-                selectinload(CourseTemplate.student),
-            )
-            .order_by(CourseTemplate.created_at.desc())
-        )
-        result = await self.db_session.execute(stmt)
-        template: CourseTemplate | None = result.scalars().first()
-
-        if template is None:
-            return None
+    ) -> schemas.TemplateResponse:
+        template = await self._get_template_or_404(template_id)
+        TemplatePolicy(user=user).check_read_one(template)
 
         template_responses = await self._build_template_responses([template], user)
-        return template_responses[0] if template_responses else None
+        return template_responses[0]
 
     async def get_templates(
         self, user: tuple[dict, dict], course_id: int | None, page: int, size: int
     ) -> schemas.ListTemplateDTO:
+        TemplatePolicy(user=user).check_read_list(course_id)
 
         filters = []
         if course_id is not None:

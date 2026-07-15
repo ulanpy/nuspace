@@ -9,22 +9,16 @@ GitHub: https://github.com/superhooman/crashed.nu
 from typing import Annotated, List
 
 import httpx
-from backend.common.dependencies import (
-    get_db_session,
-    get_infra,
-)
+from backend.common.dependencies import get_infra
 from backend.modules.auth.dependencies import get_creds_or_401
 from backend.common.schemas import Infra
 from backend.core.configs.config import config
-from backend.core.database.models.grade_report import CourseItem
-from backend.modules.courses.courses import dependencies as deps
 from backend.modules.courses.courses import schemas
 from backend.modules.courses.courses.dependencies import get_student_course_service
 from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
-from backend.modules.courses.courses.policy import CourseItemPolicy, StudentCoursePolicy
+from backend.modules.courses.courses.policy import StudentCoursePolicy
 from backend.modules.courses.courses.service import StudentCourseService
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(tags=["Student Courses"])
 
@@ -175,7 +169,6 @@ async def export_registered_schedule_to_google_calendar(
 async def add_course_item(
     course_item_data: schemas.CourseItemCreate,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
     service: StudentCourseService = Depends(get_student_course_service),
 ) -> schemas.BaseCourseItem:
     """
@@ -191,31 +184,14 @@ async def add_course_item(
     **Returns:**
     - Created course item with all details
     """
-    student_course = await deps.student_course_exists_or_404(
-        student_course_id=course_item_data.student_course_id, db_session=db_session
-    )
-    CourseItemPolicy(user=user).check_create(student_course=student_course)
-
-    student_sub = user[0].get("sub")
-    item = await service.add_course_item(
-        course_item_data=course_item_data, student_sub=student_sub
-    )
-
-    if not item:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Registered course not found for this user.",
-        )
-
-    return item
+    return await service.add_course_item(course_item_data=course_item_data, user=user)
 
 
 @router.patch("/course_items/{item_id}", response_model=schemas.BaseCourseItem)
 async def update_course_item(
+    item_id: int,
     item_update: schemas.CourseItemUpdate,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
-    item: CourseItem = Depends(deps.course_item_exists_or_404),
     service: StudentCourseService = Depends(get_student_course_service),
 ) -> schemas.BaseCourseItem:
     """
@@ -233,21 +209,15 @@ async def update_course_item(
     - Updated course item with all details
 
     """
-    student_course = await deps.student_course_exists_or_404(
-        student_course_id=item.student_course_id, db_session=db_session
+    return await service.update_course_item(
+        item_id=item_id, item_update=item_update, user=user
     )
-    CourseItemPolicy(user=user).check_update(
-        student_course=student_course, item_data=item_update
-    )
-
-    return await service.update_course_item(item=item, item_update=item_update)
 
 
 @router.delete("/course_items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_course_item(
+    item_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
-    item: CourseItem = Depends(deps.course_item_exists_or_404),
     service: StudentCourseService = Depends(get_student_course_service),
 ) -> None:
     """
@@ -264,11 +234,7 @@ async def delete_course_item(
     - HTTP 204 No Content on successful deletion
 
     """
-    student_course = await deps.student_course_exists_or_404(
-        student_course_id=item.student_course_id, db_session=db_session
-    )
-    CourseItemPolicy(user=user).check_delete(student_course=student_course)
-    await service.delete_course_item(item=item)
+    await service.delete_course_item(item_id=item_id, user=user)
     return
 
 

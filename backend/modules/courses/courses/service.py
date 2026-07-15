@@ -28,6 +28,8 @@ from backend.modules.courses.registrar.schemas import (
     UserScheduleItem,
 )
 from backend.modules.courses.registrar.service import RegistrarService
+from fastapi import HTTPException, status
+from backend.modules.courses.courses.policy import CourseItemPolicy, StudentCoursePolicy
 
 
 class StudentCourseService:
@@ -45,6 +47,23 @@ class StudentCourseService:
         self.infra = infra
         self.kc_manager = kc_manager
         self.calendar_service = calendar_service
+
+    async def _get_course_item_or_404(self, item_id: int) -> CourseItem:
+        item = await self.repository.get_course_item_by_id(item_id)
+        if item is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Course item not found."
+            )
+        return item
+
+    async def _get_student_course_or_404(self, student_course_id: int) -> StudentCourse:
+        student_course = await self.repository.get_student_course_by_id(student_course_id)
+        if student_course is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Student course registration not found",
+            )
+        return student_course
 
     async def get_registered_courses(
         self, student_sub: str
@@ -134,30 +153,47 @@ class StudentCourseService:
         )
 
     async def add_course_item(
-        self, course_item_data: schemas.CourseItemCreate, student_sub: str
-    ) -> CourseItem | None:
-        """
-        Add a course item to a registered course.
+        self,
+        course_item_data: schemas.CourseItemCreate,
+        user: tuple[dict, dict],
+    ) -> schemas.BaseCourseItem:
+        student_course = await self._get_student_course_or_404(
+            course_item_data.student_course_id
+        )
+        CourseItemPolicy(user=user).check_create(student_course=student_course)
 
-        @param course_item_data: The course item data.
-        @param student_sub: The student's sub.
-        @return: The added course item.
-        """
-        student_course: StudentCourse | None = await self.repository.fetch_student_course_for_owner(
+        student_sub = user[0].get("sub")
+        registered = await self.repository.fetch_student_course_for_owner(
             student_course_id=course_item_data.student_course_id,
             student_sub=student_sub,
+        )
+        if not registered:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Registered course not found for this user.",
             )
-        if not student_course:
-            return None
-        course_item: CourseItem = await self.repository.add_course_item(course_item_data)
-        return course_item
+
+        course_item = await self.repository.add_course_item(course_item_data)
+        return schemas.BaseCourseItem.model_validate(course_item)
 
     async def update_course_item(
-        self, item: CourseItem, item_update: schemas.CourseItemUpdate
-    ) -> CourseItem:
-        return await self.repository.update_course_item(item=item, update_data=item_update)
+        self,
+        item_id: int,
+        item_update: schemas.CourseItemUpdate,
+        user: tuple[dict, dict],
+    ) -> schemas.BaseCourseItem:
+        item = await self._get_course_item_or_404(item_id)
+        student_course = await self._get_student_course_or_404(item.student_course_id)
+        CourseItemPolicy(user=user).check_update(
+            student_course=student_course, item_data=item_update
+        )
+        updated = await self.repository.update_course_item(item=item, update_data=item_update)
+        return schemas.BaseCourseItem.model_validate(updated)
 
-    async def delete_course_item(self, item: CourseItem):
+    async def delete_course_item(self, item_id: int, user: tuple[dict, dict]) -> None:
+        item = await self._get_course_item_or_404(item_id)
+        student_course = await self._get_student_course_or_404(item.student_course_id)
+        CourseItemPolicy(user=user).check_delete(student_course=student_course)
         await self.repository.delete_course_item(item=item)
 
     def _determine_current_semester(self, semesters: List[SemesterOption], current_date: datetime) -> str | None:

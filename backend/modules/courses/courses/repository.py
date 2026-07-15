@@ -137,6 +137,12 @@ class CourseRepository:
     async def delete_course_item(self, item: CourseItem) -> None:
         await self.db_session.delete(item)
 
+    async def get_course_item_by_id(self, item_id: int) -> CourseItem | None:
+        return await self.db_session.get(CourseItem, item_id)
+
+    async def get_student_course_by_id(self, student_course_id: int) -> StudentCourse | None:
+        return await self.db_session.get(StudentCourse, student_course_id)
+
     async def upsert_schedule(
         self,
         student_sub: str,
