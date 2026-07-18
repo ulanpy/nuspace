@@ -72,23 +72,36 @@ class RegistrarClient:
         if not any(cookie for cookie in cookies.jar if cookie.name == "AUTHSSL"):
             raise ValueError("Invalid registrar credentials")
 
-    async def _get_schedule_type(self) -> str:
+    async def _get_schedule_access(self) -> dict[str, Any]:
+        """
+        Read Drupal personalSchedule.access flags from the HTML page.
+
+        Known keys:
+          - current: published/active personal timetable for the term
+          - reg: registration-period timetable tab (often empty outside add/drop)
+
+        Important: access[type] == 1 means the tab is *available*, not that it
+        contains rows. Prefer `current` for sync; use `reg` only as fallback.
+        """
         client = await self._ensure_client()
         response = await client.get(SCHEDULE_HTML_PATH)
         response.raise_for_status()
         html = response.text
         marker = "jQuery.extend(Drupal.settings, "
         if marker not in html:
-            return "current"
+            return {}
         try:
             payload = html.split(marker, 1)[1].split("})", 1)[0] + "}"
             data = json.loads(payload)
             access = data["personalSchedule"]["access"]
-            if access.get("reg") == 1:
-                return "reg"
-        except (json.JSONDecodeError, KeyError, IndexError):
-            pass
-        return "current"
+            return access if isinstance(access, dict) else {}
+        except (json.JSONDecodeError, KeyError, IndexError, TypeError):
+            return {}
+
+    @staticmethod
+    def _schedule_entry_count(payload: dict[str, Any] | list[Any]) -> int:
+        entries = payload if isinstance(payload, list) else payload.get("data", [])
+        return len(entries) if isinstance(entries, list) else 0
 
     async def _get_schedule(self, schedule_type: str) -> dict[str, Any]:
         client = await self._ensure_client()
@@ -106,9 +119,29 @@ class RegistrarClient:
         return response.json()
 
     async def fetch_schedule(self, username: str, password: str) -> dict[str, Any]:
+        """
+        Fetch personal timetable.
+
+        Strategy:
+          1. Always try `current` first (live weekly schedule).
+          2. If empty and registration tab is available, try `reg`.
+          3. Return the first non-empty payload (or the empty `current` response).
+        """
         await self.login(username=username, password=password)
-        schedule_type = await self._get_schedule_type()
-        return await self._get_schedule(schedule_type)
+        access = await self._get_schedule_access()
+
+        primary = await self._get_schedule("current")
+        if self._schedule_entry_count(primary) > 0:
+            return primary
+
+        # `reg` is available during registration windows but is frequently empty
+        # mid-term; only use it when current has nothing.
+        if access.get("reg") == 1:
+            registration = await self._get_schedule("reg")
+            if self._schedule_entry_count(registration) > 0:
+                return registration
+
+        return primary
 
     async def fetch_unofficial_transcript_raw(self, username: str, password: str) -> tuple[str, Any]:
         """
