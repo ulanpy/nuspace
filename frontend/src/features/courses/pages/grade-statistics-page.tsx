@@ -10,33 +10,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/atoms/tab
 import { useUser } from "@/hooks/use-user";
 import { apiCall } from "@/utils/api";
 import { gradeStatisticsApi } from "../api/grade-statistics-api";
-import { useLiveGpaViewModel } from '../hooks/use-live-gpa-view-model';
-import { LiveGpaTab } from '../components/live-gpa-tab';
-import { CourseStatsTab } from '../components/course-stats-tab';
-import { ScheduleBuilderTab } from '../components/schedule-builder-tab';
-import { DegreeAuditTab } from '../components/degree-audit-tab';
+import { useLiveGpaViewModel } from "../hooks/use-live-gpa-view-model";
+import { LiveGpaTab } from "../components/live-gpa-tab";
+import { CourseStatsTab } from "../components/course-stats-tab";
+import { ScheduleBuilderTab } from "../components/schedule-builder-tab";
+import { DegreeAuditTab } from "../components/degree-audit-tab";
+import { coursesSurface } from "../constants/dashboard-theme";
+import { cn } from "@/utils/utils";
 
 const tabOptions = [
-  {
-    value: "live-gpa",
-    label: "My Courses",
-    icon: BookOpen,
-  },
-  {
-    value: "course-stats",
-    label: "Course Statistics",
-    icon: BarChart3,
-  },
-  {
-    value: "schedule-builder",
-    label: "Schedule Builder",
-    icon: CalendarDays,
-  },
-  {
-    value: "degree-audit",
-    label: "Degree Audit",
-    icon: GraduationCap,
-  },
+  { value: "live-gpa", label: "My Courses", icon: BookOpen },
+  { value: "course-stats", label: "Statistics", icon: BarChart3 },
+  { value: "schedule-builder", label: "Schedule Builder", icon: CalendarDays },
+  { value: "degree-audit", label: "Degree Audit", icon: GraduationCap },
 ] as const;
 
 export default function GradeStatisticsPage() {
@@ -62,9 +48,7 @@ export default function GradeStatisticsPage() {
         queryParams.set("page", String(pageParam));
         queryParams.set("size", "12");
         const res = await apiCall<any>(`/grades?${queryParams.toString()}`);
-        if (!res) {
-          throw new Error("No response from API");
-        }
+        if (!res) throw new Error("No response from API");
         if (typeof res.total_pages !== "number" && typeof res.num_of_pages === "number") {
           res.total_pages = res.num_of_pages;
         }
@@ -97,7 +81,6 @@ export default function GradeStatisticsPage() {
     });
   }, [queryClient, user]);
 
-  // Initialize tab from query param (?tab=...)
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (tab && tabOptions.some((t) => t.value === tab)) {
@@ -110,13 +93,8 @@ export default function GradeStatisticsPage() {
   useEffect(() => {
     const tabElement = tabRefs.current[activeTab];
     if (tabElement) {
-      // Use setTimeout to ensure DOM has updated
       setTimeout(() => {
-        tabElement.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "center",
-        });
+        tabElement.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
       }, 0);
     }
   }, [activeTab]);
@@ -130,19 +108,17 @@ export default function GradeStatisticsPage() {
 
   return (
     <MotionWrapper>
-      <div className="container mx-auto px-4 py-8 space-y-6">
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Courses</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Manage your classes, grade trends, and future schedules.
-            </p>
-          </div>
+      <div className={cn("mx-auto max-w-[1560px] space-y-6 px-2 py-2 sm:px-4 sm:py-4", coursesSurface.text)}>
+        <div className="space-y-1">
+          <h1 className="text-3xl font-semibold tracking-tight">Courses</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage your classes, assignments, GPA and semester planning.
+          </p>
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <div ref={scrollContainerRef} className="overflow-x-auto">
-            <TabsList className="mb-4 inline-flex w-full min-w-max rounded-full bg-muted/60 p-1 sm:w-auto">
+            <TabsList className={cn("mb-2 inline-flex h-12 w-full min-w-max rounded-[14px] border p-1 sm:w-auto", coursesSurface.card)}>
               {tabOptions.map(({ value, label, icon: Icon }) => (
                 <TabsTrigger
                   key={value}
@@ -150,7 +126,10 @@ export default function GradeStatisticsPage() {
                     tabRefs.current[value] = el;
                   }}
                   value={value}
-                  className="flex items-center gap-2 rounded-full px-4 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  className={cn(
+                    "relative flex h-10 items-center gap-2 rounded-[10px] px-4 py-2 text-sm text-muted-foreground data-[state=active]:shadow-none after:absolute after:inset-x-3 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-transparent",
+                    coursesSurface.tabActive,
+                  )}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{label}</span>
@@ -159,19 +138,19 @@ export default function GradeStatisticsPage() {
             </TabsList>
           </div>
 
-          <TabsContent value="live-gpa">
+          <TabsContent value="live-gpa" className="mt-6">
             <LiveGpaTab user={user} login={login} viewModel={viewModel} />
           </TabsContent>
 
-          <TabsContent value="course-stats">
+          <TabsContent value="course-stats" className="mt-6">
             <CourseStatsTab initialKeyword={courseStatsKeyword} />
           </TabsContent>
 
-          <TabsContent value="schedule-builder">
+          <TabsContent value="schedule-builder" className="mt-6">
             <ScheduleBuilderTab user={user} login={login} />
           </TabsContent>
 
-          <TabsContent value="degree-audit">
+          <TabsContent value="degree-audit" className="mt-6">
             <DegreeAuditTab user={user} login={login} />
           </TabsContent>
         </Tabs>
@@ -179,4 +158,3 @@ export default function GradeStatisticsPage() {
     </MotionWrapper>
   );
 }
-

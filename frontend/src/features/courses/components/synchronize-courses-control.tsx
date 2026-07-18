@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { PointerEvent as ReactPointerEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Button } from "@/components/atoms/button";
 import { Modal } from "@/components/atoms/modal";
@@ -26,6 +26,8 @@ interface SynchronizeCoursesControlProps {
   onSync: (password: string) => Promise<RegistrarSyncResponse>;
   onSyncPdf: (pdfFileBase64: string) => Promise<RegistrarSyncResponse>;
   userEmail: string;
+  openRequestId?: number;
+  compact?: boolean;
 }
 
 function fileToBase64(file: File): Promise<string> {
@@ -44,6 +46,8 @@ export function SynchronizeCoursesControl({
   onSync,
   onSyncPdf,
   userEmail,
+  openRequestId,
+  compact = false,
 }: SynchronizeCoursesControlProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [password, setPassword] = useState("");
@@ -74,6 +78,12 @@ export function SynchronizeCoursesControl({
     setError(null);
     setIsModalOpen(true);
   };
+
+  useEffect(() => {
+    if (openRequestId) {
+      handleOpen("registrar");
+    }
+  }, [openRequestId]);
 
   const handleClose = () => {
     if (isSubmitting) return;
@@ -168,23 +178,25 @@ export function SynchronizeCoursesControl({
 
   return (
     <>
-      <div className="inline-flex overflow-hidden rounded-full">
+      <div className={`inline-flex overflow-hidden ${compact ? "rounded-lg" : "rounded-full"}`}>
         <Button
           size="sm"
+          variant="outline"
           onClick={() => handleOpen("registrar")}
-          className="rounded-none rounded-l-full px-4 font-medium gap-2"
+          className={`font-medium gap-1.5 ${compact ? "h-8 rounded-l-lg px-3 text-[13px]" : "rounded-none rounded-l-full px-4 gap-2"}`}
         >
-          <RefreshCcw className="h-4 w-4" />
+          <RefreshCcw className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
           Sync
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               size="sm"
-              className="rounded-none rounded-r-full border-l border-primary-foreground/20 px-2"
+              variant="outline"
+              className={`border-l-0 ${compact ? "h-8 rounded-r-lg px-2" : "rounded-none rounded-r-full px-2"}`}
               aria-label="More sync options"
             >
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="z-[11050]">

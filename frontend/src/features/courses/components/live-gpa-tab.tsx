@@ -1,21 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Calculator } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Modal } from "@/components/atoms/modal";
-import { AssignmentModal } from './assignment-modal';
-import { ConfirmationModal } from './confirmation-modal';
-import { ScheduleDialog } from './schedule-dialog';
-import { SynchronizeCoursesControl } from './synchronize-courses-control';
-import type { LiveGpaViewModel } from '../hooks/use-live-gpa-view-model';
-import { SummaryCards } from './live-gpa/summary-cards';
-import { RegisteredCourseList } from './live-gpa/registered-course-list';
-import { ShareTemplateModal } from './live-gpa/share-template-modal';
-import { TemplateDrawer } from './live-gpa/template-drawer';
-import { gradeStatisticsApi } from '../api/grade-statistics-api';
+import { AssignmentModal } from "./assignment-modal";
+import { ConfirmationModal } from "./confirmation-modal";
+import { ScheduleDialog } from "./schedule-dialog";
+import type { LiveGpaViewModel } from "../hooks/use-live-gpa-view-model";
+import { SummaryCards } from "./live-gpa/summary-cards";
+import { RegisteredCourseList } from "./live-gpa/registered-course-list";
+import { CourseWorkspace } from "./live-gpa/course-workspace";
+import { ShareTemplateModal } from "./live-gpa/share-template-modal";
+import { TemplateDrawer } from "./live-gpa/template-drawer";
+import { CoursesSyncToolbar } from "./live-gpa/courses-sync-toolbar";
+import { CoursesContextPanel } from "./live-gpa/courses-context-panel";
+import { gradeStatisticsApi } from "../api/grade-statistics-api";
 import { useToast } from "@/hooks/use-toast";
-import GoogleCalendarIcon from "@/assets/svg/google_calendar_icon.svg";
+import { coursesSurface } from "../constants/dashboard-theme";
+import { pickDefaultCourseId } from "../utils/course-summary-utils";
+import { useMockStudyHours } from "../hooks/use-mock-study-hours";
+import { cn } from "@/utils/utils";
 
 interface LiveGpaTabProps {
   user: { email?: string | null } | null;
@@ -26,8 +31,8 @@ interface LiveGpaTabProps {
 export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
   const {
     registeredCourses,
+    gpaExclusion,
     metrics,
-    withdraw,
     schedule,
     assignment,
     deletion,
@@ -40,6 +45,24 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
   const { toast } = useToast();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
+  const studyHours = useMockStudyHours(registeredCourses);
+
+  useEffect(() => {
+    if (registeredCourses.length === 0) {
+      setSelectedCourseId(null);
+      return;
+    }
+    const stillValid = selectedCourseId != null && registeredCourses.some((c) => c.id === selectedCourseId);
+    if (!stillValid) {
+      setSelectedCourseId(pickDefaultCourseId(registeredCourses));
+    }
+  }, [registeredCourses, selectedCourseId]);
+
+  const selectedCourse = useMemo(
+    () => registeredCourses.find((course) => course.id === selectedCourseId) ?? null,
+    [registeredCourses, selectedCourseId],
+  );
 
   const handleImportToGoogleCalendar = async () => {
     if (isExporting) return;
@@ -66,10 +89,7 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
         });
       }
     } catch (err: unknown) {
-      let detail = "Failed to export";
-      if (err instanceof Error) {
-        detail = err.message;
-      }
+      const detail = err instanceof Error ? err.message : "Failed to export";
       toast({ title: "Export failed", description: detail, variant: "error" });
     } finally {
       setIsExporting(false);
@@ -82,77 +102,31 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
 
   return (
     <div className="space-y-6">
-      {user && (
-        <>
-          <SummaryCards metrics={metrics} />
+      {user && <SummaryCards metrics={metrics} />}
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-            <SynchronizeCoursesControl
-              onSync={syncCourses}
-              onSyncPdf={syncCoursesFromPdf}
-              userEmail={userEmail}
-            />
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-full px-4 font-medium gap-2"
-              onClick={() => setIsImportModalOpen(true)}
-              disabled={isExporting}
-            >
-              <img 
-                src={typeof GoogleCalendarIcon === 'string' ? GoogleCalendarIcon : GoogleCalendarIcon.src} 
-                alt="" 
-                className="h-4 w-4" 
-              />
-              {isExporting ? "Importing…" : "Import to Google Calendar"}
-            </Button>
-          </div>
-        </>
-      )}
-
-      {/* Import to Google Calendar Confirmation Modal */}
       <Modal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         className="!bg-transparent !shadow-none border-none max-w-xl"
         contentClassName="[&>div.sticky]:hidden"
       >
-        <div className="rounded-2xl border border-border/60 bg-background p-4 flex flex-col gap-3">
-          <div className="flex justify-between items-start gap-2">
+        <div className={cn("flex flex-col gap-3 rounded-2xl border p-4", coursesSurface.cardSm)}>
+          <div className="flex items-start justify-between gap-2">
             <div className="flex-1">
-              <p className="text-lg font-semibold text-foreground">
-                Import to Google Calendar
-              </p>
+              <p className="text-lg font-semibold">Import to Google Calendar</p>
               <p className="text-sm text-muted-foreground">
-                We will import your registrar schedule to your Google Calendar,
-                please make sure to sync your schedule first.
+                We will import your registrar schedule to your Google Calendar. Please sync your schedule first.
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsImportModalOpen(false)}
-              aria-label="Close"
-              className="h-8 w-8 -mt-1 -mr-1"
-            >
-              <span className="text-muted-foreground text-lg">✕</span>
+            <Button variant="ghost" size="icon" onClick={() => setIsImportModalOpen(false)} aria-label="Close">
+              ✕
             </Button>
           </div>
           <div className="flex justify-end gap-2">
-            <Button
-              onClick={() => setIsImportModalOpen(false)}
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground h-9 px-4 text-sm"
-            >
+            <Button variant="ghost" size="sm" onClick={() => setIsImportModalOpen(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={handleImportToGoogleCalendar}
-              disabled={isExporting}
-              size="sm"
-              className="h-9 rounded-full px-4 text-sm font-medium"
-            >
+            <Button size="sm" onClick={handleImportToGoogleCalendar} disabled={isExporting}>
               {isExporting ? "Importing…" : "Import"}
             </Button>
           </div>
@@ -183,10 +157,10 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
           weightError={assignmentForm.weightError}
           maxError={assignmentForm.maxError}
           obtainedError={assignmentForm.obtainedError}
-          statusCard={assignmentForm.statusCard}
+          infoMessage={assignmentForm.infoMessage}
           onCancel={assignment.addModal.close}
           onSubmit={assignment.addModal.submit}
-          submitLabel="Add Item"
+          submitLabel="Add Assignment"
           isSubmitDisabled={!assignmentForm.isValid}
         />
       )}
@@ -207,7 +181,7 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
           weightError={assignmentForm.weightError}
           maxError={assignmentForm.maxError}
           obtainedError={assignmentForm.obtainedError}
-          statusCard={assignmentForm.statusCard}
+          infoMessage={assignmentForm.infoMessage}
           onCancel={assignment.editModal.close}
           onSubmit={assignment.editModal.submit}
           submitLabel="Save"
@@ -228,9 +202,7 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
         confirmText="Delete"
       />
 
-      {sharing.course && (
-        <ShareTemplateModal sharing={sharing} onClose={sharing.close} />
-      )}
+      {sharing.course && <ShareTemplateModal sharing={sharing} onClose={sharing.close} />}
 
       <TemplateDrawer
         templates={templates}
@@ -239,45 +211,70 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
       />
 
       {!user ? (
-        <div className="rounded-2xl border border-border/60 bg-muted/30 p-4 flex items-center justify-between">
+        <div className={cn("flex items-center justify-between rounded-[18px] border p-4", coursesSurface.cardLg)}>
           <div>
-            <p className="text-sm font-semibold text-foreground">
-              Sign in to track your course progress this semester.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              We will save your course progress for you in your account.
-            </p>
+            <p className="text-sm font-semibold">Sign in to track your course progress this semester.</p>
+            <p className="text-xs text-muted-foreground">We will save your course progress for you in your account.</p>
           </div>
-          <Button
-            onClick={login}
-            size="sm"
-            className="h-8 rounded-full px-3 text-xs font-medium"
-          >
+          <Button onClick={login} size="sm">
             Login
           </Button>
         </div>
+      ) : registeredCourses.length === 0 ? (
+        <div className={cn("rounded-[18px] border py-12 text-center text-sm text-muted-foreground", coursesSurface.cardLg)}>
+          <Calculator className="mx-auto mb-4 h-12 w-12 opacity-50" />
+          <p>No courses registered yet. Use Sync to import your schedule.</p>
+        </div>
       ) : (
-        <>
-          {registeredCourses.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)_300px] xl:items-start">
+          <div className="min-w-0 xl:sticky xl:top-4">
             <RegisteredCourseList
               courses={registeredCourses}
-              withdraw={withdraw}
-              onAddItem={assignment.addModal.open}
+              gpaExclusion={gpaExclusion}
+              selectedCourseId={selectedCourseId}
+              onSelectCourse={setSelectedCourseId}
+              weekHoursByCourseId={studyHours.totalsByCourseId}
+              footer={
+                <CoursesSyncToolbar
+                  embedded
+                  viewModel={{ syncCourses, syncCoursesFromPdf, schedule }}
+                  userEmail={userEmail}
+                  onImportCalendar={() => setIsImportModalOpen(true)}
+                  isExporting={isExporting}
+                />
+              }
+            />
+          </div>
+
+          <div className="min-w-0">
+            <CourseWorkspace
+              course={selectedCourse}
+              isExcludedFromGpa={selectedCourse?.isExcludedFromGpa ?? false}
+              onAddItem={() => selectedCourse && assignment.addModal.open(selectedCourse.id)}
               onDeleteItem={deletion.request}
               onEditItem={assignment.editModal.open}
-              onShareTemplate={sharing.open}
-              onOpenTemplates={templates.open}
+              onShareTemplate={() => selectedCourse && sharing.open(selectedCourse)}
+              onOpenTemplates={() => selectedCourse && templates.open(selectedCourse)}
+              onToggleGpaExclusion={() => selectedCourse && gpaExclusion.toggle(selectedCourse.id)}
             />
-          ) : (
-            <div className="py-6 text-center text-sm text-muted-foreground">
-              <Calculator className="mx-auto mb-4 h-12 w-12 opacity-50" />
-              <p>
-                No courses registered yet. Use the Synchronize button to import
-                your schedule.
-              </p>
-            </div>
-          )}
-        </>
+          </div>
+
+          <aside className="min-w-0 xl:sticky xl:top-4">
+            <CoursesContextPanel
+              selectedCourse={selectedCourse}
+              schedule={schedule.data}
+              isExcludedFromGpa={selectedCourse?.isExcludedFromGpa ?? false}
+              studyHours={
+                selectedCourseId != null ? studyHours.getHours(selectedCourseId) : null
+              }
+              onAdjustStudyHours={
+                selectedCourseId != null
+                  ? (dayIndex, delta) => studyHours.adjustDayHours(selectedCourseId, dayIndex, delta)
+                  : undefined
+              }
+            />
+          </aside>
+        </div>
       )}
     </div>
   );

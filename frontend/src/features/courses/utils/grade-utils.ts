@@ -51,20 +51,12 @@ export const formatPercentage = (percentage: number): string => {
   return `${percentage.toFixed(1)}%`;
 };
 
-export const getGPAColorClass = (gpa: number): string => {
-  if (gpa >= 3.7) return "text-green-600 dark:text-green-400";
-  if (gpa >= 3.0) return "text-blue-600 dark:text-blue-400";
-  if (gpa >= 2.5) return "text-amber-600 dark:text-amber-400";
-  if (gpa >= 2.0) return "text-orange-600 dark:text-orange-400";
-  return "text-red-600 dark:text-red-400";
+export const getGPAColorClass = (_gpa: number): string => {
+  return "text-foreground";
 };
 
-export const getGPABadgeClass = (gpa: number): string => {
-  if (gpa >= 3.7) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-  if (gpa >= 3.0) return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-  if (gpa >= 2.5) return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200";
-  if (gpa >= 2.0) return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
-  return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+export const getGPABadgeClass = (_gpa: number): string => {
+  return "bg-muted text-foreground";
 };
 
 export const getDifficultyLevel = (averageGPA: number, stdDeviation: number): string => {

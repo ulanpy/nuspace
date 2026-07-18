@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { formatDistanceToNow, parseISO } from "date-fns";
+import { formatUtcDistanceToNow } from "../utils/parse-utc-timestamp";
 import { gradeStatisticsApi } from '../api/grade-statistics-api';
 import {
   BaseCourseItem,
@@ -62,7 +62,7 @@ export function useLiveGpaViewModel(user: NullableUser) {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
 
-  const [withdrawnCourseIds, setWithdrawnCourseIds] = useState<Set<number>>(new Set());
+  const [excludedFromGpaCourseIds, setExcludedFromGpaCourseIds] = useState<Set<number>>(new Set());
   const [scheduleData, setScheduleData] = useState<ScheduleResponse | null>(null);
   const [scheduleMeta, setScheduleMeta] = useState<
     Pick<StudentScheduleResponse, "term_label" | "term_value" | "last_synced_at">
@@ -114,7 +114,7 @@ export function useLiveGpaViewModel(user: NullableUser) {
           if (cancelled) return;
           setRegisteredCourses(registered);
 
-          setWithdrawnCourseIds((prev) => {
+          setExcludedFromGpaCourseIds((prev) => {
             if (cancelled || prev.size === 0) return prev;
             const valid = new Set(registered.map((course) => course.id));
             const next = new Set<number>();
@@ -167,7 +167,7 @@ export function useLiveGpaViewModel(user: NullableUser) {
       setRegisteredCourses([]);
       setSelectedRegisteredCourse(null);
       setHasFetched(false);
-      setWithdrawnCourseIds(new Set());
+      setExcludedFromGpaCourseIds(new Set());
       setScheduleData(null);
       setScheduleMeta(null);
       setScheduleLoading(false);
@@ -186,13 +186,8 @@ export function useLiveGpaViewModel(user: NullableUser) {
     }
   }, [user, hasFetched, resetAssignmentForm]);
 
-  const filteredCourses = useMemo(() => {
-    const coursesNotWithdrawn =
-      withdrawnCourseIds.size === 0
-        ? registeredCourses
-        : registeredCourses.filter((course) => !withdrawnCourseIds.has(course.id));
-
-    return coursesNotWithdrawn.map((course) => ({
+  const registeredCoursesWithMeta = useMemo(() => {
+    return registeredCourses.map((course) => ({
       gpaCoverage: course.items.reduce(
         (acc, item) => {
           if (hasCompleteScore(item)) {
@@ -205,25 +200,31 @@ export function useLiveGpaViewModel(user: NullableUser) {
         { currentIncluded: 0, currentExcluded: 0 },
       ),
       ...course,
+      isExcludedFromGpa: excludedFromGpaCourseIds.has(course.id),
       items: course.items.map((item) => ({
         ...item,
         isIncludedInGPA: hasCompleteScore(item),
       })),
     }));
-  }, [registeredCourses, withdrawnCourseIds]);
+  }, [registeredCourses, excludedFromGpaCourseIds]);
 
-  const totalGPA = useMemo(() => calculateTotalGPA(filteredCourses), [filteredCourses]);
+  const coursesIncludedInGpa = useMemo(
+    () => registeredCoursesWithMeta.filter((course) => !course.isExcludedFromGpa),
+    [registeredCoursesWithMeta],
+  );
+
+  const totalGPA = useMemo(() => calculateTotalGPA(coursesIncludedInGpa), [coursesIncludedInGpa]);
   const maxPotentialGPA = useMemo(
-    () => calculateMaxPossibleTotalGPA(filteredCourses),
-    [filteredCourses],
+    () => calculateMaxPossibleTotalGPA(coursesIncludedInGpa),
+    [coursesIncludedInGpa],
   );
   const projectedGPA = useMemo(
-    () => calculateProjectedTotalGPA(filteredCourses),
-    [filteredCourses],
+    () => calculateProjectedTotalGPA(coursesIncludedInGpa),
+    [coursesIncludedInGpa],
   );
 
-  const handleToggleWithdraw = useCallback((courseId: number) => {
-    setWithdrawnCourseIds((prev) => {
+  const handleToggleGpaExclusion = useCallback((courseId: number) => {
+    setExcludedFromGpaCourseIds((prev) => {
       const next = new Set(prev);
       if (next.has(courseId)) {
         next.delete(courseId);
@@ -437,8 +438,8 @@ export function useLiveGpaViewModel(user: NullableUser) {
   const scheduleLastSyncedText = useMemo(() => {
     if (!scheduleMeta?.last_synced_at) return null;
     try {
-      return formatDistanceToNow(parseISO(scheduleMeta.last_synced_at), { addSuffix: true });
-    } catch (error) {
+      return formatUtcDistanceToNow(scheduleMeta.last_synced_at);
+    } catch {
       return null;
     }
   }, [scheduleMeta?.last_synced_at]);
@@ -451,12 +452,12 @@ export function useLiveGpaViewModel(user: NullableUser) {
         setRegisteredCourses(result.synced_courses);
         if (result.schedule) {
           setScheduleData(result.schedule);
-          setScheduleMeta((prev) => ({
-            term_label: result.term_label ?? prev?.term_label ?? null,
-            term_value: result.term_value ?? prev?.term_value ?? null,
-            last_synced_at: result.last_synced_at ?? new Date().toISOString(),
-          }));
         }
+        setScheduleMeta((prev) => ({
+          term_label: result.term_label ?? prev?.term_label ?? null,
+          term_value: result.term_value ?? prev?.term_value ?? null,
+          last_synced_at: result.last_synced_at ?? new Date().toISOString(),
+        }));
         return result;
       } finally {
         setScheduleLoading(false);
@@ -475,12 +476,12 @@ export function useLiveGpaViewModel(user: NullableUser) {
         setRegisteredCourses(result.synced_courses);
         if (result.schedule) {
           setScheduleData(result.schedule);
-          setScheduleMeta((prev) => ({
-            term_label: result.term_label ?? prev?.term_label ?? null,
-            term_value: result.term_value ?? prev?.term_value ?? null,
-            last_synced_at: result.last_synced_at ?? new Date().toISOString(),
-          }));
         }
+        setScheduleMeta((prev) => ({
+          term_label: result.term_label ?? prev?.term_label ?? null,
+          term_value: result.term_value ?? prev?.term_value ?? null,
+          last_synced_at: result.last_synced_at ?? new Date().toISOString(),
+        }));
         return result;
       } finally {
         setScheduleLoading(false);
@@ -565,19 +566,11 @@ export function useLiveGpaViewModel(user: NullableUser) {
   })();
 
   const isAddOrEditValid = nameValid && weightNumValid && maxNumValid && obtainedNumValid;
-  const hasReadyStatus =
+  const hasBothScores =
     parseInput(newItemInput.max) != null && parseInput(newItemInput.obtained) != null;
-  const assignmentStatusCard = hasReadyStatus
-    ? {
-        tone: "ready" as const,
-        title: "Ready for GPA",
-        message: "This assignment will be included in all GPA calculations.",
-      }
-    : {
-        tone: "warning" as const,
-        title: "Heads up",
-        message: "Add both max and obtained scores for this assignment to count toward GPA.",
-      };
+  const assignmentInfoMessage = hasBothScores
+    ? undefined
+    : "GPA is calculated only after both maximum and obtained scores are provided.";
   const nameError = nameValid ? undefined : "Name is required and max 15 characters.";
   const weightError = weightNumValid ? undefined : "Weight must be between 0 and 100.";
   const maxError = maxNumValid ? undefined : "Max must be between 0 and 99999.99.";
@@ -683,16 +676,17 @@ export function useLiveGpaViewModel(user: NullableUser) {
   }, [itemToDelete]);
 
   return {
-    registeredCourses,
-    filteredCourses,
+    registeredCourses: registeredCoursesWithMeta,
+    coursesIncludedInGpa,
     metrics: {
       totalGPA,
       maxPotentialGPA,
       projectedGPA,
     },
-    withdraw: {
-      ids: withdrawnCourseIds,
-      toggle: handleToggleWithdraw,
+    gpaExclusion: {
+      ids: excludedFromGpaCourseIds,
+      toggle: handleToggleGpaExclusion,
+      isExcluded: (courseId: number) => excludedFromGpaCourseIds.has(courseId),
     },
     schedule: {
       data: scheduleData,
@@ -717,7 +711,7 @@ export function useLiveGpaViewModel(user: NullableUser) {
         weightError,
         maxError,
         obtainedError,
-        statusCard: assignmentStatusCard,
+        infoMessage: assignmentInfoMessage,
         isValid: isAddOrEditValid,
       },
       addModal: {

@@ -17,6 +17,8 @@ interface ModalProps {
   children?: React.ReactNode;
   className?: string;
   contentClassName?: string;
+  bodyClassName?: string;
+  hideHeader?: boolean;
 }
 
 export function Modal({
@@ -27,6 +29,8 @@ export function Modal({
   children,
   className = "max-w-md",
   contentClassName,
+  bodyClassName,
+  hideHeader = false,
 }: ModalProps) {
 
   const backNav = useMaybeBackNavigation();
@@ -108,21 +112,29 @@ export function Modal({
               "min(calc(100dvh - (env(safe-area-inset-bottom, 0px) + 3rem)), calc(100vh - (env(safe-area-inset-bottom, 0px) + 3rem)))",
           }}
         >
-          {/* Sticky header without backdrop blur (Safari bug with overflow containers) */}
-          <div className="sticky top-0 z-10 flex justify-between items-center p-4 border-b bg-background">
-            <div className="flex items-center gap-2">
-              {title && <h2 className="text-lg font-semibold">{title}</h2>}
-              {description && (
-                <p className="text-sm text-muted-foreground">{description}</p>
-              )}
+          {!hideHeader && (
+            <div className="sticky top-0 z-10 flex justify-between items-center p-4 border-b bg-background">
+              <div className="flex items-center gap-2">
+                {title && <h2 className="text-lg font-semibold">{title}</h2>}
+                {description && (
+                  <p className="text-sm text-muted-foreground">{description}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+          )}
+          <div
+            className={cn(
+              "flex-1 overflow-y-auto overflow-x-hidden",
+              hideHeader ? bodyClassName ?? "p-0" : cn("p-4", bodyClassName),
+            )}
+          >
+            {children}
           </div>
-          <div className="p-4 flex-1 overflow-y-auto overflow-x-hidden">{children}</div>
         </div>
       </div>
     </div>,

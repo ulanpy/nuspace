@@ -5,7 +5,7 @@ import { Modal } from "@/components/atoms/modal";
 import { Badge } from "@/components/atoms/badge";
 import { Skeleton } from "@/components/atoms/skeleton";
 import { cn } from "@/utils/utils";
-import { formatDistanceToNow, parseISO } from "date-fns";
+import { formatUtcDistanceToNow } from "../utils/parse-utc-timestamp";
 import { ScheduleResponse } from "../types";
 import { Button } from "@/components/atoms/button";
 import { gradeStatisticsApi } from '../api/grade-statistics-api';
@@ -184,10 +184,8 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
   const lastSyncedText = useMemo(() => {
     if (!meta?.last_synced_at) return null;
     try {
-      // Convert UTC datetime from database to local time
-      const utcDate = parseISO(meta.last_synced_at + 'Z'); // Add 'Z' to ensure it's treated as UTC
-      return formatDistanceToNow(utcDate, { addSuffix: true });
-    } catch (error) {
+      return formatUtcDistanceToNow(meta.last_synced_at);
+    } catch {
       return null;
     }
   }, [meta?.last_synced_at]);
