@@ -6,7 +6,12 @@ import { Label } from "@/components/atoms/label";
 import { CommunityRecruitmentStatus, CommunityType, CommunityCategory } from "@/features/shared/campus/types";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
+import {
+  getHttpsUrlError,
+  getInstagramUrlError,
+  getTelegramUrlError,
+  normalizeHttpUrl,
+} from "@/features/communities/utils/url-validation";
 
 export function CommunityDetailsForm() {
   const {
@@ -16,8 +21,6 @@ export function CommunityDetailsForm() {
     isFieldEditable,
     isEditMode,
   } = useCommunityForm();
-  const { toast } = useToast();
-
   // State for the date picker
   const [date, setDate] = useState<Date | undefined>(undefined);
 
@@ -53,15 +56,19 @@ export function CommunityDetailsForm() {
   const showRecruitmentLink =
     formData.recruitment_status === CommunityRecruitmentStatus.open;
 
-  const isValidUrl = (value: string): boolean => {
-    if (!value) return true;
-    try {
-      const url = new URL(value);
-      return url.protocol === "http:" || url.protocol === "https:";
-    } catch {
-      return false;
-    }
-  };
+  const normalizedTelegramUrl = normalizeHttpUrl(formData.telegram_url);
+  const telegramUrlError = normalizedTelegramUrl
+    ? getTelegramUrlError(normalizedTelegramUrl)
+    : undefined;
+  const normalizedInstagramUrl = normalizeHttpUrl(formData.instagram_url);
+  const instagramUrlError = normalizedInstagramUrl
+    ? getInstagramUrlError(normalizedInstagramUrl)
+    : undefined;
+  const recruitmentLink = (formData as { recruitment_link?: string }).recruitment_link;
+  const normalizedRecruitmentUrl = normalizeHttpUrl(recruitmentLink);
+  const recruitmentUrlError = normalizedRecruitmentUrl
+    ? getHttpsUrlError(normalizedRecruitmentUrl)
+    : undefined;
 
   return (
     <div className="space-y-4">
@@ -141,7 +148,14 @@ export function CommunityDetailsForm() {
             value={formData.telegram_url}
             onChange={handleInputChange}
             disabled={!isFieldEditable("telegram_url")}
+            aria-invalid={Boolean(telegramUrlError)}
+            aria-describedby={telegramUrlError ? "telegram_url-error" : undefined}
           />
+          {telegramUrlError && (
+            <p id="telegram_url-error" role="alert" className="mt-1 text-xs text-destructive">
+              {telegramUrlError}
+            </p>
+          )}
         </div>
         <div>
           <Label htmlFor="instagram_url">Instagram URL</Label>
@@ -151,7 +165,14 @@ export function CommunityDetailsForm() {
             value={formData.instagram_url} 
             onChange={handleInputChange}
             disabled={!isFieldEditable("instagram_url")}
+            aria-invalid={Boolean(instagramUrlError)}
+            aria-describedby={instagramUrlError ? "instagram_url-error" : undefined}
           />
+          {instagramUrlError && (
+            <p id="instagram_url-error" role="alert" className="mt-1 text-xs text-destructive">
+              {instagramUrlError}
+            </p>
+          )}
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -189,17 +210,14 @@ export function CommunityDetailsForm() {
               placeholder="https://..."
               disabled={!isFieldEditable("recruitment_link")}
               required={showRecruitmentLink}
-              onBlur={(e) => {
-                const value = e.target.value.trim();
-                if (value && !isValidUrl(value)) {
-                  toast({
-                    title: "Invalid recruitment URL",
-                    description: "Enter a valid URL starting with https:// or http://",
-                    variant: "destructive",
-                  });
-                }
-              }}
+              aria-invalid={Boolean(recruitmentUrlError)}
+              aria-describedby={recruitmentUrlError ? "recruitment_link-error" : undefined}
             />
+            {recruitmentUrlError && (
+              <p id="recruitment_link-error" role="alert" className="mt-1 text-xs text-destructive">
+                {recruitmentUrlError}
+              </p>
+            )}
           </div>
         )}
                  {isFieldEditable("established") && (
