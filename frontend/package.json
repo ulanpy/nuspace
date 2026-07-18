@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
     "build": "vite build",
-    "start": "vite preview --host 0.0.0.0 --port 5173"
+    "start": "vite preview --host 0.0.0.0 --port 5173",
+    "test:url-validation": "tsx --test src/features/communities/utils/url-validation.test.ts"
   },
   "dependencies": {
     "@capacitor/core": "^8.0.0",

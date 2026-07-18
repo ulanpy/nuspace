@@ -1,5 +1,7 @@
+import re
 from datetime import date, datetime
-from typing import List
+from typing import List, Literal
+from urllib.parse import SplitResult, urlsplit
 
 from fastapi import Query
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, field_serializer, field_validator
@@ -12,6 +14,70 @@ from backend.core.database.models.community import (
     CommunityRecruitmentStatus,
     CommunityType,
 )
+
+
+_URL_SCHEME_PATTERN = re.compile(r"^[a-z][a-z\d+.-]*:", re.IGNORECASE)
+_SOCIAL_HOSTS = {
+    "telegram": {"t.me", "telegram.me"},
+    "instagram": {"instagram.com", "instagr.am"},
+}
+
+
+def _normalize_optional_url(value: object) -> str | None:
+    if value is None:
+        return None
+
+    normalized = str(value).strip()
+    if not normalized:
+        return None
+    if not _URL_SCHEME_PATTERN.match(normalized):
+        return f"https://{normalized}"
+    return normalized
+
+
+def _parse_http_url(value: str, error_message: str) -> SplitResult:
+    if value.count("://") != 1:
+        raise ValueError(error_message)
+
+    try:
+        parsed = urlsplit(value)
+        hostname = parsed.hostname
+        _ = parsed.port
+    except ValueError:
+        raise ValueError(error_message) from None
+
+    if parsed.scheme not in {"http", "https"} or not hostname:
+        raise ValueError(error_message)
+    return parsed
+
+
+def _validate_social_url(
+    value: object,
+    *,
+    platform: Literal["telegram", "instagram"],
+    error_message: str,
+) -> str | None:
+    normalized = _normalize_optional_url(value)
+    if normalized is None:
+        return None
+
+    parsed = _parse_http_url(normalized, error_message)
+    hostname = parsed.hostname.lower().removeprefix("www.")
+    if hostname not in _SOCIAL_HOSTS[platform]:
+        raise ValueError(error_message)
+    return normalized
+
+
+def _validate_recruitment_url(value: object) -> str | None:
+    error_message = "Enter an HTTPS URL"
+    normalized = _normalize_optional_url(value)
+    if normalized is None:
+        return None
+
+    parsed = _parse_http_url(normalized, error_message)
+    if parsed.scheme != "https":
+        raise ValueError(error_message)
+    return normalized
 
 
 # Achievement Schemas
@@ -215,27 +281,28 @@ class CommunityCreateRequest(BaseModel):
         example="https://www.instagram.com/nufencingclub",
     )
 
-    @field_validator("telegram_url", "instagram_url", mode="before")
-    def normalize_social_url(cls, value):
-        if value is None:
-            return None
-        value = value.strip()
-        if value == "":
-            return None
-        if not value.startswith(("http://", "https://")):
-            return f"https://{value}"
-        return value
+    @field_validator("telegram_url", mode="before")
+    @classmethod
+    def validate_telegram_url(cls, value: object) -> str | None:
+        return _validate_social_url(
+            value,
+            platform="telegram",
+            error_message="Enter a Telegram URL",
+        )
+
+    @field_validator("instagram_url", mode="before")
+    @classmethod
+    def validate_instagram_url(cls, value: object) -> str | None:
+        return _validate_social_url(
+            value,
+            platform="instagram",
+            error_message="Enter an Instagram URL",
+        )
 
     @field_validator("recruitment_link", mode="before")
-    def normalize_recruitment_link(cls, value):
-        if value is None:
-            return None
-        value = str(value).strip()
-        if value == "":
-            return None
-        if not value.startswith(("http://", "https://")):
-            return f"https://{value}"
-        return value
+    @classmethod
+    def validate_recruitment_link(cls, value: object) -> str | None:
+        return _validate_recruitment_url(value)
 
     @field_serializer("recruitment_link")
     def serialize_recruitment_link(self, value: HttpUrl | None) -> str | None:
@@ -338,27 +405,28 @@ class CommunityUpdateRequest(BaseModel):
     class Config:
         from_attributes = True  # Make sure it can be used with SQLAlchemy models
 
-    @field_validator("telegram_url", "instagram_url", mode="before")
-    def normalize_social_url_update(cls, value):
-        if value is None:
-            return None
-        value = value.strip()
-        if value == "":
-            return None
-        if not value.startswith(("http://", "https://")):
-            return f"https://{value}"
-        return value
+    @field_validator("telegram_url", mode="before")
+    @classmethod
+    def validate_telegram_url(cls, value: object) -> str | None:
+        return _validate_social_url(
+            value,
+            platform="telegram",
+            error_message="Enter a Telegram URL",
+        )
+
+    @field_validator("instagram_url", mode="before")
+    @classmethod
+    def validate_instagram_url(cls, value: object) -> str | None:
+        return _validate_social_url(
+            value,
+            platform="instagram",
+            error_message="Enter an Instagram URL",
+        )
 
     @field_validator("recruitment_link", mode="before")
-    def normalize_recruitment_link_update(cls, value):
-        if value is None:
-            return None
-        value = str(value).strip()
-        if value == "":
-            return None
-        if not value.startswith(("http://", "https://")):
-            return f"https://{value}"
-        return value
+    @classmethod
+    def validate_recruitment_link(cls, value: object) -> str | None:
+        return _validate_recruitment_url(value)
 
 
 class ListCommunity(BaseModel):

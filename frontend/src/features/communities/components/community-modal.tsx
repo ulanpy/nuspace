@@ -33,6 +33,12 @@ import { useInitializeMedia } from '@/features/media/hooks/use-initialize-media'
 import { campuscurrentAPI } from '@/features/communities/api/communities-api';
 import { useToast } from "@/hooks/use-toast";
 import { LoginModal } from "@/components/molecules/login-modal";
+import {
+  getHttpsUrlError,
+  getInstagramUrlError,
+  getTelegramUrlError,
+  normalizeHttpUrl,
+} from "@/features/communities/utils/url-validation";
 
 interface CommunityModalProps {
   isOpen: boolean;
@@ -80,25 +86,6 @@ export function CommunityModal({
     );
   }
 
-  const isValidUrl = (value: string): boolean => {
-    try {
-      const url = new URL(value);
-      return url.protocol === "http:" || url.protocol === "https:";
-    } catch {
-      return false;
-    }
-  };
-
-  const ensureHttp = (val: string | undefined | null): string | undefined => {
-    if (!val) return undefined;
-    const trimmed = val.trim();
-    if (!trimmed) return undefined;
-    if (!/^https?:\/\//i.test(trimmed)) {
-      return `https://${trimmed}`;
-    }
-    return trimmed;
-  };
-
   const handleSubmit = async (
     formData: CreateCommunityData | EditCommunityData,
     resetForm: () => void
@@ -108,7 +95,9 @@ export function CommunityModal({
     let operationSucceeded = false;
     try {
       const isRecruitmentOpen = (formData as EditCommunityData).recruitment_status === CommunityRecruitmentStatus.open;
-      const link = ensureHttp((formData as EditCommunityData).recruitment_link || "");
+      const link = normalizeHttpUrl((formData as EditCommunityData).recruitment_link || "");
+      const telegramUrl = normalizeHttpUrl(formData.telegram_url);
+      const instagramUrl = normalizeHttpUrl(formData.instagram_url);
 
       if (isRecruitmentOpen && !link) {
         toast({
@@ -119,10 +108,24 @@ export function CommunityModal({
         return;
       }
 
-      if (isRecruitmentOpen && link && !isValidUrl(link)) {
+      const recruitmentUrlError = link ? getHttpsUrlError(link) : undefined;
+      const telegramUrlError = telegramUrl ? getTelegramUrlError(telegramUrl) : undefined;
+      const instagramUrlError = instagramUrl ? getInstagramUrlError(instagramUrl) : undefined;
+
+      if (isRecruitmentOpen && recruitmentUrlError) {
         toast({
           title: "Invalid recruitment URL",
-          description: "Please enter a valid URL starting with https:// or http://",
+          description: recruitmentUrlError,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const socialUrlError = telegramUrlError || instagramUrlError;
+      if (socialUrlError) {
+        toast({
+          title: "Invalid social media URL",
+          description: socialUrlError,
           variant: "destructive",
         });
         return;
@@ -141,8 +144,8 @@ export function CommunityModal({
           email: ((formData as EditCommunityData).email || "").trim() || undefined,
           recruitment_status: (formData as EditCommunityData).recruitment_status,
           established: (formData as EditCommunityData).established,
-          telegram_url: formData.telegram_url,
-          instagram_url: formData.instagram_url,
+          telegram_url: telegramUrl,
+          instagram_url: instagramUrl,
           ...(mediaIdsToDelete.length > 0
             ? { media_ids_to_delete: mediaIdsToDelete }
             : {}),
@@ -203,8 +206,8 @@ export function CommunityModal({
           head: user.user.sub,
           established: (formData as CreateCommunityData).established || new Date().toISOString().split('T')[0],
           description: formData.description || "",
-          telegram_url: formData.telegram_url || undefined,
-          instagram_url: formData.instagram_url || undefined,
+          telegram_url: telegramUrl,
+          instagram_url: instagramUrl,
         };
 
         // Only include recruitment_link when status is open and link is non-empty
@@ -373,4 +376,3 @@ function CommunityActionsWrapper({
     />
   );
 }
-

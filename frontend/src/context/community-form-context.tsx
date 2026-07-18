@@ -12,6 +12,12 @@ import {
   CommunityEditableFields,
   CommunityPermissions,
 } from "@/features/shared/campus/types";
+import {
+  getHttpsUrlError,
+  getInstagramUrlError,
+  getTelegramUrlError,
+  normalizeHttpUrl,
+} from "@/features/communities/utils/url-validation";
 
 interface CommunityFormContextType {
   formData: CreateCommunityData | EditCommunityData;
@@ -106,7 +112,7 @@ export function CommunityFormProvider({
     ) {
       return;
     }
-    setFormData({ ...formData, [name]: value });
+    setFormData((currentFormData) => ({ ...currentFormData, [name]: value }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -155,16 +161,6 @@ export function CommunityFormProvider({
 
   const validateForm = (): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
-    const ensureHttp = (val: string | undefined | null): string | undefined => {
-      if (!val) return undefined;
-      const trimmed = val.trim();
-      if (!trimmed) return undefined;
-      if (!/^https?:\/\//i.test(trimmed)) {
-        return `https://${trimmed}`;
-      }
-      return trimmed;
-    };
-    
     // Name validation (required, 3-100 characters)
     if (!formData.name || formData.name.trim().length < 3) {
       errors.push("Community name must be at least 3 characters long");
@@ -207,19 +203,13 @@ export function CommunityFormProvider({
     
     // Recruitment link validation (required when status is open)
     if (formData.recruitment_status === CommunityRecruitmentStatus.open) {
-      const normalizedLink = ensureHttp((formData as any).recruitment_link as string);
-      (formData as any).recruitment_link = normalizedLink || "";
-      const link = normalizedLink;
+      const link = normalizeHttpUrl((formData as any).recruitment_link as string);
       if (!link) {
         errors.push("Recruitment link is required when recruitment status is open");
       } else {
-        try {
-          const url = new URL(link);
-          if (url.protocol !== "http:" && url.protocol !== "https:") {
-            errors.push("Recruitment link must be a valid HTTP or HTTPS URL");
-          }
-        } catch {
-          errors.push("Recruitment link must be a valid URL");
+        const linkError = getHttpsUrlError(link);
+        if (linkError) {
+          errors.push(`Recruitment link: ${linkError}`);
         }
       }
     }
@@ -230,28 +220,20 @@ export function CommunityFormProvider({
     }
     
     // URL validation for social media links
-    const validateOptionalUrl = (url: string | undefined, fieldName: string) => {
-      const normalized = ensureHttp(url);
-      if (normalized) {
-        try {
-          const validUrl = new URL(normalized);
-          if (validUrl.protocol !== "http:" && validUrl.protocol !== "https:") {
-            errors.push(`${fieldName} must be a valid HTTP or HTTPS URL`);
-          }
-        } catch {
-          errors.push(`${fieldName} must be a valid URL`);
-        }
-      }
-      // write back normalization so the submit uses it
-      if (fieldName === "Telegram URL") {
-        (formData as any).telegram_url = normalized as any;
-      } else if (fieldName === "Instagram URL") {
-        (formData as any).instagram_url = normalized as any;
+    const validateOptionalUrl = (
+      url: string | undefined,
+      fieldName: string,
+      getUrlError: (value: string) => string | undefined,
+    ) => {
+      const normalized = normalizeHttpUrl(url);
+      const urlError = normalized ? getUrlError(normalized) : undefined;
+      if (urlError) {
+        errors.push(`${fieldName}: ${urlError}`);
       }
     };
     
-    validateOptionalUrl(formData.telegram_url as any, "Telegram URL");
-    validateOptionalUrl(formData.instagram_url as any, "Instagram URL");
+    validateOptionalUrl(formData.telegram_url, "Telegram URL", getTelegramUrlError);
+    validateOptionalUrl(formData.instagram_url, "Instagram URL", getInstagramUrlError);
     
     return {
       isValid: errors.length === 0,
@@ -288,5 +270,3 @@ export function useCommunityForm() {
   }
   return context;
 }
-
-
