@@ -48,7 +48,7 @@ export function CoursesSyncToolbar({
               className="h- min-w-0 flex-1 gap-1.5 rounded-lg px-2 text-[12px] font-medium"
               onClick={onImportCalendar}
               disabled={isExporting}
-              title="Import to Google Calendar"
+              title="Export calendar"
             >
               <img
                 src={
@@ -118,7 +118,7 @@ export function CoursesSyncToolbar({
             alt=""
             className="h-3.5 w-3.5"
           />
-          <span className="hidden md:inline">{isExporting ? "Importing…" : "Import to Google Calendar"}</span>
+          <span className="hidden md:inline">{isExporting ? "Working…" : "Export calendar"}</span>
           <span className="md:hidden">{isExporting ? "…" : "Calendar"}</span>
         </Button>
       )}

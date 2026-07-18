@@ -17,6 +17,7 @@ from backend.core.database.models.grade_report import (
 from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.courses.courses import schemas
 from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
+from backend.modules.courses.courses.ics_export import events_to_ics
 from backend.modules.courses.courses.repository import CourseRepository
 from backend.modules.courses.registrar.schemas import (
     CourseSearchRequest,
@@ -695,21 +696,18 @@ class StudentCourseService:
             schedule=schedule,
         )
 
-    async def export_schedule_to_google_calendar(
+    async def _build_schedule_calendar_events(
         self,
         *,
         student_sub: str,
-        kc_access_token: str | None,
-        kc_refresh_token: str | None,
         infra: Infra | None = None,
-    ) -> schemas.GoogleCalendarExportResponse:
+    ) -> tuple[list[dict], list[str], list[str]]:
         """
-        Push the student's weekly schedule to Google Calendar by enriching
-        entries with start/end dates from the Meilisearch schedule index.
-        """
-        if not self.calendar_sync:
-            raise ValueError("Calendar service is not configured")
+        Build Google-shaped calendar event dicts for the student's latest schedule.
 
+        Returns (events, missing_dates, lookup_errors). Events use Asia/Almaty
+        local times and weekly RRULE/EXDATE recurrence matching the Google export.
+        """
         active_infra = infra or self.infra
         if not active_infra or not active_infra.meilisearch_client:
             raise ValueError("Meilisearch client is not available")
@@ -723,7 +721,6 @@ class StudentCourseService:
             for day in schedule_record.schedule_data
         ]
 
-        # Collect course codes for Meilisearch lookups
         code_lookup: dict[str, str] = {}
         for day in normalized_week:
             for item in day:
@@ -765,42 +762,16 @@ class StudentCourseService:
             if isinstance(res, Exception):
                 lookup_errors.append(str(res))
                 continue
-            normalized_code, window, chosen_hit = res
+            normalized_code, window, _chosen_hit = res
             if window:
                 course_windows[normalized_code] = window
             else:
                 raw_code = code_lookup.get(normalized_code) or normalized_code
                 missing_dates.append(raw_code)
 
-        # Build calendar events
         events: list[dict] = []
         seen_blocks: set[tuple[str, int, int, int]] = set()
         local_tz = ZoneInfo("Asia/Almaty")
-
-        def _event_dict(start_dt: datetime, end_dt: datetime, until_dt: datetime, exdates: list[datetime] | None = None) -> dict:
-            recurrence: list[str] = [
-                f"RRULE:FREQ=WEEKLY;UNTIL={until_dt.astimezone(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
-            ]
-            if exdates:
-                exdate_values = ",".join(
-                    dt.strftime("%Y%m%dT%H%M%S") for dt in exdates
-                )
-                recurrence.append(f"EXDATE;TZID=Asia/Almaty:{exdate_values}")
-            return {
-                "summary": summary,
-                "description": description,
-                "location": item.cab or "",
-                "start": {"dateTime": start_dt.isoformat(), "timeZone": "Asia/Almaty"},
-                "end": {"dateTime": end_dt.isoformat(), "timeZone": "Asia/Almaty"},
-                "recurrence": recurrence,
-                "extendedProperties": {
-                    "private": {
-                        "course_code": item.course_code,
-                        "teacher": item.teacher,
-                        "label": item.label,
-                    }
-                },
-            }
 
         for day_idx, day_entries in enumerate(normalized_week):
             for item in day_entries:
@@ -845,16 +816,26 @@ class StudentCourseService:
                             datetime.combine(skip_date, time(start_time.hh, start_time.mm), tzinfo=local_tz)
                         )
 
-                # stable event key per course/day/time
-                event_key = f"{normalized_code}-{day_idx}-{start_time.hh:02d}{start_time.mm:02d}-{end_time.hh:02d}{end_time.mm:02d}"
+                recurrence: list[str] = [
+                    f"RRULE:FREQ=WEEKLY;UNTIL={until_dt.astimezone(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+                ]
+                if exdates:
+                    exdate_values = ",".join(dt.strftime("%Y%m%dT%H%M%S") for dt in exdates)
+                    recurrence.append(f"EXDATE;TZID=Asia/Almaty:{exdate_values}")
+
+                event_key = (
+                    f"{normalized_code}-{day_idx}-"
+                    f"{start_time.hh:02d}{start_time.mm:02d}-"
+                    f"{end_time.hh:02d}{end_time.mm:02d}"
+                )
                 events.append(
-                    _event_dict(
-                        event_start,
-                        event_end,
-                        until_dt,
-                        exdates=exdates,
-                    )
-                    | {
+                    {
+                        "summary": summary,
+                        "description": description,
+                        "location": item.cab or "",
+                        "start": {"dateTime": event_start.isoformat(), "timeZone": "Asia/Almaty"},
+                        "end": {"dateTime": event_end.isoformat(), "timeZone": "Asia/Almaty"},
+                        "recurrence": recurrence,
                         "extendedProperties": {
                             "private": {
                                 "course_code": item.course_code,
@@ -864,9 +845,31 @@ class StudentCourseService:
                                 "source": "nuros_schedule",
                                 "term_value": schedule_record.term_value,
                             }
-                        }
+                        },
                     }
                 )
+
+        return events, missing_dates, lookup_errors
+
+    async def export_schedule_to_google_calendar(
+        self,
+        *,
+        student_sub: str,
+        kc_access_token: str | None,
+        kc_refresh_token: str | None,
+        infra: Infra | None = None,
+    ) -> schemas.GoogleCalendarExportResponse:
+        """
+        Push the student's weekly schedule to Google Calendar by enriching
+        entries with start/end dates from the Meilisearch schedule index.
+        """
+        if not self.calendar_sync:
+            raise ValueError("Calendar service is not configured")
+
+        events, missing_dates, lookup_errors = await self._build_schedule_calendar_events(
+            student_sub=student_sub,
+            infra=infra,
+        )
 
         if not events:
             return schemas.GoogleCalendarExportResponse(
@@ -877,7 +880,7 @@ class StudentCourseService:
                 google_errors=["no_events_to_create"],
             )
 
-        created, updated, deleted, google_errors = await self.calendar_sync.sync_events(
+        created, updated, _deleted, google_errors = await self.calendar_sync.sync_events(
             desired_events=events,
             kc_access_token=kc_access_token,
             kc_refresh_token=kc_refresh_token,
@@ -890,6 +893,23 @@ class StudentCourseService:
             lookup_errors=lookup_errors,
             google_errors=google_errors,
         )
+
+    async def export_schedule_to_ics(
+        self,
+        *,
+        student_sub: str,
+        infra: Infra | None = None,
+    ) -> str:
+        """
+        Build an iCalendar (.ics) document for the student's latest schedule.
+        """
+        events, _missing_dates, _lookup_errors = await self._build_schedule_calendar_events(
+            student_sub=student_sub,
+            infra=infra,
+        )
+        if not events:
+            raise ValueError("No calendar events to export")
+        return events_to_ics(events)
 
 
 def _normalize_pdf_bytes(pdf_bytes: bytes) -> bytes:

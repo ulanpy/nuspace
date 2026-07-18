@@ -19,6 +19,7 @@ from backend.modules.courses.courses.errors import CourseLookupError, SemesterRe
 from backend.modules.courses.courses.policy import StudentCoursePolicy
 from backend.modules.courses.courses.service import StudentCourseService
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, status
+from fastapi.responses import Response
 
 router = APIRouter(tags=["Student Courses"])
 
@@ -163,6 +164,36 @@ async def export_registered_schedule_to_google_calendar(
         raise HTTPException(status_code=exc.response.status_code, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
+@router.get("/registered_courses/schedule/ics")
+async def export_registered_schedule_to_ics(
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    infra: Infra = Depends(get_infra),
+    service: StudentCourseService = Depends(get_student_course_service),
+):
+    """
+    Download the student's latest registrar schedule as an iCalendar (.ics) file.
+    Works with Apple Calendar, Outlook, and other apps that import .ics.
+    """
+    student_sub = user[0].get("sub")
+    StudentCoursePolicy(user=user).check_read_list(student_sub=student_sub)
+
+    try:
+        ics_body = await service.export_schedule_to_ics(
+            student_sub=student_sub,
+            infra=infra,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+    return Response(
+        content=ics_body,
+        media_type="text/calendar; charset=utf-8",
+        headers={
+            "Content-Disposition": 'attachment; filename="schedule.ics"',
+        },
+    )
 
 
 @router.post("/course_items", response_model=schemas.BaseCourseItem)

@@ -14,8 +14,6 @@ interface RegisteredCourseListProps {
   gpaExclusion: LiveGpaViewModel["gpaExclusion"];
   selectedCourseId: number | null;
   onSelectCourse: (courseId: number) => void;
-  /** Mock weekly study hours by course id — scan signal only. */
-  weekHoursByCourseId?: Record<number, number>;
   footer?: ReactNode;
 }
 
@@ -24,7 +22,6 @@ export function RegisteredCourseList({
   gpaExclusion,
   selectedCourseId,
   onSelectCourse,
-  weekHoursByCourseId,
   footer,
 }: RegisteredCourseListProps) {
   return (
@@ -43,7 +40,6 @@ export function RegisteredCourseList({
             isExcludedFromGpa={
               registeredCourse.isExcludedFromGpa ?? gpaExclusion.isExcluded(registeredCourse.id)
             }
-            weekHours={weekHoursByCourseId?.[registeredCourse.id]}
             onSelect={() => onSelectCourse(registeredCourse.id)}
           />
         ))}

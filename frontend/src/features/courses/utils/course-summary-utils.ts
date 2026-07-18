@@ -17,6 +17,27 @@ export function getProfessorForCourse(
   return null;
 }
 
+export function getEarnedGradeSummary(items: BaseCourseItem[]) {
+  const totalWeight = items.reduce((acc, item) => acc + (item.total_weight_pct || 0), 0);
+  const scale = Math.max(100, totalWeight) || 100;
+
+  const scoredItems = items.filter(hasCompleteScore);
+  const earnedWeight = scoredItems.reduce((acc, item) => {
+    const weight = item.total_weight_pct || 0;
+    return acc + weight * (item.obtained_score / item.max_score);
+  }, 0);
+
+  if (items.length === 0) {
+    return { percent: 0, earnedLabel: "0%", barPercent: 0 };
+  }
+
+  return {
+    percent: earnedWeight,
+    earnedLabel: `${earnedWeight.toFixed(0)}%`,
+    barPercent: Math.min(100, (earnedWeight / scale) * 100),
+  };
+}
+
 export function getAssignmentProgress(items: BaseCourseItem[]) {
   const totalWeight = items.reduce((acc, item) => acc + (item.total_weight_pct || 0), 0);
   const completedWeight = items

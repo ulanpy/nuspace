@@ -153,6 +153,24 @@ export function SynchronizeCoursesControl({
     }
   };
 
+  const handleDownloadIcs = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      await gradeStatisticsApi.exportScheduleToIcs();
+      toast({
+        title: "Calendar file downloaded",
+        description: "Import schedule.ics into Apple Calendar, Outlook, or any calendar app.",
+        variant: "success",
+      });
+    } catch (err: unknown) {
+      const detail = err instanceof Error ? err.message : "Failed to download calendar";
+      toast({ title: "Download failed", description: detail, variant: "error" });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleRevealPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
     setShowPassword(true);
@@ -344,27 +362,42 @@ export function SynchronizeCoursesControl({
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-2 my-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 my-2">
             {syncResult && (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={handleImportToGoogleCalendar}
-                disabled={isExporting || isSubmitting}
-                className="rounded-full px-4 font-medium gap-2"
-              >
-                <img 
-                  src={typeof GoogleCalendarIcon === 'string' ? GoogleCalendarIcon : GoogleCalendarIcon.src} 
-                  alt="" 
-                  className="h-4 w-4" 
-                />
-                {isExporting ? "Importing…" : "Import to Google Calendar"}
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleDownloadIcs}
+                  disabled={isExporting || isSubmitting}
+                  className="rounded-full px-4 font-medium"
+                >
+                  {isExporting ? "Working…" : "Download .ics"}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleImportToGoogleCalendar}
+                  disabled={isExporting || isSubmitting}
+                  className="rounded-full px-4 font-medium gap-2"
+                >
+                  <img
+                    src={
+                      typeof GoogleCalendarIcon === "string"
+                        ? GoogleCalendarIcon
+                        : GoogleCalendarIcon.src
+                    }
+                    alt=""
+                    className="h-4 w-4"
+                  />
+                  {isExporting ? "Working…" : "Google Calendar"}
+                </Button>
+              </div>
             )}
             <Button
               size="sm"
-              // onClick={}
               disabled={
                 isSubmitting ||
                 (usePdfUpload ? !pdfFile || Boolean(pdfError) : !password.trim())

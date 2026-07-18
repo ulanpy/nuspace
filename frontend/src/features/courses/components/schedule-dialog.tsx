@@ -139,6 +139,24 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
     }
   };
 
+  const handleDownloadIcs = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await gradeStatisticsApi.exportScheduleToIcs();
+      toast({
+        title: "Calendar file downloaded",
+        description: "Import schedule.ics into Apple Calendar, Outlook, or any calendar app.",
+        variant: "success",
+      });
+    } catch (err: unknown) {
+      const detail = err instanceof Error ? err.message : "Failed to download calendar";
+      toast({ title: "Download failed", description: detail, variant: "error" });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const timeSlots = useMemo(() => {
     const MIN_TIME = 6 * 60;
     const MAX_TIME = 22 * 60;
@@ -208,20 +226,31 @@ export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: Sch
               Synced {lastSyncedText ?? "just now"}
             </p>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-full px-4 font-medium gap-2"
-            onClick={handleExport}
-            disabled={exporting || isLoading || !hasItems}
-          >
-            <img 
-              src={typeof GoogleCalendarIcon === 'string' ? GoogleCalendarIcon : GoogleCalendarIcon.src} 
-              alt="" 
-              className="h-4 w-4" 
-            />
-            {exporting ? "Exporting…" : "Import to Google Calendar"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full px-4 font-medium"
+              onClick={handleDownloadIcs}
+              disabled={exporting || isLoading || !hasItems}
+            >
+              {exporting ? "Working…" : "Download .ics"}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full px-4 font-medium gap-2"
+              onClick={handleExport}
+              disabled={exporting || isLoading || !hasItems}
+            >
+              <img
+                src={typeof GoogleCalendarIcon === "string" ? GoogleCalendarIcon : GoogleCalendarIcon.src}
+                alt=""
+                className="h-4 w-4"
+              />
+              {exporting ? "Working…" : "Google Calendar"}
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (

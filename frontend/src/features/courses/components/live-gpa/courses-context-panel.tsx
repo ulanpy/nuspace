@@ -1,28 +1,21 @@
 "use client";
 
-import Link from "@/router/link";
-import { BookOpen, ExternalLink, LifeBuoy } from "lucide-react";
+import { BookOpen, LifeBuoy } from "lucide-react";
 import type { RegisteredCourse, ScheduleResponse } from "../../types";
-import { coursesSurface, getDepartmentAccent } from "../../constants/dashboard-theme";
-import { getAssignmentProgress, getCourseSummaryRows } from "../../utils/course-summary-utils";
-import type { WeekDayHours } from "../../utils/mock-study-hours";
-import { StudyHoursCard } from "./study-hours-card";
+import { coursesChart, coursesSurface } from "../../constants/dashboard-theme";
+import { getCourseSummaryRows, getEarnedGradeSummary } from "../../utils/course-summary-utils";
 import { cn } from "@/utils/utils";
 
 interface CoursesContextPanelProps {
   selectedCourse: RegisteredCourse | null;
   schedule: ScheduleResponse | null;
   isExcludedFromGpa: boolean;
-  studyHours?: { days: WeekDayHours[]; target: number } | null;
-  onAdjustStudyHours?: (dayIndex: number, delta: number) => void;
 }
 
 export function CoursesContextPanel({
   selectedCourse,
   schedule,
   isExcludedFromGpa,
-  studyHours,
-  onAdjustStudyHours,
 }: CoursesContextPanelProps) {
   if (!selectedCourse) {
     return (
@@ -41,8 +34,7 @@ export function CoursesContextPanel({
     );
   }
 
-  const accent = getDepartmentAccent(selectedCourse.course.department);
-  const progress = getAssignmentProgress(selectedCourse.items);
+  const earned = getEarnedGradeSummary(selectedCourse.items);
   const rows = getCourseSummaryRows(selectedCourse, schedule);
 
   return (
@@ -68,27 +60,17 @@ export function CoursesContextPanel({
 
         <div className="mt-4 space-y-2">
           <div className="flex items-center justify-between text-[13px]">
-            <span className="text-muted-foreground">Weighted progress</span>
-            <span className="font-medium">{progress.percent}%</span>
+            <span className="text-muted-foreground">Earned grade</span>
+            <span className="font-medium tabular-nums text-green-600 dark:text-green-400">{earned.earnedLabel}</span>
           </div>
           <div className={cn("h-1.5 overflow-hidden rounded-full", coursesSurface.progressTrack)}>
             <div
               className="h-full rounded-full transition-all"
-              style={{ width: `${progress.percent}%`, backgroundColor: accent.color }}
+              style={{ width: `${earned.barPercent}%`, backgroundColor: coursesChart.green }}
             />
           </div>
-          <p className="text-[12px] text-muted-foreground">{progress.label}</p>
         </div>
       </div>
-
-      {studyHours && onAdjustStudyHours && selectedCourse && (
-        <StudyHoursCard
-          courseId={selectedCourse.id}
-          days={studyHours.days}
-          target={studyHours.target}
-          onAdjustDay={onAdjustStudyHours}
-        />
-      )}
 
       <CoursesHelpCard />
     </div>
@@ -103,10 +85,6 @@ export function CoursesHelpCard() {
         <p className="text-[13px] font-medium">Need help?</p>
       </div>
       <div className="flex flex-col gap-2 text-[13px]">
-        <Link href="/courses?tab=live-gpa" className="inline-flex items-center gap-1 text-primary hover:underline">
-          View Guide
-          <ExternalLink className="h-3 w-3" />
-        </Link>
         <a
           href="https://t.me/kamikadze24"
           target="_blank"

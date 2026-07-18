@@ -68,6 +68,20 @@ export const gradeStatisticsApi = {
   exportScheduleToGoogle: async (): Promise<GoogleCalendarExportResponse> => {
     return await apiCall(`/registered_courses/schedule/google`, { method: 'POST' });
   },
+
+  /** Download registrar schedule as an iCalendar (.ics) file. */
+  exportScheduleToIcs: async (): Promise<void> => {
+    const ics = await apiCall<string>(`/registered_courses/schedule/ics`);
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "schedule.ics";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  },
   
   // ==== Course Items APIs ====
   addCourseItem: async (payload: CourseItemCreate): Promise<BaseCourseItem> => {

@@ -152,7 +152,6 @@ interface CourseRowProps {
   registeredCourse: RegisteredCourse;
   isSelected: boolean;
   isExcludedFromGpa: boolean;
-  weekHours?: number;
   onSelect: () => void;
 }
 
@@ -161,7 +160,6 @@ export function CourseRow({
   registeredCourse,
   isSelected,
   isExcludedFromGpa,
-  weekHours,
   onSelect,
 }: CourseRowProps) {
   const { course, items } = registeredCourse;
@@ -204,12 +202,6 @@ export function CourseRow({
           {course.title || course.department || "Course"}
         </p>
       </div>
-
-      {weekHours != null && (
-        <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground" title="Study hours this week">
-          {weekHours}h
-        </span>
-      )}
     </button>
   );
 }

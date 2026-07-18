@@ -19,7 +19,6 @@ import { gradeStatisticsApi } from "../api/grade-statistics-api";
 import { useToast } from "@/hooks/use-toast";
 import { coursesSurface } from "../constants/dashboard-theme";
 import { pickDefaultCourseId } from "../utils/course-summary-utils";
-import { useMockStudyHours } from "../hooks/use-mock-study-hours";
 import { cn } from "@/utils/utils";
 
 interface LiveGpaTabProps {
@@ -46,7 +45,6 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
-  const studyHours = useMockStudyHours(registeredCourses);
 
   useEffect(() => {
     if (registeredCourses.length === 0) {
@@ -87,13 +85,32 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
           description: "Your schedule is up to date.",
           variant: "success",
         });
+        setIsImportModalOpen(false);
       }
     } catch (err: unknown) {
       const detail = err instanceof Error ? err.message : "Failed to export";
       toast({ title: "Export failed", description: detail, variant: "error" });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleDownloadIcs = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      await gradeStatisticsApi.exportScheduleToIcs();
+      toast({
+        title: "Calendar file downloaded",
+        description: "Import schedule.ics into Apple Calendar, Outlook, or any calendar app.",
+        variant: "success",
+      });
       setIsImportModalOpen(false);
+    } catch (err: unknown) {
+      const detail = err instanceof Error ? err.message : "Failed to download calendar";
+      toast({ title: "Download failed", description: detail, variant: "error" });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -113,21 +130,25 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
         <div className={cn("flex flex-col gap-3 rounded-2xl border p-4", coursesSurface.cardSm)}>
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1">
-              <p className="text-lg font-semibold">Import to Google Calendar</p>
+              <p className="text-lg font-semibold">Export calendar</p>
               <p className="text-sm text-muted-foreground">
-                We will import your registrar schedule to your Google Calendar. Please sync your schedule first.
+                Sync to Google Calendar, or download an .ics file for Apple Calendar, Outlook, and other apps.
+                Sync your registrar schedule first.
               </p>
             </div>
             <Button variant="ghost" size="icon" onClick={() => setIsImportModalOpen(false)} aria-label="Close">
               ✕
             </Button>
           </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setIsImportModalOpen(false)}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="ghost" size="sm" onClick={() => setIsImportModalOpen(false)} disabled={isExporting}>
               Cancel
             </Button>
+            <Button size="sm" variant="outline" onClick={handleDownloadIcs} disabled={isExporting}>
+              {isExporting ? "Working…" : "Download .ics"}
+            </Button>
             <Button size="sm" onClick={handleImportToGoogleCalendar} disabled={isExporting}>
-              {isExporting ? "Importing…" : "Import"}
+              {isExporting ? "Working…" : "Google Calendar"}
             </Button>
           </div>
         </div>
@@ -243,7 +264,6 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
               gpaExclusion={gpaExclusion}
               selectedCourseId={selectedCourseId}
               onSelectCourse={setSelectedCourseId}
-              weekHoursByCourseId={studyHours.totalsByCourseId}
               footer={
                 <CoursesSyncToolbar
                   embedded
@@ -274,14 +294,6 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
               selectedCourse={selectedCourse}
               schedule={schedule.data}
               isExcludedFromGpa={selectedCourse?.isExcludedFromGpa ?? false}
-              studyHours={
-                selectedCourseId != null ? studyHours.getHours(selectedCourseId) : null
-              }
-              onAdjustStudyHours={
-                selectedCourseId != null
-                  ? (dayIndex, delta) => studyHours.adjustDayHours(selectedCourseId, dayIndex, delta)
-                  : undefined
-              }
             />
           </aside>
         </div>
