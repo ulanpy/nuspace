@@ -5,6 +5,14 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Nuspace',
   description: 'Campus platform for Nazarbayev University',
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
+  manifest: '/manifest.webmanifest',
 }
 
 export default function RootLayout({
