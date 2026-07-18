@@ -221,9 +221,19 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
           </Button>
         </div>
       ) : registeredCourses.length === 0 ? (
-        <div className={cn("rounded-[18px] border py-12 text-center text-sm text-muted-foreground", coursesSurface.cardLg)}>
+        <div className={cn("rounded-[18px] p-6 text-center text-sm text-muted-foreground", coursesSurface.cardLg)}>
           <Calculator className="mx-auto mb-4 h-12 w-12 opacity-50" />
           <p>No courses registered yet. Use Sync to import your schedule.</p>
+          <div className="mx-auto mt-6 max-w-md">
+            <CoursesSyncToolbar
+              viewModel={{ syncCourses, syncCoursesFromPdf, schedule }}
+              userEmail={userEmail}
+              onImportCalendar={() => setIsImportModalOpen(true)}
+              isExporting={isExporting}
+              showCalendar={false}
+              plain
+            />
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)_300px] xl:items-start">

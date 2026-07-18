@@ -178,12 +178,12 @@ export function SynchronizeCoursesControl({
 
   return (
     <>
-      <div className={`inline-flex overflow-hidden ${compact ? "rounded-lg" : "rounded-full"}`}>
+      <div className={`inline-flex items-center gap-1.5 ${compact ? "rounded-lg" : "rounded-full"}`}>
         <Button
           size="sm"
           variant="outline"
           onClick={() => handleOpen("registrar")}
-          className={`font-medium gap-1.5 ${compact ? "h-8 rounded-l-lg px-3 text-[13px]" : "rounded-none rounded-l-full px-4 gap-2"}`}
+          className={`font-medium gap-1.5 ${compact ? "h-8 rounded-lg px-3 text-[13px]" : "rounded-full px-4 gap-2"}`}
         >
           <RefreshCcw className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
           Sync
@@ -193,7 +193,7 @@ export function SynchronizeCoursesControl({
             <Button
               size="sm"
               variant="outline"
-              className={`border-l-0 ${compact ? "h-8 rounded-r-lg px-2" : "rounded-none rounded-r-full px-2"}`}
+              className={`${compact ? "h-8 rounded-lg px-2" : "rounded-full px-2"}`}
               aria-label="More sync options"
             >
               <ChevronDown className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
