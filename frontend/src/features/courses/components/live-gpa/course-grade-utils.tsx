@@ -7,6 +7,7 @@ import {
   calculateCourseScore,
   calculateMaxPossibleCourseScore,
   formatGPA,
+  formatWeightPercent,
   getGPAColorClass,
   hasCompleteScore,
   scoreToGPA,
@@ -47,7 +48,7 @@ export function CourseGradeDistributionBar({ items }: CourseGradeDistributionBar
   const unassignedWeight = Math.max(0, 100 - totalWeight);
 
   const segments = [
-    { label: `Earned ${earnedWeight.toFixed(0)}%`, value: earnedWeight, color: coursesChart.green },
+    { label: `Earned ${formatWeightPercent(earnedWeight)}`, value: earnedWeight, color: coursesChart.green },
     { label: "Below max", value: belowMaxWeight, color: coursesChart.muted },
     { label: "Pending scores", value: pendingWeight, color: coursesChart.orange },
     { label: "Unassigned weight", value: unassignedWeight, color: coursesChart.blue },
@@ -90,7 +91,7 @@ export function CourseStatisticsCards({ registeredCourse }: { registeredCourse: 
   const hasClassAverage = classAverage != null;
 
   const stats: Array<{ label: string; value: string; tone?: string; tip?: string }> = [
-    { label: "Current Score", value: `${score.toFixed(0)}%` },
+    { label: "Current Score", value: formatWeightPercent(score) },
     ...(hasClassAverage
       ? [
           {

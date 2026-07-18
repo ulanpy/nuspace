@@ -1,5 +1,5 @@
 import type { BaseCourseItem, RegisteredCourse, ScheduleResponse } from "../types";
-import { hasCompleteScore } from "../utils/grade-utils";
+import { hasCompleteScore, formatWeightPercent } from "../utils/grade-utils";
 
 export function getProfessorForCourse(
   schedule: ScheduleResponse | null,
@@ -33,7 +33,7 @@ export function getEarnedGradeSummary(items: BaseCourseItem[]) {
 
   return {
     percent: earnedWeight,
-    earnedLabel: `${earnedWeight.toFixed(0)}%`,
+    earnedLabel: formatWeightPercent(earnedWeight),
     barPercent: Math.min(100, (earnedWeight / scale) * 100),
   };
 }

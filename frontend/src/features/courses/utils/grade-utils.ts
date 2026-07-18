@@ -51,6 +51,12 @@ export const formatPercentage = (percentage: number): string => {
   return `${percentage.toFixed(1)}%`;
 };
 
+/** Weighted course percentages (earned bar, summary) — up to 2 decimal places. */
+export const formatWeightPercent = (value: number): string => {
+  const text = value.toFixed(2);
+  return `${text.replace(/\.?0+$/, "")}%`;
+};
+
 export const getGPAColorClass = (_gpa: number): string => {
   return "text-foreground";
 };
