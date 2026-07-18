@@ -296,8 +296,9 @@ jobs:
           ansible_managed = Ansible managed
           
           [ssh_connection]
-          ssh_args = 
+          ssh_args = -C -o ControlMaster=auto -o ControlPersist=300s -o ServerAliveInterval=30 -o ServerAliveCountMax=10
           control_path_dir = /tmp
+          pipelining = True
           EOF
 
       - name: Create inventory file
