@@ -96,7 +96,7 @@ export function CourseStatisticsCards({ registeredCourse }: { registeredCourse: 
           {
             label: "Class avg",
             value: `${Number(classAverage).toFixed(0)}%`,
-            tip: "Same scale as your score · app peers only",
+            tip: "App peers only",
           },
         ]
       : []),

@@ -6,6 +6,7 @@ import { SearchableInfiniteList } from '@/components/virtual/searchable-infinite
 import { usePreSearchGrades } from '../api/hooks/use-pre-search-grades';
 import { useGradeTerms } from '../api/hooks/use-grade-terms';
 import { GradeStatisticsCard } from './grade-statistics-card';
+import { GradeCompareTray } from './grade-compare-tray';
 import type { GradeStatistics } from "../types";
 import {
   Select,
@@ -41,6 +42,10 @@ export function CourseStatsTab({ initialKeyword = "" }: { initialKeyword?: strin
     });
   };
 
+  const handleRemove = (id: number) => {
+    setSelected((prev) => prev.filter((s) => s.id !== id));
+  };
+
   return (
     <div className="w-full overflow-x-hidden" id="courses-section">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -68,6 +73,13 @@ export function CourseStatsTab({ initialKeyword = "" }: { initialKeyword?: strin
           </Select>
         </div>
       </div>
+
+      <GradeCompareTray
+        selected={selected}
+        onRemove={handleRemove}
+        onClear={() => setSelected([])}
+        maxSelections={MAX_SELECTIONS}
+      />
 
       <SearchableInfiniteList
         queryKey={["courses"]}

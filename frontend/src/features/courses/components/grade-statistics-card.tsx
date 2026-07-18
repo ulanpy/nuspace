@@ -13,8 +13,9 @@ import {
   getDifficultyColorClass
 } from '../utils/grade-utils';
 import { GradeDistributionChart } from './grade-distribution-chart';
-import { Users, TrendingUp, BarChart3, User, PieChart, EyeOff } from "lucide-react";
+import { Users, TrendingUp, BarChart3, User, PieChart, EyeOff, Check, GitCompareArrows } from "lucide-react";
 import { useState } from "react";
+import { cn } from "@/utils/utils";
 
 interface GradeStatisticsCardProps {
   statistics: GradeStatistics;
@@ -28,12 +29,18 @@ export function GradeStatisticsCard({ statistics, showChart = true, onToggleSele
   const [showPieChart, setShowPieChart] = useState(false);
   const gradeDistribution = getGradeDistribution(statistics);
   const difficulty = getDifficultyLevel(statistics.avg_gpa, statistics.std_dev);
+  const selectDisabled = Boolean(onToggleSelect) && disableAdd && !isSelected;
 
   return (
-    <Card className="w-full hover:shadow-lg transition-shadow duration-300">
+    <Card
+      className={cn(
+        "w-full transition-shadow duration-300 hover:shadow-lg",
+        isSelected && "ring-2 ring-primary/50 border-primary/40",
+      )}
+    >
       <CardHeader className="pb-4 relative">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <CardTitle className="text-xl font-bold text-gray-800 dark:text-gray-200">
               {statistics.course_code}
             </CardTitle>
@@ -65,6 +72,30 @@ export function GradeStatisticsCard({ statistics, showChart = true, onToggleSele
               </Badge>
             </div>
           </div>
+
+          {onToggleSelect && (
+            <Button
+              type="button"
+              size="sm"
+              variant={isSelected ? "default" : "outline"}
+              className="h-8 shrink-0 gap-1.5 rounded-lg text-xs font-medium"
+              disabled={selectDisabled}
+              aria-pressed={isSelected}
+              onClick={() => onToggleSelect(statistics)}
+            >
+              {isSelected ? (
+                <>
+                  <Check className="h-3.5 w-3.5" />
+                  Selected
+                </>
+              ) : (
+                <>
+                  <GitCompareArrows className="h-3.5 w-3.5" />
+                  Compare
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </CardHeader>
 
