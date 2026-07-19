@@ -256,6 +256,7 @@ export default function Events() {
           isOpen={isCommunityModalOpen}
           onClose={() => setIsCommunityModalOpen(false)}
           onSelect={handleCommunitySelect}
+          onClear={handleCommunityRemove}
           selectedCommunityId={selectedCommunity?.id}
         />
       </div>

@@ -3,6 +3,7 @@ from enum import Enum as PyEnum
 
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey
 from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -46,6 +47,17 @@ class EventType(PyEnum):
 class CollaboratorType(PyEnum):
     user = "user"
     community = "community"
+
+
+class EventBotSubmissionStatus(PyEnum):
+    """Lifecycle of a Telegram → Event ingestion attempt."""
+
+    pending_extract = "pending_extract"
+    needs_info = "needs_info"
+    preview = "preview"
+    published = "published"
+    rejected = "rejected"
+    failed = "failed"
 
 
 class EventCollaborator(Base):
@@ -114,6 +126,59 @@ class Event(Base):
     collaborators = relationship(
         "EventCollaborator", back_populates="event", cascade="all, delete-orphan"
     )
+    bot_submissions = relationship("EventBotSubmission", back_populates="event")
+
+
+class EventBotSubmission(Base):
+    """
+    Telegram bot ingestion log for event posts.
+
+    One row per /post attempt. Rejected / incomplete attempts are kept
+    (no physical dedupe — product allows re-posts; moderation is ban-based).
+    """
+
+    __tablename__ = "event_bot_submissions"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
+
+    submitter_sub: Mapped[str] = mapped_column(
+        ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
+    )
+    submitter_telegram_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
+
+    status: Mapped[EventBotSubmissionStatus] = mapped_column(
+        SQLEnum(EventBotSubmissionStatus, name="event_bot_submission_status"),
+        nullable=False,
+        index=True,
+        default=EventBotSubmissionStatus.pending_extract,
+    )
+    reject_reason: Mapped[str | None] = mapped_column(nullable=True)
+
+    event_id: Mapped[int | None] = mapped_column(
+        ForeignKey("events.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+
+    # Telegram provenance (informational; not unique)
+    origin_type: Mapped[str | None] = mapped_column(nullable=True)
+    origin_chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    origin_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    forward_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    forward_sender_name: Mapped[str | None] = mapped_column(nullable=True)
+    media_file_unique_id: Mapped[str | None] = mapped_column(nullable=True)
+
+    bot_chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    bot_message_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+    raw_caption: Mapped[str | None] = mapped_column(nullable=True)
+    raw_payload: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    extracted_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    registration_link: Mapped[str | None] = mapped_column(nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    submitter = relationship("User")
+    event = relationship("Event", back_populates="bot_submissions")
 
 
 # class EventAttendee(Base):
