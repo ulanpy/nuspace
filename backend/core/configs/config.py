@@ -48,6 +48,10 @@ class Config(BaseSettings):
     QUALTRICS_API_TOKEN: str | None = None
     QUALTRICS_DATA_CENTER_ID: str | None = None
     QUALTRICS_SURVEY_ID: str | None = None
+    # DeepSeek (Telegram event extraction). Optional locally; set in .env for bot /post.
+    DEEPSEEK_API_KEY: str | None = None
+    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
+    DEEPSEEK_MODEL: str = "deepseek-v4-flash"
     # Header mapping for easy reference when setting values
     GCS_METADATA_HEADERS: dict = {
         "filename": "x-goog-meta-filename",

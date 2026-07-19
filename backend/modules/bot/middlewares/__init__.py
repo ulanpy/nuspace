@@ -1,12 +1,15 @@
 import httpx
 from aiogram import Dispatcher
-from backend.core.configs.config import config
-from backend.core.database.manager import AsyncDatabaseManager
+from google.auth.credentials import Credentials
 from google.cloud import storage
 from redis.asyncio import Redis
 
+from backend.core.configs.config import Config, config
+from backend.core.database.manager import AsyncDatabaseManager
+
 from .bucket_client import BucketClientMiddleware
 from .db_session import DatabaseMiddleware
+from .event_post import EventPostMiddleware
 from .i18n import I18N
 from .meilisearch import MeilisearchMiddleware
 from .public_url import UrlMiddleware
@@ -20,7 +23,12 @@ def setup_middlewares(
     db_manager: AsyncDatabaseManager,
     storage_client: storage.Client,
     meilisearch_client: httpx.AsyncClient,
+    *,
+    broker,
+    signing_credentials: Credentials | None = None,
+    app_config: Config | None = None,
 ):
+    cfg = app_config or config
     middlewares = [
         DatabaseMiddleware(db_manager),
         RedisMiddleware(redis),
@@ -28,6 +36,14 @@ def setup_middlewares(
         I18N(),
         BucketClientMiddleware(storage_client),
         MeilisearchMiddleware(meilisearch_client),
+        EventPostMiddleware(
+            meilisearch_client=meilisearch_client,
+            storage_client=storage_client,
+            redis=redis,
+            broker=broker,
+            signing_credentials=signing_credentials,
+            app_config=cfg,
+        ),
     ]
     for middleware in middlewares:
         dp.update.middleware(middleware)

@@ -22,6 +22,8 @@ __all__ = [
     "UserScope",
     "GradeReport",
     "EventCollaborator",
+    "EventBotSubmission",
+    "EventBotSubmissionStatus",
     "Notification",
     "Course",
     "CourseItem",
@@ -50,6 +52,8 @@ from .community import (
 )
 from .events import (
     Event,
+    EventBotSubmission,
+    EventBotSubmissionStatus,
     EventCollaborator,
     EventScope,
     EventStatus,
