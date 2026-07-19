@@ -1,27 +1,34 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, Users } from "lucide-react";
+import { Search, Users, Check } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Modal } from "@/components/atoms/modal";
 import { Input } from "@/components/atoms/input";
-import { Label } from "@/components/atoms/label";
 import { Card } from "@/components/atoms/card";
+import { VerificationBadge } from "@/components/molecules/verification-badge";
 import { useSearchCommunities } from "@/features/communities/hooks/use-search-communities";
 import { Community } from "@/features/shared/campus/types";
+
+const getCommunityProfileImage = (community: Community) =>
+  community.media?.find((m) => m.media_format === "profile")?.url ||
+  community.media?.[0]?.url ||
+  null;
 
 interface CommunitySelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (community: Community) => void;
+  onClear?: () => void;
   selectedCommunityId?: number;
 }
 
-export function CommunitySelectionModal({ 
-  isOpen, 
-  onClose, 
-  onSelect, 
-  selectedCommunityId 
+export function CommunitySelectionModal({
+  isOpen,
+  onClose,
+  onSelect,
+  onClear,
+  selectedCommunityId
 }: CommunitySelectionModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -43,34 +50,53 @@ export function CommunitySelectionModal({
     onClose();
   };
 
-  const CommunityCard = ({ community }: { community: Community }) => (
-    <Card 
-      className={`p-4 cursor-pointer transition-all hover:bg-accent/50 ${
-        selectedCommunityId === community.id ? 'ring-2 ring-primary bg-accent/30' : ''
-      }`}
-      onClick={() => handleSelect(community)}
-    >
-      <div className="flex items-start gap-3">
-        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <Users className="h-6 w-6 text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-sm mb-1 truncate">{community.name}</h3>
-          <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-            {community.description}
-          </p>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="capitalize bg-secondary px-2 py-1 rounded">
-              {community.category}
-            </span>
-            <span className="capitalize">
-              {community.type}
-            </span>
+  const CommunityCard = ({ community }: { community: Community }) => {
+    const profileImg = getCommunityProfileImage(community);
+    const isSelected = selectedCommunityId === community.id;
+
+    return (
+      <Card
+        className={`p-4 cursor-pointer transition-all hover:bg-accent/50 ${
+          isSelected ? 'ring-2 ring-primary bg-accent/30' : ''
+        }`}
+        onClick={() => handleSelect(community)}
+      >
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {profileImg ? (
+              <img
+                src={profileImg}
+                alt={community.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Users className="h-6 w-6 text-primary" />
+            )}
           </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-medium text-sm mb-1 truncate inline-flex items-center gap-1">
+              <span className="truncate">{community.name}</span>
+              {community.verified && <VerificationBadge size={13} />}
+            </h3>
+            <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+              {community.description}
+            </p>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="capitalize font-medium bg-secondary text-secondary-foreground px-2 py-0.5 rounded">
+                {community.category}
+              </span>
+              <span className="capitalize text-muted-foreground">
+                {community.type}
+              </span>
+            </div>
+          </div>
+          {isSelected && (
+            <Check className="h-4 w-4 text-primary flex-shrink-0 mt-1" />
+          )}
         </div>
-      </div>
-    </Card>
-  );
+      </Card>
+    );
+  };
 
   const LoadingSkeleton = () => (
     <div className="space-y-3">
@@ -98,19 +124,17 @@ export function CommunitySelectionModal({
     >
       <div className="space-y-4">
         {/* Search */}
-        <div className="space-y-2">
-          <Label htmlFor="community-search">Search Communities</Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="community-search"
-              type="text"
-              placeholder="Search by name or description..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            id="community-search"
+            type="text"
+            placeholder="Search by name or description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+            autoFocus
+          />
         </div>
 
         {/* Communities List */}
@@ -139,7 +163,20 @@ export function CommunitySelectionModal({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end pt-4 border-t">
+        <div className="flex justify-between pt-4 border-t">
+          {selectedCommunityId && onClear ? (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                onClear();
+                onClose();
+              }}
+            >
+              Clear selection
+            </Button>
+          ) : (
+            <span />
+          )}
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>

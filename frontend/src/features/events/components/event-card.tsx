@@ -10,6 +10,7 @@ import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 import { getSvgSrc } from "@/utils/svg-utils";
 import { CountdownHeaderBar } from './countdown-header-bar';
 import { ROUTES } from "@/data/routes";
+import { getPolicyColor, getPolicyDisplay } from "@/features/events/utils/event-formatters";
 
 interface EventCardProps extends Event {
   compact?: boolean;
@@ -65,18 +66,6 @@ export function EventCard(props: EventCardProps) {
     }
   };
 
-  // Helper function to get policy display text
-  const getPolicyDisplay = (policy: string) => {
-    switch (policy) {
-      case "open":
-        return "Open";
-      case "registration":
-        return "Registration";
-      default:
-        return policy;
-    }
-  };
-
   const isUpcoming = new Date(start_datetime).getTime() > Date.now();
 
   // Calculate duration in minutes for the countdown component
@@ -108,11 +97,7 @@ export function EventCard(props: EventCardProps) {
           <div className="absolute bottom-2 left-2">
             <Badge
               variant="outline"
-              className={`text-xs bg-white/90 backdrop-blur-sm ${
-                policy === 'open'
-                  ? 'bg-green-100/90 text-green-900 border-green-200 dark:bg-green-900/50 dark:text-green-200 dark:border-green-800'
-                  : 'bg-blue-100/90 text-blue-900 border-blue-200 dark:bg-blue-900/50 dark:text-blue-200 dark:border-blue-800'
-              }`}
+              className={`text-xs backdrop-blur-sm ${getPolicyColor(policy)}`}
             >
               {getPolicyDisplay(policy)}
             </Badge>

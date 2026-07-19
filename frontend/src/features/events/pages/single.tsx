@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  ArrowLeft,
   Calendar,
   Clock,
   MapPin,
@@ -42,7 +43,7 @@ const renderActionButton = (action: EventActionDescriptor) => {
   const button = (
     <Button
       variant={action.variant ?? "default"}
-      className="flex items-center gap-2 w-full"
+      className="flex items-center gap-2"
       onClick={action.onClick}
     >
       <Icon className="h-4 w-4" />
@@ -57,18 +58,13 @@ const renderActionButton = (action: EventActionDescriptor) => {
         href={action.href}
         target={action.openInNewTab ? "_blank" : undefined}
         rel={action.openInNewTab ? "noopener noreferrer" : undefined}
-        className="flex-1 sm:flex-none"
       >
         {button}
       </a>
     );
   }
 
-  return (
-    <div key={action.id} className="flex-1 sm:flex-none">
-      {button}
-    </div>
-  );
+  return <div key={action.id}>{button}</div>;
 };
 
 export default function EventDetailPage() {
@@ -104,6 +100,7 @@ export default function EventDetailPage() {
         <EventDetailView
           event={resolvedEvent}
           shareEvent={shareEvent}
+          goToEventsRoot={goToEventsRoot}
           goToCommunity={goToCommunity}
           actionDescriptors={actionDescriptors}
           durationMinutes={durationMinutes}
@@ -123,6 +120,7 @@ export default function EventDetailPage() {
 type EventDetailViewProps = {
   event: Event;
   shareEvent: () => void;
+  goToEventsRoot: () => void;
   goToCommunity: () => void;
   actionDescriptors: EventActionDescriptor[];
   durationMinutes: number;
@@ -138,6 +136,7 @@ type EventDetailViewProps = {
 const EventDetailView = ({
   event,
   shareEvent,
+  goToEventsRoot,
   goToCommunity,
   actionDescriptors,
   durationMinutes,
@@ -151,6 +150,15 @@ const EventDetailView = ({
 }: EventDetailViewProps) => {
   return (
     <div className="container mx-auto pb-20 px-4 max-w-7xl">
+      <Button
+        variant="ghost"
+        className="flex items-center gap-2 -ml-3 mb-4 text-muted-foreground hover:text-foreground"
+        onClick={goToEventsRoot}
+      >
+        <ArrowLeft className="h-4 w-4" />
+        <span>Back to Events</span>
+      </Button>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
         <div className="lg:sticky lg:top-6 lg:self-start">
           <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-muted shadow-sm lg:max-h-[600px]">
@@ -249,107 +257,103 @@ const EventDetailView = ({
             <MarkdownContent content={event.description} />
           </div>
 
-          <div className="space-y-3 pt-4">
-            {actionDescriptors.length > 0 && (
-              <div className="flex flex-col sm:flex-row gap-3">
-                {actionDescriptors.map((action) => renderActionButton(action))}
-              </div>
-            )}
-
-            <div className="flex">
-              <Button
-                variant="outline"
-                className="flex items-center gap-2 w-full sm:w-auto"
-                onClick={shareEvent}
-              >
-                <Share2 className="h-4 w-4" />
-                <span>Share Event</span>
-              </Button>
-            </div>
+          <div className="flex flex-wrap items-center gap-3 pt-4">
+            {actionDescriptors.map((action) => renderActionButton(action))}
+            <Button
+              variant="outline"
+              size="icon"
+              className="flex-shrink-0"
+              onClick={shareEvent}
+              aria-label="Share Event"
+              title="Share Event"
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
           </div>
 
           {((event.scope === "community" && event.community) ||
             (event.scope === "personal" && event.creator)) && (
-            <div className="mt-8">
-              <div className="rounded-xl border bg-card p-6 shadow-sm">
-                <h3 className="text-lg font-semibold mb-4">Event Organizers</h3>
-                <div className="space-y-4">
-                  {event.scope === "community" ? (
-                    <div
-                      className="flex items-center gap-4 cursor-pointer hover:bg-muted/50 p-3 rounded-lg transition-colors"
-                      onClick={goToCommunity}
-                    >
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                        {communityProfileImg ? (
-                          <img
-                            src={communityProfileImg}
-                            alt={`${event.community?.name} profile`}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Users className="h-6 w-6 text-primary" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-base break-words inline-flex items-center gap-1">
-                          <span className="truncate">
-                            {event.community?.name}
-                          </span>
-                          {event.community?.verified && (
-                            <VerificationBadge className="ml-1" size={12} />
-                          )}
-                        </p>
-                        <p className="text-sm text-muted-foreground break-words">
-                          Community
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-4 p-3">
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+            <div className="pt-6 mt-2 border-t space-y-3">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Organizers
+              </h3>
+              <div className="flex flex-wrap gap-x-6 gap-y-3">
+                {event.scope === "community" ? (
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 group text-left"
+                    onClick={goToCommunity}
+                  >
+                    <div className="w-9 h-9 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                      {communityProfileImg ? (
                         <img
-                          src={event.creator?.picture}
-                          alt={`${event.creator?.name}'s profile`}
+                          src={communityProfileImg}
+                          alt={`${event.community?.name} profile`}
                           className="w-full h-full object-cover"
                         />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-base break-words">
-                          {`${event.creator?.name} ${event.creator?.surname}`}
-                        </p>
-                        <p className="text-sm text-muted-foreground break-words">
-                          Event Organizer
-                        </p>
-                      </div>
+                      ) : (
+                        <Users className="h-4 w-4 text-primary" />
+                      )}
                     </div>
-                  )}
-
-                  {event.scope === "community" && event.creator && (
-                    <div className="flex items-center gap-4 p-3">
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                        {event.creator?.picture ? (
-                          <img
-                            src={event.creator.picture}
-                            alt={`${event.creator?.name} ${event.creator?.surname}`}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Users className="h-6 w-6 text-primary" />
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm break-words inline-flex items-center gap-1 group-hover:underline">
+                        <span className="truncate">
+                          {event.community?.name}
+                        </span>
+                        {event.community?.verified && (
+                          <VerificationBadge className="ml-1" size={12} />
                         )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-base break-words">
-                          {`${event.creator?.name ?? ""} ${
-                            event.creator?.surname ?? ""
-                          }`.trim() || "Event Coordinator"}
-                        </p>
-                        <p className="text-sm text-muted-foreground break-words">
-                          Event Coordinator
-                        </p>
-                      </div>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Community
+                      </p>
                     </div>
-                  )}
-                </div>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                      <img
+                        src={event.creator?.picture}
+                        alt={`${event.creator?.name}'s profile`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm break-words">
+                        {`${event.creator?.name} ${event.creator?.surname}`}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Event Organizer
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {event.scope === "community" && event.creator && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                      {event.creator?.picture ? (
+                        <img
+                          src={event.creator.picture}
+                          alt={`${event.creator?.name} ${event.creator?.surname}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Users className="h-4 w-4 text-primary" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm break-words">
+                        {`${event.creator?.name ?? ""} ${
+                          event.creator?.surname ?? ""
+                        }`.trim() || "Event Coordinator"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Event Coordinator
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
