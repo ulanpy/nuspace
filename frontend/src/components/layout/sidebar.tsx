@@ -131,35 +131,46 @@ function SidebarNav({ onNavigate, collapsed = false }: SidebarNavProps) {
 
   return (
     <nav className="flex flex-col gap-1">
-      {NAV_ITEMS.map((item) => (
-        <Link
-          key={item.to}
-          href={item.to}
-          onClick={onNavigate}
-          title={collapsed ? item.label : undefined}
-          className={cn(
-            "flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200",
-            collapsed ? "px-3 py-2.5 overflow-hidden" : "px-3 py-2.5",
-            isActive(item.to)
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground",
-          )}
-        >
-          <span className="flex-shrink-0">{item.icon}</span>
-          {
+      {NAV_ITEMS.map((item) => {
+        const active = isActive(item.to);
+
+        return (
+          <Link
+            key={item.to}
+            href={item.to}
+            onClick={onNavigate}
+            title={collapsed ? item.label : undefined}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "relative flex min-h-11 items-center gap-3 overflow-hidden rounded-md px-3 py-2.5 text-sm font-semibold transition-[color,background-color,transform] duration-[var(--duration-fast)] ease-[var(--ease-campus-snap)] active:scale-[0.99]",
+              active
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            <span className="flex-shrink-0">{item.icon}</span>
             <span
               className={cn(
-                "whitespace-nowrap transition-all duration-300 ease-in-out",
+                "whitespace-nowrap transition-[width,opacity,transform] duration-[var(--duration-panel)] ease-[var(--ease-campus-snap)]",
                 collapsed
-                  ? "w-0 opacity-0 translate-x-[-10px]"
-                  : "w-auto opacity-100 translate-x-0",
+                  ? "w-0 -translate-x-2 opacity-0"
+                  : "w-auto translate-x-0 opacity-100",
               )}
             >
               {item.label}
             </span>
-          }
-        </Link>
-      ))}
+            {active && (
+              <span
+                aria-hidden
+                className={cn(
+                  "ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-[oklch(0.65_0.185_45)]",
+                  collapsed && "absolute right-1.5 top-1.5",
+                )}
+              />
+            )}
+          </Link>
+        );
+      })}
     </nav>
   );
 }
@@ -223,7 +234,7 @@ function SidebarUserFooter({ collapsed = false }: SidebarUserFooterProps) {
     */
 
   return (
-    <div className="border-t pt-4 mt-auto transition-all duration-300 gap-2">
+    <div className="mt-auto gap-2 border-t pt-4 transition-all duration-[var(--duration-panel)]">
       <div className="flex items-center gap-3 mb-3 overflow-hidden">
         <div className="shrink-0 flex items-center justify-center">
           {displayUser.picture ? (
@@ -347,7 +358,7 @@ export function Sidebar() {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden md:flex fixed left-0 top-0 h-screen border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 flex-col z-40 transition-all duration-300 ease-in-out",
+          "fixed left-0 top-0 z-40 hidden h-screen flex-col border-r bg-background md:flex transition-all duration-[var(--duration-panel)] ease-[var(--ease-campus-snap)]",
           sidebarWidth,
         )}
       >
@@ -379,7 +390,7 @@ export function Sidebar() {
         {/* Collapse toggle button */}
         <button
           onClick={toggleCollapsed}
-          className="absolute -right-3 top-1/2 z-50 hidden h-10 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background shadow-md transition-all hover:w-8 hover:bg-muted md:flex group"
+          className="group absolute -right-3 top-1/2 z-50 hidden h-11 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-[width,background-color,transform] duration-[var(--duration-fast)] ease-[var(--ease-campus-snap)] hover:w-8 hover:bg-muted active:scale-[0.98] md:flex"
           title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <div className="text-secondary-foreground/70 transition-transform duration-300 group-hover:scale-125 group-hover:text-foreground">
@@ -400,7 +411,7 @@ export function Sidebar() {
                 @media (min-width: 768px) {
                     .sidebar-margin {
                         margin-left: ${isCollapsed ? "4rem" : "16rem"};
-                        transition: margin-left 0.3s ease-in-out;
+                        transition: margin-left var(--duration-panel) var(--ease-campus-snap);
                     }
                 }
             `}</style>

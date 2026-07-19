@@ -625,7 +625,7 @@ function ContactSearchResults({
         <section
           key={service.id}
           aria-labelledby={`search-result-${service.id}`}
-          className="overflow-hidden rounded-2xl border border-border bg-background"
+          className="overflow-hidden rounded-lg border border-border bg-background"
         >
           <div className="flex items-center gap-3 px-4 py-4">
             <ServiceIcon service={service} />
@@ -737,7 +737,7 @@ export function ContactsInfoSection() {
 
         {isSearching ? (
           searchResults.length === 0 ? (
-            <div className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border px-6 py-10 text-center">
+            <div className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 px-6 py-10 text-center">
               <Search
                 className="h-7 w-7 text-muted-foreground"
                 aria-hidden="true"
@@ -771,7 +771,7 @@ export function ContactsInfoSection() {
                 </h3>
                 <Accordion
                   type="multiple"
-                  className="rounded-2xl border border-border bg-background"
+                  className="rounded-lg border border-border bg-background"
                 >
                   {services.map((service) => (
                     <AccordionItem
