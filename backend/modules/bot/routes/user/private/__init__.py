@@ -5,6 +5,7 @@ from aiogram.enums.chat_type import ChatType
 from backend.modules.bot.routes.user.private.messages.start import router as start
 from backend.modules.bot.routes.user.private.messages.start_deeplink import router as start_deeplink
 from backend.modules.bot.routes.user.private.messages.student_validator import router as student_validator
+from backend.modules.bot.routes.user.private.messages.post_event import router as post_event
 from backend.modules.bot.routes.user.private.callback.confirmation import router as confirmation
 
 
@@ -18,6 +19,7 @@ def setup_private_message_router() -> Router:
     router: Router = Router(name="Private message router")
     router.include_router(start_deeplink)
     router.include_router(start)
+    router.include_router(post_event)
     router.include_router(student_validator)
     return router
 

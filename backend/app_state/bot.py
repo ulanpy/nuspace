@@ -37,6 +37,9 @@ async def setup_bot(
         db_manager=app.state.db_manager,
         storage_client=app.state.storage_client,
         meilisearch_client=app.state.meilisearch_client,
+        broker=app.state.broker,
+        signing_credentials=getattr(app.state, "signing_credentials", None),
+        app_config=getattr(app.state, "config", config),
     )
 
     # Routers
@@ -45,8 +48,9 @@ async def setup_bot(
     try:
         start = BotCommand(command="start", description="start")
         course = BotCommand(command="course", description="Course grade statistics")
+        post = BotCommand(command="post", description="Publish replied post as campus event")
         await app.state.bot.set_my_commands(
-            commands=[start, course], scope=BotCommandScopeAllPrivateChats()
+            commands=[start, course, post], scope=BotCommandScopeAllPrivateChats()
         )
         await app.state.bot.set_my_commands(
             commands=[course], scope=BotCommandScopeAllGroupChats()
