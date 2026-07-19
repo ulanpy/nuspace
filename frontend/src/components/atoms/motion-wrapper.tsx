@@ -1,11 +1,15 @@
 "use client";
 import { motion, useAnimation } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { useEffect, ReactNode, useState } from "react";
+import { useEffect, type ReactNode, useState } from "react";
 
 const boxVariant = {
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
-  hidden: { opacity: 0, y: 20 }
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
+  },
+  hidden: { opacity: 0, y: 6 },
 };
 
 interface MotionWrapperProps {
@@ -21,9 +25,13 @@ const MotionWrapper = ({ children }: MotionWrapperProps) => {
       return;
     }
 
-    const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    const prefersReducedMotion =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
     const isMobileBrowser = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const isMiniApp = Boolean((window as any)?.Telegram?.WebApp);
+    const telegramWindow = window as Window & {
+      Telegram?: { WebApp?: unknown };
+    };
+    const isMiniApp = Boolean(telegramWindow.Telegram?.WebApp);
 
     setDisableAnimation(prefersReducedMotion || (isMobileBrowser && !isMiniApp));
   }, []);
@@ -66,7 +74,11 @@ const MotionWrapper = ({ children }: MotionWrapperProps) => {
       variants={boxVariant}
       initial={initialVariant}
       animate={animateVariant}
-      style={disableAnimation ? { opacity: 1, transform: "none" } : { willChange: "opacity, transform" }}
+      style={
+        disableAnimation
+          ? { opacity: 1, transform: "none" }
+          : { willChange: "opacity, transform" }
+      }
     >
       {children}
     </motion.div>

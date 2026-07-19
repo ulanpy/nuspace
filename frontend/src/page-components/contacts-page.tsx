@@ -8,10 +8,10 @@ export default function ContactsPage() {
     <MotionWrapper>
       <main className="container mx-auto max-w-5xl px-4 py-8 sm:py-10">
         <div className="mb-7 max-w-2xl">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Contacts & Essential Services
           </h1>
-          <p className="mt-2 leading-relaxed text-gray-600 dark:text-gray-400">
+          <p className="mt-2 max-w-[65ch] leading-relaxed text-muted-foreground">
             Save these contacts. In an emergency, call campus security or local services immediately.
           </p>
         </div>

@@ -17,11 +17,18 @@ import {
 } from "@/components/atoms/dropdown-menu";
 import { CommunitySelectionModal } from '@/features/communities/components/community-selection-modal';
 
-const renderEmptyEvents = (filterType: string, eventTypeFilter: string | null, selectedCommunity: Community | null) => () => (
-  <div className="flex flex-col items-center justify-center py-12 text-center">
-    <Calendar className="h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" />
-    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No events found</h3>
-    <p className="text-gray-500 dark:text-gray-400 mb-4">
+const renderEmptyEvents = (
+  filterType: string,
+  eventTypeFilter: string | null,
+  selectedCommunity: Community | null,
+  clearFilters: () => void,
+) => () => (
+  <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-6 py-12 text-center">
+    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <Calendar className="h-6 w-6" aria-hidden="true" />
+    </div>
+    <h3 className="mb-2 text-lg font-bold">No events match these filters</h3>
+    <p className="mb-5 max-w-[52ch] text-sm text-muted-foreground">
       {selectedCommunity && eventTypeFilter === "recruitment" && filterType === "upcoming" && `No upcoming recruitment events from ${selectedCommunity.name} at the moment.`}
       {selectedCommunity && eventTypeFilter === "recruitment" && filterType === "today" && `No recruitment events from ${selectedCommunity.name} scheduled for today.`}
       {selectedCommunity && eventTypeFilter === "recruitment" && filterType === "week" && `No recruitment events from ${selectedCommunity.name} scheduled for this week.`}
@@ -39,6 +46,11 @@ const renderEmptyEvents = (filterType: string, eventTypeFilter: string | null, s
       {!selectedCommunity && !eventTypeFilter && filterType === "week" && "No events scheduled for this week."}
       {!selectedCommunity && !eventTypeFilter && filterType === "month" && "No events scheduled for this month."}
     </p>
+    {(selectedCommunity || eventTypeFilter || filterType !== "upcoming") && (
+      <Button variant="outline" size="sm" onClick={clearFilters}>
+        Clear filters
+      </Button>
+    )}
   </div>
 );
 
@@ -66,6 +78,12 @@ export default function Events() {
     setSelectedCommunity(null);
   };
 
+  const clearFilters = () => {
+    setTimeFilter("upcoming");
+    setEventTypeFilter(null);
+    setSelectedCommunity(null);
+  };
+
   const renderEventCard = (event: Event) => (
     <EventCard
       {...event}
@@ -79,13 +97,13 @@ export default function Events() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Events</h1>
-              <p className="text-gray-600 dark:text-gray-400">Discover and join campus events happening around you</p>
+              <h1 className="text-3xl font-bold tracking-tight">Events</h1>
+              <p className="text-muted-foreground">Find what is happening across campus.</p>
             </div>
             <Button
               onClick={() => setIsCreateModalOpen(true)}
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2"
+              className="flex items-center gap-2 px-4"
             >
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Create Event</span>
@@ -105,7 +123,7 @@ export default function Events() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm justify-between bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
+                    className="h-10 flex-shrink-0 justify-between px-3 text-xs sm:px-4 sm:text-sm"
                   >
                     <span className="hidden sm:inline">{currentFilterLabel}</span>
                     <span className="sm:hidden">{timeFilter === "upcoming" ? "Upcoming" : timeFilter === "today" ? "Today" : timeFilter === "week" ? "Week" : timeFilter === "month" ? "Month" : "Upcoming"}</span>
@@ -113,20 +131,14 @@ export default function Events() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                  className="w-48 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                  className="w-48"
                   align="start"
                 >
                   {filterOptions.map((option) => (
                     <DropdownMenuItem
                       key={option.value}
                       onClick={() => setTimeFilter(option.value as TimeFilter)}
-                      className={`
-                        text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700
-                        ${timeFilter === option.value
-                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                          : ''
-                        }
-                      `}
+                      className={timeFilter === option.value ? "bg-primary/10 text-primary" : ""}
                     >
                       {option.label}
                     </DropdownMenuItem>
@@ -140,10 +152,10 @@ export default function Events() {
                 size="sm"
                 onClick={() => setIsCommunityModalOpen(true)}
                 className={`
-                  flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm gap-1 sm:gap-2
+                  h-10 flex-shrink-0 px-3 text-xs sm:px-4 sm:text-sm gap-1 sm:gap-2
                   ${selectedCommunity
-                    ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm'
-                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
+                    ? 'border-success bg-success text-success-foreground hover:bg-success/90'
+                    : ''
                   }
                 `}
               >
@@ -158,10 +170,10 @@ export default function Events() {
                 size="sm"
                 onClick={() => setEventTypeFilter(eventTypeFilter === "recruitment" ? null : "recruitment")}
                 className={`
-                  flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm gap-1 sm:gap-2
+                  h-10 flex-shrink-0 px-3 text-xs sm:px-4 sm:text-sm gap-1 sm:gap-2
                   ${eventTypeFilter === "recruitment"
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600 shadow-sm'
-                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
+                    ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90'
+                    : ''
                   }
                 `}
               >
@@ -176,24 +188,26 @@ export default function Events() {
             {(selectedCommunity || eventTypeFilter === "recruitment") && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {selectedCommunity && (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-full text-xs">
+                  <div className="flex items-center gap-1 rounded-full bg-success/15 px-2 py-1 text-xs text-success">
                     <Building2 className="h-3 w-3" />
                     <span className="max-w-24 truncate">{selectedCommunity.name}</span>
                     <button
                       onClick={handleCommunityRemove}
-                      className="ml-1 hover:text-green-600 dark:hover:text-green-300"
+                      className="ml-1 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label={`Remove ${selectedCommunity.name} filter`}
                     >
                       <X className="h-3 w-3" />
                     </button>
                   </div>
                 )}
                 {eventTypeFilter === "recruitment" && (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full text-xs">
+                  <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">
                     <Users className="h-3 w-3" />
                     <span>Recruiting</span>
                     <button
                       onClick={() => setEventTypeFilter(null)}
-                      className="ml-1 hover:text-blue-600 dark:hover:text-blue-300"
+                      className="ml-1 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label="Remove recruiting filter"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -215,7 +229,12 @@ export default function Events() {
               community_id: selectedCommunity?.id || undefined,
             }}
             renderItem={renderEventCard}
-            renderEmpty={renderEmptyEvents(timeFilter, eventTypeFilter, selectedCommunity)}
+            renderEmpty={renderEmptyEvents(
+              timeFilter,
+              eventTypeFilter,
+              selectedCommunity,
+              clearFilters,
+            )}
             showSearch={false}
             gridLayout={{
               mobile: 2,

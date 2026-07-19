@@ -242,9 +242,12 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
           </Button>
         </div>
       ) : registeredCourses.length === 0 ? (
-        <div className={cn("rounded-[18px] p-6 text-center text-sm text-muted-foreground", coursesSurface.cardLg)}>
-          <Calculator className="mx-auto mb-4 h-12 w-12 opacity-50" />
-          <p>No courses registered yet. Use Sync to import your schedule.</p>
+        <div className={cn("rounded-lg p-6 text-center text-sm text-muted-foreground", coursesSurface.cardLg)}>
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Calculator className="h-6 w-6" aria-hidden="true" />
+          </div>
+          <h2 className="text-lg font-bold text-foreground">Your course list is empty</h2>
+          <p className="mt-1">Sync your schedule to add registered courses.</p>
           <div className="mx-auto mt-6 max-w-md">
             <CoursesSyncToolbar
               viewModel={{ syncCourses, syncCoursesFromPdf, schedule }}
