@@ -1,191 +1,409 @@
-'use client'
+"use client";
 
-import { ArrowRight, Calendar, Users, Sparkles, Library, Shield, Phone } from 'lucide-react'
-import Link from '@/router/link'
-import { Button } from '@/components/atoms/button'
-import { useUser } from '@/hooks/use-user'
-import { FeatureCarousel } from '@/components/molecules/feature-carousel'
-import eventImg1 from '@/assets/images/event_pics/1.webp'
-import eventImg2 from '@/assets/images/event_pics/2.webp'
-import eventImg3 from '@/assets/images/event_pics/3.webp'
-import eventImg4 from '@/assets/images/event_pics/4.webp'
-import eventImg5 from '@/assets/images/event_pics/5.webp'
+import type { LucideIcon } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpenCheck,
+  Calendar,
+  Check,
+  Github,
+  GraduationCap,
+  Info,
+  LockKeyhole,
+  Search,
+  Shield,
+  Sparkles,
+  Users,
+} from "lucide-react";
+import Link from "@/router/link";
+import { Button } from "@/components/atoms/button";
+import { useUser } from "@/hooks/use-user";
+import { FeatureCarousel } from "@/components/molecules/feature-carousel";
+import { ROUTES } from "@/data/routes";
+import { cn } from "@/utils/utils";
+import eventImg1 from "@/assets/images/event_pics/1.webp";
+import eventImg2 from "@/assets/images/event_pics/2.webp";
+import eventImg3 from "@/assets/images/event_pics/3.webp";
+import eventImg4 from "@/assets/images/event_pics/4.webp";
+import eventImg5 from "@/assets/images/event_pics/5.webp";
 
-const eventImages = [eventImg1, eventImg2, eventImg3, eventImg4, eventImg5]
+const eventImages = [eventImg1, eventImg2, eventImg3, eventImg4, eventImg5];
+
+interface Feature {
+  title: string;
+  description: string;
+  link: string;
+  icon: LucideIcon;
+  className: string;
+  iconClassName: string;
+  stripClassName: string;
+  details?: string[];
+}
+
+const features: Feature[] = [
+  {
+    title: "Courses",
+    description:
+      "Track grades, compare course statistics, build a schedule, and understand your degree progress.",
+    link: ROUTES.COURSES,
+    icon: GraduationCap,
+    className: "md:col-span-2 lg:col-span-3",
+    iconClassName: "bg-primary/10 text-primary",
+    stripClassName: "bg-primary",
+    details: ["Live GPA", "Schedule builder", "Degree audit"],
+  },
+  {
+    title: "Events",
+    description:
+      "See what is happening across campus and find events worth showing up for.",
+    link: ROUTES.EVENTS.ROOT,
+    icon: Calendar,
+    className: "md:col-span-2 lg:col-span-3",
+    iconClassName:
+      "bg-warning/15 text-warning-foreground dark:text-warning",
+    stripClassName: "bg-warning",
+    details: ["Campus calendar", "Recruitment", "Calendar export"],
+  },
+  {
+    title: "Communities",
+    description:
+      "Find student groups and follow the communities you care about.",
+    link: ROUTES.COMMUNITIES.ROOT,
+    icon: Users,
+    className: "lg:col-span-2",
+    iconClassName: "bg-community/15 text-community",
+    stripClassName: "bg-community",
+    details: ["Student clubs", "Recruitment", "Community events"],
+  },
+  {
+    title: "Contacts",
+    description:
+      "Search essential university services, people, and emergency contacts.",
+    link: ROUTES.CONTACTS,
+    icon: Info,
+    className: "lg:col-span-2",
+    iconClassName: "bg-contact/15 text-contact",
+    stripClassName: "bg-contact",
+    details: ["Services", "Emergency contacts", "Search"],
+  },
+  {
+    title: "SG otinish",
+    description:
+      "Send a request or appeal directly to Student Government and follow its status.",
+    link: ROUTES.SGOTINISH.ROOT,
+    icon: Shield,
+    className: "lg:col-span-2",
+    iconClassName: "bg-success/15 text-success",
+    stripClassName: "bg-success",
+    details: ["Requests", "Appeals", "Status tracking"],
+  },
+];
+
+const onboardingSteps = [
+  {
+    icon: LockKeyhole,
+    title: "Sign in with your NU account",
+    description: "Use the same university identity you already know.",
+  },
+  {
+    icon: Search,
+    title: "Open the tool you need",
+    description:
+      "Courses, events, contacts, communities, and requests live in one place.",
+  },
+  {
+    icon: Check,
+    title: "Get the task done",
+    description:
+      "Keep your campus information organised without switching between services.",
+  },
+];
 
 export default function LandingPage() {
-  const { login } = useUser()
-
-  const features = [
-    {
-      icon: <Library className="w-12 h-12" />,
-      title: 'Courses',
-      description: 'Manage your classes, view detailed grade statistics, build your perfect schedule, and track your degree audit progress.',
-      link: '/courses',
-      gradient: 'from-green-500/20 to-green-600/10',
-      iconColor: 'text-green-500',
-    },
-    {
-      icon: <Calendar className="w-12 h-12" />,
-      title: 'Events',
-      description: 'Stay updated with campus events, club activities, and community gatherings. Never miss out on what\'s happening.',
-      link: '/events',
-      gradient: 'from-orange-500/20 to-orange-600/10',
-      iconColor: 'text-orange-500',
-    },
-    {
-      icon: <Users className="w-12 h-12" />,
-      title: 'Communities',
-      description: 'Connect with student organizations and find your community at NU. Join clubs that match your interests.',
-      link: '/communities',
-      gradient: 'from-blue-500/20 to-blue-600/10',
-      iconColor: 'text-blue-500',
-    },
-    {
-      icon: <Phone className="w-12 h-12" />,
-      title: 'Contacts',
-      description: 'Find important university contacts quickly when you need it most.',
-      link: '/contacts',
-      gradient: 'from-cyan-500/20 to-cyan-600/10',
-      iconColor: 'text-cyan-500',
-    },
-    {
-      icon: <Shield className="w-12 h-12" />,
-      title: 'Sgotinish',
-      description: 'Your direct line to Student Government. Submit requests, file appeals, and make your voice heard.',
-      link: '/sgotinish',
-      gradient: 'from-pink-500/20 to-pink-600/10',
-      iconColor: 'text-pink-500',
-    },
-  ]
+  const { login } = useUser();
 
   return (
-    <div className="flex flex-col">
-      <section className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
-        <div className="relative max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-            <Sparkles className="w-4 h-4" />
-            Built by students, for students
-          </div>
+    <div className="flex flex-col bg-background text-foreground">
+      <main>
+        <section className="relative overflow-hidden px-4 py-24 sm:py-32 lg:py-40">
+          <div className="relative mx-auto max-w-5xl text-center">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
+              Built by NU students, for NU students
+            </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-            Your all-in-one platform for{' '}
-            <span className="text-primary">university life</span>
-          </h1>
+            <h1 className="mx-auto mb-6 max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+              Your all-in-one platform for{" "}
+              <span className="text-primary">university life</span>
+            </h1>
 
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
-            Nuspace brings together everything you need at Nazarbayev University —
-            academics, events, communities, and more — in one beautiful, unified experience.
-          </p>
+            <p className="mx-auto mb-9 max-w-[65ch] text-lg leading-relaxed text-muted-foreground sm:text-xl">
+              Nuspace brings together everything you need at Nazarbayev
+              University: academics, events, communities, and more, in one
+              beautiful, unified experience.
+            </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              asChild
-              className="text-base px-8 py-6 gap-2"
-            >
-              <Link href="/announcements">
-                Get Started
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              asChild
-              className="text-base px-8 py-6"
-            >
-              <a
-                href="https://github.com/ulanpy/nuspace"
-                target="_blank"
-                rel="noopener noreferrer"
+            <div className="flex flex-col justify-center gap-3 sm:flex-row">
+              <Button size="lg" asChild className="gap-2 px-8 text-base">
+                <Link href={ROUTES.ANNOUNCEMENTS}>
+                  Open Nuspace
+                  <ArrowRight className="h-5 w-5" aria-hidden="true" />
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                asChild
+                className="px-8 text-base"
               >
-                View on GitHub
-              </a>
-            </Button>
-          </div>
-        </div>
-      </section>
+                <a
+                  href="https://github.com/ulanpy/nuspace"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View on GitHub
+                </a>
+              </Button>
+            </div>
 
-      {/* Features Sections using Alternating Layout */}
-      <div className="flex flex-col gap-0">
-        {features.map((feature, index) => (
-          <section
-            key={feature.title}
-            className={`py-24 px-4 ${index % 2 === 1 ? 'bg-background' : 'bg-muted/30'}`}
-          >
-            <div className="max-w-6xl mx-auto">
-              <div className={`flex flex-col md:flex-row items-center gap-12 ${index % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
-                {/* Content Side */}
-                <div className="flex-1 space-y-6 text-center md:text-left">
-                  <h2 className="text-3xl sm:text-4xl font-bold">
-                    {feature.title}
-                  </h2>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    {feature.description}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-2">
+                <Check className="h-4 w-4 text-success" aria-hidden="true" />
+                NU account sign-in
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Check className="h-4 w-4 text-success" aria-hidden="true" />
+                Web and Telegram access
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="features"
+          className="scroll-mt-8 px-4 py-20 sm:py-24"
+        >
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-10 max-w-2xl">
+              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-primary">
+                Campus toolkit
+              </p>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                The useful parts of NU, brought together
+              </h2>
+              <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+                Start with what you need now. Every tool uses the same
+                navigation and account.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+              {features.map((feature) => {
+                const Icon = feature.icon;
+
+                return (
+                  <Link
+                    key={feature.title}
+                    href={feature.link}
+                    className={cn(
+                      "group relative flex min-h-0 flex-col overflow-hidden rounded-lg border bg-card p-6 text-card-foreground transition-[border-color,box-shadow,transform] duration-[var(--duration-panel)] ease-[var(--ease-campus-snap)] hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:min-h-56",
+                      feature.className,
+                    )}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "pointer-events-none absolute inset-x-0 top-0 h-1",
+                        feature.stripClassName,
+                      )}
+                    />
+                    <div className="relative z-10 mb-8 flex items-start justify-between gap-4">
+                      <div
+                        className={cn(
+                          "flex h-11 w-11 items-center justify-center rounded-md",
+                          feature.iconClassName,
+                        )}
+                      >
+                        <Icon className="h-5 w-5" aria-hidden="true" />
+                      </div>
+                      <ArrowRight
+                        className="h-5 w-5 text-muted-foreground transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5 group-hover:text-primary"
+                        aria-hidden="true"
+                      />
+                    </div>
+                    <div className="relative z-10 mt-auto">
+                      <h3 className="text-xl font-bold">{feature.title}</h3>
+                      <p className="mt-2 max-w-[52ch] leading-relaxed text-muted-foreground">
+                        {feature.description}
+                      </p>
+                      {feature.details && (
+                        <ul
+                          className="mt-5 flex flex-wrap gap-2"
+                          aria-label={feature.title + " tools"}
+                        >
+                          {feature.details.map((detail) => (
+                            <li
+                              key={detail}
+                              className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground"
+                            >
+                              {detail}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 py-20 sm:py-28">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+            <div>
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-md bg-warning/15 text-warning-foreground dark:text-warning">
+                  <Calendar className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-warning-foreground dark:text-warning">
+                  Campus events
+                </p>
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Know what is happening before you miss it
+              </h2>
+              <p className="mt-4 max-w-[60ch] text-lg leading-relaxed text-muted-foreground">
+                Browse upcoming events, recruitment announcements, and community
+                activities in one campus calendar.
+              </p>
+              <ul className="mt-6 space-y-3 text-sm font-medium">
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-success" aria-hidden="true" />
+                  Filter by date, type, or community
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-success" aria-hidden="true" />
+                  Add events to your calendar
+                </li>
+                <li className="flex items-center gap-3">
+                  <Check className="h-4 w-4 text-success" aria-hidden="true" />
+                  Discover student-led activities
+                </li>
+              </ul>
+              <Button variant="outline" asChild className="mt-6 gap-2">
+                <Link href={ROUTES.EVENTS.ROOT}>
+                  Browse campus events
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </Button>
+            </div>
+
+            <div className="aspect-[4/3] overflow-hidden rounded-lg border bg-card shadow-sm sm:aspect-video">
+              <FeatureCarousel
+                images={eventImages}
+                alt="Students taking part in a Nazarbayev University campus event"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section className="px-4 py-20 sm:py-24">
+          <div className="mx-auto max-w-6xl">
+            <div className="grid gap-10 lg:grid-cols-[0.75fr_1.25fr] lg:items-start lg:gap-16">
+              <div>
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-md bg-primary/10 text-primary">
+                    <BookOpenCheck className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.08em] text-primary">
+                    Getting started
                   </p>
                 </div>
-
-                {/* Visual Side */}
-                <div className="flex-1 w-full">
-                  {feature.title === 'Events' ? (
-                    <div className={`aspect-video rounded-3xl overflow-hidden shadow-2xl border bg-gradient-to-br ${feature.gradient} p-1`}>
-                      <div className="w-full h-full rounded-[1.25rem] overflow-hidden bg-background relative">
-                        <FeatureCarousel images={eventImages} />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className={`aspect-video rounded-3xl overflow-hidden shadow-2xl border bg-gradient-to-br ${feature.gradient} flex items-center justify-center`}>
-                      <div className="bg-background/80 backdrop-blur-sm p-8 rounded-2xl shadow-sm">
-                        <div className={`${feature.iconColor} opacity-50`}>
-                          {feature.icon}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                  One NU login, all your campus tools
+                </h2>
+                <p className="mt-4 max-w-[58ch] text-lg leading-relaxed text-muted-foreground">
+                  Sign in once and move between the tools you need without
+                  learning another portal.
+                </p>
               </div>
+
+              <ol className="grid gap-6 sm:grid-cols-3">
+                {onboardingSteps.map((step, index) => {
+                  const Icon = step.icon;
+
+                  return (
+                    <li key={step.title} className="relative pt-1">
+                      <div className="mb-5 flex items-center gap-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                          {index + 1}
+                        </span>
+                        <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
+                      </div>
+                      <h3 className="font-bold">{step.title}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        {step.description}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ol>
             </div>
-          </section>
-        ))}
-      </div>
 
-      {/* CTA Section */}
-      <section id="login-cta" className="py-28 px-4 bg-muted/50">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4">
-            Ready to get started?
-          </h2>
-          <p className="text-muted-foreground mb-8">
-            Join thousands of NU students already using Nuspace.
-          </p>
-          <Button size="lg" onClick={login} className="gap-2">
-            Login with NU Account
-            <ArrowRight className="w-5 h-5" />
-          </Button>
-        </div>
-      </section>
+            <div className="mt-12 flex flex-col gap-4 border-t border-border pt-8 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-bold">Ready when you are.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Sign in with your NU account to open your workspace.
+                </p>
+              </div>
+              <Button size="lg" onClick={login} className="gap-2 sm:self-auto">
+                Sign in with NU account
+                <ArrowRight className="h-5 w-5" aria-hidden="true" />
+              </Button>
+            </div>
+          </div>
+        </section>
+      </main>
 
-      {/* Footer */}
-      <footer className="py-8 text-center text-sm text-muted-foreground border-t bg-muted/30">
-        <div className="max-w-4xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p>© {new Date().getFullYear()} Nuspace. All rights reserved.</p>
-          <div className="flex gap-6">
-            <Link href="/about" className="hover:text-foreground transition-colors">
+      <footer className="border-t bg-background px-4 py-8 text-sm text-muted-foreground">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-5 md:flex-row">
+          <p>© {new Date().getFullYear()} Nuspace. Built for the NU community.</p>
+          <nav
+            aria-label="Footer navigation"
+            className="flex flex-wrap justify-center gap-x-6 gap-y-3"
+          >
+            <Link
+              href={ROUTES.ABOUT}
+              className="transition-colors hover:text-foreground"
+            >
               About
             </Link>
-            <Link href="/privacy-policy" className="hover:text-foreground transition-colors">
+            <Link
+              href={ROUTES.PRIVACY_POLICY}
+              className="transition-colors hover:text-foreground"
+            >
               Privacy Policy
             </Link>
-            <Link href="/terms-of-service" className="hover:text-foreground transition-colors">
+            <Link
+              href={ROUTES.TERMS_OF_SERVICE}
+              className="transition-colors hover:text-foreground"
+            >
               Terms of Service
             </Link>
-            <a href="https://github.com/ulanpy/nuspace" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
-              GitHub
+            <a
+              href="https://github.com/ulanpy/nuspace"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
+            >
+              Open source
+              <Github className="h-3.5 w-3.5" aria-hidden="true" />
             </a>
-          </div>
+          </nav>
         </div>
       </footer>
     </div>
-  )
+  );
 }
