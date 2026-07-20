@@ -42,7 +42,6 @@ async def setup_bot(
         app_config=getattr(app.state, "config", config),
     )
 
-    # Routers
     include_routers(app.state.dp)
 
     try:
@@ -62,7 +61,6 @@ async def setup_bot(
     except Exception as e:
         print(f"Failed to set bot commands: {e}", flush=True)
 
-    # set webhook
     try:
         print(f"Setting webhook to {config.PUBLIC_WEBHOOK_URL}/api/webhook", flush=True)
         await app.state.bot.set_webhook(

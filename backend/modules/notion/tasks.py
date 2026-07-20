@@ -7,7 +7,7 @@ from faststream.rabbit.annotations import RabbitMessage
 from backend.core.configs.config import config
 from backend.modules.notion.client import NotionClient, NotionClientError
 from backend.modules.notion.schemas import NotionTicketMessage
-from backend.modules.notification.tasks import broker
+from backend.bootstrap.rbq import broker
 from backend.modules.notion.consts import (
     NOTION_SYNC_REDIS_PREFIX,
     NOTION_PAGE_ID_REDIS_PREFIX,

@@ -8,6 +8,7 @@
 
 - **Модули** — `backend/modules/<module_name>/` (например `sgotinish/tickets`, `sgotinish/delegation`, `auth`, `courses`).
 - **Общая инфраструктура** — `backend/core/`, `backend/common/` (БД, мидлвари, утилиты).
+- **Bootstrap** — `backend/bootstrap/` (startup клиентов: DB, Redis, GCS, Meilisearch, Rabbit). Доменная регистрация (индексы, bot, schedule sync) живёт в модулях и собирается в `lifespan.py`.
 - **Роутеры** подключаются в `backend/modules/__init__.py`.
 
 ---
@@ -42,6 +43,8 @@
 
 - `policy.py` — проверки прав (используются из сервиса).
 - `interfaces.py` — `typing.Protocol`: контракт (порт) на зависимость из другого модуля. Описывает **вызывающий** модуль (дублирование между модулями допустимо). Реализация подставляется в `dependencies.py`. Имена портов — **ролевые**, не совпадают с классами сервисов (см. правило 5).
+- `search_indexes.py` — декларация Meilisearch-индексов модуля: список `MEILISEARCH_INDEXES` (`MeilisearchIndexConfig` из `bootstrap/meilisearch.py`). Сборка и sync — в `lifespan.py`, не в модуле.
+- `startup.py` — lifecycle-хуки модуля на старте/остановке процесса (`setup_*` / `cleanup_*`): фоновые задачи, периодический sync, wiring адаптеров (например bot, registrar schedule). Вызываются из `lifespan.py` после поднятия инфра-клиентов в `bootstrap/`.
 
 Поток данных: **API → Service → Repository → DB**. Зависимости инжектятся в API (сервис, репо, пользователь), сервис получает репо и прочие зависимости через конструктор или аргументы.
 

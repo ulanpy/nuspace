@@ -1,13 +1,11 @@
 from aiogram import Bot
 from aiogram.exceptions import TelegramForbiddenError, TelegramRetryAfter
-from faststream.rabbit import RabbitBroker
 from faststream.rabbit.annotations import RabbitMessage
 
+from backend.bootstrap.rbq import broker
 from backend.core.configs.config import config
 from backend.modules.notification import schemas
 from backend.modules.notification.rate_limiter import TelegramRateLimiter
-
-broker = RabbitBroker(config.CELERY_BROKER_URL) # declared only once
 
 rate_limiter = TelegramRateLimiter(global_rate_per_sec=30, per_chat_min_interval=1.0)
 
