@@ -34,6 +34,8 @@ module.exports = {
           DEFAULT: withAlpha("--success"),
           foreground: withAlpha("--success-foreground"),
         },
+        community: withAlpha("--community"),
+        contact: withAlpha("--contact"),
         warning: {
           DEFAULT: withAlpha("--warning"),
           foreground: withAlpha("--warning-foreground"),
