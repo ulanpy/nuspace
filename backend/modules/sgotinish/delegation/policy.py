@@ -3,8 +3,8 @@ from datetime import datetime
 from fastapi import HTTPException
 from fastapi import status as http_status
 
-from backend.core.database.models.sgotinish import PermissionType, TicketAccess
-from backend.core.database.models.user import User, UserRole
+from backend.modules.sgotinish.models import PermissionType, TicketAccess
+from backend.modules.auth.models import User, UserRole
 from backend.modules.sgotinish.base import BasePolicy
 
 

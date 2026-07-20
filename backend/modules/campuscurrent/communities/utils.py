@@ -1,6 +1,6 @@
 from backend.common.schemas import ResourcePermissions
-from backend.core.database.models import Community
-from backend.core.database.models.user import UserRole
+from backend.modules.campuscurrent.models import Community
+from backend.modules.auth.models import UserRole
 
 
 def get_community_permissions(

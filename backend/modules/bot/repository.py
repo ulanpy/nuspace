@@ -3,8 +3,8 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database.models.events import EventBotSubmission
-from backend.core.database.models.user import User
+from backend.modules.campuscurrent.models.events import EventBotSubmission
+from backend.modules.auth.models import User
 
 
 class EventBotSubmissionRepository:

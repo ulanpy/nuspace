@@ -7,8 +7,8 @@ from zoneinfo import ZoneInfo
 
 from backend.common.schemas import Infra
 from backend.common.utils import meilisearch, response_builder
-from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.grade_report import (
+from backend.modules.media.models import EntityType
+from backend.modules.courses.models.grade_report import (
     Course,
     CourseItem,
     StudentCourse,

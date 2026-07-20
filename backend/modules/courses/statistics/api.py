@@ -20,7 +20,7 @@ async def list_grade_terms(
 
     from sqlalchemy import select
 
-    from backend.core.database.models.grade_report import GradeReport
+    from backend.modules.courses.models.grade_report import GradeReport
 
     stmt = select(GradeReport.term).distinct().order_by(GradeReport.term.desc())
     result = await db_session.execute(stmt)

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import get_db_session
 from backend.modules.auth.dependencies import get_creds_or_401
-from backend.core.database.models.notification import Notification
+from backend.modules.notification.models import Notification
 from backend.modules.notification import schemas
 
 router = APIRouter(tags=["Notifications"])

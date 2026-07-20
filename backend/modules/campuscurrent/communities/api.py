@@ -11,7 +11,7 @@ from backend.modules.auth.dependencies import (
     get_creds_or_guest,
 )
 from backend.common.schemas import Infra
-from backend.core.database.models.community import (
+from backend.modules.campuscurrent.models.community import (
     CommunityCategory,
     CommunityPhotoAlbumType,
     CommunityRecruitmentStatus,

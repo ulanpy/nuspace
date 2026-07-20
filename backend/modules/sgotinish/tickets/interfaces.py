@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from backend.core.database.models.sgotinish import Message, Ticket
-from backend.core.database.models.user import User
+from backend.modules.sgotinish.models import Message, Ticket
+from backend.modules.auth.models import User
 from backend.modules.sgotinish.tickets import schemas
 
 

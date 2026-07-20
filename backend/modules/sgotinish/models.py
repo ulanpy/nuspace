@@ -5,7 +5,7 @@ from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, String, Text, B
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from backend.core.database.models.base import Base
 
 
 class TicketStatus(PyEnum):
@@ -132,11 +132,9 @@ class Department(Base):
     name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     is_special: Mapped[bool] = mapped_column(default=False, nullable=False)
 
-    users = relationship("User", back_populates="department")
-
 
 class PermissionType(PyEnum):
-    VIEW = "view" 
+    VIEW = "view"
     ASSIGN = "assign"
     DELEGATE = "delegate"
 

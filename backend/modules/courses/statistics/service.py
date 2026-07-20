@@ -5,8 +5,8 @@ from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.utils import meilisearch, response_builder
-from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.grade_report import GradeReport
+from backend.modules.media.models import EntityType
+from backend.modules.courses.models.grade_report import GradeReport
 from backend.modules.courses.statistics import schemas
 
 

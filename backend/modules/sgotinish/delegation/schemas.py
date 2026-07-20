@@ -3,8 +3,8 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.common.schemas import ShortUserResponse
-from backend.core.database.models.sgotinish import PermissionType
-from backend.core.database.models.user import UserRole
+from backend.modules.sgotinish.models import PermissionType
+from backend.modules.auth.models import UserRole
 
 
 class DepartmentResponseDTO(BaseModel):

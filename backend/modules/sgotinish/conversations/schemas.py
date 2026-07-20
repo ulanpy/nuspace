@@ -2,7 +2,7 @@ from datetime import datetime
 
 from typing import Optional
 from pydantic import BaseModel, Field, ConfigDict, field_validator
-from backend.core.database.models.sgotinish import ConversationStatus
+from backend.modules.sgotinish.models import ConversationStatus
 from backend.common.schemas import ShortUserResponse, ResourcePermissions
 from typing import List
 

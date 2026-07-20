@@ -2,8 +2,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.core.database.models import Media, User
-from backend.core.database.models.common_enums import EntityType
+from backend.modules.media.models import Media
+
+from backend.modules.auth.models import User
+from backend.modules.media.models import EntityType
 
 
 async def get_telegram_id(session: AsyncSession, sub: str) -> int | None:

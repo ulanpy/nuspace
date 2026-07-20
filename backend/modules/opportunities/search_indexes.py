@@ -1,5 +1,5 @@
 from backend.bootstrap.meilisearch import MeilisearchIndexConfig
-from backend.core.database.models import Opportunity
+from backend.modules.opportunities.models import Opportunity
 
 MEILISEARCH_INDEXES = [
     MeilisearchIndexConfig(

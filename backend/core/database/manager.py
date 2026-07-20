@@ -1,9 +1,11 @@
 from typing import AsyncGenerator
 
 from backend.core.configs.config import config
-from backend.core.database.models import Base
-# from backend.core.database.models import Base
+from backend.core.database.model_registry import import_models
+from backend.core.database.models.base import Base
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+import_models()
 
 
 class AsyncDatabaseManager:

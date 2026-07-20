@@ -1,9 +1,27 @@
 from datetime import datetime
+from enum import Enum as PyEnum
 
-from backend.core.database.models.base import Base
-from backend.core.database.models.common_enums import EntityType, NotificationType
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
+
+from backend.core.database.models.base import Base
+from backend.modules.media.models import EntityType
+
+
+class NotificationType(str, PyEnum):
+    """Enum representing different types of notifications.
+
+    ⚠️  IMPORTANT: When adding new values to this enum:
+    1. Add the new value to this Python enum class
+    2. Create a new Alembic migration manually (alembic revision -m "add_new_notification_type")
+    3. In the migration's upgrade() function, add:
+       op.execute("ALTER TYPE notification_type ADD VALUE 'your_new_value'")
+    4. Run the migration: alembic upgrade head
+
+    Alembic cannot auto-detect enum value changes, so manual migration is required!
+    """
+
+    info = "info"
 
 
 class Notification(Base):

@@ -1,7 +1,7 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database.models import Opportunity, OpportunityEligibility, OpportunityMajorMap
+from backend.modules.opportunities.models import Opportunity, OpportunityEligibility, OpportunityMajorMap
 from backend.common.utils import response_builder
 from backend.modules.opportunities import schemas
 from backend.modules.opportunities.repository import OpportunitiesRepository

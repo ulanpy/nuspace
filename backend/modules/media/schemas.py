@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
-from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.media import MediaFormat
+from backend.modules.media.models import EntityType
+from backend.modules.media.models import MediaFormat
 
 
 class MediaResponse(BaseModel):

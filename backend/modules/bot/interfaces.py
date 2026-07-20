@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Protocol
 
-from backend.core.database.models.events import EventType, RegistrationPolicy
+from backend.modules.campuscurrent.models.events import EventType, RegistrationPolicy
 from backend.modules.bot.schemas.event_post import ExtractedEventDraft
 
 

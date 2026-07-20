@@ -1,5 +1,5 @@
 from backend.common.schemas import ResourcePermissions
-from backend.core.database.models.sgotinish import (
+from backend.modules.sgotinish.models import (
     Conversation,
     Message,
     PermissionType,

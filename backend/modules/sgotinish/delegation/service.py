@@ -3,14 +3,14 @@ from datetime import datetime
 from typing import List
 
 from backend.common.schemas import ShortUserResponse
-from backend.core.database.models.sgotinish import (
+from backend.modules.sgotinish.models import (
     Conversation,
     Department,
     PermissionType,
     Ticket,
     TicketAccess,
 )
-from backend.core.database.models.user import User, UserRole
+from backend.modules.auth.models import User, UserRole
 from backend.modules.sgotinish.delegation.policy import DelegationPolicy
 from backend.modules.sgotinish.delegation import repository, schemas
 from backend.modules.sgotinish.delegation.interfaces import DelegationAccessNotifier, DelegationNotionSync

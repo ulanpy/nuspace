@@ -4,9 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.modules.notification.utils import send
 from backend.common.schemas import Infra
-from backend.core.database.models.common_enums import EntityType, NotificationType
-from backend.core.database.models.sgotinish import Ticket, TicketAccess, Message
-from backend.core.database.models.user import User
+from backend.modules.media.models import EntityType
+from backend.modules.notification.models import NotificationType
+from backend.modules.sgotinish.models import Ticket, TicketAccess, Message
+from backend.modules.auth.models import User
 from backend.modules.notification.schemas import RequestNotiification
 
 

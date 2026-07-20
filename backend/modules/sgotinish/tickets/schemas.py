@@ -1,11 +1,11 @@
 from datetime import datetime
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
-from backend.core.database.models.sgotinish import TicketCategory, TicketStatus
+from backend.modules.sgotinish.models import TicketCategory, TicketStatus
 from typing import Optional, List
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
 from backend.modules.sgotinish.conversations.schemas import ConversationResponseDTO
-from backend.core.database.models.sgotinish import PermissionType
+from backend.modules.sgotinish.models import PermissionType
 
 
 class BaseTicket(BaseModel):  # ORM to Pydantic

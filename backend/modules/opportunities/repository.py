@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from httpx import AsyncClient
 
 from backend.common.utils import meilisearch
-from backend.core.database.models import Opportunity, OpportunityEligibility, OpportunityMajorMap, EducationLevel
+from backend.modules.opportunities.models import Opportunity, OpportunityEligibility, OpportunityMajorMap, EducationLevel
 from backend.modules.opportunities import schemas
 
 

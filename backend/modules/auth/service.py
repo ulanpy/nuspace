@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import config
-from backend.core.database.models.user import UserRole, UserScope
+from backend.modules.auth.models import UserRole, UserScope
 from backend.modules.auth.app_token import AppTokenManager
 from backend.modules.auth.cookies import (
     set_app_token_cookie,

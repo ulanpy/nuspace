@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.schemas import Infra, ShortUserResponse
 from backend.common.utils import response_builder
-from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.community import (
+from backend.modules.media.models import EntityType
+from backend.modules.campuscurrent.models.community import (
     Community,
     CommunityAchievements,
     CommunityCategory,
@@ -16,7 +16,7 @@ from backend.core.database.models.community import (
     CommunityRecruitmentStatus,
     CommunityType,
 )
-from backend.core.database.models.media import Media, MediaFormat
+from backend.modules.media.models import Media, MediaFormat
 from backend.modules.campuscurrent.communities import schemas
 from backend.modules.campuscurrent.communities.interfaces import MediaAttachmentResolver
 from backend.modules.campuscurrent.communities.policy import CommunityPolicy

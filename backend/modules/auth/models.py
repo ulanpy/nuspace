@@ -5,7 +5,7 @@ from sqlalchemy import BigInteger, Column, DateTime, ForeignKey
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from backend.core.database.models.base import Base
 
 
 class UserRole(PyEnum):
@@ -16,12 +16,10 @@ class UserRole(PyEnum):
     soldier = "soldier"
     community_admin = "community_admin"
 
+
 class UserScope(PyEnum):
     allowed = "allowed"
     banned = "banned"
-
-
-# Mapped[dtype] defaults parameters: nullable=False, unique=True, primary_key=False
 
 
 class User(Base):
@@ -39,19 +37,14 @@ class User(Base):
     sg_assigned_at = Column(DateTime, nullable=True, index=True)
     telegram_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=True, index=True)
 
-    # Relationships for SGotinish hierarchy
-    department_id: Mapped[int] = mapped_column(ForeignKey("departments.id", ondelete="SET NULL"), nullable=True)
+    # SG hierarchy column lives on users; one-way load only (no reverse graph on User).
+    department_id: Mapped[int] = mapped_column(
+        ForeignKey("departments.id", ondelete="SET NULL"), nullable=True
+    )
     sg_assigned_by_sub: Mapped[str | None] = mapped_column(
         ForeignKey("users.sub", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
 
-    department = relationship("Department", back_populates="users", foreign_keys=[department_id])
-
-    communities_led = relationship("Community", back_populates="head_user")
-    events = relationship("Event", back_populates="creator")
-    communities = relationship("CommunityMember", back_populates="user")
-    templates = relationship("CourseTemplate", back_populates="student")
-    student_schedules = relationship("StudentSchedule", back_populates="student", cascade="all, delete-orphan")
-
+    department = relationship("Department", foreign_keys=[department_id])

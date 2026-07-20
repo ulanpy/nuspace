@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query, Request
 from httpx import HTTPError
 
 from backend.common.utils import meilisearch
-from backend.core.database.models.common_enums import EntityType
+from backend.modules.media.models import EntityType
 
 router = APIRouter(tags=["Search Routes"])
 

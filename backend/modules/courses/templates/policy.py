@@ -1,8 +1,8 @@
 from fastapi import HTTPException, status
 
 from backend.common.schemas import ResourcePermissions
-from backend.core.database.models.grade_report import CourseTemplate, StudentCourse
-from backend.core.database.models.user import UserRole
+from backend.modules.courses.models.grade_report import CourseTemplate, StudentCourse
+from backend.modules.auth.models import UserRole
 from backend.modules.courses.templates import schemas
 
 

@@ -1,13 +1,13 @@
 from typing import Sequence
 
-from backend.core.database.models.sgotinish import (
+from backend.modules.sgotinish.models import (
     Conversation,
     Department,
     PermissionType,
     Ticket,
     TicketAccess,
 )
-from backend.core.database.models.user import User, UserRole
+from backend.modules.auth.models import User, UserRole
 from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload

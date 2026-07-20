@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from backend.common.schemas import Infra
-from backend.core.database.models.community import (
+from backend.modules.campuscurrent.models.community import (
     CommunityCategory,
     CommunityPhotoAlbumType,
     CommunityRecruitmentStatus,

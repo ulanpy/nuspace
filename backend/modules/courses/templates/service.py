@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.common.utils import response_builder
-from backend.core.database.models.grade_report import CourseItem, CourseTemplate, StudentCourse, TemplateItem
+from backend.modules.courses.models.grade_report import CourseItem, CourseTemplate, StudentCourse, TemplateItem
 from backend.modules.courses.courses import schemas as student_course_schemas
 from backend.modules.courses.templates import schemas
 from backend.modules.courses.templates.policy import TemplatePolicy

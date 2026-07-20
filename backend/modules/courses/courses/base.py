@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from fastapi import status as http_status
 
-from backend.core.database.models.user import UserRole
+from backend.modules.auth.models import UserRole
 
 
 class BasePolicy:

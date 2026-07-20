@@ -6,13 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
 from backend.modules.media.schemas import MediaResponse
-from backend.core.database.models import (
-    EventScope,
-    EventStatus,
-    EventTag,
-    EventType,
-    RegistrationPolicy,
-)
+from backend.modules.campuscurrent.models import EventScope, EventStatus, EventTag, EventType, RegistrationPolicy
 from backend.modules.campuscurrent.communities.schemas import ShortCommunityResponse
 
 

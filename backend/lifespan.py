@@ -9,7 +9,7 @@ from backend.bootstrap.meilisearch import cleanup_meilisearch, setup_meilisearch
 from backend.bootstrap.rbq import cleanup_rbq, setup_rbq
 from backend.bootstrap.redis import cleanup_redis, setup_redis
 from backend.core.configs.config import Config
-from backend.modules import routers
+from backend.modules.routers import routers
 from backend.modules.auth.app_token import AppTokenManager
 from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.bot.startup import cleanup_bot, setup_bot

@@ -3,7 +3,7 @@ import logging
 import re
 from typing import Optional
 
-from backend.core.database.models.community import CommunityRecruitmentStatus
+from backend.modules.campuscurrent.models.community import CommunityRecruitmentStatus
 from backend.modules.announcements import schemas
 from backend.modules.announcements.interfaces import CommunityCatalog, EventCatalog
 from backend.modules.campuscurrent.events import schemas as event_schemas

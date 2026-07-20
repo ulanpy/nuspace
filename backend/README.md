@@ -6,11 +6,24 @@
 
 ## Где что лежит
 
-- **Модули** — `backend/modules/<module_name>/` (например `sgotinish/tickets`, `sgotinish/delegation`, `auth`, `courses`).
-- **Общая инфраструктура** — `backend/core/`, `backend/common/` (БД, мидлвари, утилиты).
+- **Модули** — `backend/modules/<module_name>/` (например `sgotinish/tickets`, `sgotinish/delegation`, `auth`, `courses`). ORM-модели модуля живут в `models.py` / `models/` рядом с доменом (не в `core`).
+- **Общая инфраструктура** — `backend/core/` (`Base`, `AsyncDatabaseManager`, `model_registry`), `backend/common/` (deps, DTO, утилиты).
 - **Bootstrap** — `backend/bootstrap/` (startup клиентов: DB, Redis, GCS, Meilisearch, Rabbit). Доменная регистрация (индексы, bot, schedule sync) живёт в модулях и собирается в `lifespan.py`.
-- **Роутеры** подключаются в `backend/modules/__init__.py`.
+- **Роутеры** подключаются в `backend/modules/routers.py` (из `lifespan.py`).
 
+Канонические пути моделей:
+
+| Владелец | Путь |
+|----------|------|
+| Identity | `modules/auth/models.py` (`User`, роли) |
+| Media | `modules/media/models.py` (`Media`, `EntityType`) |
+| Notification | `modules/notification/models.py` |
+| Campus Current | `modules/campuscurrent/models/` |
+| Courses | `modules/courses/models/` |
+| SGotinish | `modules/sgotinish/models.py` |
+| Opportunities | `modules/opportunities/models.py` |
+
+В `core/database/models/` только `Base`. Alembic и DB manager вызывают `import_models()` из `core/database/model_registry.py`, чтобы зарегистрировать все таблицы на `Base.metadata`.
 ---
 
 ## Модуль = bounded context
@@ -23,7 +36,7 @@
 - **Схемами запросов/ответов** (DTO)
 - **Зависимостями** (инжект сессии, пользователя, репо, сервиса)
 
-Модули не лезут в репозитории и сервисы друг друга напрямую. Кросс-модульные вызовы — через `interfaces.py` (ролевые `typing.Protocol`) в **вызывающем** модуле и DI реализации в `dependencies.py`. Общие вещи (модели БД, общие DTO) живут в `core`/`common` или импортируются явно по необходимости.
+Модули не лезут в репозитории и сервисы друг друга напрямую. Кросс-модульные вызовы — через `interfaces.py` (ролевые `typing.Protocol`) в **вызывающем** модуле и DI реализации в `dependencies.py`. Общие DTO — в `common`. ORM-модели — в своём модуле (`models.py` / `models/`); чужие модели другим модулям не импортировать (только через порт).
 
 ---
 
@@ -36,6 +49,7 @@
 | **API**        | `api.py`       | Роутер FastAPI, валидация входа (тело/query), вызов сервиса, возврат ответа. Никакой бизнес-логики и SQL. |
 | **Сервис**     | `service.py`   | Сценарии использования, проверки прав (policy), оркестрация репозиториев и внешних вызовов. Не знает про HTTP. |
 | **Репозиторий**| `repository.py`| Работа с БД: выборки, вставки, обновления. Только SQLAlchemy 2.0, без кастомных QueryBuilder. |
+| **Модели**     | `models.py` / `models/` | SQLAlchemy ORM сущности модуля. Наследуют `Base` из `core.database.models.base`. После добавления — зарегистрировать импорт в `core/database/model_registry.py`. |
 | **Схемы**      | `schemas.py`   | Pydantic-модели: DTO создания/обновления, ответы, фильтры. |
 | **Зависимости**| `dependencies.py` | FastAPI `Depends`: получение сессии, текущего пользователя, инстансов репо/сервиса. |
 
@@ -97,11 +111,12 @@
    - `api.py` — роутер и эндпоинты;
    - `service.py` — сценарии;
    - `repository.py` — запросы к БД;
+   - `models.py` — ORM (при своих таблицах); добавить импорт в `core/database/model_registry.py`;
    - `schemas.py` — DTO;
    - `dependencies.py` — `Depends` для сессии, пользователя, репо, сервиса;
    - `interfaces.py` — при необходимости: `Protocol` для зависимостей из других модулей.
 3. В `api.py` использовать зависимости для инжекта сервиса/репо, в хендлерах вызывать только методы сервиса.
-4. Подключить роутер в `backend/modules/__init__.py` в список `routers`.
+4. Подключить роутер в `backend/modules/routers.py` в список `routers`.
 
 Пример минимального потока: запрос → `api` (Depends) → `service.method()` → `repository` → БД → ответ из сервиса в DTO в `api`.
 

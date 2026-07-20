@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database.models.events import EventBotSubmission, EventBotSubmissionStatus, RegistrationPolicy
-from backend.core.database.models.user import UserScope
+from backend.modules.campuscurrent.models.events import EventBotSubmission, EventBotSubmissionStatus, RegistrationPolicy
+from backend.modules.auth.models import UserScope
 from backend.modules.bot.interfaces import CampusEventPublisher, EventDraftExtractor
 from backend.modules.bot.repository import EventBotSubmissionRepository
 from backend.modules.bot.schemas.event_post import (

@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 
 from backend.common.schemas import ResourcePermissions
-from backend.core.database.models import Event, EventScope, EventStatus
+from backend.modules.campuscurrent.models import Event, EventScope, EventStatus
 from backend.modules.campuscurrent.base import BasePolicy
 from backend.modules.campuscurrent.events.schemas import EventCreateRequest, EventUpdateRequest
 

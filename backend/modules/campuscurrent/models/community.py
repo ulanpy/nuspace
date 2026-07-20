@@ -5,7 +5,7 @@ from sqlalchemy import BigInteger, Column, Date, DateTime, ForeignKey
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from backend.core.database.models.base import Base
 
 
 class CommunityCategory(PyEnum):
@@ -59,7 +59,7 @@ class Community(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    head_user = relationship("User", back_populates="communities_led")
+    head_user = relationship("User")
     events = relationship("Event", back_populates="community", cascade="all, delete-orphan")
     achievements = relationship(
         "CommunityAchievements",
@@ -86,7 +86,7 @@ class CommunityMember(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     community = relationship("Community")
-    user = relationship("User", back_populates="communities")
+    user = relationship("User")
     
     
 class CommunityAchievements(Base):

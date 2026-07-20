@@ -1,5 +1,5 @@
 from backend.bootstrap.meilisearch import MeilisearchIndexConfig
-from backend.core.database.models import Community, Event
+from backend.modules.campuscurrent.models import Community, Event
 
 MEILISEARCH_INDEXES = [
     MeilisearchIndexConfig(

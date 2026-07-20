@@ -5,8 +5,28 @@ from sqlalchemy import BigInteger, Column, DateTime, Integer
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .base import Base
-from .common_enums import EntityType
+from backend.core.database.models.base import Base
+
+
+class EntityType(str, PyEnum):
+    """Enum representing different types of entities (db table names).
+
+    ⚠️  IMPORTANT: When adding new values to this enum:
+    1. Add the new value to this Python enum class
+    2. Create a new Alembic migration manually (alembic revision -m "add_new_entity_type")
+    3. In the migration's upgrade() function, add:
+       op.execute("ALTER TYPE entity_type ADD VALUE 'your_new_value'")
+    4. Run the migration: alembic upgrade head
+
+    Alembic cannot auto-detect enum value changes, so manual migration is required!
+    """
+
+    community_events = "community_events"
+    communities = "communities"
+    grade_reports = "grade_reports"
+    courses = "courses"
+    tickets = "tickets"
+    messages = "messages"
 
 
 class MediaFormat(PyEnum):
@@ -15,7 +35,6 @@ class MediaFormat(PyEnum):
     profile = "profile"
 
 
-# Mapped[dtype] defaults parameters: nullable=False, unique=True, primary_key=False
 class Media(Base):
     __tablename__ = "media"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)

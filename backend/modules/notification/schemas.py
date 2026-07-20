@@ -2,7 +2,9 @@ import datetime
 
 from pydantic import BaseModel, field_validator
 
-from backend.core.database.models.common_enums import EntityType, NotificationType
+from backend.modules.media.models import EntityType
+
+from backend.modules.notification.models import NotificationType
 
 
 class RequestNotiification(BaseModel):

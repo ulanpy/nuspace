@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 from pydantic import BaseModel, EmailStr
 
-from backend.core.database.models.user import UserRole, UserScope
+from backend.modules.auth.models import UserRole, UserScope
 
 
 class UserSchema(BaseModel):

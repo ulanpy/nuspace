@@ -4,7 +4,7 @@ import base64
 import json
 from typing import Dict, List, Optional, Tuple
 
-from backend.core.database.models.degree_audit import DegreeAuditResult
+from backend.modules.courses.models.degree_audit import DegreeAuditResult
 from backend.modules.courses.degree_audit.degree_audit import (
     REQUIREMENTS_BASE,
     apply_transfer_credit_mappings,

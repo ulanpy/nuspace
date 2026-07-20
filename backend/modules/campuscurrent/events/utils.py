@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from backend.core.database.models import Event, EventScope, EventStatus, EventTag
+from backend.modules.campuscurrent.models import Event, EventScope, EventStatus, EventTag
 from backend.modules.campuscurrent.events import schemas
 
 

@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from backend.core.database.models.events import (
+from backend.modules.campuscurrent.models.events import (
     EventBotSubmissionStatus,
     EventType,
     RegistrationPolicy,

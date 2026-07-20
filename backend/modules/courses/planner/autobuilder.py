@@ -6,7 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-from backend.core.database.models.grade_report import (
+from backend.modules.courses.models.grade_report import (
     PlannerSchedule,
     PlannerScheduleCourse,
     PlannerScheduleSection,

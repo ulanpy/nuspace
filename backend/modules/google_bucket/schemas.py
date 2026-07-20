@@ -3,8 +3,8 @@ from typing import Any, Dict
 
 from pydantic import BaseModel, Field, HttpUrl, computed_field
 
-from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.media import MediaFormat
+from backend.modules.media.models import EntityType
+from backend.modules.media.models import MediaFormat
 
 
 class SignedUrlRequest(BaseModel):

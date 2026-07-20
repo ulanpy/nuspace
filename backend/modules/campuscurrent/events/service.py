@@ -6,9 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.schemas import Infra
 from backend.common.utils import response_builder
-from backend.core.database.models import Event
-from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.media import Media, MediaFormat
+from backend.modules.campuscurrent.models import Event
+from backend.modules.media.models import EntityType
+from backend.modules.media.models import Media, MediaFormat
 from backend.modules.campuscurrent.events import schemas, utils
 from backend.modules.campuscurrent.events.interfaces import MediaAttachmentResolver
 from backend.modules.campuscurrent.events.policy import EventPolicy

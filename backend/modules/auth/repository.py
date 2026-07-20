@@ -1,7 +1,7 @@
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database.models import User
+from backend.modules.auth.models import User
 from backend.modules.auth.schemas import UserSchema
 
 

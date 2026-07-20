@@ -1,11 +1,11 @@
 from fastapi import HTTPException, status as http_status
 
-from backend.core.database.models.sgotinish import (
+from backend.modules.sgotinish.models import (
     PermissionType,
     Ticket,
     TicketAccess,
 )
-from backend.core.database.models.user import User, UserRole
+from backend.modules.auth.models import User, UserRole
 from backend.modules.sgotinish.base import BasePolicy
 from backend.common.schemas import ResourcePermissions
 from backend.modules.sgotinish.tickets import schemas

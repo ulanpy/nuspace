@@ -15,7 +15,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB
 
-from .base import Base
+from backend.core.database.models.base import Base
 
 
 class GradeReport(Base):
@@ -102,7 +102,7 @@ class StudentSchedule(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    student = relationship("User", back_populates="student_schedules")
+    student = relationship("User")
 
 
 class StudentCourse(Base):
@@ -197,7 +197,7 @@ class CourseTemplate(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
-    student = relationship("User", back_populates="templates")
+    student = relationship("User")
 
 
 class TemplateItem(Base):

@@ -6,7 +6,7 @@ from collections import defaultdict
 
 from sqlalchemy.orm import DeclarativeMeta
 
-from backend.core.database.models.media import Media
+from backend.modules.media.models import Media
 from backend.modules.media.interfaces import ObjectStorage
 from backend.modules.media.repository import MediaRepository
 from backend.modules.media.schemas import MediaResponse, MediaUpsertData

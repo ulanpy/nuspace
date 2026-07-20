@@ -4,7 +4,7 @@ from typing import Callable
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from backend.core.database.models.community import (
+from backend.modules.campuscurrent.models.community import (
     CommunityCategory,
     CommunityRecruitmentStatus,
     CommunityType,

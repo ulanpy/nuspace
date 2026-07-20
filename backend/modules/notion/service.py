@@ -3,7 +3,7 @@ from __future__ import annotations
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.schemas import Infra
-from backend.core.database.models.sgotinish import Ticket
+from backend.modules.sgotinish.models import Ticket
 from backend.modules.notion import schemas, utils
 from backend.modules.notion.consts import (
     NOTION_SYNC_REDIS_PREFIX,

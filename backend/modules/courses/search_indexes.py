@@ -1,5 +1,5 @@
 from backend.bootstrap.meilisearch import MeilisearchIndexConfig
-from backend.core.database.models import Course, GradeReport
+from backend.modules.courses.models import Course, GradeReport
 
 MEILISEARCH_INDEXES = [
     MeilisearchIndexConfig(

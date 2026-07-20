@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database.models.media import Media
+from backend.modules.media.models import Media
 from backend.modules.media.schemas import MediaUpsertData
 
 

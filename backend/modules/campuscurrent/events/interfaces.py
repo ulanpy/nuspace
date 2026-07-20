@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol, Sequence, TypeVar
 
-from backend.core.database.models.media import Media
+from backend.modules.media.models import Media
 from backend.modules.media.schemas import MediaResponse
 
 T = TypeVar("T")

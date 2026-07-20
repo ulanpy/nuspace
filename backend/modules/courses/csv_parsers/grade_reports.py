@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from backend.core.database.manager import AsyncDatabaseManager
-from backend.core.database.models.grade_report import GradeReport
+from backend.modules.courses.models.grade_report import GradeReport
 
 logger = logging.getLogger(__name__)
 

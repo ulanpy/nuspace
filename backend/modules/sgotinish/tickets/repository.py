@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, List
 
-from backend.core.database.models.sgotinish import (
+from backend.modules.sgotinish.models import (
     Conversation,
     Message,
     MessageReadStatus,
@@ -8,7 +8,7 @@ from backend.core.database.models.sgotinish import (
     Ticket,
     TicketAccess,
 )
-from backend.core.database.models.user import User, UserRole
+from backend.modules.auth.models import User, UserRole
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload

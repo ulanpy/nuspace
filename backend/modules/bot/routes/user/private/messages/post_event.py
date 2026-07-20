@@ -3,7 +3,7 @@ from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from backend.core.database.models.events import EventBotSubmissionStatus
+from backend.modules.campuscurrent.models.events import EventBotSubmissionStatus
 from backend.modules.bot.keyboards.kb import kb_url
 from backend.modules.bot.services.event_post import EventPostService
 from backend.modules.bot.utils.telegram_event_payload import build_telegram_event_post_input

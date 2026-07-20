@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, Optional
 
-from backend.core.database.models.grade_report import (
+from backend.modules.courses.models.grade_report import (
     PlannerSchedule,
     PlannerScheduleCourse,
     PlannerScheduleSection,

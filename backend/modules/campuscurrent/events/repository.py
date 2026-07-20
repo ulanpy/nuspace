@@ -6,10 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.common.utils import meilisearch
-from backend.core.database.models import Event
-from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.media import Media, MediaFormat
-from backend.core.database.models.user import User
+from backend.modules.campuscurrent.models import Event
+from backend.modules.media.models import EntityType
+from backend.modules.media.models import Media, MediaFormat
+from backend.modules.auth.models import User
 from backend.modules.campuscurrent.events import schemas, utils
 
 

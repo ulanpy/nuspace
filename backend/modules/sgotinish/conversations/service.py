@@ -1,6 +1,6 @@
 from typing import List
 
-from backend.core.database.models.sgotinish import Conversation, Message, Ticket
+from backend.modules.sgotinish.models import Conversation, Message, Ticket
 from backend.common.schemas import ShortUserResponse
 from backend.common.utils import response_builder
 from backend.modules.sgotinish.conversations import schemas

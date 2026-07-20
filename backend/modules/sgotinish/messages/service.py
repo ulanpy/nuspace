@@ -2,17 +2,17 @@ from typing import List
 
 from fastapi import HTTPException, status
 from backend.common.utils import response_builder
-from backend.core.database.models.sgotinish import (
+from backend.modules.sgotinish.models import (
     Conversation,
     Message,
     MessageReadStatus,
     MessageReadStatusAnon,
     Ticket,
 )
-from backend.core.database.models.user import User, UserRole
+from backend.modules.auth.models import User, UserRole
 from backend.common.schemas import ShortUserResponse
 from backend.modules.sgotinish.delegation.schemas import SGUserResponse
-from backend.core.database.models.user import UserRole
+from backend.modules.auth.models import UserRole
 from backend.modules.sgotinish.messages import schemas
 from backend.modules.sgotinish.messages.policy import MessagePolicy
 from backend.modules.sgotinish.messages.interfaces import NewMessageNotifier, TicketAccessChecker

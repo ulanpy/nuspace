@@ -6,7 +6,7 @@ from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.core.database.models.grade_report import (
+from backend.modules.courses.models.grade_report import (
     Course,
     PlannerSchedule,
     PlannerScheduleCourse,

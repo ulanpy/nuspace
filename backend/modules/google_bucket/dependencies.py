@@ -6,8 +6,8 @@ from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2 import id_token
 
 from backend.core.configs.config import Config
-from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.media import MediaFormat
+from backend.modules.media.models import EntityType
+from backend.modules.media.models import MediaFormat
 from backend.modules.google_bucket import schemas
 from backend.modules.media.schemas import MediaUpsertData
 

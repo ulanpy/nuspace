@@ -1,4 +1,4 @@
-from backend.core.database.models.user import UserRole
+from backend.modules.auth.models import UserRole
 
 
 from fastapi import HTTPException

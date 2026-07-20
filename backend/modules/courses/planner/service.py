@@ -26,7 +26,7 @@ from backend.modules.courses.registrar.schemas import (
 from backend.modules.courses.planner.interfaces import CourseCatalogLookup
 from backend.modules.courses.registrar.service import CoursePriorityRecord
 
-from backend.core.database.models.grade_report import (
+from backend.modules.courses.models.grade_report import (
     PlannerSchedule,
     PlannerScheduleCourse,
     PlannerScheduleSection,

@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
 
-from .base import Base
+from backend.core.database.models.base import Base
 
 
 class DegreeAuditResult(Base):

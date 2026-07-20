@@ -2,7 +2,7 @@ from typing import Annotated
 
 from backend.common.dependencies import get_db_session
 from backend.core.configs.config import config
-from backend.core.database.models import UserRole
+from backend.modules.auth.models import UserRole
 from backend.modules.auth.app_token import AppTokenManager
 from backend.modules.auth.cookies import set_app_token_cookie, set_kc_auth_cookies
 from backend.modules.auth.keycloak_manager import KeyCloakManager

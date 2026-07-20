@@ -6,7 +6,7 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
+from backend.core.database.models.base import Base
 
 
 class RegistrationPolicy(PyEnum):
@@ -121,7 +121,7 @@ class Event(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    creator = relationship("User", back_populates="events")
+    creator = relationship("User")
     community = relationship("Community", back_populates="events")
     collaborators = relationship(
         "EventCollaborator", back_populates="event", cascade="all, delete-orphan"

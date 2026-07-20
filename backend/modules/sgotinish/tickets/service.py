@@ -3,13 +3,13 @@ from typing import List
 
 from backend.common.schemas import ShortUserResponse
 from backend.common.utils import response_builder
-from backend.core.database.models.sgotinish import (
+from backend.modules.sgotinish.models import (
     PermissionType,
     Ticket,
     TicketAccess,
     TicketCategory,
 )
-from backend.core.database.models.user import User, UserRole
+from backend.modules.auth.models import User, UserRole
 from backend.modules.sgotinish.tickets import repository, schemas
 from backend.modules.sgotinish.tickets.interfaces import (
     TicketConversationLookup,

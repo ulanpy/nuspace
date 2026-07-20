@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from backend.core.database.models.sgotinish import Message, Ticket, TicketAccess
+from backend.modules.sgotinish.models import Message, Ticket, TicketAccess
 
 
 class NewMessageNotifier(Protocol):

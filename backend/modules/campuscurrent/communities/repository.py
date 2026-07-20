@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.common.utils import meilisearch
-from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.community import (
+from backend.modules.media.models import EntityType
+from backend.modules.campuscurrent.models.community import (
     Community,
     CommunityAchievements,
     CommunityCategory,
@@ -16,8 +16,8 @@ from backend.core.database.models.community import (
     CommunityRecruitmentStatus,
     CommunityType,
 )
-from backend.core.database.models.media import Media, MediaFormat
-from backend.core.database.models.user import User
+from backend.modules.media.models import Media, MediaFormat
+from backend.modules.auth.models import User
 
 
 class CommunityRepository:

@@ -1,8 +1,8 @@
 from fastapi import HTTPException, status
 
 from backend.common.utils.enums import ResourceAction
-from backend.core.database.models.community import Community
-from backend.core.database.models.user import UserRole
+from backend.modules.campuscurrent.models.community import Community
+from backend.modules.auth.models import UserRole
 from backend.modules.campuscurrent.communities.schemas import CommunityCreateRequest
 
 

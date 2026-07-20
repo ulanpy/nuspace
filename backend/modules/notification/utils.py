@@ -1,7 +1,7 @@
 from typing import Union, List
 import datetime
 from backend.common.utils.response_builder import build_schema
-from backend.core.database.models.notification import Notification
+from backend.modules.notification.models import Notification
 from backend.modules.notification import schemas
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.common.schemas import Infra

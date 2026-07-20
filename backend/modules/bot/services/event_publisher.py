@@ -13,9 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.schemas import Infra
 from backend.core.configs.config import Config, config
-from backend.core.database.models.common_enums import EntityType
-from backend.core.database.models.events import EventType, RegistrationPolicy
-from backend.core.database.models.media import MediaFormat
+from backend.modules.media.models import EntityType
+from backend.modules.campuscurrent.models.events import EventType, RegistrationPolicy
+from backend.modules.media.models import MediaFormat
 from backend.modules.campuscurrent.events import schemas as event_schemas
 from backend.modules.campuscurrent.events.service import EventService
 from backend.modules.media.dependencies import build_media_service

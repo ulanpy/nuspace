@@ -8,7 +8,7 @@ from pydantic import BaseModel, EmailStr, Field, HttpUrl, field_serializer, fiel
 
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
 from backend.modules.media.schemas import MediaResponse
-from backend.core.database.models.community import (
+from backend.modules.campuscurrent.models.community import (
     CommunityCategory,
     CommunityPhotoAlbumType,
     CommunityRecruitmentStatus,
