@@ -196,25 +196,26 @@ export function SynchronizeCoursesControl({
 
   return (
     <>
-      <div className={`inline-flex items-center gap-1.5 ${compact ? "rounded-lg" : "rounded-full"}`}>
+      <div className="inline-flex items-center rounded-lg border border-input">
         <Button
           size="sm"
-          variant="outline"
+          variant="ghost"
           onClick={() => handleOpen("registrar")}
-          className={`font-medium gap-1.5 ${compact ? "h-8 rounded-lg px-3 text-[13px]" : "rounded-full px-4 gap-2"}`}
+          className="h-8 gap-1.5 rounded-none rounded-l-lg px-3 text-[13px] font-medium"
         >
-          <RefreshCcw className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
+          <RefreshCcw className="h-3.5 w-3.5" />
           Sync
         </Button>
+        <div className="h-5 w-px bg-border" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               size="sm"
-              variant="outline"
-              className={`${compact ? "h-8 rounded-lg px-2" : "rounded-full px-2"}`}
-              aria-label="More sync options"
+              variant="ghost"
+              className="h-8 rounded-none rounded-r-lg px-2"
+              aria-label="More sync options — sync from PDF"
             >
-              <ChevronDown className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
+              <ChevronDown className="h-3.5 w-3.5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="z-[11050]">
@@ -346,13 +347,13 @@ export function SynchronizeCoursesControl({
               <h4 className="text-sm font-semibold text-foreground">Synchronization summary</h4>
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline">Total: {syncResult.total_synced}</Badge>
-                <Badge variant="outline" className="border-emerald-500/50 text-emerald-600 dark:text-emerald-400">
+                <Badge variant="outline" className="border-success/50 text-success">
                   Added: {syncResult.added_count}
                 </Badge>
-                <Badge variant="outline" className="border-blue-500/50 text-blue-600 dark:text-blue-400">
+                <Badge variant="outline" className="border-primary/50 text-primary">
                   Kept: {syncResult.kept_count}
                 </Badge>
-                <Badge variant="outline" className="border-amber-500/50 text-amber-600 dark:text-amber-400">
+                <Badge variant="outline" className="border-warning/50 text-warning">
                   Removed: {syncResult.deleted_count}
                 </Badge>
               </div>

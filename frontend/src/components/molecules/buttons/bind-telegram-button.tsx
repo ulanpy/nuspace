@@ -208,7 +208,7 @@ export function BindTelegramButton() {
         <div className="mt-4 text-center text-xs text-muted-foreground">
           By continuing the registration process, you agree to our{" "}
           <button
-            className="underline text-blue-600 hover:text-blue-800"
+            className="underline text-primary hover:text-primary/80"
             onClick={() => setShowPrivacy(true)}
           >
             Privacy Policy

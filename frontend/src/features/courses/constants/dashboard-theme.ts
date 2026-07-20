@@ -1,9 +1,9 @@
 /** Tailwind classes aligned with app theme tokens (light + dark). */
 export const coursesSurface = {
   card: "border-border bg-card",
-  cardLg: "rounded-[18px] border border-border bg-card",
-  cardMd: "rounded-[16px] border border-border bg-card",
-  cardSm: "rounded-2xl border border-border bg-card",
+  cardLg: "rounded-lg border border-border bg-card",
+  cardMd: "rounded-md border border-border bg-card",
+  cardSm: "rounded-md border border-border bg-card",
   text: "text-foreground",
   textMuted: "text-muted-foreground",
   badge: "rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground",
@@ -12,7 +12,7 @@ export const coursesSurface = {
   input:
     "border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-ring",
   rowSelected: "border-border bg-muted/50",
-  iconPrimary: "bg-muted text-muted-foreground",
+  iconPrimary: "bg-primary/10 text-primary",
   tabActive:
     "data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:after:bg-foreground",
 } as const;
@@ -23,10 +23,18 @@ export const coursesChart = {
   orange: "#f97316",
   red: "#ef4444",
   purple: "#8b5cf6",
-  blue: "hsl(var(--foreground) / 0.35)",
-  muted: "hsl(var(--muted-foreground))",
+  blue: "oklch(var(--foreground) / 0.35)",
+  muted: "oklch(var(--muted-foreground))",
 } as const;
 
+/*
+ * departmentAccents: hardcoded rgba/hex values.
+ * Charts/SVG need raw color strings — can't consume CSS custom properties
+ * the same way Tailwind classes do. Ideally these derive from token values
+ * at runtime (getComputedStyle) or a single chart-safe palette file.
+ * The hash-based fallback means assignment is non-deterministic — not a
+ * designed mapping.
+ */
 const departmentAccents = [
   { bg: "rgba(139,92,246,0.15)", color: coursesChart.purple, label: "Chemistry" },
   { bg: "rgba(34,197,94,0.15)", color: coursesChart.green, label: "Math" },

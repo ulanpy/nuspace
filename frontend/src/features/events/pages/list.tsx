@@ -6,6 +6,8 @@ import { InfiniteList } from '@/components/virtual/infinite-list';
 import { Event, Community } from "@/features/shared/campus/types";
 import { useState } from "react";
 import { Calendar, ChevronDown, Users, Building2, X } from "lucide-react";
+import { PageContainer } from "@/components/atoms/page-container";
+import { PageHeader } from "@/components/atoms/page-header";
 import { EventModal } from '@/features/events/components/event-modal';
 import { TimeFilter } from '@/features/events/api/events-api';
 import { Button } from "@/components/atoms/button";
@@ -16,6 +18,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/atoms/dropdown-menu";
 import { CommunitySelectionModal } from '@/features/communities/components/community-selection-modal';
+import { TelegramConnectCard } from '@/features/sgotinish/components/telegram-connect-card';
+import { useUser } from '@/hooks/use-user';
 
 const renderEmptyEvents = (
   filterType: string,
@@ -62,6 +66,7 @@ const filterOptions = [
 ];
 
 export default function Events() {
+  const { user } = useUser();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("upcoming");
   const [eventTypeFilter, setEventTypeFilter] = useState<string | null>(null);
   const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
@@ -92,14 +97,9 @@ export default function Events() {
 
   return (
     <MotionWrapper>
-      <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Events</h1>
-              <p className="text-muted-foreground">Find what is happening across campus.</p>
-            </div>
+      <PageContainer padding="default">
+        <div className="flex items-center justify-between mb-6">
+          <PageHeader title="Events" subtitle="Find what is happening across campus." className="mb-0" />
             <Button
               onClick={() => setIsCreateModalOpen(true)}
               size="sm"
@@ -110,9 +110,18 @@ export default function Events() {
               <span className="sm:hidden">Create</span>
             </Button>
           </div>
-        </div>
 
         <main>
+          {user && !user.tg_id && (
+            <TelegramConnectCard
+              user={user}
+              className="mb-6"
+              title="Connect Telegram to publish instantly"
+              description="Create and publish campus events through nuspacebot without extra steps."
+              dismissKey="nuspace_events_tg_banner_dismissed"
+            />
+          )}
+
           {/* Optimized mobile filter section */}
           <div className="mb-6">
             {/* Primary filters - horizontal scrollable on mobile */}
@@ -259,7 +268,7 @@ export default function Events() {
           onClear={handleCommunityRemove}
           selectedCommunityId={selectedCommunity?.id}
         />
-      </div>
+      </PageContainer>
     </MotionWrapper>
   );
 }

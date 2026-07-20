@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TicketCard } from './ticket-card';
 import { Button } from "@/components/atoms/button";
+import { PageContainer } from "@/components/atoms/page-container";
+import { PageHeader } from "@/components/atoms/page-header";
 import { ChevronDown, Filter, Folder, Search } from "lucide-react";
 import { useRouter } from "@/router/navigation";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
@@ -166,18 +168,12 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
 
   return (
     <MotionWrapper>
-      <div className="container mx-auto px-4 py-8">
+      <PageContainer padding="default">
 
-        {/* Page Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">My Appeals</h1>
-              <p className="text-gray-600 dark:text-gray-400">Address your concerns directly to the Student Government</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 items-center">
-              {createAppealButton}
-            </div>
+        <div className="flex items-start justify-between mb-6 gap-4">
+          <PageHeader title="My Appeals" subtitle="Address your concerns directly to the Student Government" className="mb-0 flex-1" />
+          <div className="flex flex-col sm:flex-row gap-2 items-center flex-shrink-0">
+            {createAppealButton}
           </div>
         </div>
 
@@ -288,7 +284,7 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
             {createAppealButton}
           </div>
         )}
-      </div>
+      </PageContainer>
     </MotionWrapper>
   );
 }

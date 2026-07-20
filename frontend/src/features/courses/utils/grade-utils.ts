@@ -75,11 +75,11 @@ export const getDifficultyLevel = (averageGPA: number, stdDeviation: number): st
 
 export const getDifficultyColorClass = (difficulty: string): string => {
   switch (difficulty) {
-    case "Easy": return "text-green-600 dark:text-green-400";
-    case "Moderate": return "text-blue-600 dark:text-blue-400";
-    case "Hard": return "text-orange-600 dark:text-orange-400";
-    case "Very Hard": return "text-red-600 dark:text-red-400";
-    default: return "text-gray-600 dark:text-gray-400";
+    case "Easy": return "text-success";
+    case "Moderate": return "text-primary";
+    case "Hard": return "text-warning";
+    case "Very Hard": return "text-destructive";
+    default: return "text-muted-foreground";
   }
 };
 

@@ -232,12 +232,13 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
       />
 
       {!user ? (
-        <div className={cn("flex items-center justify-between rounded-[18px] border p-4", coursesSurface.cardLg)}>
-          <div>
-            <p className="text-sm font-semibold">Sign in to track your course progress this semester.</p>
-            <p className="text-xs text-muted-foreground">We will save your course progress for you in your account.</p>
+        <div className={cn("rounded-lg p-6 text-center text-sm text-muted-foreground", coursesSurface.cardLg)}>
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Calculator className="h-6 w-6" aria-hidden="true" />
           </div>
-          <Button onClick={login} size="sm">
+          <h2 className="text-lg font-bold text-foreground">Sign in to track your courses</h2>
+          <p className="mt-1">We will save your course progress in your account.</p>
+          <Button onClick={login} size="sm" className="mt-5">
             Login
           </Button>
         </div>
@@ -261,7 +262,7 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)_300px] xl:items-start">
-          <div className="min-w-0 xl:sticky xl:top-4">
+          <div className="order-2 min-w-0 xl:order-1 xl:sticky xl:top-4">
             <RegisteredCourseList
               courses={registeredCourses}
               gpaExclusion={gpaExclusion}
@@ -279,7 +280,7 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
             />
           </div>
 
-          <div className="min-w-0">
+          <div className="order-1 min-w-0 xl:order-2">
             <CourseWorkspace
               course={selectedCourse}
               isExcludedFromGpa={selectedCourse?.isExcludedFromGpa ?? false}
@@ -292,7 +293,7 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
             />
           </div>
 
-          <aside className="min-w-0 xl:sticky xl:top-4">
+          <aside className="order-3 min-w-0 xl:order-3 xl:sticky xl:top-4">
             <CoursesContextPanel
               selectedCourse={selectedCourse}
               schedule={schedule.data}

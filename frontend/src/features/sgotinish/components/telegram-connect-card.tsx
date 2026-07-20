@@ -1,38 +1,71 @@
+import { useState } from "react";
+import { X } from "lucide-react";
 import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
 import { cn } from "@/utils/utils";
 import { FaTelegram } from "react-icons/fa";
+
+const DISMISS_KEY = "nuspace_tg_banner_dismissed";
 
 interface TelegramConnectCardProps {
   user: {
     tg_id?: string | null;
   } | null;
   className?: string;
+  title?: string;
+  description?: string;
+  dismissKey?: string;
 }
 
-export function TelegramConnectCard({ user, className }: TelegramConnectCardProps) {
-  if (!user || user.tg_id) {
+export function TelegramConnectCard({
+  user,
+  className,
+  title = "Get appeal updates on Telegram",
+  description = "nuspacebot notifies you when your non-anonymous appeals get a response.",
+  dismissKey = DISMISS_KEY,
+}: TelegramConnectCardProps) {
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return sessionStorage.getItem(dismissKey) === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  if (!user || user.tg_id || dismissed) {
     return null;
   }
+
+  const handleDismiss = () => {
+    try {
+      sessionStorage.setItem(dismissKey, "true");
+    } catch {}
+    setDismissed(true);
+  };
 
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 rounded-lg border border-blue-200 bg-blue-50/80 p-4 text-blue-950 shadow-sm",
-        "dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-50",
-        "sm:flex-row sm:items-center sm:justify-between",
+        "relative flex flex-col gap-4 overflow-visible rounded-lg border border-primary/20 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
       data-bind-telegram
     >
+      <button
+        type="button"
+        onClick={handleDismiss}
+        className="absolute -right-2.5 -top-2.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label="Dismiss Telegram connect banner"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+
       <div className="flex flex-1 items-start gap-3">
-        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/60 dark:text-blue-300">
+        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
           <FaTelegram className="h-5 w-5" />
         </div>
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold">Connect Telegram to stay updated</h2>
-          <p className="text-sm text-blue-900/80 dark:text-blue-100/80">
-            Link your Telegram account to receive updates about your non-anonymous appeals directly from nuspacebot
-          </p>
+        <div className="min-w-0 flex-1 space-y-1">
+          <h2 className="text-base font-semibold text-foreground">{title}</h2>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
 
@@ -42,4 +75,3 @@ export function TelegramConnectCard({ user, className }: TelegramConnectCardProp
     </div>
   );
 }
-

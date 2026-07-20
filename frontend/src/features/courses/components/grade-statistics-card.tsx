@@ -1,19 +1,27 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/card";
+import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
 import { Button } from "@/components/atoms/button";
-import { GradeStatistics } from "../types";
-import { 
-  formatGPA, 
-  formatPercentage, 
+import type { GradeStatistics } from "../types";
+import {
+  formatGPA,
+  formatPercentage,
   getGradeDistribution,
   getGPAColorClass,
   getDifficultyLevel,
-  getDifficultyColorClass
-} from '../utils/grade-utils';
-import { GradeDistributionChart } from './grade-distribution-chart';
-import { Users, TrendingUp, BarChart3, User, PieChart, EyeOff, Check, GitCompareArrows } from "lucide-react";
+  getDifficultyColorClass,
+} from "../utils/grade-utils";
+import { GradeDistributionChart } from "./grade-distribution-chart";
+import {
+  Users,
+  TrendingUp,
+  PieChart,
+  EyeOff,
+  Check,
+  GitCompareArrows,
+  AlertTriangle,
+} from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/utils/utils";
 
@@ -25,52 +33,81 @@ interface GradeStatisticsCardProps {
   disableAdd?: boolean;
 }
 
-export function GradeStatisticsCard({ statistics, showChart = true, onToggleSelect, isSelected = false, disableAdd = false }: GradeStatisticsCardProps) {
+const barColors = [
+  "bg-success",
+  "bg-primary",
+  "bg-warning",
+  "bg-destructive/60",
+  "bg-destructive",
+];
+
+export function GradeStatisticsCard({
+  statistics,
+  showChart = true,
+  onToggleSelect,
+  isSelected = false,
+  disableAdd = false,
+}: GradeStatisticsCardProps) {
   const [showPieChart, setShowPieChart] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
   const gradeDistribution = getGradeDistribution(statistics);
   const difficulty = getDifficultyLevel(statistics.avg_gpa, statistics.std_dev);
   const selectDisabled = Boolean(onToggleSelect) && disableAdd && !isSelected;
+  const withdrawalPct = Number(statistics.pct_W_AW);
+  const totalPct = statistics.pct_A + statistics.pct_B + statistics.pct_C + statistics.pct_D + statistics.pct_F;
+  const grades = [
+    { grade: "A", percent: statistics.pct_A },
+    { grade: "B", percent: statistics.pct_B },
+    { grade: "C", percent: statistics.pct_C },
+    { grade: "D", percent: statistics.pct_D },
+    { grade: "F", percent: statistics.pct_F },
+  ];
+
+  const handleCompare = () => {
+    if (!onToggleSelect) return;
+    onToggleSelect(statistics);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1200);
+  };
 
   return (
     <Card
       className={cn(
         "w-full transition-shadow duration-300 hover:shadow-lg",
         isSelected && "ring-2 ring-primary/50 border-primary/40",
+        justAdded && "ring-2 ring-success/50 border-success/40",
       )}
     >
-      <CardHeader className="pb-4 relative">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-xl font-bold text-gray-800 dark:text-gray-200">
-              {statistics.course_code}
-            </CardTitle>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-              {statistics.course_title}
-            </p>
-            
-            {/* Faculty Info - moved above badges */}
-            {statistics.faculty && (
-              <div className="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
-                <User className="h-4 w-4" />
-                <span className="font-medium">Faculty:</span>
-                <span>{statistics.faculty}</span>
-              </div>
-            )}
-            
-            <div className="flex items-center gap-2 mt-2">
-              <Badge variant="outline" className="text-xs">
-                Section {statistics.section}
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold text-foreground truncate">
+                {statistics.course_code}
+              </h3>
+              <Badge variant="outline" className="text-[11px] shrink-0">
+                {statistics.section}
               </Badge>
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-[11px] shrink-0">
                 {statistics.term}
               </Badge>
-              <Badge 
-                variant="outline" 
-                className={`text-xs ${getDifficultyColorClass(difficulty)}`}
+              <Badge
+                variant="outline"
+                className={cn("text-[11px] shrink-0", getDifficultyColorClass(difficulty))}
               >
                 {difficulty}
               </Badge>
             </div>
+            <p className="text-sm font-medium text-foreground mt-0.5 line-clamp-1">
+              {statistics.course_title}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1.5">
+              <Users className="inline h-3.5 w-3.5 mr-1 align-text-bottom" />
+              {statistics.faculty && (
+                <span className="font-medium text-foreground">{statistics.faculty} · </span>
+              )}
+              based on {statistics.grades_count} students
+            </p>
           </div>
 
           {onToggleSelect && (
@@ -78,126 +115,94 @@ export function GradeStatisticsCard({ statistics, showChart = true, onToggleSele
               type="button"
               size="sm"
               variant={isSelected ? "default" : "outline"}
-              className="h-8 shrink-0 gap-1.5 rounded-lg text-xs font-medium"
+              className={cn(
+                "h-7 shrink-0 gap-1 rounded-md text-[11px] font-medium px-2.5",
+                justAdded && !isSelected && "border-success text-success",
+              )}
               disabled={selectDisabled}
               aria-pressed={isSelected}
-              onClick={() => onToggleSelect(statistics)}
+              onClick={handleCompare}
             >
               {isSelected ? (
-                <>
-                  <Check className="h-3.5 w-3.5" />
-                  Selected
-                </>
+                <><Check className="h-3 w-3" /> Selected</>
+              ) : justAdded ? (
+                <><Check className="h-3 w-3" /> Added</>
               ) : (
-                <>
-                  <GitCompareArrows className="h-3.5 w-3.5" />
-                  Compare
-                </>
+                <><GitCompareArrows className="h-3 w-3" /> Compare</>
               )}
             </Button>
           )}
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6">
-        {/* Key Metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <div className="flex items-center justify-center mb-1">
-              <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-              {statistics.grades_count}
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Students</div>
-          </div>
-
-          <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-            <div className="flex items-center justify-center mb-1">
-              <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-            </div>
-            <div className={`text-lg font-semibold ${getGPAColorClass(statistics.avg_gpa)}`}>
+      <CardContent className="space-y-5">
+        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[1.75rem] font-bold leading-none tabular-nums tracking-tight text-foreground">
               {formatGPA(statistics.avg_gpa)}
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Avg GPA</div>
+            </span>
+            <span className="text-xs font-medium text-muted-foreground">GPA</span>
           </div>
 
-          <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-            <div className="flex items-center justify-center mb-1">
-              <BarChart3 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">
-              {formatGPA(statistics.median_gpa)}
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Median</div>
+          <div className="h-6 w-px bg-border" />
+
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <TrendingUp className="h-3.5 w-3.5" />
+            <span>Median <strong className="tabular-nums text-foreground">{formatGPA(statistics.median_gpa)}</strong></span>
           </div>
 
-          <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-            <div className="flex items-center justify-center mb-1">
-              <BarChart3 className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-            </div>
-            <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">
-              ±{statistics.std_dev.toFixed(2)}
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">Std Dev</div>
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <span>
+              ±<strong className="tabular-nums text-foreground">{statistics.std_dev.toFixed(2)}</strong> std dev
+            </span>
           </div>
+
+          <div className="flex items-center gap-1.5 text-sm">
+            <AlertTriangle className={cn("h-3.5 w-3.5", withdrawalPct > 5 ? "text-destructive" : "text-muted-foreground")} />
+            <span className={cn(withdrawalPct > 5 ? "text-destructive" : "text-muted-foreground")}>
+              <strong className="tabular-nums">{formatPercentage(withdrawalPct)}</strong> withdrew
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowPieChart(!showPieChart)}
+            className="group ml-auto flex shrink-0 items-center gap-1.5 rounded-md py-1 pl-1 pr-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label={showPieChart ? "Hide grade distribution breakdown" : "Show grade distribution breakdown"}
+            title={
+              showPieChart
+                ? "Hide breakdown"
+                : grades
+                    .filter((g) => g.percent > 0)
+                    .map((g) => `${g.grade}: ${formatPercentage(g.percent)}`)
+                    .join(" · ")
+            }
+          >
+            <div className="relative h-2 w-40 overflow-hidden rounded-full bg-muted ring-1 ring-transparent transition-shadow group-hover:ring-border">
+              {grades.map(({ grade, percent }, i) => {
+                if (percent <= 0) return null;
+                const width = totalPct > 0 ? (percent / totalPct) * 100 : 0;
+                const prevWidth = grades
+                  .slice(0, i)
+                  .reduce((sum, g) => sum + (totalPct > 0 ? (g.percent / totalPct) * 100 : 0), 0);
+                return (
+                  <div
+                    key={grade}
+                    className={cn("absolute inset-y-0 first:rounded-l-full last:rounded-r-full", barColors[i])}
+                    style={{ left: `${prevWidth}%`, width: `${width}%` }}
+                  />
+                );
+              })}
+            </div>
+            <span className="text-[11px] font-medium underline decoration-dotted underline-offset-2">
+              {showPieChart ? "Hide" : "Breakdown"}
+            </span>
+            {showPieChart ? <EyeOff className="h-3.5 w-3.5" /> : <PieChart className="h-3.5 w-3.5" />}
+          </button>
         </div>
 
-        {/* Withdrawal Rate */}
-        <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-          <div className="flex items-center justify-center mb-1">
-            <Users className="h-4 w-4 text-red-600 dark:text-red-400" />
-          </div>
-          <div className="text-lg font-semibold text-red-600 dark:text-red-400">
-            {formatPercentage(statistics.pct_W_AW)}
-          </div>
-          <div className="text-xs text-gray-600 dark:text-gray-400">Withdrawal Rate</div>
-        </div>
-
-        {/* Grade Percentages */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Grade Distribution</h4>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowPieChart(!showPieChart)}
-              className="flex items-center gap-2 text-xs"
-            >
-              {showPieChart ? (
-                <>
-                  <EyeOff className="h-3 w-3" />
-                  Hide Chart
-                </>
-              ) : (
-                <>
-                  <PieChart className="h-3 w-3" />
-                  Show Chart
-                </>
-              )}
-            </Button>
-          </div>
-          <div className="grid grid-cols-5 gap-2 text-center">
-            {[
-              { grade: 'A', percent: statistics.pct_A, color: 'text-green-600 dark:text-green-400' },
-              { grade: 'B', percent: statistics.pct_B, color: 'text-blue-600 dark:text-blue-400' },
-              { grade: 'C', percent: statistics.pct_C, color: 'text-amber-600 dark:text-amber-400' },
-              { grade: 'D', percent: statistics.pct_D, color: 'text-orange-600 dark:text-orange-400' },
-              { grade: 'F', percent: statistics.pct_F, color: 'text-red-600 dark:text-red-400' },
-            ].map(({ grade, percent, color }) => (
-              <div key={grade} className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                <div className={`text-sm font-semibold ${color}`}>{grade}</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  {formatPercentage(percent)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Chart - now controlled by showPieChart state */}
         {showPieChart && showChart && gradeDistribution.length > 0 && (
-          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="pt-4 border-t border-border">
             <GradeDistributionChart data={gradeDistribution} title="" />
           </div>
         )}

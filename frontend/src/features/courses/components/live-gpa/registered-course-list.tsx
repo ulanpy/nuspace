@@ -24,11 +24,20 @@ export function RegisteredCourseList({
   onSelectCourse,
   footer,
 }: RegisteredCourseListProps) {
+  const excludedCount = courses.filter(
+    (c) => c.isExcludedFromGpa ?? gpaExclusion.isExcluded(c.id),
+  ).length;
+
   return (
     <div className={cn("flex flex-col p-3", coursesSurface.cardLg)}>
       <div className="mb-3 flex items-center gap-2 px-0.5">
         <h2 className="text-sm font-semibold">Courses</h2>
         <span className={coursesSurface.badge}>{courses.length}</span>
+        {excludedCount > 0 && (
+          <span className="ml-auto text-[11px] text-muted-foreground">
+            {excludedCount} excluded from GPA
+          </span>
+        )}
       </div>
 
       <div className="min-h-0 flex-1 space-y-1">

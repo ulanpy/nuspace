@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useMutation, useInfiniteQuery } from "@tanstack/react-query";
 import { Search, Loader2, Plus, Eye, EyeOff } from "lucide-react";
+import { PageContainer } from "@/components/atoms/page-container";
+import { PageHeader } from "@/components/atoms/page-header";
 import { createOpportunity, deleteOpportunity, fetchOpportunities, updateOpportunity } from "../api";
 import {
   Opportunity,
@@ -369,15 +371,6 @@ export default function OpportunitiesPage() {
 
   useEffect(() => () => observerRef.current?.disconnect(), []);
 
-  const header = (
-    <div className="flex flex-col gap-2">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Opportunities Digest</h1>
-      <p className="text-gray-600 dark:text-gray-400">
-        Research opportunities, summer internships, forums and summits are collected specifically for NU students. Majors listed are not strict requirements—feel free to explore other majors if the opportunity fits you. Always double-check details on the official program pages; this list is to help you discover options. Check this page regularly—MRI keeps updating it.
-      </p>
-    </div>
-  );
-
   const handleSubmitForm = (payload: UpsertOpportunityInput) => {
     setSubmitError(null);
     if (editing) {
@@ -400,15 +393,16 @@ export default function OpportunitiesPage() {
   return (
     <MotionWrapper>
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8 space-y-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            {header}
-          </div>
+        <PageContainer padding="default" className="space-y-8">
+          <PageHeader
+            title="Opportunities Digest"
+            subtitle="Research opportunities, summer internships, forums and summits collected specifically for NU students. Majors listed are not strict requirements — always double-check details on the official program pages. Check this page regularly — MRI keeps updating it."
+          />
 
           {/* Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 rounded-2xl bg-white/90 p-4 shadow-sm border border-gray-200 backdrop-blur dark:bg-background/80 dark:border-border/60">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 rounded-2xl bg-card p-4 shadow-sm border border-border">
             <div className="sm:col-span-2 md:col-span-2 lg:col-span-3">
-              <Label htmlFor="q" className="text-xs text-gray-500">
+              <Label htmlFor="q" className="text-xs text-muted-foreground">
                 Search
               </Label>
               <div className="relative">
@@ -586,7 +580,7 @@ export default function OpportunitiesPage() {
               )}
             </div>
           )}
-        </div>
+        </PageContainer>
       </div>
     </MotionWrapper>
   );
