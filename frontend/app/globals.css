@@ -129,6 +129,29 @@
     font-variant-numeric: tabular-nums;
   }
 
+  .scroll-thin {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(var(--border)) oklch(var(--muted));
+  }
+
+  .scroll-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scroll-thin::-webkit-scrollbar-track {
+    background: oklch(var(--muted));
+  }
+
+  .scroll-thin::-webkit-scrollbar-thumb {
+    background-color: oklch(var(--border));
+    border-radius: 9999px;
+  }
+
+  .scroll-thin::-webkit-scrollbar-thumb:hover {
+    background-color: oklch(var(--muted-foreground) / 0.4);
+  }
+
   /* Prevent iOS/Android webview zoom on input focus by enforcing >=16px font-size */
   @media (max-width: 768px) {
 

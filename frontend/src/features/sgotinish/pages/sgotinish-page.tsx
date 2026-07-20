@@ -11,6 +11,8 @@ import { CreateAppealButton } from '../components/create-appeal-button';
 import CreateTicketModal from '../components/create-ticket-modal'; // Import the modal
 import { LoginModal } from "@/components/molecules/login-modal";
 import { TelegramConnectCard } from '../components/telegram-connect-card';
+import { PageContainer } from "@/components/atoms/page-container";
+import { PageHeader } from "@/components/atoms/page-header";
 import { Tabs, TabsList, TabsTrigger } from "@/components/atoms/tabs";
 import { SGMembersManagement } from "../components/sg-members-management";
 
@@ -54,15 +56,10 @@ export default function SgotinishPage() {
     }
     if (effectiveDashboard === "sg-members") {
       return (
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">SG Members</h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Manage SG hierarchy and membership permissions.
-            </p>
-          </div>
+        <PageContainer padding="default">
+          <PageHeader title="SG Members" subtitle="Manage SG hierarchy and membership permissions." />
           <SGMembersManagement currentUser={user} />
-        </div>
+        </PageContainer>
       );
     }
 

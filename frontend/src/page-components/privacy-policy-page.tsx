@@ -1,4 +1,6 @@
 import { Mail, Phone, ExternalLink } from 'lucide-react'
+import { PageContainer } from '@/components/atoms/page-container'
+import { Section } from '@/components/atoms/section'
 
 const privacyData = {
   title: 'Privacy Policy for nuspace.kz',
@@ -68,30 +70,28 @@ const privacyData = {
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="container max-w-4xl mx-auto py-12 px-4 space-y-8">
-      {/* Header */}
-      <div className="space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight">{privacyData.title}</h1>
-        <p className="text-muted-foreground">Last updated: {privacyData.lastUpdated}</p>
-        <div className="p-4 bg-muted/50 rounded-lg border border-border">
-          <p className="leading-relaxed">{privacyData.introduction}</p>
+    <PageContainer as="main" maxWidth="prose">
+      <Section variant="compact">
+        <div className="space-y-4">
+          <h1 className="text-4xl font-bold tracking-tight">{privacyData.title}</h1>
+          <p className="text-muted-foreground">Last updated: {privacyData.lastUpdated}</p>
+          <div className="p-4 bg-muted/50 rounded-lg border border-border">
+            <p className="leading-relaxed">{privacyData.introduction}</p>
+          </div>
         </div>
-      </div>
+      </Section>
 
-      {/* Sections */}
-      <div className="space-y-8">
+      <Section variant="compact" className="space-y-8">
         {privacyData.sections.map((section) => (
           <section key={section.id} className="space-y-3">
             <h2 className="text-2xl font-bold">{section.id}. {section.title}</h2>
 
-            {/* Render Paragraph if description exists */}
             {section.description && (
               <p className="leading-relaxed text-muted-foreground">
                 {section.description}
               </p>
             )}
 
-            {/* Render List if points exist */}
             {section.points && (
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 {section.points.map((point, idx) => (
@@ -101,10 +101,9 @@ export default function PrivacyPolicyPage() {
             )}
           </section>
         ))}
-      </div>
+      </Section>
 
-      {/* Contact */}
-      <div className="mt-12 pt-8 border-t border-border">
+      <Section variant="compact" className="border-t border-border">
         <h2 className="text-2xl font-bold mb-6">Contact Us</h2>
         <p className="text-muted-foreground mb-6">{privacyData.contact.message}</p>
         <div className="grid gap-4 md:grid-cols-3">
@@ -130,7 +129,7 @@ export default function PrivacyPolicyPage() {
             </div>
           </a>
         </div>
-      </div>
-    </div>
+      </Section>
+    </PageContainer>
   )
 }

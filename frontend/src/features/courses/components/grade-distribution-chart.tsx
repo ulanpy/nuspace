@@ -13,7 +13,7 @@ export function GradeDistributionChart({ data, title = "Grade Distribution" }: G
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+        <div className="bg-card p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold">{`Grade ${data.grade}`}</p>
           <p className="text-sm">{`${data.percentage.toFixed(1)}% (${data.count} students)`}</p>
         </div>
@@ -31,7 +31,7 @@ export function GradeDistributionChart({ data, title = "Grade Distribution" }: G
               className="w-3 h-3 rounded-full" 
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-gray-700 dark:text-gray-300">
+            <span className="text-foreground">
               {entry.payload.grade} ({entry.payload.percentage.toFixed(1)}%)
             </span>
           </div>
@@ -42,7 +42,7 @@ export function GradeDistributionChart({ data, title = "Grade Distribution" }: G
 
   return (
     <div className="w-full">
-      <h3 className="text-lg font-semibold text-center mb-4 text-gray-800 dark:text-gray-200">
+      <h3 className="text-lg font-semibold text-center mb-4 text-foreground">
         {title}
       </h3>
       <ResponsiveContainer width="100%" height={300}>

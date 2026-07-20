@@ -21,6 +21,8 @@ import { useUser } from "@/hooks/use-user";
 import { FeatureCarousel } from "@/components/molecules/feature-carousel";
 import { ROUTES } from "@/data/routes";
 import { cn } from "@/utils/utils";
+import { PageContainer } from "@/components/atoms/page-container";
+import { Section } from "@/components/atoms/section";
 import eventImg1 from "@/assets/images/event_pics/1.webp";
 import eventImg2 from "@/assets/images/event_pics/2.webp";
 import eventImg3 from "@/assets/images/event_pics/3.webp";
@@ -70,7 +72,7 @@ const features: Feature[] = [
       "Find student groups and follow the communities you care about.",
     link: ROUTES.COMMUNITIES.ROOT,
     icon: Users,
-    className: "lg:col-span-2",
+    className: "md:col-span-1 lg:col-span-2",
     iconClassName: "bg-community/15 text-community",
     stripClassName: "bg-community",
     details: ["Student clubs", "Recruitment", "Community events"],
@@ -81,7 +83,7 @@ const features: Feature[] = [
       "Search essential university services, people, and emergency contacts.",
     link: ROUTES.CONTACTS,
     icon: Info,
-    className: "lg:col-span-2",
+    className: "md:col-span-1 lg:col-span-2",
     iconClassName: "bg-contact/15 text-contact",
     stripClassName: "bg-contact",
     details: ["Services", "Emergency contacts", "Search"],
@@ -92,7 +94,7 @@ const features: Feature[] = [
       "Send a request or appeal directly to Student Government and follow its status.",
     link: ROUTES.SGOTINISH.ROOT,
     icon: Shield,
-    className: "lg:col-span-2",
+    className: "md:col-span-1 lg:col-span-2",
     iconClassName: "bg-success/15 text-success",
     stripClassName: "bg-success",
     details: ["Requests", "Appeals", "Status tracking"],
@@ -113,9 +115,9 @@ const onboardingSteps = [
   },
   {
     icon: Check,
-    title: "Get the task done",
+    title: "Get things done on campus",
     description:
-      "Keep your campus information organised without switching between services.",
+      "Courses, events, contacts, and requests — all accessible from one account.",
   },
 ];
 
@@ -125,22 +127,22 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col bg-background text-foreground">
       <main>
-        <section className="relative overflow-hidden px-4 py-24 sm:py-32 lg:py-40">
-          <div className="relative mx-auto max-w-5xl text-center">
+        <section className="relative overflow-hidden py-24 sm:py-32 lg:py-40">
+          <PageContainer className="text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
               <Sparkles className="h-4 w-4" aria-hidden="true" />
               Built by NU students, for NU students
             </div>
 
             <h1 className="mx-auto mb-6 max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Your all-in-one platform for{" "}
-              <span className="text-primary">university life</span>
+              Track grades, find events, and{" "}
+              <span className="text-primary">stay on top of campus</span>
             </h1>
 
             <p className="mx-auto mb-9 max-w-[65ch] text-lg leading-relaxed text-muted-foreground sm:text-xl">
-              Nuspace brings together everything you need at Nazarbayev
-              University: academics, events, communities, and more, in one
-              beautiful, unified experience.
+              Nuspace brings together academics, events, communities, and
+              campus services at Nazarbayev University. Sign in with your
+              NU account and get started.
             </p>
 
             <div className="flex flex-col justify-center gap-3 sm:flex-row">
@@ -176,14 +178,14 @@ export default function LandingPage() {
                 Web and Telegram access
               </span>
             </div>
-          </div>
+          </PageContainer>
         </section>
 
-        <section
+        <Section
           id="features"
-          className="scroll-mt-8 px-4 py-20 sm:py-24"
+          className="scroll-mt-8"
         >
-          <div className="mx-auto max-w-6xl">
+          <PageContainer maxWidth="wide">
             <div className="mb-10 max-w-2xl">
               <p className="mb-3 text-sm font-semibold uppercase tracking-[0.08em] text-primary">
                 Campus toolkit
@@ -256,60 +258,62 @@ export default function LandingPage() {
                 );
               })}
             </div>
-          </div>
-        </section>
+          </PageContainer>
+        </Section>
 
-        <section className="px-4 py-20 sm:py-28">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
-            <div>
-              <div className="mb-5 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-md bg-warning/15 text-warning-foreground dark:text-warning">
-                  <Calendar className="h-5 w-5" aria-hidden="true" />
+        <Section>
+          <PageContainer maxWidth="wide">
+            <div className="grid items-center gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+              <div>
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-md bg-warning/15 text-warning-foreground dark:text-warning">
+                    <Calendar className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.08em] text-warning-foreground dark:text-warning">
+                    Campus events
+                  </p>
                 </div>
-                <p className="text-sm font-semibold uppercase tracking-[0.08em] text-warning-foreground dark:text-warning">
-                  Campus events
+                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                  Know what is happening before you miss it
+                </h2>
+                <p className="mt-4 max-w-[60ch] text-lg leading-relaxed text-muted-foreground">
+                  Browse upcoming events, recruitment announcements, and community
+                  activities in one campus calendar.
                 </p>
+                <ul className="mt-6 space-y-3 text-sm font-medium">
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-success" aria-hidden="true" />
+                    Filter by date, type, or community
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-success" aria-hidden="true" />
+                    Add events to your calendar
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <Check className="h-4 w-4 text-success" aria-hidden="true" />
+                    Discover student-led activities
+                  </li>
+                </ul>
+                <Button variant="outline" asChild className="mt-6 gap-2">
+                  <Link href={ROUTES.EVENTS.ROOT}>
+                    Browse campus events
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                </Button>
               </div>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Know what is happening before you miss it
-              </h2>
-              <p className="mt-4 max-w-[60ch] text-lg leading-relaxed text-muted-foreground">
-                Browse upcoming events, recruitment announcements, and community
-                activities in one campus calendar.
-              </p>
-              <ul className="mt-6 space-y-3 text-sm font-medium">
-                <li className="flex items-center gap-3">
-                  <Check className="h-4 w-4 text-success" aria-hidden="true" />
-                  Filter by date, type, or community
-                </li>
-                <li className="flex items-center gap-3">
-                  <Check className="h-4 w-4 text-success" aria-hidden="true" />
-                  Add events to your calendar
-                </li>
-                <li className="flex items-center gap-3">
-                  <Check className="h-4 w-4 text-success" aria-hidden="true" />
-                  Discover student-led activities
-                </li>
-              </ul>
-              <Button variant="outline" asChild className="mt-6 gap-2">
-                <Link href={ROUTES.EVENTS.ROOT}>
-                  Browse campus events
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              </Button>
-            </div>
 
-            <div className="aspect-[4/3] overflow-hidden rounded-lg border bg-card shadow-sm sm:aspect-video">
-              <FeatureCarousel
-                images={eventImages}
-                alt="Students taking part in a Nazarbayev University campus event"
-              />
+              <div className="aspect-[4/3] overflow-hidden rounded-lg border bg-card shadow-sm sm:aspect-video">
+                <FeatureCarousel
+                  images={eventImages}
+                  alt="Students taking part in a Nazarbayev University campus event"
+                />
+              </div>
             </div>
-          </div>
-        </section>
+          </PageContainer>
+        </Section>
 
-        <section className="px-4 py-20 sm:py-24">
-          <div className="mx-auto max-w-6xl">
+        <Section>
+          <PageContainer maxWidth="wide">
             <div className="grid gap-10 lg:grid-cols-[0.75fr_1.25fr] lg:items-start lg:gap-16">
               <div>
                 <div className="mb-5 flex items-center gap-3">
@@ -363,12 +367,15 @@ export default function LandingPage() {
                 <ArrowRight className="h-5 w-5" aria-hidden="true" />
               </Button>
             </div>
-          </div>
-        </section>
+          </PageContainer>
+        </Section>
       </main>
 
-      <footer className="border-t bg-background px-4 py-8 text-sm text-muted-foreground">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-5 md:flex-row">
+      <footer className="border-t bg-background text-sm text-muted-foreground">
+        <PageContainer
+          as="div"
+          className="flex flex-col items-center justify-between gap-5 py-8 md:flex-row"
+        >
           <p>© {new Date().getFullYear()} Nuspace. Built for the NU community.</p>
           <nav
             aria-label="Footer navigation"
@@ -402,7 +409,7 @@ export default function LandingPage() {
               <Github className="h-3.5 w-3.5" aria-hidden="true" />
             </a>
           </nav>
-        </div>
+        </PageContainer>
       </footer>
     </div>
   );

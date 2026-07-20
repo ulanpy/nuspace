@@ -17,6 +17,8 @@ import { ScheduleBuilderTab } from "../components/schedule-builder-tab";
 import { DegreeAuditTab } from "../components/degree-audit-tab";
 import { coursesSurface } from "../constants/dashboard-theme";
 import { cn } from "@/utils/utils";
+import { PageContainer } from "@/components/atoms/page-container";
+import { PageHeader } from "@/components/atoms/page-header";
 
 const tabOptions = [
   { value: "live-gpa", label: "My Courses", icon: BookOpen },
@@ -108,17 +110,12 @@ export default function GradeStatisticsPage() {
 
   return (
     <MotionWrapper>
-      <div className={cn("mx-auto max-w-[1560px] space-y-6 px-2 py-2 sm:px-4 sm:py-4", coursesSurface.text)}>
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight">Courses</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage your classes, assignments, GPA and semester planning.
-          </p>
-        </div>
+      <PageContainer maxWidth="full" padding="dense" className={cn("space-y-6", coursesSurface.text)}>
+        <PageHeader title="Courses" subtitle="Manage your classes, assignments, GPA and semester planning." className="mb-0" />
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <div ref={scrollContainerRef} className="overflow-x-auto">
-            <TabsList className={cn("mb-2 inline-flex h-12 w-full min-w-max rounded-[14px] border p-1 sm:w-auto", coursesSurface.card)}>
+            <TabsList className={cn("mb-2 inline-flex h-12 w-full min-w-max rounded-lg border p-1 sm:w-auto", coursesSurface.card)}>
               {tabOptions.map(({ value, label, icon: Icon }) => (
                 <TabsTrigger
                   key={value}
@@ -127,7 +124,7 @@ export default function GradeStatisticsPage() {
                   }}
                   value={value}
                   className={cn(
-                    "relative flex h-10 items-center gap-2 rounded-[10px] px-4 py-2 text-sm text-muted-foreground data-[state=active]:shadow-none after:absolute after:inset-x-3 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-transparent",
+                    "flex h-10 items-center gap-2 rounded-md px-4 py-2 text-sm text-muted-foreground data-[state=active]:shadow-none",
                     coursesSurface.tabActive,
                   )}
                 >
@@ -154,7 +151,7 @@ export default function GradeStatisticsPage() {
             <DegreeAuditTab user={user} login={login} />
           </TabsContent>
         </Tabs>
-      </div>
+      </PageContainer>
     </MotionWrapper>
   );
 }

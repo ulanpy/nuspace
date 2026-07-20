@@ -21,7 +21,7 @@ import {
   PlannerCourseAddPayload,
   PlannerCourseSearchResult,
 } from "../types";
-import { Loader2, RefreshCcw, Trash2, Wand2, X } from "lucide-react";
+import { Loader2, RefreshCcw, RotateCcw, Trash2, Wand2, X } from "lucide-react";
 import { ConfirmationModal } from './confirmation-modal';
 import { useSyllabusLinks } from '../utils/use-syllabus-links';
 
@@ -545,7 +545,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-6 xl:flex-row">
-        <aside className="w-full space-y-4 lg:w-80">
+        <aside className="w-full space-y-4 xl:w-80">
         <section className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold">Find a course</h3>
@@ -574,7 +574,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
             )}
             {searchOpen && (
               <div className="absolute left-0 right-0 top-full z-20 mt-2 rounded-xl border border-border/60 bg-card shadow-lg">
-                <div className="max-h-80 overflow-auto p-3 space-y-3 text-sm">
+                <div className="max-h-80 overflow-auto p-3 space-y-3 text-sm scroll-thin">
                   {isSearchPending && searchResults.length === 0 ? (
                     <p className="flex items-center gap-2 text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" /> Searching registrar catalog...
@@ -687,40 +687,49 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
           </div>
         </section>
 
-        <section className="rounded-xl border border-border/60 bg-card p-4 shadow-sm max-h-[500px] overflow-auto">
-          <div className="flex items-center justify-between gap-3">
+        <section className="scroll-thin rounded-xl border border-border/60 bg-card p-4 shadow-sm max-h-[500px] overflow-y-auto overflow-x-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold">Courses</h3>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Button
-                size="sm"
+                size="icon"
                 variant="secondary"
+                className="h-8 w-8"
                 onClick={() => refreshAllCoursesMutation.mutate()}
                 disabled={!planner?.courses.length || refreshAllCoursesMutation.isPending}
+                title="Refresh"
+                aria-label="Refresh courses"
               >
                 {refreshAllCoursesMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Refresh"
+                  <RefreshCcw className="h-4 w-4" />
                 )}
               </Button>
               <Button
-                size="sm"
+                size="icon"
                 variant="secondary"
+                className="h-8 w-8"
                 onClick={() => setResetConfirmOpen(true)}
                 disabled={resetPlannerMutation.isPending}
+                title="Reset"
+                aria-label="Reset planner"
               >
-                Reset
+                <RotateCcw className="h-4 w-4" />
               </Button>
               <Button
-                size="sm"
+                size="icon"
                 variant="secondary"
+                className="h-8 w-8"
                 onClick={() => autoBuildMutation.mutate()}
                 disabled={!planner || autoBuildMutation.isPending}
+                title="Shuffle"
+                aria-label="Auto-build schedule"
               >
                 {autoBuildMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Shuffle"
+                  <Wand2 className="h-4 w-4" />
                 )}
               </Button>
             </div>
@@ -765,7 +774,7 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
         </section>
         </aside>
 
-        <section className="overflow-x-auto flex-1 rounded-2xl border border-border/60 bg-card p-4 shadow-sm w-[700px] sm:w-vw lg:w-full">
+        <section className="overflow-x-auto flex-1 w-full min-w-0 rounded-2xl border border-border/60 bg-card p-4 shadow-sm scroll-thin">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-base font-semibold">Planner preview</h3>
             {selectedEvents.length > 0 && (
@@ -786,11 +795,25 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
             onShowDetails={setActiveSection}
             activeCourseId={activeCourseId}
           />
+          {activeSection && (
+            <SectionDetailModal
+              sectionEvent={activeSection}
+              onClose={() => setActiveSection(null)}
+              onRemove={() => {
+                const { course, section } = activeSection;
+                const remainingSectionIds = course.sections
+                  .filter((s) => s.is_selected && s.id !== section.id)
+                  .map((s) => s.id);
+                selectSectionMutation.mutate(
+                  { courseId: course.id, sectionIds: remainingSectionIds },
+                  { onSuccess: () => setActiveSection(null) },
+                );
+              }}
+              removing={selectSectionMutation.isPending}
+            />
+          )}
         </section>
       </div>
-      {activeSection && (
-        <SectionDetailModal sectionEvent={activeSection} onClose={() => setActiveSection(null)} />
-      )}
       {activeRequirements && (
         <CourseRequirementModal
           details={activeRequirements}
@@ -934,31 +957,31 @@ const SchedulePreview = ({
   onShowDetails: (sectionEvent: SectionEvent) => void;
   activeCourseId: number | null;
 }) => {
-  if (!schedule) {
-    return (
-      <div className="mt-6 flex h-64 items-center justify-center text-sm text-muted-foreground">
-        Create a schedule to preview blocks.
-      </div>
-    );
-  }
+  const timedEvents = useMemo(
+    () => events.filter(({ section }) => {
+      const [start, end] = parseTimeRange(section.times);
+      return start != null && end != null;
+    }),
+    [events],
+  );
 
-  const hasSections = schedule.courses.some((course) => course.sections.length);
-  const startHour = 8;
-  const endHour = 22; // 10 PM
-  const hourHeight = 75;
-  const hours = Array.from({ length: endHour - startHour + 1 }, (_, idx) => startHour + idx);
-  const maxTimeMinutes = endHour * 60; // 10 PM in minutes (1320)
+  // Grid spans at least the standard campus day (8 AM–10 PM), but widens to fit
+  // any section outside that window instead of silently dropping it.
+  const { startHour, endHour } = useMemo(() => {
+    let minStart = 8 * 60;
+    let maxEnd = 22 * 60;
+    timedEvents.forEach(({ section }) => {
+      const [start, end] = parseTimeRange(section.times);
+      if (start != null) minStart = Math.min(minStart, start);
+      if (end != null) maxEnd = Math.max(maxEnd, end);
+    });
+    return { startHour: Math.floor(minStart / 60), endHour: Math.ceil(maxEnd / 60) };
+  }, [timedEvents]);
 
-  // Filter out events that end after 10 PM
-  const filteredEvents = events.filter(({ section }) => {
-    const [start, end] = parseTimeRange(section.times);
-    if (start == null || end == null) return false;
-    return end <= maxTimeMinutes; // Only include events that end at or before 10 PM
-  });
   const clashingSectionIds = useMemo(() => {
     const clashes = new Set<number>();
     const intervalsByDay: Record<string, Array<{ start: number; end: number; id: number }>> = {};
-    filteredEvents.forEach(({ section }) => {
+    timedEvents.forEach(({ section }) => {
       const [start, end] = parseTimeRange(section.times);
       if (start == null || end == null) {
         return;
@@ -977,7 +1000,20 @@ const SchedulePreview = ({
       });
     });
     return clashes;
-  }, [filteredEvents]);
+  }, [timedEvents]);
+
+  if (!schedule) {
+    return (
+      <div className="mt-6 flex h-64 items-center justify-center text-sm text-muted-foreground">
+        Create a schedule to preview blocks.
+      </div>
+    );
+  }
+
+  const hasSections = schedule.courses.some((course) => course.sections.length);
+  const hourHeight = 75;
+  const hours = Array.from({ length: endHour - startHour + 1 }, (_, idx) => startHour + idx);
+  const filteredEvents = timedEvents;
 
   return (
     <div className="mt-4 space-y-4">
@@ -995,7 +1031,15 @@ const SchedulePreview = ({
             : "Load registrar sections to start visualizing your schedule."}
         </div>
       ) : (
-        <div className="overflow-auto rounded-xl border border-border/60 bg-muted/10 p-4">
+        <>
+        <div className="md:hidden">
+          <ScheduleAgenda
+            events={filteredEvents}
+            clashingSectionIds={clashingSectionIds}
+            onShowDetails={onShowDetails}
+          />
+        </div>
+        <div className="hidden overflow-auto rounded-xl border border-border/60 bg-muted/10 p-4 scroll-thin md:block">
           <div className="grid grid-cols-[60px_repeat(6,minmax(0,1fr))] gap-2 text-xs font-semibold">
             <div />
             {dayDefs.map((day) => (
@@ -1041,7 +1085,7 @@ const SchedulePreview = ({
                         return (
                           <div
                             key={`${section.id}-${day.key}`}
-                            className={`absolute left-1 right-1 cursor-pointer rounded-md px-1.5 py-1 text-[10px] font-semibold shadow transition-all hover:border-blue-500/50 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${clashClasses}`}
+                            className={`absolute left-1 right-1 cursor-pointer rounded-md px-1.5 py-1 text-[10px] font-semibold shadow transition-all hover:border-primary/50 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${clashClasses}`}
                             style={{
                               top: ((start - startHour * 60) / 60) * hourHeight,
                               height: ((end - start) / 60) * hourHeight,
@@ -1079,6 +1123,113 @@ const SchedulePreview = ({
               </div>
             </div>
           </div>
+        </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+const ScheduleAgenda = ({
+  events,
+  clashingSectionIds,
+  onShowDetails,
+}: {
+  events: SectionEvent[];
+  clashingSectionIds: Set<number>;
+  onShowDetails: (sectionEvent: SectionEvent) => void;
+}) => {
+  const daysWithEvents = dayDefs.filter((day) =>
+    events.some(({ section }) => section.days.includes(day.key)),
+  );
+  const [selectedDay, setSelectedDay] = useState(daysWithEvents[0]?.key ?? dayDefs[0].key);
+
+  useEffect(() => {
+    if (!daysWithEvents.some((d) => d.key === selectedDay) && daysWithEvents[0]) {
+      setSelectedDay(daysWithEvents[0].key);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events]);
+
+  const dayEvents = events
+    .filter(({ section }) => section.days.includes(selectedDay))
+    .map((event) => ({ event, start: parseTimeRange(event.section.times)[0] ?? 0 }))
+    .sort((a, b) => a.start - b.start)
+    .map(({ event }) => event);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 scroll-thin">
+        {dayDefs.map((day) => {
+          const hasEvents = daysWithEvents.some((d) => d.key === day.key);
+          return (
+            <button
+              key={day.key}
+              type="button"
+              disabled={!hasEvents}
+              onClick={() => setSelectedDay(day.key)}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                selectedDay === day.key
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : hasEvents
+                    ? "border-border/60 bg-card text-foreground hover:bg-muted"
+                    : "border-border/30 bg-card text-muted-foreground/40"
+              }`}
+            >
+              {day.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {dayEvents.length === 0 ? (
+        <div className="flex h-32 items-center justify-center rounded-xl border border-border/60 bg-muted/10 text-sm text-muted-foreground">
+          No sections on this day.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {dayEvents.map(({ course, section }) => {
+            const demandRatio = computeDemandRatio(section);
+            const slotColors = getDemandClasses(demandRatio);
+            const isClashing = clashingSectionIds.has(section.id);
+            return (
+              <div
+                key={section.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => onShowDetails({ course, section })}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onShowDetails({ course, section });
+                  }
+                }}
+                className={`cursor-pointer rounded-xl border p-3 shadow-sm transition-colors ${
+                  isClashing
+                    ? "border-destructive/70 bg-destructive text-destructive-foreground ring-2 ring-destructive/60"
+                    : `border-border/60 ${slotColors.bg} ${slotColors.text}`
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold text-current">
+                    {course.course_code}
+                    <span className="ml-1.5 opacity-80">{section.section_code}</span>
+                  </p>
+                  {section.times && (
+                    <span className="shrink-0 text-xs font-medium text-current opacity-90">
+                      {section.times}
+                    </span>
+                  )}
+                </div>
+                {section.faculty && (
+                  <p className="mt-1 truncate text-xs text-current opacity-80">{section.faculty}</p>
+                )}
+                {section.room && (
+                  <p className="truncate text-xs text-current opacity-80">{section.room}</p>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -1186,9 +1337,11 @@ const SectionSelectorBar = ({
 interface SectionDetailModalProps {
   sectionEvent: SectionEvent;
   onClose: () => void;
+  onRemove: () => void;
+  removing: boolean;
 }
 
-const SectionDetailModal = ({ sectionEvent, onClose }: SectionDetailModalProps) => {
+const SectionDetailModal = ({ sectionEvent, onClose, onRemove, removing }: SectionDetailModalProps) => {
   const { course, section } = sectionEvent;
   const selected = section.selected_count ?? 0;
   const enrolled = section.enrollment_snapshot ?? 0;
@@ -1219,29 +1372,40 @@ const SectionDetailModal = ({ sectionEvent, onClose }: SectionDetailModalProps) 
         onClick={(e) => e.stopPropagation()}
         style={{ maxHeight: "calc(100vh - 2rem)" }}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold text-muted-foreground">{course.course_code}</p>
-            <h2 className="text-xl font-bold">{section.section_code}</h2>
+            <p className="text-sm font-semibold text-muted-foreground">
+              {course.course_code}
+              <span className="ml-1.5 font-normal">{section.section_code}</span>
+            </p>
+            <h2 className="text-xl font-bold leading-tight">{course.title || course.course_code}</h2>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0">
             <X className="h-4 w-4" />
           </Button>
         </div>
         <div className="mt-4 space-y-3 text-sm">
           <div className="flex justify-between text-muted-foreground">
-            <span>Days</span>
-            <span className="font-medium text-foreground">
+            <span>Days & time</span>
+            <span className="flex items-center gap-2 font-medium text-foreground">
               <DayIndicators days={section.days} />
+              {section.times || "N/A"}
             </span>
           </div>
-          <DetailRow label="Time" value={section.times || "N/A"} />
           <DetailRow label="Room" value={section.room || "TBD"} />
           <DetailRow label="Faculty" value={section.faculty || "TBD"} />
         </div>
         {showBar && (
           <DemandBar capacity={capacity} picked={selected} enrolled={enrolled} />
         )}
+        <Button
+          variant="outline"
+          className="mt-4 w-full text-destructive hover:text-destructive"
+          onClick={onRemove}
+          disabled={removing}
+        >
+          {removing ? "Removing…" : "Remove this section"}
+        </Button>
         <p className="mt-4 text-xs text-muted-foreground">
           Picked counts number of students who have selected this section.
         </p>
@@ -1375,16 +1539,17 @@ const DemandBar = ({
   const safeEnrolled = Math.max(0, Math.min(enrolled, capacity));
   const pickedPercent = capacity > 0 ? (safePicked / capacity) * 100 : 0;
   const enrolledPercent = capacity > 0 ? (safeEnrolled / capacity) * 100 : 0;
+  const markersOverlap = Math.abs(pickedPercent - enrolledPercent) < 4;
   return (
     <div className="mt-6 space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-4 text-xs">
       <div className="relative h-3 rounded-full bg-muted">
         <div
           className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background bg-primary shadow"
-          style={{ left: `${pickedPercent}%`, top: "50%" }}
+          style={{ left: `${pickedPercent}%`, top: markersOverlap ? "35%" : "50%" }}
         />
         <div
-          className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background bg-muted-foreground/70 shadow"
-          style={{ left: `${enrolledPercent}%`, top: "50%" }}
+          className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-45 border-2 border-background bg-muted-foreground/70 shadow"
+          style={{ left: `${enrolledPercent}%`, top: markersOverlap ? "65%" : "50%" }}
         />
       </div>
       <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
@@ -1434,15 +1599,24 @@ function computeDemandRatio(section: PlannerSection): number {
 
 function getDemandClasses(ratio: number): { bg: string; text: string } {
   if (ratio >= 1.0) {
-    return { bg: "bg-destructive/30 hover:bg-destructive/40", text: "text-destructive-foreground" };
+    return {
+      bg: "bg-destructive/40 hover:bg-destructive/50 dark:bg-destructive/30 dark:hover:bg-destructive/40",
+      text: "text-destructive-foreground",
+    };
   }
   if (ratio >= 0.75) {
-    return { bg: "bg-amber-200/70 hover:bg-amber-200/80", text: "text-amber-950" };
+    return {
+      bg: "bg-warning/40 hover:bg-warning/50 dark:bg-warning/25 dark:hover:bg-warning/35",
+      text: "text-warning-foreground",
+    };
   }
   if (ratio >= 0.5) {
-    return { bg: "bg-primary/20 hover:bg-primary/30", text: "text-primary-900" };
+    return {
+      bg: "bg-primary/30 hover:bg-primary/40 dark:bg-primary/20 dark:hover:bg-primary/30",
+      text: "text-primary",
+    };
   }
-  return { bg: "bg-blue-500/20 hover:bg-blue-500/30", text: "text-blue-900 dark:text-blue-100" };
+  return { bg: "bg-secondary/60 hover:bg-secondary/80", text: "text-secondary-foreground" };
 }
 
 function truncateFaculty(faculty: string | null | undefined): string {

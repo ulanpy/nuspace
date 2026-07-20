@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TicketCard } from './ticket-card';
 import { Button } from "@/components/atoms/button";
+import { PageContainer } from "@/components/atoms/page-container";
+import { PageHeader } from "@/components/atoms/page-header";
 import { Filter, Folder, CheckCircle, ChevronDown } from "lucide-react";
 import { useRouter } from "@/router/navigation";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
@@ -154,17 +156,8 @@ export default function SGDashboard() {
 
   return (
     <MotionWrapper>
-      <div className="container mx-auto px-4 py-8">
-
-        {/* Page Header */}
-        <div className="mb-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">SG Dashboard</h1>
-              <p className="text-gray-600 dark:text-gray-400">Manage student appeals and track metrics</p>
-            </div>
-          </div>
-        </div>
+      <PageContainer padding="default">
+        <PageHeader title="SG Dashboard" subtitle="Manage student appeals and track metrics" />
 
         {/* Filters */}
         <div className="mb-6">
@@ -272,7 +265,7 @@ export default function SGDashboard() {
             </div>
           )}
         </div>
-      </div>
+      </PageContainer>
     </MotionWrapper>
   );
 }

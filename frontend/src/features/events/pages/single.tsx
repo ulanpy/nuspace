@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/atoms/button";
+import { PageContainer } from "@/components/atoms/page-container";
 import { Badge } from "@/components/atoms/badge";
 import { EventModal } from '@/features/events/components/event-modal';
 import { CountdownBadge } from '@/features/events/components/countdown-badge';
@@ -149,7 +150,7 @@ const EventDetailView = ({
   handleImageError,
 }: EventDetailViewProps) => {
   return (
-    <div className="container mx-auto pb-20 px-4 max-w-7xl">
+    <PageContainer maxWidth="full" padding="default" className="pb-20">
       <Button
         variant="ghost"
         className="flex items-center gap-2 -ml-3 mb-4 text-muted-foreground hover:text-foreground"
@@ -368,7 +369,7 @@ const EventDetailView = ({
         event={event}
         isEditMode={true}
       />
-    </div>
+    </PageContainer>
   );
 };
 
@@ -385,13 +386,12 @@ const EventDetailErrorState = ({
   isError?: boolean;
   onBack: () => void;
 }) => (
-  <div className="container mx-auto px-4 py-6">
+  <PageContainer padding="default">
     <div className="text-center py-12">
       <h2 className="text-xl font-bold text-destructive mb-4">
         {isError ? "Failed to fetch event details" : "Event not found"}
       </h2>
       <Button onClick={onBack}>Return to Events</Button>
     </div>
-  </div>
-);
-
+  </PageContainer>
+  );

@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import { Calendar, Plus } from "lucide-react";
 import { useSearchParams } from "@/router/navigation";
+import { PageContainer } from "@/components/atoms/page-container";
+import { PageHeader } from "@/components/atoms/page-header";
 
 import { LoginModal } from "@/components/molecules/login-modal";
 import { CommunityCard } from '@/features/communities/components/community-card';
@@ -85,14 +87,9 @@ export default function CommunitiesPage() {
 
   return (
     <MotionWrapper>
-      <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <div className="pr-4 sm:pr-0">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Communities</h1>
-              <p className="text-gray-600 dark:text-gray-400">Join communities and connect with like-minded people</p>
-            </div>
+      <PageContainer padding="default">
+        <div className="flex items-center justify-between mb-6">
+          <PageHeader title="Communities" subtitle="Join communities and connect with like-minded people" className="mb-0" />
             <Button
               onClick={() => setIsCreateModalOpen(true)}
               size="sm"
@@ -103,7 +100,6 @@ export default function CommunitiesPage() {
               <span className="sm:hidden">Create</span>
             </Button>
           </div>
-        </div>
 
         {/* Search Bar */}
         <div className="mb-4">
@@ -302,7 +298,7 @@ export default function CommunitiesPage() {
           title="Login Required"
           message="You need to be logged in to follow communities."
         />
-      </div>
+      </PageContainer>
     </MotionWrapper>
   );
 }
