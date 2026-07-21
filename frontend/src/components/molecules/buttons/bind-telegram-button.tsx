@@ -17,7 +17,12 @@ const numberToEmoji = (num: number): string => {
   return emojis[num - 1] || "❓";
 };
 
-export function BindTelegramButton() {
+interface BindTelegramButtonProps {
+  compact?: boolean
+  iconOnly?: boolean
+}
+
+export function BindTelegramButton({ compact, iconOnly }: BindTelegramButtonProps = {}) {
   const { user, refetchUser } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -149,21 +154,47 @@ export function BindTelegramButton() {
     return null;
   }
 
-  return (
-    <>
-      <Button
-        variant="outline"
-        size="sm"
-        className="flex items-center gap-1.5"
+  const trigger = compact ? (
+    iconOnly ? (
+      <button
+        type="button"
         onClick={handleBindTelegram}
         disabled={isLoading}
+        className="flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        title="Connect Telegram"
       >
-        <div className="flex items-center gap-1">
-          <LinkIcon className="h-3.5 w-3.5" />
-          <FaTelegram className="h-3.5 w-3.5" />
-        </div>
-        <span>{isLoading ? "Processing..." : "Connect Telegram"}</span>
-      </Button>
+        <FaTelegram className="h-5 w-5" />
+      </button>
+    ) : (
+      <button
+        type="button"
+        onClick={handleBindTelegram}
+        disabled={isLoading}
+        className="flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+      >
+        <FaTelegram className="h-5 w-5 shrink-0 text-[#0088cc]" />
+        <span className="truncate">{isLoading ? "Processing..." : "Connect Telegram"}</span>
+      </button>
+    )
+  ) : (
+    <Button
+      variant="outline"
+      size="sm"
+      className="flex items-center gap-1.5"
+      onClick={handleBindTelegram}
+      disabled={isLoading}
+    >
+      <div className="flex items-center gap-1">
+        <LinkIcon className="h-3.5 w-3.5" />
+        <FaTelegram className="h-3.5 w-3.5" />
+      </div>
+      <span>{isLoading ? "Processing..." : "Connect Telegram"}</span>
+    </Button>
+  )
+
+  return (
+    <>
+      {trigger}
 
       <Modal
         isOpen={showModal}
