@@ -2,6 +2,7 @@
 Parse registrar schedule + priority PDFs into document list.
 
 Used by the Cloud Run Job (and kept as a callable module for local debugging).
+Does not import backend Config — safe to run with only BUCKET_NAME / GCP_PROJECT_ID.
 """
 
 from __future__ import annotations
@@ -18,10 +19,50 @@ import httpx
 
 from backend.modules.courses.registrar.parsers.priority_parser import parse_pdf as parse_priority_pdf
 from backend.modules.courses.registrar.parsers.schedule_pdf_parser import parse_schedule_pdf
-from backend.modules.courses.registrar.schedule_sync import (
-    SCHEDULE_PDF_URL,
-    _merge_priorities_into_schedule,
-)
+
+
+def _normalize_code(value: str | None) -> str:
+    if not value:
+        return ""
+    return (
+        value.replace("-", "")
+        .replace(" ", "")
+        .strip()
+        .upper()
+    )
+
+
+def merge_priorities_into_schedule(
+    schedule_docs: Sequence[dict], priority_docs: Sequence[dict]
+) -> Sequence[dict]:
+    priority_map = {
+        _normalize_code(item.get("abbr")): item
+        for item in priority_docs
+        if _normalize_code(item.get("abbr"))
+    }
+
+    merged = []
+    for doc in schedule_docs:
+        code = _normalize_code(doc.get("course_code"))
+        priority = priority_map.get(code)
+        if priority:
+            doc = {
+                **doc,
+                "prerequisite": priority.get("prerequisite") or "",
+                "corequisite": priority.get("corequisite") or "",
+                "antirequisite": priority.get("antirequisite") or "",
+                "priority_1": priority.get("priority_1") or None,
+                "priority_2": priority.get("priority_2") or None,
+                "priority_3": priority.get("priority_3") or None,
+                "priority_4": priority.get("priority_4") or None,
+            }
+        merged.append(doc)
+
+    return merged
+
+
+# Back-compat alias used by tests / older imports
+_merge_priorities_into_schedule = merge_priorities_into_schedule
 
 
 async def build_schedule_documents(
@@ -37,14 +78,14 @@ async def build_schedule_documents(
     if priority_pdf_url:
         priority_docs = await _fetch_priority(priority_pdf_url)
         if priority_docs:
-            documents = _merge_priorities_into_schedule(documents, priority_docs)
+            documents = merge_priorities_into_schedule(documents, priority_docs)
 
     return documents
 
 
 async def main() -> None:
     """CLI: write parsed documents to SCHEDULE_SYNC__OUTPUT_PATH (local debug)."""
-    pdf_url = os.environ.get("SCHEDULE_SYNC__PDF_URL", SCHEDULE_PDF_URL)
+    pdf_url = os.environ.get("SCHEDULE_SYNC__PDF_URL")
     term_label = os.environ.get("SCHEDULE_SYNC__TERM_LABEL") or None
     term_id = os.environ.get("SCHEDULE_SYNC__TERM_ID") or _extract_term_id(pdf_url or "")
     priority_pdf_url = os.environ.get("SCHEDULE_SYNC__PRIORITY_PDF_URL") or None

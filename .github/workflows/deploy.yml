@@ -193,6 +193,7 @@ jobs:
         run: |
           # Keep Cloud Run Job parsers in sync with the FastAPI image (PDF parse → GCS).
           # Job must already exist (terraform apply). Image tag is ignored by Terraform lifecycle.
+          # Explicit command avoids start.sh → uvicorn → full Config (job has no .env).
           if ! gcloud run jobs describe schedule-sync-job \
             --region=europe-central2 \
             --project="$DEPLOY_GCP_PROJECT" >/dev/null 2>&1; then
@@ -201,6 +202,9 @@ jobs:
           fi
           gcloud run jobs update schedule-sync-job \
             --image="kamikadze24/fastapi:${{ steps.meta.outputs.version }}" \
+            --command=/nuros/backend/.venv/bin/python \
+            --args=-m,backend.modules.courses.registrar.schedule_sync_job \
+            --update-env-vars="PYTHONPATH=/nuros,PYTHONUNBUFFERED=1" \
             --region=europe-central2 \
             --project="$DEPLOY_GCP_PROJECT"
           echo "Updated schedule-sync-job to kamikadze24/fastapi:${{ steps.meta.outputs.version }}"

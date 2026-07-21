@@ -9,6 +9,9 @@ from backend.modules.courses.registrar.schedule_gcs import (
     SCHEDULE_GCS_OBJECT,
     download_schedule_catalog,
 )
+from backend.modules.courses.registrar.schedule_sync_worker import (
+    merge_priorities_into_schedule,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +19,9 @@ SCHEDULE_PDF_URL = None  # legacy; PDF parsing lives in Cloud Run Job
 SCHEDULE_INDEX_UID = "course_schedule_catalog"
 SCHEDULE_PRIMARY_KEY = "id"
 SCHEDULE_REFRESH_INTERVAL_SECONDS = 60 * 60 * 24  # 24 hours
+
+# Re-export for tests / callers that imported merge from this module
+_merge_priorities_into_schedule = merge_priorities_into_schedule
 
 SCHEDULE_SEARCHABLE_ATTRIBUTES: Sequence[str] = (
     "course_code",
@@ -95,46 +101,6 @@ async def sync_schedule_catalog(
     await _recreate_schedule_index(meilisearch_client, documents)
     logger.info("Synced %s registrar schedule entries from GCS", len(documents))
     return len(documents)
-
-
-def _normalize_code(value: str | None) -> str:
-    if not value:
-        return ""
-    return (
-        value.replace("-", "")
-        .replace(" ", "")
-        .strip()
-        .upper()
-    )
-
-
-def _merge_priorities_into_schedule(
-    schedule_docs: Sequence[dict], priority_docs: Sequence[dict]
-) -> Sequence[dict]:
-    priority_map = {
-        _normalize_code(item.get("abbr")): item
-        for item in priority_docs
-        if _normalize_code(item.get("abbr"))
-    }
-
-    merged = []
-    for doc in schedule_docs:
-        code = _normalize_code(doc.get("course_code"))
-        priority = priority_map.get(code)
-        if priority:
-            doc = {
-                **doc,
-                "prerequisite": priority.get("prerequisite") or "",
-                "corequisite": priority.get("corequisite") or "",
-                "antirequisite": priority.get("antirequisite") or "",
-                "priority_1": priority.get("priority_1") or None,
-                "priority_2": priority.get("priority_2") or None,
-                "priority_3": priority.get("priority_3") or None,
-                "priority_4": priority.get("priority_4") or None,
-            }
-        merged.append(doc)
-
-    return merged
 
 
 class ScheduleCatalogRefresher:
