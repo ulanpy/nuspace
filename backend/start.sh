@@ -8,8 +8,25 @@ if [ "$SCHEDULE_SYNC_JOB" = "1" ]; then
     exec "$VENV_BIN/python" -m backend.modules.courses.registrar.schedule_sync_job
 fi
 
-if [ "$IS_DEBUG" = "false" ]; then
-    exec "$VENV_BIN/gunicorn" -w $(( $(nproc) * 2 + 1 )) -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 backend.main:app
+# Normalize IS_DEBUG so False/FALSE/0 from .env also count as prod.
+IS_DEBUG_NORM=$(printf '%s' "${IS_DEBUG:-true}" | tr '[:upper:]' '[:lower:]')
+
+# Single uvicorn process only (app is still stateful: bot webhook, Meili sync, etc.).
+# Multi-worker gunicorn comes back after the app is made stateless.
+if [ "$IS_DEBUG_NORM" = "false" ] || [ "$IS_DEBUG_NORM" = "0" ] || [ "$IS_DEBUG_NORM" = "no" ]; then
+    exec "$VENV_BIN/uvicorn" backend.main:app --host 0.0.0.0 --port 8000
 else
-    exec "$VENV_BIN/uvicorn" backend.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /nuros/backend
+    exec "$VENV_BIN/uvicorn" backend.main:app \
+        --host 0.0.0.0 \
+        --port 8000 \
+        --reload \
+        --reload-dir /nuros/backend \
+        --reload-exclude '.venv/*' \
+        --reload-exclude '**/.venv/*' \
+        --reload-exclude '**/__pycache__/*' \
+        --reload-exclude '**/*.pyc' \
+        --reload-exclude '**/.mypy_cache/*' \
+        --reload-exclude '**/.pytest_cache/*' \
+        --reload-exclude '**/.ruff_cache/*' \
+        --reload-exclude '**/.git/*'
 fi
