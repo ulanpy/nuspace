@@ -11,8 +11,7 @@ fi
 # Normalize IS_DEBUG so False/FALSE/0 from .env also count as prod.
 IS_DEBUG_NORM=$(printf '%s' "${IS_DEBUG:-true}" | tr '[:upper:]' '[:lower:]')
 
-# Single uvicorn process only (app is still stateful: bot webhook, Meili sync, etc.).
-# Multi-worker gunicorn comes back after the app is made stateless.
+# Single uvicorn process (one pod / one container). Scale horizontally via k8s replicas later.
 if [ "$IS_DEBUG_NORM" = "false" ] || [ "$IS_DEBUG_NORM" = "0" ] || [ "$IS_DEBUG_NORM" = "no" ]; then
     exec "$VENV_BIN/uvicorn" backend.main:app --host 0.0.0.0 --port 8000
 else

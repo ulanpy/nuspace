@@ -33,7 +33,6 @@ services:
       - cloudflared
     environment:
       - PYTHONUNBUFFERED=1
-      - WORKERS=${GUNICORN_WORKERS:-4}
 
   nginx:
     container_name: nginx
