@@ -21,7 +21,8 @@ import {
   PlannerCourseAddPayload,
   PlannerCourseSearchResult,
 } from "../types";
-import { Loader2, RefreshCcw, RotateCcw, Trash2, Wand2, X } from "lucide-react";
+import { SignInCard } from "@/components/molecules/sign-in-card";
+import { CalendarPlus, Loader2, RefreshCcw, RotateCcw, Trash2, Wand2, X } from "lucide-react";
 import { ConfirmationModal } from './confirmation-modal';
 import { useSyllabusLinks } from '../utils/use-syllabus-links';
 
@@ -152,11 +153,10 @@ type MutationRef<TArgs> = UseMutationResult<any, unknown, TArgs, unknown>;
 type SectionEvent = { course: PlannerCourse; section: PlannerSection };
 
 interface ScheduleBuilderTabProps {
-  user: { email?: string | null } | null;
-  login: () => void;
+  user: User | null;
 }
 
-export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => {
+export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
   const queryClient = useQueryClient();
   const plannerQuery = useQuery({
     queryKey: ["plannerSchedule"],
@@ -528,17 +528,11 @@ export const ScheduleBuilderTab = ({ user, login }: ScheduleBuilderTabProps) => 
 
   if (!user) {
     return (
-      <div className="rounded-2xl border border-border/60 bg-muted/30 p-4 flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold text-foreground">Sign in to build your schedule.</p>
-          <p className="text-xs text-muted-foreground">
-            We will save your schedule for you in your account.
-          </p>
-        </div>
-        <Button onClick={login} size="sm" className="h-8 rounded-full px-3 text-xs font-medium">
-          Login
-        </Button>
-      </div>
+      <SignInCard
+        icon={<CalendarPlus className="h-6 w-6" aria-hidden="true" />}
+        title="Sign in to build your schedule"
+        description="We will save your schedule for you in your account."
+      />
     );
   }
 

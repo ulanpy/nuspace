@@ -6,7 +6,8 @@ import { useSearchParams } from "@/router/navigation";
 import { PageContainer } from "@/components/atoms/page-container";
 import { PageHeader } from "@/components/atoms/page-header";
 
-import { LoginModal } from "@/components/molecules/login-modal";
+import { AuthWallModal } from "@/components/molecules/auth-wall-modal";
+import { useAuthGate } from "@/hooks/use-auth-gate";
 import { CommunityCard } from '@/features/communities/components/community-card';
 import { InfiniteList } from '@/components/virtual/infinite-list';
 import { Community, CommunityCategory } from "@/features/shared/campus/types";
@@ -28,6 +29,7 @@ export default function CommunitiesPage() {
   // const location = useLocation();
   // const { user } = useUser();
   const searchParams = useSearchParams();
+  const { requireAuth, isModalOpen, closeModal } = useAuthGate();
   const initialRecruitmentFilter = searchParams?.get("recruitment_status") === "open";
   const [selectedCommunityCategory, setSelectedCommunityCategory] =
     useState<string>("All");
@@ -64,8 +66,6 @@ export default function CommunitiesPage() {
       ? null
       : alias(normalize(selectedCommunityCategory));
 
-  const [showLoginModal] = useState(false);
-
   const categoryOptions = useMemo(
     () => ["All", ...Object.values(CommunityCategory)],
     []
@@ -91,7 +91,7 @@ export default function CommunitiesPage() {
         <div className="flex items-center justify-between mb-6">
           <PageHeader title="Communities" subtitle="Join communities and connect with like-minded people" className="mb-0" />
             <Button
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={() => requireAuth(() => setIsCreateModalOpen(true))}
               size="sm"
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2"
             >
@@ -290,13 +290,10 @@ export default function CommunitiesPage() {
           isEditMode={false}
         />
 
-        {/* Login Modal */}
-        <LoginModal
-          isOpen={showLoginModal}
-          onClose={() => { }}
-          onSuccess={() => { }}
-          title="Login Required"
-          message="You need to be logged in to follow communities."
+        <AuthWallModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          message="You need to be logged in to create communities."
         />
       </PageContainer>
     </MotionWrapper>

@@ -28,7 +28,7 @@ const tabOptions = [
 ] as const;
 
 export default function GradeStatisticsPage() {
-  const { user, login } = useUser();
+  const { user } = useUser();
   const viewModel = useLiveGpaViewModel(user);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -136,7 +136,7 @@ export default function GradeStatisticsPage() {
           </div>
 
           <TabsContent value="live-gpa" className="mt-6">
-            <LiveGpaTab user={user} login={login} viewModel={viewModel} />
+            <LiveGpaTab user={user} viewModel={viewModel} />
           </TabsContent>
 
           <TabsContent value="course-stats" className="mt-6">
@@ -144,11 +144,11 @@ export default function GradeStatisticsPage() {
           </TabsContent>
 
           <TabsContent value="schedule-builder" className="mt-6">
-            <ScheduleBuilderTab user={user} login={login} />
+            <ScheduleBuilderTab user={user} />
           </TabsContent>
 
           <TabsContent value="degree-audit" className="mt-6">
-            <DegreeAuditTab user={user} login={login} />
+            <DegreeAuditTab user={user} />
           </TabsContent>
         </Tabs>
       </PageContainer>

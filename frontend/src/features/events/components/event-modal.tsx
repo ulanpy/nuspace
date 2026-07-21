@@ -23,7 +23,6 @@ import { EventActions } from './forms/event-actions';
 import { useEventForm, EventFormProvider } from '@/context/event-form-context';
 import { useInitializeMedia } from '@/features/media/hooks/use-initialize-media';
 import { useToast } from "@/hooks/use-toast";
-import { LoginModal } from "@/components/molecules/login-modal";
 
 interface EventModalProps {
   isOpen: boolean;
@@ -174,18 +173,7 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
     }
   };
 
-  // Require authentication to use the modal
-  if (!user) {
-    return (
-      <LoginModal
-        isOpen={isOpen}
-        onClose={onClose}
-        onSuccess={onClose}
-        title="Login Required"
-        message={isEditMode ? "You need to be logged in to edit events." : "You need to be logged in to create events."}
-      />
-    );
-  }
+  if (!user) return null;
 
   return (
     <EventFormProvider

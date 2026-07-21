@@ -24,6 +24,8 @@ import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
 import { OpportunityForm } from '../components/opportunity-form';
 import { useUser } from "@/hooks/use-user";
+import { useAuthGate } from "@/hooks/use-auth-gate";
+import { AuthWallModal } from "@/components/molecules/auth-wall-modal";
 import { queryClient } from "@/utils/query-client";
 import { Modal } from "@/components/atoms/modal";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/popover";
@@ -230,6 +232,7 @@ export default function OpportunitiesPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const { user } = useUser();
+  const { requireAuth, isModalOpen, closeModal } = useAuthGate();
   const { toast } = useToast();
 
   const userEmail = user?.email?.toLowerCase();
@@ -488,15 +491,17 @@ export default function OpportunitiesPage() {
               </div>
             </div>
 
-            {canManage && (
+            {(!user || canManage) && (
               <div className="flex h-full flex-col justify-end gap-2 sm:col-span-2 md:col-span-2 lg:col-span-1 lg:col-start-6 items-end">
                 <Button
                   className="flex h-11 w-full items-center justify-center gap-2 whitespace-nowrap text-center"
-                  onClick={() => {
-                    setSubmitError(null);
-                    setEditing(null);
-                    setIsFormOpen(true);
-                  }}
+                  onClick={() =>
+                    requireAuth(() => {
+                      setSubmitError(null);
+                      setEditing(null);
+                      setIsFormOpen(true);
+                    })
+                  }
                 >
                   <Plus className="h-4 w-4" />
                   Add Opportunity
@@ -582,6 +587,12 @@ export default function OpportunitiesPage() {
           )}
         </PageContainer>
       </div>
+
+      <AuthWallModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        message="You need to be logged in to add an opportunity."
+      />
     </MotionWrapper>
   );
 }

@@ -100,15 +100,15 @@ function SGTicketRoute() {
 
   return (
     <ProtectedLayout>
-      <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading...</div>}>
-        {id ? (
-          <TicketDetailPageContent />
-        ) : (
-          <div className="p-8 text-center">
-            <p className="text-muted-foreground">No ticket ID provided</p>
-          </div>
-        )}
-      </Suspense>
+        <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading...</div>}>
+          {id ? (
+            <TicketDetailPageContent />
+          ) : (
+            <div className="p-8 text-center">
+              <p className="text-muted-foreground">No ticket ID provided</p>
+            </div>
+          )}
+        </Suspense>
     </ProtectedLayout>
   )
 }
@@ -119,15 +119,15 @@ function StudentTicketRoute() {
 
   return (
     <ProtectedLayout>
-      <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading...</div>}>
-        {id ? (
-          <TicketDetailPageContent />
-        ) : (
-          <div className="p-8 text-center">
-            <p className="text-muted-foreground">No ticket ID provided</p>
-          </div>
-        )}
-      </Suspense>
+        <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading...</div>}>
+          {id ? (
+            <TicketDetailPageContent />
+          ) : (
+            <div className="p-8 text-center">
+              <p className="text-muted-foreground">No ticket ID provided</p>
+            </div>
+          )}
+        </Suspense>
     </ProtectedLayout>
   )
 }

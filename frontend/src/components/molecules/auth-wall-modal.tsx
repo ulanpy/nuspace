@@ -1,38 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "../../components/atoms/button";
+import { Button } from "../atoms/button";
 import { useUser } from "../../hooks/use-user";
-import { Modal } from "../../components/atoms/modal";
+import { Modal } from "../atoms/modal";
 
-interface LoginModalProps {
+interface AuthWallModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
-  title: string;
+  title?: string;
   message: string;
 }
 
-export const LoginModal = ({
+export const AuthWallModal = ({
   isOpen,
   onClose,
-  onSuccess,
-  title,
+  title = "Login Required",
   message,
-}: LoginModalProps) => {
+}: AuthWallModalProps) => {
   const { login } = useUser();
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-
-  const handleLogin = () => {
-    setIsLoggingIn(true);
-    login();
-    // In a real app, we would wait for the login to complete
-    // For now, we'll just simulate it
-    setTimeout(() => {
-      setIsLoggingIn(false);
-      onSuccess();
-    }, 1000);
-  };
 
   return (
     <Modal
@@ -41,7 +26,7 @@ export const LoginModal = ({
       className="!bg-transparent !shadow-none border-none max-w-xl"
       contentClassName="[&>div.sticky]:hidden"
     >
-      <div className="rounded-2xl border border-border/60 bg-background p-4 flex flex-col gap-3">
+      <div className="rounded-lg border border-border/60 bg-background p-4 flex flex-col gap-3">
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1">
             <p className="text-lg font-semibold text-foreground">{title}</p>
@@ -67,12 +52,11 @@ export const LoginModal = ({
             Cancel
           </Button>
           <Button
-            onClick={handleLogin}
-            disabled={isLoggingIn}
+            onClick={login}
             size="sm"
             className="h-9 rounded-full px-4 text-sm font-medium"
           >
-            {isLoggingIn ? "Logging in..." : "Login"}
+            Login
           </Button>
         </div>
       </div>
