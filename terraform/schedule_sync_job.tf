@@ -51,10 +51,20 @@ resource "google_cloud_run_v2_job" "schedule_sync" {
       max_retries     = 1
 
       containers {
-        image = var.schedule_sync_job_image
+        image   = var.schedule_sync_job_image
+        # Bypass start.sh (API server / Config). Job only needs GCS + egress.
+        command = ["/nuros/backend/.venv/bin/python"]
+        args = [
+          "-m",
+          "backend.modules.courses.registrar.schedule_sync_job",
+        ]
 
         env {
-          name  = "SCHEDULE_SYNC_JOB"
+          name  = "PYTHONPATH"
+          value = "/nuros"
+        }
+        env {
+          name  = "PYTHONUNBUFFERED"
           value = "1"
         }
         env {
