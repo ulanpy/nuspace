@@ -48,10 +48,13 @@ class Config(BaseSettings):
     QUALTRICS_API_TOKEN: str | None = None
     QUALTRICS_DATA_CENTER_ID: str | None = None
     QUALTRICS_SURVEY_ID: str | None = None
-    # DeepSeek (Telegram event extraction). Optional locally; set in .env for bot /post.
-    DEEPSEEK_API_KEY: str | None = None
-    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
-    DEEPSEEK_MODEL: str = "deepseek-v4-flash"
+    # Gemini (Telegram /post event extraction).
+    # Local dev: GEMINI_API_KEY + GEMINI_USE_ENTERPRISE=false (default when IS_DEBUG).
+    # Prod VM: GEMINI_USE_ENTERPRISE=true — ADC via attached service account, no API key.
+    GEMINI_API_KEY: str | None = None
+    GEMINI_MODEL: str = "gemini-3-flash-preview"
+    GEMINI_LOCATION: str = "global"
+    GEMINI_USE_ENTERPRISE: bool | None = None
     # Header mapping for easy reference when setting values
     GCS_METADATA_HEADERS: dict = {
         "filename": "x-goog-meta-filename",
@@ -118,6 +121,13 @@ class Config(BaseSettings):
     @cached_property
     def REDIS_URL(self):
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}"
+
+    @cached_property
+    def gemini_use_enterprise(self) -> bool:
+        """GCP enterprise backend on prod; Developer API + key locally."""
+        if self.GEMINI_USE_ENTERPRISE is not None:
+            return self.GEMINI_USE_ENTERPRISE
+        return not self.IS_DEBUG
 
     @cached_property
     def ROUTING_PREFIX(self) -> str:

@@ -13,7 +13,7 @@ from backend.modules.campuscurrent.models.events import (
 
 
 class ExtractedEventDraft(BaseModel):
-    """Structured event fields returned by DeepSeek from a Telegram post."""
+    """Structured event fields returned by the LLM from a Telegram post."""
 
     name: str | None = None
     place: str | None = None

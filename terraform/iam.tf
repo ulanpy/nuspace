@@ -151,6 +151,14 @@ resource "google_project_iam_member" "vm_secret_accessor" {
   member  = "serviceAccount:${google_service_account.vm_service_account.email}"
 }
 
+# Gemini event extraction (/post) via google-genai enterprise mode (ADC on VM).
+resource "google_project_iam_member" "vm_aiplatform_user" {
+  depends_on = [google_project_service.aiplatform_api]
+  project    = var.project_id
+  role       = "roles/aiplatform.user"
+  member     = "serviceAccount:${google_service_account.vm_service_account.email}"
+}
+
 # Allow Pub/Sub service agent to sign OIDC tokens for the VM service account
 data "google_project" "current" {}
 

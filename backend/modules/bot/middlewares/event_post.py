@@ -12,7 +12,7 @@ from backend.modules.bot.dependencies import build_event_post_service
 
 
 class EventPostMiddleware(BaseMiddleware):
-    """Inject EventPostService (DeepSeek extractor + event publisher) into handlers."""
+    """Inject EventPostService (Gemini extractor + event publisher) into handlers."""
 
     def __init__(
         self,

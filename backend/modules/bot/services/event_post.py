@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.modules.campuscurrent.models.events import EventBotSubmission, EventBotSubmissionStatus, RegistrationPolicy
@@ -12,9 +14,12 @@ from backend.modules.bot.schemas.event_post import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 class EventPostService:
     """
-    Orchestrates Telegram /post → DeepSeek extract → Event create.
+    Orchestrates Telegram /post → Gemini extract → Event create.
 
     Depends on EventDraftExtractor and CampusEventPublisher via constructor DI.
     """
@@ -90,6 +95,7 @@ class EventPostService:
                 user_id=user.sub,
             )
         except Exception as exc:
+            logger.exception("Gemini event extraction failed for submission")
             submission.status = EventBotSubmissionStatus.failed
             submission.reject_reason = str(exc)[:500]
             await self.submission_repository.save(submission)

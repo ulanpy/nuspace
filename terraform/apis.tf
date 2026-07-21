@@ -62,6 +62,13 @@ resource "google_project_service" "iam_api" {
   disable_on_destroy = false
 }
 
+# Enable Vertex AI / Gemini Enterprise API for bot /post event extraction on prod VM.
+resource "google_project_service" "aiplatform_api" {
+  project            = var.project_id
+  service            = "aiplatform.googleapis.com"
+  disable_on_destroy = false
+}
+
 # Enable the Secret Manager API for managing secrets.
 resource "google_project_service" "secretmanager_api" {
   project            = var.project_id
