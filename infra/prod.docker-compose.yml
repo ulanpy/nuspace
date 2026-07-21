@@ -171,11 +171,6 @@ services:
   loki:
     container_name: loki
     image: grafana/loki:latest
-    environment:
-      - NO_PROXY=169.254.169.254,metadata.google.internal
-      - no_proxy=169.254.169.254,metadata.google.internal
-    extra_hosts:
-      - "metadata.google.internal:169.254.169.254"
     volumes:
       - ./loki/loki.prod.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
@@ -223,6 +218,7 @@ services:
       - "grafana-data:/var/lib/grafana"
       - "./grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
       - "./grafana/dashboards/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
+      - "./grafana/dashboards/cadvisor.json:/var/lib/grafana/dashboards/cadvisor.json"
       - "./grafana/provisioning/dashboards/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
       - "./grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
       - "./grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"

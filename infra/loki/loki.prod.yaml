@@ -1,6 +1,6 @@
-# This is a complete configuration to deploy Loki backed by GCS.
-# It uses the modern TSDB store and configures retention via the compactor.
-# Includes relevant limits_config for structured metadata and volume features.
+# Production Loki: local filesystem only (no GCS).
+# Avoids Class A ops / storage billing on gs://nuspace-logs.
+# Logs survive container restart via loki_data volume; wiped by `docker compose down -v`.
 
 auth_enabled: false
 
@@ -8,13 +8,9 @@ server:
   http_listen_port: 3100
 
 limits_config:
-  # This is the global retention period applied for all log streams.
-  # The compactor will use this value to delete old data.
-  # Set to 7 days (168 hours). The minimum retention is 24h.
   retention_period: 168h
   allow_structured_metadata: true
   volume_enabled: true
-  # Ingestion and stream/cardinality safeguards
   ingestion_rate_mb: 4
   ingestion_burst_size_mb: 8
   per_stream_rate_limit: 1MB
@@ -28,8 +24,6 @@ limits_config:
   reject_old_samples_max_age: 168h
 
 common:
-  # The path_prefix is used by Loki for internal operational files,
-  # typically for local temporary data when using an object store.
   path_prefix: /loki
   ring:
     instance_addr: 127.0.0.1
@@ -41,42 +35,31 @@ schema_config:
   configs:
     - from: 2020-05-15
       store: tsdb
-      object_store: gcs
+      object_store: filesystem
       schema: v13
       index:
         prefix: index_
         period: 24h
 
 storage_config:
-  # GCS configuration for chunks and index
-  gcs:
-    bucket_name: nuspace-logs
-
-  # TSDB shipper configuration for the index.
-  # These are *local* directories used by the shipper before uploading to GCS.
+  filesystem:
+    directory: /loki/chunks
   tsdb_shipper:
-    active_index_directory: /loki/active_index_data # Local temporary for active writes
-    cache_location: /loki/index_cache # Local directory for index cache
+    active_index_directory: /loki/active_index_data
+    cache_location: /loki/index_cache
 
 ingester:
-  chunk_target_size: 1536 # Value in KB.
-  # Reduce small-chunk churn by allowing longer idle time before flushing
+  chunk_target_size: 1536
   chunk_idle_period: 5m
-  # Upper bound on chunk age to avoid overly long-lived chunks
   max_chunk_age: 1h
 
 compactor:
-  # The working_directory is for local temporary files *before* compaction results are uploaded to GCS.
-  working_directory: /loki/compactor_work # Must be writable by Loki user in container
-  # Compaction less frequently to reduce object churn in the bucket
+  working_directory: /loki/compactor_work
   compaction_interval: 1h
   retention_enabled: true
-  # When using GCS object store, delete requests should also use GCS.
-  delete_request_store: gcs # Changed from 'filesystem' to 'gcs'
+  delete_request_store: filesystem
   retention_delete_delay: 2h
-  # Fewer workers to throttle background delete/write pressure on the bucket
   retention_delete_worker_count: 5
 
-# Pattern ingester is optional, you can leave it if you find it useful for unstructured logs.
 pattern_ingester:
-  enabled: true
+  enabled: false

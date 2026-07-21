@@ -4,13 +4,16 @@
 
 /* -------- EXPORTERS -------- */
 
-//Cadvisor exporter component for exposing Docker container metrics
+// Cadvisor exporter component for exposing Docker container metrics
 prometheus.exporter.cadvisor "docker" {
 	docker_host = "unix:///var/run/docker.sock"
 }
 
-// Node Exporter exporter component for exposing Docker container metrics
-prometheus.exporter.unix "host" { }
+// Host metrics (rootfs must match compose mount /:/rootfs:ro)
+prometheus.exporter.unix "host" {
+	rootfs_path = "/rootfs"
+	sysfs_path  = "/sys"
+}
 
 /* -------- SCRAPERS -------- */
 
@@ -28,11 +31,11 @@ prometheus.scrape "host_scrape" {
 	job_name   = "node_exporter"
 }
 
-// FastAPI Scraper Job
+// FastAPI Scraper Job — app mounts metrics at /metrics (root_path=/api is for nginx/OpenAPI only)
 prometheus.scrape "application_scrape" {
 	targets = [{
 		__address__      = "fastapi:8000",
-		__metrics_path__ = "/api/metrics",
+		__metrics_path__ = "/metrics",
 	}]
 	forward_to = [prometheus.remote_write.prometheus_write.receiver]
 	job_name   = "application"
@@ -53,46 +56,45 @@ prometheus.remote_write "prometheus_write" {
 
 // Discover Docker containers and extract metadata
 discovery.docker "linux" {
-    host = "unix:///var/run/docker.sock"
+	host = "unix:///var/run/docker.sock"
 }
 
 // Filter to only the 'fastapi' service/container targets
 discovery.relabel "logs_filter" {
-    targets = discovery.docker.linux.targets
+	targets = discovery.docker.linux.targets
 
-    // Flag if compose service is 'fastapi'
-    rule {
-        source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
-        regex         = "fastapi"
-        target_label  = "__tmp_keep"
-        replacement   = "true"
-        action        = "replace"
-    }
+	// Flag if compose service is 'fastapi'
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+		regex         = "fastapi"
+		target_label  = "__tmp_keep"
+		replacement   = "true"
+		action        = "replace"
+	}
 
-    // Flag if container name ends with 'fastapi' (fixed regex)
-    rule {
-        source_labels = ["__meta_docker_container_name"]
-        regex         = ".*fastapi$"  // Matches e.g., "/my-fastapi" or "/app-fastapi"
-        target_label  = "__tmp_keep"
-        replacement   = "true"
-        action        = "replace"
-    }
+	// Flag if container name ends with 'fastapi'
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = ".*fastapi$"
+		target_label  = "__tmp_keep"
+		replacement   = "true"
+		action        = "replace"
+	}
 
-    // Keep if flagged (i.e., either condition matched)
-    rule {
-        source_labels = ["__tmp_keep"]
-        regex         = "true"
-        action        = "keep"
-    }
+	// Keep if flagged
+	rule {
+		source_labels = ["__tmp_keep"]
+		regex         = "true"
+		action        = "keep"
+	}
 
-    // Optional: Drop the temp label
-    rule {
-        action = "labeldrop"
-        regex  = "__tmp_keep"  // Drops the label named "__tmp_keep"
-    }
+	rule {
+		action = "labeldrop"
+		regex  = "__tmp_keep"
+	}
 }
 
-// Define a relabeling rule to create a service name from the container name.
+// Create service_name from container name (/fastapi → fastapi)
 discovery.relabel "logs_integrations_docker" {
 	targets = []
 
@@ -103,13 +105,12 @@ discovery.relabel "logs_integrations_docker" {
 	}
 }
 
-// Configure a loki.source.docker component to collect logs from Docker containers.
 loki.source.docker "loki_default" {
-    host          = "unix:///var/run/docker.sock"
-    targets       = discovery.relabel.logs_filter.output
-    labels        = {"platform" = "docker"}
-    relabel_rules = discovery.relabel.logs_integrations_docker.rules
-    forward_to    = [loki.write.loki_write.receiver]
+	host          = "unix:///var/run/docker.sock"
+	targets       = discovery.relabel.logs_filter.output
+	labels        = {"platform" = "docker"}
+	relabel_rules = discovery.relabel.logs_integrations_docker.rules
+	forward_to    = [loki.write.loki_write.receiver]
 }
 
 loki.write "loki_write" {

@@ -217,6 +217,7 @@ services:
       - "grafana-data:/var/lib/grafana"
       - "./grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
       - "./grafana/dashboards/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
+      - "./grafana/dashboards/cadvisor.json:/var/lib/grafana/dashboards/cadvisor.json"
       - "./grafana/provisioning/dashboards/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
       # No need for alerting in development
       # - "./grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
