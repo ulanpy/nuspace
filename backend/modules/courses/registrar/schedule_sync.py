@@ -1,22 +1,21 @@
 import asyncio
-import json
 import logging
-import os
-import re
-import sys
-import tempfile
-from pathlib import Path
 from typing import Sequence
 
-import httpx
+from google.cloud import storage
 from httpx import AsyncClient
+
+from backend.modules.courses.registrar.schedule_gcs import (
+    SCHEDULE_GCS_OBJECT,
+    download_schedule_catalog,
+)
 
 logger = logging.getLogger(__name__)
 
-SCHEDULE_PDF_URL = None  # auto-discover when None
+SCHEDULE_PDF_URL = None  # legacy; PDF parsing lives in Cloud Run Job
 SCHEDULE_INDEX_UID = "course_schedule_catalog"
 SCHEDULE_PRIMARY_KEY = "id"
-SCHEDULE_REFRESH_INTERVAL_SECONDS = 60 * 60 * 24 # 24 hours
+SCHEDULE_REFRESH_INTERVAL_SECONDS = 60 * 60 * 24  # 24 hours
 
 SCHEDULE_SEARCHABLE_ATTRIBUTES: Sequence[str] = (
     "course_code",
@@ -60,141 +59,42 @@ async def _recreate_schedule_index(
 
 async def sync_schedule_catalog(
     meilisearch_client: AsyncClient,
-    pdf_url: str | None = SCHEDULE_PDF_URL,
-    term_label: str | None = None,
-    priority_pdf_url: str | None = None,
+    *,
+    storage_client: storage.Client,
+    bucket_name: str,
+    gcs_object: str = SCHEDULE_GCS_OBJECT,
 ) -> int:
     """
-    Download, parse, and upload registrar schedule PDF into Meilisearch.
-    Also merges registrar priority metadata into the same index to avoid
-    cross-index lookups at runtime.
-    Uses a subprocess parser for the schedule PDF (and priority merge) to avoid blocking
-    the API process.
+    Load pre-parsed registrar schedule JSON from GCS and upload into Meilisearch.
+
+    PDF discovery/parsing runs in Cloud Run Job (schedule_sync_job); this path is
+    lightweight I/O only so API restarts do not spike CPU.
     """
-    latest = None
-    if pdf_url is None or term_label is None or priority_pdf_url is None:
-        try:
-            latest = await _discover_latest_term()
-        except Exception:
-            logger.exception("Failed to auto-discover latest term; falling back to defaults if provided")
+    documents = download_schedule_catalog(
+        storage_client, bucket_name, object_name=gcs_object
+    )
 
-    if pdf_url is None and latest:
-        pdf_url = (
-            "https://registrar.nu.edu.kz/registrar_downloads/json?method=printDocument"
-            f"&name=school_schedule_by_term&termid={latest['termid']}"
+    if documents is None:
+        logger.warning(
+            "Schedule catalog GCS object gs://%s/%s missing or unreadable; "
+            "aborting sync to preserve existing Meilisearch data.",
+            bucket_name,
+            gcs_object,
         )
-    if term_label is None and latest:
-        term_label = latest["label"]
-    if priority_pdf_url is None and latest:
-        priority_pdf_url = (
-            "https://registrar.nu.edu.kz/registrar_downloads/json?method=printDocument"
-            f"&name=course_requirements&termid={latest['termid']}"
-        )
-
-    documents = await _run_schedule_parser_subprocess(pdf_url, term_label, priority_pdf_url)
+        return 0
 
     if not documents:
         logger.warning(
-            "Registrar sync resulted in 0 documents. "
-            "This may be because the source PDF is not yet available for the discovered term. "
-            "Aborting sync to preserve existing data."
+            "Schedule catalog GCS object gs://%s/%s is empty; "
+            "aborting sync to preserve existing Meilisearch data.",
+            bucket_name,
+            gcs_object,
         )
         return 0
 
     await _recreate_schedule_index(meilisearch_client, documents)
-    logger.info("Synced %s registrar schedule entries", len(documents))
+    logger.info("Synced %s registrar schedule entries from GCS", len(documents))
     return len(documents)
-
-
-async def _run_schedule_parser_subprocess(
-    pdf_url: str, term_label: str | None, priority_pdf_url: str | None
-) -> Sequence[dict]:
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as tmp:
-        output_path = Path(tmp.name)
-
-    env = os.environ.copy()
-    env["SCHEDULE_SYNC__PDF_URL"] = pdf_url
-    env["SCHEDULE_SYNC__OUTPUT_PATH"] = str(output_path)
-    if term_label:
-        env["SCHEDULE_SYNC__TERM_LABEL"] = term_label
-    if priority_pdf_url:
-        env["SCHEDULE_SYNC__PRIORITY_PDF_URL"] = priority_pdf_url
-    # Also pass term id if present in URL
-    try:
-        from urllib.parse import parse_qs, urlparse
-
-        qs = parse_qs(urlparse(pdf_url).query)
-        term_id = qs.get("termid", [None])[0]
-        if term_id:
-            env["SCHEDULE_SYNC__TERM_ID"] = term_id
-    except Exception:
-        pass
-
-    process = await asyncio.create_subprocess_exec(
-        sys.executable,
-        "-m",
-        "backend.modules.courses.registrar.schedule_sync_worker",
-        env=env,
-    )
-    await process.wait()
-
-    if process.returncode != 0:
-        output_path.unlink(missing_ok=True)
-        raise RuntimeError(f"Schedule sync worker exited with code {process.returncode}")
-
-    try:
-        with output_path.open("r", encoding="utf-8") as fp:
-            data = json.load(fp)
-    finally:
-        output_path.unlink(missing_ok=True)
-
-    return data
-
-
-_TERM_PATTERN = re.compile(
-    r"(?P<label>(Spring|Summer|Fall)\s+(?P<year>\d{4})).*?termid=(?P<termid>\d+)",
-    re.IGNORECASE | re.DOTALL,
-)
-_SEASON_ORDER = {"Spring": 0, "Summer": 1, "Fall": 2}
-_DISCOVERY_PAGES = [
-    "https://registrar.nu.edu.kz/course-schedules",
-    "https://registrar.nu.edu.kz/course-requirements",
-]
-
-
-async def _discover_latest_term() -> dict:
-    """Scrape registrar pages to find the latest term label + termid."""
-    async with httpx.AsyncClient(verify=False, timeout=30) as client:
-        texts = []
-        for url in _DISCOVERY_PAGES:
-            resp = await client.get(url)
-            resp.raise_for_status()
-            texts.append(resp.text)
-
-    candidates: list[dict] = []
-    for text in texts:
-        for m in _TERM_PATTERN.finditer(text):
-            label = m.group("label").strip()
-            season = label.split()[0].capitalize()
-            year = int(m.group("year"))
-            termid = m.group("termid")
-            candidates.append(
-                {
-                    "label": label,
-                    "season": season,
-                    "year": year,
-                    "termid": termid,
-                }
-            )
-
-    if not candidates:
-        raise RuntimeError("No term entries found during discovery")
-
-    def sort_key(item: dict):
-        return (item["year"], _SEASON_ORDER.get(item["season"], 0))
-
-    latest = max(candidates, key=sort_key)
-    return latest
 
 
 def _normalize_code(value: str | None) -> str:
@@ -238,19 +138,21 @@ def _merge_priorities_into_schedule(
 
 
 class ScheduleCatalogRefresher:
-    """Schedules periodic refresh of registrar schedule PDF data."""
+    """Periodically pulls schedule catalog JSON from GCS into Meilisearch."""
 
     def __init__(
         self,
         meilisearch_client: AsyncClient,
         *,
-        pdf_url: str = SCHEDULE_PDF_URL,
-        term_label: str | None = None,
+        storage_client: storage.Client,
+        bucket_name: str,
+        gcs_object: str = SCHEDULE_GCS_OBJECT,
         interval_seconds: int = SCHEDULE_REFRESH_INTERVAL_SECONDS,
     ):
         self._client = meilisearch_client
-        self._pdf_url = pdf_url
-        self._term_label = term_label
+        self._storage_client = storage_client
+        self._bucket_name = bucket_name
+        self._gcs_object = gcs_object
         self._interval_seconds = interval_seconds
         self._stop_event: asyncio.Event | None = None
         self._task: asyncio.Task | None = None
@@ -285,10 +187,9 @@ class ScheduleCatalogRefresher:
             try:
                 await sync_schedule_catalog(
                     self._client,
-                    pdf_url=self._pdf_url,
-                    term_label=self._term_label,
+                    storage_client=self._storage_client,
+                    bucket_name=self._bucket_name,
+                    gcs_object=self._gcs_object,
                 )
             except Exception:
-                logger.exception("Failed to refresh registrar schedule data")
-
-
+                logger.exception("Failed to refresh registrar schedule data from GCS")

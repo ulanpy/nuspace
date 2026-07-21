@@ -188,6 +188,23 @@ jobs:
           fi
           gcloud config set project "$DEPLOY_GCP_PROJECT"
 
+      - name: Update schedule-sync Cloud Run Job image
+        if: steps.changes.outputs.backend == 'true'
+        run: |
+          # Keep Cloud Run Job parsers in sync with the FastAPI image (PDF parse → GCS).
+          # Job must already exist (terraform apply). Image tag is ignored by Terraform lifecycle.
+          if ! gcloud run jobs describe schedule-sync-job \
+            --region=europe-central2 \
+            --project="$DEPLOY_GCP_PROJECT" >/dev/null 2>&1; then
+            echo "schedule-sync-job not found in $DEPLOY_GCP_PROJECT (apply terraform first); skipping image update"
+            exit 0
+          fi
+          gcloud run jobs update schedule-sync-job \
+            --image="kamikadze24/fastapi:${{ steps.meta.outputs.version }}" \
+            --region=europe-central2 \
+            --project="$DEPLOY_GCP_PROJECT"
+          echo "Updated schedule-sync-job to kamikadze24/fastapi:${{ steps.meta.outputs.version }}"
+
       - name: Get VM information and Docker credentials from Secret Manager
         id: secrets
         run: |
