@@ -2,9 +2,6 @@ from __future__ import annotations
 
 import logging
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from backend.modules.campuscurrent.models.events import EventBotSubmission, EventBotSubmissionStatus, RegistrationPolicy
 from backend.modules.auth.models import UserScope
 from backend.modules.bot.interfaces import CampusEventPublisher, EventDraftExtractor
 from backend.modules.bot.repository import BotUserRepository, EventBotSubmissionRepository
@@ -12,7 +9,14 @@ from backend.modules.bot.schemas.event_post import (
     EventPostResult,
     TelegramEventPostInput,
 )
-
+from backend.modules.campuscurrent.models.community import Community
+from backend.modules.campuscurrent.models.events import (
+    EventBotSubmission,
+    EventBotSubmissionStatus,
+    RegistrationPolicy,
+)
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -139,19 +143,40 @@ class EventPostService:
         assert draft.name and draft.place and draft.start_datetime and draft.end_datetime
         assert draft.description and draft.type
 
-        event_id = await self.event_publisher.publish_personal_event(
-            creator_sub=user.sub,
-            name=draft.name,
-            place=draft.place,
-            start_datetime=draft.start_datetime,
-            end_datetime=draft.end_datetime,
-            description=draft.description,
-            event_type=draft.type,
-            policy=draft.policy or RegistrationPolicy.open,
-            registration_link=draft.registration_link or submission.registration_link,
-            image_bytes=image_bytes,
-            image_mime_type=image_mime_type,
+        community_result = await self.db_session.execute(
+            select(Community).where(Community.head == user.sub)
         )
+        community = community_result.scalars().first()
+
+        if community is not None:
+            event_id = await self.event_publisher.publish_community_event(
+                creator_sub=user.sub,
+                community_id=community.id,
+                name=draft.name,
+                place=draft.place,
+                start_datetime=draft.start_datetime,
+                end_datetime=draft.end_datetime,
+                description=draft.description,
+                event_type=draft.type,
+                policy=draft.policy or RegistrationPolicy.open,
+                registration_link=draft.registration_link or submission.registration_link,
+                image_bytes=image_bytes,
+                image_mime_type=image_mime_type,
+            )
+        else:
+            event_id = await self.event_publisher.publish_personal_event(
+                creator_sub=user.sub,
+                name=draft.name,
+                place=draft.place,
+                start_datetime=draft.start_datetime,
+                end_datetime=draft.end_datetime,
+                description=draft.description,
+                event_type=draft.type,
+                policy=draft.policy or RegistrationPolicy.open,
+                registration_link=draft.registration_link or submission.registration_link,
+                image_bytes=image_bytes,
+                image_mime_type=image_mime_type,
+            )
 
         submission.event_id = event_id
         submission.status = EventBotSubmissionStatus.published

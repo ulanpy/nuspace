@@ -324,7 +324,7 @@ const EventDetailView = ({
                         {`${event.creator?.name} ${event.creator?.surname}`}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Event Organizer
+                        Posted by
                       </p>
                     </div>
                   </div>
@@ -347,10 +347,10 @@ const EventDetailView = ({
                       <p className="font-medium text-sm break-words">
                         {`${event.creator?.name ?? ""} ${
                           event.creator?.surname ?? ""
-                        }`.trim() || "Event Coordinator"}
+                        }`.trim() || "Posted by"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Event Coordinator
+                        Posted by
                       </p>
                     </div>
                   </div>

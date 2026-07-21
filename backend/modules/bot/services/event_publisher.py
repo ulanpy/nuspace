@@ -5,22 +5,20 @@ import logging
 import uuid
 from datetime import datetime
 
+from backend.common.schemas import Infra
+from backend.core.configs.config import Config, config
+from backend.modules.campuscurrent.events import schemas as event_schemas
+from backend.modules.campuscurrent.events.service import EventService
+from backend.modules.campuscurrent.models.events import EventType, RegistrationPolicy
+from backend.modules.media.dependencies import build_media_service
+from backend.modules.media.models import EntityType, MediaFormat
+from backend.modules.media.schemas import MediaUpsertData
+from backend.modules.media.service import MediaService
 from google.auth.credentials import Credentials
 from google.cloud import storage
 from httpx import AsyncClient
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from backend.common.schemas import Infra
-from backend.core.configs.config import Config, config
-from backend.modules.media.models import EntityType
-from backend.modules.campuscurrent.models.events import EventType, RegistrationPolicy
-from backend.modules.media.models import MediaFormat
-from backend.modules.campuscurrent.events import schemas as event_schemas
-from backend.modules.campuscurrent.events.service import EventService
-from backend.modules.media.dependencies import build_media_service
-from backend.modules.media.schemas import MediaUpsertData
-from backend.modules.media.service import MediaService
 
 logger = logging.getLogger(__name__)
 
@@ -99,9 +97,55 @@ class EventServicePublisher:
                     mime_type=image_mime_type or "image/jpeg",
                 )
             except Exception:
-                logger.exception(
-                    "Failed to attach Telegram image to event_id=%s", created.id
+                logger.exception("Failed to attach Telegram image to event_id=%s", created.id)
+        return created.id
+
+    async def publish_community_event(
+        self,
+        *,
+        creator_sub: str,
+        community_id: int,
+        name: str,
+        place: str,
+        start_datetime: datetime,
+        end_datetime: datetime,
+        description: str,
+        event_type: EventType,
+        policy: RegistrationPolicy,
+        registration_link: str | None = None,
+        image_bytes: bytes | None = None,
+        image_mime_type: str | None = None,
+    ) -> int:
+        user = (
+            {"sub": creator_sub},
+            {"role": "default", "communities": [community_id]},
+        )
+        created = await self.event_service.add_event(
+            infra=self.infra,
+            event_data=event_schemas.EventCreateRequest(
+                creator_sub=creator_sub,
+                community_id=community_id,
+                name=name,
+                place=place,
+                start_datetime=start_datetime,
+                end_datetime=end_datetime,
+                description=description,
+                type=event_type,
+                policy=policy,
+                registration_link=registration_link,
+            ),
+            user=user,
+        )
+        if image_bytes:
+            try:
+                await self._attach_carousel_image(
+                    creator_sub=creator_sub,
+                    event_id=created.id,
+                    image_bytes=image_bytes,
+                    mime_type=image_mime_type or "image/jpeg",
                 )
+            except Exception:
+                logger.exception("Failed to attach Telegram image to event_id=%s", created.id)
         return created.id
 
     async def _attach_carousel_image(
