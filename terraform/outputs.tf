@@ -85,3 +85,23 @@ output "wif_provider_name" {
   value       = google_iam_workload_identity_pool_provider.github_provider.name
   description = "Full resource name of the WIF provider"
 }
+
+output "schedule_sync_job_name" {
+  value       = google_cloud_run_v2_job.schedule_sync.name
+  description = "Cloud Run Job that parses registrar PDFs into GCS"
+}
+
+output "schedule_sync_job_uri" {
+  value = format(
+    "projects/%s/locations/%s/jobs/%s",
+    var.project_id,
+    var.region,
+    google_cloud_run_v2_job.schedule_sync.name,
+  )
+  description = "Full resource name of the schedule sync Cloud Run Job"
+}
+
+output "schedule_sync_gcs_object" {
+  value       = format("gs://%s/registrar/course_schedule_catalog.json", var.media_bucket_name)
+  description = "GCS object written by the schedule sync job and read by FastAPI"
+}

@@ -26,6 +26,8 @@ class Config(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: int
     BUCKET_NAME: str
+    # Pre-parsed registrar schedule catalog written by Cloud Run Job
+    SCHEDULE_SYNC_GCS_OBJECT: str = "registrar/course_schedule_catalog.json"
     MEILISEARCH_MASTER_KEY: str
     MEILISEARCH_URL: str
     CELERY_BROKER_URL: str

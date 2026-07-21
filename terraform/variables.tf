@@ -186,3 +186,33 @@ variable "github_branches" {
   type        = list(string)
   default     = ["main", "dev"]
 }
+
+variable "schedule_sync_job_name" {
+  description = "Cloud Run Job name for registrar schedule PDF → GCS sync"
+  type        = string
+  default     = "schedule-sync-job"
+}
+
+variable "schedule_sync_job_image" {
+  description = "Container image for the schedule sync Cloud Run Job (same as fastapi)"
+  type        = string
+  default     = "kamikadze24/fastapi:latest"
+}
+
+variable "schedule_sync_job_account_id" {
+  description = "Service account ID for the schedule sync Cloud Run Job"
+  type        = string
+  default     = "nuspace-schedule-sync-job"
+}
+
+variable "schedule_sync_scheduler_account_id" {
+  description = "Service account ID for Cloud Scheduler invoking the schedule sync job"
+  type        = string
+  default     = "nuspace-schedule-sync-sched"
+}
+
+variable "schedule_sync_cron" {
+  description = "Cron schedule (UTC) for registrar schedule sync job"
+  type        = string
+  default     = "0 3 * * *"
+}

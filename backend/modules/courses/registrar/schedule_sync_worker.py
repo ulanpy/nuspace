@@ -1,48 +1,113 @@
+"""
+Parse registrar schedule + priority PDFs into document list.
+
+Used by the Cloud Run Job (and kept as a callable module for local debugging).
+Does not import backend Config — safe to run with only BUCKET_NAME / GCP_PROJECT_ID.
+"""
+
+from __future__ import annotations
+
 import asyncio
 import json
 import os
 import sys
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
 from typing import Sequence
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 
-from backend.modules.courses.registrar.parsers.schedule_pdf_parser import parse_schedule_pdf
 from backend.modules.courses.registrar.parsers.priority_parser import parse_pdf as parse_priority_pdf
-from backend.modules.courses.registrar.schedule_sync import (
-    SCHEDULE_PDF_URL,
-    _merge_priorities_into_schedule,
-)
+from backend.modules.courses.registrar.parsers.schedule_pdf_parser import parse_schedule_pdf
+
+
+def _normalize_code(value: str | None) -> str:
+    if not value:
+        return ""
+    return (
+        value.replace("-", "")
+        .replace(" ", "")
+        .strip()
+        .upper()
+    )
+
+
+def merge_priorities_into_schedule(
+    schedule_docs: Sequence[dict], priority_docs: Sequence[dict]
+) -> Sequence[dict]:
+    priority_map = {
+        _normalize_code(item.get("abbr")): item
+        for item in priority_docs
+        if _normalize_code(item.get("abbr"))
+    }
+
+    merged = []
+    for doc in schedule_docs:
+        code = _normalize_code(doc.get("course_code"))
+        priority = priority_map.get(code)
+        if priority:
+            doc = {
+                **doc,
+                "prerequisite": priority.get("prerequisite") or "",
+                "corequisite": priority.get("corequisite") or "",
+                "antirequisite": priority.get("antirequisite") or "",
+                "priority_1": priority.get("priority_1") or None,
+                "priority_2": priority.get("priority_2") or None,
+                "priority_3": priority.get("priority_3") or None,
+                "priority_4": priority.get("priority_4") or None,
+            }
+        merged.append(doc)
+
+    return merged
+
+
+# Back-compat alias used by tests / older imports
+_merge_priorities_into_schedule = merge_priorities_into_schedule
+
+
+async def build_schedule_documents(
+    *,
+    pdf_url: str,
+    term_label: str | None,
+    term_id: str | None,
+    priority_pdf_url: str | None,
+) -> Sequence[dict]:
+    content = await _download(pdf_url)
+    documents = parse_schedule_pdf(content, term_label=term_label, term_id=term_id)
+
+    if priority_pdf_url:
+        priority_docs = await _fetch_priority(priority_pdf_url)
+        if priority_docs:
+            documents = merge_priorities_into_schedule(documents, priority_docs)
+
+    return documents
 
 
 async def main() -> None:
-    pdf_url = os.environ.get("SCHEDULE_SYNC__PDF_URL", SCHEDULE_PDF_URL)
+    """CLI: write parsed documents to SCHEDULE_SYNC__OUTPUT_PATH (local debug)."""
+    pdf_url = os.environ.get("SCHEDULE_SYNC__PDF_URL")
     term_label = os.environ.get("SCHEDULE_SYNC__TERM_LABEL") or None
-    term_id = os.environ.get("SCHEDULE_SYNC__TERM_ID") or _extract_term_id(pdf_url)
+    term_id = os.environ.get("SCHEDULE_SYNC__TERM_ID") or _extract_term_id(pdf_url or "")
     priority_pdf_url = os.environ.get("SCHEDULE_SYNC__PRIORITY_PDF_URL") or None
     output_path = os.environ.get("SCHEDULE_SYNC__OUTPUT_PATH")
 
     if not output_path:
         raise SystemExit("SCHEDULE_SYNC__OUTPUT_PATH env var is required")
+    if not pdf_url:
+        raise SystemExit("SCHEDULE_SYNC__PDF_URL env var is required")
 
-    content = await _download(pdf_url)
     try:
-        documents = parse_schedule_pdf(content, term_label=term_label, term_id=term_id)
+        documents = await build_schedule_documents(
+            pdf_url=pdf_url,
+            term_label=term_label,
+            term_id=term_id,
+            priority_pdf_url=priority_pdf_url,
+        )
     except Exception as exc:
         print(f"Schedule sync worker failed to parse feed: {exc}", file=sys.stderr)
-        # Debug hint: dump first few KB as hex to help inspect headers
-        preview_path = Path(output_path + ".preview.txt")
-        hex_preview = content[:4096].hex()
-        preview_path.write_text(hex_preview, encoding="utf-8")
-        raise SystemExit(1)
+        raise SystemExit(1) from exc
 
-    if priority_pdf_url:
-        priority_docs = await _fetch_priority(priority_pdf_url)
-        if priority_docs:
-            documents = _merge_priorities_into_schedule(documents, priority_docs)
-
-    Path(output_path).write_text(json.dumps(documents), encoding="utf-8")
+    Path(output_path).write_text(json.dumps(list(documents)), encoding="utf-8")
 
 
 async def _download(url: str) -> bytes:
@@ -54,7 +119,6 @@ async def _download(url: str) -> bytes:
 
 async def _fetch_priority(url: str) -> Sequence[dict]:
     try:
-        # Priority PDF sometimes has cert issues; disable verify to avoid blocking sync
         async with httpx.AsyncClient(timeout=60.0, verify=False) as client:
             resp = await client.get(url)
             resp.raise_for_status()
@@ -75,6 +139,6 @@ def _extract_term_id(url: str) -> str | None:
 if __name__ == "__main__":
     try:
         asyncio.run(main())
-    except Exception as exc:  # pragma: no cover - surfaced in parent process
+    except Exception as exc:  # pragma: no cover
         print(f"Schedule sync worker failed: {exc}", file=sys.stderr)
         raise

@@ -62,6 +62,26 @@ Always verify your workspace before applying changes:
 terraform workspace show
 ```
 
+### Registrar schedule sync (Cloud Run Job)
+
+Heavy PDF parsing runs in Cloud Run Job `schedule-sync-job` (daily 03:00 UTC) and writes:
+
+`gs://{media_bucket}/registrar/course_schedule_catalog.json`
+
+FastAPI only downloads that JSON into Meilisearch on startup / every 24h.
+
+**Cutover after first `terraform apply`:**
+
+```bash
+chmod +x infra/scripts/cutover-schedule-sync.sh
+# production
+./infra/scripts/cutover-schedule-sync.sh nuspace2025 nuspace-media
+# staging
+./infra/scripts/cutover-schedule-sync.sh nuspace-staging nuspace-media-staging
+```
+
+Then deploy/restart `fastapi` and confirm logs show `Synced schedule catalog docs from GCS: N` with low CPU.
+
 ---
 
 ## Configuration Structure
@@ -75,6 +95,7 @@ The Terraform configuration is organized into separate files:
 - **`compute.tf`**: Compute Engine resources (VM, disk, static IP)
 - **`storage.tf`**: Cloud Storage buckets (media, logs)
 - **`pubsub.tf`**: Pub/Sub resources (topic, subscriptions)
+- **`schedule_sync_job.tf`**: Cloud Run Job + Scheduler (registrar PDF → GCS JSON)
 - **`outputs.tf`**: Output values
 - **`variables.tf`**: Input variable definitions
 - **`backend.tfbackend`**: Backend configuration (gitignored)

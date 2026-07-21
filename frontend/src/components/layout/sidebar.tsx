@@ -28,6 +28,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/atoms/sheet";
+import { SidebarTelegramConnect } from "@/components/molecules/sidebar-telegram-connect";
 import { cn } from "@/utils/utils";
 
 // localStorage key for sidebar collapsed state
@@ -349,6 +350,7 @@ export function Sidebar() {
               <div className="flex-1 overflow-y-auto">
                 <SidebarNav onNavigate={handleNavigate} />
               </div>
+              <SidebarTelegramConnect />
               <SidebarUserFooter />
             </div>
           </SheetContent>
@@ -381,6 +383,8 @@ export function Sidebar() {
         <div className={cn("flex-1 overflow-y-auto overflow-x-hidden p-2")}>
           <SidebarNav collapsed={isCollapsed} />
         </div>
+
+        <SidebarTelegramConnect collapsed={isCollapsed} />
 
         {/* User footer */}
         <div className="transition-all p-3">
