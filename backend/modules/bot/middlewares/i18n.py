@@ -1,3 +1,5 @@
+"""Inject gettext ``_`` into handler context (default locale: en)."""
+
 import gettext
 import os
 from pathlib import Path
@@ -7,14 +9,18 @@ from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Message, TelegramObject
 from redis.asyncio import Redis
 
+DEFAULT_LANGUAGE = "en"
 
-def get_translator(lang: str):
-    LOCALES_DIR = os.path.join(Path(__file__).parent.parent, "locales")
-    translator = gettext.translation("messages", localedir=LOCALES_DIR, languages=[lang])
+
+def get_translator(lang: str) -> Callable[[str], str]:
+    """Load compiled ``messages.mo`` for the given locale code."""
+    locales_dir = os.path.join(Path(__file__).parent.parent, "locales")
+    translator = gettext.translation("messages", localedir=locales_dir, languages=[lang])
     return translator.gettext
 
 
 class I18N(BaseMiddleware):
+    """Attach ``data['_']`` for handlers that wrap user-visible strings."""
 
     async def __call__(
         self,
@@ -23,19 +29,13 @@ class I18N(BaseMiddleware):
         data: dict[str, Any],
     ) -> Any:
         user_id = None
-
-        if isinstance(event, Message):
-            user_id = event.from_user.id
-        elif isinstance(event, CallbackQuery):
+        if isinstance(event, (Message, CallbackQuery)):
             user_id = event.from_user.id
 
         if not user_id:
             return await handler(event, data)
 
-        user_id = event.from_user.id
-        key = f"language:{user_id}"
         redis: Redis = data.get("redis")
-        language: str = await redis.get(key) or "en"
-        _ = get_translator(language)
-        data["_"] = _
+        language: str = await redis.get(f"language:{user_id}") or DEFAULT_LANGUAGE
+        data["_"] = get_translator(language)
         return await handler(event, data)

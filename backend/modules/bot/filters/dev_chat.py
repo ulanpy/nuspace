@@ -1,3 +1,5 @@
+"""Restrict handlers to the nuspace dev Telegram group."""
+
 from aiogram.filters import BaseFilter
 from aiogram.types import TelegramObject
 

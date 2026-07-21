@@ -1,3 +1,5 @@
+"""Bot lifecycle: webhook, dispatcher, middlewares, and Telegram commands."""
+
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types.bot_command import BotCommand
@@ -15,17 +17,14 @@ from backend.modules.bot.routes import include_routers
 async def setup_bot(
     app: FastAPI,
     token: str = config.TELEGRAM_BOT_TOKEN,
-):
+) -> None:
+    """Create Bot/Dispatcher, wire middlewares, register webhook."""
     app.state.bot = Bot(token=token)
     app.state.dp = Dispatcher(storage=RedisStorage(app.state.redis))
-    # Discover bot username dynamically (without @) to avoid hardcoding
     try:
         me = await app.state.bot.get_me()
         username = getattr(me, "username", None)
-        if isinstance(username, str) and len(username) > 0:
-            app.state.bot_username = username.lstrip("@")
-        else:
-            app.state.bot_username = None
+        app.state.bot_username = username.lstrip("@") if username else None
     except Exception as e:
         print(f"Failed to fetch bot username: {e}", flush=True)
         app.state.bot_username = None
@@ -45,18 +44,23 @@ async def setup_bot(
     include_routers(app.state.dp)
 
     try:
-        start = BotCommand(command="start", description="start")
-        course = BotCommand(command="course", description="Course grade statistics")
-        post = BotCommand(command="post", description="Publish replied post as campus event")
         await app.state.bot.set_my_commands(
-            commands=[start, course, post], scope=BotCommandScopeAllPrivateChats()
+            commands=[
+                BotCommand(command="start", description="start"),
+                BotCommand(command="course", description="Course grade statistics"),
+                BotCommand(command="post", description="Publish replied post as campus event"),
+            ],
+            scope=BotCommandScopeAllPrivateChats(),
         )
         await app.state.bot.set_my_commands(
-            commands=[course], scope=BotCommandScopeAllGroupChats()
+            commands=[BotCommand(command="course", description="Course grade statistics")],
+            scope=BotCommandScopeAllGroupChats(),
         )
-        killswitch = BotCommand(command="killswitch", description="Anti-spam: ban new members")
         await app.state.bot.set_my_commands(
-            commands=[killswitch], scope=BotCommandScopeChat(chat_id=DEV_CHAT_ID)
+            commands=[
+                BotCommand(command="killswitch", description="Anti-spam: ban new members"),
+            ],
+            scope=BotCommandScopeChat(chat_id=DEV_CHAT_ID),
         )
     except Exception as e:
         print(f"Failed to set bot commands: {e}", flush=True)
@@ -70,12 +74,11 @@ async def setup_bot(
             secret_token=config.TG_WEBHOOK_SECRET_TOKEN,
         )
         print("Webhook set successfully", flush=True)
-        return
     except Exception as e:
         print(f"Failed to set webhook {config.PUBLIC_WEBHOOK_URL}/api/webhook: {e}", flush=True)
 
 
-async def cleanup_bot(app: FastAPI):
+async def cleanup_bot(app: FastAPI) -> None:
     bot = getattr(app.state, "bot", None)
     if bot:
         try:

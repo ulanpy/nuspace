@@ -1,3 +1,5 @@
+"""Register all aiogram routers on the dispatcher."""
+
 from aiogram import Dispatcher
 
 from backend.modules.bot.routes.course import setup_course_routers

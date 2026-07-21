@@ -1,43 +1,21 @@
-import time
+"""Inline and reply keyboards for Telegram handlers."""
+
 from random import shuffle
-from typing import Callable
 
-from aiogram.types import (
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    KeyboardButton,
-    KeyboardButtonRequestUsers,
-    ReplyKeyboardMarkup,
-)
-from backend.modules.bot.keyboards.callback_factory import (
-    ConfirmTelegramUser,
-    Languages,
-    NotificationAction,
-)
-from backend.modules.bot.utils.enums import NotificationEnum
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-
-def notifications_keyboard(
-    action: NotificationEnum, _: Callable[[str], str]
-) -> InlineKeyboardMarkup:
-    text = (
-        _("✅Включить уведомления")
-        if action == NotificationEnum.ENABLE
-        else _("⛔️Выключить уведомления")
-    )
-    button = InlineKeyboardButton(text=text, callback_data=NotificationAction(action=action).pack())
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button]])
-    return keyboard
+from backend.modules.bot.keyboards.callback_factory import ConfirmTelegramUser
 
 
 def kb_url(url: str) -> InlineKeyboardMarkup:
+    """Single button linking to the public nuspace site."""
     return InlineKeyboardMarkup(
         row_width=1, inline_keyboard=[[InlineKeyboardButton(text="nuspace", url=url)]]
     )
 
 
 def kb_confirmation(sub: str, confirmation_number: int) -> InlineKeyboardMarkup:
+    """Emoji grid for Telegram account linking confirmation."""
     emojis = ["🐬", "🦄", "🐖", "🐉", "🐁", "🐈", "🦍", "🐝", "🐺", "🐥"]
     buttons = [
         InlineKeyboardButton(
@@ -53,42 +31,3 @@ def kb_confirmation(sub: str, confirmation_number: int) -> InlineKeyboardMarkup:
     keyboard = [buttons[i : i + 5] for i in range(0, len(buttons), 5)]
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
-
-
-def kb_languages() -> InlineKeyboardMarkup:
-    emojis = ["🇰🇿", "🇷🇺", "🇺🇸"]
-    callback_data = ["kz", "ru", "en"]
-    buttons = [
-        [
-            InlineKeyboardButton(text=emoji, callback_data=Languages(language=cb_data).pack())
-            for emoji, cb_data in zip(emojis, callback_data)
-        ]
-    ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
-
-
-def get_user_selector_kb(_: Callable[[str], str]) -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(
-                    text=_("Выберите пользователя"),
-                    request_users=KeyboardButtonRequestUsers(
-                        request_id=int(time.time() * 1000) % (2**31 - 1),
-                        user_is_bot=False,
-                        max_quantity=1,
-                    ),
-                )
-            ]
-        ],
-        resize_keyboard=True,
-    )
-
-
-def user_profile_button(user_id: int, _: Callable[[str], str]) -> InlineKeyboardMarkup:
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text=_("Профиль пользователя"), url=f"tg://user?id={user_id}")]
-        ]
-    )
-    return keyboard

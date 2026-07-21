@@ -1,3 +1,5 @@
+"""Format and paginate /course grade report results."""
+
 import httpx
 from urllib.parse import quote
 

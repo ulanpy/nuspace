@@ -1,20 +1,17 @@
+"""CallbackData factories for inline keyboard payloads."""
+
 from aiogram.filters.callback_data import CallbackData
-from backend.modules.bot.utils.enums import NotificationEnum
 
 
 class ConfirmTelegramUser(CallbackData, prefix="confirm"):
+    """Telegram linking: user picks the emoji shown on the website."""
+
     sub: str
     number: int
     confirmation_number: int
 
 
-class Languages(CallbackData, prefix="language"):
-    language: str
-
-
-class NotificationAction(CallbackData, prefix="notif"):
-    action: NotificationEnum
-
-
 class CourseGradesPage(CallbackData, prefix="cgr"):
+    """Pagination for /course grade report results."""
+
     page: int

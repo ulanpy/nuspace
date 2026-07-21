@@ -1,3 +1,5 @@
+"""Allow commands only from the configured killswitch owner."""
+
 from aiogram.filters import BaseFilter
 from aiogram.types import TelegramObject
 

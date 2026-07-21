@@ -1,3 +1,5 @@
+"""Dev-group killswitch: auto-ban new members when enabled."""
+
 from aiogram import Bot, Router
 from aiogram.filters import Command
 from aiogram.filters.chat_member_updated import JOIN_TRANSITION, ChatMemberUpdatedFilter

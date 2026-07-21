@@ -1,3 +1,5 @@
+"""Register aiogram middlewares (DB, Redis, i18n, infra clients)."""
+
 import httpx
 from aiogram import Dispatcher
 from google.auth.credentials import Credentials
@@ -14,6 +16,7 @@ from .i18n import I18N
 from .meilisearch import MeilisearchMiddleware
 from .public_url import UrlMiddleware
 from .redis import RedisMiddleware
+from .telegram_link import TelegramLinkMiddleware
 
 
 def setup_middlewares(
@@ -27,13 +30,15 @@ def setup_middlewares(
     broker,
     signing_credentials: Credentials | None = None,
     app_config: Config | None = None,
-):
+) -> None:
+    """Attach shared dependencies to every update handler."""
     cfg = app_config or config
     middlewares = [
         DatabaseMiddleware(db_manager),
         RedisMiddleware(redis),
         UrlMiddleware(config.PUBLIC_WEBHOOK_URL),
         I18N(),
+        TelegramLinkMiddleware(),
         BucketClientMiddleware(storage_client),
         MeilisearchMiddleware(meilisearch_client),
         EventPostMiddleware(
