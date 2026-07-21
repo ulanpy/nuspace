@@ -6,6 +6,7 @@ import { ProtectedLayout } from '@/layouts/protected-layout'
 import { EventsLayout } from '@/layouts/events-layout'
 import { useRouter, useSearchParams } from '@/router/navigation'
 import { useUser } from '@/hooks/use-user'
+import { ServerError } from '@/components/molecules/server-error'
 import LandingPageContent from '@/page-components/landing-page'
 import AboutPageContent from '@/page-components/about-page'
 import PrivacyPolicyPage from '@/page-components/privacy-policy-page'
@@ -33,6 +34,15 @@ function RootComponent() {
       <Outlet />
     </Providers>
   )
+}
+
+function RouteErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
+  const status =
+    typeof error === 'object' && error !== null && 'status' in error
+      ? Number((error as { status?: unknown }).status)
+      : undefined
+
+  return <ServerError status={status} onRetry={reset} />
 }
 
 function NotFoundComponent() {
@@ -154,6 +164,7 @@ function PublicTicketRoute() {
 const rootRoute = createRootRoute({
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
+  errorComponent: RouteErrorComponent,
 })
 
 const indexRoute = createRoute({

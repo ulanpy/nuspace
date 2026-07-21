@@ -72,6 +72,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
+          images: kamikadze24/fastapi
           tags: |
             type=sha,format=short
             type=raw,value=latest
@@ -84,7 +85,8 @@ jobs:
           context: backend
           file: backend/Dockerfile
           push: true
-          tags: kamikadze24/fastapi:${{ steps.meta.outputs.version }}
+          # Push both sha and latest so Cloud Run Job and VM never drift to a stale :latest
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=fastapi
           cache-to: type=gha,mode=max,scope=fastapi
@@ -96,7 +98,9 @@ jobs:
           context: infra/postgres
           file: infra/postgres/Dockerfile
           push: true
-          tags: kamikadze24/postgres-walg:${{ steps.meta.outputs.version }}
+          tags: |
+            kamikadze24/postgres-walg:${{ steps.meta.outputs.version }}
+            kamikadze24/postgres-walg:latest
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=postgres-walg
           cache-to: type=gha,mode=max,scope=postgres-walg
@@ -108,7 +112,9 @@ jobs:
           context: infra/backup
           file: infra/backup/Dockerfile
           push: true
-          tags: kamikadze24/nuspace-backup:${{ steps.meta.outputs.version }}
+          tags: |
+            kamikadze24/nuspace-backup:${{ steps.meta.outputs.version }}
+            kamikadze24/nuspace-backup:latest
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=nuspace-backup
           cache-to: type=gha,mode=max,scope=nuspace-backup
