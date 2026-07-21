@@ -38,10 +38,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/atoms/alert";
 import { Badge } from "@/components/atoms/badge";
 import { cn } from "@/utils/utils";
 import { Modal } from "@/components/atoms/modal";
+import { SignInCard } from "@/components/molecules/sign-in-card";
 
 type DegreeAuditTabProps = {
   user: { email?: string | null } | null;
-  login: () => void;
 };
 
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
@@ -79,7 +79,7 @@ function rowsToTcMappings(rows: TcMappingRowState[]): DegreeAuditTCMapping[] {
     }));
 }
 
-export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
+export function DegreeAuditTab({ user }: DegreeAuditTabProps) {
   const username = useMemo(() => {
     const email = user?.email || "";
     const [name] = email.split("@");
@@ -272,17 +272,11 @@ export function DegreeAuditTab({ user, login }: DegreeAuditTabProps) {
 
   if (!user) {
     return (
-      <div className="rounded-2xl border border-border/60 bg-muted/30 p-4 flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold text-foreground">Sign in to run degree audit.</p>
-          <p className="text-xs text-muted-foreground">
-            Use registrar credentials or upload a transcript PDF to run the audit.
-          </p>
-        </div>
-        <Button size="sm" onClick={login} className="h-8 rounded-full px-3 text-xs font-medium">
-          Login
-        </Button>
-      </div>
+      <SignInCard
+        icon={<GraduationCap className="h-6 w-6" aria-hidden="true" />}
+        title="Sign in to run degree audit"
+        description="Use registrar credentials or upload a transcript PDF to run the audit."
+      />
     );
   }
 

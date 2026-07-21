@@ -32,7 +32,6 @@ import { pollForCommunityImages } from "@/utils/polling";
 import { useInitializeMedia } from '@/features/media/hooks/use-initialize-media';
 import { campuscurrentAPI } from '@/features/communities/api/communities-api';
 import { useToast } from "@/hooks/use-toast";
-import { LoginModal } from "@/components/molecules/login-modal";
 import {
   getHttpsUrlError,
   getInstagramUrlError,
@@ -73,18 +72,7 @@ export function CommunityModal({
   // Initialize media for edit/create flows via shared hook
   useInitializeMedia({ isEditMode, mediaItems: community?.media });
 
-  // Require authentication to use the modal
-  if (!user) {
-    return (
-      <LoginModal
-        isOpen={isOpen}
-        onClose={onClose}
-        onSuccess={onClose}
-        title="Login Required"
-        message={isEditMode ? "You need to be logged in to edit communities." : "You need to be logged in to create communities."}
-      />
-    );
-  }
+  if (!user) return null;
 
   const handleSubmit = async (
     formData: CreateCommunityData | EditCommunityData,

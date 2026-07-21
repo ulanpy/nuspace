@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Calculator } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Modal } from "@/components/atoms/modal";
+import { SignInCard } from "@/components/molecules/sign-in-card";
 import { AssignmentModal } from "./assignment-modal";
 import { ConfirmationModal } from "./confirmation-modal";
 import { ScheduleDialog } from "./schedule-dialog";
@@ -22,12 +23,11 @@ import { pickDefaultCourseId } from "../utils/course-summary-utils";
 import { cn } from "@/utils/utils";
 
 interface LiveGpaTabProps {
-  user: { email?: string | null } | null;
-  login: () => void;
+  user: User | null;
   viewModel: LiveGpaViewModel;
 }
 
-export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
+export function LiveGpaTab({ user, viewModel }: LiveGpaTabProps) {
   const {
     registeredCourses,
     gpaExclusion,
@@ -232,16 +232,11 @@ export function LiveGpaTab({ user, login, viewModel }: LiveGpaTabProps) {
       />
 
       {!user ? (
-        <div className={cn("rounded-lg p-6 text-center text-sm text-muted-foreground", coursesSurface.cardLg)}>
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Calculator className="h-6 w-6" aria-hidden="true" />
-          </div>
-          <h2 className="text-lg font-bold text-foreground">Sign in to track your courses</h2>
-          <p className="mt-1">We will save your course progress in your account.</p>
-          <Button onClick={login} size="sm" className="mt-5">
-            Login
-          </Button>
-        </div>
+        <SignInCard
+          icon={<Calculator className="h-6 w-6" aria-hidden="true" />}
+          title="Sign in to track your courses"
+          description="We will save your course progress in your account."
+        />
       ) : registeredCourses.length === 0 ? (
         <div className={cn("rounded-lg p-6 text-center text-sm text-muted-foreground", coursesSurface.cardLg)}>
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">

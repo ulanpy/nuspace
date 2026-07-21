@@ -9,8 +9,9 @@ import { useUser } from "@/hooks/use-user";
 import { Shield, GraduationCap, Users } from "lucide-react";
 import { CreateAppealButton } from '../components/create-appeal-button';
 import CreateTicketModal from '../components/create-ticket-modal'; // Import the modal
-import { LoginModal } from "@/components/molecules/login-modal";
 import { TelegramConnectCard } from '../components/telegram-connect-card';
+import { useAuthGate } from "@/hooks/use-auth-gate";
+import { AuthWallModal } from "@/components/molecules/auth-wall-modal";
 import { PageContainer } from "@/components/atoms/page-container";
 import { PageHeader } from "@/components/atoms/page-header";
 import { Tabs, TabsList, TabsTrigger } from "@/components/atoms/tabs";
@@ -19,7 +20,8 @@ import { SGMembersManagement } from "../components/sg-members-management";
 type DashboardTab = "student" | "sg-tickets" | "sg-members";
 
 export default function SgotinishPage() {
-  const { user, isLoading, login } = useUser();
+  const { user, isLoading } = useUser();
+  const { requireAuth, isModalOpen, closeModal } = useAuthGate();
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
@@ -30,23 +32,11 @@ export default function SgotinishPage() {
         ? "sg-tickets"
         : "student";
   const [activeDashboard, setActiveDashboard] = useState<DashboardTab>(initialTab);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isCreateTicketModalOpen, setCreateTicketModalOpen] = useState(false); // State for the new modal
 
   const isSgMember = user && ["boss", "capo", "soldier"].includes(user.role);
 
-  const handleCreateAppeal = () => {
-    if (!user) {
-      setIsLoginModalOpen(true);
-    } else {
-      setCreateTicketModalOpen(true); // Open the modal instead of navigating
-    }
-  };
-
-  const handleLogin = () => {
-    login();
-    setIsLoginModalOpen(false);
-  };
+  const handleCreateAppeal = () => requireAuth(() => setCreateTicketModalOpen(true));
 
   const effectiveDashboard: DashboardTab = isSgMember ? activeDashboard : "student";
 
@@ -89,7 +79,7 @@ export default function SgotinishPage() {
 
   return (
     <MotionWrapper>
-      <div>
+      <PageContainer padding="none">
         {user && !user.tg_id && (
           <TelegramConnectCard user={user} className="mb-6" />
         )}
@@ -116,16 +106,7 @@ export default function SgotinishPage() {
           </Tabs>
         )}
         {renderDashboardContent()}
-      </div>
-
-      {/* Render the Login Modal */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onSuccess={handleLogin}
-        title="Login Required"
-        message="You need to be logged in to create a new appeal."
-      />
+      </PageContainer>
 
       {/* Render the Create Ticket Modal */}
       <CreateTicketModal
@@ -135,6 +116,11 @@ export default function SgotinishPage() {
           setCreateTicketModalOpen(false);
           // Optional: Show a success toast notification here
         }}
+      />
+      <AuthWallModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        message="You need to be logged in to create a new appeal."
       />
     </MotionWrapper>
   );

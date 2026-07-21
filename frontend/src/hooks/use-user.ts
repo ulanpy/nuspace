@@ -1,5 +1,6 @@
 import { queryClient } from "@/utils/query-client";
 import { apiCall } from "@/utils/api";
+import { consumeIntendedRedirect } from "@/utils/auth-redirect";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 
@@ -75,14 +76,9 @@ export const useUser = () => {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      // Check for saved redirect URL from ProtectedRoute (deep-link preservation)
-      const savedRedirect = sessionStorage.getItem("__nuspace_redirect_url__");
+      // Check for saved redirect URL from RequireAuth (deep-link preservation)
+      const savedRedirect = consumeIntendedRedirect();
       const returnTo = savedRedirect || `${window.location.pathname}${window.location.search}${window.location.hash}`;
-
-      // Clear the saved redirect now that we're using it
-      if (savedRedirect) {
-        sessionStorage.removeItem("__nuspace_redirect_url__");
-      }
 
       const url = `/api/login?return_to=${encodeURIComponent(returnTo)}`;
       window.location.href = url;

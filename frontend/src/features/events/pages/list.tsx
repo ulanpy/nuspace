@@ -20,6 +20,8 @@ import {
 import { CommunitySelectionModal } from '@/features/communities/components/community-selection-modal';
 import { TelegramConnectCard } from '@/features/sgotinish/components/telegram-connect-card';
 import { useUser } from '@/hooks/use-user';
+import { useAuthGate } from '@/hooks/use-auth-gate';
+import { AuthWallModal } from '@/components/molecules/auth-wall-modal';
 
 const renderEmptyEvents = (
   filterType: string,
@@ -67,6 +69,7 @@ const filterOptions = [
 
 export default function Events() {
   const { user } = useUser();
+  const { requireAuth, isModalOpen, closeModal } = useAuthGate();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("upcoming");
   const [eventTypeFilter, setEventTypeFilter] = useState<string | null>(null);
   const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
@@ -101,7 +104,7 @@ export default function Events() {
         <div className="flex items-center justify-between mb-6">
           <PageHeader title="Events" subtitle="Find what is happening across campus." className="mb-0" />
             <Button
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={() => requireAuth(() => setIsCreateModalOpen(true))}
               size="sm"
               className="flex items-center gap-2 px-4"
             >
@@ -267,6 +270,12 @@ export default function Events() {
           onSelect={handleCommunitySelect}
           onClear={handleCommunityRemove}
           selectedCommunityId={selectedCommunity?.id}
+        />
+
+        <AuthWallModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          message="You need to be logged in to create events."
         />
       </PageContainer>
     </MotionWrapper>
