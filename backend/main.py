@@ -9,7 +9,7 @@ from backend.lifespan import lifespan
 from backend.middlewares.prometheus_metrics import instrument_app, metrics_app
 
 app = FastAPI(
-    debug=True,
+    debug=True if config.IS_DEBUG else False,
     lifespan=lifespan,
     root_path="/api",
     docs_url="/docs" if config.IS_DEBUG else None,
