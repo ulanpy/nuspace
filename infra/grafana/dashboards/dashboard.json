@@ -3,10 +3,7 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -49,17 +46,13 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 1 },
+      "gridPos": { "h": 5, "w": 4, "x": 0, "y": 1 },
       "id": 1,
       "options": {
         "colorMode": "background_solid",
         "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
+        "textMode": "auto"
       },
       "targets": [
         {
@@ -78,36 +71,71 @@
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "unit": "reqps",
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 1,
-            "showPoints": "never",
-            "spanNulls": false
-          }
+          "color": { "mode": "thresholds" },
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue" }]
+          },
+          "unit": "none"
         },
         "overrides": []
       },
-      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 1 },
+      "gridPos": { "h": 5, "w": 5, "x": 4, "y": 1 },
       "id": 11,
       "options": {
-        "legend": { "calcs": ["mean"], "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "single", "sort": "none" }
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
       },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "sum(rate(http_request_total[5m]))",
-          "legendFormat": "RPS",
-          "range": true,
+          "expr": "sum(rate(http_request_total{path!=\"[unmatched]\"}[5m])) * 60",
+          "instant": true,
+          "legendFormat": "req/min",
           "refId": "A"
         }
       ],
-      "title": "Request Rate (RPS)",
-      "type": "timeseries"
+      "title": "App traffic (excl. unmatched)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green" }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 5, "x": 9, "y": 1 },
+      "id": 16,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "sum(increase(http_request_total{path!=\"[unmatched]\"}[$__range]))",
+          "instant": true,
+          "legendFormat": "requests in range",
+          "refId": "A"
+        }
+      ],
+      "title": "Total requests (time range)",
+      "type": "stat"
     },
     {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
@@ -127,13 +155,11 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 1 },
+      "gridPos": { "h": 5, "w": 5, "x": 14, "y": 1 },
       "id": 12,
       "options": {
         "colorMode": "background",
         "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "auto"
       },
@@ -141,9 +167,9 @@
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "sum(rate(http_request_total{status=~\"5..\"}[5m])) / clamp_min(sum(rate(http_request_total[5m])), 1e-9)",
+          "expr": "sum(rate(http_request_total{status=~\"5..\", path!=\"[unmatched]\"}[5m])) / clamp_min(sum(rate(http_request_total{path!=\"[unmatched]\"}[5m])), 1e-9)",
+          "instant": true,
           "legendFormat": "5xx rate",
-          "range": true,
           "refId": "A"
         }
       ],
@@ -154,111 +180,243 @@
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "unit": "s",
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 1,
-            "showPoints": "never",
-            "spanNulls": false
+          "color": { "mode": "thresholds" },
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green" },
+              { "color": "orange", "value": 500 },
+              { "color": "red", "value": 1500 }
+            ]
           }
         },
         "overrides": []
       },
-      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 1 },
+      "gridPos": { "h": 5, "w": 5, "x": 19, "y": 1 },
       "id": 13,
       "options": {
-        "legend": { "calcs": ["mean"], "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "single", "sort": "none" }
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
       },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{path!=\"[unmatched]\"}[5m]))) * 1000",
+          "instant": true,
           "legendFormat": "p95",
-          "range": true,
           "refId": "A"
         }
       ],
       "title": "Latency p95",
-      "type": "timeseries"
+      "type": "stat"
     },
     {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Absolute request counts for the selected time range (readable at low campus traffic). Sorted by volume.",
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "unit": "reqps",
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 1,
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" }
+          "custom": { "align": "auto", "filterable": true, "inspect": false },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green" }]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Total" },
+            "properties": [
+              { "id": "custom.width", "value": 120 },
+              { "id": "decimals", "value": 0 },
+              { "id": "unit", "value": "short" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "req/min" },
+            "properties": [
+              { "id": "custom.width", "value": 120 },
+              { "id": "decimals", "value": 2 },
+              { "id": "unit", "value": "none" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Share %" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "decimals", "value": 1 },
+              { "id": "custom.width", "value": 100 }
+            ]
+          }
+        ]
       },
-      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 6 },
+      "gridPos": { "h": 12, "w": 14, "x": 0, "y": 6 },
       "id": 14,
       "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "cellHeight": "sm",
+        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "Total" }]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "sum by (path) (increase(http_request_total{path!=\"[unmatched]\"}[$__range]))",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "__auto",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "sum by (path) (rate(http_request_total{path!=\"[unmatched]\"}[5m])) * 60",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "__auto",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "sum by (path) (increase(http_request_total{path!=\"[unmatched]\"}[$__range])) / clamp_min(sum(increase(http_request_total{path!=\"[unmatched]\"}[$__range])), 1)",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "__auto",
+          "refId": "C"
+        }
+      ],
+      "title": "Requests by Endpoint (selected range)",
+      "transformations": [
+        {
+          "id": "seriesToColumns",
+          "options": { "byField": "path" }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Time 1": true,
+              "Time 2": true,
+              "Time 3": true
+            },
+            "renameByName": {
+              "path": "Endpoint",
+              "Value #A": "Total",
+              "Value #B": "req/min",
+              "Value #C": "Share %"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [{ "field": "Total", "desc": true }]
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Top endpoints over time in requests/minute (not req/s).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" }
+          },
+          "decimals": 2,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 12, "w": 10, "x": 14, "y": 6 },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": ["mean"],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "sum by (path) (rate(http_request_total[5m]))",
+          "expr": "topk(8, sum by (path) (rate(http_request_total{path!=\"[unmatched]\"}[5m])) * 60)",
           "legendFormat": "{{path}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Requests by Endpoint",
+      "title": "Top 8 endpoints (req/min)",
       "type": "timeseries"
     },
     {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "unit": "reqps",
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 1,
-            "showPoints": "never",
-            "spanNulls": false
-          }
+          "custom": { "align": "auto", "filterable": true },
+          "decimals": 0,
+          "unit": "short"
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 6 },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 18 },
       "id": 15,
       "options": {
-        "legend": { "calcs": ["mean"], "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "5xx Total" }]
       },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "sum by (path) (rate(http_request_total{status=~\"5..\"}[5m]))",
-          "legendFormat": "{{path}}",
-          "range": true,
+          "expr": "sum by (path) (increase(http_request_total{status=~\"5..\", path!=\"[unmatched]\"}[$__range]))",
+          "format": "table",
+          "instant": true,
           "refId": "A"
         }
       ],
-      "title": "5xx by Endpoint",
-      "type": "timeseries"
+      "title": "5xx by Endpoint (selected range)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true },
+            "renameByName": { "path": "Endpoint", "Value": "5xx Total" }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [{ "field": "5xx Total", "desc": true }]
+          }
+        }
+      ],
+      "type": "table"
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
       "id": 101,
       "panels": [],
       "title": "Host Resources",
@@ -272,7 +430,7 @@
           "max": 100,
           "min": 0,
           "thresholds": {
-            "mode": "percentage",
+            "mode": "absolute",
             "steps": [
               { "color": "green" },
               { "color": "orange", "value": 70 },
@@ -283,11 +441,10 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 15 },
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 25 },
       "id": 5,
       "options": {
         "displayMode": "lcd",
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
         "orientation": "horizontal",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "showUnfilled": true,
@@ -296,9 +453,9 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "100 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\", job=\"node_exporter\"}[5m])) * 100",
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
           "legendFormat": "Host CPU",
-          "range": true,
+          "instant": true,
           "refId": "A"
         }
       ],
@@ -313,7 +470,7 @@
           "max": 100,
           "min": 0,
           "thresholds": {
-            "mode": "percentage",
+            "mode": "absolute",
             "steps": [
               { "color": "green" },
               { "color": "orange", "value": 70 },
@@ -324,11 +481,10 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 15 },
+      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 25 },
       "id": 6,
       "options": {
         "displayMode": "lcd",
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
         "orientation": "horizontal",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "showUnfilled": true,
@@ -337,9 +493,9 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "100 * (\n  node_memory_MemTotal_bytes{job=\"node_exporter\"} - node_memory_MemFree_bytes{job=\"node_exporter\"} - node_memory_Buffers_bytes{job=\"node_exporter\"} - node_memory_Cached_bytes{job=\"node_exporter\"}\n) / node_memory_MemTotal_bytes{job=\"node_exporter\"}",
+          "expr": "100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes))",
           "legendFormat": "Host Memory",
-          "range": true,
+          "instant": true,
           "refId": "A"
         }
       ],
@@ -354,7 +510,7 @@
           "max": 100,
           "min": 0,
           "thresholds": {
-            "mode": "percentage",
+            "mode": "absolute",
             "steps": [
               { "color": "green" },
               { "color": "orange", "value": 70 },
@@ -365,11 +521,10 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 15 },
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 25 },
       "id": 7,
       "options": {
         "displayMode": "lcd",
-        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false },
         "orientation": "horizontal",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "showUnfilled": true,
@@ -378,9 +533,9 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "100 * (\n  node_filesystem_size_bytes{job=\"node_exporter\", mountpoint=\"/\", fstype!=\"rootfs\"} - \n  node_filesystem_avail_bytes{job=\"node_exporter\", mountpoint=\"/\", fstype!=\"rootfs\"}\n) / node_filesystem_size_bytes{job=\"node_exporter\", mountpoint=\"/\", fstype!=\"rootfs\"}",
-          "legendFormat": "Host Disk Usage",
-          "range": true,
+          "expr": "100 * (1 - (node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs\", mountpoint=~\"/|/rootfs\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs\", mountpoint=~\"/|/rootfs\"}))",
+          "legendFormat": "Host Disk",
+          "instant": true,
           "refId": "A"
         }
       ],
@@ -389,7 +544,7 @@
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
       "id": 102,
       "panels": [],
       "title": "Disk & Network I/O",
@@ -411,7 +566,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 21 },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 31 },
       "id": 8,
       "options": {
         "legend": { "calcs": ["mean"], "displayMode": "list", "placement": "bottom", "showLegend": true },
@@ -420,14 +575,14 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "rate(node_disk_read_bytes_total{job=\"node_exporter\", device=~\"sd.*|nvme.*|vd.*|xvd.*\"}[5m])",
+          "expr": "rate(node_disk_read_bytes_total{device=~\"sd.*|nvme.*|vd.*|xvd.*|dm-.*\"}[5m])",
           "legendFormat": "{{device}} Read",
           "range": true,
           "refId": "A"
         },
         {
           "editorMode": "code",
-          "expr": "rate(node_disk_written_bytes_total{job=\"node_exporter\", device=~\"sd.*|nvme.*|vd.*|xvd.*\"}[5m])",
+          "expr": "rate(node_disk_written_bytes_total{device=~\"sd.*|nvme.*|vd.*|xvd.*|dm-.*\"}[5m])",
           "legendFormat": "{{device}} Write",
           "range": true,
           "refId": "B"
@@ -452,7 +607,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 21 },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 31 },
       "id": 9,
       "options": {
         "legend": { "calcs": ["mean"], "displayMode": "list", "placement": "bottom", "showLegend": true },
@@ -461,15 +616,15 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (instance) (rate(node_network_receive_bytes_total{job=\"node_exporter\", device=~\"eth.*|ens.*|en.*\"}[5m]))",
-          "legendFormat": "Incoming Traffic",
+          "expr": "sum(rate(node_network_receive_bytes_total{device!~\"lo|veth.*|docker.*|br-.*\"}[5m]))",
+          "legendFormat": "Incoming",
           "range": true,
           "refId": "A"
         },
         {
           "editorMode": "code",
-          "expr": "sum by (instance) (rate(node_network_transmit_bytes_total{job=\"node_exporter\", device=~\"eth.*|ens.*|en.*\"}[5m]))",
-          "legendFormat": "Outgoing Traffic",
+          "expr": "sum(rate(node_network_transmit_bytes_total{device!~\"lo|veth.*|docker.*|br-.*\"}[5m]))",
+          "legendFormat": "Outgoing",
           "range": true,
           "refId": "B"
         }
@@ -493,7 +648,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 21 },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 31 },
       "id": 10,
       "options": {
         "legend": { "calcs": ["lastNotNull"], "displayMode": "list", "placement": "bottom", "showLegend": true },
@@ -502,14 +657,14 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "node_filesystem_size_bytes{job=\"node_exporter\", mountpoint=\"/\", fstype!=\"rootfs\"} / (1024*1024*1024)",
+          "expr": "node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs\", mountpoint=~\"/|/rootfs\"} / (1024*1024*1024)",
           "legendFormat": "Total GB",
           "range": true,
           "refId": "A"
         },
         {
           "editorMode": "code",
-          "expr": "(node_filesystem_size_bytes{job=\"node_exporter\", mountpoint=\"/\", fstype!=\"rootfs\"} - node_filesystem_avail_bytes{job=\"node_exporter\", mountpoint=\"/\", fstype!=\"rootfs\"}) / (1024*1024*1024)",
+          "expr": "(node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs\", mountpoint=~\"/|/rootfs\"} - node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs\", mountpoint=~\"/|/rootfs\"}) / (1024*1024*1024)",
           "legendFormat": "Used GB",
           "range": true,
           "refId": "B"
@@ -520,7 +675,7 @@
     },
     {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 37 },
       "id": 103,
       "panels": [],
       "title": "Application Logs",
@@ -529,7 +684,7 @@
     {
       "datasource": { "type": "loki", "uid": "P8E80F9AEF21F6940" },
       "fieldConfig": { "defaults": {}, "overrides": [] },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 28 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 38 },
       "id": 2,
       "options": {
         "dedupStrategy": "none",
@@ -561,12 +716,12 @@
   "schemaVersion": 41,
   "tags": ["monitoring", "host", "application"],
   "templating": { "list": [] },
-  "time": { "from": "now-1h", "to": "now" },
+  "time": { "from": "now-6h", "to": "now" },
   "timepicker": {
     "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h"]
   },
   "timezone": "browser",
   "title": "Monitoring Dashboard",
   "uid": "1b8269c7-0913-431b-a48e-96bfa4aca74e",
-  "version": 2
+  "version": 3
 }

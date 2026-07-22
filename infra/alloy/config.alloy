@@ -9,10 +9,11 @@ prometheus.exporter.cadvisor "docker" {
 	docker_host = "unix:///var/run/docker.sock"
 }
 
-// Host metrics (rootfs must match compose mount /:/rootfs:ro)
+// Host metrics — paths must match compose bind mounts
 prometheus.exporter.unix "host" {
+	procfs_path = "/host/proc"
 	rootfs_path = "/rootfs"
-	sysfs_path  = "/sys"
+	sysfs_path  = "/host/sys"
 }
 
 /* -------- SCRAPERS -------- */

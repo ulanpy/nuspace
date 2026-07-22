@@ -250,7 +250,8 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /var/run:/var/run:ro
       - /:/rootfs:ro
-      - /sys:/sys:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
     command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     restart: unless-stopped
     ports:
