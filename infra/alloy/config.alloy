@@ -32,15 +32,15 @@ prometheus.scrape "host_scrape" {
 	job_name   = "node_exporter"
 }
 
-// FastAPI Scraper Job — app mounts metrics at /metrics (root_path=/api is for nginx/OpenAPI only)
+// FastAPI scrape — trailing slash avoids 307 /metrics -> /metrics/
 prometheus.scrape "application_scrape" {
 	targets = [{
 		__address__      = "fastapi:8000",
-		# Trailing slash avoids FastAPI 307 /metrics → /metrics/ (double scrape noise)
 		__metrics_path__ = "/metrics/",
 	}]
-	forward_to = [prometheus.remote_write.prometheus_write.receiver]
-	job_name   = "application"
+	forward_to     = [prometheus.remote_write.prometheus_write.receiver]
+	job_name       = "application"
+	scrape_interval = "15s"
 }
 
 /* -------- REMOTE WRITE -------- */

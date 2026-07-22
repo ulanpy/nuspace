@@ -2,88 +2,102 @@ import time
 from typing import Callable
 
 from fastapi import FastAPI, Request, Response
-from prometheus_client import Counter, Gauge, Histogram, make_asgi_app
+from prometheus_client import Counter, Gauge, Histogram, Info, make_asgi_app
 
 """
 Exposes Prometheus metrics via a separate ASGI app mounted at /metrics.
 
-- Metric objects (e.g., Counter, Gauge, Histogram) are global and registered to the default
-  registry.
-- Middleware instruments the main FastAPI app and updates these metrics on each request.
-- The mounted `metrics_app` serves current values from the shared registry when `/metrics`
-  is scraped.
-
-Cardinality control strategy:
-- Path label uses the Starlette route template (e.g., "/users/{id}") resolved after routing
-  completes. Unmatched routes (404) and early failures fall back to a constant label
-  "[unmatched]" to avoid raw URL cardinality.
-- The in-progress gauge is labeled only by HTTP method (no path) to prevent spawning a series
-  per unique path before routing has resolved.
+Metric names/labels match Grafana dashboard 25040 ("FastAPI Full Observability").
+/metrics scrapes are skipped so Alloy traffic does not inflate app panels.
 """
 
+PROJECT = "nuspace"
 
-# --- METRIC DEFINITIONS ---
-REQUEST_COUNT = Counter("http_request_total", "Total HTTP Requests", ["method", "status", "path"])
-REQUEST_LATENCY = Histogram(
-    "http_request_duration_seconds", "HTTP Request Duration", ["method", "status", "path"]
+REQUESTS = Counter(
+    "fastapi_http_requests_total",
+    "Total HTTP requests",
+    ["method", "path", "project"],
 )
-REQUEST_IN_PROGRESS = Gauge("http_requests_in_progress", "HTTP Requests in progress", ["method"])
-
+RESPONSES = Counter(
+    "fastapi_http_responses_total",
+    "Total HTTP responses by status",
+    ["method", "path", "status_code", "project"],
+)
+REQUEST_LATENCY = Histogram(
+    "fastapi_http_request_duration_seconds",
+    "HTTP request duration in seconds",
+    ["method", "path", "project"],
+)
+REQUEST_IN_PROGRESS = Gauge(
+    "fastapi_http_requests_in_progress",
+    "HTTP requests in progress",
+    ["method", "path", "project"],
+)
+EXCEPTIONS = Counter(
+    "fastapi_http_exceptions_total",
+    "Total unhandled exceptions",
+    ["method", "path", "exception_type", "project"],
+)
+APP_INFO = Info("fastapi_app", "FastAPI application info")
+APP_INFO.info({"project": PROJECT, "app": "nuspace"})
 
 metrics_app = make_asgi_app()
 
+_SKIP_PREFIXES = ("/metrics",)
 
-# --- MIDDLEWARE FUNCTION ---
-# function based wrapper elegantly solves circular import
+
+def _should_skip(path: str) -> bool:
+    return any(path == p or path.startswith(p + "/") for p in _SKIP_PREFIXES)
+
+
 def instrument_app(app: FastAPI):
-    """
-    Instrument the FastAPI app with Prometheus middleware.
-
-    Metrics emitted per request:
-    - Counter `http_request_total{method,status,path}`
-    - Histogram `http_request_duration_seconds{method,status,path}`
-    - Gauge `http_requests_in_progress{method}`
-
-    Flow:
-    1) On entry, increment in-progress by method only.
-    2) Delegate to downstream via `call_next`.
-    3) In a `finally` block, resolve the route template (post-routing). If unavailable,
-       set `path` to "[unmatched]".
-    4) Observe duration and increment counters using the template path.
-    5) Decrement in-progress.
-
-    Rationale:
-    - Resolving the `path` label after routing ensures template values like "/users/{id}"
-      instead of raw URLs such as "/users/123".
-    - Using a constant for unmatched routes and removing `path` from the in-progress gauge
-      prevents high cardinality from 404s, typos, and dynamic path segments.
-    """
+    """Instrument the FastAPI app with Prometheus middleware (dashboard 25040 schema)."""
 
     @app.middleware("http")
     async def monitor_requests(request: Request, call_next: Callable):
-        """Middleware body that records in-progress, counts, and duration per request."""
-        method: str = request.method
+        raw_path = request.url.path
+        if _should_skip(raw_path):
+            return await call_next(request)
 
-        # Increment in-progress by method only to avoid pre-routing path cardinality
-        REQUEST_IN_PROGRESS.labels(method=method).inc()
-        start_time: float = time.time()
+        method = request.method
+        in_progress_path = "[in_flight]"
+        REQUEST_IN_PROGRESS.labels(
+            method=method, path=in_progress_path, project=PROJECT
+        ).inc()
+        start_time = time.time()
+        status = "500"
+        exc_type: str | None = None
 
         try:
             response: Response = await call_next(request)
             status = str(response.status_code)
-        except Exception as e:
-            status = "500"
-            raise e from None
+            return response
+        except Exception as exc:
+            exc_type = type(exc).__name__
+            raise
         finally:
-            # Resolve path template AFTER routing; fallback to a constant for unmatched routes
             route = request.scope.get("route")
             path_template = route.path if getattr(route, "path", None) else "[unmatched]"
-
+            REQUEST_IN_PROGRESS.labels(
+                method=method, path=in_progress_path, project=PROJECT
+            ).dec()
+            if _should_skip(path_template):
+                return
             duration = time.time() - start_time
-            REQUEST_COUNT.labels(method=method, status=status, path=path_template).inc()
-            REQUEST_LATENCY.labels(method=method, status=status, path=path_template).observe(
-                duration
-            )
-            REQUEST_IN_PROGRESS.labels(method=method).dec()
-
-        return response
+            REQUESTS.labels(method=method, path=path_template, project=PROJECT).inc()
+            RESPONSES.labels(
+                method=method,
+                path=path_template,
+                status_code=status,
+                project=PROJECT,
+            ).inc()
+            REQUEST_LATENCY.labels(
+                method=method, path=path_template, project=PROJECT
+            ).observe(duration)
+            if exc_type:
+                EXCEPTIONS.labels(
+                    method=method,
+                    path=path_template,
+                    exception_type=exc_type,
+                    project=PROJECT,
+                ).inc()
