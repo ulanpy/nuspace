@@ -9,6 +9,7 @@ import { Event } from "@/features/shared/campus/types";
 import { CountdownHeaderBar } from './countdown-header-bar';
 import { ROUTES } from "@/data/routes";
 import { getPolicyColor, getPolicyDisplay } from "@/features/events/utils/event-formatters";
+import { formatInCampusTime, isoToCampusWallClock } from "@/features/events/utils/campus-datetime";
 
 interface EventCardProps extends Event {
   compact?: boolean;
@@ -28,40 +29,33 @@ export function EventCard(props: EventCardProps) {
 
   const [imageError, setImageError] = useState(false);
 
-  // Helper function to format event date in a human-readable way
   const formatEventDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const { date: eventLocalDate } = isoToCampusWallClock(dateString);
+    const { date: today } = isoToCampusWallClock(new Date().toISOString());
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const eventDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    
-    // Format time
-    const time = date.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true 
+
+    const timeLabel = formatInCampusTime(dateString, {
+      hour: "numeric",
+      minute: "2-digit",
     });
-    
-    // Check if it's today, tomorrow, or another date
-    if (eventDate.getTime() === today.getTime()) {
-      return `Today at ${time}`;
-    } else if (eventDate.getTime() === tomorrow.getTime()) {
-      return `Tomorrow at ${time}`;
-    } else {
-      // For other dates, show "11 Aug at 2:30 PM" format
-      const day = date.getDate();
-      const month = date.toLocaleDateString([], { month: 'short' });
-      const year = date.getFullYear();
-      const currentYear = now.getFullYear();
-      
-      if (year === currentYear) {
-        return `${day} ${month} at ${time}`;
-      } else {
-        return `${day} ${month} ${year} at ${time}`;
-      }
+
+    if (eventLocalDate.getTime() === today.getTime()) {
+      return `Today at ${timeLabel}`;
     }
+    if (eventLocalDate.getTime() === tomorrow.getTime()) {
+      return `Tomorrow at ${timeLabel}`;
+    }
+
+    const day = eventLocalDate.getDate();
+    const month = formatInCampusTime(dateString, { month: "short" });
+    const year = eventLocalDate.getFullYear();
+    const currentYear = today.getFullYear();
+
+    if (year === currentYear) {
+      return `${day} ${month} at ${timeLabel}`;
+    }
+    return `${day} ${month} ${year} at ${timeLabel}`;
   };
 
   const isUpcoming = new Date(start_datetime).getTime() > Date.now();

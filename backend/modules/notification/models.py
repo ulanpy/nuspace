@@ -1,4 +1,5 @@
 from datetime import datetime
+from backend.common.datetime_utils import utc_now
 from enum import Enum as PyEnum
 
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String
@@ -35,4 +36,4 @@ class Notification(Base):
     type: Mapped[NotificationType] = mapped_column(String, nullable=False)
     tg_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     url: Mapped[str] = mapped_column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)

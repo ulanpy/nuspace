@@ -1,9 +1,10 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from backend.common.datetime_utils import almaty_to_utc
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
 from backend.modules.campuscurrent.models import EventStatus, EventTag, EventType, RegistrationPolicy
 from backend.modules.media.schemas import MediaResponse
@@ -26,10 +27,14 @@ class EventCreateRequest(BaseModel):
     name: str = Field(..., description="The name of the event", example="nuspace 2025")
     place: str = Field(..., description="The place of the event", example="NU 3rd block, 3rd floor")
     start_datetime: datetime = Field(
-        ..., description="The start datetime of the event", example="2026-06-12T10:00:00Z"
+        ...,
+        description="Event start as UTC instant (ISO-8601 with offset). Naive values are Asia/Almaty.",
+        example="2026-06-12T10:00:00+05:00",
     )
     end_datetime: datetime = Field(
-        ..., description="The end datetime of the event", example="2026-06-12T12:00:00Z"
+        ...,
+        description="Event end as UTC instant (ISO-8601 with offset). Naive values are Asia/Almaty.",
+        example="2026-06-12T12:00:00+05:00",
     )
     description: str = Field(
         ..., description="The description of the event", example="nuspace is a community event"
@@ -42,29 +47,17 @@ class EventCreateRequest(BaseModel):
         example="https://forms.google.com/event-registration",
     )
 
-    @field_validator("end_datetime")
-    def validate_end_datetime(cls, value, info):
-        if (
-            "start_datetime" in info.data
-            and value is not None
-            and info.data["start_datetime"] is not None
-        ):
-            start_dt = info.data["start_datetime"]
-            if not start_dt.tzinfo:
-                start_dt = start_dt.replace(tzinfo=timezone.utc)
-            if not value.tzinfo:
-                value = value.replace(tzinfo=timezone.utc)
-
-            if value <= start_dt:
-                raise ValueError("End datetime must be after start datetime")
-        return value
-
     @field_validator("start_datetime", "end_datetime")
-    def validate_datetime(cls, value):
-        if value is not None:
-            if not value.tzinfo:
-                value = value.replace(tzinfo=timezone.utc)
-            return value.astimezone(timezone.utc).replace(tzinfo=None)
+    @classmethod
+    def validate_datetime(cls, value: datetime | None) -> datetime | None:
+        return almaty_to_utc(value) if value is not None else None
+
+    @field_validator("end_datetime")
+    @classmethod
+    def validate_end_datetime(cls, value: datetime, info):
+        start_dt = info.data.get("start_datetime")
+        if value is not None and start_dt is not None and value <= start_dt:
+            raise ValueError("End datetime must be after start datetime")
         return value
 
 
@@ -85,10 +78,14 @@ class EventUpdateRequest(BaseModel):
         default=None, description="The place of the event", example="NU 3rd block, 3rd floor"
     )
     start_datetime: datetime | None = Field(
-        default=None, description="The start datetime of the event", example="2026-06-12T10:00:00Z"
+        default=None,
+        description="Event start as UTC instant (ISO-8601 with offset). Naive values are Asia/Almaty.",
+        example="2026-06-12T10:00:00+05:00",
     )
     end_datetime: datetime | None = Field(
-        default=None, description="The end datetime of the event", example="2026-06-12T12:00:00Z"
+        default=None,
+        description="Event end as UTC instant (ISO-8601 with offset). Naive values are Asia/Almaty.",
+        example="2026-06-12T12:00:00+05:00",
     )
     description: str | None = Field(
         default=None,
@@ -120,29 +117,17 @@ class EventUpdateRequest(BaseModel):
         description="IDs of media attachments to delete as part of this update",
     )
 
-    @field_validator("end_datetime")
-    def validate_end_datetime(cls, value, info):
-        if (
-            value is not None
-            and "start_datetime" in info.data
-            and info.data["start_datetime"] is not None
-        ):
-            start_dt = info.data["start_datetime"]
-            if not start_dt.tzinfo:
-                start_dt = start_dt.replace(tzinfo=timezone.utc)
-            if not value.tzinfo:
-                value = value.replace(tzinfo=timezone.utc)
-
-            if value <= start_dt:
-                raise ValueError("End datetime must be after start datetime")
-        return value
-
     @field_validator("start_datetime", "end_datetime")
-    def validate_datetime(cls, value):
-        if value is not None:
-            if not value.tzinfo:
-                value = value.replace(tzinfo=timezone.utc)
-            return value.astimezone(timezone.utc).replace(tzinfo=None)
+    @classmethod
+    def validate_datetime(cls, value: datetime | None) -> datetime | None:
+        return almaty_to_utc(value) if value is not None else None
+
+    @field_validator("end_datetime")
+    @classmethod
+    def validate_end_datetime(cls, value: datetime | None, info):
+        start_dt = info.data.get("start_datetime")
+        if value is not None and start_dt is not None and value <= start_dt:
+            raise ValueError("End datetime must be after start datetime")
         return value
 
     @field_validator("name", "place", "description")

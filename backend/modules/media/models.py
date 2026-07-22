@@ -1,4 +1,5 @@
 from datetime import datetime
+from backend.common.datetime_utils import utc_now
 from enum import Enum as PyEnum
 
 from sqlalchemy import BigInteger, Column, DateTime, Integer
@@ -48,5 +49,5 @@ class Media(Base):
         SQLEnum(MediaFormat, name="media_format"), nullable=False, index=True
     )
     media_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)

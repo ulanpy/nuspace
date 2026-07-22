@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from backend.common.datetime_utils import utc_now
 from enum import Enum
 
 from sqlalchemy import Column, Date, DateTime, Enum as SAEnum, ForeignKey, Integer, String, Text
@@ -96,8 +97,8 @@ class Opportunity(Base):
     link: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     location: Mapped[str | None] = mapped_column(String(256), nullable=True)
     funding: Mapped[str | None] = mapped_column(String(256), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     eligibilities: Mapped[list[OpportunityEligibility]] = relationship(
         "OpportunityEligibility",

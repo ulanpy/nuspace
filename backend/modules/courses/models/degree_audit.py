@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from backend.common.datetime_utils import utc_now
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
@@ -22,7 +23,7 @@ class DegreeAuditResult(Base):
     summary = Column(JSONB, nullable=True)
     warnings = Column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
     csv_base64 = Column(String, nullable=True)
-    created_at = Column(DateTime, nullable=False, server_default=text("NOW()"))
-    updated_at = Column(DateTime, nullable=False, server_default=text("NOW()"), onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("NOW()"))
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=text("NOW()"), onupdate=utc_now)
 
 

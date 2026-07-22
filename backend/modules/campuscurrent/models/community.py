@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from backend.common.datetime_utils import utc_now
 from enum import Enum as PyEnum
 
 from sqlalchemy import BigInteger, Column, Date, DateTime, ForeignKey
@@ -43,7 +44,7 @@ class Community(Base):
     )
     telegram_url: Mapped[str] = mapped_column(nullable=True, unique=False)
     instagram_url: Mapped[str] = mapped_column(nullable=True, unique=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     head_user = relationship("User")

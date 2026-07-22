@@ -1,23 +1,4 @@
-const ensureUtcString = (value: string): string => {
-  // If the string already has timezone info (Z or +/-HH:MM), keep it
-  if (/([zZ]|[+-]\d{2}:?\d{2})$/.test(value)) {
-    return value;
-  }
-
-  // Otherwise assume backend sent UTC without suffix, so append Z
-  return `${value}Z`;
-};
-
+/** Parse API datetime (ISO with offset / Z) to a Date for local display. */
 export const toLocalDate = (value: Date | string): Date => {
-  if (value instanceof Date) {
-    return value;
-  }
-
-  return new Date(ensureUtcString(value));
+  return value instanceof Date ? value : new Date(value);
 };
-
-export const toLocalISOString = (value: Date | string): string => {
-  return toLocalDate(value).toLocaleString();
-};
-
-

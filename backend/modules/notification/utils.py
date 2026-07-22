@@ -1,5 +1,5 @@
 from typing import Union, List
-import datetime
+from datetime import datetime, timezone
 from backend.common.utils.response_builder import build_schema
 from backend.modules.notification.models import Notification
 from backend.modules.notification import schemas
@@ -97,7 +97,7 @@ async def send(
             tg_id=notification_schema.telegram_id,
             type=notification_schema.type,
             url=notification_schema.url,
-            created_at=datetime.datetime.now()
+            created_at=datetime.now(timezone.utc)
         )
         modified_notification: schemas._RequestNotification = build_schema(
             schemas._RequestNotification,

@@ -13,7 +13,30 @@ from backend.modules.bot.services.event_extraction_prompt import EVENT_EXTRACTIO
 
 logger = logging.getLogger(__name__)
 
-_RESPONSE_SCHEMA = ExtractedEventDraft.model_json_schema()
+_NAIVE_CAMPUS_DATETIME_SCHEMA = {
+    "anyOf": [
+        {
+            "type": "string",
+            "description": (
+                "Asia/Almaty wall-clock time as naive ISO-8601 YYYY-MM-DDTHH:MM:SS "
+                "(no Z / offset). Backend converts to UTC for storage."
+            ),
+        },
+        {"type": "null"},
+    ],
+    "default": None,
+}
+
+
+def build_gemini_event_response_schema() -> dict:
+    """JSON schema for Gemini; datetime fields as plain strings to avoid +05:00 offsets."""
+    schema = ExtractedEventDraft.model_json_schema()
+    for key in ("start_datetime", "end_datetime"):
+        schema["properties"][key] = _NAIVE_CAMPUS_DATETIME_SCHEMA
+    return schema
+
+
+_RESPONSE_SCHEMA = build_gemini_event_response_schema()
 
 
 def build_gemini_client(app_config: Config | None = None) -> genai.Client:

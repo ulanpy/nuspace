@@ -40,7 +40,7 @@ def _origin_fields(message: Message) -> dict:
             "origin_chat_id": None,
             "origin_message_id": None,
             "forward_date": (
-                datetime.fromtimestamp(message.forward_date, tz=timezone.utc).replace(tzinfo=None)
+                datetime.fromtimestamp(message.forward_date, tz=timezone.utc)
                 if message.forward_date
                 else None
             ),
@@ -50,8 +50,11 @@ def _origin_fields(message: Message) -> dict:
     origin_type = getattr(origin, "type", None)
     origin_type_value = origin_type.value if hasattr(origin_type, "value") else str(origin_type)
     forward_date = getattr(origin, "date", None)
-    if isinstance(forward_date, datetime) and forward_date.tzinfo is not None:
-        forward_date = forward_date.astimezone(timezone.utc).replace(tzinfo=None)
+    if isinstance(forward_date, datetime):
+        if forward_date.tzinfo is None:
+            forward_date = forward_date.replace(tzinfo=timezone.utc)
+        else:
+            forward_date = forward_date.astimezone(timezone.utc)
 
     origin_chat_id = None
     origin_message_id = None

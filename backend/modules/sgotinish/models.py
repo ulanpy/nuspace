@@ -1,4 +1,5 @@
 from datetime import datetime
+from backend.common.datetime_utils import utc_now
 from enum import Enum as PyEnum
 
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, String, Text, Boolean
@@ -47,8 +48,8 @@ class Ticket(Base):
     )
     is_anonymous: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     owner_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     author = relationship("User")
     conversations = relationship("Conversation", back_populates="ticket", cascade="all, delete-orphan")
@@ -68,7 +69,7 @@ class Conversation(Base):
     status: Mapped[ConversationStatus] = mapped_column(
         SQLEnum(ConversationStatus, name="conversation_status"), default=ConversationStatus.active, nullable=False, index=True
     )
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
 
     ticket = relationship("Ticket", back_populates="conversations")
     sg_member = relationship("User")
@@ -88,7 +89,7 @@ class Message(Base):
     )
     body: Mapped[str] = mapped_column(Text, nullable=False)
     is_from_sg_member: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    sent_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    sent_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
 
     conversation = relationship("Conversation", back_populates="messages")
     sender = relationship("User")
@@ -107,7 +108,7 @@ class MessageReadStatus(Base):
     user_sub: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="CASCADE"), primary_key=True, nullable=False
     )
-    read_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    read_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
 
     message = relationship("Message", back_populates="read_statuses")
     user = relationship("User")
@@ -120,7 +121,7 @@ class MessageReadStatusAnon(Base):
         ForeignKey("messages.id", ondelete="CASCADE"), primary_key=True, nullable=False
     )
     owner_hash: Mapped[str] = mapped_column(String(64), primary_key=True, nullable=False)
-    read_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    read_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
 
     message = relationship("Message", back_populates="read_statuses_anon")
 
@@ -149,7 +150,7 @@ class TicketAccess(Base):
     )
 
     granted_by_sub: Mapped[str | None] = mapped_column(ForeignKey("users.sub", ondelete="SET NULL"), nullable=True)
-    granted_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    granted_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     ticket = relationship("Ticket")
     user = relationship("User", foreign_keys=[user_sub])

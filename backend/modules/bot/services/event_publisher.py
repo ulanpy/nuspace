@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from google.auth.credentials import Credentials
 from google.cloud import storage
@@ -112,7 +112,7 @@ class EventServicePublisher:
         mime_type: str,
     ) -> None:
         cfg = self.infra.config
-        timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
         filename = f"{cfg.ROUTING_PREFIX}/{creator_sub}_{timestamp}_{uuid.uuid4().hex}"
         bucket = self.storage_client.bucket(cfg.BUCKET_NAME)
         blob = bucket.blob(filename)

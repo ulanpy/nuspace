@@ -3,7 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from backend.common.datetime_utils import almaty_to_utc
 
 from backend.modules.campuscurrent.models.events import (
     EventBotSubmissionStatus,
@@ -26,6 +28,11 @@ class ExtractedEventDraft(BaseModel):
     missing_fields: list[str] = Field(default_factory=list)
     reject: bool = False
     reject_reason: str | None = None
+
+    @field_validator("start_datetime", "end_datetime")
+    @classmethod
+    def normalize_to_utc(cls, value: datetime | None) -> datetime | None:
+        return almaty_to_utc(value) if value is not None else None
 
     @property
     def is_complete(self) -> bool:

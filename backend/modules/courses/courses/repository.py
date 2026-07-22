@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Dict, List, Sequence
+from datetime import datetime, timezone
 
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -170,7 +170,7 @@ class CourseRepository:
             update_data = schemas.StudentScheduleUpdate(
                 schedule_data=schedule_data,
                 preferences=preferences,
-                last_synced_at=datetime.utcnow(),
+                last_synced_at=datetime.now(timezone.utc),
             )
             for field, value in update_data.model_dump(exclude_unset=True).items():
                 if hasattr(existing_schedule, field):

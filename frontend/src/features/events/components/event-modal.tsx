@@ -19,6 +19,7 @@ import { EventActions } from './forms/event-actions';
 import { useEventForm, EventFormProvider } from '@/context/event-form-context';
 import { useInitializeMedia } from '@/features/media/hooks/use-initialize-media';
 import { useToast } from "@/hooks/use-toast";
+import { campusWallClockToIso } from "@/features/events/utils/campus-datetime";
 
 interface EventModalProps {
   isOpen: boolean;
@@ -63,25 +64,8 @@ export function EventModal({ isOpen, onClose, isEditMode, event, permissions }: 
       return;
     }
 
-    const startYear = startDate.getFullYear();
-    const startMonth = startDate.getMonth();
-    const startDay = startDate.getDate();
-    const [startHoursStr, startMinutesStr] = startTime ? startTime.split(":") : ["0", "0"];
-    const startHoursNum = parseInt(startHoursStr, 10) || 0;
-    const startMinutesNum = parseInt(startMinutesStr, 10) || 0;
-    const startDateTime = new Date(
-      Date.UTC(startYear, startMonth, startDay, startHoursNum, startMinutesNum, 0, 0)
-    ).toISOString();
-
-    const endYear = endDate.getFullYear();
-    const endMonth = endDate.getMonth();
-    const endDay = endDate.getDate();
-    const [endHoursStr, endMinutesStr] = endTime ? endTime.split(":") : ["0", "0"];
-    const endHoursNum = parseInt(endHoursStr, 10) || 0;
-    const endMinutesNum = parseInt(endMinutesStr, 10) || 0;
-    const endDateTime = new Date(
-      Date.UTC(endYear, endMonth, endDay, endHoursNum, endMinutesNum, 0, 0)
-    ).toISOString();
+    const startDateTime = campusWallClockToIso(startDate, startTime);
+    const endDateTime = campusWallClockToIso(endDate, endTime);
 
     if (new Date(endDateTime) <= new Date(startDateTime)) {
       toast({

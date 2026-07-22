@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { CreateEventData, EditEventData, EventPolicy, EventType, Event, EventPermissions, EventEditableFields } from '@/features/shared/campus/types';
+import { isoToCampusWallClock } from '@/features/events/utils/campus-datetime';
 
 interface EventFormContextType {
   // Form data
@@ -81,19 +82,14 @@ export function EventFormProvider({
         tag: event.tag,
       });
       
-      // Initialize start date and time
-      const startD = new Date(event.start_datetime);
-      setStartDate(new Date(startD.getFullYear(), startD.getMonth(), startD.getDate()));
-      const startHh = String(startD.getHours()).padStart(2, '0');
-      const startMm = String(startD.getMinutes()).padStart(2, '0');
-      setStartTime(`${startHh}:${startMm}`);
-      
-      // Initialize end date and time
-      const endD = new Date(event.end_datetime);
-      setEndDate(new Date(endD.getFullYear(), endD.getMonth(), endD.getDate()));
-      const endHh = String(endD.getHours()).padStart(2, '0');
-      const endMm = String(endD.getMinutes()).padStart(2, '0');
-      setEndTime(`${endHh}:${endMm}`);
+      // Initialize start/end from API UTC instants → campus wall clock for the form
+      const startParts = isoToCampusWallClock(event.start_datetime);
+      setStartDate(startParts.date);
+      setStartTime(startParts.time);
+
+      const endParts = isoToCampusWallClock(event.end_datetime);
+      setEndDate(endParts.date);
+      setEndTime(endParts.time);
     } else if (!isEditMode) {
       setFormData({
         name: "",

@@ -20,7 +20,7 @@ Time rules (critical):
 - All event times in posts are Nazarbayev University local time (Asia/Almaty, UTC+5).
 - Copy the exact clock time from the post into start_datetime/end_datetime.
 - Format: YYYY-MM-DDTHH:MM:SS with NO timezone suffix — never append Z, +05:00, or any offset.
-- Never convert local time to UTC. Post says 15:00 → "2026-08-29T15:00:00", NOT "2026-08-29T10:00:00".
+- Never convert local time to UTC yourself; the backend stores UTC from Asia/Almaty.
 - Example: "29 августа, начало в 15:00" → start_datetime "2026-08-29T15:00:00", end_datetime "2026-08-29T17:00:00".
 
 Description formatting (Markdown rendered on the event page):

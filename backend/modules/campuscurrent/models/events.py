@@ -1,4 +1,5 @@
 from datetime import datetime
+from backend.common.datetime_utils import utc_now
 from enum import Enum as PyEnum
 
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey
@@ -71,7 +72,7 @@ class EventCollaborator(Base):
     community_id: Mapped[int] = mapped_column(
         ForeignKey("communities.id", ondelete="CASCADE"), nullable=True, index=True
     )
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     event = relationship("Event", back_populates="collaborators")
     user = relationship("User")
@@ -90,11 +91,11 @@ class Event(Base):
     registration_link: Mapped[str] = mapped_column(nullable=True, unique=False)
     name: Mapped[str] = mapped_column(nullable=False, unique=False)
     place: Mapped[str] = mapped_column(nullable=False, unique=False)
-    start_datetime: Mapped[DateTime] = mapped_column(
-        DateTime, nullable=False, index=True
+    start_datetime: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
     )  # Renamed from event_datetime
-    end_datetime: Mapped[DateTime] = mapped_column(
-        DateTime, nullable=False, index=True
+    end_datetime: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
     )  # New field
     description: Mapped[str] = mapped_column(nullable=False, unique=False)
     type: Mapped[EventType] = mapped_column(
@@ -107,8 +108,8 @@ class Event(Base):
         SQLEnum(EventTag, name="event_tag"), nullable=False, default=EventTag.regular
     )  # only admins can edit tag
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     creator = relationship("User")
     collaborators = relationship(
@@ -150,7 +151,7 @@ class EventBotSubmission(Base):
     origin_type: Mapped[str | None] = mapped_column(nullable=True)
     origin_chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     origin_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
-    forward_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    forward_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     forward_sender_name: Mapped[str | None] = mapped_column(nullable=True)
     media_file_unique_id: Mapped[str | None] = mapped_column(nullable=True)
 
@@ -162,8 +163,8 @@ class EventBotSubmission(Base):
     extracted_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     registration_link: Mapped[str | None] = mapped_column(nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     submitter = relationship("User")
     event = relationship("Event", back_populates="bot_submissions")
@@ -179,6 +180,6 @@ class EventBotSubmission(Base):
 #     user_sub: Mapped[str] = mapped_column(
 #         ForeignKey("users.sub", ondelete="CASCADE"), nullable=False
 #     )
-#     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-#     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow,
+#     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+#     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now,
 # nullable=False)

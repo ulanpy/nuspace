@@ -145,10 +145,12 @@ class EventRepository:
                 utils.build_time_filter_expressions(time_filter=event_filter.time_filter)
             )
         else:
+            # Compare campus calendar dates (Asia/Almaty), not UTC date of the instant.
+            campus_start_date = func.date(func.timezone("Asia/Almaty", Event.start_datetime))
             if event_filter.start_date:
-                filters.append(func.date(Event.start_datetime) >= event_filter.start_date)
+                filters.append(campus_start_date >= event_filter.start_date)
             if event_filter.end_date:
-                filters.append(func.date(Event.start_datetime) <= event_filter.end_date)
+                filters.append(campus_start_date <= event_filter.end_date)
 
         stmt = (
             select(Event)

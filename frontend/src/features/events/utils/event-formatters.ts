@@ -1,14 +1,18 @@
-import { format } from "date-fns";
 import type { EventPolicy } from "@/features/shared/campus/types";
+import { formatInCampusTime } from "@/features/events/utils/campus-datetime";
 
 export const formatEventDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return format(date, "d MMMM");
+  return formatInCampusTime(dateString, {
+    day: "numeric",
+    month: "long",
+  });
 };
 
 export const formatEventTime = (dateString: string) => {
-  const date = new Date(dateString);
-  return format(date, "p");
+  return formatInCampusTime(dateString, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 };
 
 export const getPolicyDisplay = (policy: EventPolicy | string) => {
@@ -32,4 +36,3 @@ export const getPolicyColor = (policy: EventPolicy | string) => {
       return "bg-gray-100 text-gray-900 border-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700";
   }
 };
-

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from backend.common.schemas import ShortUserResponse
@@ -137,7 +137,7 @@ class DelegationService:
                     continue
                 score = (
                     self.PERMISSION_RANK.get(row.permission, 0),
-                    row.granted_at or datetime.min,
+                    row.granted_at or datetime.min.replace(tzinfo=timezone.utc),
                 )
                 if best_score is None or score > best_score:
                     best_score = score
@@ -221,8 +221,8 @@ class DelegationService:
         members.sort(
             key=lambda member: (
                 role_priority.get(member.role, 99),
-                member.sg_assigned_at or datetime.min,
-                member.created_at or datetime.min,
+                member.sg_assigned_at or datetime.min.replace(tzinfo=timezone.utc),
+                member.created_at or datetime.min.replace(tzinfo=timezone.utc),
             )
         )
 
@@ -268,7 +268,7 @@ class DelegationService:
         role_changed = previous_role != payload.role
         is_new_sg_member = previous_role not in self.SG_MEMBER_ROLES
         if is_new_sg_member or role_changed or target_user.sg_assigned_at is None:
-            target_user.sg_assigned_at = datetime.utcnow()
+            target_user.sg_assigned_at = datetime.now(timezone.utc)
             target_user.sg_assigned_by_sub = actor_sub
 
         await self.db_session.commit()

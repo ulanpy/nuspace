@@ -1,6 +1,7 @@
 """ORM models for grade reports, course progress, and planner data."""
 
 from datetime import datetime
+from backend.common.datetime_utils import utc_now
 
 from sqlalchemy import (
     Boolean,
@@ -47,8 +48,8 @@ class GradeReport(Base):
     letters_count: Mapped[int] = mapped_column(Integer, nullable=True)
     faculty: Mapped[str] = mapped_column(String(256), nullable=True, index=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
 
 class Course(Base):
@@ -74,8 +75,8 @@ class Course(Base):
     title: Mapped[str] = mapped_column(String(512), nullable=True)
     credits: Mapped[int] = mapped_column(Integer, nullable=True)
     term: Mapped[str] = mapped_column(String(32), nullable=True, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     # ORM relationships
     student_courses = relationship("StudentCourse", back_populates="course")
@@ -98,9 +99,9 @@ class StudentSchedule(Base):
     term_value: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
     schedule_data: Mapped[list] = mapped_column(JSONB, nullable=False)
     preferences: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    last_synced_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    last_synced_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     student = relationship("User")
 
@@ -121,8 +122,8 @@ class StudentCourse(Base):
         ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     # ORM relationships
     items = relationship(
@@ -159,8 +160,8 @@ class CourseItem(Base):
     max_score: Mapped[float] = mapped_column(Numeric(7, 2), nullable=True)
     obtained_score: Mapped[float] = mapped_column(Numeric(7, 2), nullable=True)
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     # ORM relationships
     student_course = relationship("StudentCourse", back_populates="items")
@@ -184,8 +185,8 @@ class CourseTemplate(Base):
     )
 
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     
 
@@ -215,8 +216,8 @@ class TemplateItem(Base):
     total_weight_pct: Mapped[float] = mapped_column(Numeric(5, 2), nullable=True
     )
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     # ORM relationships
     template = relationship("CourseTemplate", back_populates="items")
@@ -237,9 +238,9 @@ class PlannerSchedule(Base):
     student_sub: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
     )
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
     )
 
     courses = relationship(
@@ -268,9 +269,9 @@ class PlannerScheduleCourse(Base):
     metadata_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     capacity_total: Mapped[int | None] = mapped_column(Integer, nullable=True)
     enrollment_total: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
     )
 
     planner_schedule = relationship("PlannerSchedule", back_populates="courses")
@@ -301,9 +302,9 @@ class PlannerScheduleSection(Base):
     capacity: Mapped[int | None] = mapped_column(Integer, nullable=True)
     enrollment_snapshot: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_selected: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
     )
 
     planner_course = relationship("PlannerScheduleCourse", back_populates="sections")
