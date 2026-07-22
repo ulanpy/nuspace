@@ -36,7 +36,8 @@ prometheus.scrape "host_scrape" {
 prometheus.scrape "application_scrape" {
 	targets = [{
 		__address__      = "fastapi:8000",
-		__metrics_path__ = "/metrics",
+		# Trailing slash avoids FastAPI 307 /metrics → /metrics/ (double scrape noise)
+		__metrics_path__ = "/metrics/",
 	}]
 	forward_to = [prometheus.remote_write.prometheus_write.receiver]
 	job_name   = "application"

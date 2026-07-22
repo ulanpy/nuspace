@@ -80,3 +80,11 @@
     up --no-deps -d fastapi
   when: backend_rollout_needed | default(false) | bool
   register: backend_up
+
+# Safety net until nginx uses runtime Docker DNS (infra/nginx/nginx.conf).
+# Stale upstream IP after fastapi recreate → 502 "No route to host".
+- name: Reload nginx after fastapi recreate
+  ansible.builtin.command: docker exec nginx nginx -s reload
+  when: backend_up is changed
+  failed_when: false
+  changed_when: true
