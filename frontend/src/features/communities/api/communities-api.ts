@@ -9,13 +9,12 @@ import {
 } from "@/features/shared/campus/types";
 
 export const campuscurrentAPI = {
-  getCommunitiesQueryOptions: (params: { page?: number; size?: number; keyword?: string | null; category?: string | null; recruitment_status?: string | null } = {}) => {
+  getCommunitiesQueryOptions: (params: { page?: number; size?: number; keyword?: string | null; category?: string | null } = {}) => {
     const normalizedParams = {
       page: params.page ?? 1,
       size: params.size ?? 12,
       keyword: params.keyword ?? null,
       category: params.category ?? null,
-      recruitment_status: params.recruitment_status ?? null,
     } as const;
 
     const queryParams = new URLSearchParams();
@@ -23,8 +22,6 @@ export const campuscurrentAPI = {
     queryParams.set("size", String(normalizedParams.size));
     if (normalizedParams.keyword) queryParams.set("keyword", String(normalizedParams.keyword));
     if (normalizedParams.category) queryParams.set("community_category", String(normalizedParams.category));
-    if (normalizedParams.recruitment_status)
-      queryParams.set("recruitment_status", String(normalizedParams.recruitment_status));
 
     return {
       queryKey: [
@@ -34,7 +31,6 @@ export const campuscurrentAPI = {
         normalizedParams.size,
         normalizedParams.keyword ?? "",
         normalizedParams.category ?? "",
-        normalizedParams.recruitment_status ?? "",
       ] as const,
       queryFn: async () => {
         const res = await apiCall<any>(

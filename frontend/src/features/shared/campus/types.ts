@@ -22,11 +22,6 @@ import { Media } from "@/features/media/types/types";
       registration = "registration"
     }
 
-    export enum CommunityRecruitmentStatus {
-      open = "open",
-      closed = "closed"
-    }
-
     export interface HeadUser {
       sub: string;
       name: string;
@@ -51,8 +46,6 @@ import { Media } from "@/features/media/types/types";
       type = "type",
       category = "category",
       email = "email",
-      recruitment_status = "recruitment_status",
-      recruitment_link = "recruitment_link",
       description = "description",
       established = "established",
       head = "head",
@@ -81,8 +74,6 @@ import { Media } from "@/features/media/types/types";
       /** Whether the community is verified */
       verified: boolean;
       email?: string;
-      recruitment_status: CommunityRecruitmentStatus;
-      recruitment_link: string;
       description: string;
       head: string;
       established: string;
@@ -225,8 +216,6 @@ import { Media } from "@/features/media/types/types";
       type: CommunityType;
       category: CommunityCategory;
       email?: string;
-      recruitment_status: CommunityRecruitmentStatus;
-      recruitment_link?: string;
       description: string;
       established: string;
       head: string;
@@ -238,8 +227,6 @@ import { Media } from "@/features/media/types/types";
       name?: string;
       email?: string;
       established?: string;
-      recruitment_status?: CommunityRecruitmentStatus;
-      recruitment_link?: string;
       description?: string;
       telegram_url?: string;
       instagram_url?: string;

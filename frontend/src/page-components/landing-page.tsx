@@ -75,7 +75,7 @@ const features: Feature[] = [
     className: "md:col-span-1 lg:col-span-2",
     iconClassName: "bg-community/15 text-community",
     stripClassName: "bg-community",
-    details: ["Student clubs", "Recruitment"],
+    details: ["Student clubs", "Profiles", "Categories"],
   },
   {
     title: "Contacts",

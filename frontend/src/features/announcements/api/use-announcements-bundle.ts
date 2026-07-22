@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiCall } from "@/utils/api";
 
 export type AnnouncementsBundleResponse = {
-  communities: {
+  events: {
     items: any[];
     total_pages: number;
     total: number;
@@ -12,7 +12,7 @@ export type AnnouncementsBundleResponse = {
     size: number;
     has_next: boolean;
   };
-  events: {
+  recruitment_events: {
     items: any[];
     total_pages: number;
     total: number;
@@ -24,7 +24,7 @@ export type AnnouncementsBundleResponse = {
 
 export function useAnnouncementsBundle() {
   return useQuery({
-    queryKey: ["announcements", "bundle", { v: 1 }],
+    queryKey: ["announcements", "bundle", { v: 2 }],
     queryFn: async () => {
       return await apiCall<AnnouncementsBundleResponse>("/announcements/bundle");
     },

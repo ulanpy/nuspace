@@ -11,7 +11,6 @@ from backend.modules.campuscurrent.communities.dependencies import get_community
 from backend.modules.campuscurrent.communities.service import CommunityService
 from backend.modules.campuscurrent.models.community import (
     CommunityCategory,
-    CommunityRecruitmentStatus,
     CommunityType,
 )
 
@@ -52,7 +51,6 @@ async def get_communities(
     page: int = 1,
     community_type: CommunityType | None = None,
     community_category: CommunityCategory | None = None,
-    recruitment_status: CommunityRecruitmentStatus | None = None,
     head_sub: str | None = Query(
         default=None,
         description=("if 'me' then current user's sub will be used"),
@@ -71,7 +69,6 @@ async def get_communities(
         size=size,
         community_type=community_type,
         community_category=community_category,
-        recruitment_status=recruitment_status,
         head_sub=head_sub,
         keyword=keyword,
     )

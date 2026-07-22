@@ -13,7 +13,6 @@ import {
   CommunityPermissions,
   CommunityType,
   CommunityCategory,
-  CommunityRecruitmentStatus,
 } from "@/features/shared/campus/types";
 
 // Import all the new modular components
@@ -33,7 +32,6 @@ import { useInitializeMedia } from '@/features/media/hooks/use-initialize-media'
 import { campuscurrentAPI } from '@/features/communities/api/communities-api';
 import { useToast } from "@/hooks/use-toast";
 import {
-  getHttpsUrlError,
   getInstagramUrlError,
   getTelegramUrlError,
   normalizeHttpUrl,
@@ -82,32 +80,11 @@ export function CommunityModal({
 
     let operationSucceeded = false;
     try {
-      const isRecruitmentOpen = (formData as EditCommunityData).recruitment_status === CommunityRecruitmentStatus.open;
-      const link = normalizeHttpUrl((formData as EditCommunityData).recruitment_link || "");
       const telegramUrl = normalizeHttpUrl(formData.telegram_url);
       const instagramUrl = normalizeHttpUrl(formData.instagram_url);
 
-      if (isRecruitmentOpen && !link) {
-        toast({
-          title: "Recruitment link required",
-          description: "Please provide a recruitment link when recruitment status is open",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const recruitmentUrlError = link ? getHttpsUrlError(link) : undefined;
       const telegramUrlError = telegramUrl ? getTelegramUrlError(telegramUrl) : undefined;
       const instagramUrlError = instagramUrl ? getInstagramUrlError(instagramUrl) : undefined;
-
-      if (isRecruitmentOpen && recruitmentUrlError) {
-        toast({
-          title: "Invalid recruitment URL",
-          description: recruitmentUrlError,
-          variant: "destructive",
-        });
-        return;
-      }
 
       const socialUrlError = telegramUrlError || instagramUrlError;
       if (socialUrlError) {
@@ -125,12 +102,10 @@ export function CommunityModal({
           ...(bannersRef.current?.getMarkedForDeletion() ?? []),
         ];
 
-        // Update existing community
         const editData: EditCommunityData = {
           name: formData.name,
           description: formData.description,
           email: ((formData as EditCommunityData).email || "").trim() || undefined,
-          recruitment_status: (formData as EditCommunityData).recruitment_status,
           established: (formData as EditCommunityData).established,
           telegram_url: telegramUrl,
           instagram_url: instagramUrl,
@@ -138,11 +113,6 @@ export function CommunityModal({
             ? { media_ids_to_delete: mediaIdsToDelete }
             : {}),
         };
-
-        // Only include recruitment_link when status is open and link is non-empty
-        if (isRecruitmentOpen && link) {
-          editData.recruitment_link = link;
-        }
 
         const updated = await handleUpdate(community.id.toString(), editData);
         operationSucceeded = Boolean(updated);
@@ -184,24 +154,17 @@ export function CommunityModal({
           );
         }
       } else {
-        // Create new community
         const createData: CreateCommunityData = {
           name: formData.name || "",
           type: (formData as CreateCommunityData).type || CommunityType.club,
           category: (formData as CreateCommunityData).category || CommunityCategory.academic,
           email: (((formData as CreateCommunityData).email || "").trim()) || undefined,
-          recruitment_status: (formData as CreateCommunityData).recruitment_status,
           head: user.user.sub,
           established: (formData as CreateCommunityData).established || new Date().toISOString().split('T')[0],
           description: formData.description || "",
           telegram_url: telegramUrl,
           instagram_url: instagramUrl,
         };
-
-        // Only include recruitment_link when status is open and link is non-empty
-        if (isRecruitmentOpen && link) {
-          createData.recruitment_link = link;
-        }
 
         const created = await handleCreate(createData);
         operationSucceeded = Boolean(created);

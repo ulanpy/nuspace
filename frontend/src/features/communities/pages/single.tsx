@@ -20,7 +20,6 @@ import {
   Calendar,
   ExternalLink,
   Settings,
-  UserRoundPlus,
 } from "lucide-react";
 
 import { Media } from "@/features/media/types/types";
@@ -120,12 +119,6 @@ export default function CommunityDetailPage() {
                     <Badge variant="secondary" className="capitalize font-medium px-3 py-1">
                       {community.type}
                     </Badge>
-                    <Badge
-                      variant={community.recruitment_status === "open" ? "default" : "outline"}
-                      className="capitalize font-medium px-3 py-1"
-                    >
-                      Recruitment {community.recruitment_status}
-                    </Badge>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
@@ -178,45 +171,6 @@ export default function CommunityDetailPage() {
                 </div>
 
                 <div className="flex flex-col gap-2 w-full md:w-auto md:self-start md:ml-0 md:items-start">
-                  {(() => {
-                    const isOpen = community.recruitment_status === "open";
-                    const link = community.recruitment_link || "";
-                    if (isOpen && link) {
-                      return (
-                        <Button asChild className="w-full md:w-56 h-10 px-4 justify-center">
-                          <a href={link} target="_blank" rel="noopener noreferrer">
-                            <UserRoundPlus className="h-4 w-4 mr-2" />
-                            Join Community
-                          </a>
-                        </Button>
-                      );
-                    }
-                    if (!isOpen) {
-                      return (
-                        <Button
-                          variant="secondary"
-                          disabled
-                          className="w-full md:w-56 h-10 px-4 justify-center"
-                          title="This club is not currently recruiting"
-                        >
-                          <UserRoundPlus className="h-4 w-4 mr-2" />
-                          Not Recruiting
-                        </Button>
-                      );
-                    }
-                    return (
-                      <Button
-                        variant="secondary"
-                        disabled
-                        className="w-full md:w-56 h-10 px-4 justify-center"
-                        title="Recruitment link was not provided"
-                      >
-                        <UserRoundPlus className="h-4 w-4 mr-2" />
-                        Join (link unavailable)
-                      </Button>
-                    );
-                  })()}
-
                   {permissions?.can_edit && (
                     <Button
                       variant="outline"

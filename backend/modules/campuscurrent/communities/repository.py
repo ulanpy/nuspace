@@ -10,7 +10,6 @@ from backend.modules.auth.models import User
 from backend.modules.campuscurrent.models.community import (
     Community,
     CommunityCategory,
-    CommunityRecruitmentStatus,
     CommunityType,
 )
 from backend.modules.media.models import EntityType, Media, MediaFormat
@@ -104,7 +103,6 @@ class CommunityRepository:
         size: int,
         community_type: CommunityType | None,
         community_category: CommunityCategory | None,
-        recruitment_status: CommunityRecruitmentStatus | None,
         head_sub: str | None,
         keyword: str | None,
         meilisearch_client: AsyncClient,
@@ -131,8 +129,6 @@ class CommunityRepository:
             conditions.append(Community.type == community_type)
         if community_category:
             conditions.append(Community.category == community_category)
-        if recruitment_status:
-            conditions.append(Community.recruitment_status == recruitment_status)
         if head_sub:
             conditions.append(Community.head == head_sub)
         if keyword:

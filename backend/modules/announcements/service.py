@@ -5,9 +5,9 @@ from typing import Optional
 import httpx
 
 from backend.modules.announcements import schemas
-from backend.modules.announcements.interfaces import CommunityCatalog, EventCatalog
+from backend.modules.announcements.interfaces import EventCatalog
 from backend.modules.campuscurrent.events import schemas as event_schemas
-from backend.modules.campuscurrent.models.community import CommunityRecruitmentStatus
+from backend.modules.campuscurrent.models.events import EventType
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +34,7 @@ async def get_latest_telegram_post_id() -> Optional[int]:
 
 
 class AnnouncementsService:
-    def __init__(
-        self,
-        community_catalog: CommunityCatalog,
-        event_catalog: EventCatalog,
-    ):
-        self.community_catalog = community_catalog
+    def __init__(self, event_catalog: EventCatalog):
         self.event_catalog = event_catalog
 
     async def get_bundle(
@@ -47,10 +42,10 @@ class AnnouncementsService:
         *,
         infra,
         user: tuple[dict, dict],
-        communities_page: int = 1,
-        communities_size: int = 5,
         events_page: int = 1,
         events_size: int = 5,
+        recruitment_events_page: int = 1,
+        recruitment_events_size: int = 5,
     ) -> schemas.AnnouncementsBundleResponse:
         """
         Aggregate data required by the announcements landing page into a single response.
@@ -58,18 +53,6 @@ class AnnouncementsService:
         NOTE: We intentionally run these sequentially because SQLAlchemy AsyncSession is
         not safe to use concurrently across tasks.
         """
-        communities = await self.community_catalog.list_communities(
-            infra=infra,
-            user=user,
-            page=communities_page,
-            size=communities_size,
-            community_type=None,
-            community_category=None,
-            recruitment_status=CommunityRecruitmentStatus.open,
-            head_sub=None,
-            keyword=None,
-        )
-
         event_filter = event_schemas.EventFilter(
             page=events_page,
             size=events_size,
@@ -80,7 +63,18 @@ class AnnouncementsService:
             user=user, event_filter=event_filter, infra=infra
         )
 
+        recruitment_filter = event_schemas.EventFilter(
+            page=recruitment_events_page,
+            size=recruitment_events_size,
+            event_status=event_schemas.EventStatus.approved,
+            event_type=EventType.recruitment,
+            time_filter=event_schemas.TimeFilter.UPCOMING,
+        )
+        recruitment_events = await self.event_catalog.get_events(
+            user=user, event_filter=recruitment_filter, infra=infra
+        )
+
         return schemas.AnnouncementsBundleResponse(
-            communities=communities,
             events=events,
+            recruitment_events=recruitment_events,
         )

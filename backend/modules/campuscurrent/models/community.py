@@ -24,12 +24,6 @@ class CommunityType(PyEnum):
     organization = "organization"
 
 
-class CommunityRecruitmentStatus(PyEnum):
-    open = "open"
-    closed = "closed"
-    upcoming = "upcoming"
-
-
 class Community(Base):
     __tablename__ = "communities"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
@@ -41,14 +35,7 @@ class Community(Base):
         SQLEnum(CommunityCategory, name="community_category"), nullable=False, index=True
     )
     email: Mapped[str] = mapped_column(nullable=True, unique=False)
-    recruitment_status: Mapped[CommunityRecruitmentStatus] = mapped_column(
-        SQLEnum(CommunityRecruitmentStatus, name="community_recruitment_status"),
-        nullable=False,
-        default=CommunityRecruitmentStatus.closed,
-        index=True,
-    )
     verified: Mapped[bool] = mapped_column(nullable=False, default=False, index=True)
-    recruitment_link: Mapped[str] = mapped_column(nullable=True, unique=False)
     description: Mapped[str] = mapped_column(nullable=False)
     established: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     head: Mapped[str] = mapped_column(

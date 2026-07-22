@@ -97,14 +97,6 @@ export function CommunityCard({ community }: { community: Community }) {
               {community.category[0].toUpperCase()}
               {community.category.slice(1)}
             </Badge>
-            {community.recruitment_status === "open" && (
-              <Badge
-                variant="outline"
-                className="text-xs px-2 py-0.5 bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800"
-              >
-                Recruiting
-              </Badge>
-            )}
           </div>
         </div>
       </Card>

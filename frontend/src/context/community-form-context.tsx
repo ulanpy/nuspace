@@ -8,12 +8,10 @@ import {
   Community,
   CommunityCategory,
   CommunityType,
-  CommunityRecruitmentStatus,
   CommunityEditableFields,
   CommunityPermissions,
 } from "@/features/shared/campus/types";
 import {
-  getHttpsUrlError,
   getInstagramUrlError,
   getTelegramUrlError,
   normalizeHttpUrl,
@@ -61,8 +59,6 @@ export function CommunityFormProvider({
     category: "academic" as CommunityCategory,
     type: "club" as CommunityType,
     email: "",
-    recruitment_status: "closed" as CommunityRecruitmentStatus,
-    recruitment_link: "",
     telegram_url: "",
     instagram_url: "",
     head: user?.user.sub || "",
@@ -77,8 +73,6 @@ export function CommunityFormProvider({
         category: community.category,
         type: community.type,
         email: community.email || "",
-        recruitment_status: community.recruitment_status,
-        recruitment_link: community.recruitment_link || "",
         telegram_url: community.telegram_url,
         instagram_url: community.instagram_url,
         head: community.head,
@@ -91,12 +85,10 @@ export function CommunityFormProvider({
         category: "academic" as CommunityCategory,
         type: "club" as CommunityType,
         email: "",
-        recruitment_status: "closed" as CommunityRecruitmentStatus,
-        recruitment_link: "",
         telegram_url: "",
         instagram_url: "",
         head: user?.user.sub || "",
-        established: new Date().toISOString().split('T')[0],
+        established: new Date().toISOString().split("T")[0],
       });
     }
   }, [isEditMode, community, user]);
@@ -123,16 +115,10 @@ export function CommunityFormProvider({
     ) {
       return;
     }
-    const updatedData: CreateCommunityData | EditCommunityData = {
+    setFormData({
       ...formData,
       [name]: value,
-    } as CreateCommunityData | EditCommunityData;
-
-    if (name === "recruitment_status" && value === CommunityRecruitmentStatus.closed) {
-      (updatedData as any).recruitment_link = "";
-    }
-
-    setFormData(updatedData);
+    } as CreateCommunityData | EditCommunityData);
   };
 
   const isFieldEditable = (fieldName: string): boolean => {
@@ -149,27 +135,23 @@ export function CommunityFormProvider({
         category: "academic" as CommunityCategory,
         type: "club" as CommunityType,
         email: "",
-        recruitment_status: "closed" as CommunityRecruitmentStatus,
         head: user?.user.sub || "",
-        recruitment_link: "",
         telegram_url: "",
         instagram_url: "",
-        established: new Date().toISOString().split('T')[0],
+        established: new Date().toISOString().split("T")[0],
       });
     }
   };
 
   const validateForm = (): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
-    // Name validation (required, 3-100 characters)
     if (!formData.name || formData.name.trim().length < 3) {
       errors.push("Community name must be at least 3 characters long");
     }
     if (formData.name && formData.name.length > 100) {
       errors.push("Community name must be no more than 100 characters long");
     }
-    
-    // Description validation (required, max 5000 characters)
+
     if (!formData.description || formData.description.trim().length === 0) {
       errors.push("Description is required");
     }
@@ -177,7 +159,6 @@ export function CommunityFormProvider({
       errors.push("Description must be no more than 5000 characters long");
     }
 
-    // Email validation (optional field, but must be valid if provided)
     const emailValue = (formData as any).email?.trim?.() || "";
     if (emailValue.length > 0) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -185,41 +166,19 @@ export function CommunityFormProvider({
         errors.push("Email must be a valid email address");
       }
     }
-    
-    // Type validation (required for create mode)
+
     if (!isEditMode && !(formData as CreateCommunityData).type) {
       errors.push("Community type is required");
     }
-    
-    // Category validation (required for create mode)
+
     if (!isEditMode && !(formData as CreateCommunityData).category) {
       errors.push("Community category is required");
     }
-    
-    // Recruitment status validation (required)
-    if (!formData.recruitment_status) {
-      errors.push("Recruitment status is required");
-    }
-    
-    // Recruitment link validation (required when status is open)
-    if (formData.recruitment_status === CommunityRecruitmentStatus.open) {
-      const link = normalizeHttpUrl((formData as any).recruitment_link as string);
-      if (!link) {
-        errors.push("Recruitment link is required when recruitment status is open");
-      } else {
-        const linkError = getHttpsUrlError(link);
-        if (linkError) {
-          errors.push(`Recruitment link: ${linkError}`);
-        }
-      }
-    }
-    
-    // Established date validation (required for create mode)
+
     if (!isEditMode && !(formData as CreateCommunityData).established) {
       errors.push("Established date is required");
     }
-    
-    // URL validation for social media links
+
     const validateOptionalUrl = (
       url: string | undefined,
       fieldName: string,
@@ -231,13 +190,13 @@ export function CommunityFormProvider({
         errors.push(`${fieldName}: ${urlError}`);
       }
     };
-    
+
     validateOptionalUrl(formData.telegram_url, "Telegram URL", getTelegramUrlError);
     validateOptionalUrl(formData.instagram_url, "Instagram URL", getInstagramUrlError);
-    
+
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   };
 

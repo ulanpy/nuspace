@@ -3,29 +3,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from backend.common.schemas import Infra
-from backend.modules.campuscurrent.communities import schemas as community_schemas
 from backend.modules.campuscurrent.events import schemas as event_schemas
-from backend.modules.campuscurrent.models.community import (
-    CommunityCategory,
-    CommunityRecruitmentStatus,
-    CommunityType,
-)
-
-
-class CommunityCatalog(Protocol):
-    async def list_communities(
-        self,
-        infra: Infra,
-        user: tuple[dict, dict],
-        *,
-        page: int,
-        size: int,
-        community_type: CommunityType | None,
-        community_category: CommunityCategory | None,
-        recruitment_status: CommunityRecruitmentStatus | None,
-        head_sub: str | None,
-        keyword: str | None,
-    ) -> community_schemas.ListCommunity: ...
 
 
 class EventCatalog(Protocol):

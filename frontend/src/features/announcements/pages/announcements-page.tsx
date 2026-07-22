@@ -30,14 +30,15 @@ export default function AnnouncementsPage() {
 
     const { data: bundle, isLoading: bundleLoading } = useAnnouncementsBundle();
 
-    const upcomingEvents = bundle?.events?.items || [];
-    const recruitingCommunities = bundle?.communities?.items ?? [];
+    const upcomingEvents = (bundle?.events?.items || []).filter(
+        (event: any) => event.type !== "recruitment"
+    );
+    const recruitmentEvents = bundle?.recruitment_events?.items ?? [];
 
     return (
         <div className="container mx-auto px-4 py-8 space-y-8">
             {SHOW_PRESIDENTIAL_ELECTION_BANNER ? <PresidentialElectionBanner /> : null}
 
-            {/* Welcome Header */}
             <div className="flex items-center gap-4">
                 {user?.picture && (
                     <img
@@ -54,11 +55,8 @@ export default function AnnouncementsPage() {
                 </div>
             </div>
 
-            {/* Main content grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left column */}
                 <div className="lg:col-span-2 space-y-6">
-                    {/* Events Widget */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-semibold">Current Events</h2>
@@ -121,12 +119,11 @@ export default function AnnouncementsPage() {
                         )}
                     </div>
 
-                    {/* Communities recruiting now */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold">Communities Recruiting Now</h2>
+                            <h2 className="text-lg font-semibold">Now Recruiting</h2>
                             <Link
-                                href="/communities?recruitment_status=open"
+                                href="/events"
                                 className="text-sm text-primary hover:underline flex items-center gap-1"
                             >
                                 View all <ArrowRight className="w-4 h-4" />
@@ -139,18 +136,18 @@ export default function AnnouncementsPage() {
                                     <div key={idx} className="h-20 rounded-xl bg-muted animate-pulse" />
                                 ))}
                             </div>
-                        ) : recruitingCommunities.length > 0 ? (
+                        ) : recruitmentEvents.length > 0 ? (
                             <div className="space-y-3">
-                                {recruitingCommunities.map((community: any) => (
+                                {recruitmentEvents.map((event: any) => (
                                     <Link
-                                        key={community.id}
-                                        href={`/communities/?id=${community.id}`}
+                                        key={event.id}
+                                        href={`/events/?id=${event.id}`}
                                         className="flex items-start gap-3 p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors"
                                     >
-                                        {community.media?.[0]?.url ? (
+                                        {event.media?.[0]?.url ? (
                                             <img
-                                                src={community.media[0].url}
-                                                alt={community.name}
+                                                src={event.media[0].url}
+                                                alt={event.name}
                                                 className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                                             />
                                         ) : (
@@ -159,14 +156,16 @@ export default function AnnouncementsPage() {
                                             </div>
                                         )}
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="font-medium truncate">{community.name}</h3>
+                                            <h3 className="font-medium truncate">{event.name}</h3>
                                             <p className="text-sm text-muted-foreground line-clamp-2">
-                                                {community.description}
+                                                {event.place}
                                             </p>
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
-                                                <span className="capitalize">{community.category}</span>
+                                                <span>
+                                                    {new Date(event.start_datetime).toLocaleDateString()}
+                                                </span>
                                                 <span className="capitalize px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                                                    {community.recruitment_status}
+                                                    Recruitment
                                                 </span>
                                             </div>
                                         </div>
@@ -177,19 +176,18 @@ export default function AnnouncementsPage() {
                         ) : (
                             <div className="p-6 text-center rounded-xl border bg-card">
                                 <Users className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-                                <p className="text-muted-foreground">No communities are recruiting right now</p>
+                                <p className="text-muted-foreground">No recruitment events right now</p>
                                 <Link
-                                    href="/communities?recruitment_status=open"
+                                    href="/events"
                                     className="inline-block mt-3 text-sm text-primary hover:underline"
                                 >
-                                    Browse all communities
+                                    Browse all events
                                 </Link>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Telegram Feed - spans 1 column */}
                 <div className="lg:col-span-1">
                     <TelegramFeed />
                 </div>

@@ -3,11 +3,10 @@
 import { useCommunityForm } from '@/context/community-form-context';
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
-import { CommunityRecruitmentStatus, CommunityType, CommunityCategory } from "@/features/shared/campus/types";
+import { CommunityType, CommunityCategory } from "@/features/shared/campus/types";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import {
-  getHttpsUrlError,
   getInstagramUrlError,
   getTelegramUrlError,
   normalizeHttpUrl,
@@ -19,12 +18,9 @@ export function CommunityDetailsForm() {
     handleInputChange,
     handleSelectChange,
     isFieldEditable,
-    isEditMode,
   } = useCommunityForm();
-  // State for the date picker
   const [date, setDate] = useState<Date | undefined>(undefined);
 
-  // Convert established string to Date when formData changes
   useEffect(() => {
     if ('established' in formData && formData.established) {
       const establishedDate = new Date(formData.established);
@@ -38,23 +34,17 @@ export function CommunityDetailsForm() {
     }
   }, [formData]);
 
-  // Handle date selection
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
     if (selectedDate) {
-      // Format as YYYY-MM-DD string for backend date field
       const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const day = String(selectedDate.getDate()).padStart(2, '0');
-      const dateString = `${year}-${month}-${day}`;
-      handleSelectChange("established", dateString);
+      handleSelectChange("established", `${year}-${month}-${day}`);
     } else {
       handleSelectChange("established", "");
     }
   };
-
-  const showRecruitmentLink =
-    formData.recruitment_status === CommunityRecruitmentStatus.open;
 
   const normalizedTelegramUrl = normalizeHttpUrl(formData.telegram_url);
   const telegramUrlError = normalizedTelegramUrl
@@ -63,11 +53,6 @@ export function CommunityDetailsForm() {
   const normalizedInstagramUrl = normalizeHttpUrl(formData.instagram_url);
   const instagramUrlError = normalizedInstagramUrl
     ? getInstagramUrlError(normalizedInstagramUrl)
-    : undefined;
-  const recruitmentLink = (formData as { recruitment_link?: string }).recruitment_link;
-  const normalizedRecruitmentUrl = normalizeHttpUrl(recruitmentLink);
-  const recruitmentUrlError = normalizedRecruitmentUrl
-    ? getHttpsUrlError(normalizedRecruitmentUrl)
     : undefined;
 
   return (
@@ -175,68 +160,22 @@ export function CommunityDetailsForm() {
           )}
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {isFieldEditable("established") && (
         <div>
-          <Label htmlFor="recruitment_status">Recruitment Status <span className="text-red-500">*</span></Label>
-          <select
-            name="recruitment_status"
-            value={formData.recruitment_status}
-            onChange={(e) =>
-              handleSelectChange("recruitment_status", e.target.value)
-            }
-            disabled={!isFieldEditable("recruitment_status")}
-            required
-            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-              {Object.values(CommunityRecruitmentStatus).map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-          </select>
+          <Label htmlFor="established">Established <span className="text-red-500">*</span></Label>
+          <Input
+            type="date"
+            value={date ? format(date, "yyyy-MM-dd") : ""}
+            onChange={(e) => {
+              const selectedDate = e.target.value ? new Date(e.target.value) : undefined;
+              handleDateSelect(selectedDate);
+            }}
+            className="w-full"
+            min="1900-01-01"
+            max="2030-12-31"
+          />
         </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {showRecruitmentLink && (
-          <div>
-            <Label htmlFor="recruitment_link">
-              Recruitment Link {showRecruitmentLink && <span className="text-red-500">*</span>}
-            </Label>
-            <Input
-              id="recruitment_link"
-              name="recruitment_link"
-              value={(formData as any).recruitment_link || ""}
-              onChange={handleInputChange}
-              placeholder="https://..."
-              disabled={!isFieldEditable("recruitment_link")}
-              required={showRecruitmentLink}
-              aria-invalid={Boolean(recruitmentUrlError)}
-              aria-describedby={recruitmentUrlError ? "recruitment_link-error" : undefined}
-            />
-            {recruitmentUrlError && (
-              <p id="recruitment_link-error" role="alert" className="mt-1 text-xs text-destructive">
-                {recruitmentUrlError}
-              </p>
-            )}
-          </div>
-        )}
-                 {isFieldEditable("established") && (
-           <div>
-             <Label htmlFor="established">Established <span className="text-red-500">*</span></Label>
-             <Input
-               type="date"
-               value={date ? format(date, "yyyy-MM-dd") : ""}
-               onChange={(e) => {
-                 const selectedDate = e.target.value ? new Date(e.target.value) : undefined;
-                 handleDateSelect(selectedDate);
-               }}
-               className="w-full"
-               min="1900-01-01"
-               max="2030-12-31"
-             />
-           </div>
-         )}
-      </div>
+      )}
     </div>
   );
 }

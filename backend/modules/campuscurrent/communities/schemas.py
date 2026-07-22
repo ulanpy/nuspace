@@ -3,12 +3,11 @@ from datetime import date, datetime
 from typing import List, Literal
 from urllib.parse import SplitResult, urlsplit
 
-from pydantic import BaseModel, EmailStr, Field, HttpUrl, field_serializer, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
 from backend.modules.campuscurrent.models.community import (
     CommunityCategory,
-    CommunityRecruitmentStatus,
     CommunityType,
 )
 from backend.modules.media.schemas import MediaResponse
@@ -66,18 +65,6 @@ def _validate_social_url(
     return normalized
 
 
-def _validate_recruitment_url(value: object) -> str | None:
-    error_message = "Enter an HTTPS URL"
-    normalized = _normalize_optional_url(value)
-    if normalized is None:
-        return None
-
-    parsed = _parse_http_url(normalized, error_message)
-    if parsed.scheme != "https":
-        raise ValueError(error_message)
-    return normalized
-
-
 class CommunityCreateRequest(BaseModel):
     name: str = Field(
         ...,
@@ -96,16 +83,6 @@ class CommunityCreateRequest(BaseModel):
         default=None,
         description="The email of the community",
         example="nufencingclub@gmail.com",
-    )
-    recruitment_status: CommunityRecruitmentStatus = Field(
-        ...,
-        description="The recruitment status of the community",
-        example=CommunityRecruitmentStatus.open,
-    )
-    recruitment_link: HttpUrl | None = Field(
-        default=None,
-        description="The link to the recruitment page",
-        example="https://www.google.com",
     )
     description: str = Field(
         ...,
@@ -146,15 +123,6 @@ class CommunityCreateRequest(BaseModel):
             error_message="Enter an Instagram URL",
         )
 
-    @field_validator("recruitment_link", mode="before")
-    @classmethod
-    def validate_recruitment_link(cls, value: object) -> str | None:
-        return _validate_recruitment_url(value)
-
-    @field_serializer("recruitment_link")
-    def serialize_recruitment_link(self, value: HttpUrl | None) -> str | None:
-        return str(value) if value else None
-
 
 class BaseCommunity(BaseModel):
     id: int
@@ -162,9 +130,7 @@ class BaseCommunity(BaseModel):
     type: CommunityType
     category: CommunityCategory
     email: EmailStr | None = None
-    recruitment_status: CommunityRecruitmentStatus
     verified: bool
-    recruitment_link: HttpUrl | None = None
     description: str
     established: date
     head: str
@@ -206,16 +172,6 @@ class CommunityUpdateRequest(BaseModel):
     established: date | None = Field(
         default=None, description="The date the community was established", example="2025-01-01"
     )
-    recruitment_status: CommunityRecruitmentStatus | None = Field(
-        default=None,
-        description="The recruitment status of the community",
-        example=CommunityRecruitmentStatus.open,
-    )
-    recruitment_link: HttpUrl | None = Field(
-        default=None,
-        description="The link to the recruitment page",
-        example="https://www.nuspace.kz/recruitment",
-    )
     description: str | None = Field(
         default=None,
         max_length=5000,
@@ -244,10 +200,6 @@ class CommunityUpdateRequest(BaseModel):
             return None
         return value
 
-    @field_serializer("recruitment_link")
-    def serialize_recruitment_link(self, value: HttpUrl | None) -> str | None:
-        return str(value) if value else None
-
     class Config:
         from_attributes = True
 
@@ -268,11 +220,6 @@ class CommunityUpdateRequest(BaseModel):
             platform="instagram",
             error_message="Enter an Instagram URL",
         )
-
-    @field_validator("recruitment_link", mode="before")
-    @classmethod
-    def validate_recruitment_link(cls, value: object) -> str | None:
-        return _validate_recruitment_url(value)
 
 
 class ListCommunity(BaseModel):

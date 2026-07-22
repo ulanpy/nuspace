@@ -29,23 +29,23 @@ async def get_announcements_bundle_route(
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     infra: Infra = Depends(get_infra),
     service: AnnouncementsService = Depends(get_announcements_service),
-    communities_page: int = Query(1, ge=1),
-    communities_size: int = Query(5, ge=1, le=100),
     events_page: int = Query(1, ge=1),
     events_size: int = Query(5, ge=1, le=100),
+    recruitment_events_page: int = Query(1, ge=1),
+    recruitment_events_size: int = Query(5, ge=1, le=100),
 ) -> schemas.AnnouncementsBundleResponse:
     """
     Single endpoint for the announcements landing page to reduce initial request fan-out.
 
-    Defaults match current frontend usage:
-    - recruiting communities: page=1 size=5 (open)
+    Defaults:
     - events: page=1 size=5 (approved + upcoming)
+    - recruitment_events: page=1 size=5 (approved + upcoming + type=recruitment)
     """
     return await service.get_bundle(
         infra=infra,
         user=user,
-        communities_page=communities_page,
-        communities_size=communities_size,
         events_page=events_page,
         events_size=events_size,
+        recruitment_events_page=recruitment_events_page,
+        recruitment_events_size=recruitment_events_size,
     )

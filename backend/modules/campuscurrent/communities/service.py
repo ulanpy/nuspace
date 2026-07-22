@@ -14,7 +14,6 @@ from backend.modules.campuscurrent.communities.utils import get_community_permis
 from backend.modules.campuscurrent.models.community import (
     Community,
     CommunityCategory,
-    CommunityRecruitmentStatus,
     CommunityType,
 )
 from backend.modules.media.models import EntityType, Media, MediaFormat
@@ -148,7 +147,6 @@ class CommunityService:
         size: int,
         community_type: CommunityType | None,
         community_category: CommunityCategory | None,
-        recruitment_status: CommunityRecruitmentStatus | None,
         head_sub: str | None,
         keyword: str | None,
     ) -> schemas.ListCommunity:
@@ -161,7 +159,6 @@ class CommunityService:
             size=size,
             community_type=community_type,
             community_category=community_category,
-            recruitment_status=recruitment_status,
             head_sub=head_sub,
             keyword=keyword,
             meilisearch_client=infra.meilisearch_client,
