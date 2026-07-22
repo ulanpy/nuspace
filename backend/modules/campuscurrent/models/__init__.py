@@ -1,10 +1,6 @@
 from backend.modules.campuscurrent.models.community import (
     Community,
-    CommunityAchievements,
     CommunityCategory,
-    CommunityMember,
-    CommunityPhotoAlbum,
-    CommunityPhotoAlbumType,
     CommunityRecruitmentStatus,
     CommunityType,
 )
@@ -14,7 +10,6 @@ from backend.modules.campuscurrent.models.events import (
     EventBotSubmission,
     EventBotSubmissionStatus,
     EventCollaborator,
-    EventScope,
     EventStatus,
     EventTag,
     EventType,
@@ -23,11 +18,7 @@ from backend.modules.campuscurrent.models.events import (
 
 __all__ = [
     "Community",
-    "CommunityAchievements",
     "CommunityCategory",
-    "CommunityMember",
-    "CommunityPhotoAlbum",
-    "CommunityPhotoAlbumType",
     "CommunityRecruitmentStatus",
     "CommunityType",
     "CollaboratorType",
@@ -35,7 +26,6 @@ __all__ = [
     "EventBotSubmission",
     "EventBotSubmissionStatus",
     "EventCollaborator",
-    "EventScope",
     "EventStatus",
     "EventTag",
     "EventType",

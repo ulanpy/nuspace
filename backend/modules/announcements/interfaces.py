@@ -3,25 +3,16 @@ from __future__ import annotations
 from typing import Protocol
 
 from backend.common.schemas import Infra
+from backend.modules.campuscurrent.communities import schemas as community_schemas
+from backend.modules.campuscurrent.events import schemas as event_schemas
 from backend.modules.campuscurrent.models.community import (
     CommunityCategory,
-    CommunityPhotoAlbumType,
     CommunityRecruitmentStatus,
     CommunityType,
 )
-from backend.modules.campuscurrent.communities import schemas as community_schemas
-from backend.modules.campuscurrent.events import schemas as event_schemas
 
 
 class CommunityCatalog(Protocol):
-    async def list_all_photo_albums(
-        self,
-        *,
-        size: int,
-        page: int,
-        album_type: CommunityPhotoAlbumType | None,
-    ) -> community_schemas.ListPhotoAlbums: ...
-
     async def list_communities(
         self,
         infra: Infra,

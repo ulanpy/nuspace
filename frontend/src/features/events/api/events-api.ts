@@ -13,10 +13,8 @@ export const campuscurrentAPI = {
     page?: number;
     size?: number;
     registration_policy?: string | null;
-    event_scope?: string | null;
     event_type?: string | null;
     event_status?: string | null;
-    community_id?: number | null;
     creator_sub?: string | null;
     keyword?: string | null;
   }) => {
@@ -40,10 +38,7 @@ export const campuscurrentAPI = {
     // Optional filters
     if (params.registration_policy)
       queryParams.set("registration_policy", String(params.registration_policy));
-    if (params.event_scope) queryParams.set("event_scope", String(params.event_scope));
     if (params.event_type) queryParams.set("event_type", String(params.event_type));
-    if (params.community_id != null)
-      queryParams.set("community_id", String(params.community_id));
     if (params.creator_sub) queryParams.set("creator_sub", String(params.creator_sub));
     if (params.keyword) queryParams.set("keyword", String(params.keyword));
 

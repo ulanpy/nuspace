@@ -17,7 +17,6 @@ import { PageContainer } from "@/components/atoms/page-container";
 import { Badge } from "@/components/atoms/badge";
 import { EventModal } from '@/features/events/components/event-modal';
 import { CountdownBadge } from '@/features/events/components/countdown-badge';
-import { VerificationBadge } from "@/components/molecules/verification-badge";
 import { MarkdownContent } from '@/components/molecules/markdown-content';
 import { QueryBoundary } from '@/components/molecules/query-boundary';
 import type { Event } from "@/features/shared/campus/types";
@@ -75,10 +74,8 @@ export default function EventDetailPage() {
     isError,
     shareEvent,
     goToEventsRoot,
-    goToCommunity,
     actionDescriptors,
     durationMinutes,
-    communityProfileImg,
     showEditModal,
     closeEditModal,
     imageLoaded,
@@ -102,10 +99,8 @@ export default function EventDetailPage() {
           event={resolvedEvent}
           shareEvent={shareEvent}
           goToEventsRoot={goToEventsRoot}
-          goToCommunity={goToCommunity}
           actionDescriptors={actionDescriptors}
           durationMinutes={durationMinutes}
-          communityProfileImg={communityProfileImg}
           showEditModal={showEditModal}
           closeEditModal={closeEditModal}
           imageLoaded={imageLoaded}
@@ -122,10 +117,8 @@ type EventDetailViewProps = {
   event: Event;
   shareEvent: () => void;
   goToEventsRoot: () => void;
-  goToCommunity: () => void;
   actionDescriptors: EventActionDescriptor[];
   durationMinutes: number;
-  communityProfileImg: string | null;
   showEditModal: boolean;
   closeEditModal: () => void;
   imageLoaded: boolean;
@@ -138,10 +131,8 @@ const EventDetailView = ({
   event,
   shareEvent,
   goToEventsRoot,
-  goToCommunity,
   actionDescriptors,
   durationMinutes,
-  communityProfileImg,
   showEditModal,
   closeEditModal,
   imageLoaded,
@@ -215,22 +206,11 @@ const EventDetailView = ({
             <h1 className="text-3xl lg:text-4xl font-bold leading-tight break-words">
               {event.name}
             </h1>
-            {event.scope === "community" ? (
-              <div className="text-primary text-lg font-medium break-words">
-                <button
-                  type="button"
-                  className="hover:underline inline-flex items-center gap-1"
-                  onClick={goToCommunity}
-                >
-                  <span>by {event.community?.name || "Unknown Community"}</span>
-                  {event.community?.verified && <VerificationBadge className="ml-1" size={14} />}
-                </button>
-              </div>
-            ) : (
+            {event.creator ? (
               <div className="text-muted-foreground text-lg break-words">
-                by {event.creator?.name} {event.creator?.surname}
+                by {event.creator.name} {event.creator.surname}
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="space-y-3 text-muted-foreground">
@@ -272,89 +252,33 @@ const EventDetailView = ({
             </Button>
           </div>
 
-          {((event.scope === "community" && event.community) ||
-            (event.scope === "personal" && event.creator)) && (
+          {event.creator && (
             <div className="pt-6 mt-2 border-t space-y-3">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Organizers
+                Organizer
               </h3>
               <div className="flex flex-wrap gap-x-6 gap-y-3">
-                {event.scope === "community" ? (
-                  <button
-                    type="button"
-                    className="flex items-center gap-3 group text-left"
-                    onClick={goToCommunity}
-                  >
-                    <div className="w-9 h-9 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                      {communityProfileImg ? (
-                        <img
-                          src={communityProfileImg}
-                          alt={`${event.community?.name} profile`}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <Users className="h-4 w-4 text-primary" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm break-words inline-flex items-center gap-1 group-hover:underline">
-                        <span className="truncate">
-                          {event.community?.name}
-                        </span>
-                        {event.community?.verified && (
-                          <VerificationBadge className="ml-1" size={12} />
-                        )}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Community
-                      </p>
-                    </div>
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+                    {event.creator.picture ? (
                       <img
-                        src={event.creator?.picture}
-                        alt={`${event.creator?.name}'s profile`}
+                        src={event.creator.picture}
+                        alt={`${event.creator.name}'s profile`}
                         className="w-full h-full object-cover"
                       />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm break-words">
-                        {`${event.creator?.name} ${event.creator?.surname}`}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Event Organizer
-                      </p>
-                    </div>
+                    ) : (
+                      <Users className="h-4 w-4 text-primary" />
+                    )}
                   </div>
-                )}
-
-                {event.scope === "community" && event.creator && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                      {event.creator?.picture ? (
-                        <img
-                          src={event.creator.picture}
-                          alt={`${event.creator?.name} ${event.creator?.surname}`}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <Users className="h-4 w-4 text-primary" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm break-words">
-                        {`${event.creator?.name ?? ""} ${
-                          event.creator?.surname ?? ""
-                        }`.trim() || "Event Coordinator"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Event Coordinator
-                      </p>
-                    </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm break-words">
+                      {`${event.creator.name} ${event.creator.surname}`}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Event Organizer
+                    </p>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           )}
@@ -364,7 +288,6 @@ const EventDetailView = ({
       <EventModal
         isOpen={showEditModal}
         onClose={closeEditModal}
-        communityId={event.community?.id}
         permissions={event.permissions}
         event={event}
         isEditMode={true}

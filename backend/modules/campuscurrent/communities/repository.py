@@ -6,18 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.common.utils import meilisearch
-from backend.modules.media.models import EntityType
+from backend.modules.auth.models import User
 from backend.modules.campuscurrent.models.community import (
     Community,
-    CommunityAchievements,
     CommunityCategory,
-    CommunityPhotoAlbum,
-    CommunityPhotoAlbumType,
     CommunityRecruitmentStatus,
     CommunityType,
 )
-from backend.modules.media.models import Media, MediaFormat
-from backend.modules.auth.models import User
+from backend.modules.media.models import EntityType, Media, MediaFormat
 
 
 class CommunityRepository:
@@ -31,10 +27,7 @@ class CommunityRepository:
         stmt = (
             select(Community)
             .where(Community.id == community.id)
-            .options(
-                selectinload(Community.head_user),
-                selectinload(Community.achievements),
-            )
+            .options(selectinload(Community.head_user))
         )
         result = await self.db_session.execute(stmt)
         return result.scalars().one()
@@ -49,10 +42,7 @@ class CommunityRepository:
         stmt = (
             select(Community)
             .where(Community.id == community.id)
-            .options(
-                selectinload(Community.head_user),
-                selectinload(Community.achievements),
-            )
+            .options(selectinload(Community.head_user))
         )
         result = await self.db_session.execute(stmt)
         return result.scalars().one()
@@ -151,10 +141,7 @@ class CommunityRepository:
         base_stmt = (
             select(Community)
             .where(*conditions)
-            .options(
-                selectinload(Community.head_user),
-                selectinload(Community.achievements),
-            )
+            .options(selectinload(Community.head_user))
         )
 
         if keyword:
@@ -184,165 +171,8 @@ class CommunityRepository:
 
         return communities, count, keyword_no_results
 
-    async def get_achievements(
-        self, community_id: int, size: int, page: int
-    ) -> Tuple[List[CommunityAchievements], int]:
-        conditions = [CommunityAchievements.community_id == community_id]
-        page_num = max(1, page or 1)
-        stmt = (
-            select(CommunityAchievements)
-            .where(*conditions)
-            .order_by(CommunityAchievements.year.desc())
-            .offset((page_num - 1) * size)
-            .limit(size)
-        )
-        result = await self.db_session.execute(stmt)
-        achievements: List[CommunityAchievements] = list(result.scalars().all())
-
-        count_stmt = (
-            select(func.count())
-            .select_from(CommunityAchievements)
-            .where(*conditions)
-        )
-        count_result = await self.db_session.execute(count_stmt)
-        count: int = count_result.scalar() or 0
-        return achievements, count
-
-    async def create_achievement(self, achievement_data) -> CommunityAchievements:
-        achievement = CommunityAchievements(**achievement_data.model_dump())
-        self.db_session.add(achievement)
-        await self.db_session.flush()
-        await self.db_session.refresh(achievement)
-        return achievement
-
-    async def get_achievement(
-        self, community_id: int, achievement_id: int
-    ) -> CommunityAchievements | None:
-        stmt = select(CommunityAchievements).where(
-            CommunityAchievements.id == achievement_id,
-            CommunityAchievements.community_id == community_id,
-        )
-        result = await self.db_session.execute(stmt)
-        return result.scalars().first()
-
-    async def update_achievement(
-        self, achievement: CommunityAchievements, achievement_data
-    ) -> CommunityAchievements:
-        for field, value in achievement_data.model_dump(exclude_unset=True).items():
-            if hasattr(achievement, field):
-                setattr(achievement, field, value)
-        await self.db_session.flush()
-        await self.db_session.refresh(achievement)
-        return achievement
-
-    async def delete_achievement(self, achievement: CommunityAchievements) -> bool:
-        try:
-            await self.db_session.delete(achievement)
-            return True
-        except Exception:
-            return False
-
     async def load_relations(self, community: Community, relations: list[str] | None = None) -> None:
-        """
-        Ensure required relationships are loaded to avoid lazy-load during response building.
-        """
-        await self.db_session.refresh(community, relations or ["head_user", "achievements"])
-
-    async def get_photo_albums(
-        self,
-        community_id: int,
-        size: int,
-        page: int,
-        album_type: CommunityPhotoAlbumType | None = None,
-    ) -> Tuple[List[CommunityPhotoAlbum], int]:
-        conditions = [CommunityPhotoAlbum.community_id == community_id]
-
-        if album_type is not None:
-            conditions.append(CommunityPhotoAlbum.album_type == album_type)
-
-        page_num = max(1, page or 1)
-        stmt = (
-            select(CommunityPhotoAlbum)
-            .where(*conditions)
-            .order_by(CommunityPhotoAlbum.created_at.asc())
-            .offset((page_num - 1) * size)
-            .limit(size)
-        )
-        result = await self.db_session.execute(stmt)
-        albums: List[CommunityPhotoAlbum] = list(result.scalars().all())
-
-        count_stmt = select(func.count()).select_from(CommunityPhotoAlbum).where(*conditions)
-        count_result = await self.db_session.execute(count_stmt)
-        count: int = count_result.scalar() or 0
-        return albums, count
-
-    async def create_photo_album(self, album_data: dict) -> CommunityPhotoAlbum:
-        """Create a new photo album from dict data."""
-        album = CommunityPhotoAlbum(**album_data)
-        self.db_session.add(album)
-        await self.db_session.flush()
-        await self.db_session.refresh(album)
-        return album
-
-    async def get_photo_album(
-        self, community_id: int, album_id: int
-    ) -> CommunityPhotoAlbum | None:
-        stmt = select(CommunityPhotoAlbum).where(
-            CommunityPhotoAlbum.id == album_id,
-            CommunityPhotoAlbum.community_id == community_id,
-        )
-        result = await self.db_session.execute(stmt)
-        return result.scalars().first()
-
-    async def update_photo_album(
-        self, album: CommunityPhotoAlbum, album_data: dict
-    ) -> CommunityPhotoAlbum:
-        """Update a photo album from dict data."""
-        for key, value in album_data.items():
-            if hasattr(album, key) and value is not None:
-                setattr(album, key, value)
-        await self.db_session.flush()
-        await self.db_session.refresh(album)
-        return album
-
-    async def delete_photo_album(self, album: CommunityPhotoAlbum) -> bool:
-        try:
-            await self.db_session.delete(album)
-            return True
-        except Exception:
-            return False
-
-    async def get_all_photo_albums(
-        self,
-        size: int,
-        page: int,
-        album_type: CommunityPhotoAlbumType | None = None,
-    ) -> Tuple[List[CommunityPhotoAlbum], int]:
-        """Get photo albums from all communities."""
-        conditions = []
-
-        if album_type is not None:
-            conditions.append(CommunityPhotoAlbum.album_type == album_type)
-
-        page_num = max(1, page or 1)
-        stmt = select(CommunityPhotoAlbum).options(selectinload(CommunityPhotoAlbum.community))
-        if conditions:
-            stmt = stmt.where(*conditions)
-        stmt = (
-            stmt.order_by(CommunityPhotoAlbum.created_at.desc())
-            .offset((page_num - 1) * size)
-            .limit(size)
-        )
-        result = await self.db_session.execute(stmt)
-        albums: List[CommunityPhotoAlbum] = list(result.scalars().all())
-
-        count_stmt = select(func.count()).select_from(CommunityPhotoAlbum)
-        if conditions:
-            count_stmt = count_stmt.where(*conditions)
-        count_result = await self.db_session.execute(count_stmt)
-        count: int = count_result.scalar() or 0
-
-        return albums, count
+        await self.db_session.refresh(community, relations or ["head_user"])
 
     async def get_by_id(self, community_id: int) -> Community | None:
         stmt = (

@@ -6,8 +6,6 @@ import { Calendar, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
 import { Event } from "@/features/shared/campus/types";
-import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
-import { getSvgSrc } from "@/utils/svg-utils";
 import { CountdownHeaderBar } from './countdown-header-bar';
 import { ROUTES } from "@/data/routes";
 import { getPolicyColor, getPolicyDisplay } from "@/features/events/utils/event-formatters";
@@ -105,34 +103,12 @@ export function EventCard(props: EventCardProps) {
           
           {/* Profile image overlay - bottom right */}
           <div className="absolute bottom-2 right-2">
-            {props.scope === "personal" && props.creator?.picture && (
+            {props.creator?.picture && (
               <img
                 src={props.creator.picture}
                 alt={`${props.creator.name} ${props.creator.surname}`}
                 className="w-8 h-8 rounded-full border-2 border-white shadow-md object-cover"
               />
-            )}
-            {props.scope === "community" && props.community?.media && (
-              (() => {
-                const profileMedia = props.community.media.find(
-                  (media) => 
-                    media.entity_type === "communities" && 
-                    media.media_format === "profile"
-                );
-                return profileMedia ? (
-                  <img
-                    src={profileMedia.url}
-                    alt={props.community.name}
-                    className="w-8 h-8 rounded-full border-2 border-white shadow-md object-cover"
-                  />
-                ) : (
-                  <img
-                    src={profilePlaceholder}
-                    alt={props.community.name || "Community Profile"}
-                    className="w-8 h-8 rounded-full border-2 border-white shadow-md object-cover"
-                  />
-                );
-              })()
             )}
           </div>
         </div>
@@ -146,9 +122,9 @@ export function EventCard(props: EventCardProps) {
             <h3 className="text-base font-semibold line-clamp-2 leading-tight">{name}</h3>
           </Link>
           <div className="text-sm text-muted-foreground line-clamp-1">
-            {props.scope === "community" 
-              ? `by ${props.community?.name || 'Unknown Community'}` 
-              : `by ${props.creator?.name} ${props.creator?.surname}`}
+            {props.creator
+              ? `by ${props.creator.name} ${props.creator.surname}`
+              : "by Unknown Organizer"}
           </div>
         </div>
       </CardHeader>

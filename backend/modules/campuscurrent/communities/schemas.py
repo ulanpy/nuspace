@@ -3,17 +3,15 @@ from datetime import date, datetime
 from typing import List, Literal
 from urllib.parse import SplitResult, urlsplit
 
-from fastapi import Query
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, field_serializer, field_validator
 
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
-from backend.modules.media.schemas import MediaResponse
 from backend.modules.campuscurrent.models.community import (
     CommunityCategory,
-    CommunityPhotoAlbumType,
     CommunityRecruitmentStatus,
     CommunityType,
 )
+from backend.modules.media.schemas import MediaResponse
 
 
 _URL_SCHEME_PATTERN = re.compile(r"^[a-z][a-z\d+.-]*:", re.IGNORECASE)
@@ -78,157 +76,6 @@ def _validate_recruitment_url(value: object) -> str | None:
     if parsed.scheme != "https":
         raise ValueError(error_message)
     return normalized
-
-
-# Achievement Schemas
-class AchievementBase(BaseModel):
-    description: str = Field(
-        ...,
-        min_length=1,
-        max_length=500,
-        description="Short description of the achievement",
-        example="Revived tradition 'Miriater' allowing both new and older members to perform",
-    )
-    year: int = Field(
-        ...,
-        ge=1900,
-        le=2100,
-        description="Year the achievement was accomplished",
-        example=2024,
-    )
-
-    class Config:
-        from_attributes = True
-
-
-class AchievementCreateRequest(AchievementBase):
-    community_id: int = Field(..., description="ID of the community this achievement belongs to")
-
-
-class AchievementUpdateRequest(BaseModel):
-    description: str | None = Field(
-        default=None,
-        min_length=1,
-        max_length=500,
-        description="Short description of the achievement",
-    )
-    year: int | None = Field(
-        default=None,
-        ge=1900,
-        le=2100,
-        description="Year the achievement was accomplished",
-    )
-
-    class Config:
-        from_attributes = True
-
-
-class AchievementResponse(AchievementBase):
-    id: int
-    community_id: int
-    created_at: datetime
-    updated_at: datetime
-
-
-class ListAchievements(BaseModel):
-    achievements: List[AchievementResponse] = []
-    total_pages: int = 1
-
-
-# Photo Album Schemas
-class PhotoAlbumBase(BaseModel):
-    album_url: str = Field(
-        ...,
-        min_length=1,
-        max_length=2048,
-        description="URL to the Google Photos album",
-        example="https://photos.google.com/share/AF1QipN...",
-    )
-    description: str | None = Field(
-        default=None,
-        max_length=500,
-        description="Optional custom description for the album",
-        example="Our club photoshoot from Spring 2025",
-    )
-    album_type: CommunityPhotoAlbumType = Field(
-        default=CommunityPhotoAlbumType.other,
-        description="Type of the photo album",
-        example=CommunityPhotoAlbumType.event_photos,
-    )
-
-    @field_validator("album_url", mode="before")
-    def validate_album_url(cls, value):
-        if value is None:
-            raise ValueError("Album URL is required")
-        value = str(value).strip()
-        if value == "":
-            raise ValueError("Album URL cannot be empty")
-        if not value.startswith(("http://", "https://")):
-            return f"https://{value}"
-        return value
-
-    class Config:
-        from_attributes = True
-
-
-class PhotoAlbumCreateRequest(PhotoAlbumBase):
-    community_id: int = Field(..., description="ID of the community this album belongs to")
-
-
-class PhotoAlbumUpdateRequest(BaseModel):
-    album_url: str | None = Field(
-        default=None,
-        min_length=1,
-        max_length=2048,
-        description="URL to the Google Photos album",
-    )
-    description: str | None = Field(
-        default=None,
-        max_length=500,
-        description="Optional custom description for the album",
-    )
-    album_type: CommunityPhotoAlbumType | None = Field(
-        default=None,
-        description="Type of the photo album",
-    )
-
-    @field_validator("album_url", mode="before")
-    def validate_album_url_update(cls, value):
-        if value is None:
-            return None
-        value = str(value).strip()
-        if value == "":
-            return None
-        if not value.startswith(("http://", "https://")):
-            return f"https://{value}"
-        return value
-
-    class Config:
-        from_attributes = True
-
-
-class PhotoAlbumResponse(PhotoAlbumBase):
-    id: int
-    community_id: int
-    album_title: str | None = None
-    album_thumbnail_url: str | None = None
-    album_date: date | None = None
-    created_at: datetime
-    updated_at: datetime
-    community_name: str | None = None
-    
-    class Config:
-        from_attributes = True
-        extra = "ignore"
-
-
-class ListPhotoAlbums(BaseModel):
-    albums: List[PhotoAlbumResponse] = []
-    total_pages: int = 1
-    total: int = 0
-    page: int = 1
-    size: int = 20
-    has_next: bool = False
 
 
 class CommunityCreateRequest(BaseModel):
@@ -334,7 +181,6 @@ class CommunityResponse(BaseCommunity):
     head_user: ShortUserResponse
     media: List[MediaResponse] = []
     permissions: ResourcePermissions = ResourcePermissions()
-    achievements: List[AchievementResponse] = []
 
 
 class ShortCommunityResponse(BaseModel):
@@ -403,7 +249,7 @@ class CommunityUpdateRequest(BaseModel):
         return str(value) if value else None
 
     class Config:
-        from_attributes = True  # Make sure it can be used with SQLAlchemy models
+        from_attributes = True
 
     @field_validator("telegram_url", mode="before")
     @classmethod

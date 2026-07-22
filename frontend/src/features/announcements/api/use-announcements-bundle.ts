@@ -4,14 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { apiCall } from "@/utils/api";
 
 export type AnnouncementsBundleResponse = {
-  photo_albums: {
-    albums: any[];
-    total_pages: number;
-    total: number;
-    page: number;
-    size: number;
-    has_next: boolean;
-  };
   communities: {
     items: any[];
     total_pages: number;
@@ -38,4 +30,3 @@ export function useAnnouncementsBundle() {
     },
   });
 }
-

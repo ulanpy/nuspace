@@ -5,13 +5,9 @@ import { Modal } from "@/components/atoms/modal";
 import { useCreateEvent } from '@/features/events/hooks/use-create-event';
 import { useUpdateEvent } from '@/features/events/hooks/use-update-event';
 import { useDeleteEvent } from '@/features/events/hooks/use-delete-event';
-// import { useMediaUploadContext } from '@/context/media-upload-context';
 import { useUser } from "@/hooks/use-user";
-import { CreateEventData, EditEventData, EventType, Event, EventPermissions, Community } from "@/features/shared/campus/types";
-import { CommunitySelectionModal } from '@/features/communities/components/community-selection-modal';
+import { CreateEventData, EditEventData, EventType, Event, EventPermissions } from "@/features/shared/campus/types";
 
-// Import all the new modular components
-import { EventScopeSelector, CommunityDisplay } from './forms/event-scope-selector';
 import { UnifiedEventMediaUpload } from './unified-event-media-upload';
 import { EventDetailsForm } from './forms/event-details-form';
 import { EventDateTimeSelector } from './forms/event-date-time-selector';
@@ -28,26 +24,21 @@ interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
   isEditMode: boolean;
-  communityId?: number;
-  initialCommunity?: Community;
   event?: Event;
   permissions?: EventPermissions;
 }
 
-export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCommunity, event, permissions }: EventModalProps) {
+export function EventModal({ isOpen, onClose, isEditMode, event, permissions }: EventModalProps) {
   const { user } = useUser();
   const { handleCreate, isCreating } = useCreateEvent();
   const { handleUpdate, isUpdating } = useUpdateEvent();
   const { handleDelete, isDeleting } = useDeleteEvent();
-  // const { isUploading } = useMediaUploadContext();
 
   const isProcessing = isCreating || isUpdating || isDeleting;
   const { toast } = useToast();
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showCommunityModal, setShowCommunityModal] = useState(false);
 
-  // Initialize media for edit/create flows via shared hook
   useInitializeMedia({ isEditMode, mediaItems: event?.media });
 
   const handleSubmit = async (
@@ -56,13 +47,10 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
     startTime: string,
     endDate: Date | undefined,
     endTime: string,
-    isCommunityEvent: boolean,
-    selectedCommunity: Community | null,
     resetForm: () => void
   ) => {
     if (!user || !startDate || !endDate) return;
 
-    // Validate registration link requirement
     if (
       formData.policy === "registration" &&
       !((formData as any).registration_link && (formData as any).registration_link.trim().length > 0)
@@ -75,7 +63,6 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
       return;
     }
 
-    // Combine start date and time for start_datetime in UTC
     const startYear = startDate.getFullYear();
     const startMonth = startDate.getMonth();
     const startDay = startDate.getDate();
@@ -86,7 +73,6 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
       Date.UTC(startYear, startMonth, startDay, startHoursNum, startMinutesNum, 0, 0)
     ).toISOString();
 
-    // Combine end date and time for end_datetime in UTC
     const endYear = endDate.getFullYear();
     const endMonth = endDate.getMonth();
     const endDay = endDate.getDate();
@@ -97,7 +83,6 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
       Date.UTC(endYear, endMonth, endDay, endHoursNum, endMinutesNum, 0, 0)
     ).toISOString();
 
-    // Validate that end datetime is after start datetime
     if (new Date(endDateTime) <= new Date(startDateTime)) {
       toast({
         title: "Invalid time range",
@@ -109,32 +94,24 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
 
     try {
       if (isEditMode && event) {
-        // Update existing event
-         const editData: EditEventData = {
+        const editData: EditEventData = {
           name: formData.name,
           place: formData.place,
           start_datetime: startDateTime,
           end_datetime: endDateTime,
           description: formData.description,
           policy: formData.policy,
-           registration_link: (formData as any).registration_link,
+          registration_link: (formData as any).registration_link,
           type: formData.type as EventType,
         };
 
-        // Only include tag if user has permission to edit it
         if (permissions?.editable_fields.includes('tag' as any)) {
           editData.tag = 'tag' in formData ? formData.tag : event.tag;
         }
         
         await handleUpdate(event.id.toString(), editData);
       } else {
-        // Create new event
-        const resolvedCommunityId = isCommunityEvent
-          ? (selectedCommunity?.id ?? (formData as CreateEventData).community_id ?? communityId)
-          : undefined;
-
         const createData: CreateEventData = {
-          community_id: resolvedCommunityId,
           creator_sub: user.user.sub,
           policy: formData.policy as EventPolicy,
           registration_link: (formData as any).registration_link,
@@ -149,7 +126,6 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
         await handleCreate(createData);
       }
       
-      // Reset form and close modal
       resetForm();
       onClose();
     } catch (error) {
@@ -179,8 +155,6 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
     <EventFormProvider
       isEditMode={isEditMode}
       event={event}
-      communityId={communityId}
-      initialCommunity={initialCommunity}
       permissions={permissions}
     >
       <Modal
@@ -191,7 +165,6 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
       >
         <div className="flex w-full flex-col gap-6">
 
-        {/* Info: Create Your Own Event */}
         <div className="rounded-lg border border-amber-200/60 dark:border-amber-700/30 bg-gradient-to-r from-amber-50 to-pink-50 dark:from-amber-900/20 dark:to-pink-900/10 p-4">
             <div className="text-sm md:text-base">
               <div className="font-semibold">Create Your Own Event</div>
@@ -211,29 +184,16 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
             </div>
           </div>
 
-
-          {/* Event Scope - Personal vs Community */}
-          <EventScopeSelector onCommunityModalOpen={() => setShowCommunityModal(true)} />
-
-          {/* Community Display for Edit Mode */}
-          <CommunityDisplay />
-
-          {/* Media Upload Section */}
           <UnifiedEventMediaUpload />
 
-          {/* Event Details */}
           <EventDetailsForm />
 
-          {/* Date and Time */}
           <EventDateTimeSelector />
 
-          {/* Tag */}
           <EventElevatedFields />
 
-          {/* Description */}
           <EventDescription />
 
-          {/* Delete Confirmation */}
           <DeleteConfirmation
             title="Event"
             isVisible={showDeleteConfirm}
@@ -242,7 +202,6 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
             onConfirm={handleDeleteConfirm}
           />
 
-          {/* Actions */}
           <EventActionsWrapper
             isProcessing={isProcessing}
             showDeleteConfirm={showDeleteConfirm}
@@ -251,45 +210,10 @@ export function EventModal({ isOpen, onClose, isEditMode, communityId, initialCo
           />
         </div>
       </Modal>
-
-      {/* Community Selection Modal */}
-      <CommunitySelectionWrapper
-        isOpen={showCommunityModal}
-        onClose={() => setShowCommunityModal(false)}
-        communityId={communityId}
-      />
     </EventFormProvider>
   );
 }
 
-// Wrapper component to handle community selection with form context
-function CommunitySelectionWrapper({
-  isOpen,
-  onClose,
-  communityId,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  communityId?: number;
-}) {
-  const { selectedCommunity, handleCommunitySelect } = useEventForm();
-
-  const handleSelect = (community: Community) => {
-    handleCommunitySelect(community);
-    onClose();
-  };
-
-  return (
-    <CommunitySelectionModal
-      isOpen={isOpen}
-      onClose={onClose}
-      onSelect={handleSelect}
-      selectedCommunityId={selectedCommunity?.id ?? communityId}
-    />
-  );
-}
-
-// Wrapper component to handle form context within EventActions
 function EventActionsWrapper({
   isProcessing,
   showDeleteConfirm,
@@ -304,26 +228,21 @@ function EventActionsWrapper({
     startTime: string,
     endDate: Date | undefined,
     endTime: string,
-    isCommunityEvent: boolean,
-    selectedCommunity: Community | null,
     resetForm: () => void
   ) => void;
   onDelete: () => void;
 }) {
-  const formContext = useEventForm();
   const {
     formData,
     startDate,
     startTime,
     endDate,
     endTime,
-    isCommunityEvent,
-    selectedCommunity,
     resetForm,
-  } = formContext;
+  } = useEventForm();
 
   const handleSubmit = () => {
-    onSubmit(formData, startDate, startTime, endDate, endTime, isCommunityEvent, selectedCommunity, resetForm);
+    onSubmit(formData, startDate, startTime, endDate, endTime, resetForm);
   };
 
   return (

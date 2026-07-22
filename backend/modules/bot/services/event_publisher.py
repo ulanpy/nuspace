@@ -78,7 +78,6 @@ class EventServicePublisher:
             infra=self.infra,
             event_data=event_schemas.EventCreateRequest(
                 creator_sub=creator_sub,
-                community_id=None,
                 name=name,
                 place=place,
                 start_datetime=start_datetime,

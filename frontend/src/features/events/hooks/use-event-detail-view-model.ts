@@ -18,11 +18,6 @@ export type EventActionDescriptor = {
   openInNewTab?: boolean;
 };
 
-const getCommunityProfileImage = (event: Event | null) =>
-  event?.community?.media?.find((m) => m.media_format === "profile")?.url ||
-  event?.community?.media?.[0]?.url ||
-  null;
-
 export const useEventDetailViewModel = () => {
   const router = useRouter();
   const { toast } = useToast();
@@ -43,11 +38,6 @@ export const useEventDetailViewModel = () => {
     const end = new Date(event.end_datetime).getTime();
     return Math.max(0, Math.round((end - start) / (1000 * 60)));
   }, [event]);
-
-  const communityProfileImg = useMemo(
-    () => getCommunityProfileImage(event),
-    [event]
-  );
 
   const handleAddToCalendar = useCallback(() => {
     if (!event) return;
@@ -79,12 +69,6 @@ export const useEventDetailViewModel = () => {
   const goToEventsRoot = useCallback(() => {
     router.push(ROUTES.EVENTS.ROOT);
   }, [router]);
-
-  const communityId = event?.community?.id;
-  const goToCommunity = useCallback(() => {
-    if (!communityId) return;
-    router.push(ROUTES.COMMUNITIES.DETAIL_FN(String(communityId)));
-  }, [communityId, router]);
 
   const openEditModal = useCallback(() => setShowEditModal(true), []);
   const closeEditModal = useCallback(() => setShowEditModal(false), []);
@@ -138,10 +122,8 @@ export const useEventDetailViewModel = () => {
     isError,
     isPast,
     durationMinutes,
-    communityProfileImg,
     shareEvent,
     goToEventsRoot,
-    goToCommunity,
     actionDescriptors,
     showEditModal,
     openEditModal,
@@ -152,4 +134,3 @@ export const useEventDetailViewModel = () => {
     handleImageError,
   };
 };
-

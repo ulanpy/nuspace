@@ -3,11 +3,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 from backend.common.dependencies import get_infra
+from backend.common.schemas import Infra
 from backend.modules.auth.dependencies import (
     get_creds_or_401,
     get_creds_or_guest,
 )
-from backend.common.schemas import Infra
 from backend.modules.campuscurrent.events import schemas
 from backend.modules.campuscurrent.events.dependencies import get_event_service
 from backend.modules.campuscurrent.events.service import EventService
@@ -27,44 +27,9 @@ async def get_events(
 
     **Access Policy:**
     - Anyone (including guests) can view: Approved, Cancelled
-    - Event creator, community head, admin can view: Approved, Pending, Rejected, Cancelled
+    - Event creator or admin can view all statuses for their own events
     - For users viewing events they don't own:
       - Must explicitly specify status in {approved, cancelled}
-      - Cannot view events with other statuses
-
-    **Examples:**
-    - GET /events (own events) → All statuses allowed
-    - GET /events (others' events) → Must specify status=approved or status=cancelled
-    - GET /events?status=approved → Allowed
-    - GET /events?status=cancelled → Allowed
-    - GET /events?status=pending → Not allowed (if don't own event)
-
-    **Parameters:**
-    - `size`: Number of events per page (default: 20, max: 100)
-    - `page`: Page number (default: 1)
-    - `registration_policy`: Filter by event policy (optional)
-    - `event_scope`: Filter by event scope (optional)
-    - `event_type`: Filter by event type (optional)
-    - `event_status`: Filter by event status (optional)
-    - `community_id`: Filter by specific community (optional)
-    - `time_filter`: Predefined time filter (upcoming, today, week, month) - takes precedence over
-       start_date/end_date
-    - `start_date`: Start date for filtering events (optional, ignored if time_filter is provided)
-    - `end_date`: End date for filtering events (optional, ignored if time_filter is provided)
-    - `creator_sub`: Filter by event creator (optional)
-        - If set to "me", returns the current user's events
-        - If set to a specific user_sub, returns that user's approved events (if authorized)
-    - `keyword`: Search keyword for event name or description (optional)
-
-    **Returns:**
-    - List of events matching the criteria with pagination info
-
-    **Notes:**
-    - When status is not specified, it means user wants to see all statuses
-    - Regular users must explicitly request approved events when viewing others' events
-    - No silent filtering is applied - user must be explicit about their intent
-    - Results are ordered by start_datetime by default
-    - Returns 404 if specified community_id doesn't exist
     """
     return await event_service.get_events(
         user=user,
@@ -84,35 +49,12 @@ async def add_event(
     Creates a new event.
 
     **Access Policy:**
+    - Any authenticated user can create events for themselves
     - Admin can create events with any configuration
-    - For personal events:
-      - Cannot have a community_id (enforced by schema)
-      - Any authenticated user can create
-    - For community events:
-      - Must have a community_id (enforced by schema)
 
     **Data Enrichment:**
-    The following fields are automatically set by the backend based on business rules:
-    - `scope`: Set to personal if no community_id, community if community_id provided
-    - `status`: Set based on user role and event type
-      - Admin: approved
-      - Community head: approved
-      - Regular user: pending if community_id provided, approved if no community_id
-    - `tag`: Set to regular always (changed to other tags with patch by admin)
-
-    **Parameters:**
-    - `event_data`: Event data including name, description, etc.
-
-    **Returns:**
-    - Created event with all its details, including enriched fields
-
-    **Errors:**
-    - Returns 403 if user doesn't have permission to create the event
-    - Returns 404 if specified community does not exist
-
-    **Note:**
-    - `creator_sub` can be `me` to indicate the authenticated user
-    - `community_id` is optional, if not provided the event is personal
+    - `status`: approved
+    - `tag`: regular (admins can change later)
     """
     return await event_service.add_event(infra=infra, event_data=event_data, user=user)
 
@@ -130,27 +72,7 @@ async def update_event(
 
     **Access Policy:**
     - Admin can update any field
-    - Community head of the event that belongs to the community:
-      - Can update any field except: community_id, creator_sub, scope, tag
-      - Can modify event status freely
-    - Event creator of the personal event:
-      - Can update any field except: community_id, creator_sub, scope, tag
-    - Event creator of the community event:
-      - Can update any field except: community_id, creator_sub, scope, tag, status
-
-    **Parameters:**
-    - `event_id`: ID of the event to update
-    - `event_data`: Updated event data including name, description, policy, etc.
-
-    **Returns:**
-    - Updated event with all its details and media
-
-    **Errors:**
-    - Returns 404 if event is not found
-    - Returns 403 if user doesn't have permission to update the event
-    - Returns 403 if user tries to update restricted fields
-    - Returns 400 if user tries to update status without proper permissions
-    - Returns 500 on internal error
+    - Event creator can update most fields except tag
     """
     return await event_service.update_event(
         infra=infra, event_id=event_id, event_data=event_data, user=user
@@ -168,28 +90,9 @@ async def delete_event(
     Deletes a specific event.
 
     **Access Policy:**
-    - Event creator can delete their own event
-    - Community head can delete events in their community
-    - Admin can delete any event
-
-    **Parameters:**
-    - `event_id`: The ID of the event to delete
-
-    **Process:**
-    - Deletes the event entry from the database
-    - Deletes all related media files from the storage bucket and their DB records
-    - Removes the event from the Meilisearch index
-
-    **Returns:**
-    - HTTP 204 No Content on successful deletion
-
-    **Errors:**
-    - Returns 404 if the event is not found
-    - Returns 403 if user doesn't have permission
-    - Returns 500 on internal error
+    - Event creator or admin
     """
     await event_service.delete_event(infra=infra, event_id=event_id, user=user)
-    return status.HTTP_204_NO_CONTENT
 
 
 @router.get("/events/{event_id}", response_model=schemas.EventResponse)
@@ -200,21 +103,6 @@ async def get_event(
     event_service: EventService = Depends(get_event_service),
 ) -> schemas.EventResponse:
     """
-    Retrieves a single event by its unique ID.
-
-    **Access Policy:**
-    - Anyone can view approved or cancelled events
-    - Only event creator, community head, or admin can view pending or rejected events
-
-    **Parameters:**
-    - `event_id`: The unique identifier of the event to retrieve
-
-    **Returns:**
-    - A detailed event object if found, including its name, description,
-    community details, policy, and media URLs
-
-    **Errors:**
-    - Returns 404 if event is not found
-    - Returns 500 on internal error
+    Retrieves a specific event by ID.
     """
     return await event_service.get_event_by_id(infra=infra, event_id=event_id, user=user)

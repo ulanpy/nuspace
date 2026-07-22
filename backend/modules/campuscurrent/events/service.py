@@ -6,13 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.schemas import Infra
 from backend.common.utils import response_builder
-from backend.modules.campuscurrent.models import Event
-from backend.modules.media.models import EntityType
-from backend.modules.media.models import Media, MediaFormat
 from backend.modules.campuscurrent.events import schemas, utils
 from backend.modules.campuscurrent.events.interfaces import MediaAttachmentResolver
 from backend.modules.campuscurrent.events.policy import EventPolicy
 from backend.modules.campuscurrent.events.repository import EventRepository
+from backend.modules.campuscurrent.models import Event
+from backend.modules.media.models import EntityType, Media, MediaFormat
 
 
 class EventService:
@@ -136,37 +135,23 @@ class EventService:
             return []
 
         event_ids: List[int] = [event.id for event in events]
-        community_ids: List[int] = [
-            event.community_id for event in events if event.community_id
-        ]
-
         all_media_objs: List[Media] = await self.repo.list_media(
             event_ids=event_ids,
-            community_ids=community_ids,
             event_media_formats=[MediaFormat.carousel],
-            community_media_formats=[MediaFormat.profile, MediaFormat.banner],
         )
 
         url_map = await self.media_attachment_resolver.build_url_map(all_media_objs)
 
         event_media_by_id = defaultdict(list)
-        community_media_by_id = defaultdict(list)
         for media in all_media_objs:
             if media.entity_type == EntityType.community_events:
                 event_media_by_id[media.entity_id].append(media)
-            elif media.entity_type == EntityType.communities:
-                community_media_by_id[media.entity_id].append(media)
 
         event_responses: List[schemas.EventResponse] = []
         for event in events:
             event_media_objects: List[Media] = event_media_by_id.get(event.id, [])
-            event_media_responses = self.media_attachment_resolver.to_responses(event_media_objects, url_map)
-
-            community_media_objects: List[Media] = (
-                community_media_by_id.get(event.community_id, []) if event.community_id else []
-            )
-            community_media_responses = self.media_attachment_resolver.to_responses(
-                community_media_objects, url_map
+            event_media_responses = self.media_attachment_resolver.to_responses(
+                event_media_objects, url_map
             )
 
             event_responses.append(
@@ -174,16 +159,6 @@ class EventService:
                     schemas.EventResponse,
                     schemas.EventResponse.model_validate(event),
                     media=event_media_responses,
-                    collaborators=getattr(event, "collaborators", []),
-                    community=(
-                        response_builder.build_schema(
-                            schemas.ShortCommunityResponse,
-                            schemas.ShortCommunityResponse.model_validate(event.community),
-                            media=community_media_responses,
-                        )
-                        if event.community
-                        else None
-                    ),
                     creator=schemas.ShortUserResponse.model_validate(event.creator),
                     permissions=EventPolicy(user=user).get_permissions(event),
                 )
@@ -205,8 +180,6 @@ class EventService:
         EventPolicy(user=user).check_read_list(
             creator_sub=event_filter.creator_sub,
             event_status=event_filter.event_status,
-            community_id=event_filter.community_id,
-            event_scope=event_filter.event_scope,
         )
 
         creator_sub = (

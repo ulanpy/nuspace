@@ -5,9 +5,8 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator
 
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
+from backend.modules.campuscurrent.models import EventStatus, EventTag, EventType, RegistrationPolicy
 from backend.modules.media.schemas import MediaResponse
-from backend.modules.campuscurrent.models import EventScope, EventStatus, EventTag, EventType, RegistrationPolicy
-from backend.modules.campuscurrent.communities.schemas import ShortCommunityResponse
 
 
 class TimeFilter(str, Enum):
@@ -20,13 +19,6 @@ class TimeFilter(str, Enum):
 
 
 class EventCreateRequest(BaseModel):
-    community_id: int | None = Field(
-        default=None,
-        description=(
-            "The community id of the event."
-            "If set the event scope is community. otherwise it is personal"
-        ),
-    )
     creator_sub: str = Field(..., description="The creator sub of the event", example="me")
     policy: RegistrationPolicy = Field(
         ..., description="The policy of the event", example=RegistrationPolicy.open
@@ -57,7 +49,6 @@ class EventCreateRequest(BaseModel):
             and value is not None
             and info.data["start_datetime"] is not None
         ):
-            # Ensure both datetimes are timezone-aware for comparison
             start_dt = info.data["start_datetime"]
             if not start_dt.tzinfo:
                 start_dt = start_dt.replace(tzinfo=timezone.utc)
@@ -78,16 +69,9 @@ class EventCreateRequest(BaseModel):
 
 
 class EnrichedEventCreateRequest(EventCreateRequest):
-    """
-    Internal model that extends EventCreateRequest with system-controlled fields.
-    These fields are set by the backend based on business logic and permissions.
-    """
+    """Internal model with system-controlled fields set by the backend."""
 
-    scope: EventScope = Field(
-        ..., description="The scope of the event", example=EventScope.community
-    )
     tag: EventTag = Field(..., description="The tag of the event", example=EventTag.regular)
-
     status: EventStatus = Field(
         ..., description="The status of the event", example=EventStatus.approved
     )
@@ -127,7 +111,6 @@ class EventUpdateRequest(BaseModel):
         example="https://forms.google.com/event-registration",
     )
 
-    # admin only fields
     tag: EventTag | None = Field(
         default=None, description="The tag of the event. Admin only", example=None
     )
@@ -144,7 +127,6 @@ class EventUpdateRequest(BaseModel):
             and "start_datetime" in info.data
             and info.data["start_datetime"] is not None
         ):
-            # Ensure both datetimes are timezone-aware for comparison
             start_dt = info.data["start_datetime"]
             if not start_dt.tzinfo:
                 start_dt = start_dt.replace(tzinfo=timezone.utc)
@@ -172,9 +154,8 @@ class EventUpdateRequest(BaseModel):
         return value
 
 
-class BaseEventSchema(BaseModel):  # ORMtoPydantic
+class BaseEventSchema(BaseModel):
     id: int
-    community_id: Optional[int] = None
     creator_sub: str
     policy: RegistrationPolicy
     registration_link: Optional[str] = None
@@ -183,7 +164,6 @@ class BaseEventSchema(BaseModel):  # ORMtoPydantic
     start_datetime: datetime
     end_datetime: datetime
     description: str
-    scope: EventScope
     type: EventType
     status: EventStatus
     tag: EventTag
@@ -196,7 +176,6 @@ class BaseEventSchema(BaseModel):  # ORMtoPydantic
 
 class EventResponse(BaseEventSchema):
     media: List[MediaResponse] = Field(default_factory=list)
-    community: Optional[ShortCommunityResponse] = None
     creator: ShortUserResponse
     permissions: ResourcePermissions = Field(default_factory=ResourcePermissions)
 
@@ -212,10 +191,8 @@ class EventFilter(BaseModel):
     registration_policy: Optional[RegistrationPolicy] = Field(
         default=None, description="Filter by event registration policy"
     )
-    event_scope: Optional[EventScope] = Field(default=None, description="Filter by event scope")
     event_type: Optional[EventType] = Field(default=None, description="Filter by event type")
     event_status: Optional[EventStatus] = Field(default=None, description="Filter by event status")
-    community_id: Optional[int] = Field(default=None, description="Filter by specific community")
     time_filter: Optional[TimeFilter] = Field(
         default=None, description="Predefined time filter: upcoming, today, week, month"
     )

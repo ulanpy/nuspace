@@ -28,11 +28,6 @@ class EventStatus(PyEnum):
     cancelled = "cancelled"  # Cancelled after approval
 
 
-class EventScope(PyEnum):
-    personal = "personal"
-    community = "community"
-
-
 class EventType(PyEnum):
     academic = "academic"
     professional = "professional"
@@ -86,9 +81,6 @@ class EventCollaborator(Base):
 class Event(Base):
     __tablename__ = "events"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
-    community_id: Mapped[int] = mapped_column(
-        ForeignKey("communities.id", ondelete="CASCADE"), nullable=True, unique=False, index=True
-    )
     creator_sub: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, unique=False, index=True
     )
@@ -105,9 +97,6 @@ class Event(Base):
         DateTime, nullable=False, index=True
     )  # New field
     description: Mapped[str] = mapped_column(nullable=False, unique=False)
-    scope: Mapped[EventScope] = mapped_column(
-        SQLEnum(EventScope, name="event_scope"), nullable=False, index=True
-    )
     type: Mapped[EventType] = mapped_column(
         SQLEnum(EventType, name="event_type"), nullable=False, index=True
     )
@@ -122,7 +111,6 @@ class Event(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     creator = relationship("User")
-    community = relationship("Community", back_populates="events")
     collaborators = relationship(
         "EventCollaborator", back_populates="event", cascade="all, delete-orphan"
     )

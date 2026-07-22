@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useUser } from '@/hooks/use-user';
-import { CreateEventData, EditEventData, EventPolicy, EventType, Event, EventPermissions, EventEditableFields, Community } from '@/features/shared/campus/types';
+import { CreateEventData, EditEventData, EventPolicy, EventType, Event, EventPermissions, EventEditableFields } from '@/features/shared/campus/types';
 
 interface EventFormContextType {
   // Form data
@@ -19,23 +19,14 @@ interface EventFormContextType {
   endTime: string;
   setEndTime: (time: string) => void;
   
-  // Community state
-  isCommunityEvent: boolean;
-  setIsCommunityEvent: (value: boolean) => void;
-  selectedCommunity: Community | null;
-  setSelectedCommunity: (community: Community | null) => void;
-  
   // Modal props
   isEditMode: boolean;
   event?: Event;
   permissions?: EventPermissions;
-  communityId?: number;
   
   // Handlers
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   handleSelectChange: (name: string, value: string) => void;
-  handleCommunityToggle: (checked: boolean) => void;
-  handleCommunitySelect: (community: Community) => void;
   isFieldEditable: (fieldName: string) => boolean;
   resetForm: () => void;
 }
@@ -47,8 +38,6 @@ interface EventFormProviderProps {
   isEditMode: boolean;
   event?: Event;
   permissions?: EventPermissions;
-  communityId?: number;
-  initialCommunity?: Community;
 }
 
 export function EventFormProvider({
@@ -56,8 +45,6 @@ export function EventFormProvider({
   isEditMode,
   event,
   permissions,
-  communityId,
-  initialCommunity,
 }: EventFormProviderProps) {
   const { user } = useUser();
 
@@ -71,7 +58,6 @@ export function EventFormProvider({
     policy: "open" as EventPolicy,
     registration_link: "",
     type: "academic" as EventType,
-    community_id: communityId || undefined,
     creator_sub: user?.user.sub || "",
   });
   
@@ -79,10 +65,6 @@ export function EventFormProvider({
   const [startTime, setStartTime] = useState("");
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [endTime, setEndTime] = useState("");
-  
-  // Community selection state
-  const [isCommunityEvent, setIsCommunityEvent] = useState(!!communityId);
-  const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
 
   // Update form data when modal opens or event changes
   useEffect(() => {
@@ -97,7 +79,6 @@ export function EventFormProvider({
         registration_link: event.registration_link,
         type: event.type,
         tag: event.tag,
-        status: event.status,
       });
       
       // Initialize start date and time
@@ -113,15 +94,6 @@ export function EventFormProvider({
       const endHh = String(endD.getHours()).padStart(2, '0');
       const endMm = String(endD.getMinutes()).padStart(2, '0');
       setEndTime(`${endHh}:${endMm}`);
-      
-      // Set community state for edit mode
-      if (event.community) {
-        setIsCommunityEvent(true);
-        setSelectedCommunity(event.community);
-      } else {
-        setIsCommunityEvent(false);
-        setSelectedCommunity(null);
-      }
     } else if (!isEditMode) {
       setFormData({
         name: "",
@@ -132,26 +104,14 @@ export function EventFormProvider({
         policy: "open" as EventPolicy,
         registration_link: "",
         type: "academic" as EventType,
-        community_id: undefined,
         creator_sub: user?.user.sub || "",
       });
       setStartDate(undefined);
       setStartTime("");
       setEndDate(undefined);
       setEndTime("");
-      
-      // Reset community state for create mode
-      setIsCommunityEvent(!!communityId);
-      if (initialCommunity || communityId) {
-        const id = initialCommunity?.id ?? communityId;
-        const name = initialCommunity?.name ?? undefined;
-        setSelectedCommunity({ id, name } as unknown as Community);
-        setFormData((prev) => ({ ...prev, community_id: id }));
-      } else {
-        setSelectedCommunity(null);
-      }
     }
-  }, [isEditMode, event, communityId, user]);
+  }, [isEditMode, event, user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -180,31 +140,6 @@ export function EventFormProvider({
     return permissions.editable_fields.includes(fieldName as EventEditableFields);
   };
 
-  // Community selection handlers
-  const handleCommunityToggle = (checked: boolean) => {
-    // If modal opened from community page, prevent switching away from community event
-    if (communityId != null) {
-      setIsCommunityEvent(true);
-      return;
-    }
-    setIsCommunityEvent(checked);
-    if (!checked) {
-      setSelectedCommunity(null);
-      setFormData({ ...formData, community_id: undefined });
-    }
-  };
-
-  const handleCommunitySelect = (community: Community) => {
-    // If modal opened from community page, prevent changing to a different community
-    if (communityId != null && community.id !== communityId) {
-      setSelectedCommunity({ id: communityId } as unknown as Community);
-      setFormData({ ...formData, community_id: communityId });
-      return;
-    }
-    setSelectedCommunity(community);
-    setFormData({ ...formData, community_id: community.id });
-  };
-
   const resetForm = () => {
     if (!isEditMode) {
       setFormData({
@@ -216,7 +151,6 @@ export function EventFormProvider({
         policy: "open" as EventPolicy,
         registration_link: "",
         type: "academic" as EventType,
-        community_id: communityId || undefined,
         creator_sub: user?.user.sub || "",
       } as CreateEventData);
       setStartDate(undefined);
@@ -237,18 +171,11 @@ export function EventFormProvider({
     setEndDate,
     endTime,
     setEndTime,
-    isCommunityEvent,
-    setIsCommunityEvent,
-    selectedCommunity,
-    setSelectedCommunity,
     isEditMode,
     event,
     permissions,
-    communityId,
     handleInputChange,
     handleSelectChange,
-    handleCommunityToggle,
-    handleCommunitySelect,
     isFieldEditable,
     resetForm,
   };

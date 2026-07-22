@@ -73,15 +73,6 @@ import { Media } from "@/features/media/types/types";
       editable_fields: CommunityEditableFields[]
     }
 
-    export interface Achievement {
-      id: number;
-      community_id: number;
-      description: string;
-      year: number;
-      created_at: string;
-      updated_at: string;
-    }
-
     export interface Community {
       id: number;
       name: string;
@@ -102,7 +93,6 @@ import { Media } from "@/features/media/types/types";
       head_user: HeadUser;
       media: Media[];
       permissions: CommunityPermissions;
-      achievements: Achievement[];
 
     }
 
@@ -186,7 +176,6 @@ import { Media } from "@/features/media/types/types";
 
     export interface Event {
       id: number;
-      community_id: number;
       creator_sub: string;
       policy: EventPolicy;
       registration_link?: string;
@@ -195,19 +184,17 @@ import { Media } from "@/features/media/types/types";
       start_datetime: string;
       end_datetime: string;
       description: string;
-      scope: Scope;
       type: EventType;
       tag: EventTag;
+      status?: string;
       created_at: string;
       updated_at: string;
       media: Media[];
-      community?: Community;
       creator?: HeadUser;
       permissions?: EventPermissions;
     }
 
     export interface CreateEventData {
-      community_id?: number;
       creator_sub: string;
       policy: EventPolicy;
       name: string;

@@ -25,8 +25,6 @@ export function EventActions({
     endTime,
     isEditMode,
     permissions,
-    isCommunityEvent,
-    selectedCommunity,
   } = useEventForm();
 
   const requiresRegistrationLink = formData.policy === 'registration';
@@ -42,8 +40,7 @@ export function EventActions({
     !endDate ||
     !endTime ||
     (requiresRegistrationLink && !hasRegistrationLink) ||
-    (isEditMode && !permissions?.can_edit) || 
-    (!isEditMode && isCommunityEvent && !selectedCommunity);
+    (isEditMode && !permissions?.can_edit);
 
   // Telegram Mini App bottom button integration
   useTelegramBottomButtons({

@@ -3,23 +3,17 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.exc import IntegrityError
 
-from backend.common.dependencies import (
-    get_infra,
-)
-from backend.modules.auth.dependencies import (
-    get_creds_or_401,
-    get_creds_or_guest,
-)
+from backend.common.dependencies import get_infra
 from backend.common.schemas import Infra
-from backend.modules.campuscurrent.models.community import (
-    CommunityCategory,
-    CommunityPhotoAlbumType,
-    CommunityRecruitmentStatus,
-    CommunityType,
-)
+from backend.modules.auth.dependencies import get_creds_or_401, get_creds_or_guest
 from backend.modules.campuscurrent.communities import schemas
 from backend.modules.campuscurrent.communities.dependencies import get_community_service
 from backend.modules.campuscurrent.communities.service import CommunityService
+from backend.modules.campuscurrent.models.community import (
+    CommunityCategory,
+    CommunityRecruitmentStatus,
+    CommunityType,
+)
 
 router = APIRouter(tags=["Community Routes"])
 
@@ -38,16 +32,6 @@ async def add_community(
     **Access Policy:**
     - Any registered user can create communities
     - Users can only create communities for themselves (head must be "me" or their own sub)
-
-    **Parameters:**
-    - `community_data` (schemas.CommunityRequest): Data for the new community.
-
-    **Returns:**
-    - `schemas.CommunityResponse`: Created community with media.
-
-    **Notes:**
-    - The community is indexed in Meilisearch after creation.
-    - Users can only set themselves as the head of the community.
     """
     try:
         return await community_service.create_community(
@@ -60,7 +44,6 @@ async def add_community(
         )
 
 
-# add keyword search
 @router.get("/communities", response_model=schemas.ListCommunity)
 async def get_communities(
     request: Request,
@@ -80,29 +63,7 @@ async def get_communities(
         default=None, description="Search keyword for community name or description"
     ),
 ) -> schemas.ListCommunity:
-    """
-    Retrieves a paginated list of communities with flexible filtering.
-
-    **Access Policy:**
-    - All users can access this endpoint
-
-    **Parameters:**
-    - `size`: Number of communities per page (default: 20)
-    - `page`: Page number (default: 1)
-    - `community_type`: Filter by community type (optional)
-    - `community_category`: Filter by community category (optional)
-    - `recruitment_status`: Filter by recruitment status (optional)
-    - `head_sub`: Filter by head sub (optional)
-    - `keyword`: Search keyword for community name or description (optional)
-
-    **Returns:**
-    - List of communities matching the criteria with pagination info
-
-    **Notes:**
-    - If head_sub is 'me', the current user's sub will be used
-    - Results are ordered by creation date (newest first)
-    - Each community includes its associated media in profile format
-    """
+    """Retrieves a paginated list of communities with flexible filtering."""
     return await community_service.list_communities(
         infra=infra,
         user=user,
@@ -124,23 +85,7 @@ async def get_community(
     infra: Infra = Depends(get_infra),
     community_service: CommunityService = Depends(get_community_service),
 ) -> schemas.CommunityResponse:
-    """
-    Retrieves a specific community by ID.
-
-    **Access Policy:**
-    - All authenticated users can access this endpoint
-
-    **Parameters:**
-    - `community_id`: The unique identifier of the community to retrieve
-
-    **Returns:**
-    - A detailed community object if found, including its name, description,
-    head user details, and media URLs
-
-    **Errors:**
-    - Returns 404 if community is not found
-    - Returns 500 on internal error
-    """
+    """Retrieves a specific community by ID."""
     return await community_service.get_community_response(
         infra=infra, community_id=community_id, user=user
     )
@@ -155,23 +100,7 @@ async def update_community(
     infra: Infra = Depends(get_infra),
     community_service: CommunityService = Depends(get_community_service),
 ) -> schemas.CommunityResponse:
-    """
-    Updates fields of an existing community.
-
-    **Access Policy:**
-    - The user must be the head of the community or an admin
-
-    **Parameters:**
-    - `new_data`: Updated community data including community_id, name, description, type, etc.
-
-    **Returns:**
-    - Updated community with all its details and media
-
-    **Errors:**
-    - Returns 404 if community is not found
-    - Returns 403 if user is not the head of the community and is not an admin
-    - Returns 500 on internal error
-    """
+    """Updates fields of an existing community. Head or admin only."""
     return await community_service.update_community(
         infra=infra, community_id=community_id, new_data=new_data, user=user
     )
@@ -185,371 +114,7 @@ async def delete_community(
     infra: Infra = Depends(get_infra),
     community_service: CommunityService = Depends(get_community_service),
 ):
-    """
-    Deletes a specific community.
-
-    **Access Policy:**
-    - The user must be an admin
-
-    **Parameters:**
-    - `community_id`: The ID of the community to delete
-
-    **Process:**
-    - Deletes all media files (community) from storage
-    - Deletes the community entry from the database
-    - Removes the community from the Meilisearch index
-
-    **Returns:**
-    - HTTP 204 No Content on successful deletion
-
-    **Errors:**
-    - Returns 404 if the community is not found
-    - Returns 500 on internal error
-    """
+    """Deletes a community. Admin only."""
     await community_service.delete_community(
         infra=infra, community_id=community_id, user=user
-    )
-
-# ==================== Achievement Endpoints ====================
-
-
-@router.post("/communities/{community_id}/achievements", response_model=schemas.AchievementResponse)
-async def create_achievement(
-    community_id: int,
-    achievement_data: schemas.AchievementCreateRequest,
-    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    community_service: CommunityService = Depends(get_community_service),
-) -> schemas.AchievementResponse:
-    """
-    Create a new achievement for a community.
-
-    **Access Policy:**
-    - User must be the community head (can_edit permission)
-
-    **Parameters:**
-    - `community_id`: The ID of the community
-    - `achievement_data`: Achievement details (description, year)
-
-    **Returns:**
-    - Created achievement object
-
-    **Errors:**
-    - 403 if user doesn't have permission
-    - 404 if community not found
-    """
-    return await community_service.create_achievement(
-        community_id=community_id,
-        achievement_data=achievement_data,
-        user=user,
-    )
-
-
-@router.get("/communities/{community_id}/achievements", response_model=schemas.ListAchievements)
-async def get_achievements(
-    community_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    community_service: CommunityService = Depends(get_community_service),
-    size: int = Query(100, ge=1, le=200),
-    page: int = 1,
-) -> schemas.ListAchievements:
-    """
-    Get all achievements for a community.
-
-    **Access Policy:**
-    - All users can access
-
-    **Parameters:**
-    - `community_id`: The ID of the community
-    - `size`: Number of achievements per page
-    - `page`: Page number
-
-    **Returns:**
-    - List of achievements ordered by year (descending)
-    """
-    return await community_service.list_achievements(
-        community_id=community_id, size=size, page=page, user=user
-    )
-
-
-@router.patch("/communities/{community_id}/achievements/{achievement_id}", response_model=schemas.AchievementResponse)
-async def update_achievement(
-    community_id: int,
-    achievement_id: int,
-    achievement_data: schemas.AchievementUpdateRequest,
-    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    community_service: CommunityService = Depends(get_community_service),
-) -> schemas.AchievementResponse:
-    """
-    Update an achievement.
-
-    **Access Policy:**
-    - User must be the community head (can_edit permission)
-
-    **Parameters:**
-    - `community_id`: The ID of the community
-    - `achievement_id`: The ID of the achievement
-    - `achievement_data`: Updated achievement data
-
-    **Returns:**
-    - Updated achievement object
-
-    **Errors:**
-    - 403 if user doesn't have permission
-    - 404 if achievement or community not found
-    """
-    return await community_service.update_achievement(
-        community_id=community_id,
-        achievement_id=achievement_id,
-        achievement_data=achievement_data,
-        user=user,
-    )
-
-
-@router.delete("/communities/{community_id}/achievements/{achievement_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_achievement(
-    community_id: int,
-    achievement_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    community_service: CommunityService = Depends(get_community_service),
-):
-    """
-    Delete an achievement.
-
-    **Access Policy:**
-    - User must be the community head (can_edit permission)
-
-    **Parameters:**
-    - `community_id`: The ID of the community
-    - `achievement_id`: The ID of the achievement
-
-    **Returns:**
-    - 204 No Content on success
-
-    **Errors:**
-    - 403 if user doesn't have permission
-    - 404 if achievement or community not found
-    """
-    await community_service.delete_achievement(
-        community_id=community_id,
-        achievement_id=achievement_id,
-        user=user,
-    )
-
-
-# ==================== Photo Album Endpoints ====================
-
-@router.get("/photo-albums", response_model=schemas.ListPhotoAlbums)
-async def get_all_photo_albums(
-    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    community_service: CommunityService = Depends(get_community_service),
-    size: int = Query(20, ge=1, le=100),
-    page: int = 1,
-    album_type: CommunityPhotoAlbumType | None = None,
-) -> schemas.ListPhotoAlbums:
-    """
-    Get all photo albums from all communities.
-
-    **Access Policy:**
-    - All users can access
-
-    **Parameters:**
-    - `size`: Number of albums per page (default: 20)
-    - `page`: Page number (default: 1)
-    - `album_type`: Filter by album type (optional)
-
-    **Returns:**
-    - List of photo albums ordered by creation date (newest first)
-    """
-    return await community_service.list_all_photo_albums(
-        size=size,
-        page=page,
-        album_type=album_type,
-    )
-
-
-@router.post("/communities/{community_id}/albums", response_model=schemas.PhotoAlbumResponse)
-async def create_photo_album(
-    community_id: int,
-    album_data: schemas.PhotoAlbumCreateRequest,
-    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    community_service: CommunityService = Depends(get_community_service),
-) -> schemas.PhotoAlbumResponse:
-    """
-    Create a new photo album for a community.
-
-    **Access Policy:**
-    - User must be the community head (can_edit permission)
-
-    **Parameters:**
-    - `community_id`: The ID of the community
-    - `album_data`: Album details (album_url, description, album_type)
-
-    **Returns:**
-    - Created photo album object
-
-    **Errors:**
-    - 403 if user doesn't have permission
-    - 404 if community not found
-    """
-    return await community_service.create_photo_album(
-        community_id=community_id,
-        album_data=album_data,
-        user=user,
-    )
-
-
-@router.get("/communities/{community_id}/albums", response_model=schemas.ListPhotoAlbums)
-async def get_photo_albums(
-    community_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    community_service: CommunityService = Depends(get_community_service),
-    size: int = Query(20, ge=1, le=100),
-    page: int = 1,
-    album_type: CommunityPhotoAlbumType | None = None,
-) -> schemas.ListPhotoAlbums:
-    """
-    Get all photo albums for a community.
-
-    **Access Policy:**
-    - All users can access
-
-    **Parameters:**
-    - `community_id`: The ID of the community
-    - `size`: Number of albums per page (default: 20)
-    - `page`: Page number (default: 1)
-    - `album_type`: Filter by album type (optional)
-
-    **Returns:**
-    - List of photo albums ordered by creation date (newest first)
-    """
-    return await community_service.list_photo_albums(
-        community_id=community_id,
-        size=size,
-        page=page,
-        album_type=album_type,
-        user=user,
-    )
-
-
-@router.patch("/communities/{community_id}/albums/{album_id}", response_model=schemas.PhotoAlbumResponse)
-async def update_photo_album(
-    community_id: int,
-    album_id: int,
-    album_data: schemas.PhotoAlbumUpdateRequest,
-    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    community_service: CommunityService = Depends(get_community_service),
-) -> schemas.PhotoAlbumResponse:
-    """
-    Update a photo album.
-
-    **Access Policy:**
-    - User must be the community head (can_edit permission)
-
-    **Parameters:**
-    - `community_id`: The ID of the community
-    - `album_id`: The ID of the album
-    - `album_data`: Updated album data
-
-    **Returns:**
-    - Updated photo album object
-
-    **Errors:**
-    - 403 if user doesn't have permission
-    - 404 if album or community not found
-    """
-    return await community_service.update_photo_album(
-        community_id=community_id,
-        album_id=album_id,
-        album_data=album_data,
-        user=user,
-    )
-
-
-@router.delete("/communities/{community_id}/albums/{album_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_photo_album(
-    community_id: int,
-    album_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    community_service: CommunityService = Depends(get_community_service),
-):
-    """
-    Delete a photo album.
-
-    **Access Policy:**
-    - User must be the community head (can_edit permission)
-
-    **Parameters:**
-    - `community_id`: The ID of the community
-    - `album_id`: The ID of the album
-
-    **Returns:**
-    - 204 No Content on success
-
-    **Errors:**
-    - 403 if user doesn't have permission
-    - 404 if album or community not found
-    """
-    await community_service.delete_photo_album(
-        community_id=community_id,
-        album_id=album_id,
-        user=user,
-    )
-
-
-@router.post("/communities/{community_id}/albums/{album_id}/refresh", response_model=schemas.PhotoAlbumResponse)
-async def refresh_photo_album_metadata(
-    community_id: int,
-    album_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    community_service: CommunityService = Depends(get_community_service),
-) -> schemas.PhotoAlbumResponse:
-    """
-    Refresh album metadata from Google Photos.
-
-    **Access Policy:**
-    - User must be the community head (can_edit permission)
-
-    **Parameters:**
-    - `community_id`: The ID of the community
-    - `album_id`: The ID of the album
-
-    **Returns:**
-    - Updated photo album object with fresh metadata
-
-    **Errors:**
-    - 403 if user doesn't have permission
-    - 404 if album or community not found
-    """
-    return await community_service.refresh_photo_album_metadata(
-        community_id=community_id,
-        album_id=album_id,
-        user=user,
-    )
-
-
-@router.post("/communities/{community_id}/albums/refresh")
-async def refresh_all_photo_albums(
-    community_id: int,
-    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    community_service: CommunityService = Depends(get_community_service),
-) -> dict:
-    """
-    Refresh metadata for all photo albums in a community.
-
-    **Access Policy:**
-    - User must be the community head (can_edit permission)
-
-    **Parameters:**
-    - `community_id`: The ID of the community
-
-    **Returns:**
-    - Summary of refresh operation (total, success, error counts)
-
-    **Errors:**
-    - 403 if user doesn't have permission
-    - 404 if community not found
-    """
-    return await community_service.refresh_all_photo_albums(
-        community_id=community_id,
-        user=user,
     )

@@ -1,17 +1,17 @@
-import httpx
 import logging
 import re
 from typing import Optional
 
-from backend.modules.campuscurrent.models.community import CommunityRecruitmentStatus
+import httpx
+
 from backend.modules.announcements import schemas
 from backend.modules.announcements.interfaces import CommunityCatalog, EventCatalog
 from backend.modules.campuscurrent.events import schemas as event_schemas
+from backend.modules.campuscurrent.models.community import CommunityRecruitmentStatus
 
 logger = logging.getLogger(__name__)
 
 CHANNEL_URL = "https://t.me/s/nuspacechannel"
-
 POST_ID_PATTERN = re.compile(r'data-post="[^"]+/(\d+)"')
 
 
@@ -26,8 +26,7 @@ async def get_latest_telegram_post_id() -> Optional[int]:
             if not matches:
                 return None
 
-            latest_id = int(matches[-1])
-            return latest_id
+            return int(matches[-1])
 
     except Exception as e:
         logger.error(f"Failed to fetch telegram posts: {e}")
@@ -48,8 +47,6 @@ class AnnouncementsService:
         *,
         infra,
         user: tuple[dict, dict],
-        photo_albums_page: int = 1,
-        photo_albums_size: int = 20,
         communities_page: int = 1,
         communities_size: int = 5,
         events_page: int = 1,
@@ -61,12 +58,6 @@ class AnnouncementsService:
         NOTE: We intentionally run these sequentially because SQLAlchemy AsyncSession is
         not safe to use concurrently across tasks.
         """
-        photo_albums = await self.community_catalog.list_all_photo_albums(
-            size=photo_albums_size,
-            page=photo_albums_page,
-            album_type=None,
-        )
-
         communities = await self.community_catalog.list_communities(
             infra=infra,
             user=user,
@@ -90,7 +81,6 @@ class AnnouncementsService:
         )
 
         return schemas.AnnouncementsBundleResponse(
-            photo_albums=photo_albums,
             communities=communities,
             events=events,
         )

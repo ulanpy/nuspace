@@ -8,10 +8,8 @@ export type UseInfiniteEventsParams = {
   start_date?: string;
   end_date?: string;
   registration_policy?: string | null;
-  event_scope?: string | null;
   event_type?: string | null;
   event_status?: string | null;
-  community_id?: number | null;
   creator_sub?: string | null;
   keyword?: string;
   size?: number;
@@ -23,10 +21,8 @@ export function useInfiniteEvents(params: UseInfiniteEventsParams = {}) {
     start_date,
     end_date,
     registration_policy,
-    event_scope,
     event_type,
     event_status = "approved",
-    community_id,
     creator_sub,
     keyword = "",
     size = 12,
@@ -42,10 +38,8 @@ export function useInfiniteEvents(params: UseInfiniteEventsParams = {}) {
       start_date,
       end_date,
       registration_policy,
-      event_scope,
       event_type,
       event_status,
-      community_id,
       creator_sub,
     },
   });

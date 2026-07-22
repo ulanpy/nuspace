@@ -1,16 +1,15 @@
 from typing import List, Tuple
 
 from httpx import AsyncClient
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.common.utils import meilisearch
-from backend.modules.campuscurrent.models import Event
-from backend.modules.media.models import EntityType
-from backend.modules.media.models import Media, MediaFormat
 from backend.modules.auth.models import User
 from backend.modules.campuscurrent.events import schemas, utils
+from backend.modules.campuscurrent.models import Event
+from backend.modules.media.models import EntityType, Media, MediaFormat
 
 
 class EventRepository:
@@ -28,7 +27,6 @@ class EventRepository:
             .where(Event.id == event.id)
             .options(
                 selectinload(Event.creator),
-                selectinload(Event.community),
                 selectinload(Event.collaborators),
             )
         )
@@ -49,7 +47,6 @@ class EventRepository:
             .where(Event.id == event.id)
             .options(
                 selectinload(Event.creator),
-                selectinload(Event.community),
                 selectinload(Event.collaborators),
             )
         )
@@ -64,7 +61,6 @@ class EventRepository:
                 "id": event.id,
                 "name": event.name,
                 "description": event.description,
-                "community_id": event.community_id,
                 "policy": event.policy.value if event.policy else None,
             },
         )
@@ -94,7 +90,6 @@ class EventRepository:
             select(Event)
             .where(Event.id == event_id)
             .options(
-                selectinload(Event.community),
                 selectinload(Event.creator),
                 selectinload(Event.collaborators),
             )
@@ -136,16 +131,12 @@ class EventRepository:
         filters = []
         if event_filter.registration_policy:
             filters.append(Event.policy == event_filter.registration_policy)
-        if event_filter.community_id:
-            filters.append(Event.community_id == event_filter.community_id)
         if event_filter.keyword:
             filters.append(Event.id.in_(event_ids))
         if event_filter.event_type:
             filters.append(Event.type == event_filter.event_type)
         if event_filter.event_status:
             filters.append(Event.status == event_filter.event_status)
-        if event_filter.event_scope:
-            filters.append(Event.scope == event_filter.event_scope)
         if creator_sub:
             filters.append(Event.creator_sub == creator_sub)
 
@@ -164,7 +155,6 @@ class EventRepository:
             .where(*filters)
             .options(
                 selectinload(Event.creator),
-                selectinload(Event.community),
                 selectinload(Event.collaborators),
             )
             .order_by(Event.start_datetime.asc())
@@ -188,32 +178,18 @@ class EventRepository:
     async def list_media(
         self,
         event_ids: List[int] | None = None,
-        community_ids: List[int] | None = None,
         event_media_formats: List[MediaFormat] | None = None,
-        community_media_formats: List[MediaFormat] | None = None,
     ) -> List[Media]:
-        media_conditions = []
-        if event_ids:
-            event_conditions = [
-                Media.entity_id.in_(event_ids),
-                Media.entity_type == EntityType.community_events,
-            ]
-            if event_media_formats:
-                event_conditions.append(Media.media_format.in_(event_media_formats))
-            media_conditions.append(and_(*event_conditions))
-
-        if community_ids:
-            community_conditions = [
-                Media.entity_id.in_(community_ids),
-                Media.entity_type == EntityType.communities,
-            ]
-            if community_media_formats:
-                community_conditions.append(Media.media_format.in_(community_media_formats))
-            media_conditions.append(and_(*community_conditions))
-
-        if not media_conditions:
+        if not event_ids:
             return []
 
-        stmt = select(Media).where(or_(*media_conditions))
+        event_conditions = [
+            Media.entity_id.in_(event_ids),
+            Media.entity_type == EntityType.community_events,
+        ]
+        if event_media_formats:
+            event_conditions.append(Media.media_format.in_(event_media_formats))
+
+        stmt = select(Media).where(and_(*event_conditions))
         result = await self.db_session.execute(stmt)
         return list(result.scalars().all())

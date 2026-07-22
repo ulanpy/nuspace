@@ -7,10 +7,8 @@ export type UseEventsParams = {
   start_date?: string;
   end_date?: string;
   registration_policy?: string | null;
-  event_scope?: string | null;
   event_type?: string | null;
   event_status?: string | null;
-  community_id?: number | null;
   creator_sub?: string | null;
   keyword?: string | null;
   size?: number;

@@ -75,7 +75,7 @@ const features: Feature[] = [
     className: "md:col-span-1 lg:col-span-2",
     iconClassName: "bg-community/15 text-community",
     stripClassName: "bg-community",
-    details: ["Student clubs", "Recruitment", "Community events"],
+    details: ["Student clubs", "Recruitment"],
   },
   {
     title: "Contacts",
@@ -283,7 +283,7 @@ export default function LandingPage() {
                 <ul className="mt-6 space-y-3 text-sm font-medium">
                   <li className="flex items-center gap-3">
                     <Check className="h-4 w-4 text-success" aria-hidden="true" />
-                    Filter by date, type, or community
+                    Filter by date or type
                   </li>
                   <li className="flex items-center gap-3">
                     <Check className="h-4 w-4 text-success" aria-hidden="true" />
