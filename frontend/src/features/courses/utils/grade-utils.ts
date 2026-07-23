@@ -13,26 +13,28 @@ export const getGradeDistribution = (stats: GradeStatistics): GradeDistribution[
     "W/AW": "#374151", // gray-700
   };
 
-  const grades = [
-    { grade: "A", percentage: stats.pct_A, count: Math.round((stats.pct_A / 100) * stats.grades_count) },
-    { grade: "B", percentage: stats.pct_B, count: Math.round((stats.pct_B / 100) * stats.grades_count) },
-    { grade: "C", percentage: stats.pct_C, count: Math.round((stats.pct_C / 100) * stats.grades_count) },
-    { grade: "D", percentage: stats.pct_D, count: Math.round((stats.pct_D / 100) * stats.grades_count) },
-    { grade: "F", percentage: stats.pct_F, count: Math.round((stats.pct_F / 100) * stats.grades_count) },
+  const pct = (v: number | null): number => v ?? 0;
+  const count = (v: number | null): number => Math.round((pct(v) / 100) * stats.grades_count);
+
+  const grades: { grade: string; percentage: number; count: number }[] = [
+    { grade: "A", percentage: pct(stats.pct_A), count: count(stats.pct_A) },
+    { grade: "B", percentage: pct(stats.pct_B), count: count(stats.pct_B) },
+    { grade: "C", percentage: pct(stats.pct_C), count: count(stats.pct_C) },
+    { grade: "D", percentage: pct(stats.pct_D), count: count(stats.pct_D) },
+    { grade: "F", percentage: pct(stats.pct_F), count: count(stats.pct_F) },
   ];
 
-  // Add non-letter grades if they exist
-  if (stats.pct_P > 0) {
-    grades.push({ grade: "P", percentage: stats.pct_P, count: Math.round((stats.pct_P / 100) * stats.grades_count) });
+  if (pct(stats.pct_P) > 0) {
+    grades.push({ grade: "P", percentage: pct(stats.pct_P), count: count(stats.pct_P) });
   }
-  if (stats.pct_I > 0) {
-    grades.push({ grade: "I", percentage: stats.pct_I, count: Math.round((stats.pct_I / 100) * stats.grades_count) });
+  if (pct(stats.pct_I) > 0) {
+    grades.push({ grade: "I", percentage: pct(stats.pct_I), count: count(stats.pct_I) });
   }
-  if (stats.pct_AU > 0) {
-    grades.push({ grade: "AU", percentage: stats.pct_AU, count: Math.round((stats.pct_AU / 100) * stats.grades_count) });
+  if (pct(stats.pct_AU) > 0) {
+    grades.push({ grade: "AU", percentage: pct(stats.pct_AU), count: count(stats.pct_AU) });
   }
-  if (stats.pct_W_AW > 0) {
-    grades.push({ grade: "W/AW", percentage: stats.pct_W_AW, count: Math.round((stats.pct_W_AW / 100) * stats.grades_count) });
+  if (pct(stats.pct_W_AW) > 0) {
+    grades.push({ grade: "W/AW", percentage: pct(stats.pct_W_AW), count: count(stats.pct_W_AW) });
   }
 
   return grades
@@ -43,16 +45,19 @@ export const getGradeDistribution = (stats: GradeStatistics): GradeDistribution[
     }));
 };
 
-export const formatGPA = (gpa: number): string => {
+export const formatGPA = (gpa: number | null | undefined): string => {
+  if (gpa == null) return "—";
   return gpa.toFixed(2);
 };
 
-export const formatPercentage = (percentage: number): string => {
+export const formatPercentage = (percentage: number | null | undefined): string => {
+  if (percentage == null) return "—";
   return `${percentage.toFixed(1)}%`;
 };
 
 /** Weighted course percentages (earned bar, summary) — up to 2 decimal places. */
-export const formatWeightPercent = (value: number): string => {
+export const formatWeightPercent = (value: number | null | undefined): string => {
+  if (value == null) return "—";
   const text = value.toFixed(2);
   return `${text.replace(/\.?0+$/, "")}%`;
 };
@@ -65,11 +70,13 @@ export const getGPABadgeClass = (_gpa: number): string => {
   return "bg-muted text-foreground";
 };
 
-export const getDifficultyLevel = (averageGPA: number, stdDeviation: number): string => {
-  if (averageGPA >= 3.5 && stdDeviation <= 0.5) return "Easy";
-  if (averageGPA <= 2.0 || stdDeviation >= 1.0) return "Very Hard";
-  if (averageGPA <= 2.5 || stdDeviation >= 0.8) return "Hard";
-  if (averageGPA >= 3.0 && stdDeviation <= 0.6) return "Moderate";
+export const getDifficultyLevel = (averageGPA: number | null, stdDeviation: number | null): string => {
+  const gpa = averageGPA ?? 0;
+  const std = stdDeviation ?? 1;
+  if (gpa >= 3.5 && std <= 0.5) return "Easy";
+  if (gpa <= 2.0 || std >= 1.0) return "Very Hard";
+  if (gpa <= 2.5 || std >= 0.8) return "Hard";
+  if (gpa >= 3.0 && std <= 0.6) return "Moderate";
   return "Moderate";
 };
 

@@ -15,7 +15,7 @@ export function GradeDistributionChart({ data, title = "Grade Distribution" }: G
       return (
         <div className="bg-card p-3 border border-border rounded-lg shadow-lg">
           <p className="font-semibold">{`Grade ${data.grade}`}</p>
-          <p className="text-sm">{`${data.percentage.toFixed(1)}% (${data.count} students)`}</p>
+          <p className="text-sm">{`${(data.percentage ?? 0).toFixed(1)}% (${data.count} students)`}</p>
         </div>
       );
     }
