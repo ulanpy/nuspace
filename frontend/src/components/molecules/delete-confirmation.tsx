@@ -21,18 +21,14 @@ interface DeleteConfirmationProps {
 
 export function DeleteConfirmation({
   title,
-  isVisible, 
-  isDeleting, 
-  onCancel, 
-  onConfirm 
+  isVisible,
+  isDeleting,
+  onCancel,
+  onConfirm
 }: DeleteConfirmationProps) {
-  if (!isVisible) {
-    return null;
-  }
-
   return (
     <AlertDialog open={isVisible} onOpenChange={(open) => !open && onCancel()}>
-      <AlertDialogContent>
+      <AlertDialogContent className="z-[10001]">
         <AlertDialogHeader>
           <AlertDialogTitle>Delete {title}</AlertDialogTitle>
           <AlertDialogDescription>
@@ -40,7 +36,7 @@ export function DeleteConfirmation({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting} onClick={onCancel}>
+          <AlertDialogCancel disabled={isDeleting}>
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
