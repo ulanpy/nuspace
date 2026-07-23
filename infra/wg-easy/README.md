@@ -1,6 +1,6 @@
 # WireGuard VPN with UI using wg-easy
 
-WireGuard VPN setup used for SSH access to the server and internal services (e.g. the [monitoring stack](../README.md)).
+This WireGuard VPN setup is used for SSH access to the server and internal services (e.g. the [monitoring stack](../README.md)).
 
 ## Why WireGuard + wg-easy
 
