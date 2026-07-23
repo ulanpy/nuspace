@@ -56,7 +56,7 @@ function chipLabel(item: GradeStatistics) {
 }
 
 function gradePercentiles(stats: GradeStatistics): number[] {
-  return [stats.pct_A, stats.pct_B, stats.pct_C, stats.pct_D, stats.pct_F];
+  return [stats.pct_A ?? 0, stats.pct_B ?? 0, stats.pct_C ?? 0, stats.pct_D ?? 0, stats.pct_F ?? 0];
 }
 
 const GRADE_LABELS = ["A", "B", "C", "D", "F"];
@@ -87,7 +87,7 @@ export function GradeCompareTray({
       key: "avg_gpa",
       label: "Avg GPA",
       values: selected.map((s) => formatGPA(s.avg_gpa)),
-      highlightIndexes: bestHigherIndexes(selected.map((s) => s.avg_gpa)),
+      highlightIndexes: bestHigherIndexes(selected.map((s) => s.avg_gpa ?? 0)),
     },
     {
       key: "difficulty",
@@ -100,7 +100,7 @@ export function GradeCompareTray({
       key: "withdrawal",
       label: "Withdrawal",
       values: selected.map((s) => formatPercentage(s.pct_W_AW)),
-      highlightIndexes: bestLowerIndexes(selected.map((s) => Number(s.pct_W_AW))),
+      highlightIndexes: bestLowerIndexes(selected.map((s) => s.pct_W_AW ?? 0)),
     },
     {
       key: "median",
@@ -110,7 +110,7 @@ export function GradeCompareTray({
     {
       key: "std",
       label: "Std Dev",
-      values: selected.map((s) => `±${s.std_dev.toFixed(2)}`),
+      values: selected.map((s) => (s.std_dev != null ? `±${s.std_dev.toFixed(2)}` : "—")),
     },
     { key: "students", label: "Students", values: selected.map((s) => String(s.grades_count)) },
   ];
@@ -296,7 +296,7 @@ function MiniGradeBar({ pcts }: { pcts: number[] }) {
             key={GRADE_LABELS[i]}
             className={cn(barColors[i])}
             style={{ width: `${width}%` }}
-            title={`${GRADE_LABELS[i]}: ${pct.toFixed(1)}%`}
+            title={`${GRADE_LABELS[i]}: ${(pct ?? 0).toFixed(1)}%`}
           />
         );
       })}

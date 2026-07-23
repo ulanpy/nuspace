@@ -54,13 +54,13 @@ export function GradeStatisticsCard({
   const difficulty = getDifficultyLevel(statistics.avg_gpa, statistics.std_dev);
   const selectDisabled = Boolean(onToggleSelect) && disableAdd && !isSelected;
   const withdrawalPct = Number(statistics.pct_W_AW);
-  const totalPct = statistics.pct_A + statistics.pct_B + statistics.pct_C + statistics.pct_D + statistics.pct_F;
+  const totalPct = (statistics.pct_A ?? 0) + (statistics.pct_B ?? 0) + (statistics.pct_C ?? 0) + (statistics.pct_D ?? 0) + (statistics.pct_F ?? 0);
   const grades = [
-    { grade: "A", percent: statistics.pct_A },
-    { grade: "B", percent: statistics.pct_B },
-    { grade: "C", percent: statistics.pct_C },
-    { grade: "D", percent: statistics.pct_D },
-    { grade: "F", percent: statistics.pct_F },
+    { grade: "A", percent: statistics.pct_A ?? 0 },
+    { grade: "B", percent: statistics.pct_B ?? 0 },
+    { grade: "C", percent: statistics.pct_C ?? 0 },
+    { grade: "D", percent: statistics.pct_D ?? 0 },
+    { grade: "F", percent: statistics.pct_F ?? 0 },
   ];
 
   const handleCompare = () => {
@@ -151,11 +151,13 @@ export function GradeStatisticsCard({
             <span>Median <strong className="tabular-nums text-foreground">{formatGPA(statistics.median_gpa)}</strong></span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <span>
-              ±<strong className="tabular-nums text-foreground">{statistics.std_dev.toFixed(2)}</strong> std dev
-            </span>
-          </div>
+          {statistics.std_dev != null && (
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <span>
+                ±<strong className="tabular-nums text-foreground">{statistics.std_dev.toFixed(2)}</strong> std dev
+              </span>
+            </div>
+          )}
 
           <div className="flex items-center gap-1.5 text-sm">
             <AlertTriangle className={cn("h-3.5 w-3.5", withdrawalPct > 5 ? "text-destructive" : "text-muted-foreground")} />
