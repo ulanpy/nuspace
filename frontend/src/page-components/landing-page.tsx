@@ -147,7 +147,7 @@ export default function LandingPage() {
               </span>
             </div>
 
-            <h1 className="mx-auto mb-5 max-w-3xl text-balance text-[1.75rem] font-bold leading-tight tracking-tight sm:mb-6 sm:text-4xl md:text-[2.75rem]">
+            <h1 className="mx-auto mb-5 max-w-3xl text-balance text-[2.25rem] font-bold leading-tight tracking-tight sm:mb-6 sm:text-6xl md:text-[3.75rem]">
               Track grades, find events, and{" "}
               <span className="text-primary">stay on top of campus</span>
             </h1>
