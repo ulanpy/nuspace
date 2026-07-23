@@ -6,6 +6,8 @@ deleteDatasources:
     orgId: 1
   - name: Loki
     orgId: 1
+  - name: PostgreSQL
+    orgId: 1
 
 datasources:
   - name: Prometheus
@@ -21,4 +23,20 @@ datasources:
     uid: P8E80F9AEF21F6940
     url: http://loki:3100
     access: proxy
+    editable: false
+
+  # Product analytics (SELECT-only). Role is bootstrapped by grafana-db-init on every compose up.
+  - name: PostgreSQL
+    type: postgres
+    uid: PSQL_NUSPACE
+    url: postgres:5432
+    user: ${GRAFANA_DB_USER}
+    secureJsonData:
+      password: ${GRAFANA_DB_PASSWORD}
+    jsonData:
+      database: ${DB_NAME}
+      sslmode: disable
+      maxOpenConns: 5
+      connMaxLifetime: 14400
+      postgresVersion: 1700
     editable: false

@@ -200,6 +200,29 @@ services:
     profiles:
       - monitoring
 
+  # Creates/updates grafana_ro (SELECT-only) from env. Idempotent — safe on fresh VM or restart.
+  grafana-db-init:
+    image: postgres:17
+    container_name: grafana-db-init
+    networks:
+      - nuros
+    restart: "no"
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      GRAFANA_DB_USER: ${GRAFANA_DB_USER:-grafana_ro}
+      GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD}
+    volumes:
+      - ./scripts/ensure-grafana-ro.sh:/scripts/ensure-grafana-ro.sh:ro
+    entrypoint: [ "/bin/bash", "/scripts/ensure-grafana-ro.sh" ]
+    profiles:
+      - monitoring
+
   grafana:
     container_name: grafana
     image: grafana/grafana:latest
@@ -211,6 +234,9 @@ services:
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
       - GF_LOG_LEVEL=warn
+      - DB_NAME=${DB_NAME}
+      - GRAFANA_DB_USER=${GRAFANA_DB_USER:-grafana_ro}
+      - GRAFANA_DB_PASSWORD=${GRAFANA_DB_PASSWORD}
     ports:
       - "3000:3000"
     volumes:
@@ -219,6 +245,7 @@ services:
       - "./grafana/dashboards/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
       - "./grafana/dashboards/cadvisor.json:/var/lib/grafana/dashboards/cadvisor.json"
       - "./grafana/dashboards/fastapi-observability.json:/var/lib/grafana/dashboards/fastapi-observability.json"
+      - "./grafana/dashboards/product-overview.json:/var/lib/grafana/dashboards/product-overview.json"
       - "./grafana/provisioning/dashboards/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
       # No need for alerting in development
       # - "./grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
@@ -238,7 +265,10 @@ services:
     networks:
       - nuros
     depends_on:
-      - alloy
+      grafana-db-init:
+        condition: service_completed_successfully
+      alloy:
+        condition: service_started
     profiles:
       - monitoring
 

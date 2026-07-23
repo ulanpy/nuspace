@@ -201,6 +201,27 @@ services:
     networks:
       - nuros
 
+  # Creates/updates grafana_ro (SELECT-only) from env. Idempotent — safe on fresh VM or restart.
+  grafana-db-init:
+    image: kamikadze24/postgres-walg:latest
+    container_name: grafana-db-init
+    networks:
+      - nuros
+    restart: "no"
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      GRAFANA_DB_USER: ${GRAFANA_DB_USER:-grafana_ro}
+      GRAFANA_DB_PASSWORD: ${GRAFANA_DB_PASSWORD}
+    volumes:
+      - ./scripts/ensure-grafana-ro.sh:/scripts/ensure-grafana-ro.sh:ro
+    entrypoint: [ "/bin/bash", "/scripts/ensure-grafana-ro.sh" ]
+
   grafana:
     container_name: grafana
     image: grafana/grafana:latest
@@ -215,12 +236,16 @@ services:
       - GF_SERVER_ROOT_URL=https://vpn.nuspace.kz/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=false
       - GF_DATABASE_WAL=true
+      - DB_NAME=${DB_NAME}
+      - GRAFANA_DB_USER=${GRAFANA_DB_USER:-grafana_ro}
+      - GRAFANA_DB_PASSWORD=${GRAFANA_DB_PASSWORD}
     volumes:
       - "grafana-data:/var/lib/grafana"
       - "./grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
       - "./grafana/dashboards/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
       - "./grafana/dashboards/cadvisor.json:/var/lib/grafana/dashboards/cadvisor.json"
       - "./grafana/dashboards/fastapi-observability.json:/var/lib/grafana/dashboards/fastapi-observability.json"
+      - "./grafana/dashboards/product-overview.json:/var/lib/grafana/dashboards/product-overview.json"
       - "./grafana/provisioning/dashboards/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
       - "./grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
       - "./grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"
@@ -236,7 +261,10 @@ services:
     networks:
       - nuros
     depends_on:
-      - alloy
+      grafana-db-init:
+        condition: service_completed_successfully
+      alloy:
+        condition: service_started
 
   alloy:
     container_name: alloy
