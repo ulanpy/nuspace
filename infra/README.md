@@ -60,6 +60,10 @@ Production and staging environments use Google Cloud metadata server for authent
    docker compose -f prod.docker-compose up -d
    ```
 
+## Accessing the Stack
+
+To access the monitoring stack first you need to connect to the VPN. Refer to [WireGuard VPN](./wg-easy/README.md) documentation for details. Handle to all the services are available at `vpn.nuspace.kz/monitoring`.
+
 ## Explanation
 
 For an explanation, see the blog post at [sagyzdop.com](https://sagyzdop.com/blog/simple-monitoring-for-a-website/).
