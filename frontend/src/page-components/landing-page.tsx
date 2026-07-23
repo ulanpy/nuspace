@@ -28,8 +28,14 @@ import eventImg2 from "@/assets/images/event_pics/2.webp";
 import eventImg3 from "@/assets/images/event_pics/3.webp";
 import eventImg4 from "@/assets/images/event_pics/4.webp";
 import eventImg5 from "@/assets/images/event_pics/5.webp";
+import NuspaceLogoIcon from "@/assets/svg/nuspace_logo.svg";
 
 const eventImages = [eventImg1, eventImg2, eventImg3, eventImg4, eventImg5];
+
+const nuspaceLogoSrc =
+  typeof NuspaceLogoIcon === "string"
+    ? NuspaceLogoIcon
+    : (NuspaceLogoIcon as { src: string }).src;
 
 interface Feature {
   title: string;
@@ -127,56 +133,57 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col bg-background text-foreground">
       <main>
-        <section className="relative overflow-hidden py-24 sm:py-32 lg:py-40">
+        <section className="relative overflow-hidden py-24 sm:py-32 lg:py-36">
           <PageContainer className="text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
-              <Sparkles className="h-4 w-4" aria-hidden="true" />
-              Built by NU students, for NU students
+            <div className="mb-4 inline-flex items-center gap-2.5 sm:mb-5">
+              <img
+                src={nuspaceLogoSrc}
+                alt=""
+                className="h-7 w-7 object-contain sm:h-8 sm:w-8"
+                aria-hidden="true"
+              />
+              <span className="text-lg font-bold tracking-tight sm:text-xl">
+                Nuspace
+              </span>
             </div>
 
-            <h1 className="mx-auto mb-6 max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+            <h1 className="mx-auto mb-5 max-w-3xl text-balance text-[1.75rem] font-bold leading-tight tracking-tight sm:mb-6 sm:text-4xl md:text-[2.75rem]">
               Track grades, find events, and{" "}
               <span className="text-primary">stay on top of campus</span>
             </h1>
 
-            <p className="mx-auto mb-9 max-w-[65ch] text-lg leading-relaxed text-muted-foreground sm:text-xl">
-              Nuspace brings together academics, events, communities, and
-              campus services at Nazarbayev University. Sign in with your
-              NU account and get started.
+            <p className="mx-auto mb-9 max-w-[52ch] text-lg leading-relaxed text-muted-foreground sm:text-xl">
+            Plan your semester with GPA insights, degree audits, course planning, and campus resources.
             </p>
 
-            <div className="flex flex-col justify-center gap-3 sm:flex-row">
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
               <Button size="lg" asChild className="gap-2 px-8 text-base">
                 <Link href={ROUTES.ANNOUNCEMENTS}>
                   Open Nuspace
                   <ArrowRight className="h-5 w-5" aria-hidden="true" />
                 </Link>
               </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                asChild
-                className="px-8 text-base"
+              <a
+                href="https://github.com/ulanpy/nuspace"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-                <a
-                  href="https://github.com/ulanpy/nuspace"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  View on GitHub
-                </a>
-              </Button>
+                <Github className="h-4 w-4" aria-hidden="true" />
+                View on GitHub
+              </a>
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-2">
-                <Check className="h-4 w-4 text-success" aria-hidden="true" />
-                NU account sign-in
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
+              <span>3000+ students</span>
+              <span aria-hidden="true" className="hidden text-border sm:inline">
+                ·
               </span>
-              <span className="inline-flex items-center gap-2">
-                <Check className="h-4 w-4 text-success" aria-hidden="true" />
-                Web and Telegram access
+              <span>Open Source</span>
+              <span aria-hidden="true" className="hidden text-border sm:inline">
+                ·
               </span>
+              <span>Web &amp; Telegram</span>
             </div>
           </PageContainer>
         </section>
@@ -371,12 +378,24 @@ export default function LandingPage() {
         </Section>
       </main>
 
+      {/* Footer with a joke */}
       <footer className="border-t bg-background text-sm text-muted-foreground">
         <PageContainer
           as="div"
           className="flex flex-col items-center justify-between gap-5 py-8 md:flex-row"
         >
-          <p>© {new Date().getFullYear()} Nuspace. Built for the NU community.</p>
+          <p>
+            © {new Date().getFullYear()} Nuspace.{" "}
+            <a
+              href="https://www.youtube.com/watch?v=bJ1-CMJY7CE"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-foreground transition-colors"
+            >
+              Is mayonnaise an instrument?
+            </a>
+          </p>
+     
           <nav
             aria-label="Footer navigation"
             className="flex flex-wrap justify-center gap-x-6 gap-y-3"
@@ -405,7 +424,7 @@ export default function LandingPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
             >
-              Open source
+              Repo
               <Github className="h-3.5 w-3.5" aria-hidden="true" />
             </a>
           </nav>
