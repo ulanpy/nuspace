@@ -196,6 +196,7 @@ services:
       - "--web.enable-remote-write-receiver"
       - "--storage.tsdb.retention.time=30d"
       - "--web.external-url=/prometheus/"
+      - "--web.route-prefix=/prometheus/"
     restart: unless-stopped
     networks:
       - nuros
