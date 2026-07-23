@@ -1,6 +1,15 @@
 "use client";
 
-import { Button } from '@/components/atoms/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface DeleteConfirmationProps {
   title: string;
@@ -22,31 +31,27 @@ export function DeleteConfirmation({
   }
 
   return (
-    <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
-      <div className="flex items-center gap-2 text-red-800">
-        <span className="font-medium">Delete {title}</span>
-      </div>
-      <p className="text-sm text-red-700">
-        Are you sure you want to delete this {title.toLowerCase()}? This action cannot be undone.
-      </p>
-      <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onCancel}
-          disabled={isDeleting}
-        >
-          Cancel
-        </Button>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={onConfirm}
-          disabled={isDeleting}
-        >
-          {isDeleting ? "Deleting..." : `Delete ${title}`}
-        </Button>
-      </div>
-    </div>
+    <AlertDialog open={isVisible} onOpenChange={(open) => !open && onCancel()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete {title}</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this {title.toLowerCase()}? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting} onClick={onCancel}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            disabled={isDeleting}
+            onClick={onConfirm}
+          >
+            {isDeleting ? "Deleting..." : `Delete ${title}`}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
