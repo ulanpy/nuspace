@@ -175,7 +175,7 @@ export default function LandingPage() {
             </div>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
-              <span>3000+ students</span>
+              <span>3100+ students</span>
               <span aria-hidden="true" className="hidden text-border sm:inline">
                 ·
               </span>

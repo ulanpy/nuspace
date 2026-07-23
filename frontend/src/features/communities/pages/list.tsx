@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/atoms/page-header";
 
 import { AuthWallModal } from "@/components/molecules/auth-wall-modal";
 import { useAuthGate } from "@/hooks/use-auth-gate";
-import { CommunityCard } from '@/features/communities/components/community-card';
+import { CommunityCard, CommunityCardSkeleton } from '@/features/communities/components/community-card';
 import { InfiniteList } from '@/components/virtual/infinite-list';
 import { Community, CommunityCategory } from "@/features/shared/campus/types";
 import {
@@ -139,9 +139,16 @@ export default function CommunitiesPage() {
             additionalParams={{
               community_category: selectedCategoryParam,
             }}
-            renderItem={(community: Community) => (
+            renderItem={(community: Community, index: number) => (
               <div key={community.id} className="h-full">
-                <CommunityCard community={community} />
+                <CommunityCard community={community} priorityImage={index < 3} />
+              </div>
+            )}
+            renderLoading={() => (
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <CommunityCardSkeleton key={i} />
+                ))}
               </div>
             )}
             renderEmpty={() => (

@@ -1,7 +1,7 @@
 "use client";
 
 import MotionWrapper from "@/components/atoms/motion-wrapper";
-import { EventCard } from '@/features/events/components/event-card';
+import { EventCard, EventCardSkeleton } from '@/features/events/components/event-card';
 import { InfiniteList } from '@/components/virtual/infinite-list';
 import { Event } from "@/features/shared/campus/types";
 import { useState } from "react";
@@ -71,10 +71,19 @@ export default function Events() {
     setEventTypeFilter(null);
   };
 
-  const renderEventCard = (event: Event) => (
+  const renderEventCard = (event: Event, index: number) => (
     <EventCard
       {...event}
+      priorityImage={index < 4}
     />
+  );
+
+  const renderEventsLoading = () => (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+      {Array.from({ length: 8 }, (_, i) => (
+        <EventCardSkeleton key={i} />
+      ))}
+    </div>
   );
 
   return (
@@ -180,6 +189,7 @@ export default function Events() {
               event_type: eventTypeFilter,
             }}
             renderItem={renderEventCard}
+            renderLoading={renderEventsLoading}
             renderEmpty={renderEmptyEvents(
               timeFilter,
               eventTypeFilter,

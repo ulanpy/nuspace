@@ -6,7 +6,7 @@ import {
   CardContent,
   CardHeader,
 } from "@/components/atoms/card";
-import Image from "@/router/image";
+import { FadeInImage } from "@/components/atoms/fade-in-image";
 import { Badge } from "@/components/atoms/badge";
 import { VerificationBadge } from "@/components/molecules/verification-badge";
 import { MarkdownContent } from '@/components/molecules/markdown-content';
@@ -37,10 +37,15 @@ export default function CommunityDetailPage() {
   const [isEditCommunityModalOpen, setIsEditCommunityModalOpen] =
     useState(false);
 
+  const placeholderSrc =
+    typeof profilePlaceholder === "string"
+      ? profilePlaceholder
+      : profilePlaceholder.src;
+
   if (isCommunityLoading) {
     return (
       <div className="animate-pulse space-y-4">
-        <div className="h-40 bg-muted rounded-md"></div>
+        <div className="aspect-video bg-muted rounded-md"></div>
         <div className="h-20 bg-muted rounded-full w-20 -mt-10 ml-4 border-4 border-background"></div>
         <div className="h-6 bg-muted rounded w-1/3"></div>
         <div className="h-4 bg-muted rounded w-1/4"></div>
@@ -76,29 +81,27 @@ export default function CommunityDetailPage() {
       <main className="flex-grow">
         <div className="container px-4 md:px-20 lg:px-32">
           <Card className="mb-6 overflow-hidden shadow-lg relative">
-            <div className="relative w-full aspect-video bg-gradient-to-r from-gray-200 to-gray-500">
+            <div className="relative w-full aspect-video bg-muted">
               {banner?.url ? (
-                <Image
+                <FadeInImage
                   src={banner.url}
                   alt={community.name}
                   fill
-                  className="object-cover object-center"
+                  priority
                 />
               ) : null}
-              <div className="absolute inset-0 bg-black/20"></div>
+              <div className="absolute inset-0 bg-black/20 z-10 pointer-events-none"></div>
             </div>
 
             <div className="relative p-6">
               <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-                <div className="-mt-12 md:-mt-16 w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-white overflow-hidden bg-white shadow-xl flex-shrink-0 relative">
-                  <Image
-                    src={profile?.url || profilePlaceholder}
-                    onError={(e) => {
-                      e.currentTarget.src = profilePlaceholder;
-                    }}
+                <div className="-mt-12 md:-mt-16 w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-white overflow-hidden bg-white shadow-xl flex-shrink-0 relative z-20">
+                  <FadeInImage
+                    src={profile?.url || placeholderSrc}
+                    fallbackSrc={placeholderSrc}
                     alt={community.name}
                     fill
-                    className="object-cover"
+                    priority
                   />
                 </div>
 

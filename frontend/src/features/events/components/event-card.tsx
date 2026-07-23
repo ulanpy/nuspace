@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "@/router/link";
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/atoms/card";
 import { Badge } from "@/components/atoms/badge";
+import { FadeInImage } from "@/components/atoms/fade-in-image";
+import { Skeleton } from "@/components/atoms/skeleton";
 import { Event } from "@/features/shared/campus/types";
 import { CountdownHeaderBar } from './countdown-header-bar';
 import { ROUTES } from "@/data/routes";
@@ -13,6 +15,22 @@ import { formatInCampusTime, isoToCampusWallClock } from "@/features/events/util
 
 interface EventCardProps extends Event {
   compact?: boolean;
+  /** First row / LCP posters should load eagerly */
+  priorityImage?: boolean;
+}
+
+export function EventCardSkeleton() {
+  return (
+    <Card className="h-full flex flex-col overflow-hidden">
+      <Skeleton className="h-8 w-full rounded-none rounded-t-lg" />
+      <Skeleton className="aspect-[3/4] w-full rounded-none" />
+      <div className="space-y-2 p-3">
+        <Skeleton className="h-4 w-[80%]" />
+        <Skeleton className="h-3 w-1/2" />
+        <Skeleton className="h-3 w-2/3" />
+      </div>
+    </Card>
+  );
 }
 
 export function EventCard(props: EventCardProps) {
@@ -23,9 +41,8 @@ export function EventCard(props: EventCardProps) {
     end_datetime,
     policy, 
     media,
-    type,
+    priorityImage = false,
  } = props;
-  const compact = props.compact === true;
 
   const [imageError, setImageError] = useState(false);
 
@@ -69,12 +86,12 @@ export function EventCard(props: EventCardProps) {
       <Link href={ROUTES.EVENTS.DETAIL_FN(String(id))}>
         <div className="aspect-[3/4] relative overflow-hidden bg-muted">
           {media && media.length > 0 && media[0]?.url && !imageError ? (
-            <img
+            <FadeInImage
               src={media[0].url}
               alt={name}
-              className="object-cover w-full h-full"
+              fill
+              priority={priorityImage}
               onError={() => setImageError(true)}
-              loading="lazy"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
@@ -86,7 +103,7 @@ export function EventCard(props: EventCardProps) {
           )}
           
           {/* Policy badge overlay - bottom left */}
-          <div className="absolute bottom-2 left-2">
+          <div className="absolute bottom-2 left-2 z-10">
             <Badge
               variant="outline"
               className={`text-xs backdrop-blur-sm ${getPolicyColor(policy)}`}
@@ -96,12 +113,12 @@ export function EventCard(props: EventCardProps) {
           </div>
           
           {/* Profile image overlay - bottom right */}
-          <div className="absolute bottom-2 right-2">
+          <div className="absolute bottom-2 right-2 z-10">
             {props.creator?.picture && (
-              <img
+              <FadeInImage
                 src={props.creator.picture}
                 alt={`${props.creator.name} ${props.creator.surname}`}
-                className="w-8 h-8 rounded-full border-2 border-white shadow-md object-cover"
+                className="h-8 w-8 rounded-full border-2 border-white shadow-md object-cover"
               />
             )}
           </div>

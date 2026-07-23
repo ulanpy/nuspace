@@ -6,6 +6,7 @@ import { useUser } from "@/hooks/use-user";
 import { TelegramFeed } from '@/features/announcements/components/telegram-feed';
 import { useAnnouncementsBundle } from "@/features/announcements/api/use-announcements-bundle";
 import { PresidentialElectionBanner } from "@/features/elections/presidential-election-banner";
+import { FadeInImage } from "@/components/atoms/fade-in-image";
 
 /** Flip to `true` when you want the election block back on announcements. */
 const SHOW_PRESIDENTIAL_ELECTION_BANNER = false;
@@ -22,6 +23,18 @@ function isEventOngoing(event: any) {
     const start = new Date(event.start_datetime).getTime();
     const end = new Date(event.end_datetime).getTime();
     return start <= now && end > now;
+}
+
+function EventRowSkeleton({ thumbClassName }: { thumbClassName: string }) {
+    return (
+        <div className="flex items-center gap-4 p-4 rounded-xl border bg-card">
+            <div className={`${thumbClassName} animate-pulse rounded-lg bg-muted`} />
+            <div className="flex-1 space-y-2">
+                <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
+            </div>
+        </div>
+    );
 }
 
 export default function AnnouncementsPage() {
@@ -41,10 +54,11 @@ export default function AnnouncementsPage() {
 
             <div className="flex items-center gap-4">
                 {user?.picture && (
-                    <img
+                    <FadeInImage
                         src={user.picture}
                         alt=""
-                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-full"
+                        priority
+                        className="h-12 w-12 sm:h-14 sm:w-14 rounded-full"
                     />
                 )}
                 <div>
@@ -69,23 +83,28 @@ export default function AnnouncementsPage() {
                         </div>
 
                         {bundleLoading ? (
-                            <div className="h-40 rounded-xl bg-muted animate-pulse" />
+                            <div className="space-y-3">
+                                {Array.from({ length: 3 }).map((_, idx) => (
+                                    <EventRowSkeleton key={idx} thumbClassName="h-16 w-16 flex-shrink-0" />
+                                ))}
+                            </div>
                         ) : upcomingEvents.length > 0 ? (
                             <div className="space-y-3">
-                                {upcomingEvents.slice(0, 5).map((event: any) => (
+                                {upcomingEvents.slice(0, 5).map((event: any, index: number) => (
                                     <Link
                                         key={event.id}
                                         href={`/events/?id=${event.id}`}
                                         className="flex items-center gap-4 p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors"
                                     >
                                         {event.media?.[0]?.url ? (
-                                            <img
+                                            <FadeInImage
                                                 src={event.media[0].url}
                                                 alt={event.name}
-                                                className="w-16 h-16 rounded-lg object-cover"
+                                                priority={index < 2}
+                                                className="h-16 w-16 flex-shrink-0 rounded-lg"
                                             />
                                         ) : (
-                                            <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center">
+                                            <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                                 <Calendar className="w-6 h-6 text-primary" />
                                             </div>
                                         )}
@@ -133,7 +152,7 @@ export default function AnnouncementsPage() {
                         {bundleLoading ? (
                             <div className="space-y-3">
                                 {Array.from({ length: 3 }).map((_, idx) => (
-                                    <div key={idx} className="h-20 rounded-xl bg-muted animate-pulse" />
+                                    <EventRowSkeleton key={idx} thumbClassName="h-12 w-12 flex-shrink-0" />
                                 ))}
                             </div>
                         ) : recruitmentEvents.length > 0 ? (
@@ -145,13 +164,13 @@ export default function AnnouncementsPage() {
                                         className="flex items-start gap-3 p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors"
                                     >
                                         {event.media?.[0]?.url ? (
-                                            <img
+                                            <FadeInImage
                                                 src={event.media[0].url}
                                                 alt={event.name}
-                                                className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                                                className="h-12 w-12 flex-shrink-0 rounded-lg"
                                             />
                                         ) : (
-                                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                                 <Users className="w-6 h-6 text-primary" />
                                             </div>
                                         )}
