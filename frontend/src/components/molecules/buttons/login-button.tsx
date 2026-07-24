@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "../../atoms/button";
+import { Button } from "@/components/ui/button";
 import { User, LogOut } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 

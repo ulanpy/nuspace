@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Label } from "../atoms/label";
+import { Label } from "@/components/ui/label";
 import { ReactNode } from "react";
 
 interface AnimatedFormFieldProps {

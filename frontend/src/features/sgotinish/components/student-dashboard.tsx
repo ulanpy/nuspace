@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TicketCard } from './ticket-card';
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/atoms/page-container";
 import { PageHeader } from "@/components/atoms/page-header";
 import { ChevronDown, Filter, Folder, Search } from "lucide-react";
@@ -17,7 +17,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/atoms/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import { TicketCategory, TicketStatus } from "../types";
 
 interface StudentDashboardProps {

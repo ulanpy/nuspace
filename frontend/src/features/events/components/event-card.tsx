@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "@/router/link";
 import { Calendar } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/atoms/card";
-import { Badge } from "@/components/atoms/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { FadeInImage } from "@/components/atoms/fade-in-image";
 import { Skeleton } from "@/components/atoms/skeleton";
 import { Event } from "@/features/shared/campus/types";

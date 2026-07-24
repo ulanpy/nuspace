@@ -9,8 +9,8 @@ import { format } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { Check, CheckCheck, User } from "lucide-react";
 import { useInView } from "react-intersection-observer";
-import { Textarea } from "@/components/atoms/textarea";
-import { Button } from "@/components/atoms/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { mapRoleToDisplayName } from '../utils/role-mapping';
 
 interface MessageProps {

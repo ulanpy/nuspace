@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "../atoms/button";
+import { Button } from "@/components/ui/button";
 import { useUser } from "../../hooks/use-user";
 import { Modal } from "../atoms/modal";
 

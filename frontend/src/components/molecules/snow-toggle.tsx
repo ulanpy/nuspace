@@ -1,7 +1,7 @@
 "use client";
 
 import { Snowflake } from "lucide-react";
-import { Button } from "../atoms/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/utils";
 import { useSnow } from "@/config/seasonal";
 

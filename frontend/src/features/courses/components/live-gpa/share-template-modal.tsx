@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/atoms/modal";
 import { calculateTemplateCoverage, canShareTemplate } from '../../utils/template-utils';
 import type { LiveGpaViewModel } from '../../hooks/use-live-gpa-view-model';

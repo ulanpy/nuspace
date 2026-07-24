@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import { Trash2, Pencil } from "lucide-react";
 import { BaseCourseItem } from "../types";
 import { hasCompleteScore } from '../utils/grade-utils';

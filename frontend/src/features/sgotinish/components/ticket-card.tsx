@@ -1,5 +1,5 @@
-import { Badge } from "@/components/atoms/badge";
-import { Card, CardContent, CardHeader } from "@/components/atoms/card";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { toLocalDate } from "../utils/date";

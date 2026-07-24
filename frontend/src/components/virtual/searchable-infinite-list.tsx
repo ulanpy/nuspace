@@ -3,7 +3,7 @@
 import React, { ReactNode } from 'react';
 import { InfiniteList } from './infinite-list';
 import { Search, X } from 'lucide-react';
-import { Input } from '../atoms/input';
+import { Input } from '@/components/ui/input';
 import { PreSearchedItem } from '@/types/search';
 
 export interface SearchableInfiniteListProps<T> {

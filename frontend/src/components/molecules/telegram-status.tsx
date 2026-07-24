@@ -1,5 +1,5 @@
 import { FaTelegram } from "react-icons/fa";
-import { Badge } from "@/components/atoms/badge";
+import { Badge } from "@/components/ui/badge";
 import { useTheme } from '@/context/theme-provider-context';
 
 interface TelegramStatusProps {

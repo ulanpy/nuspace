@@ -2,17 +2,17 @@
 
 import { useState, useMemo, useEffect } from "react";
 import type { PointerEvent as ReactPointerEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/atoms/modal";
-import { Input } from "@/components/atoms/input";
-import { Badge } from "@/components/atoms/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/atoms/alert";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/atoms/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import { RefreshCcw, AlertCircle, ShieldCheck, Eye, EyeOff, Upload, ChevronDown } from "lucide-react";
 import { RegistrarSyncResponse } from "../types";
 import { gradeStatisticsApi } from '../api/grade-statistics-api';

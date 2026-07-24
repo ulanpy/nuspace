@@ -2,9 +2,9 @@
 
 import React, { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/atoms/button";
-import { Label } from "@/components/atoms/label";
-import { Progress } from "@/components/atoms/progress";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { 
   ImageIcon, 
   Upload, 
@@ -20,7 +20,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/atoms/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import { useUnifiedMedia } from '@/features/media/hooks/use-unified-media';
 import { MediaItem } from "@/features/media/types/media";
 

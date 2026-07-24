@@ -1,8 +1,8 @@
 "use client";
 
-import { Card, CardContent, CardHeader } from "@/components/atoms/card";
-import { Badge } from "@/components/atoms/badge";
-import { Button } from "@/components/atoms/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { GradeStatistics } from "../types";
 import {
   formatGPA,

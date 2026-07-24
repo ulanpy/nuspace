@@ -15,10 +15,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/atoms/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
-import { Button } from "@/components/atoms/button";
-import { Input } from "@/components/atoms/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { CommunityModal } from '@/features/communities/components/community-modal';
 import { useDebounce } from '@/hooks/use-debounce';
 import MotionWrapper from "@/components/atoms/motion-wrapper";

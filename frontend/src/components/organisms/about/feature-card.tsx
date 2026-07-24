@@ -1,5 +1,5 @@
 import { IconType } from "react-icons/lib";
-import { Card } from "@/components/atoms/card";
+import { Card } from "@/components/ui/card";
 import { useTheme } from '@/context/theme-provider-context';
 interface FeatureCardProps {
   title: string;

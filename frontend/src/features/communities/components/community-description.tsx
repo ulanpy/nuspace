@@ -2,8 +2,8 @@
 
 import { useRef } from "react";
 import { useCommunityForm } from '@/context/community-form-context';
-import { Label } from "@/components/atoms/label";
-import { Textarea } from "@/components/atoms/textarea";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { MarkdownToolbar, type FormattingAction } from '@/components/molecules/markdown-toolbar';
 
 const MAX_DESCRIPTION_LENGTH = 5000;

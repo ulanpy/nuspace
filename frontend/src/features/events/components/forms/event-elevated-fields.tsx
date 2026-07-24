@@ -1,7 +1,7 @@
 "use client";
 
-import { Label } from '@/components/atoms/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/atoms/select';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEventForm } from '@/context/event-form-context';
 import { EventEditableFields } from '@/features/shared/campus/types';
 

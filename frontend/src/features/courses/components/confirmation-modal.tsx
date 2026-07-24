@@ -1,7 +1,7 @@
 "use client";
 
 import { Modal } from "@/components/atoms/modal";
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 
 interface ConfirmationModalProps {

@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Link as LinkIcon, CheckCheck } from "lucide-react";
-import { Button } from "../../atoms/button";
+import { Button } from "@/components/ui/button";
 import { Modal } from "../../atoms/modal";
-import { Badge } from "../../atoms/badge";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "../../../hooks/use-toast";
 import { useUser } from "@/hooks/use-user";
 import { PrivacyModal } from "@/components/molecules/privacy-modal";

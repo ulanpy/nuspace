@@ -1,7 +1,7 @@
 "use client";
 
 import { Bold, Heading, Italic, Link2, List, ListOrdered, Quote } from "lucide-react";
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 
 export type FormattingAction =
   | "bold"

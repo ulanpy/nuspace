@@ -3,7 +3,7 @@
 import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { Info, X } from "lucide-react";
 import { Modal } from "@/components/atoms/modal";
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import { NumericInput } from "./forms/numeric-input";
 import { coursesSurface } from "../constants/dashboard-theme";
 import { cn } from "@/utils/utils";

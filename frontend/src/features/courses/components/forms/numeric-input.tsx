@@ -1,8 +1,8 @@
-import { forwardRef } from "react";
-import { Input, type InputProps } from "@/components/atoms/input";
+import { forwardRef, type ComponentProps } from "react";
+import { Input } from "@/components/ui/input";
 import { useIsMacSafari } from '@/hooks/use-is-mac-safari';
 
-interface NumericInputProps extends InputProps {
+interface NumericInputProps extends ComponentProps<"input"> {
   allowDecimal?: boolean;
 }
 

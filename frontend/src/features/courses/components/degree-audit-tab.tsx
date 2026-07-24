@@ -25,17 +25,17 @@ import {
   DegreeAuditTCCourse,
   DegreeAuditTCMapping,
 } from "../types";
-import { Button } from "@/components/atoms/button";
-import { Input } from "@/components/atoms/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/atoms/dropdown-menu";
-import { Alert, AlertDescription, AlertTitle } from "@/components/atoms/alert";
-import { Badge } from "@/components/atoms/badge";
+} from "@/components/ui/dropdown-menu";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/utils/utils";
 import { Modal } from "@/components/atoms/modal";
 import { SignInCard } from "@/components/molecules/sign-in-card";

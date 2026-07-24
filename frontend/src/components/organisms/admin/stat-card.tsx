@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/atoms/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ArrowUp } from "lucide-react";
 
 interface StatCardProps {

@@ -1,8 +1,8 @@
 "use client";
 
 import { useUser } from "@/hooks/use-user";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/atoms/card";
-import { Button } from "@/components/atoms/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/molecules/theme-toggle";
 import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
 import { TelegramStatus } from "@/components/molecules/telegram-status";

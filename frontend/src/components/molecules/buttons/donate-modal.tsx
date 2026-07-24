@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Modal } from "../../atoms/modal";
-import { Button } from "../../atoms/button";
+import { Button } from "@/components/ui/button";
 import { Copy, Check, Heart } from "lucide-react";
 
 interface DonateModalProps {

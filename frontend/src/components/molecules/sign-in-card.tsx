@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { Button } from "@/components/atoms/button"
+import { Button } from "@/components/ui/button"
 import { useUser } from "@/hooks/use-user"
 
 interface SignInCardProps {

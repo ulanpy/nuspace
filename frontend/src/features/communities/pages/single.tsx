@@ -1,13 +1,13 @@
 "use client";
 
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
-} from "@/components/atoms/card";
+} from "@/components/ui/card";
 import { FadeInImage } from "@/components/atoms/fade-in-image";
-import { Badge } from "@/components/atoms/badge";
+import { Badge } from "@/components/ui/badge";
 import { VerificationBadge } from "@/components/molecules/verification-badge";
 import { MarkdownContent } from '@/components/molecules/markdown-content';
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
