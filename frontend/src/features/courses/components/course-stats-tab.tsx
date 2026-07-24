@@ -14,8 +14,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/atoms/select";
-import { Label } from "@/components/atoms/label";
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 const MAX_SELECTIONS = 8;
 

@@ -7,12 +7,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/atoms/select";
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/atoms/popover";
+} from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/atoms/calendar";
 import { format } from "date-fns";
 import {
@@ -22,8 +22,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/atoms/sheet";
-import { Button } from "../atoms/button";
-import { Input } from "../atoms/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 const eventCategories = ["Academic", "Cultural", "Sports", "Social"];
 
 

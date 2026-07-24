@@ -14,7 +14,7 @@ import { useAuthGate } from "@/hooks/use-auth-gate";
 import { AuthWallModal } from "@/components/molecules/auth-wall-modal";
 import { PageContainer } from "@/components/atoms/page-container";
 import { PageHeader } from "@/components/atoms/page-header";
-import { Tabs, TabsList, TabsTrigger } from "@/components/atoms/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SGMembersManagement } from "../components/sg-members-management";
 
 type DashboardTab = "student" | "sg-tickets" | "sg-members";

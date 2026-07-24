@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import { SynchronizeCoursesControl } from "../synchronize-courses-control";
 import type { LiveGpaViewModel } from "../../hooks/use-live-gpa-view-model";
 import GoogleCalendarIcon from "@/assets/svg/google_calendar_icon.svg";

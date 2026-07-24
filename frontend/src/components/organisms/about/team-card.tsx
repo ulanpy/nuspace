@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/atoms/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { FaUsers } from "react-icons/fa";
 
 import { teamMembers } from "@/data/about/team-members";

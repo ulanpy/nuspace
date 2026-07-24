@@ -16,7 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "@/router/link";
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import { useUser } from "@/hooks/use-user";
 import { FeatureCarousel } from "@/components/molecules/feature-carousel";
 import { ROUTES } from "@/data/routes";

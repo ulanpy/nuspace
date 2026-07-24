@@ -1,5 +1,5 @@
 import { ServerCrash } from "lucide-react";
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/utils";
 
 interface ServerErrorProps {

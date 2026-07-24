@@ -1,5 +1,5 @@
 import { Bug } from "lucide-react";
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import { useTheme } from '@/context/theme-provider-context';
 
 export function ReportButton({

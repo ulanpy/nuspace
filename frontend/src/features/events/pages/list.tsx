@@ -10,13 +10,13 @@ import { PageContainer } from "@/components/atoms/page-container";
 import { PageHeader } from "@/components/atoms/page-header";
 import { EventModal } from '@/features/events/components/event-modal';
 import { TimeFilter } from '@/features/events/api/events-api';
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/atoms/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import { TelegramConnectCard } from '@/features/sgotinish/components/telegram-connect-card';
 import { useUser } from '@/hooks/use-user';
 import { useAuthGate } from '@/hooks/use-auth-gate';

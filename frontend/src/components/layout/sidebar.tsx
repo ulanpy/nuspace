@@ -19,7 +19,7 @@ import {
 import NuspaceLogoIcon from "@/assets/svg/nuspace_logo.svg";
 import { ROUTES } from "@/data/routes";
 import { useUser } from "@/hooks/use-user";
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import { IconThemeToggle } from "@/components/atoms/icon-theme-toggle";
 import {
   Sheet,

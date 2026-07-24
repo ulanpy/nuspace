@@ -1,13 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Button } from "@/components/atoms/button";
-import { Input } from "@/components/atoms/input";
-import { Textarea } from "@/components/atoms/textarea";
-import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/atoms/select";
-import { Label } from "@/components/atoms/label";
-import { Switch } from "@/components/atoms/switch";
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/atoms/tooltip";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Send, GraduationCap, Building2, Wrench, AlertTriangle, Lightbulb, HelpCircle, Check, Lock } from "lucide-react";
 import * as RadixSelect from "@radix-ui/react-select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";

@@ -11,7 +11,7 @@ import {
 } from "../types";
 import { Calendar, MapPin, Link2, Bookmark, Building2, GraduationCap, Wallet } from "lucide-react";
 import { MarkdownContent } from '@/components/molecules/markdown-content';
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { addOpportunityToCalendar } from "../api";
 import GoogleCalendarIcon from "@/assets/svg/google_calendar_icon.svg";

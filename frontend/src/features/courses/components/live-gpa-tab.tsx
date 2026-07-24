@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Calculator } from "lucide-react";
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/atoms/modal";
 import { SignInCard } from "@/components/molecules/sign-in-card";
 import { AssignmentModal } from "./assignment-modal";

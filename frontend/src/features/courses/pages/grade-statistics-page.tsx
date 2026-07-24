@@ -6,7 +6,7 @@ import { BookOpen, BarChart3, CalendarDays, GraduationCap } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import MotionWrapper from "@/components/atoms/motion-wrapper";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/atoms/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/use-user";
 import { apiCall } from "@/utils/api";
 import { gradeStatisticsApi } from "../api/grade-statistics-api";

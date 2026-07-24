@@ -11,11 +11,11 @@ import {
   normalizeOpportunityMajors,
   OpportunityEligibility,
 } from "../types";
-import { Input } from "@/components/atoms/input";
-import { Label } from "@/components/atoms/label";
-import { Button } from "@/components/atoms/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/popover";
-import { Textarea } from "@/components/atoms/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { MarkdownToolbar, type FormattingAction } from '@/components/molecules/markdown-toolbar';
 
 const MAX_DESCRIPTION_LENGTH = 1250;

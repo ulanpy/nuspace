@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { X } from "lucide-react";
-import { Button } from "./button";
+import { Button } from "@/components/ui/button";
 import { cn } from "../../utils/utils";
 import { createPortal } from "react-dom";
 import { useEffect, useCallback } from "react";

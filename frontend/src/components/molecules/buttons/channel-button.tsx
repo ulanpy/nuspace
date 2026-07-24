@@ -1,5 +1,5 @@
 import { Radio } from "lucide-react";
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 
 export function ChannelButton({
   className,

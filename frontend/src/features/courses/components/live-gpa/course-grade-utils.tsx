@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/atoms/tooltip";
+} from "@/components/ui/tooltip";
 import { cn } from "@/utils/utils";
 
 interface CourseGradeDistributionBarProps {

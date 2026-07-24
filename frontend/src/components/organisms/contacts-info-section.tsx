@@ -27,13 +27,13 @@ import {
   findMatchingContacts,
   type ContactSearchResult,
 } from "@/features/contacts/contact-search";
-import { Input } from "@/components/atoms/input";
+import { Input } from "@/components/ui/input";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/atoms/accordion";
+} from "@/components/ui/accordion";
 
 type ContactType = "phone" | "email" | "web" | "location" | "hours";
 

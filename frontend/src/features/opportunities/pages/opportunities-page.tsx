@@ -18,17 +18,17 @@ import {
   formatOpportunityType,
 } from "../types";
 import { OpportunityCard } from '../components/opportunity-card';
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import MotionWrapper from "@/components/atoms/motion-wrapper";
-import { Input } from "@/components/atoms/input";
-import { Label } from "@/components/atoms/label";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { OpportunityForm } from '../components/opportunity-form';
 import { useUser } from "@/hooks/use-user";
 import { useAuthGate } from "@/hooks/use-auth-gate";
 import { AuthWallModal } from "@/components/molecules/auth-wall-modal";
 import { queryClient } from "@/utils/query-client";
 import { Modal } from "@/components/atoms/modal";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 
 const ALLOWED_OPPORTUNITY_EMAILS = [

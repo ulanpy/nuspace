@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Badge } from "@/components/atoms/badge";
+import { Badge } from "@/components/ui/badge";
 import { useGlobalSecondTicker } from '@/hooks/use-global-second-ticker';
 
 interface CountdownBadgeProps {

@@ -3,7 +3,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/components/atoms/card";
+} from "@/components/ui/card";
 interface Item {
   name: string;
   srcImg: string;

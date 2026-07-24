@@ -1,8 +1,8 @@
 import Link from "@/router/link";
 import { ROUTES } from "@/data/routes";
 import { Community } from "@/features/shared/campus/types";
-import { Card } from "@/components/atoms/card";
-import { Badge } from "@/components/atoms/badge";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { FadeInImage } from "@/components/atoms/fade-in-image";
 import { Skeleton } from "@/components/atoms/skeleton";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";

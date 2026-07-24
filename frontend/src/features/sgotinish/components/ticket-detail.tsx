@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/atoms/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/atoms/card";
-import { Badge } from "@/components/atoms/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/atoms/select";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Modal } from "@/components/atoms/modal";
 import { MessageCircle, Clock, User, Shield, Settings, ShieldCheck, Info, MessageSquare, Lock, Link } from "lucide-react";
 import { useSearchParams } from "@/router/navigation";

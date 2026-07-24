@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef } from "react";
-import { Label } from "@/components/atoms/label";
-import { Textarea } from "@/components/atoms/textarea";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { MarkdownToolbar, type FormattingAction } from '@/components/molecules/markdown-toolbar';
 import { useEventForm } from '@/context/event-form-context';
 

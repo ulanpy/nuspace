@@ -1,11 +1,11 @@
-import { Badge } from "@/components/atoms/badge";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/atoms/card";
+} from "@/components/ui/card";
 interface MockUser {
   id: number;
   name: string;

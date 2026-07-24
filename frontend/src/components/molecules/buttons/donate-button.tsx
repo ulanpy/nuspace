@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "../../atoms/button";
+import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
 import { DonateModal } from "./donate-modal";
 

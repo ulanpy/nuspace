@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from '@/components/atoms/button';
+import { Button } from '@/components/ui/button';
 import { useEventForm } from '@/context/event-form-context';
 import { useTelegramBottomButtons } from '@/hooks/use-telegram-bottom-buttons';
 

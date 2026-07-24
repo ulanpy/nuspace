@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "@/router/navigation";
-import { Button } from "../atoms/button";
+import { Button } from "@/components/ui/button";
 
 export function GeneralSection({
   title,

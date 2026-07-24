@@ -1,4 +1,4 @@
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 interface SubmutButtonProps {
   isUploading: boolean;

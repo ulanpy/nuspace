@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { ClipboardList, Pencil, Plus, Trash2 } from "lucide-react";
-import { Button } from "@/components/atoms/button";
+import { Button } from "@/components/ui/button";
 import type { BaseCourseItem, RegisteredCourse } from "../../types";
 import { hasCompleteScore } from "../../utils/grade-utils";
 import { coursesSurface, getDepartmentAccent } from "../../constants/dashboard-theme";

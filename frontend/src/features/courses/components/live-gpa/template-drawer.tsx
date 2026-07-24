@@ -3,8 +3,8 @@
 import { RefreshCw } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/atoms/sheet";
 import { Skeleton } from "@/components/atoms/skeleton";
-import { Button } from "@/components/atoms/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   calculateTemplateCoverage,
   calculateTemplateWeight,

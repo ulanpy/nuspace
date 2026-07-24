@@ -297,3 +297,8 @@
     }
   }
 }
+
+/* TW v4 container has responsive max-widths but no auto-centering. */
+.container {
+  margin-inline: auto;
+}
