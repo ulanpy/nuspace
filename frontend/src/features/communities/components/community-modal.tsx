@@ -20,7 +20,7 @@ import { UnifiedCommunityMediaUpload } from '@/features/communities/components/u
 import type { CommunityUploadHandle } from '@/features/communities/components/unified-community-media-upload';
 import { CommunityDetailsForm } from '@/features/communities/components/community-details-form';
 import { CommunityDescription } from '@/features/communities/components/community-description';
-import { DeleteConfirmation } from '@/components/molecules/delete-confirmation';
+import { DeleteConfirmation } from '@/components/shared/delete-confirmation';
 import { CommunityActions } from '@/features/communities/components/community-actions';
 import {
   useCommunityForm,

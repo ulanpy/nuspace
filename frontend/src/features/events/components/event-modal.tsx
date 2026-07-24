@@ -14,7 +14,7 @@ import { EventDateTimeSelector } from './forms/event-date-time-selector';
 import { EventElevatedFields } from './forms/event-elevated-fields';
 import { EventDescription } from './forms/event-description';
 import { EventPolicy } from "@/features/shared/campus/types";
-import { DeleteConfirmation } from '@/components/molecules/delete-confirmation';
+import { DeleteConfirmation } from '@/components/shared/delete-confirmation';
 import { EventActions } from './forms/event-actions';
 import { useEventForm, EventFormProvider } from '@/context/event-form-context';
 import { useInitializeMedia } from '@/features/media/hooks/use-initialize-media';
