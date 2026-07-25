@@ -32,13 +32,13 @@ def _truncate(text: str, max_len: int) -> str:
 
 
 def _select_og_image(event_response) -> str | None:
+    # Events no longer carry a community (see "detached communities from
+    # events"), so there is no community banner to fall back to. Reading it
+    # here raised AttributeError and turned every preview for an event without
+    # its own media into a 500.
     for media in event_response.media:
         if getattr(media, "url", ""):
             return media.url
-    if event_response.community:
-        for media in event_response.community.media:
-            if getattr(media, "url", ""):
-                return media.url
     return None
 
 
@@ -98,6 +98,28 @@ async def get_event_og_by_query(
     infra: Infra = Depends(get_infra),
     event_service: EventService = Depends(get_event_service),
 ) -> HTMLResponse:
+    event_response = await event_service.get_event_by_id(
+        infra=infra, event_id=id, user=user
+    )
+
+    html = _build_event_html(event_response, request)
+    return HTMLResponse(content=html, status_code=status.HTTP_200_OK)
+
+
+@router.get("/og/events/{id}", response_class=HTMLResponse, include_in_schema=False)
+async def get_event_og_by_path(
+    request: Request,
+    id: int,
+    user=Depends(get_creds_or_guest),
+    infra: Infra = Depends(get_infra),
+    event_service: EventService = Depends(get_event_service),
+) -> HTMLResponse:
+    """Path-param variant for /events/{id} URLs.
+
+    Nginx rewrites crawler requests to /api/og$request_uri, so the shape of this
+    route has to mirror the frontend's URLs. The query-param route above is kept
+    so links already shared as /events?id=123 keep their previews.
+    """
     event_response = await event_service.get_event_by_id(
         infra=infra, event_id=id, user=user
     )
