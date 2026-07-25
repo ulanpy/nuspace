@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiCall } from "@/utils/api";
+import { useDebounce } from "@/hooks/use-debounce";
 import { PreSearchedItem } from "@/types/search";
 
 export const usePreSearchGrades = (inputValue: string) => {
-  const keyword = String(inputValue || "").trim();
+  const keyword = useDebounce(String(inputValue || "").trim(), 250);
   const { data } = useQuery({
     queryKey: ["pre-search-grades", keyword],
     enabled: !!keyword,
