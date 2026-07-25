@@ -9,16 +9,29 @@
  *
  *   pnpm api:generate          write src/api/schema.d.ts
  *   pnpm api:check             fail if the committed file is out of date
+ *
+ * openapi-typescript builds its output through the TypeScript compiler's
+ * ts.factory AST API, which TypeScript 7 does not expose — importing it under
+ * TS 7 throws immediately. Since its output is plain text, the generator runs
+ * in an isolated environment pinned to TS 6 rather than the project compiler.
+ * Nothing about the emitted .d.ts depends on which version produced it.
  */
+import { execFile } from "node:child_process"
 import { readFile, writeFile, mkdir } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import openapiTS, { astToString } from "openapi-typescript"
+import { promisify } from "node:util"
+
+const execFileAsync = promisify(execFile)
 
 const here = dirname(fileURLToPath(import.meta.url))
 const OUT = resolve(here, "../src/api/schema.d.ts")
 const SOURCE = process.env.OPENAPI_URL ?? "http://localhost/api/openapi.json"
 const check = process.argv.includes("--check")
+
+// Pinned so regeneration is reproducible across machines and CI.
+const GENERATOR = "openapi-typescript@7.13.0"
+const GENERATOR_COMPILER = "typescript@6.0.3"
 
 const BANNER = `/**
  * GENERATED FILE — DO NOT EDIT.
@@ -27,19 +40,41 @@ const BANNER = `/**
 
 `
 
+async function generate() {
+  const { stdout } = await execFileAsync(
+    "pnpm",
+    [
+      "dlx",
+      "--package",
+      GENERATOR_COMPILER,
+      "--package",
+      GENERATOR,
+      "openapi-typescript",
+      SOURCE,
+    ],
+    { maxBuffer: 64 * 1024 * 1024 }
+  )
+
+  // pnpm dlx prefixes resolution progress on stdout in some versions; keep
+  // everything from the generated banner onward.
+  const start = stdout.indexOf("/**")
+  if (start === -1) {
+    throw new Error(`Generator produced no schema output:\n${stdout.slice(0, 500)}`)
+  }
+  return BANNER + stdout.slice(start)
+}
+
 async function main() {
-  let ast
+  let next
   try {
-    ast = await openapiTS(new URL(SOURCE))
+    next = await generate()
   } catch (cause) {
     throw new Error(
-      `Could not read the OpenAPI schema from ${SOURCE}.\n` +
+      `Could not generate types from ${SOURCE}.\n` +
         `Start the backend first (cd infra && docker compose up), or set OPENAPI_URL.`,
       { cause }
     )
   }
-
-  const next = BANNER + astToString(ast)
 
   if (check) {
     const current = await readFile(OUT, "utf8").catch(() => null)
