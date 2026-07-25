@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Link as LinkIcon, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Modal } from "../../atoms/modal";
+import { Modal } from "@/components/shared/modal";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "../../../hooks/use-toast";
+import { toast } from "@/hooks/toast";
 import { useUser } from "@/hooks/use-user";
 import { PrivacyModal } from "@/components/molecules/privacy-modal";
 import { FaTelegram } from "react-icons/fa";
@@ -30,7 +30,6 @@ export function BindTelegramButton({ compact, iconOnly }: BindTelegramButtonProp
   const [confirmationEmoji, setConfirmationEmoji] = useState("");
   const [error, setError] = useState("");
   const [isLinked, setIsLinked] = useState(user?.tg_id || false);
-  const { toast } = useToast();
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [showPrivacy, setShowPrivacy] = useState(false);
   // Check if user is linked to Telegram directly from the user object

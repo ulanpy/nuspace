@@ -1,13 +1,13 @@
 "use client";
 
-import MotionWrapper from "@/components/atoms/motion-wrapper";
+import MotionWrapper from "@/components/shared/motion-wrapper";
 import { EventCard, EventCardSkeleton } from '@/features/events/components/event-card';
 import { InfiniteList } from '@/components/virtual/infinite-list';
 import { Event } from "@/features/shared/campus/types";
 import { useState } from "react";
 import { Calendar, ChevronDown, Users, X } from "lucide-react";
-import { PageContainer } from "@/components/atoms/page-container";
-import { PageHeader } from "@/components/atoms/page-header";
+import { PageContainer } from "@/components/shared/page-container";
+import { PageHeader } from "@/components/shared/page-header";
 import { EventModal } from '@/features/events/components/event-modal';
 import { TimeFilter } from '@/features/events/api/events-api';
 import { Button } from "@/components/ui/button";

@@ -23,13 +23,12 @@ import {
   calculateTotalGPA,
   hasCompleteScore,
 } from '../utils/grade-utils';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 
 type NullableUser = { email?: string | null } | null | undefined;
 type AssignmentField = "weight" | "max" | "obtained";
 
 export function useLiveGpaViewModel(user: NullableUser) {
-  const { toast } = useToast();
 
   const [registeredCourses, setRegisteredCourses] = useState<RegisteredCourse[]>([]);
   const [selectedRegisteredCourse, setSelectedRegisteredCourse] = useState<RegisteredCourse | null>(null);

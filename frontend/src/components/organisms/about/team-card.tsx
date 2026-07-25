@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { FaUsers } from "react-icons/fa";
 
 import { teamMembers } from "@/data/about/team-members";
-import { Modal } from "@/components/atoms/modal";
+import { Modal } from "@/components/shared/modal";
 import { useTheme } from '@/context/theme-provider-context';
 import { TeamMemberCard } from "./team-member-card";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Modal } from "../../atoms/modal";
+import { Modal } from "@/components/shared/modal";
 import { Button } from "@/components/ui/button";
 import { Copy, Check, Heart } from "lucide-react";
 

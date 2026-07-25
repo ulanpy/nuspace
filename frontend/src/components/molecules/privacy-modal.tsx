@@ -1,4 +1,4 @@
-import { Modal } from "../atoms/modal";
+import { Modal } from "@/components/shared/modal";
 
 export function PrivacyModal({
   isOpen,

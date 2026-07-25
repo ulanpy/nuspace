@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/atoms/modal";
+import { Modal } from "@/components/shared/modal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -10,7 +10,7 @@ import { sgotinishApi } from '../api/sgotinish-api';
 import { Department, SGUser, PermissionType } from "../types";
 import { mapRoleToDisplayName } from '../utils/role-mapping';
 import { HelpCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 
 interface DelegateModalProps {
   isOpen: boolean;
@@ -24,7 +24,6 @@ export function DelegateModal({ isOpen, onClose, ticketId, onSuccess }: Delegate
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedPermission, setSelectedPermission] = useState<PermissionType | null>(null);
   const [showHelp, setShowHelp] = useState(false);
-  const { toast } = useToast();
 
   const { data: departments, isLoading: isLoadingDepartments } = useQuery({
     queryKey: ["departments"],

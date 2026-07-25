@@ -1,9 +1,9 @@
 'use client'
 
 import { ContactsInfoSection } from '@/components/organisms/contacts-info-section'
-import MotionWrapper from '@/components/atoms/motion-wrapper'
-import { PageContainer } from '@/components/atoms/page-container'
-import { PageHeader } from '@/components/atoms/page-header'
+import MotionWrapper from '@/components/shared/motion-wrapper'
+import { PageContainer } from '@/components/shared/page-container'
+import { PageHeader } from '@/components/shared/page-header'
 
 export default function ContactsPage() {
   return (

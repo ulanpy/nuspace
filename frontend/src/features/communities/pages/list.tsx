@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { Calendar, Plus } from "lucide-react";
-import { PageContainer } from "@/components/atoms/page-container";
-import { PageHeader } from "@/components/atoms/page-header";
+import { PageContainer } from "@/components/shared/page-container";
+import { PageHeader } from "@/components/shared/page-header";
 
 import { AuthWallModal } from "@/components/molecules/auth-wall-modal";
 import { useAuthGate } from "@/hooks/use-auth-gate";
@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CommunityModal } from '@/features/communities/components/community-modal';
 import { useDebounce } from '@/hooks/use-debounce';
-import MotionWrapper from "@/components/atoms/motion-wrapper";
+import MotionWrapper from "@/components/shared/motion-wrapper";
 
 export default function CommunitiesPage() {
   const { requireAuth, isModalOpen, closeModal } = useAuthGate();

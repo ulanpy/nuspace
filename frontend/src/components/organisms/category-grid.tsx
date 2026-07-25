@@ -1,4 +1,4 @@
-import { CategoryCard } from "@/components/atoms/category-card";
+import { CategoryCard } from "@/components/shared/category-card";
 
 import type { JSX } from "react";
 

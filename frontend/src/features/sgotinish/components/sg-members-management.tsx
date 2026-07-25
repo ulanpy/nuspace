@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 import { useDebounce } from "@/hooks/use-debounce";
 import { sgotinishApi } from "../api/sgotinish-api";
 import { Department, SGMemberResponse, UserRole } from "../types";
@@ -79,7 +79,6 @@ const parseApiError = async (error: unknown, fallback: string): Promise<string> 
 
 export function SGMembersManagement({ currentUser }: Props) {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const currentRole = currentUser?.role as UserRole | undefined;
   const isBoss = currentRole === "boss";

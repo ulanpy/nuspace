@@ -16,6 +16,7 @@ import {
   getTelegramUrlError,
   normalizeHttpUrl,
 } from "@/features/communities/utils/url-validation";
+import { formatLocalDate } from "@/components/shared/date-picker";
 
 interface CommunityFormContextType {
   formData: CreateCommunityData | EditCommunityData;
@@ -88,7 +89,7 @@ export function CommunityFormProvider({
         telegram_url: "",
         instagram_url: "",
         head: user?.user.sub || "",
-        established: new Date().toISOString().split("T")[0],
+        established: formatLocalDate(new Date()),
       });
     }
   }, [isEditMode, community, user]);
@@ -138,7 +139,7 @@ export function CommunityFormProvider({
         head: user?.user.sub || "",
         telegram_url: "",
         instagram_url: "",
-        established: new Date().toISOString().split("T")[0],
+        established: formatLocalDate(new Date()),
       });
     }
   };

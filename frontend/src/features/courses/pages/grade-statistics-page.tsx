@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "@/router/navigation";
 import { BookOpen, BarChart3, CalendarDays, GraduationCap } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
-import MotionWrapper from "@/components/atoms/motion-wrapper";
+import MotionWrapper from "@/components/shared/motion-wrapper";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/use-user";
 import { apiCall } from "@/utils/api";
@@ -16,8 +16,8 @@ import { CourseStatsTab } from "../components/course-stats-tab";
 import { ScheduleBuilderTab } from "../components/schedule-builder-tab";
 import { DegreeAuditTab } from "../components/degree-audit-tab";
 import { coursesSurface } from "../constants/dashboard-theme";
-import { PageContainer } from "@/components/atoms/page-container";
-import { PageHeader } from "@/components/atoms/page-header";
+import { PageContainer } from "@/components/shared/page-container";
+import { PageHeader } from "@/components/shared/page-header";
 
 const tabOptions = [
   { value: "live-gpa", label: "My Courses", icon: BookOpen },

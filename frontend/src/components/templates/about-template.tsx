@@ -1,8 +1,8 @@
 import { AboutHeader } from "@/components/organisms/about/about-header";
 import { MessionSection } from "@/components/organisms/about/mission-section";
 import { AboutUsSection } from "@/components/organisms/about/about-us-section";
-import { PageContainer } from "@/components/atoms/page-container";
-import { Section } from "@/components/atoms/section";
+import { PageContainer } from "@/components/shared/page-container";
+import { Section } from "@/components/shared/section";
 
 export function AboutTemplate() {
   return (

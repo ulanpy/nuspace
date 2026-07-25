@@ -15,7 +15,7 @@ import AnnouncementsPageContent from '@/features/announcements/pages/announcemen
 import ContactsPageContent from '@/page-components/contacts-page'
 import GradeStatisticsPageContent from '@/features/courses/pages/grade-statistics-page'
 import DegreeAuditInfoPageContent from '@/features/courses/pages/degree-audit-info-page'
-import DormEatsPageContent from '@/page-components/dorm-eats-page'
+import DormEatsPageContent from '@/page-components/apps/dorm-eats'
 import OpportunitiesPageContent from '@/features/opportunities/pages/opportunities-page'
 import ProfilePageContent from '@/features/profile/profile-page'
 import SgotinishPageContent from '@/features/sgotinish/pages/sgotinish-page'

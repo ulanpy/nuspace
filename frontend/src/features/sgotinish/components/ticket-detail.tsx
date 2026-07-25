@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Modal } from "@/components/atoms/modal";
+import { Modal } from "@/components/shared/modal";
 import { MessageCircle, Clock, User, Shield, Settings, ShieldCheck, Info, MessageSquare, Lock, Link } from "lucide-react";
 import { useSearchParams } from "@/router/navigation";
-import MotionWrapper from "@/components/atoms/motion-wrapper";
+import MotionWrapper from "@/components/shared/motion-wrapper";
 import { formatDistanceToNow } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { toLocalDate } from "../utils/date";
@@ -18,7 +18,7 @@ import { useUser } from "@/hooks/use-user";
 import { DelegateModal } from './delegate-modal';
 import { Conversation } from './conversation';
 import { hashTicketKey } from "../utils/ticket-keys";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -63,7 +63,6 @@ export default function TicketDetail({ ticketKey }: TicketDetailProps) {
   const effectiveTicketKey = ticketKey ?? ticketKeyFromQuery;
   const queryClient = useQueryClient();
   const { user } = useUser();
-  const { toast } = useToast();
   const [isDelegateModalOpen, setDelegateModalOpen] = useState(false);
   const [isStatusEditOpen, setStatusEditOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("open");

@@ -1,0 +1,76 @@
+"use client";
+
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "@/context/theme-provider-context";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
+
+interface IconThemeToggleProps {
+  className?: string;
+  collapsed?: boolean;
+  size?: number;
+}
+
+export function IconThemeToggle({
+  className,
+  collapsed = false,
+  size,
+}: IconThemeToggleProps) {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const iconSize = size || (collapsed ? 16 : 18);
+
+  if (!mounted) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className={cn(
+          "h-8 w-8 overflow-hidden text-muted-foreground transition-colors hover:text-foreground",
+          collapsed && "h-8 w-8",
+          className,
+        )}
+        title="Toggle theme"
+      >
+        <div style={{ width: iconSize, height: iconSize }} />
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={toggleTheme}
+      className={cn(
+        "h-8 w-8 overflow-hidden text-muted-foreground transition-colors hover:text-foreground",
+        collapsed && "h-8 w-8",
+        className,
+      )}
+      title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={theme}
+          initial={{ y: -20, opacity: 0, rotate: -90 }}
+          animate={{ y: 0, opacity: 1, rotate: 0 }}
+          exit={{ y: 20, opacity: 0, rotate: 90 }}
+          transition={{ duration: 0.2 }}
+        >
+          {theme === "dark" ? <Moon size={iconSize} /> : <Sun size={iconSize} />}
+        </motion.div>
+      </AnimatePresence>
+    </Button>
+  );
+}

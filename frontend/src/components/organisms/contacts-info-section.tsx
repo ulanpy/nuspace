@@ -22,7 +22,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 import {
   findMatchingContacts,
   type ContactSearchResult,
@@ -405,7 +405,6 @@ function ContactRow({
   info: ContactInfo;
   urgent?: boolean;
 }) {
-  const { toast } = useToast();
 
   const icon = {
     phone: <Phone className="h-4 w-4" />,

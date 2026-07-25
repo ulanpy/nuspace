@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useMutation, useInfiniteQuery } from "@tanstack/react-query";
 import { Search, Loader2, Plus, Eye, EyeOff } from "lucide-react";
-import { PageContainer } from "@/components/atoms/page-container";
-import { PageHeader } from "@/components/atoms/page-header";
+import { PageContainer } from "@/components/shared/page-container";
+import { PageHeader } from "@/components/shared/page-header";
 import { createOpportunity, deleteOpportunity, fetchOpportunities, updateOpportunity } from "../api";
 import {
   Opportunity,
@@ -19,7 +19,7 @@ import {
 } from "../types";
 import { OpportunityCard } from '../components/opportunity-card';
 import { Button } from "@/components/ui/button";
-import MotionWrapper from "@/components/atoms/motion-wrapper";
+import MotionWrapper from "@/components/shared/motion-wrapper";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OpportunityForm } from '../components/opportunity-form';
@@ -27,9 +27,9 @@ import { useUser } from "@/hooks/use-user";
 import { useAuthGate } from "@/hooks/use-auth-gate";
 import { AuthWallModal } from "@/components/molecules/auth-wall-modal";
 import { queryClient } from "@/utils/query-client";
-import { Modal } from "@/components/atoms/modal";
+import { Modal } from "@/components/shared/modal";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 
 const ALLOWED_OPPORTUNITY_EMAILS = [
   "ministry.innovations@nu.edu.kz",
@@ -149,7 +149,7 @@ const MultiCheckboxDropdown = ({
 
   return (
     <div className={`flex h-full flex-col justify-end gap-1 ${className ?? ""}`}>
-      {label ? <Label className="text-xs text-gray-500">{label}</Label> : null}
+      {label ? <Label className="text-xs text-muted-foreground">{label}</Label> : null}
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="outline" className="w-full justify-between h-11">
@@ -233,7 +233,6 @@ export default function OpportunitiesPage() {
 
   const { user } = useUser();
   const { requireAuth, isModalOpen, closeModal } = useAuthGate();
-  const { toast } = useToast();
 
   const userEmail = user?.email?.toLowerCase();
   const canManage =
@@ -409,7 +408,7 @@ export default function OpportunitiesPage() {
                 Search
               </Label>
               <div className="relative">
-                <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="q"
                   value={filters.q || ""}
@@ -484,7 +483,7 @@ export default function OpportunitiesPage() {
                   {filters.hide_expired ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                   {filters.hide_expired ? "Show expired" : "Hide expired"}
                 </Button>
-                <div className="flex h-11 items-center text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                <div className="flex h-11 items-center whitespace-nowrap text-sm text-muted-foreground">
                   <span className="whitespace-nowrap">{displayTotal} results</span>
                   {isFetching && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
                 </div>
@@ -538,7 +537,7 @@ export default function OpportunitiesPage() {
           {/* Results */}
           <div className="space-y-3">
             {isLoading ? (
-              <div className="flex justify-center py-12 text-gray-500 dark:text-gray-400">
+              <div className="flex justify-center py-12 text-muted-foreground">
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : visibleData && visibleData.length > 0 ? (
@@ -561,14 +560,14 @@ export default function OpportunitiesPage() {
                 </div>
                 {hasNextPage && <div ref={loadMoreRef} />}
                 {isFetchingNextPage && (
-                  <div className="flex justify-center py-4 text-sm text-gray-500 dark:text-gray-400">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <div className="flex justify-center py-4 text-sm text-muted-foreground">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Loading more...
                   </div>
                 )}
               </>
             ) : (
-              <div className="rounded-2xl border border-dashed border-gray-300 bg-white/70 p-10 text-center text-gray-500 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-400">
+              <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-10 text-center text-muted-foreground">
                 No opportunities match your filters.
               </div>
             )}
@@ -577,11 +576,11 @@ export default function OpportunitiesPage() {
           {/* Load more */}
           {visibleData.length > 0 && (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 Showing {filteredCount} of {displayTotal} {displayTotal === 1 ? "item" : "items"}
               </div>
               {!hasNextPage && (
-                <div className="text-sm text-gray-400 dark:text-gray-500">End of list</div>
+                <div className="text-sm text-muted-foreground/70">End of list</div>
               )}
             </div>
           )}

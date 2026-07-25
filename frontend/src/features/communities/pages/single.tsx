@@ -6,7 +6,7 @@ import {
   CardContent,
   CardHeader,
 } from "@/components/ui/card";
-import { FadeInImage } from "@/components/atoms/fade-in-image";
+import { FadeInImage } from "@/components/shared/fade-in-image";
 import { Badge } from "@/components/ui/badge";
 import { VerificationBadge } from "@/components/molecules/verification-badge";
 import { MarkdownContent } from '@/components/molecules/markdown-content';

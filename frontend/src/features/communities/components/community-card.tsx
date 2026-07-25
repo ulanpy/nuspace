@@ -3,8 +3,8 @@ import { ROUTES } from "@/data/routes";
 import { Community } from "@/features/shared/campus/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FadeInImage } from "@/components/atoms/fade-in-image";
-import { Skeleton } from "@/components/atoms/skeleton";
+import { FadeInImage } from "@/components/shared/fade-in-image";
+import { Skeleton } from "@/components/ui/skeleton";
 import profilePlaceholder from "@/assets/svg/profile-placeholder.svg";
 import { VerificationBadge } from "@/components/molecules/verification-badge";
 

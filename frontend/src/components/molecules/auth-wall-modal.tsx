@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useUser } from "../../hooks/use-user";
-import { Modal } from "../atoms/modal";
+import { Modal } from "@/components/shared/modal";
 
 interface AuthWallModalProps {
   isOpen: boolean;
@@ -23,8 +23,8 @@ export const AuthWallModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      className="!bg-transparent !shadow-none border-none max-w-xl"
-      contentClassName="[&>div.sticky]:hidden"
+      hideHeader
+      className="max-w-xl border-none !bg-transparent !shadow-none"
     >
       <div className="rounded-lg border border-border/60 bg-background p-4 flex flex-col gap-3">
         <div className="flex justify-between items-start gap-2">

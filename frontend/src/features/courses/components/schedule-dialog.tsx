@@ -1,15 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Modal } from "@/components/atoms/modal";
+import { Modal } from "@/components/shared/modal";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/atoms/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/utils/utils";
 import { formatUtcDistanceToNow } from "../utils/parse-utc-timestamp";
 import { ScheduleResponse } from "../types";
 import { Button } from "@/components/ui/button";
 import { gradeStatisticsApi } from '../api/grade-statistics-api';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 import GoogleCalendarIcon from "@/assets/svg/google_calendar_icon.svg";
 
 interface ScheduleDialogProps {
@@ -52,7 +52,6 @@ function toMinutes(time: { hh: number; mm: number }) {
 }
 
 export function ScheduleDialog({ open, onClose, schedule, meta, isLoading }: ScheduleDialogProps) {
-  const { toast } = useToast();
   const [exporting, setExporting] = useState(false);
   const [showReauth, setShowReauth] = useState(false);
   const timetable = useMemo(() => {

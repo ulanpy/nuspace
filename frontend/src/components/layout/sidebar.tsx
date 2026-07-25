@@ -20,14 +20,14 @@ import NuspaceLogoIcon from "@/assets/svg/nuspace_logo.svg";
 import { ROUTES } from "@/data/routes";
 import { useUser } from "@/hooks/use-user";
 import { Button } from "@/components/ui/button";
-import { IconThemeToggle } from "@/components/atoms/icon-theme-toggle";
+import { IconThemeToggle } from "@/components/shared/icon-theme-toggle";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/atoms/sheet";
+} from "@/components/ui/sheet";
 import { SidebarTelegramConnect } from "@/components/molecules/sidebar-telegram-connect";
 import { cn } from "@/utils/utils";
 
@@ -337,7 +337,7 @@ export function Sidebar() {
               <span className="sr-only">Open navigation menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0" hideClose>
+          <SheetContent side="left" className="w-72 p-0" showCloseButton={false}>
             <div className="flex flex-col h-full p-6">
               <SheetHeader className="mb-6">
                 <SheetTitle className="flex items-center justify-between gap-3">

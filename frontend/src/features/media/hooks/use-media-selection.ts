@@ -1,9 +1,8 @@
 import { useMediaUploadContext } from '@/context/media-upload-context';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 import { useState } from "react";
 
 export const useMediaSelection = () => {
-  const { toast } = useToast();
   const {
     mediaFiles,
     setMediaFiles,

@@ -1,6 +1,6 @@
 import { Mail, Phone, ExternalLink } from 'lucide-react'
-import { PageContainer } from '@/components/atoms/page-container'
-import { Section } from '@/components/atoms/section'
+import { PageContainer } from '@/components/shared/page-container'
+import { Section } from '@/components/shared/section'
 
 const privacyData = {
   title: 'Privacy Policy for nuspace.kz',

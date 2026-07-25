@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "@/router/navigation";
-import MotionWrapper from "@/components/atoms/motion-wrapper";
+import MotionWrapper from "@/components/shared/motion-wrapper";
 import StudentDashboard from '../components/student-dashboard';
 import SGDashboard from '../components/sg-dashboard';
 import { useUser } from "@/hooks/use-user";
@@ -12,8 +12,8 @@ import CreateTicketModal from '../components/create-ticket-modal'; // Import the
 import { TelegramConnectCard } from '../components/telegram-connect-card';
 import { useAuthGate } from "@/hooks/use-auth-gate";
 import { AuthWallModal } from "@/components/molecules/auth-wall-modal";
-import { PageContainer } from "@/components/atoms/page-container";
-import { PageHeader } from "@/components/atoms/page-header";
+import { PageContainer } from "@/components/shared/page-container";
+import { PageHeader } from "@/components/shared/page-header";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SGMembersManagement } from "../components/sg-members-management";
 

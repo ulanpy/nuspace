@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TicketCard } from './ticket-card';
 import { Button } from "@/components/ui/button";
-import { PageContainer } from "@/components/atoms/page-container";
-import { PageHeader } from "@/components/atoms/page-header";
+import { PageContainer } from "@/components/shared/page-container";
+import { PageHeader } from "@/components/shared/page-header";
 import { ChevronDown, Filter, Folder, Search } from "lucide-react";
 import { useRouter } from "@/router/navigation";
-import MotionWrapper from "@/components/atoms/motion-wrapper";
+import MotionWrapper from "@/components/shared/motion-wrapper";
 import { ROUTES } from "@/data/routes";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { sgotinishApi } from '../api/sgotinish-api';
@@ -185,7 +185,7 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm justify-between bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
+                  className="h-8 flex-shrink-0 justify-between px-3 text-xs sm:h-10 sm:px-4 sm:text-sm"
                 >
                   <div className="flex items-center gap-2">
                     <Filter className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -195,15 +195,12 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
                   <ChevronDown className="h-3 w-3 ml-1 sm:h-4 sm:w-4 sm:ml-2" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" align="start">
+              <DropdownMenuContent className="w-48" align="start">
                 {statusOptions.map((option) => (
                   <DropdownMenuItem
                     key={option.value}
                     onClick={() => setStatusFilter(option.value)}
-                    className={`
-                      text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700
-                      ${statusFilter === option.value ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" : ""}
-                    `}
+                    className={statusFilter === option.value ? "bg-accent text-accent-foreground" : undefined}
                   >
                     {option.label}
                   </DropdownMenuItem>
@@ -216,7 +213,7 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-shrink-0 h-8 px-3 text-xs sm:h-10 sm:px-4 sm:text-sm justify-between bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
+                  className="h-8 flex-shrink-0 justify-between px-3 text-xs sm:h-10 sm:px-4 sm:text-sm"
                 >
                   <div className="flex items-center gap-2">
                     <Folder className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -226,15 +223,12 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
                   <ChevronDown className="h-3 w-3 ml-1 sm:h-4 sm:w-4 sm:ml-2" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700" align="start">
+              <DropdownMenuContent className="w-56" align="start">
                 {categoryOptions.map((option) => (
                   <DropdownMenuItem
                     key={option.value}
                     onClick={() => setCategoryFilter(option.value)}
-                    className={`
-                      text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700
-                      ${categoryFilter === option.value ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" : ""}
-                    `}
+                    className={categoryFilter === option.value ? "bg-accent text-accent-foreground" : undefined}
                   >
                     {option.label}
                   </DropdownMenuItem>
@@ -267,18 +261,16 @@ export default function StudentDashboard({ user, createAppealButton }: StudentDa
         ) : null}
 
         {isFetchingNextPage && (
-          <div className="flex justify-center py-4 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex justify-center py-4 text-sm text-muted-foreground">
             Loading more appeals...
           </div>
         )}
 
         {showEmptyState && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Search className="h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              No appeals found
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
+            <Search className="mb-4 h-12 w-12 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-medium text-foreground">No appeals found</h3>
+            <p className="mb-4 text-muted-foreground">
               Try changing search parameters or create a new appeal
             </p>
             {createAppealButton}

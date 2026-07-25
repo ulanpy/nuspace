@@ -1,10 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { campuscurrentAPI } from '@/features/communities/api/communities-api';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 import { CreateCommunityData } from "@/features/shared/campus/types";
 
 export function useCreateCommunity() {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const createCommunityMutation = useMutation({

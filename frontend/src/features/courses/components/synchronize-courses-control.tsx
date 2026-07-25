@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import type { PointerEvent as ReactPointerEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/atoms/modal";
+import { Modal } from "@/components/shared/modal";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -16,7 +16,7 @@ import {
 import { RefreshCcw, AlertCircle, ShieldCheck, Eye, EyeOff, Upload, ChevronDown } from "lucide-react";
 import { RegistrarSyncResponse } from "../types";
 import { gradeStatisticsApi } from '../api/grade-statistics-api';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 import GoogleCalendarIcon from "@/assets/svg/google_calendar_icon.svg";
 
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
@@ -59,7 +59,6 @@ export function SynchronizeCoursesControl({
   const [syncResult, setSyncResult] = useState<RegistrarSyncResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const { toast } = useToast();
   const usePdfUpload = syncMode === "pdf";
 
   const username = useMemo(() => {

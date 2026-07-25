@@ -33,7 +33,6 @@ export {
 // Feature-specific components
 export { UnifiedEventMediaUpload } from '@/features/events/components/unified-event-media-upload';
 
-// Legacy exports for backward compatibility (deprecated)
 export { useMediaUpload } from './hooks/use-media-upload';
 export { useMediaSelection } from './hooks/use-media-selection';
 export { useMediaEdit } from './hooks/use-media-edit';

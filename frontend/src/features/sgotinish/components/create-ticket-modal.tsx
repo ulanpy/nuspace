@@ -13,9 +13,9 @@ import * as RadixSelect from "@radix-ui/react-select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { sgotinishApi } from '../api/sgotinish-api';
 import { TicketCategory } from "../types";
-import { Modal } from "@/components/atoms/modal";
+import { Modal } from "@/components/shared/modal";
 import { generateTicketKey, hashTicketKey } from "../utils/ticket-keys";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 
 interface CreateTicketModalProps {
   isOpen: boolean;
@@ -25,7 +25,6 @@ interface CreateTicketModalProps {
 
 export default function CreateTicketModal({ isOpen, onClose, onSuccess }: CreateTicketModalProps) {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const pendingTicketKeyRef = useRef<string | null>(null);
   const [ticketLink, setTicketLink] = useState<string | null>(null);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);

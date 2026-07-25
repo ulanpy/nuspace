@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Modal } from "@/components/atoms/modal";
+import { Modal } from "@/components/shared/modal";
 import { useCreateEvent } from '@/features/events/hooks/use-create-event';
 import { useUpdateEvent } from '@/features/events/hooks/use-update-event';
 import { useDeleteEvent } from '@/features/events/hooks/use-delete-event';
@@ -18,7 +18,7 @@ import { DeleteConfirmation } from '@/components/shared/delete-confirmation';
 import { EventActions } from './forms/event-actions';
 import { useEventForm, EventFormProvider } from '@/context/event-form-context';
 import { useInitializeMedia } from '@/features/media/hooks/use-initialize-media';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 import { campusWallClockToIso } from "@/features/events/utils/campus-datetime";
 
 interface EventModalProps {
@@ -36,7 +36,6 @@ export function EventModal({ isOpen, onClose, isEditMode, event, permissions }: 
   const { handleDelete, isDeleting } = useDeleteEvent();
 
   const isProcessing = isCreating || isUpdating || isDeleting;
-  const { toast } = useToast();
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 

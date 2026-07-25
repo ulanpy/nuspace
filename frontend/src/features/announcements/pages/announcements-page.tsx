@@ -6,7 +6,7 @@ import { useUser } from "@/hooks/use-user";
 import { TelegramFeed } from '@/features/announcements/components/telegram-feed';
 import { useAnnouncementsBundle } from "@/features/announcements/api/use-announcements-bundle";
 import { PresidentialElectionBanner } from "@/features/elections/presidential-election-banner";
-import { FadeInImage } from "@/components/atoms/fade-in-image";
+import { FadeInImage } from "@/components/shared/fade-in-image";
 
 /** Flip to `true` when you want the election block back on announcements. */
 const SHOW_PRESIDENTIAL_ELECTION_BANNER = false;

@@ -1,6 +1,6 @@
 'use client'
 
-import { IconThemeToggle } from '@/components/atoms/icon-theme-toggle'
+import { IconThemeToggle } from '@/components/shared/icon-theme-toggle'
 
 export function PublicLayout({ children }: { children: React.ReactNode }) {
   return (

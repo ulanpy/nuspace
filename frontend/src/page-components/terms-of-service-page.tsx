@@ -1,6 +1,6 @@
 import { ExternalLink, Mail, Phone } from 'lucide-react'
-import { PageContainer } from '@/components/atoms/page-container'
-import { Section } from '@/components/atoms/section'
+import { PageContainer } from '@/components/shared/page-container'
+import { Section } from '@/components/shared/section'
 
 const tosData = {
   title: 'Terms of Service for nuspace.kz',

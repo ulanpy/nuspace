@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "@/router/navigation";
 import { ROUTES } from "@/data/routes";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 import { addToGoogleCalendar as addToGoogleCalendarUtil } from "@/features/events/utils/calendar";
 import { useEvent } from './use-event';
 import type { Event } from "@/features/shared/campus/types";
@@ -20,7 +20,6 @@ export type EventActionDescriptor = {
 
 export const useEventDetailViewModel = () => {
   const router = useRouter();
-  const { toast } = useToast();
   const { event, isLoading, isError } = useEvent();
 
   const [showEditModal, setShowEditModal] = useState(false);

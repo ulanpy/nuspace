@@ -3,9 +3,9 @@
 import { ArrowLeft, BookOpenCheck } from "lucide-react";
 import Link from "@/router/link";
 
-import MotionWrapper from "@/components/atoms/motion-wrapper";
+import MotionWrapper from "@/components/shared/motion-wrapper";
 import { Button } from "@/components/ui/button";
-import { PageContainer } from "@/components/atoms/page-container";
+import { PageContainer } from "@/components/shared/page-container";
 import { ROUTES } from "@/data/routes";
 
 const paragraphs = [

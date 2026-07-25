@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/atoms/modal";
+import { Modal } from "@/components/shared/modal";
 import { SignInCard } from "@/components/molecules/sign-in-card";
 import { AssignmentModal } from "./assignment-modal";
 import { ConfirmationModal } from "./confirmation-modal";
@@ -17,7 +17,7 @@ import { TemplateDrawer } from "./live-gpa/template-drawer";
 import { CoursesSyncToolbar } from "./live-gpa/courses-sync-toolbar";
 import { CoursesContextPanel } from "./live-gpa/courses-context-panel";
 import { gradeStatisticsApi } from "../api/grade-statistics-api";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 import { coursesSurface } from "../constants/dashboard-theme";
 import { pickDefaultCourseId } from "../utils/course-summary-utils";
 import { cn } from "@/utils/utils";
@@ -41,7 +41,6 @@ export function LiveGpaTab({ user, viewModel }: LiveGpaTabProps) {
     syncCoursesFromPdf,
   } = viewModel;
 
-  const { toast } = useToast();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
@@ -124,8 +123,8 @@ export function LiveGpaTab({ user, viewModel }: LiveGpaTabProps) {
       <Modal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
-        className="!bg-transparent !shadow-none border-none max-w-xl"
-        contentClassName="[&>div.sticky]:hidden"
+        hideHeader
+        className="max-w-xl border-none !bg-transparent !shadow-none"
       >
         <div className={cn("flex flex-col gap-3 rounded-2xl border p-4", coursesSurface.cardSm)}>
           <div className="flex items-start justify-between gap-2">

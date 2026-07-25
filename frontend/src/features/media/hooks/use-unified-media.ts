@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 import { useUnifiedMediaContext } from '@/features/media/context/unified-media-context';
 import { compressMedia } from "@/features/media/utils/compress-media";
 import { getSignedUrls } from "@/features/media/utils/get-signed-urls";
@@ -47,7 +47,6 @@ export interface UnifiedMediaHookReturn {
 }
 
 export function useUnifiedMedia(): UnifiedMediaHookReturn {
-  const { toast } = useToast();
   const context = useUnifiedMediaContext();
   
   const {

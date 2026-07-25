@@ -1,11 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { campuscurrentAPI } from '@/features/communities/api/communities-api';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 import { EditCommunityData } from "@/features/shared/campus/types";
 import { useState } from "react";
 
 export function useUpdateCommunity() {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploadProgress, setUploadProgress] = useState(0);
 

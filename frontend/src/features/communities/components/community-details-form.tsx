@@ -4,8 +4,8 @@ import { useCommunityForm } from '@/context/community-form-context';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CommunityType, CommunityCategory } from "@/features/shared/campus/types";
-import { format } from "date-fns";
 import { useState, useEffect } from "react";
+import { DatePicker } from "@/components/shared/date-picker";
 import {
   getInstagramUrlError,
   getTelegramUrlError,
@@ -163,16 +163,12 @@ export function CommunityDetailsForm() {
       {isFieldEditable("established") && (
         <div>
           <Label htmlFor="established">Established <span className="text-red-500">*</span></Label>
-          <Input
-            type="date"
-            value={date ? format(date, "yyyy-MM-dd") : ""}
-            onChange={(e) => {
-              const selectedDate = e.target.value ? new Date(e.target.value) : undefined;
-              handleDateSelect(selectedDate);
-            }}
-            className="w-full"
-            min="1900-01-01"
-            max="2030-12-31"
+          <DatePicker
+            id="established"
+            value={date}
+            onChange={handleDateSelect}
+            fromDate={new Date(1900, 0, 1)}
+            toDate={new Date(2030, 11, 31)}
           />
         </div>
       )}

@@ -1,9 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { campuscurrentAPI } from '@/features/communities/api/communities-api';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 
 export function useDeleteCommunity() {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const deleteCommunityMutation = useMutation({

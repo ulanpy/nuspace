@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Modal } from "@/components/atoms/modal";
+import { Modal } from "@/components/shared/modal";
 import { useCreateCommunity } from '@/features/communities/hooks/use-create-community';
 import { useUpdateCommunity } from '@/features/communities/hooks/use-update-community';
 import { useDeleteCommunity } from '@/features/communities/hooks/use-delete-community';
@@ -22,6 +22,7 @@ import { CommunityDetailsForm } from '@/features/communities/components/communit
 import { CommunityDescription } from '@/features/communities/components/community-description';
 import { DeleteConfirmation } from '@/components/shared/delete-confirmation';
 import { CommunityActions } from '@/features/communities/components/community-actions';
+import { formatLocalDate } from "@/components/shared/date-picker";
 import {
   useCommunityForm,
   CommunityFormProvider,
@@ -30,7 +31,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { pollForCommunityImages } from "@/utils/polling";
 import { useInitializeMedia } from '@/features/media/hooks/use-initialize-media';
 import { campuscurrentAPI } from '@/features/communities/api/communities-api';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 import {
   getInstagramUrlError,
   getTelegramUrlError,
@@ -56,7 +57,6 @@ export function CommunityModal({
   const { handleCreate, isCreating } = useCreateCommunity();
   const { handleUpdate, isUpdating } = useUpdateCommunity();
   const { handleDelete, isDeleting } = useDeleteCommunity();
-  const { toast } = useToast();
   
 
   const isProcessing = isCreating || isUpdating || isDeleting;
@@ -160,7 +160,7 @@ export function CommunityModal({
           category: (formData as CreateCommunityData).category || CommunityCategory.academic,
           email: (((formData as CreateCommunityData).email || "").trim()) || undefined,
           head: user.user.sub,
-          established: (formData as CreateCommunityData).established || new Date().toISOString().split('T')[0],
+          established: (formData as CreateCommunityData).established || formatLocalDate(new Date()),
           description: formData.description || "",
           telegram_url: telegramUrl,
           instagram_url: instagramUrl,
@@ -297,7 +297,6 @@ function CommunityActionsWrapper({
   const formContext = useCommunityForm();
   const { formData, resetForm, validateForm } = formContext;
   const [isFormValid, setIsFormValid] = useState<boolean>(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     const validation = validateForm();

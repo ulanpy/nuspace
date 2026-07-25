@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { campuscurrentAPI } from '@/features/events/api/events-api';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 import { useMediaUpload } from '@/features/media/hooks/use-media-upload';
 import { useMediaUploadContext } from '@/context/media-upload-context';
 import { useMediaEditContext } from '@/context/media-edit-context';
@@ -11,7 +11,6 @@ import { EntityType, MediaFormat, UploadMediaOptions } from "@/features/media/ty
 import { useState } from "react";
 
 export function useUpdateEvent() {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const { handleMediaUpload, resetMediaState } = useMediaUpload();
   const { setIsUploading, mediaFiles } = useMediaUploadContext();

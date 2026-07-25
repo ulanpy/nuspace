@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { DatePicker, formatLocalDate, parseLocalDate } from "@/components/shared/date-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { MarkdownToolbar, type FormattingAction } from '@/components/molecules/markdown-toolbar';
@@ -502,15 +503,15 @@ export const OpportunityForm = ({
               {isYearRound ? "Set a date instead" : "Mark as year-round"}
             </button>
           </div>
-          <Input
+          <DatePicker
             id="deadline"
-            type="date"
-            value={isYearRound ? "" : (form.deadline || "")}
-            onChange={(e) => {
+            value={form.deadline ? parseLocalDate(form.deadline) : undefined}
+            onChange={(selectedDate) => {
               setIsYearRound(false);
-              handleChange("deadline", e.target.value);
+              handleChange("deadline", selectedDate ? formatLocalDate(selectedDate) : "");
             }}
             disabled={isSubmitting || isYearRound}
+            placeholder="Pick deadline"
           />
           {isYearRound && (
             <p className="mt-1 text-xs text-muted-foreground">This opportunity will be shown as year-round.</p>

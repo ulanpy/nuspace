@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageContainer } from "@/components/atoms/page-container";
+import { PageContainer } from "@/components/shared/page-container";
 import { Badge } from "@/components/ui/badge";
 import { EventModal } from '@/features/events/components/event-modal';
 import { CountdownBadge } from '@/features/events/components/countdown-badge';

@@ -2,7 +2,7 @@
 
 import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { Info, X } from "lucide-react";
-import { Modal } from "@/components/atoms/modal";
+import { Modal } from "@/components/shared/modal";
 import { Button } from "@/components/ui/button";
 import { NumericInput } from "./forms/numeric-input";
 import { coursesSurface } from "../constants/dashboard-theme";

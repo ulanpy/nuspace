@@ -1,10 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@/router/navigation";
 import { campuscurrentAPI } from '@/features/events/api/events-api';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/toast";
 
 export function useDeleteEvent() {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const router = useRouter();
 
