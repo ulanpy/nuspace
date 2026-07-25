@@ -42,7 +42,7 @@ services:
     restart: always
     ports:
       - "80:80" # Existing frontend/
-      - "8080:8080" # New web/ — remove once the cutover lands
+      - "8081:8081" # New web/ — remove once the cutover lands
     volumes:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf
       - ../frontend/dist:/var/www/my-app/dist # Make sure this folder exists in production builds
@@ -168,6 +168,10 @@ services:
     volumes:
       - ../web:/app # Mount source for HMR
       - /app/node_modules # Anonymous volume keeps the image's deps
+    environment:
+      # The bind mount makes pnpm's deps-status check want to purge
+      # node_modules, which it refuses to do without a TTY.
+      - CI=true
     networks:
       - nuros
 

@@ -1,0 +1,72 @@
+/**
+ * Every query key in the app is built here.
+ *
+ * The previous app had 88 inline `queryKey:` literals with no shared
+ * convention — ["campusCurrent","communities"] next to ["grade-terms"] next to
+ * ["sg-members","list"] — which made targeted invalidation guesswork. Keys are
+ * hierarchical: invalidating `qk.events.all()` clears every events query,
+ * including lists and details.
+ */
+export const qk = {
+  session: () => ["session"] as const,
+
+  events: {
+    all: () => ["events"] as const,
+    list: (filters: Record<string, unknown>) =>
+      ["events", "list", filters] as const,
+    detail: (id: number) => ["events", "detail", id] as const,
+  },
+
+  communities: {
+    all: () => ["communities"] as const,
+    list: (filters: Record<string, unknown>) =>
+      ["communities", "list", filters] as const,
+    detail: (id: number) => ["communities", "detail", id] as const,
+  },
+
+  announcements: {
+    all: () => ["announcements"] as const,
+    bundle: () => ["announcements", "bundle"] as const,
+    telegram: () => ["announcements", "telegram"] as const,
+  },
+
+  opportunities: {
+    all: () => ["opportunities"] as const,
+    list: (filters: Record<string, unknown>) =>
+      ["opportunities", "list", filters] as const,
+    detail: (id: number) => ["opportunities", "detail", id] as const,
+  },
+
+  courses: {
+    all: () => ["courses"] as const,
+    catalog: (filters: Record<string, unknown>) =>
+      ["courses", "catalog", filters] as const,
+    registered: () => ["courses", "registered"] as const,
+    schedule: () => ["courses", "schedule"] as const,
+    gradeTerms: () => ["courses", "grade-terms"] as const,
+    grades: (filters: Record<string, unknown>) =>
+      ["courses", "grades", filters] as const,
+    degreeAudit: () => ["courses", "degree-audit"] as const,
+    planner: () => ["courses", "planner"] as const,
+  },
+
+  sgotinish: {
+    all: () => ["sgotinish"] as const,
+    tickets: (filters: Record<string, unknown>) =>
+      ["sgotinish", "tickets", filters] as const,
+    ticket: (id: number) => ["sgotinish", "tickets", id] as const,
+    messages: (conversationId: number) =>
+      ["sgotinish", "messages", conversationId] as const,
+    members: () => ["sgotinish", "members"] as const,
+    departments: () => ["sgotinish", "departments"] as const,
+  },
+
+  notifications: {
+    all: () => ["notifications"] as const,
+    list: (filters: Record<string, unknown>) =>
+      ["notifications", "list", filters] as const,
+  },
+
+  search: (keyword: string, storageName: string) =>
+    ["search", storageName, keyword] as const,
+} as const

@@ -25,3 +25,6 @@ dist-ssr
 
 # Generated from the backend OpenAPI schema
 openapi.json
+
+# pnpm store, created when the dev container installs into the bind mount
+.pnpm-store/
