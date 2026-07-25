@@ -38,22 +38,30 @@ export class ApiError extends Error {
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
+}
+
 function describe(detail: unknown): string {
   if (typeof detail === "string") return detail
-  if (detail && typeof detail === "object" && "detail" in detail) {
-    const inner = (detail as { detail: unknown }).detail
+
+  if (isRecord(detail) && "detail" in detail) {
+    const inner = detail.detail
     if (typeof inner === "string") return inner
-    // 422 bodies are [{loc, msg, type}, ...].
+
+    // FastAPI validation errors are [{loc, msg, type}, ...].
     if (Array.isArray(inner)) {
-      return inner
+      const messages: unknown[] = inner
+      return messages
         .map((issue) =>
-          issue && typeof issue === "object" && "msg" in issue
-            ? String((issue as { msg: unknown }).msg)
+          isRecord(issue) && typeof issue.msg === "string"
+            ? issue.msg
             : JSON.stringify(issue)
         )
         .join("; ")
     }
   }
+
   return JSON.stringify(detail)
 }
 
@@ -69,7 +77,9 @@ export async function unwrap<T>(
   if (error !== undefined || !response.ok) {
     throw new ApiError(response.status, error)
   }
-  // 204/205 responses legitimately carry no body.
+  // 204/205 carry no body by design, and callers of those endpoints type the
+  // result as void — so widening undefined to T here is intentional.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return data as T
 }
 
