@@ -112,3 +112,25 @@ async def get_community_og_by_query(
 
     html = _build_community_html(community_response, request)
     return HTMLResponse(content=html, status_code=status.HTTP_200_OK)
+
+
+@router.get("/og/communities/{id}", response_class=HTMLResponse, include_in_schema=False)
+async def get_community_og_by_path(
+    request: Request,
+    id: int,
+    user=Depends(get_creds_or_guest),
+    infra: Infra = Depends(get_infra),
+    community_service: CommunityService = Depends(get_community_service),
+) -> HTMLResponse:
+    """Path-param variant for /communities/{id} URLs.
+
+    Nginx rewrites crawler requests to /api/og$request_uri, so the shape of this
+    route has to mirror the frontend's URLs. The query-param route above is kept
+    so links already shared as /communities?id=123 keep their previews.
+    """
+    community_response = await community_service.get_community_response(
+        infra=infra, community_id=id, user=user
+    )
+
+    html = _build_community_html(community_response, request)
+    return HTMLResponse(content=html, status_code=status.HTTP_200_OK)
