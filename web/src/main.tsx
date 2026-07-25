@@ -5,6 +5,7 @@ import { RouterProvider } from "@tanstack/react-router"
 
 import "./index.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "@/components/ui/sonner"
 import { queryClient } from "@/app/query-client"
 import { router } from "@/app/router"
 
@@ -16,6 +17,7 @@ createRoot(rootElement).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <RouterProvider router={router} />
+        <Toaster />
       </ThemeProvider>
     </QueryClientProvider>
   </StrictMode>
