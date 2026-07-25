@@ -41,7 +41,8 @@ services:
       - nuros
     restart: always
     ports:
-      - "80:80" # Expose Nginx on port 80 of localhost
+      - "80:80" # Existing frontend/
+      - "8080:8080" # New web/ — remove once the cutover lands
     volumes:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf
       - ../frontend/dist:/var/www/my-app/dist # Make sure this folder exists in production builds
@@ -156,6 +157,19 @@ services:
       - nuros
     depends_on:
       - cloudflared
+
+  # New frontend, served side by side with `frontend` so the two can be compared
+  # against one backend during the rewrite. Reachable at http://localhost:8080.
+  web:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile.dev
+    restart: always
+    volumes:
+      - ../web:/app # Mount source for HMR
+      - /app/node_modules # Anonymous volume keeps the image's deps
+    networks:
+      - nuros
 
   loki:
     container_name: loki

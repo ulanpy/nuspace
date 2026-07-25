@@ -1,0 +1,21 @@
+# Dev container for the new frontend (web/). Mirrors frontend/Dockerfile_next
+# but uses pnpm via corepack instead of npm.
+FROM node:24-alpine
+
+RUN apk add --no-cache bash curl git
+RUN corepack enable
+
+WORKDIR /app
+
+# Cache the dependency layer separately from source.
+COPY web/package.json web/pnpm-lock.yaml web/pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
+
+COPY web .
+
+# Reach the backend by its compose service name rather than through nginx.
+ENV VITE_API_PROXY_TARGET=http://fastapi:8000
+
+EXPOSE 5173
+
+CMD ["pnpm", "dev"]
