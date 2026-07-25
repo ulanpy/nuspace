@@ -1,6 +1,7 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router"
 
 import { sessionQueryOptions } from "@/features/auth/api"
+import { AppSidebar } from "@/components/app-sidebar"
 
 /**
  * Authenticated shell. Every route beneath it is guarded here, once — the old
@@ -23,8 +24,11 @@ export const Route = createFileRoute("/_app")({
 function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
-      <main className="container px-3 py-4 sm:px-4 sm:py-6">
-        <Outlet />
+      <AppSidebar />
+      <main className="md:pl-60">
+        <div className="container px-3 py-4 sm:px-4 sm:py-6">
+          <Outlet />
+        </div>
       </main>
     </div>
   )
