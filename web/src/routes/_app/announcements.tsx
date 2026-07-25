@@ -1,29 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router"
 
 import { useCurrentUser } from "@/features/auth/use-session"
-import { beginLogout } from "@/features/auth/api"
-import { Button } from "@/components/ui/button"
 
 export const Route = createFileRoute("/_app/announcements")({
   component: Announcements,
 })
 
+function greeting(hour = new Date().getHours()): string {
+  if (hour < 12) return "Good morning"
+  if (hour < 18) return "Good afternoon"
+  return "Good evening"
+}
+
 function Announcements() {
   const user = useCurrentUser()
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Hi, {user.given_name}
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-3xl font-bold tracking-tight">
+          {greeting()}, {user.given_name}!
         </h1>
-        <Button variant="outline" onClick={beginLogout}>
-          Sign out
-        </Button>
-      </div>
-      <p className="text-sm text-muted-foreground">
-        Signed in as {user.email} ({user.role}).
-      </p>
+        <p className="text-muted-foreground">
+          Here&apos;s what&apos;s happening at Nuspace
+        </p>
+      </header>
     </div>
   )
 }
