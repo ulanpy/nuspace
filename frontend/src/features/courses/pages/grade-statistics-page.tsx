@@ -16,7 +16,6 @@ import { CourseStatsTab } from "../components/course-stats-tab";
 import { ScheduleBuilderTab } from "../components/schedule-builder-tab";
 import { DegreeAuditTab } from "../components/degree-audit-tab";
 import { coursesSurface } from "../constants/dashboard-theme";
-import { cn } from "@/utils/utils";
 import { PageContainer } from "@/components/atoms/page-container";
 import { PageHeader } from "@/components/atoms/page-header";
 
@@ -110,12 +109,16 @@ export default function GradeStatisticsPage() {
 
   return (
     <MotionWrapper>
-      <PageContainer maxWidth="full" padding="dense" className={cn("space-y-6", coursesSurface.text)}>
-        <PageHeader title="Courses" subtitle="Manage your classes, assignments, GPA and semester planning." className="mb-0" />
+      <PageContainer maxWidth="full" padding="dense" className={coursesSurface.text}>
+        <PageHeader
+          title="Courses"
+          subtitle="Manage your classes, assignments, GPA and semester planning."
+          className="mb-4"
+        />
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <div ref={scrollContainerRef} className="overflow-x-auto">
-            <TabsList className={cn("mb-2 inline-flex h-12 w-full min-w-max rounded-lg border p-1 sm:w-auto", coursesSurface.card)}>
+            <TabsList className="w-full min-w-max sm:w-auto">
               {tabOptions.map(({ value, label, icon: Icon }) => (
                 <TabsTrigger
                   key={value}
@@ -123,10 +126,7 @@ export default function GradeStatisticsPage() {
                     tabRefs.current[value] = el;
                   }}
                   value={value}
-                  className={cn(
-                    "flex h-10 items-center gap-2 rounded-md px-4 py-2 text-sm text-muted-foreground data-[state=active]:shadow-none",
-                    coursesSurface.tabActive,
-                  )}
+                  className="gap-2 rounded-md px-4 sm:flex-1 sm:justify-center"
                 >
                   <Icon className="h-4 w-4" />
                   <span>{label}</span>
@@ -135,19 +135,19 @@ export default function GradeStatisticsPage() {
             </TabsList>
           </div>
 
-          <TabsContent value="live-gpa" className="mt-6">
+          <TabsContent value="live-gpa" className="mt-4">
             <LiveGpaTab user={user} viewModel={viewModel} />
           </TabsContent>
 
-          <TabsContent value="course-stats" className="mt-6">
+          <TabsContent value="course-stats" className="mt-4">
             <CourseStatsTab initialKeyword={courseStatsKeyword} />
           </TabsContent>
 
-          <TabsContent value="schedule-builder" className="mt-6">
+          <TabsContent value="schedule-builder" className="mt-4">
             <ScheduleBuilderTab user={user} />
           </TabsContent>
 
-          <TabsContent value="degree-audit" className="mt-6">
+          <TabsContent value="degree-audit" className="mt-4">
             <DegreeAuditTab user={user} />
           </TabsContent>
         </Tabs>

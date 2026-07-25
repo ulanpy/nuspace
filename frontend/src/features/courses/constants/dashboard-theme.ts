@@ -13,8 +13,6 @@ export const coursesSurface = {
     "border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-ring",
   rowSelected: "border-border bg-muted/50",
   iconPrimary: "bg-primary/10 text-primary",
-  tabActive:
-    "data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:after:bg-foreground",
 } as const;
 
 /** Inline colors for charts and SVG where CSS classes are awkward. */
