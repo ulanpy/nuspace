@@ -96,7 +96,7 @@ export function CourseStatisticsCards({ registeredCourse }: { registeredCourse: 
       ? [
           {
             label: "Class avg",
-            value: `${Number(classAverage).toFixed(0)}%`,
+            value: formatWeightPercent(classAverage),
             tip: "App peers only",
           },
         ]
@@ -129,7 +129,7 @@ export function CourseStatisticsCards({ registeredCourse }: { registeredCourse: 
                 </Tooltip>
               )}
             </div>
-            <p className={cn("mt-0.5 text-base font-semibold leading-none", stat.tone ?? "text-foreground")}>
+            <p className={cn("mt-0.5 text-base font-semibold leading-none tabular-nums", stat.tone ?? "text-foreground")}>
               {stat.value}
             </p>
           </div>

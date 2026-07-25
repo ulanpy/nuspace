@@ -1,34 +1,29 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { ClipboardList, Pencil, Plus, Trash2 } from "lucide-react";
+import { ClipboardList, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BaseCourseItem, RegisteredCourse } from "../../types";
-import { hasCompleteScore } from "../../utils/grade-utils";
+import {
+  formatItemContribution,
+  formatItemScorePercent,
+  formatItemWeight,
+  formatWeightPercent,
+  hasCompleteScore,
+} from "../../utils/grade-utils";
 import { coursesSurface, getDepartmentAccent } from "../../constants/dashboard-theme";
 import { CourseGradeDistributionBar, CourseStatisticsCards } from "./course-grade-utils";
 import { cn } from "@/utils/utils";
 
 interface CourseDetailPanelProps {
   registeredCourse: RegisteredCourse;
-  isExcludedFromGpa: boolean;
-  onAddItem: () => void;
   onDeleteItem: (item: BaseCourseItem) => void;
   onEditItem: (item: BaseCourseItem) => void;
-  onShareTemplate: () => void;
-  onOpenTemplates: () => void;
-  onToggleGpaExclusion: () => void;
 }
 
 export function CourseDetailPanel({
   registeredCourse,
-  isExcludedFromGpa,
-  onAddItem,
   onDeleteItem,
   onEditItem,
-  onShareTemplate,
-  onOpenTemplates,
-  onToggleGpaExclusion,
 }: CourseDetailPanelProps) {
   const { items } = registeredCourse;
   const hasItems = items.length > 0;
@@ -42,27 +37,32 @@ export function CourseDetailPanel({
               <thead>
                 <tr>
                   <th className="pb-2 pr-3 font-medium">Assignment</th>
-                  <th className="pb-2 pr-3 font-medium">Weight</th>
-                  <th className="pb-2 pr-3 font-medium">Score</th>
-                  <th className="pb-2 pr-3 font-medium">Contribution</th>
+                  <th className="pb-2 pr-3 text-right font-medium tabular-nums">Weight</th>
+                  <th className="pb-2 pr-3 text-right font-medium tabular-nums">Score</th>
+                  <th className="pb-2 pr-3 text-right font-medium tabular-nums">Contribution</th>
                   <th className="pb-2 pr-3 font-medium">Status</th>
-                  <th className="pb-2" />
+                  <th className="pb-2 w-16" />
                 </tr>
               </thead>
               <tbody>
                 {items.map((item) => {
                   const included = hasCompleteScore(item);
-                  const weight = item.total_weight_pct || 0;
+                  const weight = item.total_weight_pct;
                   const obtained = item.obtained_score ?? 0;
-                  const max = item.max_score ?? 1;
-                  const contribution = included ? ((obtained / max) * weight).toFixed(1) : "—";
-                  const score = included ? `${((obtained / max) * 100).toFixed(0)}%` : "—";
+                  const max = item.max_score ?? 0;
+
                   return (
                     <tr key={item.id}>
                       <td className="py-2 pr-3 font-medium text-foreground">{item.item_name}</td>
-                      <td className="py-2 pr-3">{weight.toFixed(0)}%</td>
-                      <td className="py-2 pr-3">{score}</td>
-                      <td className="py-2 pr-3">{included ? `${contribution}%` : "—"}</td>
+                      <td className="py-2 pr-3 text-right tabular-nums whitespace-nowrap">
+                        {formatItemWeight(weight)}
+                      </td>
+                      <td className="py-2 pr-3 text-right tabular-nums whitespace-nowrap">
+                        {included ? formatItemScorePercent(obtained, max) : "—"}
+                      </td>
+                      <td className="py-2 pr-3 text-right tabular-nums whitespace-nowrap">
+                        {included ? formatItemContribution(obtained, max, weight) : "—"}
+                      </td>
                       <td className="py-2 pr-3">
                         <span
                           className={cn(
@@ -97,52 +97,19 @@ export function CourseDetailPanel({
 
           <CourseGradeDistributionBar items={items} />
           <CourseStatisticsCards registeredCourse={registeredCourse} />
-
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            <ActionButton variant="primary" onClick={onAddItem}>
-              Add Assignment
-            </ActionButton>
-            <ActionButton variant="secondary" onClick={onOpenTemplates}>
-              Browse Templates
-            </ActionButton>
-            <ActionButton variant="secondary" onClick={onShareTemplate}>
-              Share Template
-            </ActionButton>
-            <ActionButton variant="secondary" onClick={onToggleGpaExclusion}>
-              {isExcludedFromGpa ? "Include in overall GPA" : "Exclude from overall GPA"}
-            </ActionButton>
-          </div>
         </>
       ) : (
-        <>
-          <div className="flex items-center gap-3 py-2">
-            <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", coursesSurface.iconPrimary)}>
-              <ClipboardList className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-medium">No assignments yet</p>
-              <p className="mt-0.5 text-[13px] leading-snug text-muted-foreground">
-                Add assignments manually or import a peer template to start tracking your grade.
-              </p>
-            </div>
-            <ActionButton variant="primary" onClick={onAddItem}>
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Add Assignment
-            </ActionButton>
+        <div className="flex items-center gap-3 py-2">
+          <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", coursesSurface.iconPrimary)}>
+            <ClipboardList className="h-5 w-5" />
           </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <ActionButton variant="secondary" onClick={onOpenTemplates}>
-              Browse Templates
-            </ActionButton>
-            <ActionButton variant="secondary" onClick={onShareTemplate}>
-              Share Template
-            </ActionButton>
-            <ActionButton variant="secondary" onClick={onToggleGpaExclusion}>
-              {isExcludedFromGpa ? "Include in overall GPA" : "Exclude from overall GPA"}
-            </ActionButton>
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] font-medium">No assignments yet</p>
+            <p className="mt-0.5 text-[13px] leading-snug text-muted-foreground">
+              Use the controls in Course summary to add assignments or manage grading setup.
+            </p>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
@@ -203,45 +170,5 @@ export function CourseRow({
         </p>
       </div>
     </button>
-  );
-}
-
-function ActionButton({
-  children,
-  onClick,
-  disabled,
-  variant = "secondary",
-}: {
-  children: ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-  variant?: "primary" | "secondary" | "danger";
-}) {
-  if (variant === "primary") {
-    return (
-      <Button size="sm" disabled={disabled} onClick={onClick} className="h-8 rounded-lg px-3 text-[13px] font-medium">
-        {children}
-      </Button>
-    );
-  }
-
-  if (variant === "danger") {
-    return (
-      <Button
-        size="sm"
-        variant="ghost"
-        disabled={disabled}
-        onClick={onClick}
-        className="h-8 rounded-lg px-3 text-[13px] font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300"
-      >
-        {children}
-      </Button>
-    );
-  }
-
-  return (
-    <Button size="sm" variant="outline" disabled={disabled} onClick={onClick} className="h-8 rounded-lg px-3 text-[13px] font-medium">
-      {children}
-    </Button>
   );
 }

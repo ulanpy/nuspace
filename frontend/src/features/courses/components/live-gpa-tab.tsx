@@ -277,13 +277,8 @@ export function LiveGpaTab({ user, viewModel }: LiveGpaTabProps) {
           <div className="order-1 min-w-0 xl:order-2">
             <CourseWorkspace
               course={selectedCourse}
-              isExcludedFromGpa={selectedCourse?.isExcludedFromGpa ?? false}
-              onAddItem={() => selectedCourse && assignment.addModal.open(selectedCourse.id)}
               onDeleteItem={deletion.request}
               onEditItem={assignment.editModal.open}
-              onShareTemplate={() => selectedCourse && sharing.open(selectedCourse)}
-              onOpenTemplates={() => selectedCourse && templates.open(selectedCourse)}
-              onToggleGpaExclusion={() => selectedCourse && gpaExclusion.toggle(selectedCourse.id)}
             />
           </div>
 
@@ -292,6 +287,10 @@ export function LiveGpaTab({ user, viewModel }: LiveGpaTabProps) {
               selectedCourse={selectedCourse}
               schedule={schedule.data}
               isExcludedFromGpa={selectedCourse?.isExcludedFromGpa ?? false}
+              onToggleGpaExclusion={() => selectedCourse && gpaExclusion.toggle(selectedCourse.id)}
+              onAddItem={() => selectedCourse && assignment.addModal.open(selectedCourse.id)}
+              onOpenTemplates={() => selectedCourse && templates.open(selectedCourse)}
+              onShareTemplate={() => selectedCourse && sharing.open(selectedCourse)}
             />
           </aside>
         </div>

@@ -62,7 +62,7 @@ export function CommunityFormProvider({
     email: "",
     telegram_url: "",
     instagram_url: "",
-    head: user?.user.sub || "",
+    head: user?.sub || "",
     established: "",
   });
 
@@ -88,7 +88,7 @@ export function CommunityFormProvider({
         email: "",
         telegram_url: "",
         instagram_url: "",
-        head: user?.user.sub || "",
+        head: user?.sub || "",
         established: formatLocalDate(new Date()),
       });
     }
@@ -136,7 +136,7 @@ export function CommunityFormProvider({
         category: "academic" as CommunityCategory,
         type: "club" as CommunityType,
         email: "",
-        head: user?.user.sub || "",
+        head: user?.sub || "",
         telegram_url: "",
         instagram_url: "",
         established: formatLocalDate(new Date()),

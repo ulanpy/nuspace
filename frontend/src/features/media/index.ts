@@ -1,41 +1,28 @@
 // Unified Media System - Main Export File
 
-// Context
-export { 
-  UnifiedMediaProvider, 
+export {
+  UnifiedMediaProvider,
   useUnifiedMediaContext,
   type MediaConfig,
   type MediaState,
   type MediaActions,
-  type UnifiedMediaContextType 
-} from './context/unified-media-context';
+  type UnifiedMediaContextType,
+} from "./context/unified-media-context";
 
-// Hooks
-export { 
-  useUnifiedMedia,
-  type UnifiedMediaHookReturn 
-} from './hooks/use-unified-media';
+export { useUnifiedMedia, type UnifiedMediaHookReturn } from "./hooks/use-unified-media";
 
-// Components
-export { 
+export {
   UnifiedMediaUploadZone,
-  type UnifiedMediaUploadZoneProps 
-} from '@/components/organisms/media/unified-media-upload-zone';
+  type UnifiedMediaUploadZoneProps,
+} from "@/components/organisms/media/unified-media-upload-zone";
 
-// Configuration
-export { 
+export {
   MEDIA_CONFIGS,
   getMediaConfig,
   createCustomMediaConfig,
-  type MediaConfigKey 
-} from './config/media-configs';
+  type MediaConfigKey,
+} from "./config/media-configs";
 
-// Feature-specific components
-export { UnifiedEventMediaUpload } from '@/features/events/components/unified-event-media-upload';
+export { UnifiedEventMediaUpload } from "@/features/events/components/unified-event-media-upload";
 
-export { useMediaUpload } from './hooks/use-media-upload';
-export { useMediaSelection } from './hooks/use-media-selection';
-export { useMediaEdit } from './hooks/use-media-edit';
-
-// Types
-export type { UploadMediaOptions } from './types/types';
+export type { UploadMediaOptions } from "./types/types";

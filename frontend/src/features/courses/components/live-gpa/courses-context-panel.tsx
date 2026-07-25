@@ -1,21 +1,32 @@
 "use client";
 
 import { BookOpen, LifeBuoy } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import type { RegisteredCourse, ScheduleResponse } from "../../types";
 import { coursesChart, coursesSurface } from "../../constants/dashboard-theme";
 import { getCourseSummaryRows, getEarnedGradeSummary } from "../../utils/course-summary-utils";
+import { CourseControls } from "./course-controls";
 import { cn } from "@/utils/utils";
 
 interface CoursesContextPanelProps {
   selectedCourse: RegisteredCourse | null;
   schedule: ScheduleResponse | null;
   isExcludedFromGpa: boolean;
+  onToggleGpaExclusion?: () => void;
+  onAddItem?: () => void;
+  onOpenTemplates?: () => void;
+  onShareTemplate?: () => void;
 }
 
 export function CoursesContextPanel({
   selectedCourse,
   schedule,
   isExcludedFromGpa,
+  onToggleGpaExclusion,
+  onAddItem,
+  onOpenTemplates,
+  onShareTemplate,
 }: CoursesContextPanelProps) {
   if (!selectedCourse) {
     return (
@@ -36,6 +47,7 @@ export function CoursesContextPanel({
 
   const earned = getEarnedGradeSummary(selectedCourse.items);
   const rows = getCourseSummaryRows(selectedCourse, schedule);
+  const gpaToggleId = `course-gpa-toggle-${selectedCourse.id}`;
 
   return (
     <div className="space-y-4">
@@ -58,6 +70,25 @@ export function CoursesContextPanel({
           ))}
         </dl>
 
+        {onToggleGpaExclusion && (
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <Label htmlFor={gpaToggleId} className="text-[13px] font-normal text-muted-foreground">
+              Include in overall GPA
+            </Label>
+            <Switch
+              id={gpaToggleId}
+              size="sm"
+              checked={!isExcludedFromGpa}
+              onCheckedChange={(included) => {
+                if (included === isExcludedFromGpa) {
+                  onToggleGpaExclusion();
+                }
+              }}
+              aria-label="Include course in overall GPA"
+            />
+          </div>
+        )}
+
         <div className="mt-4 space-y-2">
           <div className="flex items-center justify-between text-[13px]">
             <span className="text-muted-foreground">Earned grade</span>
@@ -70,6 +101,16 @@ export function CoursesContextPanel({
             />
           </div>
         </div>
+
+        {onAddItem && onOpenTemplates && onShareTemplate && (
+          <div className="mt-4 space-y-2 border-t border-border pt-4">
+            <CourseControls
+              onAddItem={onAddItem}
+              onOpenTemplates={onOpenTemplates}
+              onShareTemplate={onShareTemplate}
+            />
+          </div>
+        )}
       </div>
 
       <CoursesHelpCard />

@@ -59,7 +59,7 @@ export function EventFormProvider({
     policy: "open" as EventPolicy,
     registration_link: "",
     type: "academic" as EventType,
-    creator_sub: user?.user.sub || "",
+    creator_sub: user?.sub || "",
   });
   
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -100,7 +100,7 @@ export function EventFormProvider({
         policy: "open" as EventPolicy,
         registration_link: "",
         type: "academic" as EventType,
-        creator_sub: user?.user.sub || "",
+        creator_sub: user?.sub || "",
       });
       setStartDate(undefined);
       setStartTime("");
@@ -147,7 +147,7 @@ export function EventFormProvider({
         policy: "open" as EventPolicy,
         registration_link: "",
         type: "academic" as EventType,
-        creator_sub: user?.user.sub || "",
+        creator_sub: user?.sub || "",
       } as CreateEventData);
       setStartDate(undefined);
       setStartTime("");

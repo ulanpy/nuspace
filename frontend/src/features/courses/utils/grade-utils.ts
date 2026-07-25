@@ -57,9 +57,29 @@ export const formatPercentage = (percentage: number | null | undefined): string 
 
 /** Weighted course percentages (earned bar, summary) — up to 2 decimal places. */
 export const formatWeightPercent = (value: number | null | undefined): string => {
-  if (value == null) return "—";
+  if (value == null || !Number.isFinite(value)) return "—";
   const text = value.toFixed(2);
   return `${text.replace(/\.?0+$/, "")}%`;
+};
+
+/** Item weight from DB Numeric(5, 2). */
+export const formatItemWeight = (weight: number | null | undefined): string =>
+  formatWeightPercent(weight);
+
+/** Score as % from obtained/max (DB Numeric(7, 2)). */
+export const formatItemScorePercent = (obtained: number, max: number): string => {
+  if (max <= 0) return "—";
+  return formatWeightPercent((obtained / max) * 100);
+};
+
+/** Weight contribution: (obtained/max) * weight. */
+export const formatItemContribution = (
+  obtained: number,
+  max: number,
+  weight: number | null | undefined,
+): string => {
+  if (max <= 0 || weight == null) return "—";
+  return formatWeightPercent((obtained / max) * weight);
 };
 
 export const getGPAColorClass = (_gpa: number): string => {

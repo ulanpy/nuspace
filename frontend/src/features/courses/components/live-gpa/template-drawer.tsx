@@ -1,15 +1,21 @@
 "use client";
 
 import { RefreshCw } from "lucide-react";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   calculateTemplateCoverage,
   calculateTemplateWeight,
-} from '../../utils/template-utils';
-import type { LiveGpaViewModel } from '../../hooks/use-live-gpa-view-model';
+} from "../../utils/template-utils";
+import type { LiveGpaViewModel } from "../../hooks/use-live-gpa-view-model";
 import type { TemplateResponse } from "../../types";
 
 interface TemplateDrawerProps {
@@ -20,22 +26,23 @@ interface TemplateDrawerProps {
 
 export function TemplateDrawer({ templates, onLoadMore, onImport }: TemplateDrawerProps) {
   return (
-    <Sheet open={templates.isOpen} onOpenChange={(open) => !open && templates.close()}>
-      <SheetContent
-        side="right"
-        className="w-full max-w-full overflow-y-auto bg-background/95 sm:max-w-md"
-      >
-        <SheetHeader className="space-y-2">
-          <SheetTitle className="text-left text-lg font-semibold">
+    <Drawer
+      open={templates.isOpen}
+      onOpenChange={(open) => !open && templates.close()}
+      direction="right"
+    >
+      <DrawerContent className="flex h-full max-h-none w-full flex-col data-[vaul-drawer-direction=right]:sm:max-w-md">
+        <DrawerHeader className="shrink-0 space-y-2 text-left">
+          <DrawerTitle className="text-lg font-semibold">Import from classmate</DrawerTitle>
+          <DrawerDescription>
             {templates.course?.course.course_code}
             {templates.course?.section ? ` · ${templates.course.section}` : ""}
-          </SheetTitle>
-          <SheetDescription className="text-left text-sm">
-            Browse templates shared by peers and replace your course items with a single tap.
-          </SheetDescription>
-        </SheetHeader>
+            {" · "}
+            Copy their assignment names and weights into your course.
+          </DrawerDescription>
+        </DrawerHeader>
 
-        <div className="mt-4 space-y-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-6">
           {templates.course && (
             <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm">
               <div className="font-semibold text-foreground">
@@ -72,8 +79,8 @@ export function TemplateDrawer({ templates, onLoadMore, onImport }: TemplateDraw
             <EmptyState />
           )}
         </div>
-      </SheetContent>
-    </Sheet>
+      </DrawerContent>
+    </Drawer>
   );
 }
 
@@ -95,9 +102,9 @@ function SkeletonList() {
 function EmptyState() {
   return (
     <div className="space-y-3 rounded-2xl border border-dashed border-border/60 bg-muted/15 p-6 text-center">
-      <p className="text-sm font-medium text-foreground">No templates shared yet</p>
+      <p className="text-sm font-medium text-foreground">Nothing shared yet</p>
       <p className="text-xs text-muted-foreground">
-        Be the first to share your course structure so your peers can start with a plan.
+        When classmates share their grading setup, you can import it here.
       </p>
     </div>
   );
@@ -148,7 +155,7 @@ function TemplateCard({
               key={item.id}
               className="flex items-center justify-between rounded-lg border border-border/40 bg-background/70 px-3 py-2"
             >
-              <span className="text-sm font-medium text-foreground line-clamp-1">{item.item_name}</span>
+              <span className="line-clamp-1 text-sm font-medium text-foreground">{item.item_name}</span>
               <span className="text-xs text-muted-foreground">{(item.total_weight_pct ?? 0).toFixed(1)}%</span>
             </div>
           ))}
@@ -171,4 +178,3 @@ function SummaryTile({ label, value }: { label: string; value: string | number }
     </div>
   );
 }
-

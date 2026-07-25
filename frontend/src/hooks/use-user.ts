@@ -1,25 +1,47 @@
+import { useSyncExternalStore, useCallback, useMemo } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/utils/query-client";
 import { apiCall } from "@/utils/api";
 import { consumeIntendedRedirect } from "@/utils/auth-redirect";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
+import {
+  disableAuthQuery,
+  enableAuthQuery,
+  getAuthQueryEnabled,
+  subscribeAuthQueryEnabled,
+} from "@/utils/auth-query-state";
 
-// Session storage key for tracking auth failures
-const AUTH_FAILURE_KEY = "__auth_query_disabled__";
+export interface UserProfile {
+  sub: string;
+  email: string;
+  role: string;
+  name: string;
+  surname: string;
+  picture: string;
+  scope: string;
+}
 
-// Check if queries should be enabled based on previous auth failures
-const getInitialQueryEnabled = (): boolean => {
-  if (typeof window === "undefined") return true;
-  return sessionStorage.getItem(AUTH_FAILURE_KEY) !== "true";
-};
+export interface CurrentUser extends UserProfile {
+  tg_id: number | null;
+}
 
-// FUCK IT! GLOBAL VARIABLE TO SURVIVE RE-RENDERS
-let globalQueryEnabled = getInitialQueryEnabled();
+interface MeResponse {
+  user: UserProfile;
+  tg_id: number | null;
+}
+
+function isAuthFailureStatus(status: number | undefined): boolean {
+  return status === 401 || (typeof status === "number" && status >= 500);
+}
 
 export const useUser = () => {
-  const [, forceUpdate] = useState(0); // Force re-render when needed
+  const queryEnabled = useSyncExternalStore(
+    subscribeAuthQueryEnabled,
+    getAuthQueryEnabled,
+    () => true,
+  );
+
   const fetchUser = useCallback(async () => {
-    return apiCall<any>("/me", {
+    return apiCall<MeResponse>("/me", {
       method: "GET",
       credentials: "include",
       cache: "no-store",
@@ -42,13 +64,23 @@ export const useUser = () => {
     queryFn: async () => {
       try {
         return await fetchUser();
-      } catch (error: any) {
-        // If we get a 401 or 500, disable future queries and persist this state
-        if (error?.status === 401 || error?.response?.status === 401 || error?.status >= 500 || error?.response?.status >= 500) {
-          console.error(`[ERROR] failed to query user data, error status: ${error?.status}, response status: ${error?.response?.status}`);
-          globalQueryEnabled = false;
-          sessionStorage.setItem(AUTH_FAILURE_KEY, "true");
-          forceUpdate((prev: number) => prev + 1);
+      } catch (error: unknown) {
+        const status =
+          typeof error === "object" && error !== null
+            ? Number(
+                ("status" in error ? error.status : undefined) ??
+                  ("response" in error &&
+                  typeof error.response === "object" &&
+                  error.response !== null &&
+                  "status" in error.response
+                    ? (error.response as { status?: number }).status
+                    : undefined),
+              )
+            : undefined;
+
+        if (isAuthFailureStatus(status)) {
+          console.error(`[ERROR] failed to query user data, status: ${status}`);
+          disableAuthQuery();
         }
         throw error;
       }
@@ -59,33 +91,29 @@ export const useUser = () => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchInterval: false,
-    enabled: globalQueryEnabled,
+    enabled: queryEnabled,
   });
 
-  const user = useMemo(() => {
-    if (!rawUser || !rawUser.user) return null;
-
-    // Backward compatible: keep nested `user` while also exposing flattened fields at top-level
-    // - Existing code that uses `user.user.sub` continues to work
-    // - New code can use `user.sub`, `user.role`, etc.
+  const user = useMemo((): CurrentUser | null => {
+    if (!rawUser?.user) return null;
     return {
-      ...rawUser,          // keeps `user` (nested) and `tg_id`
-      ...rawUser.user,     // flattens common fields like sub, given_name, role, etc.
-    } as any;
+      ...rawUser.user,
+      tg_id: rawUser.tg_id ?? null,
+    };
   }, [rawUser]);
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      // Check for saved redirect URL from RequireAuth (deep-link preservation)
       const savedRedirect = consumeIntendedRedirect();
-      const returnTo = savedRedirect || `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      const returnTo =
+        savedRedirect ||
+        `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
-      const url = `/api/login?return_to=${encodeURIComponent(returnTo)}`;
-      window.location.href = url;
+      window.location.href = `/api/login?return_to=${encodeURIComponent(returnTo)}`;
       return null;
     },
     onSuccess: () => {
-      sessionStorage.removeItem(AUTH_FAILURE_KEY);
+      enableAuthQuery();
       queryClient.invalidateQueries({ queryKey: ["user"] });
     },
   });
@@ -103,34 +131,33 @@ export const useUser = () => {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.removeQueries({
-        queryKey: ["user"],
-      });
-      // Refresh the page to reset all state
+      queryClient.removeQueries({ queryKey: ["user"] });
       window.location.reload();
     },
   });
 
   const refreshSession = useCallback(async () => {
-    // Manual recovery hook (e.g. “Retry session” button) without background polling
     try {
       await fetch("/api/refresh-token", {
         method: "POST",
         credentials: "include",
       });
-      queryClient.invalidateQueries({ queryKey: ["user"] });
+      enableAuthQuery();
+      await queryClient.invalidateQueries({ queryKey: ["user"] });
     } catch (error) {
       console.error("Error refreshing token:", error);
     }
   }, []);
 
   const login = () => {
-    sessionStorage.removeItem(AUTH_FAILURE_KEY);
+    enableAuthQuery();
     loginMutation.mutate();
   };
+
   const logout = () => {
     logoutMutation.mutate();
   };
+
   return {
     user,
     isLoading,

@@ -1,70 +1,54 @@
 "use client";
 
-import { useEffect } from "react";
-import { UnifiedMediaProvider } from '@/features/media/context/unified-media-context';
-import { UnifiedMediaUploadZone } from '@/components/organisms/media/unified-media-upload-zone';
-import { useUnifiedMedia } from '@/features/media/hooks/use-unified-media';
-import { useUnifiedMediaContext } from '@/features/media/context/unified-media-context';
-import { getMediaConfig } from '@/features/media/config/media-configs';
-import { useEventForm } from '@/context/event-form-context';
-import { useMediaUploadContext } from '@/context/media-upload-context';
-import { useMediaEditContext } from '@/context/media-edit-context';
-import { useCreateEvent } from '@/features/events/hooks/use-create-event';
-import { useUpdateEvent } from '@/features/events/hooks/use-update-event';
+import { forwardRef, useEffect, useImperativeHandle } from "react";
+import { UnifiedMediaProvider, useUnifiedMediaContext } from "@/features/media/context/unified-media-context";
+import { UnifiedMediaUploadZone } from "@/components/organisms/media/unified-media-upload-zone";
+import { useUnifiedMedia } from "@/features/media/hooks/use-unified-media";
+import { getMediaConfig } from "@/features/media/config/media-configs";
+import { useEventForm } from "@/context/event-form-context";
+import { EntityType } from "@/features/media/types/types";
 
-// Bridge component to connect unified system with legacy contexts
-function EventMediaUploadBridge() {
-  const { isEditMode } = useEventForm();
-  const { setPreviewMedia, setMediaFiles, setIsUploading, isUploading: legacyIsUploading } = useMediaUploadContext();
-  const { originalMedia, setMediaToDelete } = useMediaEditContext();
-  const { uploadProgress: createProgress } = useCreateEvent();
-  const { uploadProgress: updateProgress } = useUpdateEvent();
-  
-  const {
-    previewMedia,
-    mediaFiles,
-    isUploading,
-    initializeExistingMedia,
-    mediaToDelete,
-  } = useUnifiedMedia();
+export type EventUploadHandle = {
+  upload: (entityId: number) => Promise<boolean>;
+  getMarkedForDeletion: () => number[];
+  clearMarkedForDeletion: () => void;
+  hasPending: () => boolean;
+};
 
-  const { setUploading, setProgress } = useUnifiedMediaContext();
-
-  // Sync with legacy contexts
-  useEffect(() => {
-    setPreviewMedia(previewMedia);
-  }, [previewMedia, setPreviewMedia]);
+const EventMediaUploadBridge = forwardRef<EventUploadHandle>(function EventMediaUploadBridge(_, ref) {
+  const { isEditMode, event } = useEventForm();
+  const { uploadFiles, initializeExistingMedia, mediaFiles, mediaToDelete } = useUnifiedMedia();
+  const { config, unmarkForDeletion } = useUnifiedMediaContext();
 
   useEffect(() => {
-    setMediaFiles(mediaFiles);
-  }, [mediaFiles, setMediaFiles]);
-
-  useEffect(() => {
-    setIsUploading(isUploading);
-  }, [isUploading, setIsUploading]);
-
-  useEffect(() => {
-    setMediaToDelete(mediaToDelete);
-  }, [mediaToDelete, setMediaToDelete]);
-
-  // Mirror legacy/flow progress into unified context
-  useEffect(() => {
-    setUploading(legacyIsUploading);
-  }, [legacyIsUploading, setUploading]);
-
-  useEffect(() => {
-    const progress = isEditMode ? updateProgress : createProgress;
-    if (!isUploading) {
-      setProgress(progress || 0);
+    if (isEditMode && event && Array.isArray(event.media) && event.media.length > 0) {
+      initializeExistingMedia(
+        event.media.map((item) => ({
+          id: item.id,
+          url: item.url,
+        })),
+      );
     }
-  }, [createProgress, updateProgress, isEditMode, setProgress, isUploading]);
+  }, [isEditMode, event, initializeExistingMedia]);
 
-  // Initialize existing media in edit mode
-  useEffect(() => {
-    if (isEditMode && originalMedia.length > 0) {
-      initializeExistingMedia(originalMedia);
-    }
-  }, [isEditMode, originalMedia, initializeExistingMedia]);
+  useImperativeHandle(ref, () => ({
+    upload: async (entityId: number) => {
+      if (mediaFiles.length === 0) {
+        return true;
+      }
+
+      return uploadFiles({
+        entity_type: EntityType.community_events,
+        entityId,
+        mediaFormat: config.mediaFormat,
+      });
+    },
+    getMarkedForDeletion: () => mediaToDelete,
+    clearMarkedForDeletion: () => {
+      mediaToDelete.forEach((id) => unmarkForDeletion(id));
+    },
+    hasPending: () => mediaFiles.length > 0 || mediaToDelete.length > 0,
+  }));
 
   return (
     <UnifiedMediaUploadZone
@@ -79,27 +63,18 @@ function EventMediaUploadBridge() {
       showDropZoneWhenHasItems={true}
       dropZoneVariant="default"
       progressVariant="standalone"
-      customActions={[
-        {
-          id: 'optimize',
-          label: 'Optimize Image',
-          icon: ({ className }) => <span className={className}>🎨</span>,
-          onClick: (index, item) => {
-            console.log('Optimize image:', index, item);
-          },
-          showInDropdown: true,
-        }
-      ]}
     />
   );
-}
+});
 
-export function UnifiedEventMediaUpload() {
-  const config = getMediaConfig('campusCurrentEvents');
+export const UnifiedEventMediaUpload = forwardRef<EventUploadHandle>(
+  function UnifiedEventMediaUpload(_, ref) {
+    const config = getMediaConfig("campusCurrentEvents");
 
-  return (
-    <UnifiedMediaProvider config={config}>
-      <EventMediaUploadBridge />
-    </UnifiedMediaProvider>
-  );
-}
+    return (
+      <UnifiedMediaProvider config={config}>
+        <EventMediaUploadBridge ref={ref} />
+      </UnifiedMediaProvider>
+    );
+  },
+);
