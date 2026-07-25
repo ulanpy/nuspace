@@ -4,11 +4,17 @@ import { toast as sonnerToast } from "sonner";
 
 type ToastType = "default" | "success" | "error" | "warning" | "destructive";
 
+interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface ToastProps {
   title?: string;
   description?: string;
   variant?: ToastType;
   duration?: number;
+  action?: ToastAction;
 }
 
 export function toast({
@@ -16,8 +22,9 @@ export function toast({
   description,
   variant = "default",
   duration = 5000,
+  action,
 }: ToastProps) {
-  const options = { description, duration };
+  const options = { description, duration, action };
 
   switch (variant) {
     case "success":

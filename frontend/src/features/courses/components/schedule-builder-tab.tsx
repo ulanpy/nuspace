@@ -11,6 +11,7 @@ import {
 } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { gradeStatisticsApi } from '../api/grade-statistics-api';
 import {
@@ -22,9 +23,18 @@ import {
   PlannerCourseSearchResult,
 } from "../types";
 import { SignInCard } from "@/components/molecules/sign-in-card";
-import { CalendarPlus, Loader2, RefreshCcw, RotateCcw, Trash2, Wand2, X } from "lucide-react";
+import { CalendarPlus, ChevronDown, Loader2, RefreshCcw, RotateCcw, Trash2, Wand2, X } from "lucide-react";
 import { ConfirmationModal } from './confirmation-modal';
 import { useSyllabusLinks } from '../utils/use-syllabus-links';
+import { toast } from "@/hooks/toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type CourseForm = {
   query: string;
@@ -168,10 +178,8 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
   });
 
   const [courseForm, setCourseForm] = useState<CourseForm>(defaultCourseForm);
-  const [autoBuildResult, setAutoBuildResult] = useState<PlannerAutoBuildResponse | null>(null);
-  const [autoBuildError, setAutoBuildError] = useState<string | null>(null);
-  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
   const [loadingSections, setLoadingSections] = useState<Record<number, boolean>>({});
+  const autoBuildUndoSnapshot = useRef<Record<number, number[]> | null>(null);
   const [searchResults, setSearchResults] = useState<PlannerCourseSearchResult[]>([]);
   const [searchCursor, setSearchCursor] = useState<number | null>(null);
   const [lastSearch, setLastSearch] = useState<{ term_value: string; query: string } | null>(
@@ -209,13 +217,12 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
 
   useEffect(() => {
     setCourseForm(defaultCourseForm);
-    setAutoBuildResult(null);
-    setAutoBuildError(null);
     setLoadingSections({});
     setSearchResults([]);
     setSearchCursor(null);
     setLastSearch(null);
     setIsLoadingMore(false);
+    autoBuildUndoSnapshot.current = null;
     autoFetchedCourses.current.clear();
   }, [planner?.id]);
 
@@ -274,9 +281,47 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
     });
   }, [planner, invalidatePlanner]);
 
+  const capturePlannerSelections = useCallback((schedule: PlannerSchedule | null) => {
+    if (!schedule) return {};
+    return Object.fromEntries(
+      schedule.courses.map((course) => [
+        course.id,
+        course.sections.filter((section) => section.is_selected).map((section) => section.id),
+      ]),
+    );
+  }, []);
+
+  const restorePlannerSelections = useCallback(
+    async (snapshot: Record<number, number[]>) => {
+      await Promise.all(
+        Object.entries(snapshot).map(([courseId, sectionIds]) =>
+          gradeStatisticsApi.selectPlannerSections(Number(courseId), {
+            section_ids: sectionIds,
+          }),
+        ),
+      );
+      await invalidatePlanner();
+    },
+    [invalidatePlanner],
+  );
+
   const addCourseMutation = useMutation({
     mutationFn: (payload: PlannerCourseAddPayload) => gradeStatisticsApi.addPlannerCourse(payload),
-    onSuccess: invalidatePlanner,
+    onSuccess: (_data, variables) => {
+      toast({
+        variant: "success",
+        title: `${variables.course_code} added`,
+        description: "Course added to your planner.",
+      });
+      invalidatePlanner();
+    },
+    onError: () => {
+      toast({
+        variant: "error",
+        title: "Could not add course",
+        description: "Please try again.",
+      });
+    },
   });
 
   const removeCourseMutation = useMutation({
@@ -284,24 +329,25 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
     onSuccess: (_data, courseId) => {
       const courseLabel =
         planner?.courses?.find((c) => c.id === courseId)?.course_code ?? "Course";
-      setAutoBuildResult(null);
-      setAutoBuildError(null);
-      setRefreshMessage(`${courseLabel} removed from planner.`);
+      toast({
+        variant: "success",
+        title: `${courseLabel} removed`,
+        description: "Course removed from your planner.",
+      });
       invalidatePlanner();
     },
     onError: () => {
-      setAutoBuildResult(null);
-      setAutoBuildError(null);
-      setRefreshMessage("Remove failed. Please try again.");
+      toast({
+        variant: "error",
+        title: "Remove failed",
+        description: "Please try again.",
+      });
     },
   });
 
   const refreshAllCoursesMutation = useMutation({
     mutationFn: () => gradeStatisticsApi.refreshPlannerCourses(),
     onMutate: () => {
-      setAutoBuildResult(null);
-      setAutoBuildError(null);
-      setRefreshMessage(null);
       if (planner?.courses?.length) {
         setLoadingSections((prev) => {
           const next = { ...prev };
@@ -313,11 +359,19 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
       }
     },
     onSuccess: () => {
-      setRefreshMessage("All courses refreshed with new Registrar data");
+      toast({
+        variant: "success",
+        title: "Courses refreshed",
+        description: "Loaded latest registrar data.",
+      });
       invalidatePlanner();
     },
     onError: () => {
-      setRefreshMessage("Refresh failed. Please try again.");
+      toast({
+        variant: "error",
+        title: "Refresh failed",
+        description: "Please try again.",
+      });
     },
     onSettled: () => {
       setLoadingSections({});
@@ -341,18 +395,51 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
   const autoBuildMutation = useMutation({
     mutationFn: () => gradeStatisticsApi.autoBuildPlanner(),
     onMutate: () => {
-      setAutoBuildError(null);
-      setAutoBuildResult(null);
-      setRefreshMessage(null);
+      autoBuildUndoSnapshot.current = capturePlannerSelections(planner);
     },
     onSuccess: (result: PlannerAutoBuildResponse) => {
-      setAutoBuildResult(result);
-      setRefreshMessage(null);
+      const snapshot = autoBuildUndoSnapshot.current;
+      const description = result.unscheduled_courses.length
+        ? `${result.message} Couldn't place: ${result.unscheduled_courses.join(", ")}.`
+        : result.message;
+
+      toast({
+        variant: "success",
+        title: "Schedule auto-built",
+        description,
+        duration: 8000,
+        action: snapshot
+          ? {
+              label: "Undo",
+              onClick: () => {
+                void restorePlannerSelections(snapshot)
+                  .then(() => {
+                    autoBuildUndoSnapshot.current = null;
+                    toast({
+                      title: "Auto-build undone",
+                      description: "Restored your previous section selections.",
+                    });
+                  })
+                  .catch(() => {
+                    toast({
+                      variant: "error",
+                      title: "Undo failed",
+                      description: "Please try again.",
+                    });
+                  });
+              },
+            }
+          : undefined,
+      });
       invalidatePlanner();
     },
     onError: (error) => {
-      setAutoBuildError(error instanceof Error ? error.message : "Shuffle failed");
-      setRefreshMessage(null);
+      autoBuildUndoSnapshot.current = null;
+      toast({
+        variant: "error",
+        title: "Auto-build failed",
+        description: error instanceof Error ? error.message : "Shuffle failed.",
+      });
     },
   });
 
@@ -456,7 +543,7 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
         ? "Unable to search courses"
         : null;
   const isSearchPending = courseSearchMutation.isPending && !isLoadingMore;
-  const canSearch = Boolean(planner && courseForm.term_value && normalizeCourseQuery(courseForm.query));
+  const activeSearchQuery = normalizeCourseQuery(courseForm.query);
 
   const selectedEvents: SectionEvent[] = useMemo(() => {
     if (!planner) return [];
@@ -538,19 +625,20 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-6 xl:flex-row">
-        <aside className="w-full space-y-4 xl:w-80">
-        <section className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+        <aside className="w-full min-w-0 shrink-0 space-y-4 xl:w-72">
+        <section className="min-w-0 rounded-xl border border-border/60 bg-card p-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold">Find a course</h3>
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              Shows courses from "{courseForm.term_label || courseForm.term_value || "semester"}"
-            </span>
+            {(courseForm.term_label || courseForm.term_value) && (
+              <Badge variant="secondary" className="font-normal">
+                {courseForm.term_label || courseForm.term_value}
+              </Badge>
+            )}
           </div>
-          <div ref={searchBoxRef} className="relative mt-3 space-y-2">
+          <div ref={searchBoxRef} className="relative mt-3 min-w-0 space-y-2">
             <form className="space-y-2" onSubmit={handleSearchSubmit}>
-              <input
-                className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              <Input
                 placeholder="Search by code (e.g., MATH 161)"
                 value={courseForm.query}
                 onChange={(e) =>
@@ -567,9 +655,13 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
               <p className="text-xs text-destructive">{searchError}</p>
             )}
             {searchOpen && (
-              <div className="absolute left-0 right-0 top-full z-20 mt-2 rounded-xl border border-border/60 bg-card shadow-lg">
-                <div className="max-h-80 overflow-auto p-3 space-y-3 text-sm scroll-thin">
-                  {isSearchPending && searchResults.length === 0 ? (
+              <div className="absolute left-0 right-0 top-full z-20 mt-2 min-w-0 overflow-hidden rounded-xl border border-border/60 bg-card shadow-lg">
+                <div className="max-h-80 space-y-3 overflow-x-hidden overflow-y-auto p-3 text-sm scroll-thin">
+                  {!activeSearchQuery ? (
+                    <p className="text-xs text-muted-foreground">
+                      Type a course code to search the catalog.
+                    </p>
+                  ) : isSearchPending && searchResults.length === 0 ? (
                     <p className="flex items-center gap-2 text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" /> Searching registrar catalog...
                     </p>
@@ -588,34 +680,39 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
                         hasPriorityValues(priorityValues);
                       const metaParts = [result.school, result.level, result.term].filter(Boolean);
                       const syllabusLink = getSyllabusLink(result.course_code);
+                      const alreadyAdded = isCourseAlreadyAdded(result.course_code, courseForm.term_value);
                       return (
                         <div
                           key={result.course_code}
                           className="rounded-lg border border-border/60 p-3"
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
+                          <div className="flex items-start gap-2">
+                            <div className="min-w-0 flex-1">
                               <p className="text-sm font-semibold">{result.course_code}</p>
-                              <p className="text-xs text-muted-foreground">{result.title}</p>
+                              <p className="break-words text-xs text-muted-foreground">{result.title}</p>
                               {metaParts.length > 0 && (
                                 <p className="text-xs text-muted-foreground">{metaParts.join(" · ")}</p>
                               )}
-                              <div className="flex items-center gap-2 text-xs">
+                              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
                                 {hasMeta && (
                                   <Button
                                     size="xs"
                                     variant="link"
-                                    className="px-0 text-xs"
+                                    className="h-auto min-h-0 px-0 py-0 text-xs whitespace-normal"
                                     onClick={() => handleShowRequirementsFromSearch(result)}
                                   >
                                     Priorities & requisites
                                   </Button>
                                 )}
-                                <span className="text-border">|</span>
+                                {hasMeta && syllabusLink && (
+                                  <span className="text-border" aria-hidden="true">
+                                    |
+                                  </span>
+                                )}
                                 <Button
                                   size="xs"
                                   variant="link"
-                                  className="px-0 text-xs"
+                                  className="h-auto min-h-0 px-0 py-0 text-xs whitespace-normal"
                                   disabled={!syllabusLink}
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -630,22 +727,19 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
                             </div>
                             <Button
                               size="sm"
+                              className="shrink-0 self-start"
                               onClick={() => handleAddCourse(result.course_code)}
                               disabled={
                                 !planner ||
                                 !courseForm.term_value ||
                                 addCourseMutation.isPending ||
-                                isCourseAlreadyAdded(result.course_code, courseForm.term_value)
+                                alreadyAdded
                               }
-                              variant={
-                                isCourseAlreadyAdded(result.course_code, courseForm.term_value)
-                                  ? "outline"
-                                  : "default"
-                              }
+                              variant={alreadyAdded ? "outline" : "default"}
                             >
                               {addCourseMutation.isPending ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : isCourseAlreadyAdded(result.course_code, courseForm.term_value) ? (
+                              ) : alreadyAdded ? (
                                 "Added"
                               ) : (
                                 "Add"
@@ -659,11 +753,11 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
                     <p className="text-xs text-muted-foreground">No results. Try another code.</p>
                   )}
                 </div>
-                {searchCursor && (
+                {searchCursor && activeSearchQuery && searchResults.length > 0 && (
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="w-full border-t border-border/60 rounded-b-xl"
+                    className="h-auto w-full rounded-none rounded-b-xl border-t border-border/60 py-2.5"
                     onClick={handleLoadMoreResults}
                     disabled={isLoadingMore}
                   >
@@ -684,68 +778,67 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
         <section className="scroll-thin rounded-xl border border-border/60 bg-card p-4 shadow-sm max-h-[500px] overflow-y-auto overflow-x-hidden">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold">Courses</h3>
-            <div className="flex items-center gap-1.5">
-              <Button
-                size="icon"
-                variant="secondary"
-                className="h-8 w-8"
-                onClick={() => refreshAllCoursesMutation.mutate()}
-                disabled={!planner?.courses.length || refreshAllCoursesMutation.isPending}
-                title="Refresh"
-                aria-label="Refresh courses"
-              >
-                {refreshAllCoursesMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCcw className="h-4 w-4" />
-                )}
-              </Button>
-              <Button
-                size="icon"
-                variant="secondary"
-                className="h-8 w-8"
-                onClick={() => setResetConfirmOpen(true)}
-                disabled={resetPlannerMutation.isPending}
-                title="Reset"
-                aria-label="Reset planner"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-              <Button
-                size="icon"
-                variant="secondary"
-                className="h-8 w-8"
-                onClick={() => autoBuildMutation.mutate()}
-                disabled={!planner || autoBuildMutation.isPending}
-                title="Shuffle"
-                aria-label="Auto-build schedule"
-              >
-                {autoBuildMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Wand2 className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-          {(autoBuildResult || autoBuildError) && (
-            <div className="mt-2 rounded-md border border-border/40 bg-muted/20 p-2 text-xs text-muted-foreground space-y-1">
-              {autoBuildError && <p className="text-destructive">{autoBuildError}</p>}
-              {autoBuildResult && (
-                <>
-                  <p>{autoBuildResult.message}</p>
-                  {!!autoBuildResult.unscheduled_courses.length && (
-                    <p>Couldn&apos;t place: {autoBuildResult.unscheduled_courses.join(", ")}</p>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 gap-1.5">
+                  Actions
+                  <ChevronDown className="h-4 w-4 opacity-70" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>Planner actions</DropdownMenuLabel>
+                <DropdownMenuItem
+                  className="items-start py-2"
+                  disabled={!planner?.courses.length || refreshAllCoursesMutation.isPending}
+                  onClick={() => refreshAllCoursesMutation.mutate()}
+                >
+                  {refreshAllCoursesMutation.isPending ? (
+                    <Loader2 className="mt-0.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCcw className="mt-0.5 h-4 w-4" />
                   )}
-                </>
-              )}
-            </div>
-          )}
-          {!autoBuildResult && !autoBuildError && refreshMessage && (
-            <div className="mt-2 rounded-md border border-border/40 bg-muted/20 p-2 text-xs text-muted-foreground">
-              <p>{refreshMessage}</p>
-            </div>
-          )}
+                  <div className="min-w-0">
+                    <p className="font-medium leading-none">Refresh courses</p>
+                    <p className="mt-1 text-xs font-normal text-muted-foreground">
+                      Reload section times and instructors from registrar.
+                    </p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="items-start py-2"
+                  disabled={!planner || autoBuildMutation.isPending}
+                  onClick={() => autoBuildMutation.mutate()}
+                >
+                  {autoBuildMutation.isPending ? (
+                    <Loader2 className="mt-0.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="mt-0.5 h-4 w-4" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-medium leading-none">Auto-build schedule</p>
+                    <p className="mt-1 text-xs font-normal text-muted-foreground">
+                      Build valid schedule without time clashes from your courses.
+                    </p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  className="items-start py-2"
+                  disabled={resetPlannerMutation.isPending}
+                  onClick={() => setResetConfirmOpen(true)}
+                >
+                  <RotateCcw className="mt-0.5 h-4 w-4" />
+                  <div className="min-w-0">
+                    <p className="font-medium leading-none">Reset planner</p>
+                    <p className="mt-1 text-xs font-normal opacity-80">
+                      Remove all courses and clear your draft schedule.
+                    </p>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           <div className="mt-3 space-y-3 text-sm">
             {planner?.courses.length ? (
               planner.courses.map((course) => (
@@ -768,8 +861,8 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
         </section>
         </aside>
 
-        <section className="overflow-x-auto flex-1 w-full min-w-0 rounded-2xl border border-border/60 bg-card p-4 shadow-sm scroll-thin">
-          <div className="mb-4 flex items-center justify-between">
+        <section className="w-full min-w-0 flex-1 rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-2">
             <h3 className="text-base font-semibold">Planner preview</h3>
             {selectedEvents.length > 0 && (
               <Badge
@@ -996,6 +1089,18 @@ const SchedulePreview = ({
     return clashes;
   }, [timedEvents]);
 
+  // Drop unused weekend columns so Mon–Fri get more width.
+  const visibleDays = useMemo(() => {
+    const used = new Set<string>();
+    timedEvents.forEach(({ section }) => {
+      for (const day of section.days || "") {
+        used.add(day);
+      }
+    });
+    const hasWeekend = used.has("S");
+    return hasWeekend ? dayDefs : dayDefs.filter((day) => day.key !== "S");
+  }, [timedEvents]);
+
   if (!schedule) {
     return (
       <div className="mt-6 flex h-64 items-center justify-center text-sm text-muted-foreground">
@@ -1005,9 +1110,12 @@ const SchedulePreview = ({
   }
 
   const hasSections = schedule.courses.some((course) => course.sections.length);
-  const hourHeight = 75;
+  const hourHeight = 84;
   const hours = Array.from({ length: endHour - startHour + 1 }, (_, idx) => startHour + idx);
   const filteredEvents = timedEvents;
+  const dayCount = visibleDays.length;
+  const gridTemplateColumns = `64px repeat(${dayCount}, minmax(7.5rem, 1fr))`;
+  const minGridWidth = 64 + dayCount * 120;
 
   return (
     <div className="mt-4 space-y-4">
@@ -1033,88 +1141,95 @@ const SchedulePreview = ({
             onShowDetails={onShowDetails}
           />
         </div>
-        <div className="hidden overflow-auto rounded-xl border border-border/60 bg-muted/10 p-4 scroll-thin md:block">
-          <div className="grid grid-cols-[60px_repeat(6,minmax(0,1fr))] gap-2 text-xs font-semibold">
-            <div />
-            {dayDefs.map((day) => (
-              <div key={day.key} className="text-center text-muted-foreground">
-                {day.label}
-              </div>
-            ))}
-          </div>
-          <div className="mt-2 flex">
-            <div className="flex flex-col text-right text-xs text-muted-foreground">
-              {hours.map((hour) => (
-                <div
-                  key={hour}
-                  className="border-t border-border/40 pr-2"
-                  style={{ height: hourHeight }}
-                >
-                  {formatHour(hour)}
+        <div className="hidden overflow-x-auto rounded-xl border border-border/60 bg-muted/10 p-3 scroll-thin md:block">
+          <div style={{ minWidth: minGridWidth }}>
+            <div
+              className="grid gap-2 text-xs font-semibold"
+              style={{ gridTemplateColumns }}
+            >
+              <div />
+              {visibleDays.map((day) => (
+                <div key={day.key} className="text-center text-muted-foreground">
+                  {day.label}
                 </div>
               ))}
             </div>
-            <div className="relative flex-1">
-              <div className="absolute inset-0 grid grid-cols-6 gap-2">
-                {dayDefs.map((day) => (
-                  <div key={day.key} className="relative border-l border-border/30">
-                    {hours.map((hour) => (
-                      <div
-                        key={`${day.key}-${hour}`}
-                        className="border-t border-dashed border-border/20"
-                        style={{ height: hourHeight }}
-                      />
-                    ))}
-                    {filteredEvents
-                      .filter(({ section }) => section.days.includes(day.key))
-                      .map(({ course, section }) => {
-                        const [start, end] = parseTimeRange(section.times);
-                        if (start == null || end == null) return null;
-                        const demandRatio = computeDemandRatio(section);
-                        const slotColors = getDemandClasses(demandRatio);
-                        const isClashing = clashingSectionIds.has(section.id);
-                        const clashClasses = isClashing
-                          ? "bg-destructive text-destructive-foreground border border-destructive/70 ring-2 ring-destructive/60"
-                          : `border-2 border-transparent ${slotColors.bg} ${slotColors.text}`;
-                        return (
-                          <div
-                            key={`${section.id}-${day.key}`}
-                            className={`absolute left-1 right-1 cursor-pointer rounded-md px-1.5 py-1 text-[10px] font-semibold shadow transition-all hover:border-primary/50 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${clashClasses}`}
-                            style={{
-                              top: ((start - startHour * 60) / 60) * hourHeight,
-                              height: ((end - start) / 60) * hourHeight,
-                              zIndex: isClashing ? 10 : 1,
-                            }}
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => onShowDetails({ course, section })}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                onShowDetails({ course, section });
-                              }
-                            }}
-                          >
-                            <p className="truncate text-current">
-                              {course.course_code}
-                              <span className="ml-1 opacity-80">{section.section_code}</span>
-                            </p>
-                            {section.faculty && (
-                              <p className="truncate text-[9px] text-current opacity-80">
-                                {truncateFaculty(section.faculty)}
-                              </p>
-                            )}
-                            {section.room && (
-                              <p className="truncate text-[9px] text-current opacity-80">
-                                {truncateRoom(section.room)}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
+            <div
+              className="relative mt-2 grid gap-2"
+              style={{
+                gridTemplateColumns,
+                height: hours.length * hourHeight,
+              }}
+            >
+              <div className="flex flex-col text-right text-xs text-muted-foreground">
+                {hours.map((hour) => (
+                  <div
+                    key={hour}
+                    className="border-t border-border/40 pr-2"
+                    style={{ height: hourHeight }}
+                  >
+                    {formatHour(hour)}
                   </div>
                 ))}
               </div>
+              {visibleDays.map((day) => (
+                <div key={day.key} className="relative border-l border-border/30">
+                  {hours.map((hour) => (
+                    <div
+                      key={`${day.key}-${hour}`}
+                      className="border-t border-dashed border-border/20"
+                      style={{ height: hourHeight }}
+                    />
+                  ))}
+                  {filteredEvents
+                    .filter(({ section }) => section.days.includes(day.key))
+                    .map(({ course, section }) => {
+                      const [start, end] = parseTimeRange(section.times);
+                      if (start == null || end == null) return null;
+                      const demandRatio = computeDemandRatio(section);
+                      const slotColors = getDemandClasses(demandRatio);
+                      const isClashing = clashingSectionIds.has(section.id);
+                      const clashClasses = isClashing
+                        ? "bg-destructive text-destructive-foreground border border-destructive/70 ring-2 ring-destructive/60"
+                        : `border-2 border-transparent ${slotColors.bg} ${slotColors.text}`;
+                      return (
+                        <div
+                          key={`${section.id}-${day.key}`}
+                          className={`absolute inset-x-1 cursor-pointer overflow-hidden rounded-md px-2 py-1 text-[11px] font-semibold shadow transition-all hover:border-primary/50 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${clashClasses}`}
+                          style={{
+                            top: ((start - startHour * 60) / 60) * hourHeight,
+                            height: ((end - start) / 60) * hourHeight,
+                            zIndex: isClashing ? 10 : 1,
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => onShowDetails({ course, section })}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              onShowDetails({ course, section });
+                            }
+                          }}
+                        >
+                          <p className="truncate text-current">
+                            {course.course_code}
+                            <span className="ml-1 opacity-80">{section.section_code}</span>
+                          </p>
+                          {section.faculty && (
+                            <p className="truncate text-[10px] text-current opacity-80">
+                              {truncateFaculty(section.faculty)}
+                            </p>
+                          )}
+                          {section.room && (
+                            <p className="truncate text-[10px] text-current opacity-80">
+                              {truncateRoom(section.room)}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              ))}
             </div>
           </div>
         </div>

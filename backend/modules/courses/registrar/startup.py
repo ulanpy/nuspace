@@ -16,6 +16,7 @@ async def setup_schedule_catalog(app: FastAPI) -> None:
         storage_client=storage_client,
         bucket_name=config.BUCKET_NAME,
         gcs_object=config.SCHEDULE_SYNC_GCS_OBJECT,
+        prefer_local_fixture=config.IS_DEBUG,
     )
     try:
         count = await sync_schedule_catalog(
@@ -23,8 +24,10 @@ async def setup_schedule_catalog(app: FastAPI) -> None:
             storage_client=storage_client,
             bucket_name=config.BUCKET_NAME,
             gcs_object=config.SCHEDULE_SYNC_GCS_OBJECT,
+            prefer_local_fixture=config.IS_DEBUG,
         )
-        print(f"Synced schedule catalog docs from GCS: {count}")
+        source = "local fixture" if config.IS_DEBUG else "GCS"
+        print(f"Synced schedule catalog docs from {source}: {count}")
     except Exception as exc:
         print(f"Error syncing registrar course schedule from GCS: {exc}")
     app.state.course_schedule_refresher.start()

@@ -8,6 +8,7 @@ from httpx import AsyncClient
 from backend.modules.courses.registrar.schedule_gcs import (
     SCHEDULE_GCS_OBJECT,
     download_schedule_catalog,
+    load_local_schedule_catalog_fixture,
 )
 from backend.modules.courses.registrar.schedule_sync_worker import (
     merge_priorities_into_schedule,
@@ -69,16 +70,26 @@ async def sync_schedule_catalog(
     storage_client: storage.Client,
     bucket_name: str,
     gcs_object: str = SCHEDULE_GCS_OBJECT,
+    prefer_local_fixture: bool = False,
 ) -> int:
     """
     Load pre-parsed registrar schedule JSON from GCS and upload into Meilisearch.
 
     PDF discovery/parsing runs in Cloud Run Job (schedule_sync_job); this path is
     lightweight I/O only so API restarts do not spike CPU.
+
+    When prefer_local_fixture is True (local IS_DEBUG), load committed fixture first.
     """
-    documents = download_schedule_catalog(
-        storage_client, bucket_name, object_name=gcs_object
-    )
+    documents: list[dict] | None = None
+    if prefer_local_fixture:
+        documents = load_local_schedule_catalog_fixture()
+        if documents is not None:
+            logger.info("Loaded %s schedule entries from local debug fixture", len(documents))
+
+    if documents is None:
+        documents = download_schedule_catalog(
+            storage_client, bucket_name, object_name=gcs_object
+        )
 
     if documents is None:
         logger.warning(
@@ -114,12 +125,14 @@ class ScheduleCatalogRefresher:
         bucket_name: str,
         gcs_object: str = SCHEDULE_GCS_OBJECT,
         interval_seconds: int = SCHEDULE_REFRESH_INTERVAL_SECONDS,
+        prefer_local_fixture: bool = False,
     ):
         self._client = meilisearch_client
         self._storage_client = storage_client
         self._bucket_name = bucket_name
         self._gcs_object = gcs_object
         self._interval_seconds = interval_seconds
+        self._prefer_local_fixture = prefer_local_fixture
         self._stop_event: asyncio.Event | None = None
         self._task: asyncio.Task | None = None
 
@@ -156,6 +169,7 @@ class ScheduleCatalogRefresher:
                     storage_client=self._storage_client,
                     bucket_name=self._bucket_name,
                     gcs_object=self._gcs_object,
+                    prefer_local_fixture=self._prefer_local_fixture,
                 )
             except Exception:
                 logger.exception("Failed to refresh registrar schedule data from GCS")

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from pathlib import Path
 from typing import Sequence
 
 from google.cloud import storage
@@ -12,6 +13,39 @@ logger = logging.getLogger(__name__)
 
 SCHEDULE_GCS_OBJECT = "registrar/course_schedule_catalog.json"
 SCHEDULE_GCS_META_OBJECT = "registrar/meta.json"
+
+FIXTURES_DIR = Path(__file__).resolve().parents[3] / "fixtures" / "registrar"
+SCHEDULE_FIXTURE_CATALOG = FIXTURES_DIR / "course_schedule_catalog.json"
+SCHEDULE_FIXTURE_META = FIXTURES_DIR / "meta.json"
+
+
+def load_local_schedule_catalog_fixture() -> list[dict] | None:
+    """
+    Load committed registrar schedule JSON for local debug (IS_DEBUG=true).
+
+    Returns None if the fixture file is missing or invalid.
+    """
+    if not SCHEDULE_FIXTURE_CATALOG.is_file():
+        logger.info("Local schedule fixture not found at %s", SCHEDULE_FIXTURE_CATALOG)
+        return None
+
+    try:
+        raw = SCHEDULE_FIXTURE_CATALOG.read_text(encoding="utf-8")
+        data = json.loads(raw)
+    except Exception:
+        logger.exception("Failed to read local schedule fixture at %s", SCHEDULE_FIXTURE_CATALOG)
+        return None
+
+    if not isinstance(data, list):
+        logger.error("Local schedule fixture at %s is not a JSON list", SCHEDULE_FIXTURE_CATALOG)
+        return None
+
+    if SCHEDULE_FIXTURE_META.is_file():
+        logger.info("Using local schedule fixture meta from %s", SCHEDULE_FIXTURE_META)
+    else:
+        logger.info("Local schedule fixture meta missing at %s", SCHEDULE_FIXTURE_META)
+
+    return data
 
 
 def download_schedule_catalog(
