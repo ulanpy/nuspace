@@ -42,7 +42,7 @@ services:
     restart: always
     ports:
       - "80:80" # Existing frontend/
-      - "8081:8081" # New web/ — remove once the cutover lands
+      - "6767:6767" # New web/ — remove once the cutover lands
     volumes:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf
       - ../frontend/dist:/var/www/my-app/dist # Make sure this folder exists in production builds
@@ -159,7 +159,7 @@ services:
       - cloudflared
 
   # New frontend, served side by side with `frontend` so the two can be compared
-  # against one backend during the rewrite. Reachable at http://localhost:8080.
+  # against one backend during the rewrite. Reachable at http://localhost:6767.
   web:
     build:
       context: ..
