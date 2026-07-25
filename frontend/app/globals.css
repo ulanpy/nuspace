@@ -1,13 +1,20 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
-@import '@fontsource-variable/inter' layer(base);
 
 @custom-variant dark (&:is(.dark *));
 
+@font-face {
+  font-family: 'Onest';
+  src: url('/fonts/Onest-Variable.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: 'Onest Variable', sans-serif;
+  --font-sans: 'Onest', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -83,13 +90,12 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
-
   *,
   ::after,
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+    border-color: var(--border);
   }
 }
 
@@ -133,14 +139,6 @@
 }
 
 @layer utilities {
-  @font-face {
-    font-family: 'Onest';
-    src: url('/fonts/Onest-Variable.ttf') format('truetype');
-    font-style: normal;
-    font-weight: 100 900;
-    font-display: swap;
-  }
-
   .no-transitions * {
     transition: none !important;
   }
@@ -237,21 +235,21 @@
   --sidebar-accent-foreground: hsl(214.0 36.4% 92.8%);
   --sidebar-border: hsl(215.8 20.7% 24.2%);
   --sidebar-ring: hsl(25.8 93.2% 63.0%);
+}
 
-
+@layer base {
   * {
     @apply border-border outline-ring/50;
   }
 
-  body {
-    @apply bg-background text-foreground;
-    font-family: "Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-kerning: normal;
-    font-optical-sizing: auto;
-  }
-
   html {
     @apply font-sans;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-kerning: normal;
+    font-optical-sizing: auto;
   }
 
   h1,
