@@ -136,7 +136,20 @@ class PublicCourseCatalogClient:
                     "description": entry.get("SHORTDESC") or None,
                     "department": entry.get("DEPARTMENT", ""),
                     "title": entry.get("TITLE", ""),
-                    "credits": entry.get("CRECTS", ""),
+                    # CRUS, not CRECTS. The registrar publishes both US credits
+                    # and ECTS; this used to take ECTS, which is roughly double,
+                    # so a 3-credit course was stored as 6.
+                    #
+                    # That is not merely cosmetic. GPA is credit-weighted, and
+                    # the ratio is not always 2:1 -- the catalog contains courses
+                    # with 0 US credits and 6 ECTS. Those carry no weight toward
+                    # a GPA, but under ECTS they were weighted more heavily than
+                    # a normal course.
+                    #
+                    # It was also inconsistent: the Meilisearch-backed path
+                    # already reads credits_us, so the same course could end up
+                    # stored as 3 or 6 depending on which path created it.
+                    "credits": entry.get("CRUS", ""),
                     "term": entry.get("TERMNAME", ""),
                 }
             )
