@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { lazy, startTransition, Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "@/router/navigation";
 import { BookOpen, BarChart3, CalendarDays, GraduationCap } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,12 +12,19 @@ import { apiCall } from "@/utils/api";
 import { gradeStatisticsApi } from "../api/grade-statistics-api";
 import { useLiveGpaViewModel } from "../hooks/use-live-gpa-view-model";
 import { LiveGpaTab } from "../components/live-gpa-tab";
-import { CourseStatsTab } from "../components/course-stats-tab";
-import { ScheduleBuilderTab } from "../components/schedule-builder-tab";
-import { DegreeAuditTab } from "../components/degree-audit-tab";
 import { coursesSurface } from "../constants/dashboard-theme";
 import { PageContainer } from "@/components/shared/page-container";
 import { PageHeader } from "@/components/shared/page-header";
+
+const CourseStatsTab = lazy(() =>
+  import("../components/course-stats-tab").then((m) => ({ default: m.CourseStatsTab })),
+);
+const ScheduleBuilderTab = lazy(() =>
+  import("../components/schedule-builder-tab").then((m) => ({ default: m.ScheduleBuilderTab })),
+);
+const DegreeAuditTab = lazy(() =>
+  import("../components/degree-audit-tab").then((m) => ({ default: m.DegreeAuditTab })),
+);
 
 const tabOptions = [
   { value: "live-gpa", label: "My Courses", icon: BookOpen },
@@ -26,12 +33,25 @@ const tabOptions = [
   { value: "degree-audit", label: "Degree Audit", icon: GraduationCap },
 ] as const;
 
+type TabValue = (typeof tabOptions)[number]["value"];
+
+function isTabValue(value: string | null): value is TabValue {
+  return tabOptions.some((t) => t.value === value);
+}
+
+function TabPanelFallback() {
+  return (
+    <div className="py-10 text-center text-sm text-muted-foreground">Loading…</div>
+  );
+}
+
 export default function GradeStatisticsPage() {
   const { user } = useUser();
   const viewModel = useLiveGpaViewModel(user);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const [activeTab, setActiveTab] = useState("live-gpa");
+  const [activeTab, setActiveTab] = useState<TabValue>("live-gpa");
+  // Content mounts in a transition so the tab chrome can paint first.
+  const [contentTab, setContentTab] = useState<TabValue>("live-gpa");
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -84,27 +104,34 @@ export default function GradeStatisticsPage() {
 
   useEffect(() => {
     const tab = searchParams.get("tab");
-    if (tab && tabOptions.some((t) => t.value === tab)) {
-      setActiveTab(tab);
-    }
-  }, [searchParams]);
+    if (!isTabValue(tab) || tab === activeTab) return;
+    setActiveTab(tab);
+    startTransition(() => {
+      setContentTab(tab);
+    });
+  }, [searchParams, activeTab]);
 
   const courseStatsKeyword = searchParams.get("keyword") ?? "";
 
   useEffect(() => {
     const tabElement = tabRefs.current[activeTab];
-    if (tabElement) {
-      setTimeout(() => {
-        tabElement.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-      }, 0);
-    }
+    if (!tabElement) return;
+    tabElement.scrollIntoView({ behavior: "auto", block: "nearest", inline: "nearest" });
   }, [activeTab]);
 
   const handleTabChange = (value: string) => {
+    if (!isTabValue(value) || value === activeTab) return;
+
+    // Paint the selected tab immediately; defer heavy panel mount + URL sync.
     setActiveTab(value);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("tab", value);
-    router.replace(`?${params.toString()}`);
+    startTransition(() => {
+      setContentTab(value);
+      const params = new URLSearchParams(searchParams.toString());
+      if (params.get("tab") !== value) {
+        params.set("tab", value);
+        router.replace(`?${params.toString()}`);
+      }
+    });
   };
 
   return (
@@ -117,7 +144,7 @@ export default function GradeStatisticsPage() {
         />
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <div ref={scrollContainerRef} className="overflow-x-auto">
+          <div className="overflow-x-auto">
             <TabsList className="w-full min-w-max sm:w-auto">
               {tabOptions.map(({ value, label, icon: Icon }) => (
                 <TabsTrigger
@@ -126,7 +153,7 @@ export default function GradeStatisticsPage() {
                     tabRefs.current[value] = el;
                   }}
                   value={value}
-                  className="gap-2 rounded-md px-4 sm:flex-1 sm:justify-center"
+                  className="gap-2 rounded-md px-4 transition-none sm:flex-1 sm:justify-center"
                 >
                   <Icon className="h-4 w-4" />
                   <span>{label}</span>
@@ -136,19 +163,41 @@ export default function GradeStatisticsPage() {
           </div>
 
           <TabsContent value="live-gpa" className="mt-4">
-            <LiveGpaTab user={user} viewModel={viewModel} />
+            {contentTab === "live-gpa" ? (
+              <LiveGpaTab user={user} viewModel={viewModel} />
+            ) : (
+              <TabPanelFallback />
+            )}
           </TabsContent>
 
           <TabsContent value="course-stats" className="mt-4">
-            <CourseStatsTab initialKeyword={courseStatsKeyword} />
+            {contentTab === "course-stats" ? (
+              <Suspense fallback={<TabPanelFallback />}>
+                <CourseStatsTab initialKeyword={courseStatsKeyword} />
+              </Suspense>
+            ) : (
+              <TabPanelFallback />
+            )}
           </TabsContent>
 
           <TabsContent value="schedule-builder" className="mt-4">
-            <ScheduleBuilderTab user={user} />
+            {contentTab === "schedule-builder" ? (
+              <Suspense fallback={<TabPanelFallback />}>
+                <ScheduleBuilderTab user={user} />
+              </Suspense>
+            ) : (
+              <TabPanelFallback />
+            )}
           </TabsContent>
 
           <TabsContent value="degree-audit" className="mt-4">
-            <DegreeAuditTab user={user} />
+            {contentTab === "degree-audit" ? (
+              <Suspense fallback={<TabPanelFallback />}>
+                <DegreeAuditTab user={user} />
+              </Suspense>
+            ) : (
+              <TabPanelFallback />
+            )}
           </TabsContent>
         </Tabs>
       </PageContainer>

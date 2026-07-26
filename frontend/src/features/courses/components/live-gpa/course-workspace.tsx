@@ -15,24 +15,14 @@ import { cn } from "@/utils/utils";
 
 interface CourseWorkspaceProps {
   course: RegisteredCourse | null;
-  isExcludedFromGpa: boolean;
-  onAddItem: () => void;
   onDeleteItem: (item: BaseCourseItem) => void;
   onEditItem: (item: BaseCourseItem) => void;
-  onShareTemplate: () => void;
-  onOpenTemplates: () => void;
-  onToggleGpaExclusion: () => void;
 }
 
 export function CourseWorkspace({
   course,
-  isExcludedFromGpa,
-  onAddItem,
   onDeleteItem,
   onEditItem,
-  onShareTemplate,
-  onOpenTemplates,
-  onToggleGpaExclusion,
 }: CourseWorkspaceProps) {
   if (!course) {
     return (
@@ -83,13 +73,8 @@ export function CourseWorkspace({
 
       <CourseDetailPanel
         registeredCourse={course}
-        isExcludedFromGpa={isExcludedFromGpa}
-        onAddItem={onAddItem}
         onDeleteItem={onDeleteItem}
         onEditItem={onEditItem}
-        onShareTemplate={onShareTemplate}
-        onOpenTemplates={onOpenTemplates}
-        onToggleGpaExclusion={onToggleGpaExclusion}
       />
     </div>
   );

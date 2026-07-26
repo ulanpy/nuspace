@@ -8,9 +8,17 @@ from unittest.mock import MagicMock
 from backend.modules.courses.registrar.schedule_gcs import (
     SCHEDULE_GCS_OBJECT,
     download_schedule_catalog,
+    load_local_schedule_catalog_fixture,
     upload_schedule_catalog,
 )
 from backend.modules.courses.registrar.schedule_sync import _merge_priorities_into_schedule
+
+
+def test_load_local_schedule_catalog_fixture_reads_committed_file():
+    docs = load_local_schedule_catalog_fixture()
+    assert docs is not None
+    assert len(docs) > 0
+    assert "course_code" in docs[0]
 
 
 def test_download_missing_object_returns_none():

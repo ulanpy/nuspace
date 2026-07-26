@@ -200,7 +200,7 @@ export function RegisteredCourseCard({
               disabled={isWithdrawn}
             >
               <UsersRound className="h-3.5 w-3.5" />
-              Browse templates
+              Import from classmate
             </Button>
           )}
           {onShareTemplate && (
@@ -212,7 +212,7 @@ export function RegisteredCourseCard({
               disabled={isWithdrawn}
             >
               <Share2 className="h-3.5 w-3.5" />
-              Share template
+              Share with classmates
             </Button>
           )}
           <Button

@@ -353,7 +353,7 @@ export function useLiveGpaViewModel(user: NullableUser) {
         toast({
           variant: "warning",
           title: "Add assignments first",
-          description: "Please add at least one item before sharing a template.",
+          description: "Add at least one assignment before sharing your grading setup.",
         });
         return;
       }
@@ -412,8 +412,8 @@ export function useLiveGpaViewModel(user: NullableUser) {
 
       toast({
         variant: "success",
-        title: "Template shared",
-        description: "Your course template is now available to peers.",
+        title: "Setup shared",
+        description: "Classmates can now import your assignment names and weights. Your grades stay private.",
       });
       closeShareModal();
       if (templateDrawerCourse?.id === sharingCourse.id) {
@@ -427,7 +427,7 @@ export function useLiveGpaViewModel(user: NullableUser) {
       toast({
         variant: "destructive",
         title: "Share failed",
-        description: "We couldn't share this template. Try again later.",
+        description: "We couldn't share your grading setup. Try again later.",
       });
     } finally {
       setIsSharing(false);

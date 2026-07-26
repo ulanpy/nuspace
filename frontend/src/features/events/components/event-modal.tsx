@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Modal } from "@/components/shared/modal";
 import { useCreateEvent } from '@/features/events/hooks/use-create-event';
 import { useUpdateEvent } from '@/features/events/hooks/use-update-event';
@@ -8,7 +8,10 @@ import { useDeleteEvent } from '@/features/events/hooks/use-delete-event';
 import { useUser } from "@/hooks/use-user";
 import { CreateEventData, EditEventData, EventType, Event, EventPermissions } from "@/features/shared/campus/types";
 
-import { UnifiedEventMediaUpload } from './unified-event-media-upload';
+import {
+  UnifiedEventMediaUpload,
+  type EventUploadHandle,
+} from './unified-event-media-upload';
 import { EventDetailsForm } from './forms/event-details-form';
 import { EventDateTimeSelector } from './forms/event-date-time-selector';
 import { EventElevatedFields } from './forms/event-elevated-fields';
@@ -17,9 +20,11 @@ import { EventPolicy } from "@/features/shared/campus/types";
 import { DeleteConfirmation } from '@/components/shared/delete-confirmation';
 import { EventActions } from './forms/event-actions';
 import { useEventForm, EventFormProvider } from '@/context/event-form-context';
-import { useInitializeMedia } from '@/features/media/hooks/use-initialize-media';
 import { toast } from "@/hooks/toast";
 import { campusWallClockToIso } from "@/features/events/utils/campus-datetime";
+import { useQueryClient } from "@tanstack/react-query";
+import { pollForEventImages } from "@/utils/polling";
+import { campuscurrentAPI } from "@/features/events/api/events-api";
 
 interface EventModalProps {
   isOpen: boolean;
@@ -34,12 +39,12 @@ export function EventModal({ isOpen, onClose, isEditMode, event, permissions }: 
   const { handleCreate, isCreating } = useCreateEvent();
   const { handleUpdate, isUpdating } = useUpdateEvent();
   const { handleDelete, isDeleting } = useDeleteEvent();
+  const queryClient = useQueryClient();
+  const mediaRef = useRef<EventUploadHandle>(null);
 
   const isProcessing = isCreating || isUpdating || isDeleting;
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  useInitializeMedia({ isEditMode, mediaItems: event?.media });
 
   const handleSubmit = async (
     formData: CreateEventData | EditEventData,
@@ -77,6 +82,8 @@ export function EventModal({ isOpen, onClose, isEditMode, event, permissions }: 
 
     try {
       if (isEditMode && event) {
+        const mediaIdsToDelete = mediaRef.current?.getMarkedForDeletion() ?? [];
+
         const editData: EditEventData = {
           name: formData.name,
           place: formData.place,
@@ -86,16 +93,37 @@ export function EventModal({ isOpen, onClose, isEditMode, event, permissions }: 
           policy: formData.policy,
           registration_link: (formData as any).registration_link,
           type: formData.type as EventType,
+          ...(mediaIdsToDelete.length > 0
+            ? { media_ids_to_delete: mediaIdsToDelete }
+            : {}),
         };
 
         if (permissions?.editable_fields.includes('tag' as any)) {
           editData.tag = 'tag' in formData ? formData.tag : event.tag;
         }
         
-        await handleUpdate(event.id.toString(), editData);
+        const updated = await handleUpdate(event.id.toString(), editData);
+        mediaRef.current?.clearMarkedForDeletion();
+        resetForm();
+        onClose();
+
+        void mediaRef.current?.upload(updated.id).catch((mediaError) => {
+          console.warn("Failed to upload event media:", mediaError);
+        });
+
+        queryClient.invalidateQueries({ queryKey: ["campusCurrent", "events"] });
+        queryClient.invalidateQueries({
+          queryKey: ["campusCurrent", "event", updated.id.toString()],
+        });
+        void pollForEventImages(
+          updated.id,
+          queryClient,
+          "campusCurrent",
+          campuscurrentAPI.getEventQueryOptions,
+        );
       } else {
         const createData: CreateEventData = {
-          creator_sub: user.user.sub,
+          creator_sub: user.sub,
           policy: formData.policy as EventPolicy,
           registration_link: (formData as any).registration_link,
           name: formData.name || "",
@@ -106,11 +134,25 @@ export function EventModal({ isOpen, onClose, isEditMode, event, permissions }: 
           type: formData.type as EventType,
         };
 
-        await handleCreate(createData);
+        const created = await handleCreate(createData);
+        resetForm();
+        onClose();
+
+        void mediaRef.current?.upload(created.id).catch((mediaError) => {
+          console.warn("Failed to upload event media:", mediaError);
+        });
+
+        queryClient.invalidateQueries({ queryKey: ["campusCurrent", "events"] });
+        queryClient.invalidateQueries({
+          queryKey: ["campusCurrent", "event", created.id.toString()],
+        });
+        void pollForEventImages(
+          created.id,
+          queryClient,
+          "campusCurrent",
+          campuscurrentAPI.getEventQueryOptions,
+        );
       }
-      
-      resetForm();
-      onClose();
     } catch (error) {
       console.error(`Failed to ${isEditMode ? 'update' : 'create'} event:`, error);
     }
@@ -167,7 +209,7 @@ export function EventModal({ isOpen, onClose, isEditMode, event, permissions }: 
             </div>
           </div>
 
-          <UnifiedEventMediaUpload />
+          <UnifiedEventMediaUpload ref={mediaRef} />
 
           <EventDetailsForm />
 

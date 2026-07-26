@@ -103,7 +103,7 @@ export function BindTelegramButton({ compact, iconOnly }: BindTelegramButtonProp
 
   const handleBindTelegram = async () => {
     // Use the correct user identifier - check both possible locations
-    const userIdentifier = user?.user?.sub;
+    const userIdentifier = user?.sub;
 
     if (!userIdentifier) {
       setError("User information not available");

@@ -29,7 +29,6 @@ import {
 } from '@/context/community-form-context';
 import { useQueryClient } from "@tanstack/react-query";
 import { pollForCommunityImages } from "@/utils/polling";
-import { useInitializeMedia } from '@/features/media/hooks/use-initialize-media';
 import { campuscurrentAPI } from '@/features/communities/api/communities-api';
 import { toast } from "@/hooks/toast";
 import {
@@ -66,9 +65,6 @@ export function CommunityModal({
   const bannersRef = useRef<CommunityUploadHandle>(null);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  // Initialize media for edit/create flows via shared hook
-  useInitializeMedia({ isEditMode, mediaItems: community?.media });
 
   if (!user) return null;
 
@@ -159,7 +155,7 @@ export function CommunityModal({
           type: (formData as CreateCommunityData).type || CommunityType.club,
           category: (formData as CreateCommunityData).category || CommunityCategory.academic,
           email: (((formData as CreateCommunityData).email || "").trim()) || undefined,
-          head: user.user.sub,
+          head: user.sub,
           established: (formData as CreateCommunityData).established || formatLocalDate(new Date()),
           description: formData.description || "",
           telegram_url: telegramUrl,
@@ -246,7 +242,7 @@ export function CommunityModal({
             </div>
           )}
           {/* Media Upload Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-6">
             <UnifiedCommunityMediaUpload ref={profilesRef} type="communityProfiles" />
             <UnifiedCommunityMediaUpload ref={bannersRef} type="communityBanners" />
           </div>

@@ -19,7 +19,7 @@ import { CommunityModal } from '@/features/communities/components/community-moda
 export default function ProfilePage() {
     const { user, isLoading, logout, login } = useUser();
     const router = useRouter();
-    const { communities } = useUserCommunities(user?.user?.sub);
+    const { communities } = useUserCommunities(user?.sub);
     const [isCreateCommunityModalOpen, setIsCreateCommunityModalOpen] = useState(false);
 
 
@@ -34,18 +34,18 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-4">
                         <div
                             className="w-12 h-12 rounded-full bg-muted overflow-hidden flex items-center justify-center">
-                            {user?.user?.picture ? (
-                                <img src={user.user.picture} alt="avatar" className="w-full h-full object-cover" />
+                            {user?.picture ? (
+                                <img src={user.picture} alt="avatar" className="w-full h-full object-cover" />
                             ) : (
                                 <User className="h-6 w-6 text-muted-foreground" />
                             )}
                         </div>
                         <div className="min-w-0">
                             <div className="font-semibold truncate">
-                                {isLoading ? "Loading..." : user?.user?.given_name || user?.user?.name || "Guest"}
+                                {isLoading ? "Loading..." : user?.name || "Guest"}
                             </div>
                             <div className="text-sm text-muted-foreground truncate">
-                                {user?.user?.email || "Not signed in"}
+                                {user?.email || "Not signed in"}
                             </div>
                         </div>
                         <div className="ml-auto flex items-center gap-2">
