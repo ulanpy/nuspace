@@ -16,6 +16,23 @@ export function registeredCoursesQueryOptions() {
   })
 }
 
+/**
+ * Terms the planner can build against, newest first.
+ *
+ * The current term is whatever this returns — Fall 2026 is `825` today, and it
+ * changes every semester. Nothing may hardcode that value: a literal term id
+ * works until the registrar rolls over and then silently searches an empty
+ * catalog, which looks like "no courses found" rather than like a bug.
+ */
+export function semestersQueryOptions() {
+  return queryOptions({
+    queryKey: qk.courses.semesters(),
+    queryFn: () => unwrap(api.GET("/planner/semesters")),
+    // Terms roll over once a semester; no reason to refetch within a session.
+    staleTime: Infinity,
+  })
+}
+
 /** The weekly timetable, used for professor names and the schedule view. */
 export function scheduleQueryOptions() {
   return queryOptions({
