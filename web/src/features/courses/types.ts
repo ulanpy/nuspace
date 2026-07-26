@@ -24,3 +24,10 @@ export interface CourseItemDraft {
   obtained_score: number | null
   max_score: number | null
 }
+
+/** Degree audit: what a programme requires and how far along the student is. */
+export type AuditCatalog = components["schemas"]["CatalogResponse"]
+export type AuditResponse = components["schemas"]["AuditResponse"]
+export type AuditProgram = components["schemas"]["AuditProgramResult"]
+export type AuditRequirement = components["schemas"]["AuditRequirementResult"]
+export type AuditSummary = components["schemas"]["AuditSummary"]

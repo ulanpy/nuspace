@@ -188,3 +188,93 @@ async function toBase64(file: File): Promise<string> {
 
   return btoa(binary)
 }
+
+/** Admission years, majors and minors the audit can run against. */
+export function auditCatalogQueryOptions() {
+  return queryOptions({
+    queryKey: qk.courses.degreeAudit(),
+    queryFn: () => unwrap(api.GET("/degree-audit/catalog")),
+    // Requirement CSVs ship with the backend; they change once a year at most.
+    staleTime: Infinity,
+  })
+}
+
+/**
+ * The last audit this student ran, if any.
+ *
+ * An audit is expensive — it pulls a transcript from the registrar — so the
+ * result is cached server-side and shown on arrival rather than making the
+ * student re-enter their password to see what they already computed.
+ */
+export function cachedAuditQueryOptions(year?: string, major?: string) {
+  return queryOptions({
+    queryKey: [...qk.courses.degreeAudit(), "result", year, major] as const,
+    queryFn: () =>
+      unwrap(
+        api.GET("/degree-audit/result", {
+          params: { query: { year: year ?? null, major: major ?? null } },
+        })
+      ),
+  })
+}
+
+interface AuditSelection {
+  year: string
+  majors: string[]
+  minors: string[]
+}
+
+/**
+ * Transfer-credit mappings, which the audit accepts but this UI does not build
+ * yet. The schema requires the field, so it is sent empty rather than omitted —
+ * students with transfer credits will see those courses listed back as
+ * `unmapped_tc_courses`.
+ */
+const NO_TC_MAPPINGS: [] = []
+
+export function useRegistrarAudit() {
+  const client = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      password,
+      ...selection
+    }: AuditSelection & { password: string }) =>
+      unwrap(
+        api.POST("/degree-audit/audit/registrar", {
+          // `username` is required by the schema but the backend derives it;
+          // sending the empty string keeps the contract without inventing one.
+          body: {
+            ...selection,
+            username: "",
+            password,
+            tc_mappings: NO_TC_MAPPINGS,
+          },
+        })
+      ),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: qk.courses.degreeAudit() }),
+  })
+}
+
+export function useTranscriptAudit() {
+  const client = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      file,
+      ...selection
+    }: AuditSelection & { file: File }) =>
+      unwrap(
+        api.POST("/degree-audit/audit/pdf", {
+          body: {
+            ...selection,
+            pdf_file: await toBase64(file),
+            tc_mappings: NO_TC_MAPPINGS,
+          },
+        })
+      ),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: qk.courses.degreeAudit() }),
+  })
+}
