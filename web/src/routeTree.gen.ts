@@ -13,7 +13,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as PublicRouteImport } from './routes/_public'
 import { Route as AppAnnouncementsRouteImport } from './routes/_app/announcements'
 import { Route as AppContactsRouteImport } from './routes/_app/contacts'
-import { Route as AppCoursesRouteImport } from './routes/_app/courses'
+import { Route as AppCoursesRouteRouteImport } from './routes/_app/courses/route'
 import { Route as AppOpportunitiesRouteImport } from './routes/_app/opportunities'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppSgotinishRouteImport } from './routes/_app/sgotinish'
@@ -23,6 +23,10 @@ import { Route as PublicPrivacyPolicyRouteImport } from './routes/_public/privac
 import { Route as PublicTermsOfServiceRouteImport } from './routes/_public/terms-of-service'
 import { Route as AppCommunitiesIndexRouteImport } from './routes/_app/communities/index'
 import { Route as AppCommunitiesCommunityIdRouteImport } from './routes/_app/communities/$communityId'
+import { Route as AppCoursesIndexRouteImport } from './routes/_app/courses/index'
+import { Route as AppCoursesAuditRouteImport } from './routes/_app/courses/audit'
+import { Route as AppCoursesScheduleRouteImport } from './routes/_app/courses/schedule'
+import { Route as AppCoursesStatisticsRouteImport } from './routes/_app/courses/statistics'
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
 import { Route as AppEventsEventIdRouteImport } from './routes/_app/events/$eventId'
 
@@ -44,7 +48,7 @@ const AppContactsRoute = AppContactsRouteImport.update({
   path: '/contacts',
   getParentRoute: () => AppRoute,
 } as any)
-const AppCoursesRoute = AppCoursesRouteImport.update({
+const AppCoursesRouteRoute = AppCoursesRouteRouteImport.update({
   id: '/courses',
   path: '/courses',
   getParentRoute: () => AppRoute,
@@ -95,6 +99,26 @@ const AppCommunitiesCommunityIdRoute =
     path: '/communities/$communityId',
     getParentRoute: () => AppRoute,
   } as any)
+const AppCoursesIndexRoute = AppCoursesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppCoursesRouteRoute,
+} as any)
+const AppCoursesAuditRoute = AppCoursesAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AppCoursesRouteRoute,
+} as any)
+const AppCoursesScheduleRoute = AppCoursesScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => AppCoursesRouteRoute,
+} as any)
+const AppCoursesStatisticsRoute = AppCoursesStatisticsRouteImport.update({
+  id: '/statistics',
+  path: '/statistics',
+  getParentRoute: () => AppCoursesRouteRoute,
+} as any)
 const AppEventsIndexRoute = AppEventsIndexRouteImport.update({
   id: '/events/',
   path: '/events/',
@@ -108,9 +132,9 @@ const AppEventsEventIdRoute = AppEventsEventIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
+  '/courses': typeof AppCoursesRouteRouteWithChildren
   '/announcements': typeof AppAnnouncementsRoute
   '/contacts': typeof AppContactsRoute
-  '/courses': typeof AppCoursesRoute
   '/opportunities': typeof AppOpportunitiesRoute
   '/profile': typeof AppProfileRoute
   '/sgotinish': typeof AppSgotinishRoute
@@ -118,15 +142,18 @@ export interface FileRoutesByFullPath {
   '/privacy-policy': typeof PublicPrivacyPolicyRoute
   '/terms-of-service': typeof PublicTermsOfServiceRoute
   '/communities/$communityId': typeof AppCommunitiesCommunityIdRoute
+  '/courses/audit': typeof AppCoursesAuditRoute
+  '/courses/schedule': typeof AppCoursesScheduleRoute
+  '/courses/statistics': typeof AppCoursesStatisticsRoute
   '/events/$eventId': typeof AppEventsEventIdRoute
   '/communities/': typeof AppCommunitiesIndexRoute
+  '/courses/': typeof AppCoursesIndexRoute
   '/events/': typeof AppEventsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/announcements': typeof AppAnnouncementsRoute
   '/contacts': typeof AppContactsRoute
-  '/courses': typeof AppCoursesRoute
   '/opportunities': typeof AppOpportunitiesRoute
   '/profile': typeof AppProfileRoute
   '/sgotinish': typeof AppSgotinishRoute
@@ -134,17 +161,21 @@ export interface FileRoutesByTo {
   '/privacy-policy': typeof PublicPrivacyPolicyRoute
   '/terms-of-service': typeof PublicTermsOfServiceRoute
   '/communities/$communityId': typeof AppCommunitiesCommunityIdRoute
+  '/courses/audit': typeof AppCoursesAuditRoute
+  '/courses/schedule': typeof AppCoursesScheduleRoute
+  '/courses/statistics': typeof AppCoursesStatisticsRoute
   '/events/$eventId': typeof AppEventsEventIdRoute
   '/communities': typeof AppCommunitiesIndexRoute
+  '/courses': typeof AppCoursesIndexRoute
   '/events': typeof AppEventsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
+  '/_app/courses': typeof AppCoursesRouteRouteWithChildren
   '/_app/announcements': typeof AppAnnouncementsRoute
   '/_app/contacts': typeof AppContactsRoute
-  '/_app/courses': typeof AppCoursesRoute
   '/_app/opportunities': typeof AppOpportunitiesRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/sgotinish': typeof AppSgotinishRoute
@@ -153,17 +184,21 @@ export interface FileRoutesById {
   '/_public/terms-of-service': typeof PublicTermsOfServiceRoute
   '/_public/': typeof PublicIndexRoute
   '/_app/communities/$communityId': typeof AppCommunitiesCommunityIdRoute
+  '/_app/courses/audit': typeof AppCoursesAuditRoute
+  '/_app/courses/schedule': typeof AppCoursesScheduleRoute
+  '/_app/courses/statistics': typeof AppCoursesStatisticsRoute
   '/_app/events/$eventId': typeof AppEventsEventIdRoute
   '/_app/communities/': typeof AppCommunitiesIndexRoute
+  '/_app/courses/': typeof AppCoursesIndexRoute
   '/_app/events/': typeof AppEventsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/courses'
     | '/announcements'
     | '/contacts'
-    | '/courses'
     | '/opportunities'
     | '/profile'
     | '/sgotinish'
@@ -171,15 +206,18 @@ export interface FileRouteTypes {
     | '/privacy-policy'
     | '/terms-of-service'
     | '/communities/$communityId'
+    | '/courses/audit'
+    | '/courses/schedule'
+    | '/courses/statistics'
     | '/events/$eventId'
     | '/communities/'
+    | '/courses/'
     | '/events/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/announcements'
     | '/contacts'
-    | '/courses'
     | '/opportunities'
     | '/profile'
     | '/sgotinish'
@@ -187,16 +225,20 @@ export interface FileRouteTypes {
     | '/privacy-policy'
     | '/terms-of-service'
     | '/communities/$communityId'
+    | '/courses/audit'
+    | '/courses/schedule'
+    | '/courses/statistics'
     | '/events/$eventId'
     | '/communities'
+    | '/courses'
     | '/events'
   id:
     | '__root__'
     | '/_app'
     | '/_public'
+    | '/_app/courses'
     | '/_app/announcements'
     | '/_app/contacts'
-    | '/_app/courses'
     | '/_app/opportunities'
     | '/_app/profile'
     | '/_app/sgotinish'
@@ -205,8 +247,12 @@ export interface FileRouteTypes {
     | '/_public/terms-of-service'
     | '/_public/'
     | '/_app/communities/$communityId'
+    | '/_app/courses/audit'
+    | '/_app/courses/schedule'
+    | '/_app/courses/statistics'
     | '/_app/events/$eventId'
     | '/_app/communities/'
+    | '/_app/courses/'
     | '/_app/events/'
   fileRoutesById: FileRoutesById
 }
@@ -249,7 +295,7 @@ declare module '@tanstack/react-router' {
       id: '/_app/courses'
       path: '/courses'
       fullPath: '/courses'
-      preLoaderRoute: typeof AppCoursesRouteImport
+      preLoaderRoute: typeof AppCoursesRouteRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/opportunities': {
@@ -315,6 +361,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCommunitiesCommunityIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/courses/': {
+      id: '/_app/courses/'
+      path: '/'
+      fullPath: '/courses/'
+      preLoaderRoute: typeof AppCoursesIndexRouteImport
+      parentRoute: typeof AppCoursesRouteRoute
+    }
+    '/_app/courses/audit': {
+      id: '/_app/courses/audit'
+      path: '/audit'
+      fullPath: '/courses/audit'
+      preLoaderRoute: typeof AppCoursesAuditRouteImport
+      parentRoute: typeof AppCoursesRouteRoute
+    }
+    '/_app/courses/schedule': {
+      id: '/_app/courses/schedule'
+      path: '/schedule'
+      fullPath: '/courses/schedule'
+      preLoaderRoute: typeof AppCoursesScheduleRouteImport
+      parentRoute: typeof AppCoursesRouteRoute
+    }
+    '/_app/courses/statistics': {
+      id: '/_app/courses/statistics'
+      path: '/statistics'
+      fullPath: '/courses/statistics'
+      preLoaderRoute: typeof AppCoursesStatisticsRouteImport
+      parentRoute: typeof AppCoursesRouteRoute
+    }
     '/_app/events/': {
       id: '/_app/events/'
       path: '/events'
@@ -332,10 +406,28 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppCoursesRouteRouteChildren {
+  AppCoursesAuditRoute: typeof AppCoursesAuditRoute
+  AppCoursesScheduleRoute: typeof AppCoursesScheduleRoute
+  AppCoursesStatisticsRoute: typeof AppCoursesStatisticsRoute
+  AppCoursesIndexRoute: typeof AppCoursesIndexRoute
+}
+
+const AppCoursesRouteRouteChildren: AppCoursesRouteRouteChildren = {
+  AppCoursesAuditRoute: AppCoursesAuditRoute,
+  AppCoursesScheduleRoute: AppCoursesScheduleRoute,
+  AppCoursesStatisticsRoute: AppCoursesStatisticsRoute,
+  AppCoursesIndexRoute: AppCoursesIndexRoute,
+}
+
+const AppCoursesRouteRouteWithChildren = AppCoursesRouteRoute._addFileChildren(
+  AppCoursesRouteRouteChildren,
+)
+
 interface AppRouteChildren {
+  AppCoursesRouteRoute: typeof AppCoursesRouteRouteWithChildren
   AppAnnouncementsRoute: typeof AppAnnouncementsRoute
   AppContactsRoute: typeof AppContactsRoute
-  AppCoursesRoute: typeof AppCoursesRoute
   AppOpportunitiesRoute: typeof AppOpportunitiesRoute
   AppProfileRoute: typeof AppProfileRoute
   AppSgotinishRoute: typeof AppSgotinishRoute
@@ -346,9 +438,9 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppCoursesRouteRoute: AppCoursesRouteRouteWithChildren,
   AppAnnouncementsRoute: AppAnnouncementsRoute,
   AppContactsRoute: AppContactsRoute,
-  AppCoursesRoute: AppCoursesRoute,
   AppOpportunitiesRoute: AppOpportunitiesRoute,
   AppProfileRoute: AppProfileRoute,
   AppSgotinishRoute: AppSgotinishRoute,
