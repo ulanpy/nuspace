@@ -2,20 +2,15 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 
 import { registeredCoursesQueryOptions } from "@/features/courses/api"
+import { CourseCard } from "@/features/courses/components/course-card"
 import {
   ceilingGpa,
-  courseScore,
-  courseScoreSoFar,
   formatGpa,
-  formatWeight,
-  isGraded,
   projectedGpa,
-  scoreToLetter,
   semesterGpa,
 } from "@/features/courses/gpa"
 import type { RegisteredCourse } from "@/features/courses/types"
 import { EmptyState, QueryBoundary } from "@/components/query-boundary"
-import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 
 export const Route = createFileRoute("/_app/courses/")({
@@ -67,58 +62,6 @@ function GpaSummary({ courses }: { courses: RegisteredCourse[] }) {
   )
 }
 
-function CourseRow({ registered }: { registered: RegisteredCourse }) {
-  const { course, items } = registered
-  const graded = items.filter(isGraded)
-  const soFar = courseScoreSoFar(items)
-  const banked = courseScore(items)
-
-  const weightGraded = graded.reduce(
-    (total, item) => total + (item.total_weight_pct ?? 0),
-    0
-  )
-
-  return (
-    <Card className="space-y-3 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="font-semibold">
-            {course.course_code}
-            {course.title && (
-              <span className="font-normal text-muted-foreground">
-                {" "}
-                · {course.title}
-              </span>
-            )}
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            {course.credits ?? 0} credits
-            {registered.class_average != null &&
-              ` · class average ${formatWeight(registered.class_average)}`}
-          </p>
-        </div>
-
-        {graded.length > 0 && (
-          <Badge variant="secondary" className="tabular-nums">
-            {scoreToLetter(soFar)} · {formatWeight(soFar)}
-          </Badge>
-        )}
-      </div>
-
-      {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No assignments yet.</p>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          {/* Both readings, because they diverge hard early in a term: banked
-              counts ungraded work as zero, so it looks alarming in week three. */}
-          {formatWeight(banked)} banked of {formatWeight(weightGraded)} graded ·{" "}
-          {graded.length} of {items.length} items
-        </p>
-      )}
-    </Card>
-  )
-}
-
 function MyCourses() {
   const query = useQuery(registeredCoursesQueryOptions())
 
@@ -138,7 +81,7 @@ function MyCourses() {
           <GpaSummary courses={courses} />
           <div className="space-y-3">
             {courses.map((registered) => (
-              <CourseRow key={registered.id} registered={registered} />
+              <CourseCard key={registered.id} registered={registered} />
             ))}
           </div>
         </div>
