@@ -1,7 +1,9 @@
 import json
 from typing import Any
+import ssl
 import time
 import re
+from pathlib import Path
 
 import httpx
 from httpx import Cookies
@@ -11,6 +13,28 @@ HOST = "https://registrar.nu.edu.kz"
 LOGIN_PATH = "/index.php"
 SCHEDULE_HTML_PATH = "/my-registrar/personal-schedule"
 SCHEDULE_JSON_PATH = "/my-registrar/personal-schedule/json"
+
+# registrar.nu.edu.kz serves a valid, publicly-trusted Sectigo certificate for
+# *.nu.edu.kz, but sends only the leaf -- it omits the intermediate CA. Clients
+# therefore cannot build a chain to the Sectigo root and verification fails with
+# "unable to get local issuer certificate".
+#
+# Supplying the missing intermediate ourselves is the actual fix. The
+# alternative that was in place -- disabling verification entirely -- also
+# disables every guarantee TLS provides on this connection, and this is the
+# connection that carries a student's registrar password. Anyone able to
+# intercept traffic between the backend and the registrar could present any
+# certificate at all and harvest those credentials in plaintext.
+_INTERMEDIATE_CA = Path(__file__).with_name("sectigo_intermediate.pem")
+
+
+def _build_ssl_context() -> ssl.SSLContext:
+    # Default trust store for the roots, plus the one intermediate the registrar
+    # omits. Loading it as an additional anchor is only a path-building aid --
+    # its own root is already trusted, so this grants no new trust.
+    context = ssl.create_default_context()
+    context.load_verify_locations(cafile=str(_INTERMEDIATE_CA))
+    return context
 
 
 class RegistrarClient:
@@ -22,10 +46,14 @@ class RegistrarClient:
     automatically.
     
     Args:
-        verify_ssl: Whether to verify SSL certificates (default: False for registrar)
+        verify_ssl: Whether to verify the registrar's TLS certificate. Defaults
+            to True and should stay that way; the missing intermediate that made
+            verification fail is bundled, so there is no longer a reason to
+            disable it. Kept only as an escape hatch if the registrar's
+            certificate chain changes again.
         timeout: Request timeout in seconds (default: 30.0)
     """
-    def __init__(self, *, verify_ssl: bool = False, timeout: float = 30.0) -> None:
+    def __init__(self, *, verify_ssl: bool = True, timeout: float = 30.0) -> None:
         self.verify_ssl = verify_ssl
         self.timeout = timeout
         self._client: httpx.AsyncClient | None = None
@@ -44,7 +72,7 @@ class RegistrarClient:
             self._client = httpx.AsyncClient(
                 base_url=HOST,
                 timeout=self.timeout,
-                verify=self.verify_ssl,
+                verify=_build_ssl_context() if self.verify_ssl else False,
             )
             self._client.cookies.set("has_js", "1", domain="registrar.nu.edu.kz")
         return self._client
