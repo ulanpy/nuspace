@@ -1,26 +1,28 @@
 """
-This module is as a tribute to the creator 
+This module is as a tribute to the creator
 of crashed.nu — @superhooman.
 GitHub: https://github.com/superhooman/crashed.nu
 """
-
-
 
 from typing import Annotated, List
 
 import httpx
 from backend.common.dependencies import get_infra
-from backend.modules.auth.dependencies import get_creds_or_401
 from backend.common.schemas import Infra
 from backend.core.configs.config import config
+from backend.modules.auth.dependencies import get_creds_or_401
 from backend.modules.courses.courses import schemas
 from backend.modules.courses.courses.dependencies import get_student_course_service
 from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
 from backend.modules.courses.courses.policy import StudentCoursePolicy
+from backend.modules.courses.courses.service import StudentCourseService
 from backend.modules.courses.registrar.clients.registrar_client import (
     RegistrarLoginUnconfirmed,
 )
-from backend.modules.courses.courses.service import StudentCourseService
+from backend.modules.courses.registrar.username import (
+    RegistrarDebugUsernameMissing,
+    resolve_registrar_username,
+)
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, status
 from fastapi.responses import Response
 
@@ -55,18 +57,20 @@ async def sync_courses_from_registrar(
     """
     try:
         student_sub = user[0].get("sub")
-        # In production the registrar username is the local part of the NU
-        # email. Locally the session is a mock user with no such email, so it
-        # comes from REGISTRAR_DEBUG_USERNAME -- set it to your own username.
-        student_username = user[0].get("email").split("@")[0]
-        if config.IS_DEBUG and config.REGISTRAR_DEBUG_USERNAME:
-            student_username = config.REGISTRAR_DEBUG_USERNAME
+        student_username = resolve_registrar_username(
+            user[0].get("email"),
+            is_debug=config.IS_DEBUG,
+            debug_username=config.REGISTRAR_DEBUG_USERNAME,
+        )
         sync_result = await service.sync_courses_from_registrar(
             student_sub=student_sub,
             password=data.password,
             username=student_username,
         )
         return sync_result
+
+    except RegistrarDebugUsernameMissing as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
 
     except CourseLookupError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
@@ -89,8 +93,6 @@ async def sync_courses_from_registrar(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Could not reach the registrar: {e.__class__.__name__}",
         )
-
-    
 
 
 @router.post("/registered_courses/sync/pdf", response_model=schemas.RegistrarSyncResponse)
@@ -258,9 +260,7 @@ async def update_course_item(
     - Updated course item with all details
 
     """
-    return await service.update_course_item(
-        item_id=item_id, item_update=item_update, user=user
-    )
+    return await service.update_course_item(item_id=item_id, item_update=item_update, user=user)
 
 
 @router.delete("/course_items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -313,6 +313,4 @@ async def get_courses(
     **Returns:**
     - Paginated list of courses with total pages information
     """
-    return await service.get_courses(
-        infra=infra, page=page, size=size, term=term, keyword=keyword
-    )
+    return await service.get_courses(infra=infra, page=page, size=size, term=term, keyword=keyword)

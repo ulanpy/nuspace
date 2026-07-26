@@ -40,3 +40,19 @@ export function validateImage(file: File): string | null {
   }
   return null
 }
+
+/** Refuse an invalid batch before an entity is created or updated. */
+export function assertValidImageBatch(files: readonly File[]): void {
+  if (files.length > MAX_UPLOAD_BATCH) {
+    throw new Error(
+      `Can upload at most ${String(MAX_UPLOAD_BATCH)} files at a time.`
+    )
+  }
+
+  const rejected = files
+    .map(validateImage)
+    .filter((problem) => problem !== null)
+  if (rejected.length > 0) {
+    throw new Error(rejected.join("; "))
+  }
+}

@@ -9,7 +9,8 @@ import { api, unwrap } from "@/api/client"
 import { qk } from "@/api/query-keys"
 import { hasMediaFormat, pollForMedia } from "@/lib/media-polling"
 import { useMediaUpload } from "@/features/media/use-media-upload"
-import type { MediaFormat } from "@/features/media/types"
+import { assertValidImageBatch, type MediaFormat } from "@/features/media/types"
+import { saveWithMedia } from "@/features/media/save-with-media"
 import type {
   EventCreate,
   EventStatus,
@@ -108,24 +109,29 @@ export function useCreateEvent() {
       body: EventCreate
       files: File[]
     }) => {
-      const event = await unwrap(api.POST("/events", { body }))
-
-      // Uploads need the id, so they cannot be part of the same request. A
-      // failure here leaves a real event with no poster, which is recoverable
-      // by editing — losing the event to un-do a failed image would not be.
-      if (files.length > 0) {
-        await uploadMedia({
-          entityType: "community_events",
-          entityId: event.id,
-          items: toUploadItems(files),
-        })
-      }
-
-      return event
+      return saveWithMedia({
+        validate: () => {
+          assertValidImageBatch(files)
+        },
+        saveEntity: () => unwrap(api.POST("/events", { body })),
+        uploadMedia:
+          files.length > 0
+            ? async (event) => {
+                const uploaded = await uploadMedia({
+                  entityType: "community_events",
+                  entityId: event.id,
+                  items: toUploadItems(files),
+                })
+                return uploaded.length
+              }
+            : undefined,
+      })
     },
-    onSuccess: async (event, { files }) => {
+    onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: qk.events.all() })
-      if (files.length > 0) refreshWhenMediaLands(queryClient, event.id)
+      if (result.successfulUploadCount > 0) {
+        refreshWhenMediaLands(queryClient, result.entity.id)
+      }
     },
   })
 }
@@ -145,26 +151,35 @@ export function useUpdateEvent() {
       body: EventUpdate
       files: File[]
     }) => {
-      const event = await unwrap(
-        api.PATCH("/events/{event_id}", {
-          params: { path: { event_id: id } },
-          body,
-        })
-      )
-
-      if (files.length > 0) {
-        await uploadMedia({
-          entityType: "community_events",
-          entityId: id,
-          items: toUploadItems(files),
-        })
-      }
-
-      return event
+      return saveWithMedia({
+        validate: () => {
+          assertValidImageBatch(files)
+        },
+        saveEntity: () =>
+          unwrap(
+            api.PATCH("/events/{event_id}", {
+              params: { path: { event_id: id } },
+              body,
+            })
+          ),
+        uploadMedia:
+          files.length > 0
+            ? async () => {
+                const uploaded = await uploadMedia({
+                  entityType: "community_events",
+                  entityId: id,
+                  items: toUploadItems(files),
+                })
+                return uploaded.length
+              }
+            : undefined,
+      })
     },
-    onSuccess: async (_event, { id, files }) => {
+    onSuccess: async (result, { id }) => {
       await queryClient.invalidateQueries({ queryKey: qk.events.all() })
-      if (files.length > 0) refreshWhenMediaLands(queryClient, id)
+      if (result.successfulUploadCount > 0) {
+        refreshWhenMediaLands(queryClient, id)
+      }
     },
   })
 }

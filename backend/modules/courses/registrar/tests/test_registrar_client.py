@@ -1,16 +1,84 @@
 import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
-CLIENT_PATH = (
-    Path(__file__).resolve().parents[1] / "clients" / "registrar_client.py"
-)
+CLIENT_PATH = Path(__file__).resolve().parents[1] / "clients" / "registrar_client.py"
 spec = importlib.util.spec_from_file_location("registrar_client", CLIENT_PATH)
 registrar_client = importlib.util.module_from_spec(spec)
 assert spec and spec.loader
 spec.loader.exec_module(registrar_client)
 RegistrarClient = registrar_client.RegistrarClient
+InvalidRegistrarCredentials = registrar_client.InvalidRegistrarCredentials
+RegistrarLoginUnconfirmed = registrar_client.RegistrarLoginUnconfirmed
+
+
+class LoginResponse:
+    status_code = 200
+
+    def __init__(self, text: str):
+        self.text = text
+
+    def raise_for_status(self) -> None:
+        raise AssertionError("raise_for_status should not be called")
+
+
+class LoginHttpClient:
+    def __init__(self, text: str, cookie_names: tuple[str, ...] = ()):
+        self.response = LoginResponse(text)
+        self.cookies = SimpleNamespace(jar=[SimpleNamespace(name=name) for name in cookie_names])
+
+    async def post(self, *args, **kwargs):
+        return self.response
+
+
+def install_login_client(monkeypatch, registrar, fake_http_client):
+    async def fake_ensure_client():
+        return fake_http_client
+
+    monkeypatch.setattr(registrar, "_ensure_client", fake_ensure_client)
+
+
+@pytest.mark.asyncio
+async def test_login_recognizes_explicitly_rejected_credentials(monkeypatch):
+    client = RegistrarClient()
+    install_login_client(
+        monkeypatch,
+        client,
+        LoginHttpClient("Unrecognized username or password."),
+    )
+
+    with pytest.raises(InvalidRegistrarCredentials):
+        await client.login("student", "wrong")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("body", "cookies"),
+    [
+        ("Welcome", ("AUTHSSL",)),
+        ('<a href="/user/logout">Log out</a>', ()),
+    ],
+)
+async def test_login_accepts_session_or_logout_success_signals(monkeypatch, body, cookies):
+    client = RegistrarClient()
+    install_login_client(monkeypatch, client, LoginHttpClient(body, cookies))
+
+    await client.login("student", "correct")
+
+
+@pytest.mark.asyncio
+async def test_login_reports_an_unconfirmed_page_change(monkeypatch):
+    client = RegistrarClient()
+    install_login_client(
+        monkeypatch,
+        client,
+        LoginHttpClient("<html>Unexpected login response</html>"),
+    )
+
+    with pytest.raises(RegistrarLoginUnconfirmed):
+        await client.login("student", "correct")
 
 
 @pytest.mark.asyncio

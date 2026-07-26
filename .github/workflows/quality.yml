@@ -1,0 +1,107 @@
+name: Quality
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL build tools
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: uv sync --frozen
+
+      - name: Run backend tests
+        working-directory: backend
+        run: uv run --env-file ../infra/.env.example pytest
+
+      - name: Export OpenAPI
+        working-directory: backend
+        run: uv run python scripts/export_openapi.py --output "${{ runner.temp }}/openapi.json"
+
+      - name: Upload OpenAPI contract
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-contract
+          path: ${{ runner.temp }}/openapi.json
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install web dependencies
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        working-directory: web
+        run: pnpm format:check
+
+      - name: Lint web
+        working-directory: web
+        run: pnpm lint
+
+      - name: Test web
+        working-directory: web
+        run: pnpm test
+
+      - name: Build web
+        working-directory: web
+        run: pnpm build
+
+  contract:
+    needs: [backend, web]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download OpenAPI contract
+        uses: actions/download-artifact@v4
+        with:
+          name: openapi-contract
+          path: openapi
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Check generated API types
+        working-directory: web
+        env:
+          OPENAPI_URL: ${{ github.workspace }}/openapi/openapi.json
+        run: pnpm api:check

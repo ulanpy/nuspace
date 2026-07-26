@@ -64,6 +64,74 @@ jobs:
               - 'infra/postgres/**'
               - 'infra/backup/**'
 
+      # Validate the exact source contract before publishing an image or static
+      # artifact. The dummy env supplies import-time Config values only; FastAPI
+      # lifespan is not started by the exporter.
+      - name: Install PostgreSQL build tools
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev
+
+      - name: Set up Python for backend checks
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install backend dependencies
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
+        working-directory: backend
+        run: uv sync --frozen
+
+      - name: Test backend
+        if: steps.changes.outputs.backend == 'true'
+        working-directory: backend
+        run: uv run --env-file ../infra/.env.example pytest
+
+      - name: Export OpenAPI contract
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
+        working-directory: backend
+        run: uv run python scripts/export_openapi.py --output "${{ runner.temp }}/openapi.json"
+
+      - name: Enable pnpm
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
+        run: corepack enable
+
+      - name: Set up Node.js for checks
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install web dependencies
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Check generated API types
+        if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
+        working-directory: web
+        env:
+          OPENAPI_URL: ${{ runner.temp }}/openapi.json
+        run: pnpm api:check
+
+      - name: Validate frontend
+        if: steps.changes.outputs.frontend == 'true'
+        working-directory: web
+        run: |
+          pnpm format:check
+          pnpm lint
+          pnpm test
+          pnpm build
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -125,25 +193,6 @@ jobs:
           cache-to: type=gha,mode=max,scope=nuspace-backup
 
       # --- Frontend static export (Vite SPA) — built on the runner, not on the VM ---
-      - name: Set up pnpm
-        if: steps.changes.outputs.frontend == 'true'
-        run: corepack enable
-
-      - name: Set up Node.js for frontend build
-        if: steps.changes.outputs.frontend == 'true'
-        uses: actions/setup-node@v4
-        with:
-          # Node 22: the test runner strips TypeScript natively, and the build
-          # itself needs a version Vite 8 supports.
-          node-version: '22'
-          cache: pnpm
-          cache-dependency-path: web/pnpm-lock.yaml
-
-      - name: Build frontend static output
-        if: steps.changes.outputs.frontend == 'true'
-        working-directory: web
-        run: pnpm install --frozen-lockfile && pnpm build
-
       - name: Pack frontend out/ for Ansible
         if: steps.changes.outputs.frontend == 'true'
         run: tar czf "${{ runner.temp }}/frontend-static.tar.gz" -C web/out .

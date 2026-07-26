@@ -1,13 +1,11 @@
 import json
-from typing import Any
+import re
 import ssl
 import time
-import re
 from pathlib import Path
+from typing import Any
 
 import httpx
-from httpx import Cookies
-
 
 HOST = "https://registrar.nu.edu.kz"
 LOGIN_PATH = "/index.php"
@@ -54,11 +52,11 @@ def _build_ssl_context() -> ssl.SSLContext:
 class RegistrarClient:
     """
     HTTP client for interacting with NU registrar system.
-    
+
     Provides async context manager interface for authenticated requests to fetch
     student schedule data. Handles login authentication and session management
     automatically.
-    
+
     Args:
         verify_ssl: Whether to verify the registrar's TLS certificate. Defaults
             to True and should stay that way; the missing intermediate that made
@@ -67,6 +65,7 @@ class RegistrarClient:
             certificate chain changes again.
         timeout: Request timeout in seconds (default: 30.0)
     """
+
     def __init__(self, *, verify_ssl: bool = True, timeout: float = 30.0) -> None:
         self.verify_ssl = verify_ssl
         self.timeout = timeout
@@ -125,9 +124,7 @@ class RegistrarClient:
         looks_logged_in = has_session or "user/logout" in body
 
         if rejected:
-            raise InvalidRegistrarCredentials(
-                "The registrar rejected the username or password."
-            )
+            raise InvalidRegistrarCredentials("The registrar rejected the username or password.")
         if not looks_logged_in:
             # Neither signal present: the login page changed, or the registrar
             # answered with something unexpected. Saying "wrong password" here
@@ -207,7 +204,9 @@ class RegistrarClient:
 
         return primary
 
-    async def fetch_unofficial_transcript_raw(self, username: str, password: str) -> tuple[str, Any]:
+    async def fetch_unofficial_transcript_raw(
+        self, username: str, password: str
+    ) -> tuple[str, Any]:
         """
         Fetch unofficial transcript payload directly from registrar.
         Returns tuple of (content_type, payload) where payload is JSON (dict)
@@ -250,7 +249,11 @@ class RegistrarClient:
             pass
 
         if text:
-            m = re.search(r'(?:href|src)="([^"]*transcriptRenderDocumentPDF[^"]+)"', text, re.IGNORECASE)
+            m = re.search(
+                r'(?:href|src)="([^"]*transcriptRenderDocumentPDF[^"]+)"',
+                text,
+                re.IGNORECASE,
+            )
             if m:
                 url = m.group(1)
                 # Support both absolute and relative links.

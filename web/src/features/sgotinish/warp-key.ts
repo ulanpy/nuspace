@@ -18,7 +18,6 @@
  */
 
 const KEY_BYTES = 32
-const STORAGE_PREFIX = "sgotinish.warpkey."
 
 /** A fresh, URL-safe key. */
 export function generateWarpKey(): string {
@@ -65,54 +64,4 @@ export function readKeyFromFragment(hash: string): string | null {
 /** The shareable link for a ticket — the only copy of the key that exists. */
 export function warpKeyLink(key: string, origin: string): string {
   return `${origin}/t#key=${key}`
-}
-
-/**
- * Remember a key locally so the ticket is reachable without the link.
- *
- * A convenience, never the system of record: localStorage is cleared by
- * browsers, private windows and "clear site data", so the link remains the
- * thing that must be kept. Stored under the hash so several tickets coexist.
- */
-export function rememberKey(ownerHash: string, key: string): void {
-  try {
-    localStorage.setItem(STORAGE_PREFIX + ownerHash, key)
-  } catch {
-    // Storage can be unavailable or full; the link still works.
-  }
-}
-
-export function recallKey(ownerHash: string): string | null {
-  try {
-    return localStorage.getItem(STORAGE_PREFIX + ownerHash)
-  } catch {
-    return null
-  }
-}
-
-/** Every anonymous ticket key this browser has kept, newest first. */
-export function recallAllKeys(): { ownerHash: string; key: string }[] {
-  const found: { ownerHash: string; key: string }[] = []
-
-  try {
-    for (let index = 0; index < localStorage.length; index += 1) {
-      const name = localStorage.key(index)
-      if (!name?.startsWith(STORAGE_PREFIX)) continue
-
-      const key = localStorage.getItem(name)
-      if (key) found.push({ ownerHash: name.slice(STORAGE_PREFIX.length), key })
-    }
-  } catch {
-    return []
-  }
-
-  return found
-}
-
-export function forgetKey(ownerHash: string): void {
-  try {
-    localStorage.removeItem(STORAGE_PREFIX + ownerHash)
-  } catch {
-    // Nothing to do — the caller only wanted it gone locally.
-  }
 }

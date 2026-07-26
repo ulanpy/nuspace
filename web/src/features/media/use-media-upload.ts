@@ -7,12 +7,12 @@ import {
   uploadToSignedUrl,
 } from "@/features/media/api"
 import {
-  MAX_UPLOAD_BATCH,
+  assertValidImageBatch,
   type EntityType,
   type MediaFormat,
   type SignedUrlResponse,
-  validateImage,
 } from "@/features/media/types"
+import { MediaUploadBatchError } from "@/features/media/save-with-media"
 
 /** One file and where it belongs in the entity's gallery. */
 export interface UploadItem {
@@ -61,20 +61,9 @@ export function useMediaUpload() {
     }: UploadRequest): Promise<SignedUrlResponse[]> => {
       if (items.length === 0) return []
 
-      if (items.length > MAX_UPLOAD_BATCH) {
-        throw new Error(
-          `Can upload at most ${String(MAX_UPLOAD_BATCH)} files at a time.`
-        )
-      }
-
       // Reject the batch before signing anything: a URL issued for a file we
       // then refuse to send is a signature nobody redeems.
-      const rejected = items
-        .map((item) => validateImage(item.file))
-        .filter(Boolean)
-      if (rejected.length > 0) {
-        throw new Error(rejected.join("; "))
-      }
+      assertValidImageBatch(items.map((item) => item.file))
 
       setStatuses(items.map(() => "pending"))
 
@@ -107,13 +96,15 @@ export function useMediaUpload() {
 
       const failures = settled.filter((result) => result.status === "rejected")
       if (failures.length > 0) {
+        const successfulUploadCount = settled.length - failures.length
         const reasons = failures.map((failure) =>
           failure.reason instanceof MediaUploadError
             ? failure.reason.message
             : String(failure.reason)
         )
-        throw new Error(
-          `${String(failures.length)} of ${String(items.length)} uploads failed: ${reasons.join("; ")}`
+        throw new MediaUploadBatchError(
+          `${String(failures.length)} of ${String(items.length)} uploads failed: ${reasons.join("; ")}`,
+          successfulUploadCount
         )
       }
 
