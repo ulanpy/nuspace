@@ -2,16 +2,12 @@ import { Link } from "@tanstack/react-router"
 import { BadgeCheckIcon } from "lucide-react"
 
 import type { Community } from "@/features/communities/types"
+import { selectMedia } from "@/features/media/select"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 
-function profileUrl(community: Community): string | undefined {
-  const media = community.media
-  return (media.find((m) => m.media_format === "profile") ?? media[0])?.url
-}
-
 export function CommunityCard({ community }: { community: Community }) {
-  const avatar = profileUrl(community)
+  const avatar = selectMedia(community.media, "profile")?.url
 
   return (
     <Card className="p-0 transition-shadow hover:shadow-md">

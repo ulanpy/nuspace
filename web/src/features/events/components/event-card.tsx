@@ -2,17 +2,15 @@ import { Link } from "@tanstack/react-router"
 import { CalendarIcon, MapPinIcon } from "lucide-react"
 
 import type { Event } from "@/features/events/types"
+import { selectMedia } from "@/features/media/select"
 import { formatCampusDateTime, isPast } from "@/lib/datetime"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 
-function bannerUrl(event: Event): string | undefined {
-  const media = event.media ?? []
-  return (media.find((m) => m.media_format === "banner") ?? media[0])?.url
-}
-
 export function EventCard({ event }: { event: Event }) {
-  const banner = bannerUrl(event)
+  // Posters are portrait by convention — the upload guidance asks for 3:4 —
+  // so the card reserves that shape rather than cropping to a wide strip.
+  const poster = selectMedia(event.media, "carousel")
   const finished = isPast(event.end_datetime)
 
   return (
@@ -22,13 +20,13 @@ export function EventCard({ event }: { event: Event }) {
         params={{ eventId: String(event.id) }}
         className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
-        {banner && (
+        {poster && (
           <img
-            src={banner}
+            src={poster.url}
             alt=""
             aria-hidden
             loading="lazy"
-            className="aspect-[16/9] w-full bg-muted object-cover"
+            className="aspect-[3/4] w-full bg-muted object-cover"
           />
         )}
 
