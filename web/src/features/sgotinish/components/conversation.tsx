@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Loader2, Send } from "lucide-react"
 
@@ -9,7 +9,11 @@ import { SkeletonLines } from "@/components/query-boundary"
 import { formatRelative } from "@/lib/datetime"
 import { cn } from "@/lib/utils"
 
-import { messagesQueryOptions, useSendMessage } from "../api"
+import {
+  messagesQueryOptions,
+  useMarkMessageRead,
+  useSendMessage,
+} from "../api"
 import type { Conversation, Message } from "../types"
 
 function senderName(message: Message): string {
@@ -61,6 +65,40 @@ function MessageBubble({ message }: { message: Message }) {
   )
 }
 
+/**
+ * Reports messages as read once they are on screen.
+ *
+ * `unread_count` on the ticket list is driven by `POST /messages/{id}/read`,
+ * which the ported conversation view never called — so a ticket read five
+ * times still advertised unread replies, and SG members learned to ignore the
+ * badge. Rendering the conversation is the read event: there is no separate
+ * "open" step, and the whole thread is on screen at once.
+ *
+ * Each id is only ever sent once per mount. Without that, the 20-second
+ * refetch would re-post a receipt for every message on every poll.
+ */
+function useReadReceipts(
+  conversationId: number,
+  messages: readonly Message[],
+  ownerHash?: string
+) {
+  const markRead = useMarkMessageRead(conversationId, ownerHash)
+  const reported = useRef(new Set<number>())
+
+  // The mutation object is new every render; holding it in a ref keeps it out
+  // of the dependency list without re-running the effect on each keystroke.
+  const markReadRef = useRef(markRead)
+  markReadRef.current = markRead
+
+  useEffect(() => {
+    for (const message of messages) {
+      if (reported.current.has(message.id)) continue
+      reported.current.add(message.id)
+      markReadRef.current.mutate(message.id)
+    }
+  }, [messages])
+}
+
 interface ConversationViewProps {
   conversation: Conversation
   /** Present when the reader is the anonymous ticket owner. */
@@ -80,6 +118,8 @@ export function ConversationView({
   const sendMessage = useSendMessage(conversation.id, ownerHash)
 
   const items = messages.data?.items ?? []
+
+  useReadReceipts(conversation.id, items, ownerHash)
 
   return (
     <Card className="space-y-4 p-4">

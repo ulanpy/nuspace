@@ -29,7 +29,10 @@ function SGotinishLayout() {
   const tabs: Tab[] = [
     { to: "/sgotinish/student", label: "My tickets" },
     ...(canSeeInbox
-      ? [{ to: "/sgotinish/sg" as const, label: "SG inbox" }]
+      ? [
+          { to: "/sgotinish/sg" as const, label: "SG inbox" },
+          { to: "/sgotinish/members" as const, label: "Members" },
+        ]
       : []),
   ]
 
