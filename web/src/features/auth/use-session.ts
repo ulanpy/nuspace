@@ -46,7 +46,13 @@ export function usePermissions() {
     /** True when the user heads this community, or is an admin. */
     canManageCommunity: (communityId: number) =>
       isAdmin || (user?.communities.includes(communityId) ?? false),
-    /** Authoring the opportunities digest is an admin capability. */
+    /**
+     * Authoring the opportunities digest. Admin-only is provisional — it
+     * replaces a hardcoded email allowlist that was never an authorization
+     * mechanism, but nobody has decided yet whether community heads or SG
+     * members should be able to post too. Widening it should stay a change to
+     * this line, so resist inlining role checks at call sites.
+     */
     canManageOpportunities: isAdmin,
     canDelegateTickets: isAdmin || role === "boss" || role === "capo",
   }
