@@ -2,6 +2,10 @@ import { createFileRoute } from "@tanstack/react-router"
 import { ExternalLinkIcon, LifeBuoyIcon } from "lucide-react"
 
 import { TEAM, type TeamMember } from "@/features/about/team"
+import { PageContainer } from "@/components/page-container"
+import { PageHeader } from "@/components/page-header"
+import { ResilientImage } from "@/components/resilient-image"
+import { Section } from "@/components/section"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
@@ -12,22 +16,20 @@ export const Route = createFileRoute("/_public/about")({
 function MemberCard({ member }: { member: TeamMember }) {
   return (
     <Card className="flex flex-col items-center gap-3 p-6 text-center">
-      {member.photo ? (
-        <img
-          src={member.photo}
-          alt=""
-          aria-hidden
-          loading="lazy"
-          className="size-20 rounded-full bg-muted object-cover"
-        />
-      ) : (
-        <span
-          aria-hidden
-          className="grid size-20 place-items-center rounded-full bg-muted text-2xl font-medium text-muted-foreground"
-        >
-          {member.name.charAt(0)}
-        </span>
-      )}
+      <ResilientImage
+        src={member.photo}
+        alt=""
+        aria-hidden
+        containerClassName="size-20 rounded-full"
+        fallback={
+          <span
+            aria-hidden
+            className="grid size-full place-items-center bg-muted text-2xl font-medium text-muted-foreground"
+          >
+            {member.name.charAt(0)}
+          </span>
+        }
+      />
 
       <div className="space-y-0.5">
         <h3 className="font-semibold">{member.name}</h3>
@@ -59,17 +61,22 @@ function MemberCard({ member }: { member: TeamMember }) {
 
 function About() {
   return (
-    <div className="mx-auto max-w-4xl space-y-12 py-10">
-      <header className="space-y-4 text-center">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          About <span className="text-primary">Nuspace</span>
-        </h1>
-        <p className="text-xl text-muted-foreground">
-          Your campus platform for Nazarbayev University
-        </p>
-      </header>
+    <PageContainer maxWidth="default" className="space-y-12 py-10">
+      <PageHeader
+        eyebrow="Built for NU"
+        title={
+          <>
+            About <span className="text-primary">Nuspace</span>
+          </>
+        }
+        description="Your campus platform for Nazarbayev University"
+        className="justify-center text-center [&>div]:mx-auto"
+      />
 
-      <section className="space-y-4 rounded-2xl border border-border bg-card p-8">
+      <Section
+        spacing="none"
+        className="space-y-4 rounded-2xl border border-border bg-card p-6 sm:p-8"
+      >
         <h2 className="text-2xl font-bold">Mission</h2>
         <p className="leading-relaxed text-muted-foreground">
           Nuspace brings together everything a Nazarbayev University student
@@ -80,9 +87,9 @@ function About() {
           track academics, find events worth attending, and reach the right
           office without guessing who to contact.
         </p>
-      </section>
+      </Section>
 
-      <section className="space-y-6">
+      <Section spacing="none" className="space-y-6">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold">The team</h2>
           <p className="text-muted-foreground">
@@ -98,9 +105,12 @@ function About() {
             </li>
           ))}
         </ul>
-      </section>
+      </Section>
 
-      <section className="space-y-4 rounded-2xl border border-border bg-card p-8">
+      <Section
+        spacing="none"
+        className="space-y-4 rounded-2xl border border-border bg-card p-6 sm:p-8"
+      >
         <div className="flex items-center gap-3">
           <LifeBuoyIcon className="size-6 shrink-0 text-primary" aria-hidden />
           <h2 className="text-2xl font-bold">Need help?</h2>
@@ -120,7 +130,7 @@ function About() {
             </a>
           }
         />
-      </section>
-    </div>
+      </Section>
+    </PageContainer>
   )
 }

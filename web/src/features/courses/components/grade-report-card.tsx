@@ -1,7 +1,9 @@
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
+import { difficultyLabel } from "../grade-comparison"
 import { formatGpa, formatPoints } from "../gpa"
 import type { GradeReport } from "../types"
 
@@ -124,6 +126,16 @@ export function GradeReportCard({
               .filter(Boolean)
               .join(" · ")}
           </p>
+          <div className="mt-2 flex flex-wrap gap-1">
+            <Badge variant="secondary">{difficultyLabel(report.avg_gpa)}</Badge>
+            <Badge
+              variant={(report.pct_W_AW ?? 0) >= 10 ? "destructive" : "outline"}
+            >
+              {report.pct_W_AW === null
+                ? "Withdrawals unknown"
+                : `${formatPoints(report.pct_W_AW)}% withdrew`}
+            </Badge>
+          </div>
         </div>
 
         <dl className="flex shrink-0 gap-4 text-right">

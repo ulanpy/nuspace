@@ -125,6 +125,25 @@ as Member.
 - Product sign-off:
 - Engineering sign-off:
 - Known non-blocking differences:
+  - `web/` remains the only shipped application. `frontend/` is retained
+    unchanged for the soak-release rollback described below.
+  - The landing page does not repeat the unverified “3100+ students” claim or
+    the legacy joke footer. It keeps the public Nuspace header, legal links,
+    and student-project attribution.
+  - The desktop sidebar returns as a collapsible navigation rail, while mobile
+    keeps the sticky header and sheet. The unused legacy bottom navigation is
+    intentionally not restored.
+  - Discovery pages retain compact, URL-filtered lists and the current
+    permission-aware authoring flows; legacy infinite-list and state-only tab
+    implementations are not carried over.
+  - Course comparison supports up to eight reports, not the legacy limit of
+    four. Planner scheduling retains overlap lanes, demand calculations,
+    section-type grouping, exact undo state, and retryable failures.
+  - Degree Audit keeps the current credential lifecycle, transfer mapping, and
+    cached-result behavior. About keeps team and help content directly visible
+    instead of putting static information in legacy modals.
+  - Disabled elections, Dorm Eats, animation wrappers, raw palette styling,
+    injected style tags, and obsolete API hooks remain outside parity scope.
 
 ### Rollback procedure
 

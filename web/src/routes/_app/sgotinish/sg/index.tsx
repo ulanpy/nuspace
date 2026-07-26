@@ -16,6 +16,7 @@ import { InfiniteList } from "@/components/infinite-list"
 import { cn } from "@/lib/utils"
 import { ChoiceChips } from "@/components/list-filters"
 import { TelegramConnectPrompt } from "@/features/profile/components/telegram-connect-prompt"
+import { Card } from "@/components/ui/card"
 
 const inboxSearchSchema = z.object({
   status: z.enum(TICKET_STATUSES).optional(),
@@ -43,45 +44,55 @@ function SgInbox() {
         storageKey="nuspace_sgotinish_tg_banner_dismissed"
         title="Receive delegated-ticket updates on Telegram"
       />
-      <fieldset className="flex flex-wrap gap-1">
-        <legend className="sr-only">Filter by status</legend>
-        {[undefined, ...TICKET_STATUSES].map((option) => {
-          const isActive = status === option
+      <Card className="gap-4 p-4">
+        <h2 className="text-sm font-semibold">Filter the inbox</h2>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <fieldset className="flex flex-wrap content-start gap-1">
+            <legend className="mb-2 text-sm font-medium">Ticket status</legend>
+            {[undefined, ...TICKET_STATUSES].map((option) => {
+              const isActive = status === option
 
-          return (
-            <button
-              key={option ?? "all"}
-              type="button"
-              aria-pressed={isActive}
-              onClick={() => {
-                void navigate({ search: { status: option } })
-              }}
-              className={cn(
-                "rounded-full border px-3 py-1 text-sm transition-colors",
-                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                isActive
-                  ? "border-primary bg-primary/10 font-medium"
-                  : "text-muted-foreground hover:bg-muted/60"
-              )}
-            >
-              {option ? STATUS_LABEL[option] : "All"}
-            </button>
-          )
-        })}
-      </fieldset>
-      <ChoiceChips
-        label="Ticket category"
-        value={category}
-        options={TICKET_CATEGORIES.map((value) => ({
-          value,
-          label: value.charAt(0).toUpperCase() + value.slice(1),
-        }))}
-        onChange={(next) => {
-          void navigate({
-            search: (previous) => ({ ...previous, category: next }),
-          })
-        }}
-      />
+              return (
+                <button
+                  key={option ?? "all"}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => {
+                    void navigate({
+                      search: (previous) => ({
+                        ...previous,
+                        status: option,
+                      }),
+                    })
+                  }}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-sm transition-colors",
+                    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                    isActive
+                      ? "border-primary bg-primary/10 font-medium"
+                      : "text-muted-foreground hover:bg-muted/60"
+                  )}
+                >
+                  {option ? STATUS_LABEL[option] : "All"}
+                </button>
+              )
+            })}
+          </fieldset>
+          <ChoiceChips
+            label="Ticket category"
+            value={category}
+            options={TICKET_CATEGORIES.map((value) => ({
+              value,
+              label: value.charAt(0).toUpperCase() + value.slice(1),
+            }))}
+            onChange={(next) => {
+              void navigate({
+                search: (previous) => ({ ...previous, category: next }),
+              })
+            }}
+          />
+        </div>
+      </Card>
 
       <InfiniteList
         items={list.items}

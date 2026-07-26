@@ -1,7 +1,14 @@
+import { useEffect, useState } from "react"
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router"
 
 import { sessionQueryOptions } from "@/features/auth/api"
+import {
+  readSidebarCollapsed,
+  writeSidebarCollapsed,
+} from "@/features/shell/sidebar-preference"
 import { AppSidebar } from "@/components/app-sidebar"
+import { PageContainer } from "@/components/page-container"
+import { cn } from "@/lib/utils"
 
 /**
  * Authenticated shell. Every route beneath it is guarded here, once — the old
@@ -22,13 +29,29 @@ export const Route = createFileRoute("/_app")({
 })
 
 function AppLayout() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
+    readSidebarCollapsed(window.localStorage)
+  )
+
+  useEffect(() => {
+    writeSidebarCollapsed(window.localStorage, sidebarCollapsed)
+  }, [sidebarCollapsed])
+
   return (
     <div className="min-h-screen bg-background">
-      <AppSidebar />
-      <main className="md:pl-60">
-        <div className="container px-3 py-4 sm:px-4 sm:py-6">
+      <AppSidebar
+        collapsed={sidebarCollapsed}
+        onCollapsedChange={setSidebarCollapsed}
+      />
+      <main
+        className={cn(
+          "transition-[padding-left] duration-[var(--duration-panel)] ease-[var(--ease-campus-snap)]",
+          sidebarCollapsed ? "md:pl-16" : "md:pl-64"
+        )}
+      >
+        <PageContainer className="py-4 sm:py-6">
           <Outlet />
-        </div>
+        </PageContainer>
       </main>
     </div>
   )

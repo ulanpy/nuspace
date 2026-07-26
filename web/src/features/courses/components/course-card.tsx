@@ -1,9 +1,16 @@
 import { useState } from "react"
-import { ChevronDown, EyeIcon, EyeOffIcon, Plus, Trash2 } from "lucide-react"
+import { EyeIcon, EyeOffIcon, Plus, Trash2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
 import {
@@ -75,7 +82,6 @@ export function CourseCard({
    */
   const items = [...registered.items].sort((a, b) => a.id - b.id)
 
-  const [isOpen, setIsOpen] = useState(false)
   /** The item being edited, or "new" while adding. Only one at a time. */
   const [editing, setEditing] = useState<number | "new" | null>(null)
 
@@ -109,96 +115,126 @@ export function CourseCard({
     }
   }
 
+  const editingItem =
+    typeof editing === "number"
+      ? items.find((item) => item.id === editing)
+      : undefined
+
   return (
-    <Card className="p-4">
-      <button
-        type="button"
-        onClick={() => {
-          setIsOpen((open) => !open)
-        }}
-        aria-expanded={isOpen}
-        className="flex w-full items-start justify-between gap-3 text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        <div className="min-w-0">
-          <h3 className="font-semibold">
-            {course.course_code}
-            {course.title && (
-              <span className="font-normal text-muted-foreground">
-                {" "}
-                · {course.title}
-              </span>
-            )}
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            {course.credits ?? 0} credits
-            {registered.class_average !== null &&
-              registered.class_average !== undefined &&
-              ` · class average ${formatWeight(registered.class_average)}`}
-          </p>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          {graded.length > 0 && (
-            <Badge variant="secondary" className="tabular-nums">
-              {scoreToLetter(soFar)} · {formatWeight(soFar)}
-            </Badge>
-          )}
-          <ChevronDown
-            aria-hidden
-            className={cn(
-              "size-4 transition-transform",
-              isOpen && "rotate-180"
-            )}
-          />
-        </div>
-      </button>
-
-      {items.length > 0 && (
-        <p className="mt-2 text-sm text-muted-foreground">
-          {/* Both readings, because they diverge hard early in a term: banked
-              counts ungraded work as zero, so it looks alarming in week three. */}
-          {formatWeight(banked)} banked of {formatWeight(weightGraded)} graded ·{" "}
-          {graded.length} of {items.length} items
-        </p>
-      )}
-
-      {isOpen && (
-        <div className="mt-3 space-y-1 border-t pt-3">
-          <div className="flex flex-wrap gap-1 pb-2">
-            {onToggleGpa && (
-              <Button size="sm" variant="ghost" onClick={onToggleGpa}>
-                {excludedFromGpa ? (
-                  <EyeIcon aria-hidden />
-                ) : (
-                  <EyeOffIcon aria-hidden />
-                )}
-                {excludedFromGpa ? "Include in GPA" : "Exclude from GPA"}
-              </Button>
-            )}
-            <CourseTemplateTools registered={registered} />
+    <>
+      <Card className="space-y-4 p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold">
+              {course.course_code}
+              {course.title && (
+                <span className="font-normal text-muted-foreground">
+                  {" "}
+                  · {course.title}
+                </span>
+              )}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {course.credits ?? 0} credits
+              {registered.class_average !== null &&
+                registered.class_average !== undefined &&
+                ` · class average ${formatWeight(registered.class_average)}`}
+            </p>
           </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            {graded.length > 0 && (
+              <Badge variant="secondary" className="tabular-nums">
+                {scoreToLetter(soFar)} · {formatWeight(soFar)}
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {items.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            {/* Both readings, because they diverge hard early in a term: banked
+              counts ungraded work as zero, so it looks alarming in week three. */}
+            {formatWeight(banked)} banked of {formatWeight(weightGraded)} graded
+            · {graded.length} of {items.length} items
+          </p>
+        )}
+
+        <div className="space-y-2">
           {excludedFromGpa && (
-            <p className="px-2 pb-2 text-xs text-warning">
+            <p className="rounded-lg border border-warning/50 bg-warning/5 px-3 py-2 text-xs text-warning">
               This course is excluded from the GPA summary until the page is
               reloaded or you include it again.
             </p>
           )}
-          {items.length === 0 && editing === null && (
-            <p className="px-2 py-1.5 text-sm text-muted-foreground">
+          {items.length === 0 && (
+            <p className="rounded-lg border border-dashed px-3 py-8 text-center text-sm text-muted-foreground">
               No assignments yet. Add the ones on your syllabus to track this
               course.
             </p>
           )}
 
-          {items.map((item) =>
-            editing === item.id ? (
-              <AssignmentForm
-                key={item.id}
-                item={item}
-                isPending={isPending}
-                onCancel={close}
-                onSubmit={save}
-              >
+          {items.map((item) => (
+            <ItemRow
+              key={item.id}
+              item={item}
+              onEdit={() => {
+                setEditing(item.id)
+              }}
+            />
+          ))}
+
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-1"
+            onClick={() => {
+              setEditing("new")
+            }}
+          >
+            <Plus aria-hidden />
+            Add assignment
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap gap-1 border-t pt-4">
+          {onToggleGpa && (
+            <Button size="sm" variant="ghost" onClick={onToggleGpa}>
+              {excludedFromGpa ? (
+                <EyeIcon aria-hidden />
+              ) : (
+                <EyeOffIcon aria-hidden />
+              )}
+              {excludedFromGpa ? "Include in GPA" : "Exclude from GPA"}
+            </Button>
+          )}
+          <CourseTemplateTools registered={registered} />
+        </div>
+      </Card>
+
+      <Dialog
+        open={editing !== null}
+        onOpenChange={(open) => {
+          if (!open && !isPending) close()
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editing === "new" ? "Add assignment" : "Edit assignment"}
+            </DialogTitle>
+            <DialogDescription>
+              {course.course_code} · scores can stay blank until work is graded.
+            </DialogDescription>
+          </DialogHeader>
+          {editing !== null && (
+            <AssignmentForm
+              item={editingItem}
+              isPending={isPending}
+              onCancel={close}
+              onSubmit={save}
+            >
+              {editingItem && (
                 <Button
                   type="button"
                   size="sm"
@@ -206,45 +242,17 @@ export function CourseCard({
                   className="text-destructive"
                   disabled={isPending}
                   onClick={() => {
-                    deleteItem.mutate(item.id, { onSuccess: close })
+                    deleteItem.mutate(editingItem.id, { onSuccess: close })
                   }}
                 >
                   <Trash2 aria-hidden />
                   Delete
                 </Button>
-              </AssignmentForm>
-            ) : (
-              <ItemRow
-                key={item.id}
-                item={item}
-                onEdit={() => {
-                  setEditing(item.id)
-                }}
-              />
-            )
+              )}
+            </AssignmentForm>
           )}
-
-          {editing === "new" ? (
-            <AssignmentForm
-              isPending={isPending}
-              onCancel={close}
-              onSubmit={save}
-            />
-          ) : (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="mt-1"
-              onClick={() => {
-                setEditing("new")
-              }}
-            >
-              <Plus aria-hidden />
-              Add assignment
-            </Button>
-          )}
-        </div>
-      )}
-    </Card>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

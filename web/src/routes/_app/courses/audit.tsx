@@ -251,9 +251,12 @@ function DegreeAudit() {
     <div className="space-y-4">
       <QueryBoundary query={catalog}>
         {() => (
-          <Card className="space-y-4 p-4">
+          <Card className="space-y-5 p-4 sm:p-5">
             <div>
-              <h2 className="font-semibold">Run a degree audit</h2>
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Programme progress
+              </p>
+              <h2 className="text-lg font-semibold">Run a degree audit</h2>
               <p className="text-sm text-muted-foreground">
                 Checks your transcript against the requirements for your
                 admission year.{" "}

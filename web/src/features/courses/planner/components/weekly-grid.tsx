@@ -83,6 +83,7 @@ function ScheduleBlock({ event, isClashing, onSelect }: BlockProps) {
 interface WeeklyGridProps {
   events: readonly SectionEvent[]
   onSelect: (event: SectionEvent) => void
+  collapseEmptyEdges?: boolean
 }
 
 /**
@@ -93,14 +94,18 @@ interface WeeklyGridProps {
  * their real coordinates. Where they overlap, `layoutDay` splits the column so
  * both stay visible — a conflict the student can't see is worse than useless.
  */
-export function WeeklyGrid({ events, onSelect }: WeeklyGridProps) {
+export function WeeklyGrid({
+  events,
+  onSelect,
+  collapseEmptyEdges = false,
+}: WeeklyGridProps) {
   const placed = timedEvents(events)
   const clashes = findClashes(placed)
-  const days = visibleDays(placed)
-  const { startHour, endHour } = gridHours(placed)
+  const days = visibleDays(placed, collapseEmptyEdges)
+  const { startHour, endHourExclusive } = gridHours(placed, collapseEmptyEdges)
 
   const hours = Array.from(
-    { length: endHour - startHour + 1 },
+    { length: endHourExclusive - startHour },
     (_, index) => startHour + index
   )
   const columns = `4rem repeat(${String(days.length)}, minmax(7.5rem, 1fr))`
@@ -184,13 +189,17 @@ export function WeeklyGrid({ events, onSelect }: WeeklyGridProps) {
  * phone-first audience — students check their schedule between classes. The
  * grid and the agenda render the same events; only one is visible at a time.
  */
-export function ScheduleAgenda({ events, onSelect }: WeeklyGridProps) {
+export function ScheduleAgenda({
+  events,
+  onSelect,
+  collapseEmptyEdges = false,
+}: WeeklyGridProps) {
   const placed = timedEvents(events)
   const clashes = findClashes(placed)
 
   return (
     <div className="space-y-4">
-      {visibleDays(placed).map((day) => {
+      {visibleDays(placed, collapseEmptyEdges).map((day) => {
         const forDay = placed
           .filter(({ section }) => sectionDays(section).includes(day.key))
           .sort(

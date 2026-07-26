@@ -3,10 +3,12 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import {
   BadgeCheckIcon,
+  CalendarIcon,
   ExternalLinkIcon,
   MailIcon,
   PencilIcon,
   Trash2Icon,
+  UserIcon,
 } from "lucide-react"
 
 import { apiErrorMessage } from "@/api/errors"
@@ -19,8 +21,10 @@ import { selectMedia } from "@/features/media/select"
 import { formatCampusDate } from "@/lib/datetime"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { Markdown } from "@/components/markdown"
+import { ResilientImage } from "@/components/resilient-image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 
 export const Route = createFileRoute("/_app/communities/$communityId")({
   loader: ({ context, params }) =>
@@ -63,122 +67,174 @@ function CommunityDetail() {
   const { can_edit: canEdit, can_delete: canDelete } = community.permissions
 
   return (
-    <article className="mx-auto max-w-3xl space-y-6">
-      {banner && (
-        <img
-          src={banner}
-          alt=""
-          aria-hidden
-          className="aspect-[3/1] w-full rounded-lg bg-muted object-cover"
-        />
-      )}
-
-      <header className="flex flex-wrap items-start gap-4">
-        {avatar ? (
-          <img
-            src={avatar}
-            alt=""
-            aria-hidden
-            className="size-20 shrink-0 rounded-full bg-muted object-cover"
+    <article className="mx-auto max-w-5xl space-y-6">
+      <Card className="p-0">
+        <div className="aspect-[3/1] min-h-40 bg-community/10">
+          <ResilientImage
+            src={banner}
+            alt={`${community.name} banner`}
+            containerClassName="size-full"
+            eager
+            fallback={
+              <span className="block size-full bg-community/10" aria-hidden />
+            }
           />
-        ) : (
-          <span
-            aria-hidden
-            className="grid size-20 shrink-0 place-items-center rounded-full bg-community/15 text-2xl font-semibold text-community"
-          >
-            {community.name.charAt(0).toUpperCase()}
-          </span>
-        )}
+        </div>
 
-        <div className="min-w-0 space-y-2">
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight text-balance">
-              {community.name}
-            </h1>
-            {community.verified && (
-              <BadgeCheckIcon
-                className="size-6 shrink-0 text-primary"
-                aria-label="Verified"
-              />
+        <header className="relative px-5 pt-16 pb-6 sm:px-8 sm:pt-5 sm:pl-44">
+          <div className="absolute -top-12 left-5 rounded-full bg-card p-1.5 shadow-md sm:-top-14 sm:left-8">
+            <ResilientImage
+              src={avatar}
+              alt={`${community.name} profile`}
+              containerClassName="size-24 rounded-full sm:size-28"
+              eager
+              fallback={
+                <span
+                  aria-hidden
+                  className="grid size-full place-items-center bg-community/15 text-3xl font-semibold text-community"
+                >
+                  {community.name.charAt(0).toUpperCase()}
+                </span>
+              }
+            />
+          </div>
+
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 space-y-3">
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold tracking-tight text-balance">
+                  {community.name}
+                </h1>
+                {community.verified && (
+                  <BadgeCheckIcon
+                    className="size-6 shrink-0 text-primary"
+                    aria-label="Verified community"
+                  />
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">{community.category}</Badge>
+                <Badge variant="outline">{community.type}</Badge>
+              </div>
+            </div>
+
+            {(canEdit || canDelete) && (
+              <div className="flex flex-wrap gap-2">
+                {canEdit && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsEditing(true)
+                    }}
+                  >
+                    <PencilIcon aria-hidden />
+                    Edit
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => {
+                      setIsConfirmingDelete(true)
+                    }}
+                  >
+                    <Trash2Icon aria-hidden />
+                    Delete
+                  </Button>
+                )}
+              </div>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{community.category}</Badge>
-            <Badge variant="outline">{community.type}</Badge>
-          </div>
-
-          <p className="text-sm text-muted-foreground">
-            Established {formatCampusDate(community.established)} · Head:{" "}
-            {community.head_user.name} {community.head_user.surname}
-          </p>
-
-          {(canEdit || canDelete) && (
-            <div className="flex flex-wrap gap-2">
-              {canEdit && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setIsEditing(true)
-                  }}
-                >
-                  <PencilIcon aria-hidden />
-                  Edit
-                </Button>
-              )}
-              {canDelete && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => {
-                    setIsConfirmingDelete(true)
-                  }}
-                >
-                  <Trash2Icon aria-hidden />
-                  Delete
-                </Button>
-              )}
-            </div>
-          )}
-
           {deleteCommunity.isError && (
-            <p className="text-sm text-destructive" role="alert">
+            <p className="mt-3 text-sm text-destructive" role="alert">
               {apiErrorMessage(
                 deleteCommunity.error,
                 "Could not delete the community. Try again."
               )}
             </p>
           )}
-        </div>
-      </header>
+        </header>
+      </Card>
 
-      {community.description && (
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold">About</h2>
-          <Markdown className="text-muted-foreground">
-            {community.description}
-          </Markdown>
-        </div>
-      )}
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold">About us</h2>
+          {community.description ? (
+            <Markdown className="text-muted-foreground">
+              {community.description}
+            </Markdown>
+          ) : (
+            <p className="text-muted-foreground">
+              This community has not added a description yet.
+            </p>
+          )}
+        </Card>
 
-      <div className="flex flex-wrap items-center gap-4">
-        {community.telegram_url && (
-          <ExternalLink href={community.telegram_url} label="Telegram" />
-        )}
-        {community.instagram_url && (
-          <ExternalLink href={community.instagram_url} label="Instagram" />
-        )}
-        {community.email && (
-          <a
-            href={`mailto:${community.email}`}
-            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-          >
-            <MailIcon className="size-4" aria-hidden />
-            {community.email}
-          </a>
-        )}
+        <Card className="p-5 lg:sticky lg:top-20">
+          <h2 className="font-semibold">Community details</h2>
+          <dl className="space-y-4 text-sm">
+            <div className="flex items-start gap-3">
+              <CalendarIcon
+                className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+              <div>
+                <dt className="font-medium">Established</dt>
+                <dd className="text-muted-foreground">
+                  {formatCampusDate(community.established)}
+                </dd>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <UserIcon
+                className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+              <div>
+                <dt className="font-medium">Community head</dt>
+                <dd className="text-muted-foreground">
+                  {community.head_user.name} {community.head_user.surname}
+                </dd>
+              </div>
+            </div>
+          </dl>
+
+          {(community.telegram_url ||
+            community.instagram_url ||
+            community.email) && (
+            <div className="space-y-3 border-t border-border pt-4">
+              <h3 className="text-sm font-medium">Contact</h3>
+              <div className="flex flex-col items-start gap-3">
+                {community.telegram_url && (
+                  <ExternalLink
+                    href={community.telegram_url}
+                    label="Telegram"
+                  />
+                )}
+                {community.instagram_url && (
+                  <ExternalLink
+                    href={community.instagram_url}
+                    label="Instagram"
+                  />
+                )}
+                {community.email && (
+                  <a
+                    href={`mailto:${community.email}`}
+                    className="inline-flex items-center gap-1 rounded-md text-sm font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  >
+                    <MailIcon className="size-4" aria-hidden />
+                    <span className="break-all">{community.email}</span>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+        </Card>
       </div>
 
       <CommunityFormDialog

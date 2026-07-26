@@ -22,6 +22,7 @@ import {
 } from "@/components/list-filters"
 import { EmptyState } from "@/components/query-boundary"
 import { InfiniteList } from "@/components/infinite-list"
+import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
 
 const communitiesSearchSchema = z.object({
@@ -89,20 +90,22 @@ function CommunitiesList() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold tracking-tight">Communities</h1>
-
-        {/* Open to any signed-in user, as on the server: creating a community
-            makes you its head, and admins verify it afterwards. */}
-        <Button
-          onClick={() => {
-            setIsCreating(true)
-          }}
-        >
-          <PlusIcon aria-hidden />
-          Create community
-        </Button>
-      </header>
+      <PageHeader
+        title="Communities"
+        description="Discover clubs, organizations, and campus groups."
+        actions={
+          // Open to any signed-in user, as on the server: creating a community
+          // makes you its head, and admins verify it afterwards.
+          <Button
+            onClick={() => {
+              setIsCreating(true)
+            }}
+          >
+            <PlusIcon aria-hidden />
+            Create community
+          </Button>
+        }
+      />
 
       <div className="space-y-3">
         <SearchFilter
@@ -155,7 +158,9 @@ function CommunitiesList() {
         }
       >
         {(rendered) => (
-          <div className="grid gap-4 sm:grid-cols-2">{rendered}</div>
+          <div className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {rendered}
+          </div>
         )}
       </InfiniteList>
 

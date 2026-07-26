@@ -73,6 +73,15 @@ export function CourseSearch({
         {results.map((result) => {
           const isAdded = addedCodes.has(result.course_code)
           const syllabus = syllabusLink(syllabusLinks, result.course_code)
+          const requirements = [
+            ["Prerequisites", result.pre_req],
+            ["Corequisites", result.co_req],
+            ["Antirequisites", result.anti_req],
+            ["Priority 1", result.priority_1],
+            ["Priority 2", result.priority_2],
+            ["Priority 3", result.priority_3],
+            ["Priority 4", result.priority_4],
+          ].filter((row): row is [string, string] => Boolean(row[1]?.trim()))
 
           return (
             <li
@@ -102,6 +111,23 @@ export function CourseSearch({
                     Syllabus
                     <ExternalLinkIcon className="size-3" aria-hidden />
                   </a>
+                )}
+                {requirements.length > 0 && (
+                  <details className="mt-2 text-xs">
+                    <summary className="cursor-pointer font-medium text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+                      Priorities & requisites
+                    </summary>
+                    <dl className="mt-2 space-y-1 rounded-md bg-muted/40 p-2">
+                      {requirements.map(([label, value]) => (
+                        <div key={label}>
+                          <dt className="font-medium text-muted-foreground">
+                            {label}
+                          </dt>
+                          <dd className="whitespace-pre-wrap">{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </details>
                 )}
               </div>
 

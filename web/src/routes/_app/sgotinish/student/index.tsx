@@ -16,6 +16,7 @@ import { TelegramConnectPrompt } from "@/features/profile/components/telegram-co
 import { ChoiceChips } from "@/components/list-filters"
 import { EmptyState } from "@/components/query-boundary"
 import { InfiniteList } from "@/components/infinite-list"
+import { Card } from "@/components/ui/card"
 
 const studentSearchSchema = z.object({
   status: z.enum(TICKET_STATUSES).optional(),
@@ -44,32 +45,37 @@ function MyTickets() {
         title="Get appeal updates on Telegram"
       />
       <NewTicketForm />
-      <ChoiceChips
-        label="Ticket status"
-        value={status}
-        options={TICKET_STATUSES.map((value) => ({
-          value,
-          label: STATUS_LABEL[value],
-        }))}
-        onChange={(next) => {
-          void navigate({
-            search: (previous) => ({ ...previous, status: next }),
-          })
-        }}
-      />
-      <ChoiceChips
-        label="Ticket category"
-        value={category}
-        options={TICKET_CATEGORIES.map((value) => ({
-          value,
-          label: titleCase(value),
-        }))}
-        onChange={(next) => {
-          void navigate({
-            search: (previous) => ({ ...previous, category: next }),
-          })
-        }}
-      />
+      <Card className="gap-4 p-4">
+        <h2 className="text-sm font-semibold">Filter your tickets</h2>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <ChoiceChips
+            label="Ticket status"
+            value={status}
+            options={TICKET_STATUSES.map((value) => ({
+              value,
+              label: STATUS_LABEL[value],
+            }))}
+            onChange={(next) => {
+              void navigate({
+                search: (previous) => ({ ...previous, status: next }),
+              })
+            }}
+          />
+          <ChoiceChips
+            label="Ticket category"
+            value={category}
+            options={TICKET_CATEGORIES.map((value) => ({
+              value,
+              label: titleCase(value),
+            }))}
+            onChange={(next) => {
+              void navigate({
+                search: (previous) => ({ ...previous, category: next }),
+              })
+            }}
+          />
+        </div>
+      </Card>
 
       <InfiniteList
         items={list.items}

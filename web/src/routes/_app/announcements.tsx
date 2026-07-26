@@ -10,6 +10,7 @@ import { TelegramFeed } from "@/features/announcements/components/telegram-feed"
 import { EventCard } from "@/features/events/components/event-card"
 import type { Event } from "@/features/events/types"
 import { useCurrentUser } from "@/features/auth/use-session"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export const Route = createFileRoute("/_app/announcements")({
   loader: ({ context }) =>
@@ -93,13 +94,27 @@ function Announcements() {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">
-          {greeting()}, {user.given_name}!
-        </h1>
-        <p className="text-muted-foreground">
-          Here&apos;s what&apos;s happening at Nuspace
-        </p>
+      <header className="flex items-center gap-4">
+        <Avatar className="size-12 sm:size-14">
+          {user.picture && (
+            <AvatarImage
+              src={user.picture}
+              alt={`${user.given_name}'s profile`}
+            />
+          )}
+          <AvatarFallback className="text-base font-semibold">
+            {user.given_name.charAt(0)}
+            {user.family_name.charAt(0)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-balance sm:text-3xl">
+            {greeting()}, {user.given_name}!
+          </h1>
+          <p className="text-muted-foreground">
+            Here&apos;s what&apos;s happening at Nuspace
+          </p>
+        </div>
       </header>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">

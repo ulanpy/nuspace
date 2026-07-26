@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import {
+  Building2Icon,
   CalendarClockIcon,
   CalendarPlusIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  ExternalLinkIcon,
+  GraduationCapIcon,
   MapPinIcon,
   PencilIcon,
   PlusIcon,
@@ -37,17 +42,19 @@ import {
   type OpportunityMajor,
   type Opportunity,
 } from "@/features/opportunities/types"
+import { getDeadlinePresentation } from "@/features/opportunities/presentation"
 import { useDebounced } from "@/hooks/use-debounced"
 import {
   MultiFilter,
   SearchFilter,
   type FilterOption,
 } from "@/components/list-filters"
-import { formatCampusDate, formatRelative, isPast } from "@/lib/datetime"
+import { formatCampusDate } from "@/lib/datetime"
 import { ConfirmDialog } from "@/components/confirm-dialog"
-import { toPlainText } from "@/components/markdown"
+import { Markdown, toPlainText } from "@/components/markdown"
 import { EmptyState } from "@/components/query-boundary"
 import { InfiniteList } from "@/components/infinite-list"
+import { PageHeader } from "@/components/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -82,121 +89,189 @@ function OpportunityCard({
   onEdit?: () => void
   onDelete?: () => void
 }) {
-  const expired = opportunity.deadline ? isPast(opportunity.deadline) : false
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
+  const [areMajorsExpanded, setAreMajorsExpanded] = useState(false)
   const calendar = useAddOpportunityToCalendar()
   const majors = normalizeMajors(opportunity.majors)
   const eligibilities = formatEligibilities(opportunity.eligibilities)
+  const deadline = getDeadlinePresentation(opportunity.deadline)
+  const expired = deadline.kind === "closed"
+  const description = opportunity.description
+    ? toPlainText(opportunity.description)
+    : ""
+  const canExpandDescription = description.length > 280
+  const visibleMajors = areMajorsExpanded ? majors : majors.slice(0, 5)
 
-  const body = (
-    <>
-      <div className="flex flex-wrap items-center gap-2">
+  return (
+    <Card className="p-5 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Badge variant="secondary">
           {OPPORTUNITY_TYPE_LABELS[opportunity.type]}
         </Badge>
-        {expired && <Badge variant="outline">Closed</Badge>}
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge
+            variant={
+              deadline.kind === "closing-soon"
+                ? "default"
+                : deadline.kind === "closed"
+                  ? "outline"
+                  : "secondary"
+            }
+          >
+            {deadline.label}
+          </Badge>
+          {opportunity.deadline && (
+            <span className="text-xs text-muted-foreground">
+              {formatCampusDate(opportunity.deadline)}
+            </span>
+          )}
+        </div>
       </div>
 
-      <h3 className="leading-snug font-semibold text-balance">
-        {opportunity.name}
-      </h3>
-
-      {opportunity.host && (
-        <p className="text-sm text-muted-foreground">{opportunity.host}</p>
-      )}
+      <div className="space-y-1">
+        <h3 className="text-lg leading-snug font-semibold text-balance">
+          {opportunity.name}
+        </h3>
+        {opportunity.host && (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Building2Icon className="size-4 shrink-0" aria-hidden />
+            {opportunity.host}
+          </p>
+        )}
+      </div>
 
       {opportunity.description && (
-        <p className="line-clamp-3 text-sm text-muted-foreground">
-          {toPlainText(opportunity.description)}
-        </p>
+        <div className="space-y-2">
+          {isDescriptionExpanded ? (
+            <Markdown className="text-sm text-muted-foreground">
+              {opportunity.description}
+            </Markdown>
+          ) : (
+            <p
+              className={
+                canExpandDescription
+                  ? "line-clamp-4 text-sm leading-relaxed text-muted-foreground"
+                  : "text-sm leading-relaxed text-muted-foreground"
+              }
+            >
+              {description}
+            </p>
+          )}
+          {canExpandDescription && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="-ml-3"
+              aria-expanded={isDescriptionExpanded}
+              onClick={() => {
+                setIsDescriptionExpanded((value) => !value)
+              }}
+            >
+              {isDescriptionExpanded ? (
+                <ChevronUpIcon aria-hidden />
+              ) : (
+                <ChevronDownIcon aria-hidden />
+              )}
+              {isDescriptionExpanded ? "Show less" : "Read full description"}
+            </Button>
+          )}
+        </div>
       )}
 
-      <dl className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+      <dl className="flex flex-wrap gap-2 text-xs">
         {opportunity.deadline && (
-          <div className="flex items-center gap-1.5">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-muted-foreground">
             <dt className="sr-only">Deadline</dt>
-            <CalendarClockIcon className="size-4 shrink-0" aria-hidden />
-            <dd>
-              {formatCampusDate(opportunity.deadline)}
-              {!expired && ` (${formatRelative(opportunity.deadline)})`}
-            </dd>
+            <CalendarClockIcon className="size-3.5 shrink-0" aria-hidden />
+            <dd>{deadline.relative}</dd>
           </div>
         )}
         {opportunity.location && (
-          <div className="flex items-center gap-1.5">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-muted-foreground">
             <dt className="sr-only">Location</dt>
-            <MapPinIcon className="size-4 shrink-0" aria-hidden />
+            <MapPinIcon className="size-3.5 shrink-0" aria-hidden />
             <dd>{opportunity.location}</dd>
           </div>
         )}
         {opportunity.funding && (
-          <div className="flex items-center gap-1.5">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-muted-foreground">
             <dt className="sr-only">Funding</dt>
-            <WalletIcon className="size-4 shrink-0" aria-hidden />
+            <WalletIcon className="size-3.5 shrink-0" aria-hidden />
             <dd>{opportunity.funding}</dd>
           </div>
         )}
       </dl>
 
-      {(majors.length > 0 || eligibilities.length > 0) && (
-        <div className="flex flex-wrap gap-1">
-          {eligibilities.map((label) => (
-            <Badge key={label} variant="outline">
-              {label}
-            </Badge>
-          ))}
-          {majors.slice(0, 5).map((major) => (
-            <Badge key={major} variant="secondary">
-              {major}
-            </Badge>
-          ))}
-          {majors.length > 5 && (
-            <Badge variant="secondary">+{majors.length - 5} majors</Badge>
-          )}
-        </div>
-      )}
-    </>
-  )
-
-  return (
-    <Card className="p-4">
-      {opportunity.link ? (
-        <a
-          href={opportunity.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block space-y-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-        >
-          {body}
-        </a>
-      ) : (
-        <div className="space-y-2">{body}</div>
-      )}
-
-      {(onEdit ?? onDelete) && (
-        <div className="mt-3 flex gap-1 border-t border-border pt-3">
-          {onEdit && (
-            <Button type="button" variant="ghost" size="sm" onClick={onEdit}>
-              <PencilIcon aria-hidden />
-              Edit
-            </Button>
-          )}
-          {onDelete && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onDelete}
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2Icon aria-hidden />
-              Delete
-            </Button>
-          )}
+      {eligibilities.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Eligibility
+          </h4>
+          <div className="flex flex-wrap gap-1.5">
+            {eligibilities.map((label) => (
+              <Badge key={label} variant="outline">
+                {label}
+              </Badge>
+            ))}
+          </div>
         </div>
       )}
 
-      {opportunity.deadline && !expired && (
-        <div className="mt-3 border-t border-border pt-3">
+      {majors.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Eligible majors
+          </h4>
+          <div className="flex flex-wrap gap-1.5">
+            {visibleMajors.map((major) => (
+              <Badge key={major} variant="secondary">
+                <GraduationCapIcon aria-hidden />
+                {major}
+              </Badge>
+            ))}
+            {majors.length > 5 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                aria-expanded={areMajorsExpanded}
+                onClick={() => {
+                  setAreMajorsExpanded((value) => !value)
+                }}
+              >
+                {areMajorsExpanded
+                  ? "Show fewer"
+                  : `Show ${String(majors.length - 5)} more`}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+        {opportunity.link ? (
+          <Button
+            size="sm"
+            render={
+              <a
+                href={opportunity.link}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLinkIcon aria-hidden />
+                Application link
+              </a>
+            }
+          />
+        ) : (
+          <span className="text-sm text-muted-foreground">
+            No application link provided
+          </span>
+        )}
+
+        {opportunity.deadline && !expired && (
           <Button
             type="button"
             variant="outline"
@@ -209,8 +284,32 @@ function OpportunityCard({
             <CalendarPlusIcon aria-hidden />
             {calendar.isPending ? "Adding…" : "Add deadline to calendar"}
           </Button>
+        )}
+
+        {onEdit && (
+          <Button type="button" variant="ghost" size="sm" onClick={onEdit}>
+            <PencilIcon aria-hidden />
+            Edit
+          </Button>
+        )}
+        {onDelete && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onDelete}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2Icon aria-hidden />
+            Delete
+          </Button>
+        )}
+      </div>
+
+      {opportunity.deadline && !expired && (
+        <div>
           {calendar.isSuccess && (
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
               <span
                 className={
                   calendar.data.google_errors.length > 0
@@ -240,7 +339,7 @@ function OpportunityCard({
             </div>
           )}
           {calendar.isError && (
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-destructive">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-destructive">
               <span>
                 {calendar.error instanceof ApiError &&
                 (calendar.error.status === 401 || calendar.error.status === 403)
@@ -332,32 +431,23 @@ function Opportunities() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Opportunities Digest
-          </h1>
-          <p className="text-muted-foreground">
-            Research, internships, grants and scholarships for NU students.
-          </p>
-        </div>
-
-        {/*
-          Only for people the backend will actually let through. The old page
-          rendered this for signed-out visitors as well, who were then sent to
-          sign in and came back to a button that still refused to open.
-        */}
-        {canManageOpportunities && (
-          <Button
-            onClick={() => {
-              setEditing({})
-            }}
-          >
-            <PlusIcon aria-hidden />
-            Add opportunity
-          </Button>
-        )}
-      </header>
+      <PageHeader
+        title="Opportunities Digest"
+        description="Research, internships, grants and scholarships for NU students."
+        actions={
+          // Only people the backend will actually let through see this action.
+          canManageOpportunities ? (
+            <Button
+              onClick={() => {
+                setEditing({})
+              }}
+            >
+              <PlusIcon aria-hidden />
+              Add opportunity
+            </Button>
+          ) : undefined
+        }
+      />
 
       <div className="space-y-3 rounded-lg border border-border p-3">
         <SearchFilter
@@ -479,7 +569,7 @@ function Opportunities() {
         }
       >
         {(rendered) => (
-          <div className="grid gap-4 lg:grid-cols-2">{rendered}</div>
+          <div className="mx-auto grid max-w-4xl gap-4">{rendered}</div>
         )}
       </InfiniteList>
 

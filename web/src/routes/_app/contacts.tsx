@@ -12,7 +12,10 @@ import {
   type ServiceCategory,
 } from "@/features/contacts/data"
 import { findMatchingContacts } from "@/features/contacts/search"
+import { PageContainer } from "@/components/page-container"
+import { PageHeader } from "@/components/page-header"
 import { EmptyState } from "@/components/query-boundary"
+import { Section } from "@/components/section"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -100,17 +103,14 @@ function Contacts() {
   }, [matches])
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Find the right office or service
-        </h1>
-        <p className="text-muted-foreground">
-          In an emergency, call campus security or local services immediately.
-        </p>
-      </header>
+    <PageContainer maxWidth="default" padding="none" className="space-y-8">
+      <PageHeader
+        eyebrow="Campus directory"
+        title="Find the right office or service"
+        description="In an emergency, call campus security or local services immediately."
+      />
 
-      <div className="space-y-2">
+      <Card className="space-y-2 p-4 sm:p-5">
         <Label htmlFor="contacts-search">Search contacts</Label>
         <div className="relative">
           <SearchIcon
@@ -133,7 +133,7 @@ function Contacts() {
             }}
           />
         </div>
-      </div>
+      </Card>
 
       {matches.length === 0 ? (
         <EmptyState
@@ -144,7 +144,7 @@ function Contacts() {
         <div className="space-y-8">
           {CATEGORY_ORDER.filter((category) => byCategory.has(category)).map(
             (category) => (
-              <section key={category} className="space-y-3">
+              <Section key={category} spacing="none" className="space-y-3">
                 <h2 className="text-xl font-semibold">
                   {CATEGORY_LABELS[category]}
                 </h2>
@@ -183,11 +183,11 @@ function Contacts() {
                     }
                   )}
                 </div>
-              </section>
+              </Section>
             )
           )}
         </div>
       )}
-    </div>
+    </PageContainer>
   )
 }

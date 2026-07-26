@@ -8,7 +8,11 @@ import { myCommunitiesQueryOptions } from "@/features/communities/api"
 import type { Community } from "@/features/communities/types"
 import { selectMedia } from "@/features/media/select"
 import { TelegramLink } from "@/features/profile/components/telegram-link"
+import { PageContainer } from "@/components/page-container"
+import { PageHeader } from "@/components/page-header"
 import { EmptyState, QueryBoundary } from "@/components/query-boundary"
+import { ResilientImage } from "@/components/resilient-image"
+import { Section } from "@/components/section"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -49,22 +53,20 @@ function CommunityRow({ community }: { community: Community }) {
       params={{ communityId: String(community.id) }}
       className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
-      {avatar ? (
-        <img
-          src={avatar}
-          alt=""
-          aria-hidden
-          loading="lazy"
-          className="size-8 shrink-0 rounded-full bg-muted object-cover"
-        />
-      ) : (
-        <span
-          aria-hidden
-          className="grid size-8 shrink-0 place-items-center rounded-full bg-muted"
-        >
-          <UsersIcon className="size-4 text-muted-foreground" />
-        </span>
-      )}
+      <ResilientImage
+        src={avatar}
+        alt=""
+        aria-hidden
+        containerClassName="size-8 shrink-0 rounded-full"
+        fallback={
+          <span
+            aria-hidden
+            className="grid size-full place-items-center bg-muted"
+          >
+            <UsersIcon className="size-4 text-muted-foreground" />
+          </span>
+        }
+      />
       <span className="min-w-0">
         <span className="block truncate text-sm font-medium">
           {community.name}
@@ -122,26 +124,30 @@ function Profile() {
   const { user } = session
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Profile</h1>
+    <PageContainer maxWidth="prose" padding="none" className="space-y-6">
+      <PageHeader
+        eyebrow="Your account"
+        title="Profile"
+        description="Manage your campus identity, notifications, and appearance."
+      />
 
       <Card className="gap-0 p-0">
         <div className="flex items-center gap-4 p-4">
-          {user.picture ? (
-            <img
-              src={user.picture}
-              alt=""
-              aria-hidden
-              className="size-12 shrink-0 rounded-full bg-muted object-cover"
-            />
-          ) : (
-            <span
-              aria-hidden
-              className="grid size-12 shrink-0 place-items-center rounded-full bg-muted text-lg font-medium text-muted-foreground"
-            >
-              {user.given_name.charAt(0).toUpperCase()}
-            </span>
-          )}
+          <ResilientImage
+            src={user.picture}
+            alt=""
+            aria-hidden
+            eager
+            containerClassName="size-12 shrink-0 rounded-full"
+            fallback={
+              <span
+                aria-hidden
+                className="grid size-full place-items-center bg-muted text-lg font-medium text-muted-foreground"
+              >
+                {user.given_name.charAt(0).toUpperCase()}
+              </span>
+            }
+          />
 
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold">{user.name}</p>
@@ -175,10 +181,10 @@ function Profile() {
         </Row>
       </Card>
 
-      <section className="space-y-3">
+      <Section spacing="none" className="space-y-3">
         <h2 className="text-lg font-semibold">My communities</h2>
         <MyCommunities />
-      </section>
-    </div>
+      </Section>
+    </PageContainer>
   )
 }
