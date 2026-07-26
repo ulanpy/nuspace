@@ -3,6 +3,7 @@ import { BadgeCheckIcon } from "lucide-react"
 
 import type { Community } from "@/features/communities/types"
 import { selectMedia } from "@/features/media/select"
+import { toPlainText } from "@/components/markdown"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 
@@ -47,7 +48,7 @@ export function CommunityCard({ community }: { community: Community }) {
           <Badge variant="secondary">{community.category}</Badge>
 
           <p className="line-clamp-2 text-sm text-muted-foreground">
-            {community.description}
+            {toPlainText(community.description)}
           </p>
         </div>
       </Link>
