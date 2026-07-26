@@ -6,11 +6,13 @@ import { z } from "zod"
 
 import { semestersQueryOptions } from "@/features/courses/api"
 import {
+  plannerPlansQueryOptions,
   plannerQueryOptions,
   useAutoBuild,
   useResetPlanner,
 } from "@/features/courses/planner/api"
 import { CourseSearch } from "@/features/courses/planner/components/course-search"
+import { PlanSwitcher } from "@/features/courses/planner/components/plan-switcher"
 import { PlannerCourseCard } from "@/features/courses/planner/components/planner-course-card"
 import {
   ScheduleAgenda,
@@ -42,6 +44,16 @@ const scheduleSearchSchema = z.object({
    * which meant refreshing quietly dropped you back to the default term.
    */
   term: z.string().optional(),
+  /**
+   * Which saved plan is open. In the URL for the same reason `term` is: a plan
+   * someone has arranged is worth linking to, and a reload otherwise drops
+   * them onto whichever plan happens to be first.
+   *
+   * Coerced, because the router JSON-encodes search values — a hand-written
+   * `?plan=3` arrives as a number, and a bare `z.number()` would reject the
+   * string form the router itself produces.
+   */
+  plan: z.coerce.number().optional(),
 })
 
 export const Route = createFileRoute("/_app/courses/schedule")({
@@ -62,14 +74,16 @@ function PlannerView({
   planner,
   term,
   termLabel,
+  scheduleId,
 }: {
   planner: PlannerSchedule
   term: string
   termLabel: string
+  scheduleId: number | null
 }) {
   const [detail, setDetail] = useState<SectionEvent | null>(null)
-  const autoBuild = useAutoBuild()
-  const resetPlanner = useResetPlanner()
+  const autoBuild = useAutoBuild({ scheduleId })
+  const resetPlanner = useResetPlanner({ scheduleId })
 
   const events = selectedEvents(planner)
   const clashes = findClashes(timedEvents(events))
@@ -116,6 +130,7 @@ function PlannerView({
           term={term}
           termLabel={termLabel}
           addedCodes={addedCodes}
+          scheduleId={scheduleId}
         />
       </Card>
 
@@ -178,6 +193,7 @@ function PlannerView({
             key={course.id}
             course={course}
             clashes={clashes}
+            scheduleId={scheduleId}
           />
         ))}
       </div>
@@ -186,11 +202,29 @@ function PlannerView({
 }
 
 function ScheduleBuilder() {
-  const { term } = Route.useSearch()
+  const { term, plan } = Route.useSearch()
   const navigate = Route.useNavigate()
 
   const semesters = useQuery(semestersQueryOptions())
-  const plannerQuery = useQuery(plannerQueryOptions())
+  const plansQuery = useQuery(plannerPlansQueryOptions())
+
+  const plans = plansQuery.data?.items ?? []
+  /**
+   * The plan named in the URL, or the first one.
+   *
+   * A URL can outlive the plan it names — deleted here, or opened on another
+   * device — so an id that no longer exists falls back rather than requesting
+   * a plan the server will 404. Null until the list arrives, which keeps the
+   * planner query from firing against the wrong plan and then correcting
+   * itself a moment later.
+   */
+  const activePlanId =
+    plans.find((entry) => entry.id === plan)?.id ?? plans[0]?.id ?? null
+
+  const plannerQuery = useQuery({
+    ...plannerQueryOptions(activePlanId),
+    enabled: activePlanId !== null,
+  })
 
   const options = semesters.data ?? []
   // The newest term the registrar offers, used when the URL names none — or
@@ -216,6 +250,18 @@ function ScheduleBuilder() {
 
   return (
     <div className="space-y-4">
+      {plans.length > 0 && plansQuery.data && (
+        <PlanSwitcher
+          plans={plans}
+          count={plansQuery.data.count}
+          maxAllowed={plansQuery.data.max_allowed}
+          activeId={activePlanId}
+          onSelect={(id) => {
+            void navigate({ search: (previous) => ({ ...previous, plan: id }) })
+          }}
+        />
+      )}
+
       <div className="flex items-center gap-2">
         <label htmlFor="term" className="text-sm font-medium">
           Term
@@ -224,8 +270,14 @@ function ScheduleBuilder() {
           value={activeTerm}
           onValueChange={(value) => {
             // Base UI reports a cleared select as null; that reads as "no
-            // explicit term", which is the default-to-newest case.
-            void navigate({ search: { term: value ?? undefined } })
+            // explicit term", which is the default-to-newest case. The plan is
+            // preserved: changing term inside a plan is not leaving it.
+            void navigate({
+              search: (previous) => ({
+                ...previous,
+                term: value ?? undefined,
+              }),
+            })
           }}
         >
           <SelectTrigger id="term" className="w-48">
@@ -249,6 +301,7 @@ function ScheduleBuilder() {
             planner={planner}
             term={activeTerm}
             termLabel={activeLabel}
+            scheduleId={activePlanId}
           />
         )}
       </QueryBoundary>
