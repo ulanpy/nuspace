@@ -13,7 +13,7 @@ const landingSearchSchema = z.object({
   returnTo: z.string().optional(),
 })
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_public/")({
   validateSearch: landingSearchSchema,
   beforeLoad: async ({ context }) => {
     const session =
@@ -29,7 +29,7 @@ function Landing() {
   const { returnTo } = Route.useSearch()
 
   return (
-    <main className="grid min-h-screen place-items-center p-6">
+    <div className="grid min-h-[60vh] place-items-center py-12">
       <div className="w-full max-w-md space-y-6 text-center">
         <div className="space-y-2">
           <h1 className="text-4xl font-semibold tracking-tight">Nuspace</h1>
@@ -48,6 +48,6 @@ function Landing() {
           Sign in with your NU account
         </Button>
       </div>
-    </main>
+    </div>
   )
 }

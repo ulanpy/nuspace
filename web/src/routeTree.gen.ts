@@ -9,26 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as PublicRouteImport } from './routes/_public'
 import { Route as AppAnnouncementsRouteImport } from './routes/_app/announcements'
 import { Route as AppContactsRouteImport } from './routes/_app/contacts'
 import { Route as AppCoursesRouteImport } from './routes/_app/courses'
 import { Route as AppOpportunitiesRouteImport } from './routes/_app/opportunities'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppSgotinishRouteImport } from './routes/_app/sgotinish'
+import { Route as PublicIndexRouteImport } from './routes/_public/index'
+import { Route as PublicAboutRouteImport } from './routes/_public/about'
+import { Route as PublicPrivacyPolicyRouteImport } from './routes/_public/privacy-policy'
+import { Route as PublicTermsOfServiceRouteImport } from './routes/_public/terms-of-service'
 import { Route as AppCommunitiesIndexRouteImport } from './routes/_app/communities/index'
 import { Route as AppCommunitiesCommunityIdRouteImport } from './routes/_app/communities/$communityId'
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
 import { Route as AppEventsEventIdRouteImport } from './routes/_app/events/$eventId'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicRoute = PublicRouteImport.update({
+  id: '/_public',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppAnnouncementsRoute = AppAnnouncementsRouteImport.update({
@@ -61,6 +64,26 @@ const AppSgotinishRoute = AppSgotinishRouteImport.update({
   path: '/sgotinish',
   getParentRoute: () => AppRoute,
 } as any)
+const PublicIndexRoute = PublicIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicAboutRoute = PublicAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicPrivacyPolicyRoute = PublicPrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicTermsOfServiceRoute = PublicTermsOfServiceRouteImport.update({
+  id: '/terms-of-service',
+  path: '/terms-of-service',
+  getParentRoute: () => PublicRoute,
+} as any)
 const AppCommunitiesIndexRoute = AppCommunitiesIndexRouteImport.update({
   id: '/communities/',
   path: '/communities/',
@@ -84,26 +107,32 @@ const AppEventsEventIdRoute = AppEventsEventIdRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof PublicIndexRoute
   '/announcements': typeof AppAnnouncementsRoute
   '/contacts': typeof AppContactsRoute
   '/courses': typeof AppCoursesRoute
   '/opportunities': typeof AppOpportunitiesRoute
   '/profile': typeof AppProfileRoute
   '/sgotinish': typeof AppSgotinishRoute
+  '/about': typeof PublicAboutRoute
+  '/privacy-policy': typeof PublicPrivacyPolicyRoute
+  '/terms-of-service': typeof PublicTermsOfServiceRoute
   '/communities/$communityId': typeof AppCommunitiesCommunityIdRoute
   '/events/$eventId': typeof AppEventsEventIdRoute
   '/communities/': typeof AppCommunitiesIndexRoute
   '/events/': typeof AppEventsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/': typeof PublicIndexRoute
   '/announcements': typeof AppAnnouncementsRoute
   '/contacts': typeof AppContactsRoute
   '/courses': typeof AppCoursesRoute
   '/opportunities': typeof AppOpportunitiesRoute
   '/profile': typeof AppProfileRoute
   '/sgotinish': typeof AppSgotinishRoute
+  '/about': typeof PublicAboutRoute
+  '/privacy-policy': typeof PublicPrivacyPolicyRoute
+  '/terms-of-service': typeof PublicTermsOfServiceRoute
   '/communities/$communityId': typeof AppCommunitiesCommunityIdRoute
   '/events/$eventId': typeof AppEventsEventIdRoute
   '/communities': typeof AppCommunitiesIndexRoute
@@ -111,14 +140,18 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
+  '/_public': typeof PublicRouteWithChildren
   '/_app/announcements': typeof AppAnnouncementsRoute
   '/_app/contacts': typeof AppContactsRoute
   '/_app/courses': typeof AppCoursesRoute
   '/_app/opportunities': typeof AppOpportunitiesRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/sgotinish': typeof AppSgotinishRoute
+  '/_public/about': typeof PublicAboutRoute
+  '/_public/privacy-policy': typeof PublicPrivacyPolicyRoute
+  '/_public/terms-of-service': typeof PublicTermsOfServiceRoute
+  '/_public/': typeof PublicIndexRoute
   '/_app/communities/$communityId': typeof AppCommunitiesCommunityIdRoute
   '/_app/events/$eventId': typeof AppEventsEventIdRoute
   '/_app/communities/': typeof AppCommunitiesIndexRoute
@@ -134,6 +167,9 @@ export interface FileRouteTypes {
     | '/opportunities'
     | '/profile'
     | '/sgotinish'
+    | '/about'
+    | '/privacy-policy'
+    | '/terms-of-service'
     | '/communities/$communityId'
     | '/events/$eventId'
     | '/communities/'
@@ -147,20 +183,27 @@ export interface FileRouteTypes {
     | '/opportunities'
     | '/profile'
     | '/sgotinish'
+    | '/about'
+    | '/privacy-policy'
+    | '/terms-of-service'
     | '/communities/$communityId'
     | '/events/$eventId'
     | '/communities'
     | '/events'
   id:
     | '__root__'
-    | '/'
     | '/_app'
+    | '/_public'
     | '/_app/announcements'
     | '/_app/contacts'
     | '/_app/courses'
     | '/_app/opportunities'
     | '/_app/profile'
     | '/_app/sgotinish'
+    | '/_public/about'
+    | '/_public/privacy-policy'
+    | '/_public/terms-of-service'
+    | '/_public/'
     | '/_app/communities/$communityId'
     | '/_app/events/$eventId'
     | '/_app/communities/'
@@ -168,24 +211,24 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  PublicRoute: typeof PublicRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_app': {
       id: '/_app'
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_public': {
+      id: '/_public'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PublicRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/announcements': {
@@ -229,6 +272,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/sgotinish'
       preLoaderRoute: typeof AppSgotinishRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_public/': {
+      id: '/_public/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof PublicIndexRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/about': {
+      id: '/_public/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof PublicAboutRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/privacy-policy': {
+      id: '/_public/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PublicPrivacyPolicyRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/terms-of-service': {
+      id: '/_public/terms-of-service'
+      path: '/terms-of-service'
+      fullPath: '/terms-of-service'
+      preLoaderRoute: typeof PublicTermsOfServiceRouteImport
+      parentRoute: typeof PublicRoute
     }
     '/_app/communities/': {
       id: '/_app/communities/'
@@ -289,9 +360,26 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface PublicRouteChildren {
+  PublicAboutRoute: typeof PublicAboutRoute
+  PublicPrivacyPolicyRoute: typeof PublicPrivacyPolicyRoute
+  PublicTermsOfServiceRoute: typeof PublicTermsOfServiceRoute
+  PublicIndexRoute: typeof PublicIndexRoute
+}
+
+const PublicRouteChildren: PublicRouteChildren = {
+  PublicAboutRoute: PublicAboutRoute,
+  PublicPrivacyPolicyRoute: PublicPrivacyPolicyRoute,
+  PublicTermsOfServiceRoute: PublicTermsOfServiceRoute,
+  PublicIndexRoute: PublicIndexRoute,
+}
+
+const PublicRouteWithChildren =
+  PublicRoute._addFileChildren(PublicRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  PublicRoute: PublicRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
