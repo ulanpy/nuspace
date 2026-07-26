@@ -24,9 +24,21 @@ export function useCurrentUser(): CurrentUser {
 }
 
 /**
+ * Addresses the backend lets manage opportunities regardless of role, copied
+ * from `OpportunityPolicy.ALLOWED_EMAILS`.
+ *
+ * `bob@example.com` is in the backend set and is kept here deliberately: this
+ * mirrors the server, and dropping it would only hide the button from an
+ * account the server still authorises. Removing it is a backend change.
+ */
+const OPPORTUNITY_EMAILS = new Set([
+  "ministry.innovations@nu.edu.kz",
+  "bob@example.com",
+])
+
+/**
  * Permission checks derived from the user's role and scopes, so authorization
- * lives in one place. The old app gated opportunity authoring on a hardcoded
- * client-side email allowlist that still contained bob@example.com.
+ * lives in one place.
  */
 export function usePermissions() {
   const session = useSession()
@@ -47,13 +59,17 @@ export function usePermissions() {
     canManageCommunity: (communityId: number) =>
       isAdmin || (user?.communities.includes(communityId) ?? false),
     /**
-     * Authoring the opportunities digest. Admin-only is provisional — it
-     * replaces a hardcoded email allowlist that was never an authorization
-     * mechanism, but nobody has decided yet whether community heads or SG
-     * members should be able to post too. Widening it should stay a change to
-     * this line, so resist inlining role checks at call sites.
+     * Authoring the opportunities digest. Mirrors
+     * `backend/modules/opportunities/policy.py` exactly: the allowlist is not
+     * an authorization mechanism on its own — the server checks the same thing
+     * — but showing the button to someone the server will refuse is the bug the
+     * old app had, so the two must agree. If the policy changes, change it
+     * there first and follow here.
      */
-    canManageOpportunities: isAdmin,
+    canManageOpportunities:
+      isAdmin ||
+      role === "boss" ||
+      (user != null && OPPORTUNITY_EMAILS.has(user.email)),
     canDelegateTickets: isAdmin || role === "boss" || role === "capo",
   }
 }
