@@ -339,21 +339,32 @@ class DegreeAuditService:
         stmt = select(DegreeAuditResult).where(DegreeAuditResult.student_sub == student_sub)
         if year:
             stmt = stmt.where(DegreeAuditResult.admission_year == year)
-        if major:
-            stmt = stmt.where(DegreeAuditResult.major == major)
         stmt = stmt.order_by(DegreeAuditResult.updated_at.desc())
         result = await session.execute(stmt)
-        row: DegreeAuditResult | None = result.scalars().first()
+        rows: list[DegreeAuditResult] = list(result.scalars().all())
+
+        def programmes(row: DegreeAuditResult) -> tuple[list[str], list[str]]:
+            # `major` holds a JSON blob -- {"majors": [...], "minors": [...]} --
+            # not a programme name. Older rows may still hold a bare name, hence
+            # the fallback.
+            try:
+                parsed = json.loads(row.major)
+                return parsed.get("majors", []), parsed.get("minors", [])
+            except Exception:
+                return [row.major], []
+
+        # Filtering by major has to look inside that blob. It used to compare the
+        # column to the name directly, which could never match, so passing
+        # `?major=` always returned null -- the caller could not tell "no audit
+        # for this programme" from "the filter is broken".
+        if major:
+            rows = [row for row in rows if major in programmes(row)[0]]
+
+        row = rows[0] if rows else None
         if not row:
             return None
-        
-        try:
-            parsed = json.loads(row.major)
-            majors = parsed.get("majors", [])
-            minors = parsed.get("minors", [])
-        except Exception:
-            majors = [row.major]
-            minors = []
+
+        majors, minors = programmes(row)
 
         from backend.modules.courses.degree_audit.schemas import AuditProgramResult
         
