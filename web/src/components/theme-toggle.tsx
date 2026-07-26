@@ -1,4 +1,4 @@
-import { MoonIcon, SunIcon } from "lucide-react"
+import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react"
 
 import { useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
@@ -23,8 +23,13 @@ export function ThemeToggle() {
         setTheme(next)
       }}
     >
-      <SunIcon className="size-5 dark:hidden" aria-hidden />
-      <MoonIcon className="hidden size-5 dark:block" aria-hidden />
+      {theme === "light" ? (
+        <SunIcon className="size-5" aria-hidden />
+      ) : theme === "dark" ? (
+        <MoonIcon className="size-5" aria-hidden />
+      ) : (
+        <MonitorIcon className="size-5" aria-hidden />
+      )}
     </Button>
   )
 }
