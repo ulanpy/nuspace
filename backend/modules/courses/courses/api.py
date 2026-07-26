@@ -52,9 +52,12 @@ async def sync_courses_from_registrar(
     """
     try:
         student_sub = user[0].get("sub")
-        student_username = (
-            user[0].get("email").split("@")[0] if not config.IS_DEBUG else "ulan.sharipov"
-        )
+        # In production the registrar username is the local part of the NU
+        # email. Locally the session is a mock user with no such email, so it
+        # comes from REGISTRAR_DEBUG_USERNAME -- set it to your own username.
+        student_username = user[0].get("email").split("@")[0]
+        if config.IS_DEBUG and config.REGISTRAR_DEBUG_USERNAME:
+            student_username = config.REGISTRAR_DEBUG_USERNAME
         sync_result = await service.sync_courses_from_registrar(
             student_sub=student_sub,
             password=data.password,
