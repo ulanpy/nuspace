@@ -77,9 +77,11 @@ function EventGrid({
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    // Summaries use the row variant: this page answers "what's on", and a
+    // column of full posters answers it one event per screenful.
+    <div className="grid gap-3 sm:grid-cols-2">
       {events.map((event) => (
-        <EventCard key={event.id} event={event} />
+        <EventCard key={event.id} event={event} variant="row" />
       ))}
     </div>
   )
