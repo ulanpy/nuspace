@@ -1,12 +1,16 @@
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { useState } from "react"
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
+import { PlusIcon } from "lucide-react"
 import { z } from "zod"
 
 import { useInfiniteList } from "@/hooks/use-infinite-list"
 import { qk } from "@/api/query-keys"
 import { fetchCommunitiesPage } from "@/features/communities/api"
 import { CommunityCard } from "@/features/communities/components/community-card"
+import { CommunityFormDialog } from "@/features/communities/components/community-form-dialog"
 import { EmptyState } from "@/components/query-boundary"
 import { InfiniteList } from "@/components/infinite-list"
+import { Button } from "@/components/ui/button"
 
 const communitiesSearchSchema = z.object({
   category: z
@@ -47,6 +51,9 @@ function CommunitiesList() {
     keyword: q,
   }
 
+  const navigate = useNavigate()
+  const [isCreating, setIsCreating] = useState(false)
+
   const list = useInfiniteList({
     queryKey: qk.communities.list(filters),
     fetchPage: (page) => fetchCommunitiesPage(filters, page),
@@ -54,8 +61,19 @@ function CommunitiesList() {
 
   return (
     <div className="space-y-6">
-      <header>
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-bold tracking-tight">Communities</h1>
+
+        {/* Open to any signed-in user, as on the server: creating a community
+            makes you its head, and admins verify it afterwards. */}
+        <Button
+          onClick={() => {
+            setIsCreating(true)
+          }}
+        >
+          <PlusIcon aria-hidden />
+          Create community
+        </Button>
       </header>
 
       <InfiniteList
@@ -84,6 +102,17 @@ function CommunitiesList() {
           <div className="grid gap-4 sm:grid-cols-2">{rendered}</div>
         )}
       </InfiniteList>
+
+      <CommunityFormDialog
+        open={isCreating}
+        onOpenChange={setIsCreating}
+        onSaved={(community) => {
+          void navigate({
+            to: "/communities/$communityId",
+            params: { communityId: String(community.id) },
+          })
+        }}
+      />
     </div>
   )
 }

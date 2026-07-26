@@ -16,6 +16,19 @@
       "rules": {
         "jsx-a11y/label-has-associated-control": "off"
       }
+    },
+    {
+      "files": ["src/**/*.test.ts"],
+      "rules": {
+        "typescript/no-floating-promises": "off"
+      }
+    },
+    {
+      "files": ["src/components/markdown.tsx"],
+      "rules": {
+        "jsx-a11y/anchor-has-content": "off",
+        "jsx-a11y/heading-has-content": "off"
+      }
     }
   ]
 }

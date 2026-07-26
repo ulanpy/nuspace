@@ -1,10 +1,20 @@
-import { queryOptions } from "@tanstack/react-query"
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query"
 
 import { api, unwrap } from "@/api/client"
 import { qk } from "@/api/query-keys"
+import { pollForMedia } from "@/lib/media-polling"
+import { useMediaUpload } from "@/features/media/use-media-upload"
+import type { UploadItem } from "@/features/media/use-media-upload"
 import type {
   CommunityCategory,
+  CommunityCreate,
   CommunityType,
+  CommunityUpdate,
 } from "@/features/communities/types"
 
 export interface CommunityFilters {
@@ -45,14 +55,162 @@ export function myCommunitiesQueryOptions() {
   })
 }
 
+function fetchCommunity(communityId: number) {
+  return unwrap(
+    api.GET("/communities/{community_id}", {
+      params: { path: { community_id: communityId } },
+    })
+  )
+}
+
 export function communityDetailQueryOptions(communityId: number) {
   return queryOptions({
     queryKey: qk.communities.detail(communityId),
-    queryFn: () =>
+    queryFn: () => fetchCommunity(communityId),
+  })
+}
+
+/**
+ * Refreshes once the newly uploaded images exist server-side.
+ *
+ * Not awaited by the mutation, for the reasons in `lib/media-polling.ts`. The
+ * readiness test counts: a community can be saved with a new banner and no new
+ * profile picture, so waiting for "any media" would resolve immediately
+ * against the profile picture it already had.
+ */
+function refreshWhenMediaLands(
+  queryClient: QueryClient,
+  communityId: number,
+  expected: number
+) {
+  void pollForMedia({
+    fetch: () => fetchCommunity(communityId),
+    isReady: (community) => community.media.length >= expected,
+  }).then(async (community) => {
+    if (community) {
+      await queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+    }
+  })
+}
+
+/**
+ * Profile picture and banner, in one list.
+ *
+ * Both are `entity_type: communities` and are told apart only by their format,
+ * so the pairing has to survive all the way to the signed URL. `mediaOrder` is
+ * per-format, hence the two independent counters.
+ */
+export function toCommunityUploadItems(
+  profile: readonly File[],
+  banner: readonly File[]
+): UploadItem[] {
+  return [
+    ...profile.map((file, index) => ({
+      file,
+      mediaFormat: "profile" as const,
+      mediaOrder: index,
+    })),
+    ...banner.map((file, index) => ({
+      file,
+      mediaFormat: "banner" as const,
+      mediaOrder: index,
+    })),
+  ]
+}
+
+export function useCreateCommunity() {
+  const queryClient = useQueryClient()
+  const { uploadMedia } = useMediaUpload()
+
+  return useMutation({
+    mutationFn: async ({
+      body,
+      items,
+    }: {
+      body: CommunityCreate
+      items: UploadItem[]
+    }) => {
+      const community = await unwrap(api.POST("/communities", { body }))
+
+      if (items.length > 0) {
+        await uploadMedia({
+          entityType: "communities",
+          entityId: community.id,
+          items,
+        })
+      }
+
+      return community
+    },
+    onSuccess: async (community, { items }) => {
+      await queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+      if (items.length > 0) {
+        refreshWhenMediaLands(queryClient, community.id, items.length)
+      }
+    },
+  })
+}
+
+export function useUpdateCommunity() {
+  const queryClient = useQueryClient()
+  const { uploadMedia } = useMediaUpload()
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      body,
+      items,
+    }: {
+      id: number
+      /** Removals from both zones ride along as `media_ids_to_delete`. */
+      body: CommunityUpdate
+      items: UploadItem[]
+    }) => {
+      const community = await unwrap(
+        api.PATCH("/communities/{community_id}", {
+          params: { path: { community_id: id } },
+          body,
+        })
+      )
+
+      if (items.length > 0) {
+        await uploadMedia({
+          entityType: "communities",
+          entityId: id,
+          items,
+        })
+      }
+
+      return community
+    },
+    onSuccess: async (community, { id, items }) => {
+      await queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+      if (items.length > 0) {
+        // Counted from what survived the PATCH, so images deleted in the same
+        // request are not waited for on top of the ones being added.
+        refreshWhenMediaLands(
+          queryClient,
+          id,
+          community.media.length + items.length
+        )
+      }
+    },
+  })
+}
+
+/** Admin only, per `CommunityPolicy` — the head cannot delete their own club. */
+export function useDeleteCommunity() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: number) =>
       unwrap(
-        api.GET("/communities/{community_id}", {
-          params: { path: { community_id: communityId } },
+        api.DELETE("/communities/{community_id}", {
+          params: { path: { community_id: id } },
         })
       ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: qk.communities.all() })
+    },
   })
 }
