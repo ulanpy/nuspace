@@ -133,3 +133,58 @@ export function fetchGradesPage(params: {
     })
   )
 }
+
+/**
+ * Sync registered courses straight from the registrar.
+ *
+ * The password is sent for this one request and nothing else: it is used to log
+ * in to the registrar and is never stored, logged or cached server-side. It
+ * must never be persisted client-side either — no localStorage, no form
+ * autofill of a saved value, no retry that replays it later.
+ */
+export function useRegistrarSync() {
+  const client = useQueryClient()
+
+  return useMutation({
+    mutationFn: (password: string) =>
+      unwrap(api.POST("/registered_courses/sync", { body: { password } })),
+    onSuccess: () => refreshCourses(client),
+  })
+}
+
+/**
+ * Sync from a personal-schedule PDF the student downloads themselves.
+ *
+ * The alternative for anyone unwilling to type their registrar password into
+ * something that isn't the registrar — a reasonable instinct, and one worth
+ * accommodating even though the password never leaves the request.
+ */
+export function useRegistrarPdfSync() {
+  const client = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (file: File) =>
+      unwrap(
+        api.POST("/registered_courses/sync/pdf", {
+          body: { pdf_file: await toBase64(file) },
+        })
+      ),
+    onSuccess: () => refreshCourses(client),
+  })
+}
+
+/** The API wants the PDF base64-encoded, without the data-URL prefix. */
+async function toBase64(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+
+  let binary = ""
+  // Chunked because String.fromCharCode(...bytes) blows the argument limit on
+  // a file of any real size.
+  const CHUNK = 0x8000
+  for (let index = 0; index < bytes.length; index += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + CHUNK))
+  }
+
+  return btoa(binary)
+}

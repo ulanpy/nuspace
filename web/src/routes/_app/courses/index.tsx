@@ -1,8 +1,11 @@
+import { useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
+import { RefreshCcw } from "lucide-react"
 
 import { registeredCoursesQueryOptions } from "@/features/courses/api"
 import { CourseCard } from "@/features/courses/components/course-card"
+import { RegistrarSync } from "@/features/courses/components/registrar-sync"
 import {
   ceilingGpa,
   formatGpa,
@@ -11,6 +14,7 @@ import {
 } from "@/features/courses/gpa"
 import type { RegisteredCourse } from "@/features/courses/types"
 import { EmptyState, QueryBoundary } from "@/components/query-boundary"
+import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
 export const Route = createFileRoute("/_app/courses/")({
@@ -64,16 +68,22 @@ function GpaSummary({ courses }: { courses: RegisteredCourse[] }) {
 
 function MyCourses() {
   const query = useQuery(registeredCoursesQueryOptions())
+  const [isSyncOpen, setIsSyncOpen] = useState(false)
 
   return (
     <QueryBoundary
       query={query}
       isEmpty={(courses) => courses.length === 0}
+      // With no courses there is nothing else to do on this screen, so the
+      // sync form is the page rather than something to go looking for.
       empty={
-        <EmptyState
-          title="Your course list is empty"
-          description="Sync your schedule to add registered courses."
-        />
+        <div className="space-y-4">
+          <EmptyState
+            title="Your course list is empty"
+            description="Sync with the registrar to pull in this term's courses."
+          />
+          <RegistrarSync />
+        </div>
       }
     >
       {(courses) => (
@@ -84,6 +94,21 @@ function MyCourses() {
               <CourseCard key={registered.id} registered={registered} />
             ))}
           </div>
+
+          {isSyncOpen ? (
+            <RegistrarSync />
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsSyncOpen(true)
+              }}
+            >
+              <RefreshCcw aria-hidden />
+              Sync with the registrar
+            </Button>
+          )}
         </div>
       )}
     </QueryBoundary>
