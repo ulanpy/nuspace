@@ -2,7 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { LogOutIcon, UsersIcon } from "lucide-react"
 
-import { beginLogout } from "@/features/auth/api"
+import { useLogout } from "@/features/auth/use-logout"
 import { useSession } from "@/features/auth/use-session"
 import { myCommunitiesQueryOptions } from "@/features/communities/api"
 import type { Community } from "@/features/communities/types"
@@ -116,6 +116,7 @@ function Profile() {
   // useSession, not useCurrentUser: tg_id lives on the session rather than the
   // user, and the Telegram control needs to react to it changing.
   const session = useSession()
+  const logout = useLogout()
   if (!session) return null
 
   const { user } = session
@@ -149,9 +150,16 @@ function Profile() {
             </p>
           </div>
 
-          <Button variant="outline" size="sm" onClick={beginLogout}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={logout.isPending}
+            onClick={() => {
+              logout.mutate()
+            }}
+          >
             <LogOutIcon className="size-4" aria-hidden />
-            Log out
+            {logout.isPending ? "Logging out…" : "Log out"}
           </Button>
         </div>
 

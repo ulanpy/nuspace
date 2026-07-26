@@ -3,6 +3,11 @@ import { queryOptions } from "@tanstack/react-query"
 import { ApiError, api, unwrap } from "@/api/client"
 import { qk } from "@/api/query-keys"
 import { type Session, sessionSchema } from "@/features/auth/schema"
+import {
+  currentBrowserPath,
+  loginHref,
+  requestLogout,
+} from "@/features/auth/navigation"
 
 /**
  * The session query. Resolves to null when nobody is signed in, rather than
@@ -29,14 +34,30 @@ export const sessionQueryOptions = queryOptions({
 })
 
 /**
- * Login and logout are full-page navigations, not fetches: the backend sets
- * httpOnly cookies and redirects back. `returnTo` round-trips through the
- * backend so a deep link survives the OAuth hop.
+ * Login is a full-page navigation because the backend redirects through the
+ * identity provider and back. The return target is relative because the
+ * backend intentionally rejects absolute URLs.
  */
-export function beginLogin(returnTo: string = window.location.href) {
-  window.location.href = `/api/login?return_to=${encodeURIComponent(returnTo)}`
+export function beginLogin(
+  returnTo: string = currentBrowserPath(window.location),
+  options: { reauthenticate?: boolean } = {}
+) {
+  window.location.href = loginHref({
+    returnTo,
+    origin: window.location.origin,
+    reauthenticate: options.reauthenticate,
+  })
 }
 
-export function beginLogout() {
-  window.location.href = "/api/logout"
+export function beginReauthentication() {
+  beginLogin(currentBrowserPath(window.location), { reauthenticate: true })
+}
+
+/**
+ * Logout is a fetch, not a navigation: `/api/logout` clears cookies and returns
+ * a plain 200 response. Navigating there strands the browser on the API body.
+ */
+export async function beginLogout() {
+  await requestLogout()
+  window.location.replace("/")
 }

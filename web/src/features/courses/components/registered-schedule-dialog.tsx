@@ -4,7 +4,7 @@ import { CalendarPlusIcon, DownloadIcon, Loader2Icon } from "lucide-react"
 import { toast } from "sonner"
 
 import { ApiError } from "@/api/client"
-import { beginLogin } from "@/features/auth/api"
+import { beginReauthentication } from "@/features/auth/api"
 import {
   downloadScheduleIcs,
   scheduleQueryOptions,
@@ -97,7 +97,21 @@ export function RegisteredScheduleDialog({
                       onClick={() => {
                         google.mutate(undefined, {
                           onSuccess: (result) => {
-                            if (result.google_errors.length > 0) {
+                            if (
+                              result.google_errors.includes(
+                                "insufficient_google_scope"
+                              )
+                            ) {
+                              toast.warning(
+                                "Sign in again to renew Google Calendar permission",
+                                {
+                                  action: {
+                                    label: "Sign in",
+                                    onClick: beginReauthentication,
+                                  },
+                                }
+                              )
+                            } else if (result.google_errors.length > 0) {
                               toast.warning(
                                 "Calendar sync completed with Google warnings"
                               )
@@ -117,9 +131,7 @@ export function RegisteredScheduleDialog({
                                 {
                                   action: {
                                     label: "Sign in",
-                                    onClick: () => {
-                                      beginLogin()
-                                    },
+                                    onClick: beginReauthentication,
                                   },
                                 }
                               )
