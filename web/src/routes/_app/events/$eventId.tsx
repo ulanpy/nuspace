@@ -1,10 +1,21 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { useState } from "react"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { CalendarIcon, MapPinIcon, UserIcon } from "lucide-react"
+import {
+  CalendarIcon,
+  MapPinIcon,
+  PencilIcon,
+  Trash2Icon,
+  UserIcon,
+} from "lucide-react"
 
-import { eventDetailQueryOptions } from "@/features/events/api"
+import { apiErrorMessage } from "@/api/errors"
+import { eventDetailQueryOptions, useDeleteEvent } from "@/features/events/api"
+import { EventFormDialog } from "@/features/events/components/event-form-dialog"
 import { selectMedia } from "@/features/media/select"
 import { formatCampusDateTime, formatRelative, isPast } from "@/lib/datetime"
+import { ConfirmDialog } from "@/components/confirm-dialog"
+import { Markdown } from "@/components/markdown"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
@@ -24,9 +35,18 @@ function EventDetail() {
     eventDetailQueryOptions(Number(eventId))
   )
 
+  const navigate = useNavigate()
+  const [isEditing, setIsEditing] = useState(false)
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
+  const deleteEvent = useDeleteEvent()
+
   const poster = selectMedia(event.media, "carousel")
   const started = isPast(event.start_datetime)
   const finished = isPast(event.end_datetime)
+
+  // Both come from the server, per user and per event; see canEditField.
+  const canEdit = event.permissions?.can_edit ?? false
+  const canDelete = event.permissions?.can_delete ?? false
 
   return (
     <article className="mx-auto max-w-3xl space-y-6">
@@ -56,6 +76,45 @@ function EventDetail() {
         <h1 className="text-3xl font-bold tracking-tight text-balance">
           {event.name}
         </h1>
+
+        {(canEdit || canDelete) && (
+          <div className="flex flex-wrap gap-2">
+            {canEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsEditing(true)
+                }}
+              >
+                <PencilIcon aria-hidden />
+                Edit
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => {
+                  setIsConfirmingDelete(true)
+                }}
+              >
+                <Trash2Icon aria-hidden />
+                Delete
+              </Button>
+            )}
+          </div>
+        )}
+
+        {deleteEvent.isError && (
+          <p className="text-sm text-destructive" role="alert">
+            {apiErrorMessage(
+              deleteEvent.error,
+              "Could not delete the event. Try again."
+            )}
+          </p>
+        )}
       </header>
 
       <dl className="grid gap-3 sm:grid-cols-2">
@@ -103,9 +162,9 @@ function EventDetail() {
       {event.description && (
         <div className="space-y-2">
           <h2 className="text-lg font-semibold">About</h2>
-          <p className="whitespace-pre-line text-muted-foreground">
+          <Markdown className="text-muted-foreground">
             {event.description}
-          </p>
+          </Markdown>
         </div>
       )}
 
@@ -124,6 +183,30 @@ function EventDetail() {
             }
           />
         )}
+
+      <EventFormDialog
+        event={event}
+        open={isEditing}
+        onOpenChange={setIsEditing}
+      />
+
+      <ConfirmDialog
+        open={isConfirmingDelete}
+        onOpenChange={setIsConfirmingDelete}
+        title="Delete this event?"
+        description={`“${event.name}” will disappear for everyone, along with its poster. This cannot be undone.`}
+        confirmLabel="Delete event"
+        isPending={deleteEvent.isPending}
+        onConfirm={() => {
+          deleteEvent.mutate(event.id, {
+            onSuccess: () => {
+              setIsConfirmingDelete(false)
+              // This page is about to 404 on its own loader.
+              void navigate({ to: "/events", search: { time: "upcoming" } })
+            },
+          })
+        }}
+      />
     </article>
   )
 }
