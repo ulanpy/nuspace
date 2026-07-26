@@ -1,4 +1,5 @@
 import { apiErrorMessage } from "@/api/errors"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -73,9 +74,14 @@ export function EventFormDialog({
                 updateEvent.mutate(
                   { id: event.id, body: update, files },
                   {
-                    onSuccess: (saved) => {
-                      onSaved?.(saved)
+                    onSuccess: (result) => {
+                      onSaved?.(result.entity)
                       close()
+                      if (result.mediaStatus === "failed") {
+                        toast.warning(
+                          "Event saved, but its image could not be uploaded. You can add it by editing the event."
+                        )
+                      }
                     },
                   }
                 )
@@ -83,9 +89,14 @@ export function EventFormDialog({
                 createEvent.mutate(
                   { body: create, files },
                   {
-                    onSuccess: (saved) => {
-                      onSaved?.(saved)
+                    onSuccess: (result) => {
+                      onSaved?.(result.entity)
                       close()
+                      if (result.mediaStatus === "failed") {
+                        toast.warning(
+                          "Event saved, but its image could not be uploaded. You can add it by editing the event."
+                        )
+                      }
                     },
                   }
                 )

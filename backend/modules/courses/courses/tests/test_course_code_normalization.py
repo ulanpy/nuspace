@@ -1,20 +1,14 @@
+import pytest
 from backend.modules.courses.courses.service import StudentCourseService
 from backend.modules.courses.registrar.schemas import CourseSearchResponse, CourseSummary
-import pytest
 
 
 def test_normalize_course_code_spaces_cross_list_wcs_wll() -> None:
-    assert (
-        StudentCourseService._normalize_course_code("WCS260/WLL235")
-        == "WCS 260/WLL 235"
-    )
+    assert StudentCourseService._normalize_course_code("WCS260/WLL235") == "WCS 260/WLL 235"
 
 
 def test_normalize_course_code_spaces_cross_list_wll_ant() -> None:
-    assert (
-        StudentCourseService._normalize_course_code(" WLL171 / ANT175 ")
-        == "WLL 171/ANT 175"
-    )
+    assert StudentCourseService._normalize_course_code(" WLL171 / ANT175 ") == "WLL 171/ANT 175"
 
 
 @pytest.mark.asyncio
@@ -62,11 +56,10 @@ async def test_get_or_create_course_searches_cross_list_parts():
         async def create_course(self, data):
             return {"created": True, "registrar_id": data.registrar_id}
 
-    service = StudentCourseService(repository=FakeRepo(), registrar_service=FakeRegistrar())
+    service = StudentCourseService(repository=FakeRepo(), registrar=FakeRegistrar())
     result = await service._get_or_create_course(
         course_code="WLL 235/WCS 260",
         term_value="822",
     )
 
     assert result == {"created": True, "registrar_id": 9999}
-

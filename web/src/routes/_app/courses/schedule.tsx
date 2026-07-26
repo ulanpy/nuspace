@@ -24,9 +24,15 @@ import {
   formatRoom,
   timedEvents,
 } from "@/features/courses/planner/schedule"
+import { resolvePlannerLoadState } from "@/features/courses/planner/load-state"
 import type { SectionEvent } from "@/features/courses/planner/schedule"
 import type { PlannerSchedule } from "@/features/courses/planner/types"
-import { QueryBoundary } from "@/components/query-boundary"
+import {
+  EmptyState,
+  QueryBoundary,
+  QueryError,
+  SkeletonLines,
+} from "@/components/query-boundary"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
@@ -208,39 +214,45 @@ function ScheduleBuilder() {
   const semesters = useQuery(semestersQueryOptions())
   const plansQuery = useQuery(plannerPlansQueryOptions())
 
-  const plans = plansQuery.data?.items ?? []
-  /**
-   * The plan named in the URL, or the first one.
-   *
-   * A URL can outlive the plan it names — deleted here, or opened on another
-   * device — so an id that no longer exists falls back rather than requesting
-   * a plan the server will 404. Null until the list arrives, which keeps the
-   * planner query from firing against the wrong plan and then correcting
-   * itself a moment later.
-   */
+  const loadState = resolvePlannerLoadState({
+    semesters: {
+      status: semesters.status,
+      data: semesters.data,
+      error: semesters.error,
+    },
+    plans: {
+      status: plansQuery.status,
+      data: plansQuery.data,
+      error: plansQuery.error,
+    },
+    requestedTerm: term,
+    requestedPlan: plan,
+  })
   const activePlanId =
-    plans.find((entry) => entry.id === plan)?.id ?? plans[0]?.id ?? null
+    loadState.status === "ready" ? loadState.activePlanId : null
 
   const plannerQuery = useQuery({
     ...plannerQueryOptions(activePlanId),
     enabled: activePlanId !== null,
   })
 
-  const options = semesters.data ?? []
-  // The newest term the registrar offers, used when the URL names none — or
-  // names one that no longer exists. A hardcoded id would search an empty
-  // catalog once terms rolled over, and a shared link outlives its term, so
-  // both cases have to land somewhere real rather than on "no results".
-  const activeTerm =
-    options.find((option) => option.value === term)?.value ?? options[0]?.value
-  const activeLabel =
-    options.find((option) => option.value === activeTerm)?.label ?? "this term"
-
-  if (semesters.isPending) {
-    return <p className="text-sm text-muted-foreground">Loading terms…</p>
+  if (loadState.status === "pending") {
+    return <SkeletonLines />
   }
 
-  if (!activeTerm) {
+  if (loadState.status === "error") {
+    const query = loadState.source === "semesters" ? semesters : plansQuery
+    return (
+      <QueryError
+        error={loadState.error}
+        onRetry={() => {
+          void query.refetch()
+        }}
+      />
+    )
+  }
+
+  if (loadState.status === "no-terms") {
     return (
       <p className="text-sm text-muted-foreground">
         The registrar has not published any terms to plan against yet.
@@ -248,19 +260,39 @@ function ScheduleBuilder() {
     )
   }
 
+  if (loadState.status === "no-plans") {
+    return (
+      <EmptyState
+        title="Could not load a schedule plan"
+        description="The server did not return the default plan it creates for every student."
+        action={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void plansQuery.refetch()
+            }}
+          >
+            Try again
+          </Button>
+        }
+      />
+    )
+  }
+
+  const { options, planList, activeTerm, activeLabel } = loadState
+
   return (
     <div className="space-y-4">
-      {plans.length > 0 && plansQuery.data && (
-        <PlanSwitcher
-          plans={plans}
-          count={plansQuery.data.count}
-          maxAllowed={plansQuery.data.max_allowed}
-          activeId={activePlanId}
-          onSelect={(id) => {
-            void navigate({ search: (previous) => ({ ...previous, plan: id }) })
-          }}
-        />
-      )}
+      <PlanSwitcher
+        plans={planList.items}
+        count={planList.count}
+        maxAllowed={planList.max_allowed}
+        activeId={activePlanId}
+        onSelect={(id) => {
+          void navigate({ search: (previous) => ({ ...previous, plan: id }) })
+        }}
+      />
 
       <div className="flex items-center gap-2">
         <label htmlFor="term" className="text-sm font-medium">

@@ -1,4 +1,5 @@
 import { apiErrorMessage } from "@/api/errors"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -72,9 +73,14 @@ export function CommunityFormDialog({
                 updateCommunity.mutate(
                   { id: community.id, body: update, items },
                   {
-                    onSuccess: (saved) => {
-                      onSaved?.(saved)
+                    onSuccess: (result) => {
+                      onSaved?.(result.entity)
                       close()
+                      if (result.mediaStatus === "failed") {
+                        toast.warning(
+                          "Community saved, but one or more images could not be uploaded. You can add them by editing the community."
+                        )
+                      }
                     },
                   }
                 )
@@ -82,9 +88,14 @@ export function CommunityFormDialog({
                 createCommunity.mutate(
                   { body: create, items },
                   {
-                    onSuccess: (saved) => {
-                      onSaved?.(saved)
+                    onSuccess: (result) => {
+                      onSaved?.(result.entity)
                       close()
+                      if (result.mediaStatus === "failed") {
+                        toast.warning(
+                          "Community saved, but one or more images could not be uploaded. You can add them by editing the community."
+                        )
+                      }
                     },
                   }
                 )

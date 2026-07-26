@@ -7,6 +7,7 @@ from backend.lifespan import lifespan
 
 # Import both the instrumentor and the metrics_app
 from backend.middlewares.prometheus_metrics import instrument_app, metrics_app
+from backend.modules.routers import routers
 
 app = FastAPI(
     debug=True if config.IS_DEBUG else False,
@@ -18,8 +19,14 @@ app = FastAPI(
     title="nuspace API",
     description=" Nuspace.kz is a SuperApp for NU students that streamlines communication and "
     "replaces disorganized Telegram chats with a more reliable solution. "
-    "[Project Github](https://github.com/ulanpy/nuspace). "
+    "[Project Github](https://github.com/ulanpy/nuspace). ",
 )
+
+# Routes describe the application and must exist before lifespan starts.
+# Keeping them out of startup lets tooling export OpenAPI without connecting to
+# Postgres, Redis, Meilisearch, RabbitMQ, GCS, or Telegram.
+for router in routers:
+    app.include_router(router)
 
 app.mount("/metrics", metrics_app)
 

@@ -91,15 +91,19 @@ pnpm api:check      # fail if the committed schema is stale
 committed. Nothing about a request or response is typed by hand, so a backend
 change that breaks the contract fails `tsc` instead of surfacing at runtime.
 
-Regenerate with the backend running (it only serves `/api/openapi.json` when
-`IS_DEBUG=true`):
+Regenerate from an offline backend export:
 
 ```sh
-pnpm api:generate
+cd ../backend
+uv run python scripts/export_openapi.py --output /tmp/nuspace-openapi.json
+cd ../web
+OPENAPI_URL=/tmp/nuspace-openapi.json pnpm api:generate
 ```
 
 `pnpm api:check` runs the same generation and fails on any diff, so drift is
-caught in CI.
+caught in CI. The exporter loads `infra/.env.example` as a dummy configuration
+fixture and constructs the schema without starting Postgres, Redis,
+Meilisearch, RabbitMQ, GCS, or the bot.
 
 The generator runs in an isolated environment pinned to TypeScript 6.
 `openapi-typescript` emits through the compiler's `ts.factory` AST API, which

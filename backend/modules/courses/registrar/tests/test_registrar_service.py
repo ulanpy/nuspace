@@ -1,5 +1,4 @@
 import pytest
-
 from backend.modules.courses.registrar import service as registrar_service
 from backend.modules.courses.registrar.service import RegistrarService
 
@@ -12,7 +11,7 @@ async def test_fetch_course_priorities_returns_exact_match(monkeypatch):
         return {
             "hits": [
                 {
-                    "abbr": "MATH 263",
+                    "course_code": "MATH 263",
                     "prerequisite": "Wrong prereq",
                     "corequisite": "",
                     "antirequisite": "",
@@ -22,7 +21,7 @@ async def test_fetch_course_priorities_returns_exact_match(monkeypatch):
                     "priority_4": "",
                 },
                 {
-                    "abbr": "MATH 162",
+                    "course_code": "MATH 162",
                     "prerequisite": "Correct prereq",
                     "corequisite": "",
                     "antirequisite": "",
@@ -50,7 +49,7 @@ async def test_fetch_course_priorities_returns_empty_without_exact_match(monkeyp
         return {
             "hits": [
                 {
-                    "abbr": "MATH 263",
+                    "course_code": "MATH 263",
                     "prerequisite": "Wrong prereq",
                 }
             ]
@@ -61,4 +60,3 @@ async def test_fetch_course_priorities_returns_empty_without_exact_match(monkeyp
     result = await service.fetch_course_priorities(["MATH 162"])
 
     assert result == {}
-

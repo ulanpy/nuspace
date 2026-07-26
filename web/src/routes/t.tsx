@@ -8,7 +8,6 @@ import { TicketHeader } from "@/features/sgotinish/components/ticket-header"
 import {
   deriveOwnerHash,
   readKeyFromFragment,
-  rememberKey,
 } from "@/features/sgotinish/warp-key"
 import { Card } from "@/components/ui/card"
 import { SkeletonLines } from "@/components/query-boundary"
@@ -37,11 +36,7 @@ function AnonymousTicket() {
     setHasKey(Boolean(key))
     if (!key) return
 
-    void deriveOwnerHash(key).then((hash) => {
-      setOwnerHash(hash)
-      // Keep it locally so a bookmark without the fragment still works later.
-      rememberKey(hash, key)
-    })
+    void deriveOwnerHash(key).then(setOwnerHash)
   }, [])
 
   const query = useQuery(anonymousTicketQueryOptions(ownerHash))

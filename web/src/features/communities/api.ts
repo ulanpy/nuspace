@@ -10,6 +10,8 @@ import { qk } from "@/api/query-keys"
 import { pollForMedia } from "@/lib/media-polling"
 import { useMediaUpload } from "@/features/media/use-media-upload"
 import type { UploadItem } from "@/features/media/use-media-upload"
+import { assertValidImageBatch } from "@/features/media/types"
+import { saveWithMedia } from "@/features/media/save-with-media"
 import type {
   CommunityCategory,
   CommunityCreate,
@@ -130,22 +132,32 @@ export function useCreateCommunity() {
       body: CommunityCreate
       items: UploadItem[]
     }) => {
-      const community = await unwrap(api.POST("/communities", { body }))
-
-      if (items.length > 0) {
-        await uploadMedia({
-          entityType: "communities",
-          entityId: community.id,
-          items,
-        })
-      }
-
-      return community
+      return saveWithMedia({
+        validate: () => {
+          assertValidImageBatch(items.map((item) => item.file))
+        },
+        saveEntity: () => unwrap(api.POST("/communities", { body })),
+        uploadMedia:
+          items.length > 0
+            ? async (community) => {
+                const uploaded = await uploadMedia({
+                  entityType: "communities",
+                  entityId: community.id,
+                  items,
+                })
+                return uploaded.length
+              }
+            : undefined,
+      })
     },
-    onSuccess: async (community, { items }) => {
+    onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: qk.communities.all() })
-      if (items.length > 0) {
-        refreshWhenMediaLands(queryClient, community.id, items.length)
+      if (result.successfulUploadCount > 0) {
+        refreshWhenMediaLands(
+          queryClient,
+          result.entity.id,
+          result.successfulUploadCount
+        )
       }
     },
   })
@@ -166,32 +178,39 @@ export function useUpdateCommunity() {
       body: CommunityUpdate
       items: UploadItem[]
     }) => {
-      const community = await unwrap(
-        api.PATCH("/communities/{community_id}", {
-          params: { path: { community_id: id } },
-          body,
-        })
-      )
-
-      if (items.length > 0) {
-        await uploadMedia({
-          entityType: "communities",
-          entityId: id,
-          items,
-        })
-      }
-
-      return community
+      return saveWithMedia({
+        validate: () => {
+          assertValidImageBatch(items.map((item) => item.file))
+        },
+        saveEntity: () =>
+          unwrap(
+            api.PATCH("/communities/{community_id}", {
+              params: { path: { community_id: id } },
+              body,
+            })
+          ),
+        uploadMedia:
+          items.length > 0
+            ? async () => {
+                const uploaded = await uploadMedia({
+                  entityType: "communities",
+                  entityId: id,
+                  items,
+                })
+                return uploaded.length
+              }
+            : undefined,
+      })
     },
-    onSuccess: async (community, { id, items }) => {
+    onSuccess: async (result, { id }) => {
       await queryClient.invalidateQueries({ queryKey: qk.communities.all() })
-      if (items.length > 0) {
+      if (result.successfulUploadCount > 0) {
         // Counted from what survived the PATCH, so images deleted in the same
         // request are not waited for on top of the ones being added.
         refreshWhenMediaLands(
           queryClient,
           id,
-          community.media.length + items.length
+          result.entity.media.length + result.successfulUploadCount
         )
       }
     },

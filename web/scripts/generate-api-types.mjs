@@ -35,7 +35,7 @@ const GENERATOR_COMPILER = "typescript@6.0.3"
 
 const BANNER = `/**
  * GENERATED FILE — DO NOT EDIT.
- * Regenerate with \`pnpm api:generate\` against a backend running IS_DEBUG=true.
+ * Regenerate with \`pnpm api:generate\` from an offline backend OpenAPI export.
  */
 
 `
@@ -59,7 +59,9 @@ async function generate() {
   // everything from the generated banner onward.
   const start = stdout.indexOf("/**")
   if (start === -1) {
-    throw new Error(`Generator produced no schema output:\n${stdout.slice(0, 500)}`)
+    throw new Error(
+      `Generator produced no schema output:\n${stdout.slice(0, 500)}`
+    )
   }
   return BANNER + stdout.slice(start)
 }
@@ -71,7 +73,7 @@ async function main() {
   } catch (cause) {
     throw new Error(
       `Could not generate types from ${SOURCE}.\n` +
-        `Start the backend first (cd infra && docker compose up), or set OPENAPI_URL.`,
+        `Export the backend schema and set OPENAPI_URL to its path.`,
       { cause }
     )
   }

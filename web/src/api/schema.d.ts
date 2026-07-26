@@ -1,6 +1,6 @@
 /**
  * GENERATED FILE — DO NOT EDIT.
- * Regenerate with `pnpm api:generate` against a backend running IS_DEBUG=true.
+ * Regenerate with `pnpm api:generate` from an offline backend OpenAPI export.
  */
 
 /**

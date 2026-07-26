@@ -16,12 +16,7 @@ import {
 
 import { useCreateTicket } from "../api"
 import { TICKET_CATEGORIES, type TicketCategory } from "../types"
-import {
-  deriveOwnerHash,
-  generateWarpKey,
-  rememberKey,
-  warpKeyLink,
-} from "../warp-key"
+import { deriveOwnerHash, generateWarpKey, warpKeyLink } from "../warp-key"
 
 /**
  * Shown once, after an anonymous ticket is created.
@@ -65,8 +60,8 @@ function WarpKeyHandoff({ link }: { link: string }) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        This browser will remember it too, but clearing site data or switching
-        device loses it.
+        Keep the complete link somewhere private. For anonymity, this browser
+        does not store a separate copy of its secret key.
       </p>
     </Card>
   )
@@ -138,8 +133,7 @@ export function NewTicketForm() {
                   setBody("")
                   setIsOpen(false)
 
-                  if (key && ownerHash) {
-                    rememberKey(ownerHash, key)
+                  if (key) {
                     setHandoffLink(warpKeyLink(key, window.location.origin))
                   }
                 },
