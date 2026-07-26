@@ -4,7 +4,9 @@
 
 ```
 backend/       Python 3.12 / FastAPI app (package name: nuros)
-frontend/      React 19 / Vite 7 / TypeScript SPA
+web/           React 19 / Vite 8 / TypeScript SPA — the app that ships
+frontend/      The previous SPA. Kept one release as a fallback; not built,
+               not routed to, not deployed. Work in web/.
 infra/         Docker Compose, Nginx, monitoring, service configs
 terraform/     GCP infrastructure-as-code
 ansible/       Deployment playbooks (runs from CI, not locally)
@@ -39,15 +41,27 @@ uv run pytest                        # tests
 
 Pre-commit hooks run `ruff --fix` then `black` automatically.
 
-### Frontend (`frontend/`)
+### Frontend (`web/`)
+
+pnpm, not npm. The lockfile is `web/pnpm-lock.yaml` and CI installs with
+`--frozen-lockfile`, so a dependency added with npm will fail the build.
 
 ```sh
-npm ci && npm run build              # production build → out/
-npm run dev                          # dev server on :5173
-npm run test:url-validation          # run a single test file via tsx
+pnpm install                         # deps
+pnpm build                           # typecheck + production build → out/
+pnpm dev                             # dev server on :5173
+pnpm typecheck                       # tsc -b --noEmit
+pnpm lint                            # oxlint, including type-aware rules
+pnpm format                          # prettier, sorts Tailwind classes
+pnpm test                            # node --test over src/**/*.test.ts
+pnpm api:check                       # fail if src/api/schema.d.ts is stale
 ```
 
-TypeScript strict mode. `@` alias maps to `src/`.
+`out/`, not Vite's default `dist/` — the deployment path expects it (see
+`web/vite.config.ts`).
+
+TypeScript strict mode. `@` alias maps to `src/`. Read `web/README.md` before
+changing anything there; several of its conventions are load-bearing.
 
 ## Backend Architecture
 

@@ -32,8 +32,11 @@ jobs:
           filters: |
             backend:
               - 'backend/**'
+            # The rebuilt app in web/ is what ships. frontend/ is still in the
+            # tree for one release as a fallback but is no longer deployed, so
+            # a change to it must not trigger a build.
             frontend:
-              - 'frontend/**'
+              - 'web/**'
             nginx:
               - 'infra/nginx/**'
             meilisearch:
@@ -120,22 +123,28 @@ jobs:
           cache-to: type=gha,mode=max,scope=nuspace-backup
 
       # --- Frontend static export (Vite SPA) — built on the runner, not on the VM ---
+      - name: Set up pnpm
+        if: steps.changes.outputs.frontend == 'true'
+        run: corepack enable
+
       - name: Set up Node.js for frontend build
         if: steps.changes.outputs.frontend == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          # Node 22: the test runner strips TypeScript natively, and the build
+          # itself needs a version Vite 8 supports.
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
 
       - name: Build frontend static output
         if: steps.changes.outputs.frontend == 'true'
-        working-directory: frontend
-        run: npm ci && npm run build
+        working-directory: web
+        run: pnpm install --frozen-lockfile && pnpm build
 
       - name: Pack frontend out/ for Ansible
         if: steps.changes.outputs.frontend == 'true'
-        run: tar czf "${{ runner.temp }}/frontend-static.tar.gz" -C frontend/out .
+        run: tar czf "${{ runner.temp }}/frontend-static.tar.gz" -C web/out .
 
       - name: Frontend tarball path for Ansible
         id: fe_artifact
