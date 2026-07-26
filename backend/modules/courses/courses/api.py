@@ -17,6 +17,9 @@ from backend.modules.courses.courses import schemas
 from backend.modules.courses.courses.dependencies import get_student_course_service
 from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
 from backend.modules.courses.courses.policy import StudentCoursePolicy
+from backend.modules.courses.registrar.clients.registrar_client import (
+    RegistrarLoginUnconfirmed,
+)
 from backend.modules.courses.courses.service import StudentCourseService
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, status
 from fastapi.responses import Response
@@ -71,9 +74,21 @@ async def sync_courses_from_registrar(
     except SemesterResolutionError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+    except RegistrarLoginUnconfirmed as e:
+        # Not a credentials problem, so not a 401 -- telling the student to
+        # check a password that works wastes their time and hides a real fault.
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+
     except ValueError as e:
         # Registrar login failures bubble up as ValueError
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+    except httpx.RequestError as e:
+        # DNS, TLS or connectivity failure reaching the registrar.
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Could not reach the registrar: {e.__class__.__name__}",
+        )
 
     
 
