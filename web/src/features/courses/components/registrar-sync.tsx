@@ -1,13 +1,13 @@
 import { useRef, useState } from "react"
 import { FileUp, Loader2, ShieldCheck } from "lucide-react"
 
-import { ApiError } from "@/api/client"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 import { useRegistrarPdfSync, useRegistrarSync } from "../api"
+import { registrarErrorMessage } from "../registrar-errors"
 import type { RegistrarSyncResponse } from "../types"
 
 function SyncSummary({ result }: { result: RegistrarSyncResponse }) {
@@ -25,26 +25,6 @@ function SyncSummary({ result }: { result: RegistrarSyncResponse }) {
       {changes.length > 0 && ` — ${changes.join(", ")}`}.
     </p>
   )
-}
-
-function errorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    // 401 now means the registrar itself said the username or password was
-    // wrong — nothing else maps to it. A registrar that is unreachable, or one
-    // whose sign-in page changed, comes back as 502, because telling someone to
-    // check a password that works sends them off to reset it for no reason.
-    if (error.status === 401 || error.status === 403) {
-      return "The registrar rejected that username or password."
-    }
-    if (error.status === 502) {
-      return "Could not complete the sync with the registrar — this is not a problem with your password. Try again shortly."
-    }
-    if (error.status >= 500) {
-      return "The registrar is not responding right now. Try again in a few minutes."
-    }
-    return error.message
-  }
-  return "Something went wrong during the sync."
 }
 
 export function RegistrarSync() {
@@ -176,7 +156,7 @@ export function RegistrarSync() {
 
       {active.isError && (
         <p className="text-sm text-destructive" role="alert">
-          {errorMessage(active.error)}
+          {registrarErrorMessage(active.error, "syncing your courses")}
         </p>
       )}
 

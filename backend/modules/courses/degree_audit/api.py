@@ -14,7 +14,12 @@ from backend.modules.courses.degree_audit.schemas import (
     DegreeRequirement,
 )
 from backend.modules.courses.degree_audit.service import DegreeAuditService
-from fastapi import APIRouter, Depends, status
+from backend.modules.courses.registrar.clients.registrar_client import (
+    InvalidRegistrarCredentials,
+    RegistrarLoginUnconfirmed,
+)
+from fastapi import APIRouter, Depends, HTTPException, status
+import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/degree-audit", tags=["Degree Audit"])
@@ -50,16 +55,32 @@ async def audit_from_registrar(
     if config.IS_DEBUG and config.REGISTRAR_DEBUG_USERNAME:
         username = config.REGISTRAR_DEBUG_USERNAME
 
-    return await service.audit_with_registrar(
-        year=payload.year,
-        majors=payload.majors,
-        minors=payload.minors,
-        username=username,
-        password=payload.password,
-        student_sub=_creds[1]["sub"],
-        session=db_session,
-        tc_mappings=payload.tc_mappings,
-    )
+    try:
+        return await service.audit_with_registrar(
+            year=payload.year,
+            majors=payload.majors,
+            minors=payload.minors,
+            username=username,
+            password=payload.password,
+            student_sub=_creds[1]["sub"],
+            session=db_session,
+            tc_mappings=payload.tc_mappings,
+        )
+
+    # Without these the registrar's own failures escape as unhandled exceptions
+    # and become a 500, which tells the caller nothing and (with debug on) sends
+    # a full traceback back in the response body.
+    except InvalidRegistrarCredentials as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc))
+
+    except RegistrarLoginUnconfirmed as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc))
+
+    except httpx.RequestError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Could not reach the registrar: {exc.__class__.__name__}",
+        )
 
 
 @router.post(
