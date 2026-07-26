@@ -318,7 +318,20 @@ export interface PlannerCourse {
 
 export interface PlannerSchedule {
   id: number;
+  name: string;
   courses: PlannerCourse[];
+}
+
+export interface PlannerScheduleSummary {
+  id: number;
+  name: string;
+  course_count: number;
+}
+
+export interface PlannerScheduleListResponse {
+  items: PlannerScheduleSummary[];
+  count: number;
+  max_allowed: number;
 }
 
 export type PlannerVariantResponse = PlannerSchedule;

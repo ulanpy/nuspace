@@ -227,17 +227,13 @@ class PlannerSchedule(Base):
     """Student-authored planner schedule containing planned courses/sections."""
 
     __tablename__ = "planner_schedules"
-    __table_args__ = (
-        UniqueConstraint(
-            "student_sub",
-            name="uq_planner_schedule_student",
-        ),
-    )
+    # Migration: drop uq_planner_schedule_student; add name column.
 
     id: Mapped[int] = mapped_column(primary_key=True)
     student_sub: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
     )
+    name: Mapped[str] = mapped_column(String(64), nullable=False, default="My schedule")
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False

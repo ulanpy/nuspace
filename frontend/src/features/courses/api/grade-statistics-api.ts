@@ -12,6 +12,8 @@ import {
   PlannerCourseResponse,
   PlannerCourseSearchResponse,
   PlannerSchedule,
+  PlannerScheduleListResponse,
+  PlannerScheduleSummary,
   PlannerSection,
   PlannerSectionSelectionPayload,
   SemesterOption,
@@ -118,8 +120,46 @@ export const gradeStatisticsApi = {
   },
 
   // ==== Planner APIs ====
-  getPlannerSchedule: async (): Promise<PlannerSchedule> => {
-    return await apiCall(`/planner`);
+  listPlannerSchedules: async (): Promise<PlannerScheduleListResponse> => {
+    return await apiCall(`/planner/schedules`);
+  },
+
+  createPlannerSchedule: async (name?: string): Promise<PlannerScheduleSummary> => {
+    return await apiCall(`/planner/schedules`, {
+      method: "POST",
+      json: name ? { name } : {},
+    });
+  },
+
+  duplicatePlannerSchedule: async (
+    scheduleId: number,
+    name?: string,
+  ): Promise<PlannerScheduleSummary> => {
+    return await apiCall(`/planner/schedules/${scheduleId}/duplicate`, {
+      method: "POST",
+      json: name ? { name } : {},
+    });
+  },
+
+  updatePlannerSchedule: async (
+    scheduleId: number,
+    payload: { name: string },
+  ): Promise<PlannerScheduleSummary> => {
+    return await apiCall(`/planner/schedules/${scheduleId}`, {
+      method: "PATCH",
+      json: payload,
+    });
+  },
+
+  deletePlannerSchedule: async (scheduleId: number): Promise<void> => {
+    await apiCall(`/planner/schedules/${scheduleId}`, { method: "DELETE" });
+  },
+
+  getPlannerSchedule: async (scheduleId?: number): Promise<PlannerSchedule> => {
+    const params = new URLSearchParams();
+    if (scheduleId != null) params.append("schedule_id", String(scheduleId));
+    const qs = params.toString();
+    return await apiCall(qs ? `/planner?${qs}` : `/planner`);
   },
 
   getPlannerSemesters: async (): Promise<SemesterOption[]> => {
@@ -142,12 +182,26 @@ export const gradeStatisticsApi = {
     return await apiCall(`/planner/courses/search?${params.toString()}`);
   },
 
-  refreshPlannerCourses: async (): Promise<PlannerSchedule> => {
-    return await apiCall(`/planner/courses/refresh`, { method: "POST" });
+  refreshPlannerCourses: async (scheduleId?: number): Promise<PlannerSchedule> => {
+    const params = new URLSearchParams();
+    if (scheduleId != null) params.append("schedule_id", String(scheduleId));
+    const qs = params.toString();
+    return await apiCall(qs ? `/planner/courses/refresh?${qs}` : `/planner/courses/refresh`, {
+      method: "POST",
+    });
   },
 
-  addPlannerCourse: async (payload: PlannerCourseAddPayload): Promise<PlannerCourseResponse> => {
-    return await apiCall(`/planner/courses`, { method: 'POST', json: payload });
+  addPlannerCourse: async (
+    payload: PlannerCourseAddPayload,
+    scheduleId?: number,
+  ): Promise<PlannerCourseResponse> => {
+    const params = new URLSearchParams();
+    if (scheduleId != null) params.append("schedule_id", String(scheduleId));
+    const qs = params.toString();
+    return await apiCall(qs ? `/planner/courses?${qs}` : `/planner/courses`, {
+      method: "POST",
+      json: payload,
+    });
   },
 
   removePlannerCourse: async (courseId: number): Promise<void> => {
@@ -170,12 +224,23 @@ export const gradeStatisticsApi = {
     });
   },
 
-  autoBuildPlanner: async (): Promise<PlannerAutoBuildResponse> => {
-    return await apiCall(`/planner/autobuild`, { method: 'POST' });
+  autoBuildPlanner: async (scheduleId?: number): Promise<PlannerAutoBuildResponse> => {
+    const params = new URLSearchParams();
+    if (scheduleId != null) params.append("schedule_id", String(scheduleId));
+    const qs = params.toString();
+    return await apiCall(qs ? `/planner/autobuild?${qs}` : `/planner/autobuild`, {
+      method: "POST",
+    });
   },
 
-  resetPlanner: async (term_value?: string): Promise<void> => {
-    await apiCall(`/planner/reset`, { method: 'POST', json: { term_value } });
+  resetPlanner: async (term_value?: string, scheduleId?: number): Promise<void> => {
+    const params = new URLSearchParams();
+    if (scheduleId != null) params.append("schedule_id", String(scheduleId));
+    const qs = params.toString();
+    await apiCall(qs ? `/planner/reset?${qs}` : `/planner/reset`, {
+      method: "POST",
+      json: { term_value },
+    });
   },
 
   // ==== Degree Audit ====

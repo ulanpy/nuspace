@@ -5,6 +5,10 @@ from typing import Dict, Iterable, List, Optional, Sequence
 from fastapi import HTTPException
 
 from backend.modules.courses.planner.autobuilder import PlannerAutoBuilder
+from backend.modules.courses.planner.constants import (
+    DEFAULT_SCHEDULE_NAME,
+    MAX_PLANNER_SCHEDULES_PER_STUDENT,
+)
 from backend.modules.courses.planner.repository import PlannerRepository
 from backend.modules.courses.planner.schemas import (
     AutoBuildCourseResult,
@@ -13,8 +17,13 @@ from backend.modules.courses.planner.schemas import (
     PlannerCourseResponse,
     PlannerCourseSearchResponse,
     PlannerCourseSearchResult,
-    PlannerSectionResponse,
+    PlannerScheduleCreateRequest,
+    PlannerScheduleDuplicateRequest,
+    PlannerScheduleListResponse,
     PlannerScheduleResponse,
+    PlannerScheduleSummary,
+    PlannerScheduleUpdateRequest,
+    PlannerSectionResponse,
 )
 from backend.modules.courses.planner.serializers import PlannerSerializer
 from backend.modules.courses.registrar.schemas import (
@@ -45,29 +54,182 @@ class PlannerService:
         self.serializer = PlannerSerializer(course_catalog)
         self._active_semester: SemesterOption | None = None
 
-    async def _get_or_create_schedule(self, student_sub: str) -> PlannerSchedule:
-        schedule = await self.repository.get_schedule_for_student(student_sub)
+    async def _resolve_schedule(
+        self,
+        student_sub: str,
+        schedule_id: Optional[int] = None,
+    ) -> PlannerSchedule:
+        if schedule_id is not None:
+            schedule = await self.repository.get_schedule_by_id(schedule_id, student_sub)
+            if schedule is None:
+                raise HTTPException(status_code=404, detail="Schedule not found")
+            return schedule
+
+        schedule = await self.repository.get_default_schedule_for_student(student_sub)
         if schedule is None:
             schedule = await self.repository.create_schedule(
                 student_sub=student_sub,
+                name=DEFAULT_SCHEDULE_NAME,
             )
             await self.repository.session.commit()
-            schedule = await self.repository.get_schedule_for_student(student_sub)
+            schedule = await self.repository.get_schedule_by_id(schedule.id, student_sub)
+            if schedule is None:
+                raise HTTPException(status_code=500, detail="Failed to create planner schedule")
         return schedule
 
-    async def get_schedule(self, student_sub: str) -> PlannerScheduleResponse:
-        schedule: PlannerSchedule = await self._get_or_create_schedule(student_sub)
+    async def _ensure_schedule_capacity(self, student_sub: str) -> None:
+        count = await self.repository.count_schedules_for_student(student_sub)
+        if count >= MAX_PLANNER_SCHEDULES_PER_STUDENT:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "schedule_limit_reached",
+                    "message": (
+                        f"You can have at most {MAX_PLANNER_SCHEDULES_PER_STUDENT} "
+                        "schedule variants."
+                    ),
+                },
+            )
+
+    @staticmethod
+    def _default_schedule_name(existing_count: int) -> str:
+        if existing_count == 0:
+            return DEFAULT_SCHEDULE_NAME
+        return f"Schedule {existing_count + 1}"
+
+    @staticmethod
+    def _duplicate_schedule_name(source_name: str) -> str:
+        base = f"Copy of {source_name}".strip()
+        return base[:64]
+
+    async def list_schedules(self, student_sub: str) -> PlannerScheduleListResponse:
+        schedules = await self.repository.list_schedules_for_student(student_sub)
+        if not schedules:
+            await self._resolve_schedule(student_sub)
+            schedules = await self.repository.list_schedules_for_student(student_sub)
+
+        items = [
+            PlannerScheduleSummary(
+                id=schedule.id,
+                name=schedule.name,
+                course_count=len(schedule.courses),
+            )
+            for schedule in schedules
+        ]
+        return PlannerScheduleListResponse(
+            items=items,
+            count=len(items),
+            max_allowed=MAX_PLANNER_SCHEDULES_PER_STUDENT,
+        )
+
+    async def create_schedule_variant(
+        self,
+        *,
+        student_sub: str,
+        payload: PlannerScheduleCreateRequest,
+    ) -> PlannerScheduleSummary:
+        await self._ensure_schedule_capacity(student_sub)
+        existing_count = await self.repository.count_schedules_for_student(student_sub)
+        name = (payload.name or "").strip() or self._default_schedule_name(existing_count)
+        schedule = await self.repository.create_schedule(
+            student_sub=student_sub,
+            name=name,
+        )
+        await self.repository.session.commit()
+        return PlannerScheduleSummary(
+            id=schedule.id,
+            name=schedule.name,
+            course_count=0,
+        )
+
+    async def duplicate_schedule_variant(
+        self,
+        *,
+        student_sub: str,
+        schedule_id: int,
+        payload: PlannerScheduleDuplicateRequest,
+    ) -> PlannerScheduleSummary:
+        await self._ensure_schedule_capacity(student_sub)
+        source = await self._resolve_schedule(student_sub, schedule_id)
+        name = (payload.name or "").strip() or self._duplicate_schedule_name(source.name)
+        duplicate = await self.repository.duplicate_schedule(
+            source,
+            student_sub=student_sub,
+            name=name,
+        )
+        await self.repository.session.commit()
+        reloaded = await self.repository.get_schedule_by_id(duplicate.id, student_sub)
+        target = reloaded or duplicate
+        return PlannerScheduleSummary(
+            id=target.id,
+            name=target.name,
+            course_count=len(target.courses),
+        )
+
+    async def update_schedule_variant(
+        self,
+        *,
+        student_sub: str,
+        schedule_id: int,
+        payload: PlannerScheduleUpdateRequest,
+    ) -> PlannerScheduleSummary:
+        await self._resolve_schedule(student_sub, schedule_id)
+        await self.repository.update_schedule_name(
+            schedule_id=schedule_id,
+            student_sub=student_sub,
+            name=payload.name.strip(),
+        )
+        await self.repository.session.commit()
+        refreshed = await self.repository.get_schedule_by_id(schedule_id, student_sub)
+        if refreshed is None:
+            raise HTTPException(status_code=404, detail="Schedule not found")
+        return PlannerScheduleSummary(
+            id=refreshed.id,
+            name=refreshed.name,
+            course_count=len(refreshed.courses),
+        )
+
+    async def delete_schedule_variant(
+        self,
+        *,
+        student_sub: str,
+        schedule_id: int,
+    ) -> None:
+        count = await self.repository.count_schedules_for_student(student_sub)
+        if count <= 1:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "cannot_delete_last_schedule",
+                    "message": "At least one schedule variant must remain.",
+                },
+            )
+        deleted = await self.repository.delete_schedule(schedule_id, student_sub)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Schedule not found")
+        await self.repository.session.commit()
+
+    async def get_schedule(
+        self,
+        student_sub: str,
+        schedule_id: Optional[int] = None,
+    ) -> PlannerScheduleResponse:
+        schedule = await self._resolve_schedule(student_sub, schedule_id)
         return await self._serialize_schedule_with_counts(schedule)
 
-    async def refresh_all_courses(self, student_sub: str) -> PlannerScheduleResponse:
-        schedule = await self._get_or_create_schedule(student_sub)
+    async def refresh_all_courses(
+        self,
+        student_sub: str,
+        schedule_id: Optional[int] = None,
+    ) -> PlannerScheduleResponse:
+        schedule = await self._resolve_schedule(student_sub, schedule_id)
         for course in schedule.courses:
             await self._fetch_course_sections(
                 student_sub=student_sub,
                 course=course,
                 refresh=True,
             )
-        refreshed = await self._get_or_create_schedule(student_sub)
+        refreshed = await self._resolve_schedule(student_sub, schedule.id)
         return await self._serialize_schedule_with_counts(refreshed)
 
     async def list_semesters(self) -> List[SemesterOption]:
@@ -98,9 +260,11 @@ class PlannerService:
         *,
         student_sub: str,
         term_value: Optional[str],
+        schedule_id: Optional[int] = None,
     ) -> None:
+        schedule = await self._resolve_schedule(student_sub, schedule_id)
         resolved_term = term_value or (await self._get_active_semester()).value
-        await self.repository.reset_student(student_sub, resolved_term)
+        await self.repository.reset_schedule_courses(schedule.id, resolved_term)
         await self.repository.session.commit()
 
     # ----- Course management ----- #
@@ -109,8 +273,9 @@ class PlannerService:
         *,
         student_sub: str,
         payload: PlannerCourseAddRequest,
+        schedule_id: Optional[int] = None,
     ) -> PlannerCourseResponse:
-        schedule = await self._get_or_create_schedule(student_sub)
+        schedule = await self._resolve_schedule(student_sub, schedule_id)
         active_term = await self._get_active_semester()
         summary: CourseSummary | None = await self._find_course_summary(
             course_code=payload.course_code,
@@ -278,9 +443,12 @@ class PlannerService:
         )
 
     # ----- Auto build ----- #
-    async def auto_build_schedule(self, student_sub: str) -> PlannerAutoBuildResponse:
-        schedule: PlannerSchedule = await self._get_or_create_schedule(student_sub)
-        # Ensure sections are available for each course
+    async def auto_build_schedule(
+        self,
+        student_sub: str,
+        schedule_id: Optional[int] = None,
+    ) -> PlannerAutoBuildResponse:
+        schedule = await self._resolve_schedule(student_sub, schedule_id)
         for course in schedule.courses:
             if not course.sections:
                 await self._fetch_course_sections(
@@ -288,11 +456,10 @@ class PlannerService:
                     course=course,
                     refresh=False,
                 )
-        schedule: PlannerSchedule = await self._get_or_create_schedule(student_sub)
+        schedule = await self._resolve_schedule(student_sub, schedule.id)
 
         builder_result = self.autobuilder.build(schedule)
 
-        # Update selections according to chosen schedule
         for course in schedule.courses:
             chosen_section_ids = builder_result.get(course.id)
             await self.repository.select_sections(
@@ -301,7 +468,7 @@ class PlannerService:
             )
         await self.repository.session.commit()
 
-        refreshed = await self._get_or_create_schedule(student_sub)
+        refreshed = await self._resolve_schedule(student_sub, schedule.id)
         scheduled = []
         for course in refreshed.courses:
             selected_sections = [sec for sec in course.sections if sec.is_selected]

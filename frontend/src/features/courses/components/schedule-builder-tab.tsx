@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { gradeStatisticsApi } from '../api/grade-statistics-api';
+import { ApiError } from "@/utils/api";
 import {
   PlannerAutoBuildResponse,
   PlannerCourse,
@@ -23,7 +24,7 @@ import {
   PlannerCourseSearchResult,
 } from "../types";
 import { SignInCard } from "@/components/molecules/sign-in-card";
-import { CalendarPlus, ChevronDown, Loader2, RefreshCcw, RotateCcw, Trash2, Wand2, X } from "lucide-react";
+import { CalendarPlus, ChevronDown, ClipboardCopy, Copy, Loader2, Plus, Pencil, RefreshCcw, RotateCcw, Trash2, Wand2, X } from "lucide-react";
 import { ConfirmationModal } from './confirmation-modal';
 import { useSyllabusLinks } from '../utils/use-syllabus-links';
 import { toast } from "@/hooks/toast";
@@ -32,9 +33,31 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+const formatPlanCourseCount = (count: number) => {
+  if (count === 0) return "No courses yet";
+  return count === 1 ? "1 course" : `${count} courses`;
+};
+
+const formatScheduleShortlist = (schedule: PlannerSchedule | null): string => {
+  if (!schedule?.courses?.length) return "";
+  return schedule.courses
+    .map((course) => {
+      const selectedCodes = course.sections
+        .filter((section) => section.is_selected)
+        .map((section) => section.section_code)
+        .filter(Boolean);
+      if (!selectedCodes.length) return null;
+      return `${course.course_code} ${selectedCodes.join(" | ")}`;
+    })
+    .filter(Boolean)
+    .join("\n");
+};
 
 type CourseForm = {
   query: string;
@@ -168,9 +191,16 @@ interface ScheduleBuilderTabProps {
 
 export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
   const queryClient = useQueryClient();
+  const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(null);
+  const schedulesQuery = useQuery({
+    queryKey: ["plannerSchedules"],
+    queryFn: gradeStatisticsApi.listPlannerSchedules,
+    enabled: Boolean(user),
+  });
   const plannerQuery = useQuery({
-    queryKey: ["plannerSchedule"],
-    queryFn: gradeStatisticsApi.getPlannerSchedule,
+    queryKey: ["plannerSchedule", selectedScheduleId],
+    queryFn: () => gradeStatisticsApi.getPlannerSchedule(selectedScheduleId ?? undefined),
+    enabled: Boolean(user) && selectedScheduleId != null,
   });
   const semestersQuery = useQuery({
     queryKey: ["plannerSemesters"],
@@ -186,8 +216,8 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
     null,
   );
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const searchBoxRef = useRef<HTMLDivElement | null>(null);
+  const searchResultsListRef = useRef<HTMLDivElement | null>(null);
+  const searchLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const { getLinkForCode: getSyllabusLink } = useSyllabusLinks("/data/course_links.csv");
   const [activeSection, setActiveSection] = useState<SectionEvent | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
@@ -195,11 +225,65 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
   const [activeCourseId, setActiveCourseId] = useState<number | null>(null);
   const autoFetchedCourses = useRef<Set<number>>(new Set());
   const planner = plannerQuery.data ?? null;
+  const scheduleVariants = schedulesQuery.data?.items ?? [];
+  const selectedPlanName = useMemo(() => {
+    if (selectedScheduleId == null) return null;
+    return (
+      scheduleVariants.find((variant) => variant.id === selectedScheduleId)?.name ??
+      planner?.name ??
+      null
+    );
+  }, [selectedScheduleId, scheduleVariants, planner?.name]);
+  const scheduleLimitReached =
+    (schedulesQuery.data?.count ?? 0) >= (schedulesQuery.data?.max_allowed ?? 5);
+  const canDeleteSchedule = scheduleVariants.length > 1;
   const currentTermValue = courseForm.term_value;
-  const invalidatePlanner = useCallback(
-    () => queryClient.invalidateQueries({ queryKey: ["plannerSchedule"] }),
-    [queryClient],
-  );
+  const invalidatePlanner = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ["plannerSchedules"] });
+    if (selectedScheduleId != null) {
+      void queryClient.invalidateQueries({ queryKey: ["plannerSchedule", selectedScheduleId] });
+    }
+  }, [queryClient, selectedScheduleId]);
+
+  useEffect(() => {
+    const items = schedulesQuery.data?.items;
+    if (!items?.length) return;
+    if (selectedScheduleId == null || !items.some((item) => item.id === selectedScheduleId)) {
+      setSelectedScheduleId(items[0].id);
+    }
+  }, [schedulesQuery.data, selectedScheduleId]);
+
+  const handleScheduleChange = useCallback((value: string) => {
+    const scheduleId = Number(value);
+    if (!Number.isFinite(scheduleId)) return;
+    setSelectedScheduleId(scheduleId);
+  }, []);
+
+  const handleCopyShortlist = useCallback(async () => {
+    const text = formatScheduleShortlist(planner);
+    if (!text) {
+      toast({
+        variant: "error",
+        title: "Nothing to copy",
+        description: "Select at least one section in this plan first.",
+      });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        variant: "success",
+        title: "Copied as text",
+        description: "Paste it somewhere handy for registration.",
+      });
+    } catch {
+      toast({
+        variant: "error",
+        title: "Copy failed",
+        description: "Could not access the clipboard.",
+      });
+    }
+  }, [planner]);
 
   useEffect(() => {
     if (!planner?.courses?.length) {
@@ -235,21 +319,6 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
       term_label: latestSemester.label,
     }));
   }, [semestersQuery.data, currentTermValue]);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent | TouchEvent) => {
-      if (!searchBoxRef.current) return;
-      if (!searchBoxRef.current.contains(e.target as Node)) {
-        setSearchOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("touchstart", handler);
-    return () => {
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("touchstart", handler);
-    };
-  }, []);
 
   useEffect(() => {
     setSearchResults([]);
@@ -306,7 +375,8 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
   );
 
   const addCourseMutation = useMutation({
-    mutationFn: (payload: PlannerCourseAddPayload) => gradeStatisticsApi.addPlannerCourse(payload),
+    mutationFn: (payload: PlannerCourseAddPayload) =>
+      gradeStatisticsApi.addPlannerCourse(payload, selectedScheduleId ?? undefined),
     onSuccess: (_data, variables) => {
       toast({
         variant: "success",
@@ -346,7 +416,7 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
   });
 
   const refreshAllCoursesMutation = useMutation({
-    mutationFn: () => gradeStatisticsApi.refreshPlannerCourses(),
+    mutationFn: () => gradeStatisticsApi.refreshPlannerCourses(selectedScheduleId ?? undefined),
     onMutate: () => {
       if (planner?.courses?.length) {
         setLoadingSections((prev) => {
@@ -393,7 +463,7 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
   });
 
   const autoBuildMutation = useMutation({
-    mutationFn: () => gradeStatisticsApi.autoBuildPlanner(),
+    mutationFn: () => gradeStatisticsApi.autoBuildPlanner(selectedScheduleId ?? undefined),
     onMutate: () => {
       autoBuildUndoSnapshot.current = capturePlannerSelections(planner);
     },
@@ -444,8 +514,114 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
   });
 
   const resetPlannerMutation = useMutation({
-    mutationFn: (termValue?: string) => gradeStatisticsApi.resetPlanner(termValue),
+    mutationFn: (termValue?: string) =>
+      gradeStatisticsApi.resetPlanner(termValue, selectedScheduleId ?? undefined),
     onSuccess: invalidatePlanner,
+  });
+
+  const createScheduleMutation = useMutation({
+    mutationFn: () => gradeStatisticsApi.createPlannerSchedule(),
+    onSuccess: (summary) => {
+      setSelectedScheduleId(summary.id);
+      toast({
+        variant: "success",
+        title: "New plan created",
+        description: `"${summary.name}" is ready.`,
+      });
+      invalidatePlanner();
+    },
+    onError: (error) => {
+      if (error instanceof ApiError && error.response.status === 409) {
+        toast({
+          variant: "error",
+          title: "Plan limit reached",
+          description: `You can save up to ${schedulesQuery.data?.max_allowed ?? 5} schedule plans.`,
+        });
+        return;
+      }
+      toast({
+        variant: "error",
+        title: "Could not create plan",
+        description: "Please try again.",
+      });
+    },
+  });
+
+  const duplicateScheduleMutation = useMutation({
+    mutationFn: () =>
+      gradeStatisticsApi.duplicatePlannerSchedule(selectedScheduleId as number),
+    onSuccess: (summary) => {
+      setSelectedScheduleId(summary.id);
+      toast({
+        variant: "success",
+        title: "Plan duplicated",
+        description: `"${summary.name}" created from your current plan.`,
+      });
+      invalidatePlanner();
+    },
+    onError: (error) => {
+      if (error instanceof ApiError && error.response.status === 409) {
+        toast({
+          variant: "error",
+          title: "Plan limit reached",
+          description: `You can save up to ${schedulesQuery.data?.max_allowed ?? 5} schedule plans.`,
+        });
+        return;
+      }
+      toast({
+        variant: "error",
+        title: "Could not duplicate plan",
+        description: "Please try again.",
+      });
+    },
+  });
+
+  const deleteScheduleMutation = useMutation({
+    mutationFn: () => gradeStatisticsApi.deletePlannerSchedule(selectedScheduleId as number),
+    onSuccess: () => {
+      setSelectedScheduleId(null);
+      toast({
+        variant: "success",
+        title: "Plan deleted",
+        description: "The schedule variant was removed.",
+      });
+      invalidatePlanner();
+    },
+    onError: (error) => {
+      if (error instanceof ApiError && error.response.status === 409) {
+        toast({
+          variant: "error",
+          title: "Cannot delete plan",
+          description: "At least one schedule plan must remain.",
+        });
+        return;
+      }
+      toast({
+        variant: "error",
+        title: "Could not delete plan",
+        description: "Please try again.",
+      });
+    },
+  });
+
+  const renameScheduleMutation = useMutation({
+    mutationFn: (name: string) =>
+      gradeStatisticsApi.updatePlannerSchedule(selectedScheduleId as number, { name }),
+    onSuccess: (summary) => {
+      toast({
+        variant: "success",
+        title: "Plan renamed",
+        description: `Now called "${summary.name}".`,
+      });
+      invalidatePlanner();
+    },
+    onError: () => {
+      toast({
+        variant: "error",
+        title: "Could not rename plan",
+        description: "Please try again.",
+      });
+    },
   });
 
   const courseSearchMutation = useMutation({
@@ -500,19 +676,6 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
     e.preventDefault();
   };
 
-  const handleLoadMoreResults = () => {
-    if (!searchCursor || !lastSearch) return;
-    setIsLoadingMore(true);
-    performSearch(
-      {
-        term_value: lastSearch.term_value,
-        query: lastSearch.query,
-        page: searchCursor,
-      },
-      { append: true },
-    );
-  };
-
   // Live search on typing (debounced)
   const searchDebounce = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
@@ -535,6 +698,38 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
       if (searchDebounce.current) clearTimeout(searchDebounce.current);
     };
   }, [courseForm.query, courseForm.term_value, planner]);
+
+  useEffect(() => {
+    const sentinel = searchLoadMoreRef.current;
+    const root = searchResultsListRef.current;
+    if (!sentinel || !root || !searchCursor || !lastSearch) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        if (isLoadingMore || courseSearchMutation.isPending) return;
+        setIsLoadingMore(true);
+        performSearch(
+          {
+            term_value: lastSearch.term_value,
+            query: lastSearch.query,
+            page: searchCursor,
+          },
+          { append: true },
+        );
+      },
+      { root, rootMargin: "80px", threshold: 0 },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [
+    searchCursor,
+    lastSearch,
+    isLoadingMore,
+    courseSearchMutation.isPending,
+    searchResults.length,
+  ]);
 
   const searchError =
     courseSearchMutation.isError && courseSearchMutation.error instanceof Error
@@ -605,7 +800,7 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
     return false;
   }, [selectedEvents]);
 
-  if (plannerQuery.isLoading) {
+  if (plannerQuery.isLoading || schedulesQuery.isLoading || selectedScheduleId == null) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" /> Loading planner...
@@ -636,7 +831,7 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
               </Badge>
             )}
           </div>
-          <div ref={searchBoxRef} className="relative mt-3 min-w-0 space-y-2">
+          <div className="relative mt-3 min-w-0 space-y-2">
             <form className="space-y-2" onSubmit={handleSearchSubmit}>
               <Input
                 placeholder="Search by code (e.g., MATH 161)"
@@ -648,128 +843,138 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
                   }))
                 }
                 disabled={!planner}
-                onFocus={() => setSearchOpen(true)}
               />
             </form>
             {searchError && (
               <p className="text-xs text-destructive">{searchError}</p>
             )}
-            {searchOpen && (
+            {activeSearchQuery && (
               <div className="absolute left-0 right-0 top-full z-20 mt-2 min-w-0 overflow-hidden rounded-xl border border-border/60 bg-card shadow-lg">
-                <div className="max-h-80 space-y-3 overflow-x-hidden overflow-y-auto p-3 text-sm scroll-thin">
-                  {!activeSearchQuery ? (
-                    <p className="text-xs text-muted-foreground">
-                      Type a course code to search the catalog.
-                    </p>
-                  ) : isSearchPending && searchResults.length === 0 ? (
-                    <p className="flex items-center gap-2 text-muted-foreground">
+                <div
+                  ref={searchResultsListRef}
+                  className="max-h-80 overflow-x-hidden overflow-y-auto text-sm scroll-thin"
+                >
+                  {isSearchPending && searchResults.length === 0 ? (
+                    <p className="flex items-center gap-2 px-3 py-4 text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" /> Searching registrar catalog...
                     </p>
                   ) : searchResults.length ? (
-                    searchResults.map((result) => {
-                      const priorityValues = [
-                        result.priority_1,
-                        result.priority_2,
-                        result.priority_3,
-                        result.priority_4,
-                      ];
-                      const hasMeta =
-                        hasText(result.pre_req) ||
-                        hasText(result.co_req) ||
-                        hasText(result.anti_req) ||
-                        hasPriorityValues(priorityValues);
-                      const metaParts = [result.school, result.level, result.term].filter(Boolean);
-                      const syllabusLink = getSyllabusLink(result.course_code);
-                      const alreadyAdded = isCourseAlreadyAdded(result.course_code, courseForm.term_value);
-                      return (
-                        <div
-                          key={result.course_code}
-                          className="rounded-lg border border-border/60 p-3"
-                        >
-                          <div className="flex items-start gap-2">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-semibold">{result.course_code}</p>
-                              <p className="break-words text-xs text-muted-foreground">{result.title}</p>
-                              {metaParts.length > 0 && (
-                                <p className="text-xs text-muted-foreground">{metaParts.join(" · ")}</p>
-                              )}
-                              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                                {hasMeta && (
+                    <>
+                      {searchResults.map((result, index) => {
+                        const priorityValues = [
+                          result.priority_1,
+                          result.priority_2,
+                          result.priority_3,
+                          result.priority_4,
+                        ];
+                        const hasMeta =
+                          hasText(result.pre_req) ||
+                          hasText(result.co_req) ||
+                          hasText(result.anti_req) ||
+                          hasPriorityValues(priorityValues);
+                        const metaParts = [result.school, result.level, result.term].filter(Boolean);
+                        const syllabusLink = getSyllabusLink(result.course_code);
+                        const alreadyAdded = isCourseAlreadyAdded(
+                          result.course_code,
+                          courseForm.term_value,
+                        );
+                        return (
+                          <div
+                            key={result.course_code}
+                            className={
+                              index > 0 ? "border-t border-border/60 px-3 py-3" : "px-3 py-3"
+                            }
+                          >
+                            <div className="flex items-start gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold">{result.course_code}</p>
+                                <p className="break-words text-xs text-muted-foreground">
+                                  {result.title}
+                                </p>
+                                {metaParts.length > 0 && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {metaParts.join(" · ")}
+                                  </p>
+                                )}
+                                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                                  {hasMeta && (
+                                    <Button
+                                      size="xs"
+                                      variant="link"
+                                      className="h-auto min-h-0 px-0 py-0 text-xs whitespace-normal"
+                                      onClick={() => handleShowRequirementsFromSearch(result)}
+                                    >
+                                      Priorities & requisites
+                                    </Button>
+                                  )}
+                                  {hasMeta && syllabusLink && (
+                                    <span className="text-border" aria-hidden="true">
+                                      |
+                                    </span>
+                                  )}
                                   <Button
                                     size="xs"
                                     variant="link"
                                     className="h-auto min-h-0 px-0 py-0 text-xs whitespace-normal"
-                                    onClick={() => handleShowRequirementsFromSearch(result)}
+                                    disabled={!syllabusLink}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (syllabusLink) {
+                                        window.open(syllabusLink, "_blank");
+                                      }
+                                    }}
                                   >
-                                    Priorities & requisites
+                                    Syllabus
                                   </Button>
-                                )}
-                                {hasMeta && syllabusLink && (
-                                  <span className="text-border" aria-hidden="true">
-                                    |
-                                  </span>
-                                )}
-                                <Button
-                                  size="xs"
-                                  variant="link"
-                                  className="h-auto min-h-0 px-0 py-0 text-xs whitespace-normal"
-                                  disabled={!syllabusLink}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (syllabusLink) {
-                                      window.open(syllabusLink, "_blank");
-                                    }
-                                  }}
-                                >
-                                  Syllabus
-                                </Button>
+                                </div>
                               </div>
+                              <Button
+                                size="sm"
+                                className="shrink-0 self-start"
+                                onClick={() => handleAddCourse(result.course_code)}
+                                disabled={
+                                  !planner ||
+                                  !courseForm.term_value ||
+                                  addCourseMutation.isPending ||
+                                  alreadyAdded
+                                }
+                                variant={alreadyAdded ? "outline" : "default"}
+                              >
+                                {addCourseMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : alreadyAdded ? (
+                                  "Added"
+                                ) : (
+                                  "Add"
+                                )}
+                              </Button>
                             </div>
-                            <Button
-                              size="sm"
-                              className="shrink-0 self-start"
-                              onClick={() => handleAddCourse(result.course_code)}
-                              disabled={
-                                !planner ||
-                                !courseForm.term_value ||
-                                addCourseMutation.isPending ||
-                                alreadyAdded
-                              }
-                              variant={alreadyAdded ? "outline" : "default"}
-                            >
-                              {addCourseMutation.isPending ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : alreadyAdded ? (
-                                "Added"
-                              ) : (
-                                "Add"
-                              )}
-                            </Button>
                           </div>
+                        );
+                      })}
+                      {searchCursor ? (
+                        <div
+                          ref={searchLoadMoreRef}
+                          className="flex items-center justify-center gap-2 border-t border-border/60 px-3 py-3 text-xs text-muted-foreground"
+                          aria-hidden={!isLoadingMore}
+                        >
+                          {isLoadingMore ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Loading more
+                            </>
+                          ) : (
+                            <span className="h-3.5" />
+                          )}
                         </div>
-                      );
-                    })
+                      ) : null}
+                    </>
                   ) : (
-                    <p className="text-xs text-muted-foreground">No results. Try another code.</p>
+                    <p className="px-3 py-4 text-xs text-muted-foreground">
+                      No results. Try another code.
+                    </p>
                   )}
                 </div>
-                {searchCursor && activeSearchQuery && searchResults.length > 0 && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-auto w-full rounded-none rounded-b-xl border-t border-border/60 py-2.5"
-                    onClick={handleLoadMoreResults}
-                    disabled={isLoadingMore}
-                  >
-                    {isLoadingMore ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading more
-                      </span>
-                    ) : (
-                      "Load more"
-                    )}
-                  </Button>
-                )}
               </div>
             )}
           </div>
@@ -786,7 +991,7 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuLabel>Planner actions</DropdownMenuLabel>
+                <DropdownMenuLabel>Course actions</DropdownMenuLabel>
                 <DropdownMenuItem
                   className="items-start py-2"
                   disabled={!planner?.courses.length || refreshAllCoursesMutation.isPending}
@@ -830,9 +1035,9 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
                 >
                   <RotateCcw className="mt-0.5 h-4 w-4" />
                   <div className="min-w-0">
-                    <p className="font-medium leading-none">Reset planner</p>
+                    <p className="font-medium leading-none">Reset plan courses</p>
                     <p className="mt-1 text-xs font-normal opacity-80">
-                      Remove all courses and clear your draft schedule.
+                      Remove all courses and clear selections in this plan.
                     </p>
                   </div>
                 </DropdownMenuItem>
@@ -863,15 +1068,129 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
 
         <section className="w-full min-w-0 flex-1 rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-2">
-            <h3 className="text-base font-semibold">Planner preview</h3>
-            {selectedEvents.length > 0 && (
-              <Badge
-                variant={hasClash ? "destructive" : "default"}
-                className="text-xs font-semibold"
+            <div className="flex min-w-0 items-center gap-1">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={!scheduleVariants.length}
+                    className="h-auto max-w-full gap-1.5 px-2 py-1 text-base font-semibold hover:bg-accent/50"
+                  >
+                    <span className="truncate">{selectedPlanName ?? "Planner preview"}</span>
+                    <ChevronDown className="size-4 shrink-0 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64">
+                  <DropdownMenuLabel className="text-xs font-medium">
+                    Schedule plans
+                    {schedulesQuery.data
+                      ? ` · ${schedulesQuery.data.count}/${schedulesQuery.data.max_allowed}`
+                      : ""}
+                  </DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={selectedScheduleId != null ? String(selectedScheduleId) : undefined}
+                    onValueChange={handleScheduleChange}
+                  >
+                    {scheduleVariants.map((variant) => (
+                      <DropdownMenuRadioItem
+                        key={variant.id}
+                        value={String(variant.id)}
+                        className="items-start py-2"
+                      >
+                        <div className="flex min-w-0 flex-col gap-0.5 pr-6">
+                          <span className="truncate leading-none">{variant.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatPlanCourseCount(variant.course_count)}
+                          </span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    disabled={scheduleLimitReached || createScheduleMutation.isPending}
+                    onClick={() => createScheduleMutation.mutate()}
+                  >
+                    {createScheduleMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
+                    New plan
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={
+                      !selectedScheduleId ||
+                      scheduleLimitReached ||
+                      duplicateScheduleMutation.isPending
+                    }
+                    onClick={() => duplicateScheduleMutation.mutate()}
+                  >
+                    {duplicateScheduleMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                    Duplicate
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!selectedScheduleId || renameScheduleMutation.isPending}
+                    onClick={() => {
+                      const currentName =
+                        scheduleVariants.find((item) => item.id === selectedScheduleId)?.name ??
+                        planner?.name ??
+                        "";
+                      const nextName = window.prompt("Rename schedule plan", currentName)?.trim();
+                      if (!nextName || nextName === currentName) return;
+                      renameScheduleMutation.mutate(nextName);
+                    }}
+                  >
+                    {renameScheduleMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Pencil className="h-4 w-4" />
+                    )}
+                    Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    disabled={!canDeleteSchedule || deleteScheduleMutation.isPending}
+                    onClick={() => deleteScheduleMutation.mutate()}
+                  >
+                    {deleteScheduleMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                    Delete plan
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5"
+                disabled={!selectedEvents.length}
+                onClick={() => {
+                  void handleCopyShortlist();
+                }}
               >
-                {hasClash ? "Clash" : "Fit"}
-              </Badge>
-            )}
+                <ClipboardCopy className="size-3.5" />
+                Copy as text
+              </Button>
+              {selectedEvents.length > 0 && (
+                <Badge
+                  variant={hasClash ? "destructive" : "default"}
+                  className="text-xs font-semibold"
+                >
+                  {hasClash ? "Clash" : "Fit"}
+                </Badge>
+              )}
+            </div>
           </div>
           <SchedulePreview
             schedule={planner}
@@ -912,7 +1231,7 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
         onClose={() => setResetConfirmOpen(false)}
         onConfirm={() => resetPlannerMutation.mutate(undefined)}
         title="Reset planner?"
-        description="This will clear all planner courses and selections. This action cannot be undone."
+        description="This will clear all courses and selections in the current plan. This action cannot be undone."
         confirmText="Reset"
       />
     </div>

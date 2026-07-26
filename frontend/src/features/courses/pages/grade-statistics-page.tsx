@@ -93,8 +93,8 @@ export default function GradeStatisticsPage() {
       queryFn: () => gradeStatisticsApi.getDegreeAuditStored(),
     });
     void queryClient.prefetchQuery({
-      queryKey: ["plannerSchedule"],
-      queryFn: gradeStatisticsApi.getPlannerSchedule,
+      queryKey: ["plannerSchedules"],
+      queryFn: gradeStatisticsApi.listPlannerSchedules,
     });
     void queryClient.prefetchQuery({
       queryKey: ["plannerSemesters"],
