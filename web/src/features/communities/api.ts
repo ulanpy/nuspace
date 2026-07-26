@@ -25,6 +25,26 @@ export function fetchCommunitiesPage(
   )
 }
 
+/**
+ * Communities the signed-in user heads.
+ *
+ * The filter is `head_sub`, and `"me"` resolves to the caller server-side. The
+ * old app sent `head=<sub>` — a parameter the backend does not declare, so
+ * FastAPI dropped it and the profile page's "My Communities" was really the
+ * first 100 of every community on campus.
+ */
+export function myCommunitiesQueryOptions() {
+  return queryOptions({
+    queryKey: qk.communities.mine(),
+    queryFn: () =>
+      unwrap(
+        api.GET("/communities", {
+          params: { query: { head_sub: "me", page: 1, size: 100 } },
+        })
+      ),
+  })
+}
+
 export function communityDetailQueryOptions(communityId: number) {
   return queryOptions({
     queryKey: qk.communities.detail(communityId),

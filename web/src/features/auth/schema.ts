@@ -31,6 +31,12 @@ export const currentUserSchema = z.object({
   given_name: z.string(),
   family_name: z.string(),
   name: z.string(),
+  /**
+   * Whatever the identity provider supplied. Absent under MOCK_KEYCLOAK and set
+   * to "" by the OAuth mapper when the claim is missing, so both a bad URL and
+   * no URL collapse to undefined and the UI falls back to initials.
+   */
+  picture: z.url().optional().catch(undefined),
   role: userRoleSchema.catch("default"),
   /** Community ids this user heads; drives community_admin permissions. */
   communities: z.array(z.number()).default([]),
