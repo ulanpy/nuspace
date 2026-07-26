@@ -12,8 +12,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { gradeStatisticsApi } from '../api/grade-statistics-api';
 import { ApiError } from "@/utils/api";
 import {
@@ -25,7 +27,7 @@ import {
   PlannerCourseSearchResult,
 } from "../types";
 import { SignInCard } from "@/components/molecules/sign-in-card";
-import { CalendarPlus, ChevronDown, ClipboardCopy, Copy, Loader2, Plus, Pencil, RefreshCcw, RotateCcw, Trash2, Wand2, X } from "lucide-react";
+import { CalendarPlus, ChevronDown, ClipboardCopy, Copy, Crop, Loader2, Plus, Pencil, RefreshCcw, RotateCcw, Trash2, Wand2, X } from "lucide-react";
 import { ConfirmationModal } from './confirmation-modal';
 import { useSyllabusLinks } from '../utils/use-syllabus-links';
 import { toast } from "@/hooks/toast";
@@ -40,6 +42,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+const COLLAPSE_EMPTY_EDGES_KEY = "planner.collapseEmptyEdges";
+
+const readCollapseEmptyEdgesPref = (): boolean => {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(COLLAPSE_EMPTY_EDGES_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+
+const writeCollapseEmptyEdgesPref = (value: boolean) => {
+  try {
+    window.localStorage.setItem(COLLAPSE_EMPTY_EDGES_KEY, value ? "1" : "0");
+  } catch {
+    // Ignore quota / private-mode failures.
+  }
+};
 
 const formatPlanCourseCount = (count: number) => {
   if (count === 0) return "No courses yet";
@@ -229,6 +250,7 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [activeRequirements, setActiveRequirements] = useState<CourseRequirementDetail | null>(null);
   const [activeCourseId, setActiveCourseId] = useState<number | null>(null);
+  const [collapseEmptyEdges, setCollapseEmptyEdges] = useState(false);
   const autoFetchedCourses = useRef<Set<number>>(new Set());
   const planner = plannerQuery.data ?? null;
   const scheduleVariants = schedulesQuery.data?.items ?? [];
@@ -290,6 +312,15 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
       });
     }
   }, [planner]);
+
+  useEffect(() => {
+    setCollapseEmptyEdges(readCollapseEmptyEdgesPref());
+  }, []);
+
+  const handleCollapseEmptyEdgesChange = useCallback((checked: boolean) => {
+    setCollapseEmptyEdges(checked);
+    writeCollapseEmptyEdgesPref(checked);
+  }, []);
 
   useEffect(() => {
     if (!planner?.courses?.length) {
@@ -710,17 +741,27 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
 
   // Live search on typing (debounced)
   const searchDebounce = useRef<NodeJS.Timeout | null>(null);
+  const lastSearchQueryRef = useRef("");
   useEffect(() => {
     if (!planner || !courseForm.term_value) return;
     const query = normalizeCourseQuery(courseForm.query);
     if (!query) {
+      lastSearchQueryRef.current = "";
       setSearchResults([]);
       setSearchCursor(null);
       setLastSearch(null);
       setSearchOpen(false);
       return;
     }
-    setSearchOpen(true);
+
+    const queryChanged = query !== lastSearchQueryRef.current;
+    lastSearchQueryRef.current = query;
+    // Only reopen when the user changes the query — not when planner refetches
+    // after add / autobuild / refresh.
+    if (queryChanged) {
+      setSearchOpen(true);
+    }
+
     if (searchDebounce.current) clearTimeout(searchDebounce.current);
     searchDebounce.current = setTimeout(() => {
       performSearch(
@@ -1108,8 +1149,8 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
         </aside>
 
         <section className="w-full min-w-0 flex-1 rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-1">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -1208,30 +1249,28 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1.5"
-                disabled={!selectedEvents.length}
-                onClick={() => {
-                  void handleCopyShortlist();
-                }}
-              >
-                <ClipboardCopy className="size-3.5" />
-                Copy as text
-              </Button>
               {selectedEvents.length > 0 && (
                 <Badge
                   variant={hasClash ? "destructive" : "default"}
-                  className="text-xs font-semibold"
+                  className="shrink-0 text-xs font-semibold"
                 >
                   {hasClash ? "Clash" : "Fit"}
                 </Badge>
               )}
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 shrink-0 gap-1.5"
+              disabled={!selectedEvents.length}
+              onClick={() => {
+                void handleCopyShortlist();
+              }}
+            >
+              <ClipboardCopy className="size-3.5" />
+              Copy as text
+            </Button>
           </div>
           <SchedulePreview
             schedule={planner}
@@ -1241,6 +1280,8 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
             loadingSections={loadingSections}
             onShowDetails={setActiveSection}
             activeCourseId={activeCourseId}
+            collapseEmptyEdges={collapseEmptyEdges}
+            onCollapseEmptyEdgesChange={handleCollapseEmptyEdgesChange}
           />
           {activeSection && (
             <SectionDetailModal
@@ -1462,6 +1503,8 @@ const SchedulePreview = ({
   loadingSections,
   onShowDetails,
   activeCourseId,
+  collapseEmptyEdges,
+  onCollapseEmptyEdgesChange,
 }: {
   schedule: PlannerSchedule | null;
   events: SectionEvent[];
@@ -1470,6 +1513,8 @@ const SchedulePreview = ({
   loadingSections: Record<number, boolean>;
   onShowDetails: (sectionEvent: SectionEvent) => void;
   activeCourseId: number | null;
+  collapseEmptyEdges: boolean;
+  onCollapseEmptyEdgesChange: (checked: boolean) => void;
 }) => {
   const timedEvents = useMemo(
     () => events.filter(({ section }) => {
@@ -1479,18 +1524,39 @@ const SchedulePreview = ({
     [events],
   );
 
-  // Grid spans at least the standard campus day (8 AM–10 PM), but widens to fit
-  // any section outside that window instead of silently dropping it.
-  const { startHour, endHour } = useMemo(() => {
-    let minStart = 8 * 60;
-    let maxEnd = 22 * 60;
+  // Full week defaults to campus day labels 8 AM–10 PM, but widens for outliers.
+  // With crop enabled, trim to the occupied hour range (end exclusive).
+  const { startHour, endHourExclusive } = useMemo(() => {
+    if (!timedEvents.length) {
+      return { startHour: 8, endHourExclusive: 23 };
+    }
+
+    let minStart = Number.POSITIVE_INFINITY;
+    let maxEnd = Number.NEGATIVE_INFINITY;
     timedEvents.forEach(({ section }) => {
       const [start, end] = parseTimeRange(section.times);
       if (start != null) minStart = Math.min(minStart, start);
       if (end != null) maxEnd = Math.max(maxEnd, end);
     });
-    return { startHour: Math.floor(minStart / 60), endHour: Math.ceil(maxEnd / 60) };
-  }, [timedEvents]);
+
+    if (!Number.isFinite(minStart) || !Number.isFinite(maxEnd)) {
+      return { startHour: 8, endHourExclusive: 23 };
+    }
+
+    if (collapseEmptyEdges) {
+      const start = Math.floor(minStart / 60);
+      // Exclusive end: a class ending 2:50 PM needs the 2 PM row, not an empty 3 PM row.
+      return {
+        startHour: start,
+        endHourExclusive: Math.max(Math.ceil(maxEnd / 60), start + 1),
+      };
+    }
+
+    return {
+      startHour: Math.min(8, Math.floor(minStart / 60)),
+      endHourExclusive: Math.max(23, Math.ceil(maxEnd / 60)),
+    };
+  }, [timedEvents, collapseEmptyEdges]);
 
   const clashingSectionIds = useMemo(() => {
     const clashes = new Set<number>();
@@ -1516,7 +1582,7 @@ const SchedulePreview = ({
     return clashes;
   }, [timedEvents]);
 
-  // Drop unused weekend columns so Mon–Fri get more width.
+  // Drop unused weekend by default. With crop enabled, also trim empty Mon–Fri edges.
   const visibleDays = useMemo(() => {
     const used = new Set<string>();
     timedEvents.forEach(({ section }) => {
@@ -1524,9 +1590,29 @@ const SchedulePreview = ({
         used.add(day);
       }
     });
-    const hasWeekend = used.has("S");
-    return hasWeekend ? dayDefs : dayDefs.filter((day) => day.key !== "S");
-  }, [timedEvents]);
+
+    if (!collapseEmptyEdges) {
+      const hasWeekend = used.has("S");
+      return hasWeekend ? dayDefs : dayDefs.filter((day) => day.key !== "S");
+    }
+
+    if (!used.size) {
+      return dayDefs.filter((day) => day.key !== "S");
+    }
+
+    const firstIdx = dayDefs.findIndex((day) => used.has(day.key));
+    let lastIdx = -1;
+    for (let i = dayDefs.length - 1; i >= 0; i -= 1) {
+      if (used.has(dayDefs[i].key)) {
+        lastIdx = i;
+        break;
+      }
+    }
+    if (firstIdx < 0 || lastIdx < 0) {
+      return dayDefs.filter((day) => day.key !== "S");
+    }
+    return dayDefs.slice(firstIdx, lastIdx + 1);
+  }, [timedEvents, collapseEmptyEdges]);
 
   if (!schedule) {
     return (
@@ -1538,7 +1624,7 @@ const SchedulePreview = ({
 
   const hasSections = schedule.courses.some((course) => course.sections.length);
   const hourHeight = 84;
-  const hours = Array.from({ length: endHour - startHour + 1 }, (_, idx) => startHour + idx);
+  const hours = Array.from({ length: endHourExclusive - startHour }, (_, idx) => startHour + idx);
   const filteredEvents = timedEvents;
   const dayCount = visibleDays.length;
   const gridTemplateColumns = `64px repeat(${dayCount}, minmax(7.5rem, 1fr))`;
@@ -1561,11 +1647,29 @@ const SchedulePreview = ({
         </div>
       ) : (
         <>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="collapse-empty-edges"
+              size="sm"
+              checked={collapseEmptyEdges}
+              onCheckedChange={onCollapseEmptyEdgesChange}
+            />
+            <Label
+              htmlFor="collapse-empty-edges"
+              className="cursor-pointer text-xs font-normal text-muted-foreground"
+            >
+              <Crop className="size-3.5 shrink-0 opacity-70" aria-hidden="true" />
+              Crop empty edges
+            </Label>
+          </div>
+        </div>
         <div className="md:hidden">
           <ScheduleAgenda
             events={filteredEvents}
             clashingSectionIds={clashingSectionIds}
             onShowDetails={onShowDetails}
+            collapseEmptyEdges={collapseEmptyEdges}
           />
         </div>
         <div className="hidden overflow-x-auto rounded-xl border border-border/60 bg-muted/10 p-3 scroll-thin md:block">
@@ -1670,14 +1774,32 @@ const ScheduleAgenda = ({
   events,
   clashingSectionIds,
   onShowDetails,
+  collapseEmptyEdges,
 }: {
   events: SectionEvent[];
   clashingSectionIds: Set<number>;
   onShowDetails: (sectionEvent: SectionEvent) => void;
+  collapseEmptyEdges: boolean;
 }) => {
   const daysWithEvents = dayDefs.filter((day) =>
     events.some(({ section }) => section.days.includes(day.key)),
   );
+  const visibleDayTabs = collapseEmptyEdges
+    ? (() => {
+        if (!daysWithEvents.length) return dayDefs.filter((day) => day.key !== "S");
+        const usedKeys = new Set(daysWithEvents.map((day) => day.key));
+        const firstIdx = dayDefs.findIndex((day) => usedKeys.has(day.key));
+        let lastIdx = -1;
+        for (let i = dayDefs.length - 1; i >= 0; i -= 1) {
+          if (usedKeys.has(dayDefs[i].key)) {
+            lastIdx = i;
+            break;
+          }
+        }
+        if (firstIdx < 0 || lastIdx < 0) return dayDefs.filter((day) => day.key !== "S");
+        return dayDefs.slice(firstIdx, lastIdx + 1);
+      })()
+    : dayDefs;
   const [selectedDay, setSelectedDay] = useState(daysWithEvents[0]?.key ?? dayDefs[0].key);
 
   useEffect(() => {
@@ -1685,7 +1807,7 @@ const ScheduleAgenda = ({
       setSelectedDay(daysWithEvents[0].key);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [events]);
+  }, [events, collapseEmptyEdges]);
 
   const dayEvents = events
     .filter(({ section }) => section.days.includes(selectedDay))
@@ -1696,7 +1818,7 @@ const ScheduleAgenda = ({
   return (
     <div className="space-y-3">
       <div className="flex gap-1.5 overflow-x-auto pb-1 scroll-thin">
-        {dayDefs.map((day) => {
+        {visibleDayTabs.map((day) => {
           const hasEvents = daysWithEvents.some((d) => d.key === day.key);
           return (
             <button
