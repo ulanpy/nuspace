@@ -15,15 +15,18 @@ interface CourseSearchProps {
   termLabel: string
   /** Codes already in the planner, so they can be shown as added. */
   addedCodes: ReadonlySet<string>
+  /** Which saved plan the course is added to. */
+  scheduleId: number | null
 }
 
 export function CourseSearch({
   term,
   termLabel,
   addedCodes,
+  scheduleId,
 }: CourseSearchProps) {
   const [input, setInput] = useState("")
-  const addCourse = useAddPlannerCourse()
+  const addCourse = useAddPlannerCourse({ scheduleId })
 
   // Normalizing before it reaches the query key means a Cyrillic-layout search
   // and its Latin equivalent share one cache entry instead of two.

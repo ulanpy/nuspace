@@ -99,12 +99,18 @@ function SectionButton({
 interface PlannerCourseCardProps {
   course: PlannerCourse
   clashes: ReadonlySet<number>
+  /** Which saved plan this card belongs to, so refetches hit the right one. */
+  scheduleId: number | null
 }
 
-export function PlannerCourseCard({ course, clashes }: PlannerCourseCardProps) {
-  const loadSections = useLoadSections()
-  const selectSections = useSelectSections()
-  const removeCourse = useRemovePlannerCourse()
+export function PlannerCourseCard({
+  course,
+  clashes,
+  scheduleId,
+}: PlannerCourseCardProps) {
+  const loadSections = useLoadSections({ scheduleId })
+  const selectSections = useSelectSections({ scheduleId })
+  const removeCourse = useRemovePlannerCourse({ scheduleId })
 
   const groups = groupSectionsByType(course.sections)
   const isBusy =

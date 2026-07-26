@@ -49,7 +49,16 @@ export const qk = {
     grades: (filters: Record<string, unknown>) =>
       ["courses", "grades", filters] as const,
     degreeAudit: () => ["courses", "degree-audit"] as const,
-    planner: () => ["courses", "planner"] as const,
+    /**
+     * One key per plan. A student can keep several schedule variants, and
+     * caching them under a single key would show the previous plan's courses
+     * for a frame after switching — the plans differ in exactly the data the
+     * grid draws.
+     */
+    planner: (scheduleId?: number | null) =>
+      ["courses", "planner", scheduleId ?? "default"] as const,
+    /** The list of plans, without their courses. */
+    plannerPlans: () => ["courses", "planner-plans"] as const,
   },
 
   sgotinish: {
