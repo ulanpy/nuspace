@@ -20,45 +20,152 @@ class PlannerRepository:
     def __init__(self, db_session: AsyncSession):
         self.session = db_session
 
-    async def get_schedule_for_student(self, student_sub: str) -> Optional[PlannerSchedule]:
+    def _schedule_load_options(self):
+        return selectinload(PlannerSchedule.courses).selectinload(PlannerScheduleCourse.sections)
+
+    async def count_schedules_for_student(self, student_sub: str) -> int:
+        stmt = select(func.count()).select_from(PlannerSchedule).where(
+            PlannerSchedule.student_sub == student_sub
+        )
+        result = await self.session.execute(stmt)
+        return int(result.scalar_one())
+
+    async def list_schedules_for_student(self, student_sub: str) -> List[PlannerSchedule]:
         stmt = (
             select(PlannerSchedule)
             .where(PlannerSchedule.student_sub == student_sub)
-            .limit(1)
-            .options(
-                selectinload(PlannerSchedule.courses).selectinload(
-                    PlannerScheduleCourse.sections
+            .order_by(PlannerSchedule.created_at.asc(), PlannerSchedule.id.asc())
+            .options(selectinload(PlannerSchedule.courses))
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().unique().all())
+
+    async def get_schedule_by_id(
+        self,
+        schedule_id: int,
+        student_sub: str,
+    ) -> Optional[PlannerSchedule]:
+        stmt = (
+            select(PlannerSchedule)
+            .where(
+                PlannerSchedule.id == schedule_id,
+                PlannerSchedule.student_sub == student_sub,
             )
-            )
+            .options(self._schedule_load_options())
         )
         result = await self.session.execute(stmt)
         return result.scalars().unique().first()
+
+    async def get_default_schedule_for_student(self, student_sub: str) -> Optional[PlannerSchedule]:
+        stmt = (
+            select(PlannerSchedule)
+            .where(PlannerSchedule.student_sub == student_sub)
+            .order_by(PlannerSchedule.created_at.asc(), PlannerSchedule.id.asc())
+            .limit(1)
+            .options(self._schedule_load_options())
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().unique().first()
+
+    async def get_schedule_for_student(self, student_sub: str) -> Optional[PlannerSchedule]:
+        return await self.get_default_schedule_for_student(student_sub)
 
     async def create_schedule(
         self,
         *,
         student_sub: str,
+        name: str,
     ) -> PlannerSchedule:
         schedule = PlannerSchedule(
             student_sub=student_sub,
+            name=name,
         )
         self.session.add(schedule)
         await self.session.flush()
         return schedule
 
-    async def reset_student(self, student_sub: str, term_value: Optional[str]) -> None:
-        schedule_stmt = delete(PlannerSchedule).where(
-            PlannerSchedule.student_sub == student_sub
+    async def update_schedule_name(
+        self,
+        *,
+        schedule_id: int,
+        student_sub: str,
+        name: str,
+    ) -> None:
+        await self.session.execute(
+            update(PlannerSchedule)
+            .where(
+                PlannerSchedule.id == schedule_id,
+                PlannerSchedule.student_sub == student_sub,
+            )
+            .values(name=name)
         )
-        if term_value:
-            schedule_stmt = schedule_stmt.where(
-                PlannerSchedule.id.in_(
-                    select(PlannerScheduleCourse.planner_schedule_id).where(
-                        PlannerScheduleCourse.term_value == term_value
+
+    async def delete_schedule(self, schedule_id: int, student_sub: str) -> bool:
+        schedule = await self.get_schedule_by_id(schedule_id, student_sub)
+        if schedule is None:
+            return False
+        await self.session.delete(schedule)
+        await self.session.flush()
+        return True
+
+    async def duplicate_schedule(
+        self,
+        source: PlannerSchedule,
+        *,
+        student_sub: str,
+        name: str,
+    ) -> PlannerSchedule:
+        loaded = await self.get_schedule_by_id(source.id, student_sub)
+        if loaded is None:
+            raise ValueError("source schedule not found")
+        new_schedule = await self.create_schedule(
+            student_sub=student_sub,
+            name=name,
+        )
+        for course in loaded.courses:
+            new_course = PlannerScheduleCourse(
+                planner_schedule_id=new_schedule.id,
+                registrar_course_id=course.registrar_course_id,
+                course_code=course.course_code,
+                level=course.level,
+                school=course.school,
+                term_value=course.term_value,
+                term_label=course.term_label,
+                metadata_json=dict(course.metadata_json or {}),
+                capacity_total=course.capacity_total,
+                enrollment_total=course.enrollment_total,
+            )
+            self.session.add(new_course)
+            await self.session.flush()
+            for section in course.sections:
+                self.session.add(
+                    PlannerScheduleSection(
+                        planner_schedule_course_id=new_course.id,
+                        section_code=section.section_code,
+                        days=section.days,
+                        times=section.times,
+                        room=section.room,
+                        faculty=section.faculty,
+                        capacity=section.capacity,
+                        enrollment_snapshot=section.enrollment_snapshot,
+                        is_selected=section.is_selected,
                     )
                 )
-            )
-        await self.session.execute(schedule_stmt)
+        await self.session.flush()
+        reloaded = await self.get_schedule_by_id(new_schedule.id, student_sub)
+        return reloaded or new_schedule
+
+    async def reset_schedule_courses(
+        self,
+        schedule_id: int,
+        term_value: Optional[str],
+    ) -> None:
+        stmt = delete(PlannerScheduleCourse).where(
+            PlannerScheduleCourse.planner_schedule_id == schedule_id
+        )
+        if term_value:
+            stmt = stmt.where(PlannerScheduleCourse.term_value == term_value)
+        await self.session.execute(stmt)
 
     # ----- Courses ----- #
     async def get_selection_counts_for_courses(
@@ -189,7 +296,6 @@ class PlannerRepository:
         sections_payload: Iterable[dict],
     ) -> List[PlannerScheduleSection]:
         existing = {sec.section_code: sec for sec in course.sections}
-        # delete existing sections to avoid stale data
         await self.session.execute(
             delete(PlannerScheduleSection).where(
                 PlannerScheduleSection.planner_schedule_course_id == course.id
@@ -253,7 +359,6 @@ class PlannerRepository:
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
-
     async def update_course_capacity(
         self,
         *,
@@ -270,3 +375,6 @@ class PlannerRepository:
             )
         )
 
+    @staticmethod
+    def _normalize_course_code(course_code: str) -> str:
+        return course_code.replace("-", "").replace(" ", "").strip().lower()

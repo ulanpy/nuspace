@@ -93,8 +93,6 @@ class PlannerAutoBuilder:
             course_id = course_ids[index]
             slots = options[course_id]
             for slot in slots:
-                if not slot.blocks:
-                    continue
                 if self._conflicts(slot, occupancy):
                     continue
                 assignments[course_id] = slot.section_ids
@@ -208,10 +206,12 @@ class PlannerAutoBuilder:
         per_day_blocks: Dict[int, List[tuple]] = defaultdict(list)
         blocks: List[tuple] = []
         for section in sections:
-            days = [char for char in section.days if char.upper() in DAY_TO_INDEX]
+            days = [char for char in (section.days or "") if char.upper() in DAY_TO_INDEX]
             start_minutes, end_minutes = self._parse_time_range(section.times)
-            if start_minutes is None or end_minutes is None:
-                return None
+            # Online / Distant / TBA: keep the section in the assignment, but it
+            # does not occupy calendar time and must not invalidate L+S combos.
+            if start_minutes is None or end_minutes is None or not days:
+                continue
             for day_char in days:
                 day_idx = DAY_TO_INDEX[day_char.upper()]
                 for existing_start, existing_end in per_day_blocks[day_idx]:
@@ -219,8 +219,6 @@ class PlannerAutoBuilder:
                         return None
                 per_day_blocks[day_idx].append((start_minutes, end_minutes))
                 blocks.append((day_idx, start_minutes, end_minutes))
-        if not blocks:
-            return None
         label = " / ".join([section.section_code or "Section" for section in sections])
         return SectionSlot(
             section_ids=tuple(section.id for section in sections),
@@ -274,13 +272,16 @@ class PlannerAutoBuilder:
             hour = (hour % 12) + 12
         return hour * 60 + minute
 
-    def _parse_time_range(self, value: str) -> tuple[Optional[int], Optional[int]]:
+    @staticmethod
+    def _parse_time_range_static(value: str) -> tuple[Optional[int], Optional[int]]:
         if not value:
             return None, None
         if "-" not in value:
-            return self._time_to_minutes(value), None
+            return PlannerAutoBuilder._time_to_minutes(value), None
         start_raw, end_raw = value.split("-", 1)
-        start = self._time_to_minutes(start_raw.strip())
-        end = self._time_to_minutes(end_raw.strip())
+        start = PlannerAutoBuilder._time_to_minutes(start_raw.strip())
+        end = PlannerAutoBuilder._time_to_minutes(end_raw.strip())
         return start, end
 
+    def _parse_time_range(self, value: str) -> tuple[Optional[int], Optional[int]]:
+        return self._parse_time_range_static(value)

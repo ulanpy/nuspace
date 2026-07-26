@@ -10,7 +10,12 @@ from backend.modules.courses.planner.schemas import (
     PlannerCourseResponse,
     PlannerCourseSearchResponse,
     PlannerResetRequest,
+    PlannerScheduleCreateRequest,
+    PlannerScheduleDuplicateRequest,
+    PlannerScheduleListResponse,
     PlannerScheduleResponse,
+    PlannerScheduleSummary,
+    PlannerScheduleUpdateRequest,
     PlannerSectionResponse,
     PlannerSectionSelectionRequest,
 )
@@ -33,6 +38,87 @@ async def list_semesters(
 
 
 @router.get(
+    "/schedules",
+    response_model=PlannerScheduleListResponse,
+    summary="List planner schedule variants for the authenticated student",
+)
+async def list_planner_schedules(
+    principals: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    service: PlannerService = Depends(get_planner_service),
+) -> PlannerScheduleListResponse:
+    student_sub = principals[0]["sub"]
+    return await service.list_schedules(student_sub)
+
+
+@router.post(
+    "/schedules",
+    response_model=PlannerScheduleSummary,
+    status_code=201,
+    summary="Create a new planner schedule variant",
+)
+async def create_planner_schedule(
+    payload: PlannerScheduleCreateRequest,
+    principals: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    service: PlannerService = Depends(get_planner_service),
+) -> PlannerScheduleSummary:
+    student_sub = principals[0]["sub"]
+    return await service.create_schedule_variant(student_sub=student_sub, payload=payload)
+
+
+@router.post(
+    "/schedules/{schedule_id}/duplicate",
+    response_model=PlannerScheduleSummary,
+    status_code=201,
+    summary="Duplicate a planner schedule variant",
+)
+async def duplicate_planner_schedule(
+    schedule_id: int,
+    payload: PlannerScheduleDuplicateRequest,
+    principals: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    service: PlannerService = Depends(get_planner_service),
+) -> PlannerScheduleSummary:
+    student_sub = principals[0]["sub"]
+    return await service.duplicate_schedule_variant(
+        student_sub=student_sub,
+        schedule_id=schedule_id,
+        payload=payload,
+    )
+
+
+@router.patch(
+    "/schedules/{schedule_id}",
+    response_model=PlannerScheduleSummary,
+    summary="Rename a planner schedule variant",
+)
+async def update_planner_schedule(
+    schedule_id: int,
+    payload: PlannerScheduleUpdateRequest,
+    principals: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    service: PlannerService = Depends(get_planner_service),
+) -> PlannerScheduleSummary:
+    student_sub = principals[0]["sub"]
+    return await service.update_schedule_variant(
+        student_sub=student_sub,
+        schedule_id=schedule_id,
+        payload=payload,
+    )
+
+
+@router.delete(
+    "/schedules/{schedule_id}",
+    status_code=204,
+    summary="Delete a planner schedule variant",
+)
+async def delete_planner_schedule(
+    schedule_id: int,
+    principals: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    service: PlannerService = Depends(get_planner_service),
+) -> None:
+    student_sub = principals[0]["sub"]
+    await service.delete_schedule_variant(student_sub=student_sub, schedule_id=schedule_id)
+
+
+@router.get(
     "/courses/search",
     response_model=PlannerCourseSearchResponse,
     summary="Search registrar courses for planner use",
@@ -50,8 +136,9 @@ async def search_courses_for_planner(
         term_value=term_value,
         course_code=course_code,
         size=size,
-        page=page
+        page=page,
     )
+
 
 @router.post(
     "/courses/refresh",
@@ -60,10 +147,12 @@ async def search_courses_for_planner(
 )
 async def refresh_all_courses(
     principals: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    schedule_id: int | None = Query(None),
     service: PlannerService = Depends(get_planner_service),
 ) -> PlannerScheduleResponse:
     student_sub = principals[0]["sub"]
-    return await service.refresh_all_courses(student_sub=student_sub)
+    return await service.refresh_all_courses(student_sub=student_sub, schedule_id=schedule_id)
+
 
 @router.get(
     "",
@@ -72,10 +161,11 @@ async def refresh_all_courses(
 )
 async def get_planner_schedule(
     principals: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    schedule_id: int | None = Query(None),
     service: PlannerService = Depends(get_planner_service),
 ) -> PlannerScheduleResponse:
     student_sub = principals[0]["sub"]
-    return await service.get_schedule(student_sub)
+    return await service.get_schedule(student_sub, schedule_id=schedule_id)
 
 
 @router.post(
@@ -86,10 +176,15 @@ async def get_planner_schedule(
 async def add_course(
     payload: PlannerCourseAddRequest,
     principals: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    schedule_id: int | None = Query(None),
     service: PlannerService = Depends(get_planner_service),
 ) -> PlannerCourseResponse:
     student_sub = principals[0]["sub"]
-    return await service.add_course(student_sub=student_sub, payload=payload)
+    return await service.add_course(
+        student_sub=student_sub,
+        payload=payload,
+        schedule_id=schedule_id,
+    )
 
 
 @router.delete(
@@ -151,10 +246,11 @@ async def select_sections(
 )
 async def auto_build(
     principals: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    schedule_id: int | None = Query(None),
     service: PlannerService = Depends(get_planner_service),
 ) -> PlannerAutoBuildResponse:
     student_sub = principals[0]["sub"]
-    return await service.auto_build_schedule(student_sub=student_sub)
+    return await service.auto_build_schedule(student_sub=student_sub, schedule_id=schedule_id)
 
 
 @router.post(
@@ -165,8 +261,12 @@ async def auto_build(
 async def reset_planner(
     payload: PlannerResetRequest,
     principals: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    schedule_id: int | None = Query(None),
     service: PlannerService = Depends(get_planner_service),
 ) -> None:
     student_sub = principals[0]["sub"]
-    await service.reset(student_sub=student_sub, term_value=payload.term_value)
-
+    await service.reset(
+        student_sub=student_sub,
+        term_value=payload.term_value,
+        schedule_id=schedule_id,
+    )

@@ -30,6 +30,7 @@ class PlannerSerializer:
         selection_counts = selection_counts or {}
         return PlannerScheduleResponse(
             id=schedule.id,
+            name=schedule.name,
             courses=[
                 self.serialize_course(
                     course,

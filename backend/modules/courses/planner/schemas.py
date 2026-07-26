@@ -47,7 +47,32 @@ class PlannerCourseResponse(BaseModel):
 
 class PlannerScheduleResponse(BaseModel):
     id: int
+    name: str
     courses: List[PlannerCourseResponse]
+
+
+class PlannerScheduleSummary(BaseModel):
+    id: int
+    name: str
+    course_count: int
+
+
+class PlannerScheduleListResponse(BaseModel):
+    items: List[PlannerScheduleSummary]
+    count: int
+    max_allowed: int
+
+
+class PlannerScheduleCreateRequest(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=64)
+
+
+class PlannerScheduleUpdateRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=64)
+
+
+class PlannerScheduleDuplicateRequest(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=64)
 
 
 class PlannerSectionSelectionRequest(BaseModel):
