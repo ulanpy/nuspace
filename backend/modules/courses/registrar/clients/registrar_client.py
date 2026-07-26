@@ -28,6 +28,20 @@ SCHEDULE_JSON_PATH = "/my-registrar/personal-schedule/json"
 _INTERMEDIATE_CA = Path(__file__).with_name("sectigo_intermediate.pem")
 
 
+# Session cookies a successful login may set. AUTHSSL is what the registrar
+# used; Drupal's own are SESS*/SSESS*. Accepting any of them means a rename on
+# their side degrades to "could not confirm" rather than "wrong password".
+_SESSION_COOKIE_NAMES = {"AUTHSSL", "AUTHSESS"}
+
+
+class InvalidRegistrarCredentials(ValueError):
+    """The registrar explicitly rejected the username or password."""
+
+
+class RegistrarLoginUnconfirmed(RuntimeError):
+    """Login neither clearly succeeded nor was clearly rejected."""
+
+
 def _build_ssl_context() -> ssl.SSLContext:
     # Default trust store for the roots, plus the one intermediate the registrar
     # omits. Loading it as an additional anchor is only a path-building aid --
@@ -96,9 +110,31 @@ class RegistrarClient:
         if response.status_code >= 400:
             response.raise_for_status()
 
-        cookies: Cookies = client.cookies
-        if not any(cookie for cookie in cookies.jar if cookie.name == "AUTHSSL"):
-            raise ValueError("Invalid registrar credentials")
+        # Drupal answers a rejected login with 200 and an error message, so the
+        # status code says nothing. Read the outcome from three signals rather
+        # than one: previously this checked only for an AUTHSSL cookie and
+        # reported "invalid credentials" whenever it was absent, which means a
+        # rename of that cookie would tell every student their password was
+        # wrong while it was in fact fine.
+        body = response.text
+        rejected = "unrecognized username or password" in body.lower()
+        has_session = any(
+            cookie.name in _SESSION_COOKIE_NAMES or cookie.name.startswith("SSESS")
+            for cookie in client.cookies.jar
+        )
+        looks_logged_in = has_session or "user/logout" in body
+
+        if rejected:
+            raise InvalidRegistrarCredentials(
+                "The registrar rejected the username or password."
+            )
+        if not looks_logged_in:
+            # Neither signal present: the login page changed, or the registrar
+            # answered with something unexpected. Saying "wrong password" here
+            # would send the student to reset a password that works.
+            raise RegistrarLoginUnconfirmed(
+                "Could not confirm the registrar login; the sign-in page may have changed."
+            )
 
     async def _get_schedule_access(self) -> dict[str, Any]:
         """

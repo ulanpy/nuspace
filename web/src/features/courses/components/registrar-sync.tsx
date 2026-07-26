@@ -29,11 +29,15 @@ function SyncSummary({ result }: { result: RegistrarSyncResponse }) {
 
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError) {
-    // The registrar rejects bad credentials with a 4xx; anything else is the
-    // registrar being unreachable, which is not something the student can fix
-    // by retyping their password.
+    // 401 now means the registrar itself said the username or password was
+    // wrong — nothing else maps to it. A registrar that is unreachable, or one
+    // whose sign-in page changed, comes back as 502, because telling someone to
+    // check a password that works sends them off to reset it for no reason.
     if (error.status === 401 || error.status === 403) {
-      return "The registrar rejected those credentials. Check your password and try again."
+      return "The registrar rejected that username or password."
+    }
+    if (error.status === 502) {
+      return "Could not complete the sync with the registrar — this is not a problem with your password. Try again shortly."
     }
     if (error.status >= 500) {
       return "The registrar is not responding right now. Try again in a few minutes."
