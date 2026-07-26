@@ -2,6 +2,7 @@ import { useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { Loader2, RotateCcw, Wand2 } from "lucide-react"
+import { toast } from "sonner"
 import { z } from "zod"
 
 import { semestersQueryOptions } from "@/features/courses/api"
@@ -10,6 +11,7 @@ import {
   plannerQueryOptions,
   useAutoBuild,
   useResetPlanner,
+  useRestoreSelections,
 } from "@/features/courses/planner/api"
 import { CourseSearch } from "@/features/courses/planner/components/course-search"
 import { PlanSwitcher } from "@/features/courses/planner/components/plan-switcher"
@@ -23,10 +25,13 @@ import {
   formatDays,
   formatRoom,
   timedEvents,
+  selectionSnapshot,
 } from "@/features/courses/planner/schedule"
 import { resolvePlannerLoadState } from "@/features/courses/planner/load-state"
 import type { SectionEvent } from "@/features/courses/planner/schedule"
 import type { PlannerSchedule } from "@/features/courses/planner/types"
+import { useSyllabusLinks } from "@/features/courses/planner/use-syllabus-links"
+import { syllabusLink } from "@/features/courses/planner/syllabus"
 import {
   EmptyState,
   QueryBoundary,
@@ -35,6 +40,7 @@ import {
 } from "@/components/query-boundary"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import {
   Select,
   SelectContent,
@@ -88,8 +94,11 @@ function PlannerView({
   scheduleId: number | null
 }) {
   const [detail, setDetail] = useState<SectionEvent | null>(null)
+  const [confirmingReset, setConfirmingReset] = useState(false)
   const autoBuild = useAutoBuild({ scheduleId })
   const resetPlanner = useResetPlanner({ scheduleId })
+  const restoreSelections = useRestoreSelections({ scheduleId })
+  const syllabusLinks = useSyllabusLinks()
 
   const events = selectedEvents(planner)
   const clashes = findClashes(timedEvents(events))
@@ -108,7 +117,28 @@ function PlannerView({
               variant="secondary"
               disabled={autoBuild.isPending || planner.courses.length === 0}
               onClick={() => {
-                autoBuild.mutate()
+                const snapshot = selectionSnapshot(planner)
+                autoBuild.mutate(undefined, {
+                  onSuccess: () => {
+                    toast.success("Schedule built", {
+                      action: {
+                        label: "Undo",
+                        onClick: () => {
+                          restoreSelections.mutate(snapshot, {
+                            onSuccess: () => {
+                              toast.success("Previous selections restored")
+                            },
+                            onError: () => {
+                              toast.error(
+                                "Undo was incomplete; the latest server state has been reloaded"
+                              )
+                            },
+                          })
+                        },
+                      },
+                    })
+                  },
+                })
               }}
             >
               {autoBuild.isPending ? (
@@ -123,7 +153,7 @@ function PlannerView({
               variant="ghost"
               disabled={resetPlanner.isPending || planner.courses.length === 0}
               onClick={() => {
-                resetPlanner.mutate(term)
+                setConfirmingReset(true)
               }}
             >
               <RotateCcw aria-hidden />
@@ -137,6 +167,7 @@ function PlannerView({
           termLabel={termLabel}
           addedCodes={addedCodes}
           scheduleId={scheduleId}
+          syllabusLinks={syllabusLinks}
         />
       </Card>
 
@@ -181,6 +212,21 @@ function PlannerView({
           {detail.section.faculty && (
             <p className="text-muted-foreground">{detail.section.faculty}</p>
           )}
+          {syllabusLink(syllabusLinks, detail.course.course_code) && (
+            <Button
+              size="sm"
+              variant="outline"
+              render={
+                <a
+                  href={syllabusLink(syllabusLinks, detail.course.course_code)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View syllabus
+                </a>
+              }
+            />
+          )}
           <Button
             size="sm"
             variant="ghost"
@@ -200,9 +246,26 @@ function PlannerView({
             course={course}
             clashes={clashes}
             scheduleId={scheduleId}
+            syllabusLinks={syllabusLinks}
           />
         ))}
       </div>
+
+      <ConfirmDialog
+        open={confirmingReset}
+        onOpenChange={setConfirmingReset}
+        title="Reset this schedule?"
+        description="Every course and section selection in this plan will be removed. This cannot be undone."
+        confirmLabel="Reset schedule"
+        isPending={resetPlanner.isPending}
+        onConfirm={() => {
+          resetPlanner.mutate(term, {
+            onSuccess: () => {
+              setConfirmingReset(false)
+            },
+          })
+        }}
+      />
     </div>
   )
 }

@@ -1,7 +1,8 @@
-import { useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Link, createFileRoute } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { FileUp, Loader2, ShieldCheck } from "lucide-react"
+import { toast } from "sonner"
 import { z } from "zod"
 
 import {
@@ -11,7 +12,17 @@ import {
   useTranscriptAudit,
 } from "@/features/courses/api"
 import { AuditResult } from "@/features/courses/components/audit-result"
+import { TransferCreditDialog } from "@/features/courses/components/transfer-credit-dialog"
+import {
+  mergeTransferCreditMappings,
+  transferCreditMappingRows,
+} from "@/features/courses/audit-mapping"
 import { registrarErrorMessage } from "@/features/courses/registrar-errors"
+import type {
+  AuditResponse,
+  TransferCreditMapping,
+} from "@/features/courses/types"
+import type { TransferCreditMappingRow } from "@/features/courses/audit-mapping"
 import { QueryBoundary } from "@/components/query-boundary"
 import { ToggleChip } from "@/components/toggle-chip"
 import { Button } from "@/components/ui/button"
@@ -38,20 +49,79 @@ export const Route = createFileRoute("/_app/courses/audit")({
   component: DegreeAudit,
 })
 
+interface AuditSelection {
+  year: string
+  majors: string[]
+  minors: string[]
+}
+
+type PendingAuditInput =
+  | {
+      mode: "registrar"
+      selection: AuditSelection
+      password: string
+      tcMappings: TransferCreditMapping[]
+    }
+  | {
+      mode: "pdf"
+      selection: AuditSelection
+      file: File
+      tcMappings: TransferCreditMapping[]
+    }
+
+function sameValues(left: readonly string[], right: readonly string[]) {
+  return (
+    left.length === right.length && left.every((value) => right.includes(value))
+  )
+}
+
 function DegreeAudit() {
   const { year, majors = [], minors = [] } = Route.useSearch()
   const navigate = Route.useNavigate()
 
   const [password, setPassword] = useState("")
   const [usePdf, setUsePdf] = useState(false)
+  const [auditError, setAuditError] = useState<unknown>(null)
+  const [latestResult, setLatestResult] = useState<AuditResponse | null>(null)
+  const [mappingRows, setMappingRows] = useState<TransferCreditMappingRow[]>([])
+  const [mappingOpen, setMappingOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const pendingAudit = useRef<PendingAuditInput | null>(null)
 
   const catalog = useQuery(auditCatalogQueryOptions())
   const cached = useQuery(cachedAuditQueryOptions(year, majors[0]))
 
   const registrarAudit = useRegistrarAudit()
   const transcriptAudit = useTranscriptAudit()
-  const active = usePdf ? transcriptAudit : registrarAudit
+  const resetRegistrarAudit = registrarAudit.reset
+  const resetTranscriptAudit = transcriptAudit.reset
+
+  const resetSensitiveMutationState = useCallback(() => {
+    // React Query otherwise retains the last mutation variables after settle;
+    // those variables include the password or transcript File.
+    resetRegistrarAudit()
+    resetTranscriptAudit()
+  }, [resetRegistrarAudit, resetTranscriptAudit])
+  const resetSensitiveMutationStateRef = useRef(resetSensitiveMutationState)
+  resetSensitiveMutationStateRef.current = resetSensitiveMutationState
+
+  const clearSensitiveAuditInput = useCallback(() => {
+    pendingAudit.current = null
+    setPassword("")
+    if (fileRef.current) fileRef.current.value = ""
+    resetSensitiveMutationState()
+  }, [resetSensitiveMutationState])
+
+  useEffect(
+    () => () => {
+      // A mapping prompt may still hold a registrar password or PDF for its
+      // rerun. Component teardown is a terminal path too.
+      pendingAudit.current = null
+      if (fileRef.current) fileRef.current.value = ""
+      resetSensitiveMutationStateRef.current()
+    },
+    []
+  )
 
   const years = catalog.data?.years ?? []
   const activeYear = years.find((entry) => entry.year === year)?.year
@@ -62,8 +132,16 @@ function DegreeAudit() {
 
   const canRun = Boolean(activeYear) && majors.length > 0
 
-  // A freshly run audit wins over whatever was cached from last time.
-  const result = active.data ?? cached.data ?? undefined
+  const latestMatchesSelection =
+    latestResult !== null &&
+    latestResult.year === activeYear &&
+    sameValues(latestResult.majors, majors) &&
+    sameValues(latestResult.minors, minors)
+  // A freshly run audit wins only while the URL still describes that result.
+  const result =
+    latestMatchesSelection && latestResult
+      ? latestResult
+      : (cached.data ?? undefined)
 
   const toggle = (key: "majors" | "minors", value: string) => {
     const current = key === "majors" ? majors : minors
@@ -83,6 +161,90 @@ function DegreeAudit() {
     year: activeYear ?? "",
     majors,
     minors,
+  }
+
+  const handleAuditSuccess = useCallback(
+    (response: AuditResponse, input: PendingAuditInput) => {
+      setLatestResult(response)
+      setAuditError(null)
+      resetSensitiveMutationState()
+
+      if (response.unmapped_tc_courses.length > 0) {
+        // Retain only what is required for the user-requested rerun. It never
+        // enters browser storage and is cleared on every exit from the prompt.
+        pendingAudit.current = input
+        setMappingRows(transferCreditMappingRows(response.unmapped_tc_courses))
+        setMappingOpen(true)
+        setPassword("")
+        return
+      }
+
+      setMappingOpen(false)
+      clearSensitiveAuditInput()
+    },
+    [clearSensitiveAuditInput, resetSensitiveMutationState]
+  )
+
+  const handleAuditFailure = useCallback(
+    (error: unknown) => {
+      setAuditError(error)
+      setMappingOpen(false)
+      clearSensitiveAuditInput()
+    },
+    [clearSensitiveAuditInput]
+  )
+
+  const rerunWithMappings = (tcMappings: TransferCreditMapping[]) => {
+    const input = pendingAudit.current
+    if (!input) {
+      setMappingOpen(false)
+      toast.error("The audit input has expired. Run the audit again.")
+      return
+    }
+    const combinedMappings = mergeTransferCreditMappings(
+      input.tcMappings,
+      tcMappings
+    )
+    const nextInput: PendingAuditInput = {
+      ...input,
+      tcMappings: combinedMappings,
+    }
+    setAuditError(null)
+    resetSensitiveMutationState()
+
+    const callbacks = {
+      onSuccess: (response: AuditResponse) => {
+        handleAuditSuccess(response, nextInput)
+        if (response.unmapped_tc_courses.length === 0) {
+          toast.success("Transfer credits applied")
+        } else {
+          toast.warning("Some transfer credits are still unmatched")
+        }
+      },
+      onError: (error: unknown) => {
+        handleAuditFailure(error)
+      },
+    }
+
+    if (nextInput.mode === "registrar") {
+      registrarAudit.mutate(
+        {
+          ...nextInput.selection,
+          password: nextInput.password,
+          tcMappings: combinedMappings,
+        },
+        callbacks
+      )
+    } else {
+      transcriptAudit.mutate(
+        {
+          ...nextInput.selection,
+          file: nextInput.file,
+          tcMappings: combinedMappings,
+        },
+        callbacks
+      )
+    }
   }
 
   return (
@@ -173,7 +335,25 @@ function DegreeAudit() {
                 onSubmit={(event) => {
                   event.preventDefault()
                   const file = fileRef.current?.files?.[0]
-                  if (file) transcriptAudit.mutate({ ...selection, file })
+                  if (!file) return
+
+                  clearSensitiveAuditInput()
+                  setAuditError(null)
+                  const input: PendingAuditInput = {
+                    mode: "pdf",
+                    selection,
+                    file,
+                    tcMappings: [],
+                  }
+                  transcriptAudit.mutate(
+                    { ...selection, file },
+                    {
+                      onSuccess: (response) => {
+                        handleAuditSuccess(response, input)
+                      },
+                      onError: handleAuditFailure,
+                    }
+                  )
                 }}
                 className="space-y-3"
               >
@@ -208,6 +388,8 @@ function DegreeAudit() {
                     size="sm"
                     variant="ghost"
                     onClick={() => {
+                      clearSensitiveAuditInput()
+                      setAuditError(null)
                       setUsePdf(false)
                     }}
                   >
@@ -219,12 +401,23 @@ function DegreeAudit() {
               <form
                 onSubmit={(event) => {
                   event.preventDefault()
+                  const input: PendingAuditInput = {
+                    mode: "registrar",
+                    selection,
+                    password,
+                    tcMappings: [],
+                  }
+                  setAuditError(null)
+                  resetSensitiveMutationState()
+                  setPassword("")
+                  pendingAudit.current = null
                   registrarAudit.mutate(
-                    { ...selection, password },
+                    { ...selection, password: input.password },
                     {
-                      onSettled: () => {
-                        setPassword("")
+                      onSuccess: (response) => {
+                        handleAuditSuccess(response, input)
                       },
+                      onError: handleAuditFailure,
                     }
                   )
                 }}
@@ -252,7 +445,10 @@ function DegreeAudit() {
                   <span>
                     Used once to fetch your transcript and never stored — not
                     saved to your account, not written to our database, and not
-                    kept after this request finishes.
+                    written to browser storage. If transfer credits need
+                    matching, it stays only in this page's memory for that rerun
+                    and is cleared when you finish, skip, cancel, hit an error,
+                    or leave the page.
                   </span>
                 </p>
 
@@ -276,8 +472,9 @@ function DegreeAudit() {
                     size="sm"
                     variant="ghost"
                     onClick={() => {
+                      clearSensitiveAuditInput()
+                      setAuditError(null)
                       setUsePdf(true)
-                      setPassword("")
                     }}
                   >
                     Upload a transcript instead
@@ -292,9 +489,9 @@ function DegreeAudit() {
               </p>
             )}
 
-            {active.isError && (
+            {auditError !== null && (
               <p className="text-sm text-destructive" role="alert">
-                {registrarErrorMessage(active.error, "running the audit")}
+                {registrarErrorMessage(auditError, "running the audit")}
               </p>
             )}
           </Card>
@@ -302,6 +499,18 @@ function DegreeAudit() {
       </QueryBoundary>
 
       {result && <AuditResult audit={result} />}
+
+      <TransferCreditDialog
+        open={mappingOpen}
+        rows={mappingRows}
+        isPending={registrarAudit.isPending || transcriptAudit.isPending}
+        onRowsChange={setMappingRows}
+        onSubmit={rerunWithMappings}
+        onSkip={() => {
+          setMappingOpen(false)
+          clearSensitiveAuditInput()
+        }}
+      />
     </div>
   )
 }

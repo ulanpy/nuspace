@@ -12,6 +12,9 @@ import {
 } from "@/features/communities/api"
 import { CommunityForm } from "@/features/communities/components/community-form"
 import type { Community } from "@/features/communities/types"
+import { useTelegramMainButton } from "@/hooks/use-telegram-main-button"
+
+const COMMUNITY_FORM_ID = "community-form"
 
 interface CommunityFormDialogProps {
   /** Omitted when creating. */
@@ -33,6 +36,23 @@ export function CommunityFormDialog({
 
   const isPending = createCommunity.isPending || updateCommunity.isPending
   const error = createCommunity.error ?? updateCommunity.error
+
+  useTelegramMainButton({
+    enabled: open,
+    text: isPending
+      ? community
+        ? "Saving…"
+        : "Creating…"
+      : community
+        ? "Save community"
+        : "Create community",
+    disabled: isPending,
+    pending: isPending,
+    onClick: () => {
+      const form = document.getElementById(COMMUNITY_FORM_ID)
+      if (form instanceof HTMLFormElement) form.requestSubmit()
+    },
+  })
 
   const close = () => {
     createCommunity.reset()
@@ -56,6 +76,7 @@ export function CommunityFormDialog({
 
         {open && (
           <CommunityForm
+            formId={COMMUNITY_FORM_ID}
             key={community?.id ?? "new"}
             community={community}
             isPending={isPending}

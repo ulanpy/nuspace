@@ -86,10 +86,17 @@ function MyCommunities() {
       pending={<Skeleton className="h-12 w-full" />}
       isEmpty={(data) => (data.items ?? []).length === 0}
       empty={
-        <EmptyState
-          title="You don't head any community"
-          description="Communities you lead show up here."
-        />
+        <div className="space-y-3">
+          <EmptyState
+            title="You don't head any community"
+            description="Communities you lead show up here."
+          />
+          <Button
+            variant="outline"
+            className="w-full"
+            render={<Link to="/communities">Create a community</Link>}
+          />
+        </div>
       }
     >
       {(data) => (

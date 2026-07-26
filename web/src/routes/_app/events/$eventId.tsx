@@ -3,14 +3,18 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import {
   CalendarIcon,
+  CalendarPlusIcon,
   MapPinIcon,
   PencilIcon,
   Trash2Icon,
   UserIcon,
+  Share2Icon,
 } from "lucide-react"
+import { toast } from "sonner"
 
 import { apiErrorMessage } from "@/api/errors"
 import { eventDetailQueryOptions, useDeleteEvent } from "@/features/events/api"
+import { eventGoogleCalendarUrl } from "@/features/events/calendar"
 import { EventFormDialog } from "@/features/events/components/event-form-dialog"
 import { selectMedia } from "@/features/media/select"
 import { formatCampusDateTime, formatRelative, isPast } from "@/lib/datetime"
@@ -106,6 +110,49 @@ function EventDetail() {
             )}
           </div>
         )}
+
+        <div className="flex flex-wrap gap-2">
+          {!finished && event.type !== "recruitment" && (
+            <Button
+              variant="outline"
+              size="sm"
+              render={
+                <a
+                  href={eventGoogleCalendarUrl(event)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <CalendarPlusIcon aria-hidden />
+                  Add to calendar
+                </a>
+              }
+            />
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const share = async () => {
+                if (navigator.share) {
+                  await navigator.share({
+                    title: event.name,
+                    text: `Check out this event: ${event.name}`,
+                    url: window.location.href,
+                  })
+                } else {
+                  await navigator.clipboard.writeText(window.location.href)
+                  toast.success("Event link copied")
+                }
+              }
+              void share().catch(() => {
+                toast.error("Could not share this event")
+              })
+            }}
+          >
+            <Share2Icon aria-hidden />
+            Share
+          </Button>
+        </div>
 
         {deleteEvent.isError && (
           <p className="text-sm text-destructive" role="alert">

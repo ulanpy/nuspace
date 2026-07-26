@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 import { formatGpa, formatPoints } from "../gpa"
@@ -83,7 +84,17 @@ function DistributionBar({ report }: { report: GradeReport }) {
   )
 }
 
-export function GradeReportCard({ report }: { report: GradeReport }) {
+export function GradeReportCard({
+  report,
+  selected = false,
+  compareDisabled = false,
+  onToggleCompare,
+}: {
+  report: GradeReport
+  selected?: boolean
+  compareDisabled?: boolean
+  onToggleCompare?: () => void
+}) {
   return (
     <Card className="space-y-3 p-4">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
@@ -137,6 +148,17 @@ export function GradeReportCard({ report }: { report: GradeReport }) {
             </dd>
           </div>
         </dl>
+        {onToggleCompare && (
+          <Button
+            size="sm"
+            variant={selected ? "default" : "outline"}
+            aria-pressed={selected}
+            disabled={compareDisabled && !selected}
+            onClick={onToggleCompare}
+          >
+            {selected ? "Selected" : "Compare"}
+          </Button>
+        )}
       </div>
 
       <DistributionBar report={report} />

@@ -3,6 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { api, unwrap } from "@/api/client"
 import { qk } from "@/api/query-keys"
 import type {
+  EducationLevel,
+  OpportunityMajor,
   OpportunityCreate,
   OpportunityType,
   OpportunityUpdate,
@@ -10,8 +12,22 @@ import type {
 
 export interface OpportunityFilters {
   type?: OpportunityType[]
+  majors?: OpportunityMajor[]
+  education_level?: EducationLevel[]
+  years?: number[]
   q?: string
   hide_expired?: boolean
+}
+
+export function useAddOpportunityToCalendar() {
+  return useMutation({
+    mutationFn: (id: number) =>
+      unwrap(
+        api.POST("/opportunities/{id}/calendar", {
+          params: { path: { id } },
+        })
+      ),
+  })
 }
 
 /** One page of the opportunities digest. Used by useInfiniteList. */

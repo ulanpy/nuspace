@@ -7,3 +7,4 @@ pnpm-lock.yaml
 yarn.lock
 src/routeTree.gen.ts
 src/api/schema.d.ts
+out/

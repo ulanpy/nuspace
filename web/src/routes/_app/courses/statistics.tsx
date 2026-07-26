@@ -6,6 +6,11 @@ import { z } from "zod"
 import { qk } from "@/api/query-keys"
 import { fetchGradesPage, gradeTermsQueryOptions } from "@/features/courses/api"
 import { GradeReportCard } from "@/features/courses/components/grade-report-card"
+import { GradeComparison } from "@/features/courses/components/grade-comparison"
+import {
+  MAX_GRADE_COMPARISONS,
+  toggleGradeComparison,
+} from "@/features/courses/grade-comparison"
 import type { GradeReport } from "@/features/courses/types"
 import { useDebounced } from "@/hooks/use-debounced"
 import { useInfiniteList } from "@/hooks/use-infinite-list"
@@ -30,6 +35,7 @@ function Statistics() {
   const navigate = Route.useNavigate()
 
   const [input, setInput] = useState(q ?? "")
+  const [selected, setSelected] = useState<GradeReport[]>([])
   // Every keystroke would otherwise be its own request; the field stays
   // immediate and only the query lags behind.
   const keyword = useDebounced(input)
@@ -46,6 +52,17 @@ function Statistics() {
 
   return (
     <div className="space-y-4">
+      <GradeComparison
+        selected={selected}
+        onRemove={(id) => {
+          setSelected((previous) =>
+            previous.filter((report) => report.id !== id)
+          )
+        }}
+        onClear={() => {
+          setSelected([])
+        }}
+      />
       <div>
         <label htmlFor="grade-search" className="sr-only">
           Search past grade statistics
@@ -102,7 +119,16 @@ function Statistics() {
       <InfiniteList
         items={list.items}
         getKey={(report) => report.id}
-        renderItem={(report) => <GradeReportCard report={report} />}
+        renderItem={(report) => (
+          <GradeReportCard
+            report={report}
+            selected={selected.some((item) => item.id === report.id)}
+            compareDisabled={selected.length >= MAX_GRADE_COMPARISONS}
+            onToggleCompare={() => {
+              setSelected((previous) => toggleGradeComparison(previous, report))
+            }}
+          />
+        )}
         isPending={list.isPending}
         isError={list.isError}
         error={list.error}

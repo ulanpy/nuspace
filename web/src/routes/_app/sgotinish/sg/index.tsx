@@ -6,6 +6,7 @@ import { fetchTicketsPage } from "@/features/sgotinish/api"
 import { TicketCard } from "@/features/sgotinish/components/ticket-card"
 import {
   STATUS_LABEL,
+  TICKET_CATEGORIES,
   TICKET_STATUSES,
   type Ticket,
 } from "@/features/sgotinish/types"
@@ -13,9 +14,12 @@ import { useInfiniteList } from "@/hooks/use-infinite-list"
 import { EmptyState } from "@/components/query-boundary"
 import { InfiniteList } from "@/components/infinite-list"
 import { cn } from "@/lib/utils"
+import { ChoiceChips } from "@/components/list-filters"
+import { TelegramConnectPrompt } from "@/features/profile/components/telegram-connect-prompt"
 
 const inboxSearchSchema = z.object({
   status: z.enum(TICKET_STATUSES).optional(),
+  category: z.enum(TICKET_CATEGORIES).optional(),
 })
 
 export const Route = createFileRoute("/_app/sgotinish/sg/")({
@@ -24,16 +28,21 @@ export const Route = createFileRoute("/_app/sgotinish/sg/")({
 })
 
 function SgInbox() {
-  const { status } = Route.useSearch()
+  const { status, category } = Route.useSearch()
   const navigate = Route.useNavigate()
 
   const list = useInfiniteList<Ticket>({
-    queryKey: qk.sgotinish.list({ inbox: true, status }),
-    fetchPage: ({ page, size }) => fetchTicketsPage({ page, size, status }),
+    queryKey: qk.sgotinish.list({ inbox: true, status, category }),
+    fetchPage: ({ page, size }) =>
+      fetchTicketsPage({ page, size, status, category }),
   })
 
   return (
     <div className="space-y-4">
+      <TelegramConnectPrompt
+        storageKey="nuspace_sgotinish_tg_banner_dismissed"
+        title="Receive delegated-ticket updates on Telegram"
+      />
       <fieldset className="flex flex-wrap gap-1">
         <legend className="sr-only">Filter by status</legend>
         {[undefined, ...TICKET_STATUSES].map((option) => {
@@ -60,6 +69,19 @@ function SgInbox() {
           )
         })}
       </fieldset>
+      <ChoiceChips
+        label="Ticket category"
+        value={category}
+        options={TICKET_CATEGORIES.map((value) => ({
+          value,
+          label: value.charAt(0).toUpperCase() + value.slice(1),
+        }))}
+        onChange={(next) => {
+          void navigate({
+            search: (previous) => ({ ...previous, category: next }),
+          })
+        }}
+      />
 
       <InfiniteList
         items={list.items}
