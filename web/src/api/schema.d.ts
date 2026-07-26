@@ -52,7 +52,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Bind Tg */
+        /**
+         * Bind Tg
+         * @description Issue a Telegram deeplink binding the caller's own account to a chat.
+         */
         post: operations["bind_tg_connect_tg_post"];
         delete?: never;
         options?: never;
@@ -3700,7 +3703,11 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
         };
         requestBody: {
             content: {

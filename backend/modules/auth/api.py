@@ -66,10 +66,31 @@ async def auth_callback(
 async def bind_tg(
     request: Request,
     sub_param: Sub,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     auth_service: AuthService = Depends(deps.get_auth_service),
 ):
+    """Issue a Telegram deeplink binding the caller's own account to a chat."""
+    # The sub is taken from the session, never from the request body, and the
+    # endpoint requires a session at all. Both used to be untrue: it had no auth
+    # dependency and trusted the body, while returning `correct_number` — the
+    # answer to the emoji confirmation — in the same response. Subs are public
+    # (every event and community response carries `creator.sub`), so anyone
+    # could request a link for any account and bind their own Telegram to it,
+    # quietly redirecting that user's notifications, SGotinish ticket updates
+    # included.
+    #
+    # The body is still accepted so existing clients keep working, but a sub
+    # that is not the caller's is refused rather than ignored: a client sending
+    # someone else's is either stale or hostile, and both are worth surfacing.
+    session_sub = user[0].get("sub")
+    if sub_param.sub != session_sub:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot bind Telegram for another user",
+        )
+
     bot: Bot = request.app.state.bot
-    payload = auth_service.build_telegram_bind_payload(sub_param.sub)
+    payload = auth_service.build_telegram_bind_payload(session_sub)
     link = await create_start_link(bot, payload["start_payload"], encode=True)
     return {
         "link": link,
