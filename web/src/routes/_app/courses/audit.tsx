@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { createFileRoute } from "@tanstack/react-router"
+import { Link, createFileRoute } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 import { FileUp, Loader2, ShieldCheck } from "lucide-react"
 import { z } from "zod"
@@ -13,11 +13,11 @@ import {
 import { AuditResult } from "@/features/courses/components/audit-result"
 import { registrarErrorMessage } from "@/features/courses/registrar-errors"
 import { QueryBoundary } from "@/components/query-boundary"
+import { ToggleChip } from "@/components/toggle-chip"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
 
 const auditSearchSchema = z.object({
   /**
@@ -37,33 +37,6 @@ export const Route = createFileRoute("/_app/courses/audit")({
   validateSearch: auditSearchSchema,
   component: DegreeAudit,
 })
-
-function Chip({
-  label,
-  isActive,
-  onClick,
-}: {
-  label: string
-  isActive: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={isActive}
-      onClick={onClick}
-      className={cn(
-        "rounded-full border px-3 py-1 text-sm transition-colors",
-        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-        isActive
-          ? "border-primary bg-primary/10 font-medium"
-          : "text-muted-foreground hover:bg-muted/60"
-      )}
-    >
-      {label}
-    </button>
-  )
-}
 
 function DegreeAudit() {
   const { year, majors = [], minors = [] } = Route.useSearch()
@@ -121,7 +94,14 @@ function DegreeAudit() {
               <h2 className="font-semibold">Run a degree audit</h2>
               <p className="text-sm text-muted-foreground">
                 Checks your transcript against the requirements for your
-                admission year.
+                admission year.{" "}
+                <Link
+                  to="/degree-audit-info"
+                  className="underline underline-offset-3 hover:text-foreground"
+                >
+                  How it works
+                </Link>
+                .
               </p>
             </div>
 
@@ -129,7 +109,7 @@ function DegreeAudit() {
               <legend className="text-sm font-medium">Admission year</legend>
               <div className="flex flex-wrap gap-1">
                 {years.map((entry) => (
-                  <Chip
+                  <ToggleChip
                     key={entry.year}
                     label={entry.year}
                     isActive={activeYear === entry.year}
@@ -154,7 +134,7 @@ function DegreeAudit() {
                 <legend className="text-sm font-medium">Major</legend>
                 <div className="flex flex-wrap gap-1">
                   {availableMajors.map((major) => (
-                    <Chip
+                    <ToggleChip
                       key={major}
                       label={major}
                       isActive={majors.includes(major)}
@@ -175,7 +155,7 @@ function DegreeAudit() {
                 </legend>
                 <div className="flex flex-wrap gap-1">
                   {availableMinors.map((minor) => (
-                    <Chip
+                    <ToggleChip
                       key={minor}
                       label={minor}
                       isActive={minors.includes(minor)}
