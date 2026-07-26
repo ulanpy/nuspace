@@ -29,6 +29,27 @@ side by side.
 To run outside Docker, `pnpm dev` serves on 5173 and proxies `/api` to
 `http://localhost` (override with `VITE_API_PROXY_TARGET`).
 
+### HMR can go stale — check before you trust what you see
+
+This repo runs under **Docker Desktop on Linux**, which shares the host
+filesystem into a VM. That layer desynchronizes: new files appear, but files
+edited **in place** can keep serving old content to the container for hours.
+Vite never fires, because from inside the container nothing changed.
+
+The failure is quiet and it will waste your time — the page looks fine, it is
+just not your code. A route returning 200 proves nothing either, since the dev
+server serves the same `index.html` for every path.
+
+Confirm the container actually sees an edit:
+
+```sh
+docker compose exec web grep -c somethingYouJustTyped /app/src/path/to/file.tsx
+```
+
+`docker compose restart web` resyncs the mount. The permanent fix is to run the
+stack on the native Docker daemon (`docker context use default`) instead of the
+Docker Desktop VM, which uses real bind mounts and has no such layer.
+
 ### Signing in locally
 
 `MOCK_KEYCLOAK=true` is the default, so no real credentials are needed:

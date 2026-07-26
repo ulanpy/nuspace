@@ -26,6 +26,27 @@ export const Route = createFileRoute("/_app/contacts")({
   component: Contacts,
 })
 
+/**
+ * A web link's visible text.
+ *
+ * Contact URLs are Google Forms and helpdesk links that run past 100
+ * characters, and printing them raw wrapped a single link over five lines and
+ * buried the surrounding text. The label already says where the link goes, so
+ * it becomes the link; unlabelled ones fall back to host plus a short path. The
+ * full URL stays available on hover and in the status bar.
+ */
+function linkText(value: string, label?: string): string {
+  if (label) return label
+  try {
+    const { hostname, pathname } = new URL(value)
+    const host = hostname.replace(/^www\./, "")
+    const path = pathname.replace(/\/$/, "")
+    return path.length > 1 && path.length <= 24 ? `${host}${path}` : host
+  } catch {
+    return value
+  }
+}
+
 function ContactValue({ contact }: { contact: ContactInfo }) {
   const { type, value, label, extraInfo } = contact
 
@@ -38,18 +59,19 @@ function ContactValue({ contact }: { contact: ContactInfo }) {
           ? value
           : undefined
 
+  const isWeb = type === "web"
+
   return (
     <div className="text-sm">
-      {label && <span className="font-medium">{label}: </span>}
+      {label && !isWeb && <span className="font-medium">{label}: </span>}
       {href ? (
         <a
           href={href}
-          {...(type === "web"
-            ? { target: "_blank", rel: "noopener noreferrer" }
-            : {})}
+          title={isWeb ? value : undefined}
+          {...(isWeb ? { target: "_blank", rel: "noopener noreferrer" } : {})}
           className="break-words text-primary hover:underline"
         >
-          {value}
+          {isWeb ? linkText(value, label) : value}
         </a>
       ) : (
         <span className="break-words text-muted-foreground">{value}</span>
