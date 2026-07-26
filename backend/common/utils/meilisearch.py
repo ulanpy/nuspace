@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Type
 
 from backend.core.database.manager import AsyncDatabaseManager
+from fastapi import HTTPException
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.orm import DeclarativeBase
@@ -81,6 +82,24 @@ async def get(
         payload["filter"] = filters
 
     response = await client.post(f"/indexes/{storage_name}/search", json=payload)
+
+    # An error response has no "hits", and every caller reads result["hits"]
+    # directly -- so without this the failure surfaces as an opaque
+    # `KeyError: 'hits'` and a 500 with no indication of what went wrong.
+    #
+    # This is not a rare edge: index setup deletes and recreates every index on
+    # startup, so there is a window after each deploy where searching an index
+    # that does not exist yet 500s.
+    if response.status_code >= 400:
+        body = response.json()
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                f"Search index '{storage_name}' is unavailable "
+                f"({body.get('code', response.status_code)})."
+            ),
+        )
+
     return response.json()
 
 
