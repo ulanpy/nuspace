@@ -23,6 +23,14 @@ async def list_grade_reports(
     meili_filters = [f"term = {term}"] if term else None
     meili_result = None
 
+    # The term filter has to be applied in SQL as well as in Meilisearch.
+    # Meilisearch is only consulted when there is a keyword, so without this the
+    # filter silently did nothing while browsing a term -- `?term=FA2025` and
+    # even `?term=NONSENSE` both returned every row, which reads as "this term
+    # has 1308 courses" rather than as a broken filter.
+    if term:
+        conditions.append(GradeReport.term == term)
+
     if keyword:
         meili_result = await meilisearch.get(
             client=meilisearch_client,
