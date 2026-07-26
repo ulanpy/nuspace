@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query"
 import { FileUp, Loader2, ShieldCheck } from "lucide-react"
 import { z } from "zod"
 
-import { ApiError } from "@/api/client"
 import {
   auditCatalogQueryOptions,
   cachedAuditQueryOptions,
@@ -12,6 +11,7 @@ import {
   useTranscriptAudit,
 } from "@/features/courses/api"
 import { AuditResult } from "@/features/courses/components/audit-result"
+import { registrarErrorMessage } from "@/features/courses/registrar-errors"
 import { QueryBoundary } from "@/components/query-boundary"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -63,19 +63,6 @@ function Chip({
       {label}
     </button>
   )
-}
-
-function auditErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    if (error.status === 401 || error.status === 403) {
-      return "The registrar rejected that username or password."
-    }
-    if (error.status === 502) {
-      return "Could not complete the audit with the registrar — this is not a problem with your password."
-    }
-    return error.message
-  }
-  return "Something went wrong running the audit."
 }
 
 function DegreeAudit() {
@@ -327,7 +314,7 @@ function DegreeAudit() {
 
             {active.isError && (
               <p className="text-sm text-destructive" role="alert">
-                {auditErrorMessage(active.error)}
+                {registrarErrorMessage(active.error, "running the audit")}
               </p>
             )}
           </Card>
