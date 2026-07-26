@@ -20,6 +20,33 @@ MOCK_USERS: list[dict] = [
         "picture": "https://i.pravatar.cc/150?img=5",
         "sub": "mock-sub-charlie",
     },
+    # Added so every Student Government role can be signed into rather than
+    # role-swapped in SQL between passes. backend/fixtures/dev/seed_campus.sql
+    # gives these three their roles and departments: Dana is an Executive and
+    # Erik a Member of the same department, which is the pair the capo rules
+    # are about, and Gulnar sits in a special department so "not your
+    # department" has something to refuse.
+    {
+        "email": "dana@example.com",
+        "given_name": "Dana",
+        "family_name": "Dosanova",
+        "picture": "https://i.pravatar.cc/150?img=6",
+        "sub": "mock-sub-dana",
+    },
+    {
+        "email": "erik@example.com",
+        "given_name": "Erik",
+        "family_name": "Ermekov",
+        "picture": "https://i.pravatar.cc/150?img=7",
+        "sub": "mock-sub-erik",
+    },
+    {
+        "email": "hassan@example.com",
+        "given_name": "Hassan",
+        "family_name": "Hakim",
+        "picture": "https://i.pravatar.cc/150?img=10",
+        "sub": "mock-sub-hassan",
+    },
 ]
 
 
