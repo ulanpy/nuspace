@@ -649,6 +649,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/planner/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List planner schedule variants for the authenticated student */
+        get: operations["list_planner_schedules_planner_schedules_get"];
+        put?: never;
+        /** Create a new planner schedule variant */
+        post: operations["create_planner_schedule_planner_schedules_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/planner/schedules/{schedule_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Duplicate a planner schedule variant */
+        post: operations["duplicate_planner_schedule_planner_schedules__schedule_id__duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/planner/schedules/{schedule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a planner schedule variant */
+        delete: operations["delete_planner_schedule_planner_schedules__schedule_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename a planner schedule variant */
+        patch: operations["update_planner_schedule_planner_schedules__schedule_id__patch"];
+        trace?: never;
+    };
     "/planner/courses/search": {
         parameters: {
             query?: never;
@@ -3057,12 +3110,47 @@ export interface components {
             /** Term Value */
             term_value?: string | null;
         };
+        /** PlannerScheduleCreateRequest */
+        PlannerScheduleCreateRequest: {
+            /** Name */
+            name?: string | null;
+        };
+        /** PlannerScheduleDuplicateRequest */
+        PlannerScheduleDuplicateRequest: {
+            /** Name */
+            name?: string | null;
+        };
+        /** PlannerScheduleListResponse */
+        PlannerScheduleListResponse: {
+            /** Items */
+            items: components["schemas"]["PlannerScheduleSummary"][];
+            /** Count */
+            count: number;
+            /** Max Allowed */
+            max_allowed: number;
+        };
         /** PlannerScheduleResponse */
         PlannerScheduleResponse: {
             /** Id */
             id: number;
+            /** Name */
+            name: string;
             /** Courses */
             courses: components["schemas"]["PlannerCourseResponse"][];
+        };
+        /** PlannerScheduleSummary */
+        PlannerScheduleSummary: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Course Count */
+            course_count: number;
+        };
+        /** PlannerScheduleUpdateRequest */
+        PlannerScheduleUpdateRequest: {
+            /** Name */
+            name: string;
         };
         /** PlannerSectionResponse */
         PlannerSectionResponse: {
@@ -4785,6 +4873,187 @@ export interface operations {
             };
         };
     };
+    list_planner_schedules_planner_schedules_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlannerScheduleListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_planner_schedule_planner_schedules_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlannerScheduleCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlannerScheduleSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_planner_schedule_planner_schedules__schedule_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                schedule_id: number;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlannerScheduleDuplicateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlannerScheduleSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_planner_schedule_planner_schedules__schedule_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                schedule_id: number;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_planner_schedule_planner_schedules__schedule_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                schedule_id: number;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlannerScheduleUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlannerScheduleSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search_courses_for_planner_planner_courses_search_get: {
         parameters: {
             query: {
@@ -4825,7 +5094,9 @@ export interface operations {
     };
     refresh_all_courses_planner_courses_refresh_post: {
         parameters: {
-            query?: never;
+            query?: {
+                schedule_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: {
@@ -4858,7 +5129,9 @@ export interface operations {
     };
     get_planner_schedule_planner_get: {
         parameters: {
-            query?: never;
+            query?: {
+                schedule_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: {
@@ -4891,7 +5164,9 @@ export interface operations {
     };
     add_course_planner_courses_post: {
         parameters: {
-            query?: never;
+            query?: {
+                schedule_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: {
@@ -5038,7 +5313,9 @@ export interface operations {
     };
     auto_build_planner_autobuild_post: {
         parameters: {
-            query?: never;
+            query?: {
+                schedule_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: {
@@ -5071,7 +5348,9 @@ export interface operations {
     };
     reset_planner_planner_reset_post: {
         parameters: {
-            query?: never;
+            query?: {
+                schedule_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: {
@@ -5867,7 +6146,9 @@ export interface operations {
                 page?: number;
                 owner_hash?: string | null;
             };
-            header?: never;
+            header?: {
+                "X-Owner-Hash"?: string | null;
+            };
             path?: never;
             cookie?: {
                 access_token?: string | null;
@@ -5902,7 +6183,9 @@ export interface operations {
             query?: {
                 owner_hash?: string | null;
             };
-            header?: never;
+            header?: {
+                "X-Owner-Hash"?: string | null;
+            };
             path?: never;
             cookie?: {
                 access_token?: string | null;
@@ -5941,7 +6224,9 @@ export interface operations {
             query?: {
                 owner_hash?: string | null;
             };
-            header?: never;
+            header?: {
+                "X-Owner-Hash"?: string | null;
+            };
             path: {
                 message_id: number;
             };
@@ -5978,7 +6263,9 @@ export interface operations {
             query?: {
                 owner_hash?: string | null;
             };
-            header?: never;
+            header?: {
+                "X-Owner-Hash"?: string | null;
+            };
             path: {
                 message_id: number;
             };
