@@ -1,8 +1,31 @@
+import { Download } from "lucide-react"
+
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 import type { AuditProgram, AuditRequirement, AuditResponse } from "../types"
+
+/**
+ * Save the audit's own CSV.
+ *
+ * The backend builds this alongside the on-screen result, so it is the same
+ * numbers rather than a second rendering of them — worth offering, since
+ * planning remaining courses tends to happen in a spreadsheet.
+ */
+function downloadCsv(base64: string, filename: string) {
+  const binary = atob(base64)
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0))
+  const url = URL.createObjectURL(new Blob([bytes], { type: "text/csv" }))
+
+  const link = document.createElement("a")
+  link.href = url
+  link.download = filename
+  link.click()
+
+  URL.revokeObjectURL(url)
+}
 
 /**
  * The backend sends every credit figure as a preformatted string, so they are
@@ -83,9 +106,12 @@ function ProgramCard({ program }: { program: AuditProgram }) {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <h3 className="font-semibold">{program.name}</h3>
-          <p className="text-sm text-muted-foreground capitalize">
-            {program.type} · {pending.length} of {program.results.length}{" "}
-            requirements outstanding
+          <p className="text-sm text-muted-foreground">
+            {/* Only the type is capitalized; applying it to the whole line
+                title-cases the sentence into "18 Of 37 Requirements". */}
+            <span className="capitalize">{program.type}</span> ·{" "}
+            {pending.length} of {program.results.length} requirements
+            outstanding
           </p>
         </div>
       </div>
@@ -119,8 +145,28 @@ function ProgramCard({ program }: { program: AuditProgram }) {
 }
 
 export function AuditResult({ audit }: { audit: AuditResponse }) {
+  const csv = audit.csv_base64
+
   return (
     <div className="space-y-4">
+      {csv && (
+        <div className="flex justify-end">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const programmes = [...audit.majors, ...audit.minors]
+                .join("-")
+                .replace(/[^\w-]+/g, "_")
+              downloadCsv(csv, `degree-audit-${audit.year}-${programmes}.csv`)
+            }}
+          >
+            <Download aria-hidden />
+            Download CSV
+          </Button>
+        </div>
+      )}
+
       {audit.unmapped_tc_courses.length > 0 && (
         <Card className="space-y-2 border-warning p-4">
           <h3 className="font-semibold">Transfer credits not matched</h3>
