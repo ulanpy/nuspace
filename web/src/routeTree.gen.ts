@@ -15,6 +15,7 @@ import { Route as TRouteImport } from './routes/t'
 import { Route as AppAnnouncementsRouteImport } from './routes/_app/announcements'
 import { Route as AppContactsRouteImport } from './routes/_app/contacts'
 import { Route as AppCoursesRouteRouteImport } from './routes/_app/courses/route'
+import { Route as AppDegreeAuditInfoRouteImport } from './routes/_app/degree-audit-info'
 import { Route as AppOpportunitiesRouteImport } from './routes/_app/opportunities'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppSgotinishRouteRouteImport } from './routes/_app/sgotinish/route'
@@ -31,6 +32,7 @@ import { Route as AppCoursesStatisticsRouteImport } from './routes/_app/courses/
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
 import { Route as AppEventsEventIdRouteImport } from './routes/_app/events/$eventId'
 import { Route as AppSgotinishIndexRouteImport } from './routes/_app/sgotinish/index'
+import { Route as AppSgotinishMembersRouteImport } from './routes/_app/sgotinish/members'
 import { Route as AppSgotinishSgIndexRouteImport } from './routes/_app/sgotinish/sg/index'
 import { Route as AppSgotinishSgTicketIdRouteImport } from './routes/_app/sgotinish/sg/$ticketId'
 import { Route as AppSgotinishStudentIndexRouteImport } from './routes/_app/sgotinish/student/index'
@@ -62,6 +64,11 @@ const AppContactsRoute = AppContactsRouteImport.update({
 const AppCoursesRouteRoute = AppCoursesRouteRouteImport.update({
   id: '/courses',
   path: '/courses',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDegreeAuditInfoRoute = AppDegreeAuditInfoRouteImport.update({
+  id: '/degree-audit-info',
+  path: '/degree-audit-info',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOpportunitiesRoute = AppOpportunitiesRouteImport.update({
@@ -145,6 +152,11 @@ const AppSgotinishIndexRoute = AppSgotinishIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppSgotinishRouteRoute,
 } as any)
+const AppSgotinishMembersRoute = AppSgotinishMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => AppSgotinishRouteRoute,
+} as any)
 const AppSgotinishSgIndexRoute = AppSgotinishSgIndexRouteImport.update({
   id: '/sg/',
   path: '/sg/',
@@ -175,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/sgotinish': typeof AppSgotinishRouteRouteWithChildren
   '/announcements': typeof AppAnnouncementsRoute
   '/contacts': typeof AppContactsRoute
+  '/degree-audit-info': typeof AppDegreeAuditInfoRoute
   '/opportunities': typeof AppOpportunitiesRoute
   '/profile': typeof AppProfileRoute
   '/about': typeof PublicAboutRoute
@@ -185,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/courses/schedule': typeof AppCoursesScheduleRoute
   '/courses/statistics': typeof AppCoursesStatisticsRoute
   '/events/$eventId': typeof AppEventsEventIdRoute
+  '/sgotinish/members': typeof AppSgotinishMembersRoute
   '/communities/': typeof AppCommunitiesIndexRoute
   '/courses/': typeof AppCoursesIndexRoute
   '/events/': typeof AppEventsIndexRoute
@@ -199,6 +213,7 @@ export interface FileRoutesByTo {
   '/t': typeof TRoute
   '/announcements': typeof AppAnnouncementsRoute
   '/contacts': typeof AppContactsRoute
+  '/degree-audit-info': typeof AppDegreeAuditInfoRoute
   '/opportunities': typeof AppOpportunitiesRoute
   '/profile': typeof AppProfileRoute
   '/about': typeof PublicAboutRoute
@@ -209,6 +224,7 @@ export interface FileRoutesByTo {
   '/courses/schedule': typeof AppCoursesScheduleRoute
   '/courses/statistics': typeof AppCoursesStatisticsRoute
   '/events/$eventId': typeof AppEventsEventIdRoute
+  '/sgotinish/members': typeof AppSgotinishMembersRoute
   '/communities': typeof AppCommunitiesIndexRoute
   '/courses': typeof AppCoursesIndexRoute
   '/events': typeof AppEventsIndexRoute
@@ -227,6 +243,7 @@ export interface FileRoutesById {
   '/_app/sgotinish': typeof AppSgotinishRouteRouteWithChildren
   '/_app/announcements': typeof AppAnnouncementsRoute
   '/_app/contacts': typeof AppContactsRoute
+  '/_app/degree-audit-info': typeof AppDegreeAuditInfoRoute
   '/_app/opportunities': typeof AppOpportunitiesRoute
   '/_app/profile': typeof AppProfileRoute
   '/_public/about': typeof PublicAboutRoute
@@ -238,6 +255,7 @@ export interface FileRoutesById {
   '/_app/courses/schedule': typeof AppCoursesScheduleRoute
   '/_app/courses/statistics': typeof AppCoursesStatisticsRoute
   '/_app/events/$eventId': typeof AppEventsEventIdRoute
+  '/_app/sgotinish/members': typeof AppSgotinishMembersRoute
   '/_app/communities/': typeof AppCommunitiesIndexRoute
   '/_app/courses/': typeof AppCoursesIndexRoute
   '/_app/events/': typeof AppEventsIndexRoute
@@ -256,6 +274,7 @@ export interface FileRouteTypes {
     | '/sgotinish'
     | '/announcements'
     | '/contacts'
+    | '/degree-audit-info'
     | '/opportunities'
     | '/profile'
     | '/about'
@@ -266,6 +285,7 @@ export interface FileRouteTypes {
     | '/courses/schedule'
     | '/courses/statistics'
     | '/events/$eventId'
+    | '/sgotinish/members'
     | '/communities/'
     | '/courses/'
     | '/events/'
@@ -280,6 +300,7 @@ export interface FileRouteTypes {
     | '/t'
     | '/announcements'
     | '/contacts'
+    | '/degree-audit-info'
     | '/opportunities'
     | '/profile'
     | '/about'
@@ -290,6 +311,7 @@ export interface FileRouteTypes {
     | '/courses/schedule'
     | '/courses/statistics'
     | '/events/$eventId'
+    | '/sgotinish/members'
     | '/communities'
     | '/courses'
     | '/events'
@@ -307,6 +329,7 @@ export interface FileRouteTypes {
     | '/_app/sgotinish'
     | '/_app/announcements'
     | '/_app/contacts'
+    | '/_app/degree-audit-info'
     | '/_app/opportunities'
     | '/_app/profile'
     | '/_public/about'
@@ -318,6 +341,7 @@ export interface FileRouteTypes {
     | '/_app/courses/schedule'
     | '/_app/courses/statistics'
     | '/_app/events/$eventId'
+    | '/_app/sgotinish/members'
     | '/_app/communities/'
     | '/_app/courses/'
     | '/_app/events/'
@@ -376,6 +400,13 @@ declare module '@tanstack/react-router' {
       path: '/courses'
       fullPath: '/courses'
       preLoaderRoute: typeof AppCoursesRouteRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/degree-audit-info': {
+      id: '/_app/degree-audit-info'
+      path: '/degree-audit-info'
+      fullPath: '/degree-audit-info'
+      preLoaderRoute: typeof AppDegreeAuditInfoRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/opportunities': {
@@ -490,6 +521,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSgotinishIndexRouteImport
       parentRoute: typeof AppSgotinishRouteRoute
     }
+    '/_app/sgotinish/members': {
+      id: '/_app/sgotinish/members'
+      path: '/members'
+      fullPath: '/sgotinish/members'
+      preLoaderRoute: typeof AppSgotinishMembersRouteImport
+      parentRoute: typeof AppSgotinishRouteRoute
+    }
     '/_app/sgotinish/sg/': {
       id: '/_app/sgotinish/sg/'
       path: '/sg'
@@ -540,6 +578,7 @@ const AppCoursesRouteRouteWithChildren = AppCoursesRouteRoute._addFileChildren(
 )
 
 interface AppSgotinishRouteRouteChildren {
+  AppSgotinishMembersRoute: typeof AppSgotinishMembersRoute
   AppSgotinishIndexRoute: typeof AppSgotinishIndexRoute
   AppSgotinishSgTicketIdRoute: typeof AppSgotinishSgTicketIdRoute
   AppSgotinishStudentTicketIdRoute: typeof AppSgotinishStudentTicketIdRoute
@@ -548,6 +587,7 @@ interface AppSgotinishRouteRouteChildren {
 }
 
 const AppSgotinishRouteRouteChildren: AppSgotinishRouteRouteChildren = {
+  AppSgotinishMembersRoute: AppSgotinishMembersRoute,
   AppSgotinishIndexRoute: AppSgotinishIndexRoute,
   AppSgotinishSgTicketIdRoute: AppSgotinishSgTicketIdRoute,
   AppSgotinishStudentTicketIdRoute: AppSgotinishStudentTicketIdRoute,
@@ -563,6 +603,7 @@ interface AppRouteChildren {
   AppSgotinishRouteRoute: typeof AppSgotinishRouteRouteWithChildren
   AppAnnouncementsRoute: typeof AppAnnouncementsRoute
   AppContactsRoute: typeof AppContactsRoute
+  AppDegreeAuditInfoRoute: typeof AppDegreeAuditInfoRoute
   AppOpportunitiesRoute: typeof AppOpportunitiesRoute
   AppProfileRoute: typeof AppProfileRoute
   AppCommunitiesCommunityIdRoute: typeof AppCommunitiesCommunityIdRoute
@@ -576,6 +617,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSgotinishRouteRoute: AppSgotinishRouteRouteWithChildren,
   AppAnnouncementsRoute: AppAnnouncementsRoute,
   AppContactsRoute: AppContactsRoute,
+  AppDegreeAuditInfoRoute: AppDegreeAuditInfoRoute,
   AppOpportunitiesRoute: AppOpportunitiesRoute,
   AppProfileRoute: AppProfileRoute,
   AppCommunitiesCommunityIdRoute: AppCommunitiesCommunityIdRoute,
