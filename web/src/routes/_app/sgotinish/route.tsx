@@ -5,8 +5,11 @@ import {
   useMatchRoute,
 } from "@tanstack/react-router"
 import type { LinkProps } from "@tanstack/react-router"
+import { MessagesSquareIcon } from "lucide-react"
 
 import { usePermissions } from "@/features/auth/use-session"
+import { PageContainer } from "@/components/page-container"
+import { PageHeader } from "@/components/page-header"
 import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/_app/sgotinish")({
@@ -37,18 +40,25 @@ function SGotinishLayout() {
   ]
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">SG otinish</h1>
-        <p className="text-muted-foreground">
-          Raise something with Student Government, anonymously if you prefer.
-        </p>
-      </header>
+    <PageContainer maxWidth="default" padding="none" className="space-y-6">
+      <PageHeader
+        eyebrow="Student Government"
+        title="SG otinish"
+        description="Raise something with Student Government, anonymously if you prefer."
+        actions={
+          <span
+            aria-hidden
+            className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary"
+          >
+            <MessagesSquareIcon className="size-5" />
+          </span>
+        }
+      />
 
       {tabs.length > 1 && (
         <nav
           aria-label="SGotinish sections"
-          className="-mx-1 flex gap-1 overflow-x-auto rounded-lg bg-muted p-1"
+          className="flex gap-1 overflow-x-auto rounded-xl border border-border bg-card p-1 shadow-xs"
         >
           {tabs.map(({ to, label }) => {
             const isActive = Boolean(matchRoute({ to, fuzzy: true }))
@@ -74,6 +84,6 @@ function SGotinishLayout() {
       )}
 
       <Outlet />
-    </div>
+    </PageContainer>
   )
 }

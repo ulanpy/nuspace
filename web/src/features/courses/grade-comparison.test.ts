@@ -3,6 +3,7 @@ import { describe, it } from "node:test"
 
 import {
   MAX_GRADE_COMPARISONS,
+  bestValueIndexes,
   comparisonMetrics,
   toggleGradeComparison,
 } from "./grade-comparison.ts"
@@ -42,5 +43,11 @@ describe("grade comparison", () => {
       (metric) => metric.label === "Withdrawals"
     )
     assert.deepEqual(withdrawals?.values, ["—"])
+  })
+
+  it("highlights every tied best value and ignores missing values", () => {
+    assert.deepEqual(bestValueIndexes([3.2, null, 3.8, 3.8], "highest"), [2, 3])
+    assert.deepEqual(bestValueIndexes([0.2, undefined, 0.1], "lowest"), [2])
+    assert.deepEqual(bestValueIndexes([null, undefined], "highest"), [])
   })
 })

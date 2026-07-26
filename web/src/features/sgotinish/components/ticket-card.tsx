@@ -23,14 +23,14 @@ interface TicketCardProps {
 
 export function TicketCard({ ticket, to }: TicketCardProps) {
   return (
-    <Card className="p-4">
+    <Card className="overflow-hidden p-0 transition-colors hover:border-primary/40 hover:bg-muted/20">
       <Link
         to={to}
         params={{ ticketId: String(ticket.id) }}
-        className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        className="block rounded-xl p-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset sm:p-5"
       >
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h3 className="font-semibold">{ticket.title}</h3>
             <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
               {ticket.body}

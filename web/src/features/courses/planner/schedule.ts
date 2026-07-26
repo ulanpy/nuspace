@@ -104,12 +104,15 @@ export function timedEvents(events: readonly SectionEvent[]): SectionEvent[] {
  * Defaults to the standard campus day but widens to fit anything outside it,
  * so an unusual evening section is drawn rather than silently clipped.
  */
-export function gridHours(events: readonly SectionEvent[]): {
+export function gridHours(
+  events: readonly SectionEvent[],
+  collapseEmptyEdges = false
+): {
   startHour: number
-  endHour: number
+  endHourExclusive: number
 } {
-  let earliest = 8 * 60
-  let latest = 22 * 60
+  let earliest = Number.POSITIVE_INFINITY
+  let latest = Number.NEGATIVE_INFINITY
 
   for (const { section } of events) {
     const [start, end] = parseTimeRange(section.times)
@@ -117,9 +120,18 @@ export function gridHours(events: readonly SectionEvent[]): {
     if (end !== null) latest = Math.max(latest, end)
   }
 
+  if (!Number.isFinite(earliest) || !Number.isFinite(latest)) {
+    return { startHour: 8, endHourExclusive: 23 }
+  }
+
+  const first = Math.floor(earliest / 60)
+  const last = Math.ceil(latest / 60)
+
   return {
-    startHour: Math.floor(earliest / 60),
-    endHour: Math.ceil(latest / 60),
+    startHour: collapseEmptyEdges ? first : Math.min(8, first),
+    endHourExclusive: collapseEmptyEdges
+      ? Math.max(last, first + 1)
+      : Math.max(23, last),
   }
 }
 
@@ -226,9 +238,20 @@ export function layoutDay(
 }
 
 /** Weekend columns are dropped when empty so weekdays get the width. */
-export function visibleDays(events: readonly SectionEvent[]): DayDef[] {
+export function visibleDays(
+  events: readonly SectionEvent[],
+  collapseEmptyEdges = false
+): DayDef[] {
   const used = new Set(events.flatMap(sectionDaysOf))
-  return DAYS.filter((day) => day.key !== "S" || used.has("S"))
+  if (!collapseEmptyEdges || used.size === 0) {
+    return DAYS.filter((day) => day.key !== "S" || used.has("S"))
+  }
+
+  const first = DAYS.findIndex((day) => used.has(day.key))
+  const last = DAYS.findLastIndex((day) => used.has(day.key))
+  return first < 0 || last < 0
+    ? DAYS.filter((day) => day.key !== "S")
+    : DAYS.slice(first, last + 1)
 }
 
 function sectionDaysOf({ section }: SectionEvent): string[] {
@@ -475,4 +498,40 @@ export function formatRoom(room: string | null | undefined): string {
     .filter(Boolean)
 
   return [...new Set(rooms)].join(" / ")
+}
+
+export function parseCollapseEmptyEdges(value: string | null): boolean {
+  return value === "1"
+}
+
+interface ShortlistSchedule {
+  courses: readonly {
+    course_code: string
+    sections: readonly {
+      section_code: string
+      is_selected: boolean
+    }[]
+  }[]
+}
+
+/** Registrar-friendly text: `CSCI_151 L1 | LB2`, one course per line. */
+export function formatScheduleShortlist(
+  schedule: ShortlistSchedule | null | undefined
+): string {
+  if (!schedule?.courses.length) return ""
+
+  return schedule.courses
+    .flatMap((course) => {
+      const sections = course.sections
+        .filter((section) => section.is_selected)
+        .map((section) => section.section_code)
+        .filter(Boolean)
+
+      return sections.length === 0
+        ? []
+        : [
+            `${course.course_code.replace(/[\s-]+/g, "_")} ${sections.join(" | ")}`,
+          ]
+    })
+    .join("\n")
 }

@@ -1,6 +1,9 @@
 import { ExternalLinkIcon, MailIcon, PhoneIcon } from "lucide-react"
 
 import type { LegalDocument } from "@/features/legal/content"
+import { PageContainer } from "@/components/page-container"
+import { PageHeader } from "@/components/page-header"
+import { Section } from "@/components/section"
 
 function ContactLink({
   href,
@@ -36,22 +39,21 @@ function ContactLink({
  */
 export function LegalPage({ document }: { document: LegalDocument }) {
   return (
-    <article className="mx-auto max-w-prose space-y-10 py-8">
-      <header className="space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight text-balance">
-          {document.title}
-        </h1>
-        <p className="text-muted-foreground">
-          Last updated: {document.lastUpdated}
-        </p>
+    <PageContainer as="article" maxWidth="prose" className="space-y-10 py-8">
+      <div className="space-y-4">
+        <PageHeader
+          eyebrow="Nuspace policies"
+          title={document.title}
+          description={`Last updated: ${document.lastUpdated}`}
+        />
         <div className="rounded-lg border border-border bg-muted/50 p-4">
           <p className="leading-relaxed">{document.introduction}</p>
         </div>
-      </header>
+      </div>
 
       <div className="space-y-8">
         {document.sections.map((section, index) => (
-          <section key={section.title} className="space-y-3">
+          <Section key={section.title} spacing="none" className="space-y-3">
             <h2 className="text-2xl font-bold">
               {index + 1}. {section.title}
             </h2>
@@ -69,11 +71,11 @@ export function LegalPage({ document }: { document: LegalDocument }) {
                 ))}
               </ul>
             )}
-          </section>
+          </Section>
         ))}
       </div>
 
-      <section className="space-y-6 border-t border-border pt-8">
+      <Section spacing="none" className="space-y-6 border-t border-border pt-8">
         <h2 className="text-2xl font-bold">Contact</h2>
         <p className="text-muted-foreground">{document.contact.message}</p>
         <div className="grid gap-4 text-center sm:grid-cols-3">
@@ -97,7 +99,7 @@ export function LegalPage({ document }: { document: LegalDocument }) {
             external
           />
         </div>
-      </section>
-    </article>
+      </Section>
+    </PageContainer>
   )
 }

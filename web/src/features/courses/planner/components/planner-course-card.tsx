@@ -118,6 +118,15 @@ export function PlannerCourseCard({
 
   const groups = groupSectionsByType(course.sections)
   const syllabus = syllabusLink(syllabusLinks, course.course_code)
+  const requirementRows = [
+    ["Prerequisites", course.pre_req],
+    ["Corequisites", course.co_req],
+    ["Antirequisites", course.anti_req],
+    ["Priority 1", course.priority_1],
+    ["Priority 2", course.priority_2],
+    ["Priority 3", course.priority_3],
+    ["Priority 4", course.priority_4],
+  ].filter((row): row is [string, string] => Boolean(row[1]?.trim()))
   const isBusy =
     (loadSections.isPending && loadSections.variables.courseId === course.id) ||
     (selectSections.isPending &&
@@ -147,6 +156,23 @@ export function PlannerCourseCard({
               Syllabus
               <ExternalLinkIcon className="size-3" aria-hidden />
             </a>
+          )}
+          {requirementRows.length > 0 && (
+            <details className="mt-2 text-xs">
+              <summary className="cursor-pointer font-medium text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
+                Priorities & requisites
+              </summary>
+              <dl className="mt-2 space-y-2 rounded-lg border bg-muted/20 p-3">
+                {requirementRows.map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="font-medium text-muted-foreground">
+                      {label}
+                    </dt>
+                    <dd className="mt-0.5 whitespace-pre-wrap">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
           )}
         </div>
 

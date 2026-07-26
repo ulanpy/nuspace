@@ -52,7 +52,7 @@ function PublicLayout() {
         </div>
       </header>
 
-      <main className="flex-1 px-4">
+      <main className="flex-1">
         <Outlet />
       </main>
 

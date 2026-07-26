@@ -1,12 +1,14 @@
 import { useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
-import { CalendarDaysIcon, RefreshCcw } from "lucide-react"
+import { BookOpenIcon, CalendarDaysIcon, RefreshCcw } from "lucide-react"
+import { z } from "zod"
 
 import { registeredCoursesQueryOptions } from "@/features/courses/api"
 import { CourseCard } from "@/features/courses/components/course-card"
 import { RegistrarSync } from "@/features/courses/components/registrar-sync"
 import { RegisteredScheduleDialog } from "@/features/courses/components/registered-schedule-dialog"
+import { selectedCourseId } from "@/features/courses/course-selection"
 import {
   ceilingGpa,
   formatGpa,
@@ -17,8 +19,14 @@ import type { RegisteredCourse } from "@/features/courses/types"
 import { EmptyState, QueryBoundary } from "@/components/query-boundary"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
+
+const myCoursesSearchSchema = z.object({
+  course: z.coerce.number().optional(),
+})
 
 export const Route = createFileRoute("/_app/courses/")({
+  validateSearch: myCoursesSearchSchema,
   component: MyCourses,
 })
 
@@ -79,6 +87,8 @@ function GpaSummary({
 }
 
 function MyCourses() {
+  const { course: requestedCourseId } = Route.useSearch()
+  const navigate = Route.useNavigate()
   const query = useQuery(registeredCoursesQueryOptions())
   const [isSyncOpen, setIsSyncOpen] = useState(false)
   const [isScheduleOpen, setIsScheduleOpen] = useState(false)
@@ -101,59 +111,132 @@ function MyCourses() {
       }
     >
       {(courses) => {
+        const activeCourseId = selectedCourseId(courses, requestedCourseId)
+        const activeCourse =
+          courses.find((course) => course.id === activeCourseId) ?? null
         const excludedCount = courses.filter((course) =>
           excludedIds.has(course.id)
         ).length
+
         return (
           <div className="space-y-4">
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setIsScheduleOpen(true)
-                }}
-              >
-                <CalendarDaysIcon aria-hidden />
-                Weekly timetable
-              </Button>
-            </div>
             <GpaSummary
               courses={courses.filter((course) => !excludedIds.has(course.id))}
               excludedCount={excludedCount}
             />
-            <div className="space-y-3">
-              {courses.map((registered) => (
+
+            <div className="grid items-start gap-4 xl:grid-cols-[minmax(13rem,0.8fr)_minmax(0,2fr)_minmax(14rem,0.9fr)]">
+              <Card className="p-3">
+                <div className="mb-3 flex items-center gap-2 px-1">
+                  <h2 className="text-sm font-semibold">Courses</h2>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
+                    {courses.length}
+                  </span>
+                </div>
+                <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-1">
+                  {courses.map((registered) => {
+                    const isActive = registered.id === activeCourseId
+                    const gradedCount = registered.items.filter(
+                      (item) =>
+                        item.obtained_score !== null && item.max_score !== null
+                    ).length
+
+                    return (
+                      <button
+                        key={registered.id}
+                        type="button"
+                        aria-current={isActive ? "true" : undefined}
+                        onClick={() => {
+                          void navigate({
+                            search: (previous) => ({
+                              ...previous,
+                              course: registered.id,
+                            }),
+                          })
+                        }}
+                        className={cn(
+                          "flex w-full items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
+                          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                          isActive
+                            ? "border-primary bg-primary/10"
+                            : "border-transparent hover:bg-muted/60"
+                        )}
+                      >
+                        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <BookOpenIcon className="size-4" aria-hidden />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-semibold">
+                            {registered.course.course_code}
+                          </span>
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {registered.course.title || "Untitled course"}
+                          </span>
+                          <span className="mt-1 block text-xs text-muted-foreground">
+                            {gradedCount}/{registered.items.length} graded
+                            {excludedIds.has(registered.id)
+                              ? " · GPA excluded"
+                              : ""}
+                          </span>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </Card>
+
+              {activeCourse && (
                 <CourseCard
-                  key={registered.id}
-                  registered={registered}
-                  excludedFromGpa={excludedIds.has(registered.id)}
+                  key={activeCourse.id}
+                  registered={activeCourse}
+                  excludedFromGpa={excludedIds.has(activeCourse.id)}
                   onToggleGpa={() => {
                     setExcludedIds((previous) => {
                       const next = new Set(previous)
-                      if (next.has(registered.id)) next.delete(registered.id)
-                      else next.add(registered.id)
+                      if (next.has(activeCourse.id))
+                        next.delete(activeCourse.id)
+                      else next.add(activeCourse.id)
                       return next
                     })
                   }}
                 />
-              ))}
+              )}
+
+              <aside className="space-y-4">
+                <Card className="space-y-3 p-4">
+                  <div>
+                    <h2 className="text-sm font-semibold">Workspace actions</h2>
+                    <p className="text-xs text-muted-foreground">
+                      Timetable and registrar tools apply to your full term.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setIsScheduleOpen(true)
+                    }}
+                  >
+                    <CalendarDaysIcon aria-hidden />
+                    Weekly timetable
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setIsSyncOpen((open) => !open)
+                    }}
+                  >
+                    <RefreshCcw aria-hidden />
+                    {isSyncOpen ? "Hide registrar sync" : "Sync registrar"}
+                  </Button>
+                </Card>
+                {isSyncOpen && <RegistrarSync />}
+              </aside>
             </div>
 
-            {isSyncOpen ? (
-              <RegistrarSync />
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setIsSyncOpen(true)
-                }}
-              >
-                <RefreshCcw aria-hidden />
-                Sync with the registrar
-              </Button>
-            )}
             <RegisteredScheduleDialog
               open={isScheduleOpen}
               onOpenChange={setIsScheduleOpen}

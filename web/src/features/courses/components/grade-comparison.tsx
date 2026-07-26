@@ -5,8 +5,55 @@ import {
   comparisonMetrics,
 } from "@/features/courses/grade-comparison"
 import type { GradeReport } from "@/features/courses/types"
+import { formatPoints } from "@/features/courses/gpa"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
+
+const MINI_BANDS = [
+  { key: "pct_A", label: "A", className: "bg-chart-2" },
+  { key: "pct_B", label: "B", className: "bg-chart-1" },
+  { key: "pct_C", label: "C", className: "bg-chart-4" },
+  { key: "pct_D", label: "D", className: "bg-chart-5" },
+  { key: "pct_F", label: "F", className: "bg-destructive" },
+  { key: "pct_W_AW", label: "withdrawn", className: "bg-muted-foreground/30" },
+] as const satisfies readonly {
+  key: keyof GradeReport
+  label: string
+  className: string
+}[]
+
+function MiniDistribution({ report }: { report: GradeReport }) {
+  const summary = MINI_BANDS.flatMap(({ key, label }) => {
+    const value = report[key]
+    return typeof value === "number" && value > 0
+      ? [`${label} ${formatPoints(value)}%`]
+      : []
+  }).join(", ")
+
+  return (
+    <div className="mt-2">
+      <span className="sr-only">
+        Grade distribution: {summary || "not available"}.
+      </span>
+      <span
+        aria-hidden
+        className="flex h-1.5 overflow-hidden rounded-full bg-muted"
+      >
+        {MINI_BANDS.map(({ key, className }) => {
+          const value = report[key]
+          return typeof value === "number" && value > 0 ? (
+            <span
+              key={key}
+              className={className}
+              style={{ width: `${String(value)}%` }}
+            />
+          ) : null
+        })}
+      </span>
+    </div>
+  )
+}
 
 export function GradeComparison({
   selected,
@@ -21,7 +68,7 @@ export function GradeComparison({
   const metrics = comparisonMetrics(selected)
 
   return (
-    <Card className="sticky top-2 z-20 space-y-3 bg-background/95 p-4 backdrop-blur">
+    <Card className="sticky top-16 z-20 space-y-3 bg-background/95 p-4 backdrop-blur md:top-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-medium">
           Compare {selected.length}/{MAX_GRADE_COMPARISONS}
@@ -59,6 +106,7 @@ export function GradeComparison({
                       className="px-3 py-2 text-left whitespace-nowrap"
                     >
                       {report.course_code} {report.section}
+                      <MiniDistribution report={report} />
                     </th>
                   ))}
                 </tr>
@@ -72,7 +120,11 @@ export function GradeComparison({
                     {metric.values.map((value, index) => (
                       <td
                         key={`${metric.label}-${selected[index]?.id ?? index}`}
-                        className="px-3 py-2 tabular-nums"
+                        className={cn(
+                          "px-3 py-2 tabular-nums",
+                          metric.bestIndexes?.includes(index) &&
+                            "bg-primary/10 font-semibold text-primary"
+                        )}
                       >
                         {value}
                       </td>
@@ -85,13 +137,23 @@ export function GradeComparison({
           <div className="space-y-2 sm:hidden">
             {selected.map((report, index) => (
               <dl key={report.id} className="rounded-md border p-3 text-sm">
+                <div className="mb-2 font-semibold">
+                  {report.course_code} {report.section}
+                  <MiniDistribution report={report} />
+                </div>
                 {metrics.map((metric) => (
                   <div
                     key={metric.label}
                     className="flex justify-between gap-3 py-0.5"
                   >
                     <dt className="text-muted-foreground">{metric.label}</dt>
-                    <dd className="text-right tabular-nums">
+                    <dd
+                      className={cn(
+                        "text-right tabular-nums",
+                        metric.bestIndexes?.includes(index) &&
+                          "font-semibold text-primary"
+                      )}
+                    >
                       {metric.values[index]}
                     </dd>
                   </div>
