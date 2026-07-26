@@ -97,3 +97,39 @@ export function useDeleteCourseItem() {
     onSuccess: () => refreshCourses(client),
   })
 }
+
+/** Terms that have published grade statistics, newest first. */
+export function gradeTermsQueryOptions() {
+  return queryOptions({
+    queryKey: qk.courses.gradeTerms(),
+    queryFn: () => unwrap(api.GET("/grades/terms")),
+    staleTime: Infinity,
+  })
+}
+
+/**
+ * One page of grade statistics.
+ *
+ * `keyword` goes to Meilisearch and `term` narrows in SQL; either may be
+ * omitted. Kept as a plain fetcher rather than queryOptions because the
+ * statistics list paginates through `useInfiniteList`.
+ */
+export function fetchGradesPage(params: {
+  page: number
+  size: number
+  keyword?: string
+  term?: string
+}) {
+  return unwrap(
+    api.GET("/grades", {
+      params: {
+        query: {
+          page: params.page,
+          size: params.size,
+          keyword: params.keyword ?? null,
+          term: params.term ?? null,
+        },
+      },
+    })
+  )
+}

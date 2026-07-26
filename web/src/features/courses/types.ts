@@ -6,6 +6,8 @@ export type Course = components["schemas"]["BaseCourseSchema"]
 /** One graded item within a course: a homework, a midterm, a project. */
 export type CourseItem = components["schemas"]["BaseCourseItem"]
 export type Schedule = components["schemas"]["ScheduleResponse"]
+/** One course section's published grade distribution for a past term. */
+export type GradeReport = components["schemas"]["BaseGradeReportSchema"]
 export type RegistrarSyncResponse =
   components["schemas"]["RegistrarSyncResponse"]
 
