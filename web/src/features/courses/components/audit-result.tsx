@@ -1,10 +1,21 @@
-import { Download } from "lucide-react"
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { BookOpen, Download } from "lucide-react"
 
+import { QueryBoundary } from "@/components/query-boundary"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
+import { degreeRequirementsQueryOptions } from "../api"
 import type { AuditProgram, AuditRequirement, AuditResponse } from "../types"
 
 /**
@@ -96,14 +107,20 @@ function RequirementRow({ requirement }: { requirement: AuditRequirement }) {
   )
 }
 
-function ProgramCard({ program }: { program: AuditProgram }) {
+function ProgramCard({
+  program,
+  onViewRequirements,
+}: {
+  program: AuditProgram
+  onViewRequirements: () => void
+}) {
   const pending = program.results.filter(
     (requirement) => requirement.status !== "Satisfied"
   )
 
   return (
     <Card className="space-y-4 p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
+      <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h3 className="font-semibold">{program.name}</h3>
           <p className="text-sm text-muted-foreground">
@@ -114,6 +131,10 @@ function ProgramCard({ program }: { program: AuditProgram }) {
             outstanding
           </p>
         </div>
+        <Button size="sm" variant="outline" onClick={onViewRequirements}>
+          <BookOpen aria-hidden />
+          View requirements
+        </Button>
       </div>
 
       <SummaryFigures program={program} />
@@ -144,8 +165,102 @@ function ProgramCard({ program }: { program: AuditProgram }) {
   )
 }
 
+function RequirementsDialog({
+  year,
+  program,
+  onOpenChange,
+}: {
+  year: string
+  program: AuditProgram | null
+  onOpenChange: (open: boolean) => void
+}) {
+  const requirements = useQuery(
+    degreeRequirementsQueryOptions(
+      year,
+      program?.name ?? "",
+      program?.type ?? "major"
+    )
+  )
+
+  return (
+    <Dialog
+      open={program !== null}
+      onOpenChange={(open) => {
+        onOpenChange(open)
+      }}
+    >
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>{program?.name} requirements</DialogTitle>
+          <DialogDescription>
+            Published requirements for the {year} catalogue year. These are the
+            rules used by the audit above.
+          </DialogDescription>
+        </DialogHeader>
+
+        <QueryBoundary
+          query={requirements}
+          empty={
+            <p className="text-sm text-muted-foreground">
+              No published requirements were returned for this programme.
+            </p>
+          }
+        >
+          {(items) => (
+            <ul className="space-y-2">
+              {items.map((requirement) => (
+                <li
+                  key={`${requirement.course_code}-${requirement.course_name}`}
+                  className="space-y-2 rounded-lg border p-3"
+                >
+                  <div className="flex flex-wrap justify-between gap-2">
+                    <div>
+                      <p className="font-medium">{requirement.course_code}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {requirement.course_name}
+                      </p>
+                    </div>
+                    <p className="text-sm tabular-nums">
+                      {requirement.credits_need} credits
+                      {requirement.min_grade
+                        ? ` · min ${requirement.min_grade}`
+                        : ""}
+                    </p>
+                  </div>
+                  {requirement.options.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Options: {requirement.options.join(", ")}
+                    </p>
+                  )}
+                  {requirement.must_haves.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Must include: {requirement.must_haves.join(", ")}
+                    </p>
+                  )}
+                  {requirement.excepts.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Excludes: {requirement.excepts.join(", ")}
+                    </p>
+                  )}
+                  {requirement.comments && (
+                    <p className="text-xs text-muted-foreground">
+                      {requirement.comments}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </QueryBoundary>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function AuditResult({ audit }: { audit: AuditResponse }) {
   const csv = audit.csv_base64
+  const [requirementsProgram, setRequirementsProgram] =
+    useState<AuditProgram | null>(null)
 
   return (
     <div className="space-y-4">
@@ -188,8 +303,19 @@ export function AuditResult({ audit }: { audit: AuditResponse }) {
         <ProgramCard
           key={`${program.type}-${program.name}`}
           program={program}
+          onViewRequirements={() => {
+            setRequirementsProgram(program)
+          }}
         />
       ))}
+
+      <RequirementsDialog
+        year={audit.year}
+        program={requirementsProgram}
+        onOpenChange={(open) => {
+          if (!open) setRequirementsProgram(null)
+        }}
+      />
     </div>
   )
 }

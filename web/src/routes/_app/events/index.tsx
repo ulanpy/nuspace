@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
+import { useEffect, useState } from "react"
+import { createFileRoute, redirect } from "@tanstack/react-router"
 import { PlusIcon } from "lucide-react"
 import { z } from "zod"
 
@@ -8,6 +8,14 @@ import { qk } from "@/api/query-keys"
 import { fetchEventsPage } from "@/features/events/api"
 import { EventCard } from "@/features/events/components/event-card"
 import { EventFormDialog } from "@/features/events/components/event-form-dialog"
+import { EVENT_TYPES, type EventType } from "@/features/events/types"
+import { useDebounced } from "@/hooks/use-debounced"
+import { TelegramConnectPrompt } from "@/features/profile/components/telegram-connect-prompt"
+import {
+  ChoiceChips,
+  SearchFilter,
+  type FilterOption,
+} from "@/components/list-filters"
 import { EmptyState } from "@/components/query-boundary"
 import { InfiniteList } from "@/components/infinite-list"
 import { Button } from "@/components/ui/button"
@@ -49,10 +57,26 @@ export const Route = createFileRoute("/_app/events/")({
 
 function EventsList() {
   const { time, type, q } = Route.useSearch()
+  const [search, setSearch] = useState(q ?? "")
+  const debouncedSearch = useDebounced(search)
   const filters = { time_filter: time, event_type: type, keyword: q }
-  const navigate = useNavigate()
+  const navigate = Route.useNavigate()
 
   const [isCreating, setIsCreating] = useState(false)
+
+  useEffect(() => {
+    setSearch(q ?? "")
+  }, [q])
+
+  useEffect(() => {
+    void navigate({
+      search: (previous) => ({
+        ...previous,
+        q: debouncedSearch || undefined,
+      }),
+      replace: true,
+    })
+  }, [debouncedSearch, navigate])
 
   const list = useInfiniteList({
     queryKey: qk.events.list(filters),
@@ -61,6 +85,11 @@ function EventsList() {
 
   return (
     <div className="space-y-6">
+      <TelegramConnectPrompt
+        storageKey="nuspace_events_tg_banner_dismissed"
+        title="Publish and follow campus events through Telegram"
+      />
+
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-bold tracking-tight">Events</h1>
 
@@ -75,6 +104,37 @@ function EventsList() {
           Create event
         </Button>
       </header>
+
+      <div className="space-y-3">
+        <SearchFilter
+          value={search}
+          onChange={setSearch}
+          placeholder="Search events"
+        />
+        <ChoiceChips
+          label="Time period"
+          value={time}
+          options={TIME_OPTIONS}
+          onChange={(next) => {
+            void navigate({
+              search: (previous) => ({
+                ...previous,
+                time: next ?? "upcoming",
+              }),
+            })
+          }}
+        />
+        <ChoiceChips
+          label="Event type"
+          value={type}
+          options={EVENT_TYPE_OPTIONS}
+          onChange={(next) => {
+            void navigate({
+              search: (previous) => ({ ...previous, type: next }),
+            })
+          }}
+        />
+      </div>
 
       <InfiniteList
         items={list.items}
@@ -121,4 +181,22 @@ function EventsList() {
       />
     </div>
   )
+}
+
+const TIME_OPTIONS = [
+  { value: "upcoming", label: "Upcoming" },
+  { value: "today", label: "Today" },
+  { value: "week", label: "This week" },
+  { value: "month", label: "This month" },
+] as const satisfies readonly FilterOption<
+  "upcoming" | "today" | "week" | "month"
+>[]
+
+const EVENT_TYPE_OPTIONS = EVENT_TYPES.map((value) => ({
+  value,
+  label: value === "recruitment" ? "Recruiting" : titleCase(value),
+})) satisfies FilterOption<EventType>[]
+
+function titleCase(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1)
 }

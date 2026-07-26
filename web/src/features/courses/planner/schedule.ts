@@ -363,6 +363,29 @@ export function nextSectionSelection(
   return kept.includes(sectionId) ? kept : [...kept, sectionId]
 }
 
+export interface SectionSelectionSnapshot {
+  courseId: number
+  sectionIds: number[]
+}
+
+interface SelectionSchedule {
+  courses: readonly {
+    id: number
+    sections: readonly Pick<PlannerSection, "id" | "is_selected">[]
+  }[]
+}
+
+export function selectionSnapshot(
+  planner: SelectionSchedule
+): SectionSelectionSnapshot[] {
+  return planner.courses.map((course) => ({
+    courseId: course.id,
+    sectionIds: course.sections
+      .filter((section) => section.is_selected)
+      .map((section) => section.id),
+  }))
+}
+
 /**
  * Cyrillic → Latin by keyboard position, then upper-cased.
  *

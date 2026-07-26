@@ -9,6 +9,7 @@ import { api, unwrap } from "@/api/client"
 import { qk } from "@/api/query-keys"
 
 import type { PlannerSchedule } from "./types"
+import type { SectionSelectionSnapshot } from "./schedule"
 
 /**
  * Which plan a request applies to.
@@ -184,6 +185,32 @@ export function useAutoBuild(scope: ScheduleScope) {
         })
       ),
     onSuccess: () => refreshPlanner(client, scope.scheduleId),
+  })
+}
+
+export function useRestoreSelections(scope: ScheduleScope) {
+  const client = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (snapshot: readonly SectionSelectionSnapshot[]) => {
+      const results = await Promise.allSettled(
+        snapshot.map((entry) =>
+          unwrap(
+            api.POST("/planner/courses/{course_id}/sections/select", {
+              params: { path: { course_id: entry.courseId } },
+              body: { section_ids: entry.sectionIds },
+            })
+          )
+        )
+      )
+      await refreshPlanner(client, scope.scheduleId)
+      const failures = results.filter((result) => result.status === "rejected")
+      if (failures.length > 0) {
+        throw new Error(
+          `Could not restore ${String(failures.length)} course selections`
+        )
+      }
+    },
   })
 }
 

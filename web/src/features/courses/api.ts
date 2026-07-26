@@ -8,7 +8,13 @@ import {
 import { api, unwrap } from "@/api/client"
 import { qk } from "@/api/query-keys"
 
-import type { CourseItemDraft } from "./types"
+import type {
+  CourseItemDraft,
+  RegisteredCourse,
+  TemplateUpdate,
+  TransferCreditMapping,
+} from "./types"
+import { templateItemsFromCourse } from "./templates"
 
 /**
  * The student's registered courses, each with its graded items.
@@ -46,6 +52,26 @@ export function scheduleQueryOptions() {
     queryKey: qk.courses.schedule(),
     queryFn: () => unwrap(api.GET("/registered_courses/schedule")),
   })
+}
+
+export function useGoogleScheduleExport() {
+  return useMutation({
+    mutationFn: () => unwrap(api.POST("/registered_courses/schedule/google")),
+  })
+}
+
+export async function downloadScheduleIcs(): Promise<void> {
+  const text = await unwrap(
+    api.GET("/registered_courses/schedule/ics", { parseAs: "text" })
+  )
+  const url = URL.createObjectURL(
+    new Blob([text], { type: "text/calendar;charset=utf-8" })
+  )
+  const link = document.createElement("a")
+  link.href = url
+  link.download = "schedule.ics"
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 /**
@@ -134,6 +160,97 @@ export function fetchGradesPage(params: {
   )
 }
 
+export function templatesQueryOptions(courseId: number, page = 1, size = 20) {
+  return queryOptions({
+    queryKey: [...qk.courses.templates(courseId), page, size] as const,
+    queryFn: () =>
+      unwrap(
+        api.GET("/templates", {
+          params: { query: { course_id: courseId, page, size } },
+        })
+      ),
+  })
+}
+
+export function useShareCourseTemplate() {
+  const client = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      course,
+      studentSub,
+    }: {
+      course: RegisteredCourse
+      studentSub: string
+    }) => {
+      const items = templateItemsFromCourse(course)
+      const listed = await unwrap(
+        api.GET("/templates", {
+          params: {
+            query: { course_id: course.course.id, page: 1, size: 100 },
+          },
+        })
+      )
+      const mine = listed.templates.find(
+        (entry) => entry.template.student_sub === studentSub
+      )
+
+      if (mine) {
+        const body: TemplateUpdate = {
+          template_items: items.map((item) => ({
+            item_name: item?.item_name ?? "",
+            total_weight_pct: item?.total_weight_pct ?? 0,
+          })),
+        }
+        return unwrap(
+          api.PATCH("/templates/{template_id}", {
+            params: { path: { template_id: mine.template.id } },
+            body,
+          })
+        )
+      }
+
+      return unwrap(
+        api.POST("/templates", {
+          body: {
+            course_id: course.course.id,
+            student_sub: "me",
+            template_items: items,
+          },
+        })
+      )
+    },
+    onSuccess: async (_result, { course }) => {
+      await client.invalidateQueries({
+        queryKey: qk.courses.templates(course.course.id),
+      })
+    },
+  })
+}
+
+export function useImportCourseTemplate() {
+  const client = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      templateId,
+      studentCourseId,
+    }: {
+      templateId: number
+      studentCourseId: number
+    }) =>
+      unwrap(
+        api.POST("/templates/{template_id}/import", {
+          params: {
+            path: { template_id: templateId },
+            query: { student_course_id: studentCourseId },
+          },
+        })
+      ),
+    onSuccess: () => refreshCourses(client),
+  })
+}
+
 /**
  * Sync registered courses straight from the registrar.
  *
@@ -218,28 +335,46 @@ export function cachedAuditQueryOptions(year?: string, major?: string) {
   })
 }
 
-interface AuditSelection {
+export function degreeRequirementsQueryOptions(
+  year: string,
+  name: string,
+  type: string
+) {
+  return queryOptions({
+    queryKey: qk.courses.requirements(year, name, type),
+    queryFn: () =>
+      unwrap(
+        api.GET("/degree-audit/requirements", {
+          params: { query: { year, name, type } },
+        })
+      ),
+    enabled: year.length > 0 && name.length > 0,
+    staleTime: Infinity,
+  })
+}
+
+export interface AuditSelection {
   year: string
   majors: string[]
   minors: string[]
 }
 
-/**
- * Transfer-credit mappings, which the audit accepts but this UI does not build
- * yet. The schema requires the field, so it is sent empty rather than omitted —
- * students with transfer credits will see those courses listed back as
- * `unmapped_tc_courses`.
- */
-const NO_TC_MAPPINGS: [] = []
-
 export function useRegistrarAudit() {
   const client = useQueryClient()
 
   return useMutation({
+    // The variables contain a registrar password. Remove the mutation from the
+    // cache as soon as its observer goes away instead of retaining it for the
+    // default mutation GC window.
+    gcTime: 0,
     mutationFn: ({
       password,
+      tcMappings = [],
       ...selection
-    }: AuditSelection & { password: string }) =>
+    }: AuditSelection & {
+      password: string
+      tcMappings?: TransferCreditMapping[]
+    }) =>
       unwrap(
         api.POST("/degree-audit/audit/registrar", {
           // `username` is required by the schema but the backend derives it;
@@ -248,7 +383,7 @@ export function useRegistrarAudit() {
             ...selection,
             username: "",
             password,
-            tc_mappings: NO_TC_MAPPINGS,
+            tc_mappings: tcMappings,
           },
         })
       ),
@@ -261,16 +396,22 @@ export function useTranscriptAudit() {
   const client = useQueryClient()
 
   return useMutation({
+    // The PDF is sensitive transcript data and must not outlive this route.
+    gcTime: 0,
     mutationFn: async ({
       file,
+      tcMappings = [],
       ...selection
-    }: AuditSelection & { file: File }) =>
+    }: AuditSelection & {
+      file: File
+      tcMappings?: TransferCreditMapping[]
+    }) =>
       unwrap(
         api.POST("/degree-audit/audit/pdf", {
           body: {
             ...selection,
             pdf_file: await toBase64(file),
-            tc_mappings: NO_TC_MAPPINGS,
+            tc_mappings: tcMappings,
           },
         })
       ),

@@ -1,4 +1,4 @@
-import { Loader2, RefreshCcw, Trash2 } from "lucide-react"
+import { ExternalLinkIcon, Loader2, RefreshCcw, Trash2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,8 @@ import {
   normalizeTitle,
 } from "../schedule"
 import type { PlannerCourse, PlannerSection } from "../types"
+import type { SyllabusLinks } from "../syllabus"
+import { syllabusLink } from "../syllabus"
 
 function sectionSummary(section: PlannerSection): string {
   const parts = [
@@ -101,18 +103,21 @@ interface PlannerCourseCardProps {
   clashes: ReadonlySet<number>
   /** Which saved plan this card belongs to, so refetches hit the right one. */
   scheduleId: number | null
+  syllabusLinks: SyllabusLinks
 }
 
 export function PlannerCourseCard({
   course,
   clashes,
   scheduleId,
+  syllabusLinks,
 }: PlannerCourseCardProps) {
   const loadSections = useLoadSections({ scheduleId })
   const selectSections = useSelectSections({ scheduleId })
   const removeCourse = useRemovePlannerCourse({ scheduleId })
 
   const groups = groupSectionsByType(course.sections)
+  const syllabus = syllabusLink(syllabusLinks, course.course_code)
   const isBusy =
     (loadSections.isPending && loadSections.variables.courseId === course.id) ||
     (selectSections.isPending &&
@@ -132,6 +137,17 @@ export function PlannerCourseCard({
               <Badge variant="secondary">{course.school}</Badge>
             )}
           </div>
+          {syllabus && (
+            <a
+              href={syllabus}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              Syllabus
+              <ExternalLinkIcon className="size-3" aria-hidden />
+            </a>
+          )}
         </div>
 
         <div className="flex gap-1">

@@ -145,3 +145,20 @@ export function normalizeMajors(
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return [...new Set(names)] as OpportunityMajor[]
 }
+
+export function formatEligibilities(
+  entries: Opportunity["eligibilities"]
+): string[] {
+  const grouped = new Map<EducationLevel, number[]>()
+  for (const entry of entries ?? []) {
+    const years = grouped.get(entry.education_level) ?? []
+    if (entry.year !== null) years.push(entry.year)
+    grouped.set(entry.education_level, years)
+  }
+
+  return [...grouped].map(([level, years]) => {
+    const label = EDUCATION_LEVEL_LABELS[level]
+    const unique = [...new Set(years)].sort((a, b) => a - b)
+    return unique.length === 0 ? label : `${label} · Year ${unique.join(", ")}`
+  })
+}

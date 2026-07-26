@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ChevronDown, Plus, Trash2 } from "lucide-react"
+import { ChevronDown, EyeIcon, EyeOffIcon, Plus, Trash2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,7 @@ import {
 } from "../gpa"
 import type { CourseItem, CourseItemDraft, RegisteredCourse } from "../types"
 import { AssignmentForm } from "./assignment-form"
+import { CourseTemplateTools } from "./course-template-tools"
 
 function ItemRow({ item, onEdit }: { item: CourseItem; onEdit: () => void }) {
   const graded = isGraded(item)
@@ -56,7 +57,15 @@ function ItemRow({ item, onEdit }: { item: CourseItem; onEdit: () => void }) {
   )
 }
 
-export function CourseCard({ registered }: { registered: RegisteredCourse }) {
+export function CourseCard({
+  registered,
+  excludedFromGpa = false,
+  onToggleGpa,
+}: {
+  registered: RegisteredCourse
+  excludedFromGpa?: boolean
+  onToggleGpa?: () => void
+}) {
   const { course } = registered
   /**
    * The API returns items in update order, so editing one makes it jump to the
@@ -155,6 +164,25 @@ export function CourseCard({ registered }: { registered: RegisteredCourse }) {
 
       {isOpen && (
         <div className="mt-3 space-y-1 border-t pt-3">
+          <div className="flex flex-wrap gap-1 pb-2">
+            {onToggleGpa && (
+              <Button size="sm" variant="ghost" onClick={onToggleGpa}>
+                {excludedFromGpa ? (
+                  <EyeIcon aria-hidden />
+                ) : (
+                  <EyeOffIcon aria-hidden />
+                )}
+                {excludedFromGpa ? "Include in GPA" : "Exclude from GPA"}
+              </Button>
+            )}
+            <CourseTemplateTools registered={registered} />
+          </div>
+          {excludedFromGpa && (
+            <p className="px-2 pb-2 text-xs text-warning">
+              This course is excluded from the GPA summary until the page is
+              reloaded or you include it again.
+            </p>
+          )}
           {items.length === 0 && editing === null && (
             <p className="px-2 py-1.5 text-sm text-muted-foreground">
               No assignments yet. Add the ones on your syllabus to track this

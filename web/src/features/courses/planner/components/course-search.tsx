@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Plus } from "lucide-react"
+import { ExternalLinkIcon, Plus } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input"
 import { courseSearchQueryOptions, useAddPlannerCourse } from "../api"
 import { normalizeCourseQuery, normalizeTitle } from "../schedule"
 import type { PlannerSearchResult } from "../types"
+import type { SyllabusLinks } from "../syllabus"
+import { syllabusLink } from "../syllabus"
 
 interface CourseSearchProps {
   term: string
@@ -17,6 +19,7 @@ interface CourseSearchProps {
   addedCodes: ReadonlySet<string>
   /** Which saved plan the course is added to. */
   scheduleId: number | null
+  syllabusLinks: SyllabusLinks
 }
 
 export function CourseSearch({
@@ -24,6 +27,7 @@ export function CourseSearch({
   termLabel,
   addedCodes,
   scheduleId,
+  syllabusLinks,
 }: CourseSearchProps) {
   const [input, setInput] = useState("")
   const addCourse = useAddPlannerCourse({ scheduleId })
@@ -68,6 +72,7 @@ export function CourseSearch({
       <ul className="space-y-2">
         {results.map((result) => {
           const isAdded = addedCodes.has(result.course_code)
+          const syllabus = syllabusLink(syllabusLinks, result.course_code)
 
           return (
             <li
@@ -87,6 +92,17 @@ export function CourseSearch({
                     <Badge variant="outline">{result.school}</Badge>
                   )}
                 </div>
+                {syllabus && (
+                  <a
+                    href={syllabus}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    Syllabus
+                    <ExternalLinkIcon className="size-3" aria-hidden />
+                  </a>
+                )}
               </div>
 
               <Button

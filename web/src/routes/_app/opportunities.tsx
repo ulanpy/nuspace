@@ -1,7 +1,8 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import {
   CalendarClockIcon,
+  CalendarPlusIcon,
   MapPinIcon,
   PencilIcon,
   PlusIcon,
@@ -11,21 +12,37 @@ import {
 import { z } from "zod"
 
 import { apiErrorMessage } from "@/api/errors"
+import { ApiError } from "@/api/client"
 import { qk } from "@/api/query-keys"
 import { useInfiniteList } from "@/hooks/use-infinite-list"
 import { usePermissions } from "@/features/auth/use-session"
+import { beginLogin } from "@/features/auth/api"
 import {
   fetchOpportunitiesPage,
   useCreateOpportunity,
   useDeleteOpportunity,
+  useAddOpportunityToCalendar,
   useUpdateOpportunity,
 } from "@/features/opportunities/api"
 import { OpportunityForm } from "@/features/opportunities/components/opportunity-form"
 import {
   OPPORTUNITY_TYPES,
   OPPORTUNITY_TYPE_LABELS,
+  EDUCATION_LEVELS,
+  EDUCATION_LEVEL_LABELS,
+  OPPORTUNITY_MAJORS,
+  formatEligibilities,
+  normalizeMajors,
+  type EducationLevel,
+  type OpportunityMajor,
   type Opportunity,
 } from "@/features/opportunities/types"
+import { useDebounced } from "@/hooks/use-debounced"
+import {
+  MultiFilter,
+  SearchFilter,
+  type FilterOption,
+} from "@/components/list-filters"
 import { formatCampusDate, formatRelative, isPast } from "@/lib/datetime"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { toPlainText } from "@/components/markdown"
@@ -42,7 +59,11 @@ import {
 } from "@/components/ui/dialog"
 
 const opportunitiesSearchSchema = z.object({
-  type: z.enum(OPPORTUNITY_TYPES).optional(),
+  type: z.array(z.enum(OPPORTUNITY_TYPES)).optional(),
+  majors: z.array(z.enum(OPPORTUNITY_MAJORS)).optional(),
+  education: z.array(z.enum(EDUCATION_LEVELS)).optional(),
+  years: z.array(z.coerce.number()).optional(),
+  hideExpired: z.boolean().default(true),
   q: z.string().optional(),
 })
 
@@ -62,6 +83,9 @@ function OpportunityCard({
   onDelete?: () => void
 }) {
   const expired = opportunity.deadline ? isPast(opportunity.deadline) : false
+  const calendar = useAddOpportunityToCalendar()
+  const majors = normalizeMajors(opportunity.majors)
+  const eligibilities = formatEligibilities(opportunity.eligibilities)
 
   const body = (
     <>
@@ -112,6 +136,24 @@ function OpportunityCard({
           </div>
         )}
       </dl>
+
+      {(majors.length > 0 || eligibilities.length > 0) && (
+        <div className="flex flex-wrap gap-1">
+          {eligibilities.map((label) => (
+            <Badge key={label} variant="outline">
+              {label}
+            </Badge>
+          ))}
+          {majors.slice(0, 5).map((major) => (
+            <Badge key={major} variant="secondary">
+              {major}
+            </Badge>
+          ))}
+          {majors.length > 5 && (
+            <Badge variant="secondary">+{majors.length - 5} majors</Badge>
+          )}
+        </div>
+      )}
     </>
   )
 
@@ -152,13 +194,80 @@ function OpportunityCard({
           )}
         </div>
       )}
+
+      {opportunity.deadline && !expired && (
+        <div className="mt-3 border-t border-border pt-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={calendar.isPending}
+            onClick={() => {
+              calendar.mutate(opportunity.id)
+            }}
+          >
+            <CalendarPlusIcon aria-hidden />
+            {calendar.isPending ? "Adding…" : "Add deadline to calendar"}
+          </Button>
+          {calendar.isSuccess && (
+            <p className="mt-1 text-xs text-success">
+              {calendar.data.google_errors.length > 0
+                ? "Calendar added with warnings from Google."
+                : "Added to Google Calendar."}
+            </p>
+          )}
+          {calendar.isError && (
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-destructive">
+              <span>
+                {calendar.error instanceof ApiError &&
+                (calendar.error.status === 401 || calendar.error.status === 403)
+                  ? "Google permission needs to be renewed."
+                  : apiErrorMessage(
+                      calendar.error,
+                      "Could not add this deadline."
+                    )}
+              </span>
+              {calendar.error instanceof ApiError &&
+                (calendar.error.status === 401 ||
+                  calendar.error.status === 403) && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      beginLogin()
+                    }}
+                  >
+                    Sign in again
+                  </Button>
+                )}
+            </div>
+          )}
+        </div>
+      )}
     </Card>
   )
 }
 
 function Opportunities() {
-  const { type, q } = Route.useSearch()
-  const filters = { type: type ? [type] : undefined, q, hide_expired: true }
+  const {
+    type = [],
+    majors = [],
+    education = [],
+    years = [],
+    hideExpired,
+    q,
+  } = Route.useSearch()
+  const navigate = Route.useNavigate()
+  const [search, setSearch] = useState(q ?? "")
+  const debouncedSearch = useDebounced(search)
+  const filters = {
+    type: type.length > 0 ? type : undefined,
+    majors: majors.length > 0 ? majors : undefined,
+    education_level: education.length > 0 ? education : undefined,
+    years: years.length > 0 ? years : undefined,
+    q,
+    hide_expired: hideExpired,
+  }
 
   const { canManageOpportunities } = usePermissions()
 
@@ -176,6 +285,20 @@ function Opportunities() {
   const createOpportunity = useCreateOpportunity()
   const updateOpportunity = useUpdateOpportunity()
   const deleteOpportunity = useDeleteOpportunity()
+
+  useEffect(() => {
+    setSearch(q ?? "")
+  }, [q])
+
+  useEffect(() => {
+    void navigate({
+      search: (previous) => ({
+        ...previous,
+        q: debouncedSearch || undefined,
+      }),
+      replace: true,
+    })
+  }, [debouncedSearch, navigate])
 
   const saving = createOpportunity.isPending || updateOpportunity.isPending
   const saveError = createOpportunity.error ?? updateOpportunity.error
@@ -214,6 +337,85 @@ function Opportunities() {
           </Button>
         )}
       </header>
+
+      <div className="space-y-3 rounded-lg border border-border p-3">
+        <SearchFilter
+          value={search}
+          onChange={setSearch}
+          placeholder="Search opportunities"
+        />
+        <div className="flex flex-wrap gap-2">
+          <MultiFilter
+            label="Types"
+            selected={type}
+            options={TYPE_OPTIONS}
+            onChange={(next) => {
+              void navigate({
+                search: (previous) => ({
+                  ...previous,
+                  type: next.length > 0 ? next : undefined,
+                }),
+              })
+            }}
+          />
+          <MultiFilter
+            label="Education"
+            selected={education}
+            options={EDUCATION_OPTIONS}
+            onChange={(next) => {
+              void navigate({
+                search: (previous) => ({
+                  ...previous,
+                  education: next.length > 0 ? next : undefined,
+                }),
+              })
+            }}
+          />
+          <MultiFilter
+            label="Years"
+            selected={years.map(String)}
+            options={YEAR_OPTIONS}
+            onChange={(next) => {
+              void navigate({
+                search: (previous) => ({
+                  ...previous,
+                  years:
+                    next.length > 0
+                      ? next.map((value) => Number(value))
+                      : undefined,
+                }),
+              })
+            }}
+          />
+          <MultiFilter
+            label="Majors"
+            selected={majors}
+            options={MAJOR_OPTIONS}
+            onChange={(next) => {
+              void navigate({
+                search: (previous) => ({
+                  ...previous,
+                  majors: next.length > 0 ? next : undefined,
+                }),
+              })
+            }}
+          />
+          <Button
+            variant={hideExpired ? "secondary" : "outline"}
+            size="sm"
+            onClick={() => {
+              void navigate({
+                search: (previous) => ({
+                  ...previous,
+                  hideExpired: !hideExpired,
+                }),
+              })
+            }}
+          >
+            {hideExpired ? "Show expired" : "Hide expired"}
+          </Button>
+        </div>
+      </div>
 
       <InfiniteList
         items={list.items}
@@ -345,3 +547,23 @@ function Opportunities() {
     </div>
   )
 }
+
+const TYPE_OPTIONS = OPPORTUNITY_TYPES.map((value) => ({
+  value,
+  label: OPPORTUNITY_TYPE_LABELS[value],
+}))
+
+const EDUCATION_OPTIONS = EDUCATION_LEVELS.map((value) => ({
+  value,
+  label: EDUCATION_LEVEL_LABELS[value],
+})) satisfies FilterOption<EducationLevel>[]
+
+const YEAR_OPTIONS = [1, 2, 3, 4].map((value) => ({
+  value: String(value),
+  label: `Year ${String(value)}`,
+}))
+
+const MAJOR_OPTIONS = OPPORTUNITY_MAJORS.map((value) => ({
+  value,
+  label: value,
+})) satisfies FilterOption<OpportunityMajor>[]

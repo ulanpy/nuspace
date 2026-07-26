@@ -103,6 +103,7 @@ interface CommunityFormProps {
   onCancel: () => void
   isPending: boolean
   submitError?: string | null
+  formId?: string
 }
 
 /**
@@ -127,6 +128,7 @@ export function CommunityForm({
   onCancel,
   isPending,
   submitError,
+  formId,
 }: CommunityFormProps) {
   const form = useForm<CommunityFormValues>({
     resolver: zodResolver(communitySchema),
@@ -166,6 +168,7 @@ export function CommunityForm({
 
   return (
     <form
+      id={formId}
       onSubmit={(submitEvent) => {
         void form.handleSubmit((values) => {
           const email = optional(values.email)
