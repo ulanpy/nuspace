@@ -60,6 +60,8 @@ export const qk = {
     messages: (conversationId: number) =>
       ["sgotinish", "messages", conversationId] as const,
     members: () => ["sgotinish", "members"] as const,
+    list: (filters: Record<string, unknown>) =>
+      ["sgotinish", "tickets", "list", filters] as const,
     departments: () => ["sgotinish", "departments"] as const,
   },
 
