@@ -7,6 +7,7 @@ from backend.modules.auth.dependencies import (
 from backend.modules.sgotinish.messages import dependencies as deps
 from backend.modules.sgotinish.messages import schemas
 from backend.modules.sgotinish.messages.service import MessageService
+from backend.modules.sgotinish.owner_hash import get_owner_hash
 from fastapi import APIRouter, Depends, Query
 
 router = APIRouter(tags=["SGotinish Messages Routes"])
@@ -22,7 +23,7 @@ async def create_message(
     message_data: schemas.MessageCreateDTO,
     user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     service: MessageService = Depends(deps.get_message_service),
-    owner_hash: str | None = Query(default=None),
+    owner_hash: str | None = Depends(get_owner_hash),
 ) -> schemas.MessageResponseDTO:
     """
     Creates a new message in a conversation.
@@ -52,7 +53,7 @@ async def get_messages(
     service: MessageService = Depends(deps.get_message_service),
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
-    owner_hash: str | None = Query(default=None),
+    owner_hash: str | None = Depends(get_owner_hash),
 ) -> schemas.ListMessageDTO:
     """
     Retrieves a paginated list of messages with flexible filtering.
@@ -83,7 +84,7 @@ async def get_message(
     message_id: int,
     user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     service: MessageService = Depends(deps.get_message_service),
-    owner_hash: str | None = Query(default=None),
+    owner_hash: str | None = Depends(get_owner_hash),
 ) -> schemas.MessageResponseDTO:
     """
     Retrieves a single message by its unique ID.
@@ -115,7 +116,7 @@ async def mark_message_as_read(
     message_id: int,
     user_tuple: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     service: MessageService = Depends(deps.get_message_service),
-    owner_hash: str | None = Query(default=None),
+    owner_hash: str | None = Depends(get_owner_hash),
 ) -> schemas.MessageResponseDTO:
     """
     Marks a message as read by the current user.
