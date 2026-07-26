@@ -83,6 +83,31 @@ so OpenAPI reports an opaque index signature and codegen cannot describe it.
 the only place a payload shape is written by hand — everywhere else, use the
 generated types.
 
+## Media uploads
+
+Bytes never pass through our API. `useMediaUpload()` (in `src/features/media/`)
+runs the three-step presigned flow: ask the backend to sign one PUT per file,
+send the bytes straight at the returned URL, and let the bucket tell the backend
+what landed. The `x-goog-meta-*` headers are part of the signature and are
+replayed exactly as issued — re-deriving `Content-Type` from the `File` is
+enough for GCS to answer 403.
+
+Two things about step three are easy to get wrong:
+
+- **Locally the Media row already exists before the bytes do.** With
+  `USE_GCS_EMULATOR=true` there is no Pub/Sub, so the backend creates the row
+  while signing, and the upload URL points at its own `/bucket/local-upload`
+  proxy. In production the row appears only after GCS notifies
+  `POST /bucket/gcs-hook`, which happens _after_ the PUT resolves. A refetch
+  immediately on success can legitimately come back without the new image, and
+  only production will show you that.
+- **Formats are not interchangeable, and the backend filters on them.** Events
+  return `carousel` only; communities return `profile` and `banner`. Asking an
+  entity for a format it never carries renders nothing, with no error — the
+  generated types cannot catch it, because the value is valid either way. Go
+  through `selectMedia()` in `src/features/media/select.ts`, where that mapping
+  is written down.
+
 ## Conventions
 
 - **One QueryClient**, exported from `src/app/query-client.ts` and passed to

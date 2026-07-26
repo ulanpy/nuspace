@@ -3,6 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { CalendarIcon, MapPinIcon, UserIcon } from "lucide-react"
 
 import { eventDetailQueryOptions } from "@/features/events/api"
+import { selectMedia } from "@/features/media/select"
 import { formatCampusDateTime, formatRelative, isPast } from "@/lib/datetime"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -23,18 +24,19 @@ function EventDetail() {
     eventDetailQueryOptions(Number(eventId))
   )
 
-  const banner = (event.media ?? []).find((m) => m.media_format === "banner")
+  const poster = selectMedia(event.media, "carousel")
   const started = isPast(event.start_datetime)
   const finished = isPast(event.end_datetime)
 
   return (
     <article className="mx-auto max-w-3xl space-y-6">
-      {banner && (
+      {poster && (
+        // object-contain, not cover: the poster is usually the flyer, and
+        // cropping it can cut off details that appear nowhere else on the page.
         <img
-          src={banner.url}
-          alt=""
-          aria-hidden
-          className="aspect-[16/9] w-full rounded-lg bg-muted object-cover"
+          src={poster.url}
+          alt={`Poster for ${event.name}`}
+          className="aspect-[3/4] w-full max-w-xs rounded-lg bg-muted object-contain"
         />
       )}
 

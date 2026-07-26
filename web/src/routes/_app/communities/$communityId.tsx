@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { BadgeCheckIcon, ExternalLinkIcon, MailIcon } from "lucide-react"
 
 import { communityDetailQueryOptions } from "@/features/communities/api"
-import type { Community } from "@/features/communities/types"
+import { selectMedia } from "@/features/media/select"
 import { formatCampusDate } from "@/lib/datetime"
 import { Badge } from "@/components/ui/badge"
 
@@ -14,10 +14,6 @@ export const Route = createFileRoute("/_app/communities/$communityId")({
     ),
   component: CommunityDetail,
 })
-
-function mediaBy(community: Community, format: string) {
-  return community.media.find((m) => m.media_format === format)?.url
-}
 
 function ExternalLink({ href, label }: { href: string; label: string }) {
   return (
@@ -39,8 +35,8 @@ function CommunityDetail() {
     communityDetailQueryOptions(Number(communityId))
   )
 
-  const banner = mediaBy(community, "banner")
-  const avatar = mediaBy(community, "profile")
+  const banner = selectMedia(community.media, "banner")?.url
+  const avatar = selectMedia(community.media, "profile")?.url
 
   return (
     <article className="mx-auto max-w-3xl space-y-6">
