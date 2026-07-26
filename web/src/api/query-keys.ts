@@ -44,6 +44,7 @@ export const qk = {
       ["courses", "catalog", filters] as const,
     registered: () => ["courses", "registered"] as const,
     schedule: () => ["courses", "schedule"] as const,
+    semesters: () => ["courses", "semesters"] as const,
     gradeTerms: () => ["courses", "grade-terms"] as const,
     grades: (filters: Record<string, unknown>) =>
       ["courses", "grades", filters] as const,
