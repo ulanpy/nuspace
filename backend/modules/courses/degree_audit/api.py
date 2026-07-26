@@ -44,11 +44,17 @@ async def audit_from_registrar(
     db_session: AsyncSession = Depends(get_db_session),
     service: DegreeAuditService = Depends(get_degree_audit_service),
 ) -> AuditResponse:
+    # Locally, override with your own registrar username via
+    # REGISTRAR_DEBUG_USERNAME rather than sending someone else's.
+    username = payload.username
+    if config.IS_DEBUG and config.REGISTRAR_DEBUG_USERNAME:
+        username = config.REGISTRAR_DEBUG_USERNAME
+
     return await service.audit_with_registrar(
         year=payload.year,
         majors=payload.majors,
         minors=payload.minors,
-        username=payload.username if not config.IS_DEBUG else "bauyrzhan.kizatov",
+        username=username,
         password=payload.password,
         student_sub=_creds[1]["sub"],
         session=db_session,

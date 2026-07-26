@@ -44,6 +44,15 @@ class Config(BaseSettings):
     GCP_SIGNING_SERVICE_ACCOUNT_KEY_JSON: str | None = None
     ORIGINS: List[str] = ["*"]
     MOCK_KEYCLOAK: bool  # always set True in local dev
+    # Your own registrar username, for testing the registrar sync locally.
+    #
+    # Mock users have no real NU email, so the username cannot be derived from
+    # the session the way it is in production. This used to be a colleague's
+    # username written into the source, which meant every developer's local sync
+    # attempt was a login attempt against that person's real registrar account --
+    # and enough wrong passwords locks them out. Set your own here, or leave it
+    # unset and the sync will simply fail to authenticate.
+    REGISTRAR_DEBUG_USERNAME: str | None = None
     USE_GCS_EMULATOR: bool  # keep True for local dev; For staging/prod .env will have it False
     GCS_EMULATOR_HOST: str
     INTEGRATION_SECRET: str
