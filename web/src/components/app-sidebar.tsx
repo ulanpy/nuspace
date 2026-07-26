@@ -15,8 +15,8 @@ import type { LucideIcon } from "lucide-react"
 
 import logoUrl from "@/assets/nuspace_logo.svg"
 import { cn } from "@/lib/utils"
-import { beginLogout } from "@/features/auth/api"
 import { useCurrentUser } from "@/features/auth/use-session"
+import { useLogout } from "@/features/auth/use-logout"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
@@ -95,6 +95,7 @@ function Brand({ onNavigate }: { onNavigate?: () => void }) {
 
 function AccountCard({ onNavigate }: { onNavigate?: () => void }) {
   const user = useCurrentUser()
+  const logout = useLogout()
   const initial = user.given_name.charAt(0).toUpperCase()
 
   return (
@@ -122,11 +123,14 @@ function AccountCard({ onNavigate }: { onNavigate?: () => void }) {
 
       <Button
         variant="ghost"
-        onClick={beginLogout}
+        disabled={logout.isPending}
+        onClick={() => {
+          logout.mutate()
+        }}
         className="w-full justify-start gap-3 px-3 text-sidebar-foreground"
       >
         <LogOutIcon className="size-5 shrink-0" aria-hidden />
-        Log out
+        {logout.isPending ? "Logging out…" : "Log out"}
       </Button>
     </div>
   )

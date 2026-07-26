@@ -42,7 +42,7 @@ function Landing() {
           size="lg"
           className="w-full"
           onClick={() => {
-            beginLogin(returnTo ?? window.location.origin)
+            beginLogin(returnTo)
           }}
         >
           Sign in with your NU account

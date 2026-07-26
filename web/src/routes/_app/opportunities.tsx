@@ -16,7 +16,7 @@ import { ApiError } from "@/api/client"
 import { qk } from "@/api/query-keys"
 import { useInfiniteList } from "@/hooks/use-infinite-list"
 import { usePermissions } from "@/features/auth/use-session"
-import { beginLogin } from "@/features/auth/api"
+import { beginReauthentication } from "@/features/auth/api"
 import {
   fetchOpportunitiesPage,
   useCreateOpportunity,
@@ -210,11 +210,34 @@ function OpportunityCard({
             {calendar.isPending ? "Adding…" : "Add deadline to calendar"}
           </Button>
           {calendar.isSuccess && (
-            <p className="mt-1 text-xs text-success">
-              {calendar.data.google_errors.length > 0
-                ? "Calendar added with warnings from Google."
-                : "Added to Google Calendar."}
-            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+              <span
+                className={
+                  calendar.data.google_errors.length > 0
+                    ? "text-warning"
+                    : "text-success"
+                }
+              >
+                {calendar.data.google_errors.includes(
+                  "insufficient_google_scope"
+                )
+                  ? "Google Calendar permission needs to be renewed."
+                  : calendar.data.google_errors.length > 0
+                    ? "Calendar added with warnings from Google."
+                    : "Added to Google Calendar."}
+              </span>
+              {calendar.data.google_errors.includes(
+                "insufficient_google_scope"
+              ) && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={beginReauthentication}
+                >
+                  Sign in again
+                </Button>
+              )}
+            </div>
           )}
           {calendar.isError && (
             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-destructive">
@@ -233,9 +256,7 @@ function OpportunityCard({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => {
-                      beginLogin()
-                    }}
+                    onClick={beginReauthentication}
                   >
                     Sign in again
                   </Button>

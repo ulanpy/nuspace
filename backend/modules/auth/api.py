@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 from aiogram import Bot
@@ -7,7 +8,6 @@ from fastapi.responses import RedirectResponse
 from jose import JWTError
 from redis.asyncio import Redis
 
-from backend.modules.auth.dependencies import get_creds_or_401
 from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import config
 from backend.modules.auth import dependencies as deps
@@ -16,10 +16,12 @@ from backend.modules.auth.cookies import (
     set_kc_auth_cookies,
     unset_kc_auth_cookies,
 )
+from backend.modules.auth.dependencies import get_creds_or_401
 from backend.modules.auth.schemas import CurrentUserResponse, Sub
 from backend.modules.auth.service import AuthService
 
 router = APIRouter(tags=["Auth Routes"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("/login")
@@ -41,12 +43,11 @@ async def login(
             status_code=303,
         )
 
+    response = await auth_service.get_authorize_redirect(request, state, app_base_url, reauth)
     if reauth:
         refresh_token = request.cookies.get(config.COOKIE_REFRESH_NAME)
-        response = RedirectResponse(url="/", status_code=303)
         await auth_service.prepare_reauth(request, response, refresh_token)
-
-    return await auth_service.get_authorize_redirect(request, state, app_base_url, reauth)
+    return response
 
 
 @router.get("/auth/callback")
@@ -146,26 +147,23 @@ async def get_current_user(
     return await auth_service.get_current_user(kc_principal, app_principal)
 
 
-@router.get("/logout")
+# 204 with no body: the only thing this endpoint produces is Set-Cookie headers.
+# It used to return the integer 200 as a JSON body, which said nothing and
+# invited callers to read a result that was never meaningful.
+@router.get("/logout", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
 async def logout(
     response: Response,
     auth_service: AuthService = Depends(deps.get_auth_service),
     refresh_token: Annotated[str | None, Cookie(alias=config.COOKIE_REFRESH_NAME)] = None,
 ):
-    if not refresh_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="No refresh token found in cookies",
-        )
-
-    try:
-        await auth_service.logout(refresh_token)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Error revoking token: {exc}",
-        ) from exc
+    if refresh_token:
+        try:
+            await auth_service.logout(refresh_token)
+        except Exception:
+            # Remote revocation is desirable, but an unavailable identity
+            # provider must not prevent the browser from ending its local
+            # session. The short-lived access token will expire independently.
+            logger.warning("Failed to revoke refresh token during logout", exc_info=True)
 
     unset_kc_auth_cookies(response)
     response.delete_cookie(key=config.COOKIE_APP_NAME)
-    return status.HTTP_200_OK
