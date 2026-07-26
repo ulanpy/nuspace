@@ -1,7 +1,14 @@
-import { queryOptions } from "@tanstack/react-query"
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query"
 
 import { api, unwrap } from "@/api/client"
 import { qk } from "@/api/query-keys"
+
+import type { CourseItemDraft } from "./types"
 
 /**
  * The student's registered courses, each with its graded items.
@@ -38,5 +45,55 @@ export function scheduleQueryOptions() {
   return queryOptions({
     queryKey: qk.courses.schedule(),
     queryFn: () => unwrap(api.GET("/registered_courses/schedule")),
+  })
+}
+
+/**
+ * Every item mutation invalidates the whole registered-courses query.
+ *
+ * Items only ever appear nested inside a course, and editing one changes the
+ * course score, the semester GPA and the projection all at once — there is no
+ * smaller unit worth patching by hand.
+ */
+function refreshCourses(client: QueryClient) {
+  return client.invalidateQueries({ queryKey: qk.courses.registered() })
+}
+
+export function useAddCourseItem() {
+  const client = useQueryClient()
+
+  return useMutation({
+    mutationFn: (body: CourseItemDraft & { student_course_id: number }) =>
+      unwrap(api.POST("/course_items", { body })),
+    onSuccess: () => refreshCourses(client),
+  })
+}
+
+export function useUpdateCourseItem() {
+  const client = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ itemId, ...body }: CourseItemDraft & { itemId: number }) =>
+      unwrap(
+        api.PATCH("/course_items/{item_id}", {
+          params: { path: { item_id: itemId } },
+          body,
+        })
+      ),
+    onSuccess: () => refreshCourses(client),
+  })
+}
+
+export function useDeleteCourseItem() {
+  const client = useQueryClient()
+
+  return useMutation({
+    mutationFn: (itemId: number) =>
+      unwrap<void>(
+        api.DELETE("/course_items/{item_id}", {
+          params: { path: { item_id: itemId } },
+        })
+      ),
+    onSuccess: () => refreshCourses(client),
   })
 }

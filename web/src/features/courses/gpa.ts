@@ -156,8 +156,20 @@ export function formatGpa(gpa: number | null | undefined): string {
   return gpa == null ? "—" : gpa.toFixed(2)
 }
 
-/** Weights and earned percentages, trimmed of trailing zeros. */
+/** A bare number, trimmed of trailing zeros: `47.50` → `47.5`. */
+export function formatPoints(value: number | null | undefined): string {
+  if (value == null) return "—"
+  return value.toFixed(2).replace(/\.?0+$/, "")
+}
+
+/**
+ * Weights and earned percentages.
+ *
+ * Only for values that really are percentages. Raw scores are points out of
+ * whatever the assignment is marked on — "47.5 / 50" is right where
+ * "47.5% / 50%" is nonsense — so those use `formatPoints`.
+ */
 export function formatWeight(value: number | null | undefined): string {
   if (value == null) return "—"
-  return `${value.toFixed(2).replace(/\.?0+$/, "")}%`
+  return `${formatPoints(value)}%`
 }

@@ -8,3 +8,17 @@ export type CourseItem = components["schemas"]["BaseCourseItem"]
 export type Schedule = components["schemas"]["ScheduleResponse"]
 export type RegistrarSyncResponse =
   components["schemas"]["RegistrarSyncResponse"]
+
+/**
+ * The editable fields of a course item.
+ *
+ * Create and update take the same shape here even though the API types them
+ * separately — the form is identical, and the only real difference is that
+ * create needs a course to attach to.
+ */
+export interface CourseItemDraft {
+  item_name: string
+  total_weight_pct: number | null
+  obtained_score: number | null
+  max_score: number | null
+}
