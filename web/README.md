@@ -1,7 +1,10 @@
 # web
 
-The rebuilt Nuspace frontend. Runs beside the existing `frontend/` until it
-reaches parity, at which point it takes over and `frontend/` is deleted.
+The Nuspace frontend. Serves `http://localhost` in development and everything
+CI deploys to production.
+
+The previous app in `frontend/` is still in the repository for one release as a
+fallback and is no longer routed to or built. Deleting it is a follow-up.
 
 **Stack:** Vite 8 · React 19 · TypeScript 7 · TanStack Router (file-based) ·
 TanStack Query · Tailwind v4 · shadcn/ui on Base UI.
@@ -17,14 +20,13 @@ cp .env.example .env    # fill TELEGRAM_BOT_TOKEN
 docker compose up --build
 ```
 
-|                         |                      |
-| ----------------------- | -------------------- |
-| `http://localhost`      | existing `frontend/` |
-| `http://localhost:6767` | this app             |
-| `http://localhost:8080` | pgAdmin              |
+|                         |          |
+| ----------------------- | -------- |
+| `http://localhost`      | this app |
+| `http://localhost:8080` | pgAdmin  |
 
-Both frontends talk to the same backend, so any screen can be compared
-side by side.
+To compare against the old app, point `$proxy_upstream` in
+`infra/nginx/nginx.dev.conf` back at `frontend:5173` and reload nginx.
 
 To run outside Docker, `pnpm dev` serves on 5173 and proxies `/api` to
 `http://localhost` (override with `VITE_API_PROXY_TARGET`).
@@ -55,14 +57,20 @@ Docker Desktop VM, which uses real bind mounts and has no such layer.
 `MOCK_KEYCLOAK=true` is the default, so no real credentials are needed:
 
 ```
-http://localhost:6767/api/login?mock_user=1
+http://localhost/api/login?mock_user=alice
 ```
 
-**The post-login redirect lands on `http://localhost` — port 80, the old app.**
-The backend builds it from `DEV_APP_URL` rather than the request Host. It is
-only cosmetic: cookies are not port-scoped, so you are already signed in.
-Navigate back to `:6767` and the session is live. Don't repoint `DEV_APP_URL`
-at 6767 — that just moves the problem onto the old app.
+`mock_user` accepts a number, an email, a sub or a first name. The people
+`backend/fixtures/dev/seed_campus.sql` sets up cover every role worth testing:
+
+| `mock_user` | role                                        |
+| ----------- | ------------------------------------------- |
+| `alice`     | admin                                       |
+| `bob`       | student, and on the opportunities allowlist |
+| `charlie`   | Head (`boss`)                               |
+| `dana`      | Executive (`capo`)                          |
+| `erik`      | Member (`soldier`)                          |
+| `hassan`    | student, no special access                  |
 
 ## Commands
 
@@ -72,6 +80,7 @@ pnpm build          # typecheck + production build
 pnpm typecheck      # tsc -b --noEmit over the project references
 pnpm lint           # oxlint, including type-aware rules
 pnpm format         # prettier, sorts Tailwind classes
+pnpm test           # node --test over src/**/*.test.ts
 pnpm api:generate   # regenerate src/api/schema.d.ts from the backend
 pnpm api:check      # fail if the committed schema is stale
 ```
@@ -148,6 +157,18 @@ Two things about step three are easy to get wrong:
 - **Never build a Tailwind class by interpolation** (`` `grid-cols-${n}` ``).
   The scanner cannot see it and the class is silently dropped from the
   stylesheet.
+
+## Tests
+
+`node --test`, no test framework. Node 22+ strips TypeScript natively, so a
+`.test.ts` file next to the module it covers runs with no build step and no
+dependency. `tsconfig.test.json` gives those files Node's types; the app project
+excludes them so app code cannot reach for `node:` builtins by accident.
+
+There is one suite, on `features/communities/url-validation.ts`, ported from the
+old app along with the module. It is the interesting kind of test: `new URL`
+accepts `https://wtf://t.me/x` and reports `wtf:` as the host, so a naive
+protocol check passes something that goes nowhere near Telegram.
 
 ## Linting
 

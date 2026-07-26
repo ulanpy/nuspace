@@ -1,10 +1,14 @@
 ---
 # Static files are built in GitHub Actions and shipped as a tarball on the controller.
 # `frontend_tarball_path` is set by CI when frontend paths changed; empty skips deploy.
+#
+# The path is web/out, not frontend/out: the app that ships is the rebuild in
+# web/. The frontend/ tree is still in the repository for one release, but
+# nothing unpacks into it and nginx no longer serves it.
 
 - name: Ensure frontend out directory exists with proper permissions
   ansible.builtin.file:
-    path: "/home/{{ ansible_user }}/nuspace/frontend/out"
+    path: "/home/{{ ansible_user }}/nuspace/web/out"
     state: directory
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
@@ -14,7 +18,7 @@
 - name: Clear previous static export
   ansible.builtin.shell: |
     set -e
-    rm -rf /home/{{ ansible_user }}/nuspace/frontend/out/*
+    rm -rf /home/{{ ansible_user }}/nuspace/web/out/*
   args:
     executable: /bin/bash
   when: frontend_tarball_path | default('') | length > 0
@@ -22,7 +26,7 @@
 - name: Unpack frontend build from CI runner to VM
   ansible.builtin.unarchive:
     src: "{{ frontend_tarball_path }}"
-    dest: "/home/{{ ansible_user }}/nuspace/frontend/out"
+    dest: "/home/{{ ansible_user }}/nuspace/web/out"
     remote_src: false
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
@@ -30,7 +34,7 @@
 
 - name: Verify out files were created
   ansible.builtin.stat:
-    path: "/home/{{ ansible_user }}/nuspace/frontend/out/index.html"
+    path: "/home/{{ ansible_user }}/nuspace/web/out/index.html"
   register: dist_check
   when: frontend_tarball_path | default('') | length > 0
 
@@ -43,7 +47,7 @@
 
 - name: Show frontend deploy success message
   ansible.builtin.debug:
-    msg: "Frontend static files from CI are deployed under frontend/out."
+    msg: "Frontend static files from CI are deployed under web/out."
   when: frontend_tarball_path | default('') | length > 0
 
 - name: Recreate nginx service to pick up new out files

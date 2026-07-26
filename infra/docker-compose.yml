@@ -41,8 +41,9 @@ services:
       - nuros
     restart: always
     ports:
-      - "80:80" # Existing frontend/
-      - "6767:6767" # New web/ — remove once the cutover lands
+      # :80 now serves web/. The old frontend/ service is still defined below
+      # for one release, but nothing routes to it — see infra/nginx/nginx.dev.conf.
+      - "80:80"
     volumes:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf
       - ../frontend/dist:/var/www/my-app/dist # Make sure this folder exists in production builds
@@ -158,8 +159,8 @@ services:
     depends_on:
       - cloudflared
 
-  # New frontend, served side by side with `frontend` so the two can be compared
-  # against one backend during the rewrite. Reachable at http://localhost:6767.
+  # The app. Served at http://localhost since the cutover; `frontend` below is
+  # the previous one, kept for one release as a fallback and not routed to.
   web:
     build:
       context: ..
