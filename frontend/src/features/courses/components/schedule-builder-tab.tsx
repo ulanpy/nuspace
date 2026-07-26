@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { gradeStatisticsApi } from '../api/grade-statistics-api';
 import { ApiError } from "@/utils/api";
 import {
@@ -28,6 +29,7 @@ import { CalendarPlus, ChevronDown, ClipboardCopy, Copy, Loader2, Plus, Pencil, 
 import { ConfirmationModal } from './confirmation-modal';
 import { useSyllabusLinks } from '../utils/use-syllabus-links';
 import { toast } from "@/hooks/toast";
+import { useUser } from "@/hooks/use-user";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,7 +55,8 @@ const formatScheduleShortlist = (schedule: PlannerSchedule | null): string => {
         .map((section) => section.section_code)
         .filter(Boolean);
       if (!selectedCodes.length) return null;
-      return `${course.course_code} ${selectedCodes.join(" | ")}`;
+      const courseCode = course.course_code.replace(/[\s-]+/g, "_");
+      return `${courseCode} ${selectedCodes.join(" | ")}`;
     })
     .filter(Boolean)
     .join("\n");
@@ -191,6 +194,7 @@ interface ScheduleBuilderTabProps {
 
 export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
   const queryClient = useQueryClient();
+  const { isLoading: isAuthLoading } = useUser();
   const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(null);
   const schedulesQuery = useQuery({
     queryKey: ["plannerSchedules"],
@@ -216,6 +220,8 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
     null,
   );
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchBoxRef = useRef<HTMLDivElement | null>(null);
   const searchResultsListRef = useRef<HTMLDivElement | null>(null);
   const searchLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const { getLinkForCode: getSyllabusLink } = useSyllabusLinks("/data/course_links.csv");
@@ -306,6 +312,7 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
     setSearchCursor(null);
     setLastSearch(null);
     setIsLoadingMore(false);
+    setSearchOpen(false);
     autoBuildUndoSnapshot.current = null;
     autoFetchedCourses.current.clear();
   }, [planner?.id]);
@@ -321,10 +328,34 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
   }, [semestersQuery.data, currentTermValue]);
 
   useEffect(() => {
+    const handler = (e: MouseEvent | TouchEvent) => {
+      if (!searchBoxRef.current) return;
+      if (!searchBoxRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSearchOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  useEffect(() => {
     setSearchResults([]);
     setSearchCursor(null);
     setLastSearch(null);
     setIsLoadingMore(false);
+    setSearchOpen(false);
   }, [currentTermValue]);
 
   useEffect(() => {
@@ -654,6 +685,7 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
       term_value: courseForm.term_value,
       term_label: courseForm.term_label,
     });
+    setSearchOpen(false);
   };
 
   const performSearch = (
@@ -685,8 +717,10 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
       setSearchResults([]);
       setSearchCursor(null);
       setLastSearch(null);
+      setSearchOpen(false);
       return;
     }
+    setSearchOpen(true);
     if (searchDebounce.current) clearTimeout(searchDebounce.current);
     searchDebounce.current = setTimeout(() => {
       performSearch(
@@ -700,6 +734,7 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
   }, [courseForm.query, courseForm.term_value, planner]);
 
   useEffect(() => {
+    if (!searchOpen) return;
     const sentinel = searchLoadMoreRef.current;
     const root = searchResultsListRef.current;
     if (!sentinel || !root || !searchCursor || !lastSearch) return;
@@ -729,6 +764,7 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
     isLoadingMore,
     courseSearchMutation.isPending,
     searchResults.length,
+    searchOpen,
   ]);
 
   const searchError =
@@ -800,12 +836,8 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
     return false;
   }, [selectedEvents]);
 
-  if (plannerQuery.isLoading || schedulesQuery.isLoading || selectedScheduleId == null) {
-    return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Loading planner...
-      </div>
-    );
+  if (isAuthLoading) {
+    return <ScheduleBuilderSkeleton />;
   }
 
   if (!user) {
@@ -816,6 +848,10 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
         description="We will save your schedule for you in your account."
       />
     );
+  }
+
+  if (schedulesQuery.isLoading || selectedScheduleId == null || plannerQuery.isLoading) {
+    return <ScheduleBuilderSkeleton />;
   }
 
   return (
@@ -831,7 +867,7 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
               </Badge>
             )}
           </div>
-          <div className="relative mt-3 min-w-0 space-y-2">
+          <div ref={searchBoxRef} className="relative mt-3 min-w-0 space-y-2">
             <form className="space-y-2" onSubmit={handleSearchSubmit}>
               <Input
                 placeholder="Search by code (e.g., MATH 161)"
@@ -843,12 +879,17 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
                   }))
                 }
                 disabled={!planner}
+                onFocus={() => {
+                  if (normalizeCourseQuery(courseForm.query)) {
+                    setSearchOpen(true);
+                  }
+                }}
               />
             </form>
             {searchError && (
               <p className="text-xs text-destructive">{searchError}</p>
             )}
-            {activeSearchQuery && (
+            {searchOpen && activeSearchQuery && (
               <div className="absolute left-0 right-0 top-full z-20 mt-2 min-w-0 overflow-hidden rounded-xl border border-border/60 bg-card shadow-lg">
                 <div
                   ref={searchResultsListRef}
@@ -1237,6 +1278,73 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
     </div>
   );
 };
+
+const ScheduleBuilderSkeleton = () => (
+  <div className="space-y-6" aria-busy="true" aria-label="Loading planner">
+    <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+      <aside className="w-full min-w-0 shrink-0 space-y-4 xl:w-72">
+        <section className="min-w-0 rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </div>
+          <Skeleton className="mt-3 h-9 w-full" />
+        </section>
+
+        <section className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-8 w-20" />
+          </div>
+          <div className="mt-3 space-y-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="space-y-2 rounded-lg border border-border/60 p-3">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-40" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+            ))}
+          </div>
+        </section>
+      </aside>
+
+      <section className="w-full min-w-0 flex-1 rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <Skeleton className="h-7 w-36" />
+          <Skeleton className="h-8 w-28" />
+        </div>
+        <div className="space-y-3">
+          <div className="flex gap-2 overflow-hidden">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <Skeleton key={index} className="h-9 w-40 shrink-0 rounded-xl" />
+            ))}
+          </div>
+          <div className="overflow-hidden rounded-xl border border-border/60">
+            <div className="grid grid-cols-6 border-b border-border/60">
+              <Skeleton className="m-2 h-4 w-10" />
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Skeleton key={index} className="m-2 h-4 w-8 justify-self-center" />
+              ))}
+            </div>
+            <div className="space-y-3 p-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="grid grid-cols-6 gap-2">
+                  <Skeleton className="h-8 w-10" />
+                  {Array.from({ length: 5 }).map((__, cellIndex) => (
+                    <Skeleton
+                      key={cellIndex}
+                      className={`h-8 w-full ${index % 3 === cellIndex % 3 ? "opacity-100" : "opacity-30"}`}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+);
 
 const CourseCard = ({
   course,
