@@ -51,9 +51,9 @@ docker compose -f docker-compose --profile monitoring up -d
 ### Authentication
 Production and staging environments use Google Cloud metadata server for authentication instead of service account keys.
 
-2. Update the same Telegram credentials in relevant fields in `monitoring/prometheus/alertmanager.yml`.
+Alert notifications use Grafana Unified Alerting (Telegram contact point). Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `infra/.env`; Grafana substitutes them at startup from `grafana/provisioning/alerting/contact-points.yaml.tpl`.
 
-3. Start the monitoring services (in prod/stage they started together with all services):
+2. Start the monitoring services (in prod/stage they started together with all services):
 
    ```sh
    cd infra

@@ -16,11 +16,3 @@ scrape_configs:
       - source_labels: [__name__]
         action: keep
         regex: "(up)"
-
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets: ["alertmanager:9093"]
-
-rule_files:
-  - "grafana_alert_rules.yml"

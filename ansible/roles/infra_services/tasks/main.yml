@@ -54,16 +54,6 @@
   poll: 0
   register: observability_job
 
-- name: Recreate alertmanager service
-  ansible.builtin.command: >
-    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-    up -d alertmanager
-
-  when: (alertmanager_changed | default(false)) | bool or (container_analysis is defined and 'alertmanager' in container_analysis.stdout)
-  async: 600
-  poll: 0
-  register: alertmanager_job
-
 - name: Recreate wg-easy service
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
@@ -86,7 +76,6 @@
       rabbitmq_job|default({}),
       meilisearch_job|default({}),
       observability_job|default({}),
-      alertmanager_job|default({}),
       wg_easy_job|default({})
     ] | selectattr('ansible_job_id', 'defined') | list }}"
 

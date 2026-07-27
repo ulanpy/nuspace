@@ -198,7 +198,6 @@ services:
     volumes:
       # No need for alerts in development
       # - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      # - ./prometheus/grafana_alert_rules.yml:/etc/prometheus/grafana_alert_rules.yml:ro
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -313,24 +312,6 @@ services:
       - prometheus
       - loki
       - tempo
-    profiles:
-      - monitoring
-
-  alertmanager:
-    container_name: alertmanager
-    image: prom/alertmanager:latest
-    volumes:
-      - ./prometheus/alertmanager.yml.tpl:/etc/alertmanager/alertmanager.yml.tpl:ro
-      - ./scripts/start-alertmanager.sh:/start-alertmanager.sh:ro
-    environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
-    entrypoint: ["/bin/sh", "/start-alertmanager.sh"]
-    restart: unless-stopped
-    ports:
-      - "9093:9093"
-    networks:
-      - nuros
     profiles:
       - monitoring
 

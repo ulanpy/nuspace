@@ -1,0 +1,21 @@
+apiVersion: 1
+
+templates:
+  - orgId: 1
+    name: nuspace
+    template: |
+      {{ define "nuspace.telegram.message" -}}
+      {{- if eq .Status "firing" -}}
+      🔴 <b>FastAPI недоступен</b>
+      {{- else -}}
+      ✅ <b>FastAPI восстановлен</b>
+      {{- end }}
+
+      {{ .CommonAnnotations.summary }}
+
+      {{- with (index .Alerts 0) }}
+      Instance: <code>{{ .Labels.instance }}</code>
+
+      <a href="{{ .GeneratorURL }}">Открыть в Grafana</a> · <a href="{{ .SilenceURL }}">Заглушить</a>
+      {{- end }}
+      {{- end }}

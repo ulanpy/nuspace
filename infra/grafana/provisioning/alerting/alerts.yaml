@@ -56,7 +56,7 @@ groups:
         noDataState: NoData
         execErrState: Error
         annotations:
-          summary: Server is down
+          summary: Prometheus не может scrape /metrics (up=0)
         isPaused: false
         notification_settings:
           receiver: Telegram
