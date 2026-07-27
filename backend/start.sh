@@ -12,12 +12,14 @@ fi
 IS_DEBUG_NORM=$(printf '%s' "${IS_DEBUG:-true}" | tr '[:upper:]' '[:lower:]')
 
 # Single uvicorn process (one pod / one container). Scale horizontally via k8s replicas later.
+# --no-access-log: replace uvicorn text access lines with structured JSON from middleware.
 if [ "$IS_DEBUG_NORM" = "false" ] || [ "$IS_DEBUG_NORM" = "0" ] || [ "$IS_DEBUG_NORM" = "no" ]; then
-    exec "$VENV_BIN/uvicorn" backend.main:app --host 0.0.0.0 --port 8000
+    exec "$VENV_BIN/uvicorn" backend.main:app --host 0.0.0.0 --port 8000 --no-access-log
 else
     exec "$VENV_BIN/uvicorn" backend.main:app \
         --host 0.0.0.0 \
         --port 8000 \
+        --no-access-log \
         --reload \
         --reload-dir /nuros/backend \
         --reload-exclude '.venv/*' \

@@ -7,6 +7,9 @@ from backend.lifespan import lifespan
 
 # Import both the instrumentor and the metrics_app
 from backend.middlewares.prometheus_metrics import instrument_app, metrics_app
+from backend.telemetry import instrument_fastapi, setup_tracer_provider
+
+setup_tracer_provider()
 
 app = FastAPI(
     debug=True if config.IS_DEBUG else False,
@@ -18,7 +21,7 @@ app = FastAPI(
     title="nuspace API",
     description=" Nuspace.kz is a SuperApp for NU students that streamlines communication and "
     "replaces disorganized Telegram chats with a more reliable solution. "
-    "[Project Github](https://github.com/ulanpy/nuspace). "
+    "[Project Github](https://github.com/ulanpy/nuspace). ",
 )
 
 app.mount("/metrics", metrics_app)
@@ -33,3 +36,4 @@ app.add_middleware(
 app.add_middleware(SessionMiddleware, secret_key=config.SESSION_MIDDLEWARE_KEY)
 
 instrument_app(app)
+instrument_fastapi(app)

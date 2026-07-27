@@ -1,15 +1,19 @@
-import time
-from typing import Callable
-
-from fastapi import FastAPI, Request, Response
-from prometheus_client import Counter, Gauge, Histogram, Info, make_asgi_app
-
 """
 Exposes Prometheus metrics via a separate ASGI app mounted at /metrics.
 
 Metric names/labels match Grafana dashboard 25040 ("FastAPI Full Observability").
 /metrics scrapes are skipped so Alloy traffic does not inflate app panels.
+
+Also emits structured JSON access logs (same method/path labels) for Loki filtering.
 """
+
+import time
+import traceback
+from typing import Callable
+
+from backend.middlewares.access_log import configure_access_logger, emit_access_log
+from fastapi import FastAPI, Request, Response
+from prometheus_client import Counter, Gauge, Histogram, Info, make_asgi_app
 
 PROJECT = "nuspace"
 
@@ -52,6 +56,7 @@ def _should_skip(path: str) -> bool:
 
 def instrument_app(app: FastAPI):
     """Instrument the FastAPI app with Prometheus middleware (dashboard 25040 schema)."""
+    configure_access_logger()
 
     @app.middleware("http")
     async def monitor_requests(request: Request, call_next: Callable):
@@ -61,12 +66,11 @@ def instrument_app(app: FastAPI):
 
         method = request.method
         in_progress_path = "[in_flight]"
-        REQUEST_IN_PROGRESS.labels(
-            method=method, path=in_progress_path, project=PROJECT
-        ).inc()
+        REQUEST_IN_PROGRESS.labels(method=method, path=in_progress_path, project=PROJECT).inc()
         start_time = time.time()
         status = "500"
         exc_type: str | None = None
+        exc_tb: str | None = None
 
         try:
             response: Response = await call_next(request)
@@ -74,13 +78,12 @@ def instrument_app(app: FastAPI):
             return response
         except Exception as exc:
             exc_type = type(exc).__name__
+            exc_tb = traceback.format_exc()
             raise
         finally:
             route = request.scope.get("route")
             path_template = route.path if getattr(route, "path", None) else "[unmatched]"
-            REQUEST_IN_PROGRESS.labels(
-                method=method, path=in_progress_path, project=PROJECT
-            ).dec()
+            REQUEST_IN_PROGRESS.labels(method=method, path=in_progress_path, project=PROJECT).dec()
             if _should_skip(path_template):
                 return
             duration = time.time() - start_time
@@ -91,9 +94,9 @@ def instrument_app(app: FastAPI):
                 status_code=status,
                 project=PROJECT,
             ).inc()
-            REQUEST_LATENCY.labels(
-                method=method, path=path_template, project=PROJECT
-            ).observe(duration)
+            REQUEST_LATENCY.labels(method=method, path=path_template, project=PROJECT).observe(
+                duration
+            )
             if exc_type:
                 EXCEPTIONS.labels(
                     method=method,
@@ -101,3 +104,11 @@ def instrument_app(app: FastAPI):
                     exception_type=exc_type,
                     project=PROJECT,
                 ).inc()
+            emit_access_log(
+                method=method,
+                path=path_template,
+                status_code=status,
+                duration_seconds=duration,
+                exception_type=exc_type,
+                traceback_text=exc_tb,
+            )

@@ -93,7 +93,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "count(count(container_last_seen) by (name))",
+          "expr": "count(container_last_seen{name=~\".+\"})",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -306,14 +306,15 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum(rate(container_memory_usage_bytes{name=~\".+\"}[10m])) by (name)",
+          "expr": "sum by (name) (container_memory_working_set_bytes{name=~\".+\"})",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Memory Usage",
+      "description": "Matches docker stats. Use for alerts and capacity planning.",
+      "title": "Memory (Working Set)",
       "type": "timeseries"
     },
     {
@@ -405,7 +406,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum(rate(container_memory_cache{name=~\".+\"}[10m])) by (name)",
+          "expr": "sum by (name) (container_memory_cache{name=~\".+\"})",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -416,12 +417,112 @@
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [
+            "max",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Mean",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.0.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "sum by (name) (container_memory_usage_bytes{name=~\".+\"})",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "description": "Total cgroup memory including reclaimable mmap/page cache. Often higher than working set (e.g. Meilisearch index mmap).",
+      "title": "Memory (Total Cgroup)",
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 29
       },
       "id": 12,
       "panels": [],
@@ -491,7 +592,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 21
+        "y": 30
       },
       "id": 13,
       "options": {
@@ -593,7 +694,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 21
+        "y": 30
       },
       "id": 14,
       "options": {
@@ -638,7 +739,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 39
       },
       "id": 6,
       "panels": [],
@@ -708,7 +809,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 31
+        "y": 40
       },
       "id": 5,
       "options": {
@@ -810,9 +911,9 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 31
+        "y": 40
       },
-      "id": 8,
+      "id": 15,
       "options": {
         "legend": {
           "calcs": [
@@ -855,7 +956,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 40
+        "y": 49
       },
       "id": 11,
       "panels": [],
@@ -886,7 +987,7 @@
         "h": 13,
         "w": 24,
         "x": 0,
-        "y": 41
+        "y": 50
       },
       "id": 10,
       "options": {
@@ -958,5 +1059,5 @@
   "timezone": "",
   "title": "cAdvisor Docker Insights",
   "uid": "ae3c41d7-cea5-4cca-a918-5708706b4d1a",
-  "version": 1
+  "version": 2
 }

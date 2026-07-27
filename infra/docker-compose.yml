@@ -178,6 +178,20 @@ services:
     profiles:
       - monitoring
 
+  tempo:
+    container_name: tempo
+    image: grafana/tempo:latest
+    user: "0" # local volume may not match tempo uid on first create
+    command: [ "-config.file=/etc/tempo/tempo.yaml" ]
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    restart: unless-stopped
+    networks:
+      - nuros
+    profiles:
+      - monitoring
+
   prometheus:
     container_name: prometheus
     image: prom/prometheus:latest
@@ -242,10 +256,10 @@ services:
     volumes:
       - "grafana-data:/var/lib/grafana"
       - "./grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
-      - "./grafana/dashboards/dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
       - "./grafana/dashboards/cadvisor.json:/var/lib/grafana/dashboards/cadvisor.json"
       - "./grafana/dashboards/fastapi-observability.json:/var/lib/grafana/dashboards/fastapi-observability.json"
       - "./grafana/dashboards/product-overview.json:/var/lib/grafana/dashboards/product-overview.json"
+      - "./grafana/dashboards/node-exporter-full.json:/var/lib/grafana/dashboards/node-exporter-full.json"
       - "./grafana/provisioning/dashboards/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
       # No need for alerting in development
       # - "./grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
@@ -275,6 +289,8 @@ services:
   alloy:
     container_name: alloy
     image: grafana/alloy:latest
+    # cAdvisor needs host cgroup tree + docker metadata (privileged + /sys mount).
+    privileged: true
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -283,6 +299,8 @@ services:
       - /:/rootfs:ro
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
+      - /sys:/sys:ro
+      - /dev/disk/:/dev/disk:ro
     command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     restart: unless-stopped
     ports:
@@ -294,6 +312,7 @@ services:
     depends_on:
       - prometheus
       - loki
+      - tempo
     profiles:
       - monitoring
 
@@ -332,4 +351,5 @@ volumes:
   grafana-data:
   prometheus_data:
   loki_data:
+  tempo_data:
   gcs_data:

@@ -59,6 +59,17 @@
   poll: 0
   register: loki_job
 
+# Tempo before Alloy — Alloy exports OTLP traces to tempo:4318.
+- name: Recreate tempo service
+  ansible.builtin.command: >
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    up -d tempo
+
+  when: (tempo_changed | default(false)) | bool or (container_analysis is defined and 'tempo' in container_analysis.stdout)
+  async: 600
+  poll: 0
+  register: tempo_job
+
 - name: Recreate alloy service
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
@@ -103,6 +114,7 @@
       grafana_job|default({}),
       meilisearch_job|default({}),
       loki_job|default({}),
+      tempo_job|default({}),
       alloy_job|default({}),
       alertmanager_job|default({}),
       wg_easy_job|default({})

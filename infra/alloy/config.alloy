@@ -4,12 +4,14 @@
 
 /* -------- EXPORTERS -------- */
 
-// Cadvisor exporter component for exposing Docker container metrics
+// cAdvisor — needs host /sys at /sys in the Alloy container (see compose).
 prometheus.exporter.cadvisor "docker" {
-	docker_host = "unix:///var/run/docker.sock"
+	docker_host      = "unix:///var/run/docker.sock"
+	docker_only      = true
+	storage_duration = "5m"
 }
 
-// Host metrics — paths must match compose bind mounts
+// Host metrics — paths must match compose bind mounts (/host/proc, /host/sys, /rootfs)
 prometheus.exporter.unix "host" {
 	procfs_path = "/host/proc"
 	rootfs_path = "/rootfs"
@@ -18,18 +20,37 @@ prometheus.exporter.unix "host" {
 
 /* -------- SCRAPERS -------- */
 
-// Cadvisor Scraper Job
-prometheus.scrape "docker_scrape" {
-	targets    = prometheus.exporter.cadvisor.docker.targets
-	forward_to = [prometheus.remote_write.prometheus_write.receiver]
-	job_name   = "cadvisor"
+// Normalize exporter default job=integrations/* labels for dashboards.
+discovery.relabel "cadvisor" {
+	targets = prometheus.exporter.cadvisor.docker.targets
+
+	rule {
+		target_label = "job"
+		replacement  = "cadvisor"
+	}
 }
 
-// Node Exporter Scraper Job
+discovery.relabel "node" {
+	targets = prometheus.exporter.unix.host.targets
+
+	rule {
+		target_label = "job"
+		replacement  = "node_exporter"
+	}
+}
+
+prometheus.scrape "docker_scrape" {
+	targets         = discovery.relabel.cadvisor.output
+	forward_to      = [prometheus.remote_write.prometheus_write.receiver]
+	job_name        = "cadvisor"
+	scrape_interval = "15s"
+}
+
 prometheus.scrape "host_scrape" {
-	targets    = prometheus.exporter.unix.host.targets
-	forward_to = [prometheus.remote_write.prometheus_write.receiver]
-	job_name   = "node_exporter"
+	targets         = discovery.relabel.node.output
+	forward_to      = [prometheus.remote_write.prometheus_write.receiver]
+	job_name        = "node_exporter"
+	scrape_interval = "15s"
 }
 
 // FastAPI scrape — trailing slash avoids 307 /metrics -> /metrics/
@@ -61,62 +82,89 @@ discovery.docker "linux" {
 	host = "unix:///var/run/docker.sock"
 }
 
-// Filter to only the 'fastapi' service/container targets
-discovery.relabel "logs_filter" {
+// Keep only the compose service "fastapi" (matches local + prod container_name: fastapi).
+discovery.relabel "fastapi_logs" {
 	targets = discovery.docker.linux.targets
 
-	// Flag if compose service is 'fastapi'
 	rule {
 		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
 		regex         = "fastapi"
-		target_label  = "__tmp_keep"
-		replacement   = "true"
-		action        = "replace"
-	}
-
-	// Flag if container name ends with 'fastapi'
-	rule {
-		source_labels = ["__meta_docker_container_name"]
-		regex         = ".*fastapi$"
-		target_label  = "__tmp_keep"
-		replacement   = "true"
-		action        = "replace"
-	}
-
-	// Keep if flagged
-	rule {
-		source_labels = ["__tmp_keep"]
-		regex         = "true"
 		action        = "keep"
-	}
-
-	rule {
-		action = "labeldrop"
-		regex  = "__tmp_keep"
-	}
-}
-
-// Create service_name from container name (/fastapi → fastapi)
-discovery.relabel "logs_integrations_docker" {
-	targets = []
-
-	rule {
-		source_labels = ["__meta_docker_container_name"]
-		regex         = "/(.*)"
-		target_label  = "service_name"
 	}
 }
 
 loki.source.docker "loki_default" {
-	host          = "unix:///var/run/docker.sock"
-	targets       = discovery.relabel.logs_filter.output
-	labels        = {"platform" = "docker"}
-	relabel_rules = discovery.relabel.logs_integrations_docker.rules
-	forward_to    = [loki.write.loki_write.receiver]
+	host    = "unix:///var/run/docker.sock"
+	targets = discovery.relabel.fastapi_logs.output
+	// Only one app is scraped → service_name can be static (no second relabel needed).
+	labels = {
+		platform     = "docker",
+		service_name = "fastapi",
+	}
+	forward_to = [loki.process.fastapi_json.receiver]
+}
+
+// Parse structured JSON access logs from FastAPI middleware.
+// stage.json fills the extracted map; stage.labels promotes from that map.
+// (Do not stage.match on extracted fields — match only sees real labels.)
+// Promote only low-cardinality fields; path stays in the JSON line body.
+loki.process "fastapi_json" {
+	stage.json {
+		expressions = {
+			method      = "method",
+			path        = "path",
+			status_code = "status_code",
+			level       = "level",
+			log_type    = "log_type",
+		}
+	}
+
+	stage.labels {
+		values = {
+			method   = "",
+			level    = "",
+			log_type = "",
+		}
+	}
+
+	forward_to = [loki.write.loki_write.receiver]
 }
 
 loki.write "loki_write" {
 	endpoint {
 		url = "http://loki:3100/loki/api/v1/push"
+	}
+}
+
+/* ####################################### */
+/* ######## Tracing (OTLP → Tempo) ####### */
+/* ####################################### */
+
+otelcol.receiver.otlp "default" {
+	grpc {
+		endpoint = "0.0.0.0:4317"
+	}
+	http {
+		endpoint = "0.0.0.0:4318"
+	}
+
+	output {
+		traces = [otelcol.processor.batch.default.input]
+	}
+}
+
+otelcol.processor.batch "default" {
+	output {
+		traces = [otelcol.exporter.otlphttp.tempo.input]
+	}
+}
+
+otelcol.exporter.otlphttp "tempo" {
+	client {
+		endpoint = "http://tempo:4318"
+		tls {
+			insecure             = true
+			insecure_skip_verify = true
+		}
 	}
 }
