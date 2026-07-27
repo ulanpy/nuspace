@@ -19,26 +19,6 @@
   poll: 0
   register: rabbitmq_job
 
-- name: Recreate prometheus service
-  ansible.builtin.command: >
-    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-    up -d prometheus
-
-  when: (prometheus_changed | default(false)) | bool or (container_analysis is defined and 'prometheus' in container_analysis.stdout)
-  async: 600
-  poll: 0
-  register: prometheus_job
-
-- name: Recreate grafana service
-  ansible.builtin.command: >
-    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-    up -d grafana
-
-  when: (grafana_changed | default(false)) | bool or (container_analysis is defined and 'grafana' in container_analysis.stdout)
-  async: 600
-  poll: 0
-  register: grafana_job
-
 - name: Recreate meilisearch service
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
@@ -49,36 +29,30 @@
   poll: 0
   register: meilisearch_job
 
-- name: Recreate loki service
+# Observability stack in one compose invocation — avoids races (alloy/grafana depend_on tempo).
+- name: Recreate observability stack (tempo, prometheus, loki, alloy, grafana)
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-    up -d loki
+    up -d tempo prometheus loki alloy grafana
 
-  when: (loki_changed | default(false)) | bool or (container_analysis is defined and 'loki' in container_analysis.stdout)
+  when: >
+    (prometheus_changed | default(false)) | bool or
+    (grafana_changed | default(false)) | bool or
+    (loki_changed | default(false)) | bool or
+    (alloy_changed | default(false)) | bool or
+    (tempo_changed | default(false)) | bool or
+    (
+      container_analysis is defined and (
+        'prometheus' in container_analysis.stdout or
+        'grafana' in container_analysis.stdout or
+        'loki' in container_analysis.stdout or
+        'alloy' in container_analysis.stdout or
+        'tempo' in container_analysis.stdout
+      )
+    )
   async: 600
   poll: 0
-  register: loki_job
-
-# Tempo before Alloy — Alloy exports OTLP traces to tempo:4318.
-- name: Recreate tempo service
-  ansible.builtin.command: >
-    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-    up -d tempo
-
-  when: (tempo_changed | default(false)) | bool or (container_analysis is defined and 'tempo' in container_analysis.stdout)
-  async: 600
-  poll: 0
-  register: tempo_job
-
-- name: Recreate alloy service
-  ansible.builtin.command: >
-    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-    up -d alloy
-
-  when: (alloy_changed | default(false)) | bool or (container_analysis is defined and 'alloy' in container_analysis.stdout)
-  async: 600
-  poll: 0
-  register: alloy_job
+  register: observability_job
 
 - name: Recreate alertmanager service
   ansible.builtin.command: >
@@ -110,12 +84,8 @@
   loop: "{{ [
       redis_job|default({}),
       rabbitmq_job|default({}),
-      prometheus_job|default({}),
-      grafana_job|default({}),
       meilisearch_job|default({}),
-      loki_job|default({}),
-      tempo_job|default({}),
-      alloy_job|default({}),
+      observability_job|default({}),
       alertmanager_job|default({}),
       wg_easy_job|default({})
     ] | selectattr('ansible_job_id', 'defined') | list }}"
