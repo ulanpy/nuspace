@@ -32,7 +32,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "Application Performance Index (0–1).\n\nsatisfied  = requests < 0.5 s\ntolerating = requests 0.5–2.5 s (count as 0.5)\nfrustrated = requests > 2.5 s (ignored)\n\nApdex = (satisfied + tolerating/2) / total\n\n≥ 0.94 excellent · ≥ 0.7 acceptable · < 0.7 poor",
+      "description": "Application Performance Index (0\u20131).\n\nsatisfied  = requests < 0.5 s\ntolerating = requests 0.5\u20132.5 s (count as 0.5)\nfrustrated = requests > 2.5 s (ignored)\n\nApdex = (satisfied + tolerating/2) / total\n\n\u2265 0.94 excellent \u00b7 \u2265 0.7 acceptable \u00b7 < 0.7 poor",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -108,7 +108,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "Fraction of 4xx and 5xx responses out of total requests.\n\nYellow > 1% · Red > 5%",
+      "description": "Fraction of 5xx responses out of total requests.\n\nCritical signal \u2014 any sustained 5xx is a potential incident.\n\nYellow > 0.1% \u00b7 Red > 1%",
       "fieldConfig": {
         "defaults": {
           "mappings": [],
@@ -123,11 +123,11 @@
               },
               {
                 "color": "yellow",
-                "value": 0.01
+                "value": 0.001
               },
               {
                 "color": "red",
-                "value": 0.05
+                "value": 0.01
               }
             ]
           },
@@ -139,7 +139,7 @@
         "h": 8,
         "w": 6,
         "x": 6,
-        "y": 8
+        "y": 0
       },
       "id": 2,
       "options": {
@@ -167,14 +167,88 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum(rate(fastapi_http_responses_total{status_code=~\"[45].*\", method=~\"$method\", path=~\"$path\"}[$__rate_interval])) / sum(rate(fastapi_http_responses_total{method=~\"$method\", path=~\"$path\"}[$__rate_interval]))",
+          "expr": "sum(rate(fastapi_http_responses_total{status_code=~\"5.*\", status_code=~\"$status_code\", method=~\"$method\", path=~\"$path\"}[$__rate_interval])) / sum(rate(fastapi_http_responses_total{method=~\"$method\", path=~\"$path\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Error Rate",
+      "title": "5xx Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "description": "Fraction of 4xx responses out of total requests.\n\nInformational \u2014 expect auth/bots/noise.\n\nYellow > 15% \u00b7 Red > 25%",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "yellow",
+                "value": 0.15
+              },
+              {
+                "color": "red",
+                "value": 0.25
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.4.0-20082909961",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(fastapi_http_responses_total{status_code=~\"4.*\", status_code=~\"$status_code\", method=~\"$method\", path=~\"$path\"}[$__rate_interval])) / sum(rate(fastapi_http_responses_total{method=~\"$method\", path=~\"$path\"}[$__rate_interval]))",
+          "instant": false,
+          "legendFormat": "",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "4xx Rate",
       "type": "stat"
     },
     {
@@ -202,8 +276,8 @@
       "gridPos": {
         "h": 8,
         "w": 6,
-        "x": 12,
-        "y": 16
+        "x": 18,
+        "y": 0
       },
       "id": 5,
       "options": {
@@ -259,7 +333,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "Requests per second aggregated across all endpoints (R — Rate in RED methodology).",
+      "description": "Requests per second aggregated across all endpoints (R \u2014 Rate in RED methodology).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -352,7 +426,7 @@
           "refId": "A"
         }
       ],
-      "title": "RPS — total",
+      "title": "RPS \u2014 total",
       "type": "timeseries"
     },
     {
@@ -449,7 +523,7 @@
           "refId": "A"
         }
       ],
-      "title": "RPS — by path",
+      "title": "RPS \u2014 by path",
       "type": "timeseries"
     },
     {
@@ -457,7 +531,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "RPS by HTTP status code. 2xx green · 3xx blue · 4xx yellow · 5xx red.",
+      "description": "RPS by HTTP status code. 2xx green \u00b7 3xx blue \u00b7 4xx yellow \u00b7 5xx red.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -600,14 +674,14 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum by(status_code)(rate(fastapi_http_responses_total{method=~\"$method\", path=~\"$path\"}[$__rate_interval]))",
+          "expr": "sum by(status_code)(rate(fastapi_http_responses_total{method=~\"$method\", path=~\"$path\", status_code=~\"$status_code\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "{{status_code}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "RPS — by status code",
+      "title": "RPS \u2014 by status code",
       "type": "timeseries"
     },
     {
@@ -708,7 +782,7 @@
           "refId": "A"
         }
       ],
-      "title": "P50 — total",
+      "title": "P50 \u2014 total",
       "type": "timeseries"
     },
     {
@@ -805,7 +879,7 @@
           "refId": "A"
         }
       ],
-      "title": "P50 — by path",
+      "title": "P50 \u2014 by path",
       "type": "timeseries"
     },
     {
@@ -906,7 +980,7 @@
           "refId": "A"
         }
       ],
-      "title": "P95 — total",
+      "title": "P95 \u2014 total",
       "type": "timeseries"
     },
     {
@@ -1003,7 +1077,7 @@
           "refId": "A"
         }
       ],
-      "title": "P95 — by path",
+      "title": "P95 \u2014 by path",
       "type": "timeseries"
     },
     {
@@ -1011,7 +1085,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "Tail latency across all endpoints.\n\nP99 spike with stable P50 → GC pause, lock contention, or slow DB query.\n\nYellow > 1 s · Red > 5 s",
+      "description": "Tail latency across all endpoints.\n\nP99 spike with stable P50 \u2192 GC pause, lock contention, or slow DB query.\n\nYellow > 1 s \u00b7 Red > 5 s",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1112,7 +1186,7 @@
           "refId": "A"
         }
       ],
-      "title": "P99 — total",
+      "title": "P99 \u2014 total",
       "type": "timeseries"
     },
     {
@@ -1120,7 +1194,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "Tail latency per endpoint. Yellow > 1 s · Red > 5 s",
+      "description": "Tail latency per endpoint. Yellow > 1 s \u00b7 Red > 5 s",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1217,7 +1291,7 @@
           "refId": "A"
         }
       ],
-      "title": "P99 — by path",
+      "title": "P99 \u2014 by path",
       "type": "timeseries"
     },
     {
@@ -1225,7 +1299,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "Instant snapshot of the 10 slowest endpoints by P95 latency. Bars are colour-graded green → red.",
+      "description": "Instant snapshot of the 10 slowest endpoints by P95 latency. Bars are colour-graded green \u2192 red.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1295,7 +1369,7 @@
           "refId": "A"
         }
       ],
-      "title": "Top 10 Slowest Endpoints — P95",
+      "title": "Top 10 Slowest Endpoints \u2014 P95",
       "type": "bargauge"
     },
     {
@@ -1391,7 +1465,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "description": "Total in-flight requests across all endpoints.\n\nExpected ≈ RPS × avg_duration (Little's Law). Growth with stable RPS → stuck requests.",
+          "description": "Total in-flight requests across all endpoints.\n\nExpected \u2248 RPS \u00d7 avg_duration (Little's Law). Growth with stable RPS \u2192 stuck requests.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1488,7 +1562,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "description": "Live count of in-flight requests per endpoint (gauge metric).\n\nSpike on a specific path → slow upstream or blocked worker.",
+          "description": "Live count of in-flight requests per endpoint (gauge metric).\n\nSpike on a specific path \u2192 slow upstream or blocked worker.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1602,7 +1676,105 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "Rate of client errors (4xx) per endpoint.\n\n400 bad request · 401/403 auth · 404 not found · 422 validation error\n\nHigh 422s on a POST endpoint → schema mismatch on the client side.",
+      "description": "Request rate of non-2xx responses broken down by HTTP status code (401, 403, 404, 500, 502, \u2026) over time.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 115
+      },
+      "id": 34,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "12.4.0-20082909961",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "sum by(status_code)(rate(fastapi_http_responses_total{status_code=~\"[45].*\", status_code=~\"$status_code\", method=~\"$method\", path=~\"$path\"}[$__rate_interval]))",
+          "instant": false,
+          "legendFormat": "{{status_code}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Errors by Status Code",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "description": "Rate of client errors (4xx) per endpoint.\n\n400 bad request \u00b7 401/403 auth \u00b7 404 not found \u00b7 422 validation error\n\nHigh 422s on a POST endpoint \u2192 schema mismatch on the client side.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1660,7 +1832,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 115
+        "y": 123
       },
       "id": 31,
       "options": {
@@ -1684,7 +1856,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum by(path)(rate(fastapi_http_responses_total{status_code=~\"4.*\", method=~\"$method\", path=~\"$path\"}[$__rate_interval]))",
+          "expr": "sum by(path)(rate(fastapi_http_responses_total{status_code=~\"4.*\", method=~\"$method\", path=~\"$path\", status_code=~\"$status_code\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "{{path}}",
           "range": true,
@@ -1785,7 +1957,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum by(path)(rate(fastapi_http_responses_total{status_code=~\"5.*\", method=~\"$method\", path=~\"$path\"}[$__rate_interval]))",
+          "expr": "sum by(path)(rate(fastapi_http_responses_total{status_code=~\"5.*\", method=~\"$method\", path=~\"$path\", status_code=~\"$status_code\"}[$__rate_interval]))",
           "instant": false,
           "legendFormat": "{{path}}",
           "range": true,
@@ -1858,7 +2030,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 131
+        "y": 123
       },
       "id": 33,
       "options": {
@@ -2108,7 +2280,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "description": "P99 latency per span/operation from trace span metrics.\n\nMore granular than HTTP metrics — includes DB calls, cache lookups, internal functions.",
+          "description": "P99 latency per span/operation from trace span metrics.\n\nMore granular than HTTP metrics \u2014 includes DB calls, cache lookups, internal functions.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2205,7 +2377,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "description": "Fraction of spans with STATUS_CODE_ERROR per operation.\n\nHigh error rate on an internal span with no HTTP 5xx → swallowed exception.",
+          "description": "Fraction of spans with STATUS_CODE_ERROR per operation.\n\nHigh error rate on an internal span with no HTTP 5xx \u2192 swallowed exception.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2306,7 +2478,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "description": "Rate of database calls from the service graph (Tempo).\n\nSpikes here during high HTTP load are expected; spikes without HTTP load → background job.",
+          "description": "Rate of database calls from the service graph (Tempo).\n\nSpikes here during high HTTP load are expected; spikes without HTTP load \u2192 background job.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2403,7 +2575,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "description": "P99 latency of database calls via service graph metrics.\n\nCorrelate with application P99 — if DB P99 grows with app P99, the database is the bottleneck.",
+          "description": "P99 latency of database calls via service graph metrics.\n\nCorrelate with application P99 \u2014 if DB P99 grows with app P99, the database is the bottleneck.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -2619,7 +2791,7 @@
         "type": "loki",
         "uid": "P8E80F9AEF21F6940"
       },
-      "description": "Access-log event count per level (from JSON field). Filtered by Method/Path. Spike in error/warn → correlate with RPS and P99 panels above.",
+      "description": "Access-log event count per level (from JSON field). Filtered by Method/Path. Spike in error/warn \u2192 correlate with RPS and P99 panels above.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2791,7 +2963,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "code",
-          "expr": "sum by(level)(count_over_time({service_name=\"fastapi\"} | json | log_type=\"access\" | method=~\"$method\" | path=~\"$path\" [$__interval]))",
+          "expr": "sum by(level)(count_over_time({service_name=\"fastapi\"} | json | log_type=\"access\" | method=~\"$method\" | path=~\"$path\" | status_code=~\"$status_code\" | level=~\"$level\" [$__interval]))",
           "legendFormat": "{{level}}",
           "queryType": "range",
           "refId": "A"
@@ -2833,7 +3005,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "code",
-          "expr": "{service_name=\"fastapi\"} | json | log_type=\"access\" | method=~\"$method\" | path=~\"$path\"",
+          "expr": "{service_name=\"fastapi\"} | json | log_type=\"access\" | method=~\"$method\" | path=~\"$path\" | status_code=~\"$status_code\" | level=~\"$level\"",
           "legendFormat": "",
           "queryType": "range",
           "refId": "A"
@@ -2890,7 +3062,7 @@
         {
           "id": 81,
           "type": "timeseries",
-          "title": "CPU Time Consumed — Total",
+          "title": "CPU Time Consumed \u2014 Total",
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
@@ -3054,6 +3226,68 @@
         "regexApplyTo": "value",
         "sort": 1,
         "type": "query"
+      },
+      {
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        },
+        "definition": "label_values(fastapi_http_responses_total{method=~\"$method\", path=~\"$path\"}, status_code)",
+        "includeAll": true,
+        "label": "Status",
+        "multi": true,
+        "name": "status_code",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(fastapi_http_responses_total{method=~\"$method\", path=~\"$path\"}, status_code)",
+          "refId": "Q"
+        },
+        "refresh": 2,
+        "regex": "",
+        "regexApplyTo": "value",
+        "sort": 1,
+        "type": "query",
+        "description": "HTTP status from fastapi_http_responses_total / access logs. Applies to response-count panels and Logs. Latency/Apdex metrics have no status_code label."
+      },
+      {
+        "allValue": ".+",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "includeAll": true,
+        "label": "Level",
+        "multi": true,
+        "name": "level",
+        "options": [
+          {
+            "selected": false,
+            "text": "info",
+            "value": "info"
+          },
+          {
+            "selected": false,
+            "text": "warn",
+            "value": "warn"
+          },
+          {
+            "selected": false,
+            "text": "error",
+            "value": "error"
+          }
+        ],
+        "query": "info,warn,error",
+        "skipUrlSync": false,
+        "type": "custom",
+        "description": "Access-log level from middleware: info (2xx/3xx), warn (4xx), error (5xx). Applies to Logs panels only."
       }
     ]
   },
