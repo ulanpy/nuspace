@@ -21,7 +21,7 @@ app = FastAPI(
     title="nuspace API",
     description=" Nuspace.kz is a SuperApp for NU students that streamlines communication and "
     "replaces disorganized Telegram chats with a more reliable solution. "
-    "[Project Github](https://github.com/ulanpy/nuspace). ",
+    "[Project Github](https://github.com/ulanpy/nuspace)",
 )
 
 app.mount("/metrics", metrics_app)
