@@ -9,13 +9,13 @@ templates:
       🔴 <b>FastAPI недоступен</b>
       {{- else -}}
       ✅ <b>FastAPI восстановлен</b>
+      {{- with (index .Alerts 0) }}
+      {{- $downtime := .EndsAt.Sub .StartsAt }}
+      Даунтайм: <code>{{ printf "%.0f" $downtime.Seconds }}</code> с ({{ $downtime }})
+      {{- end }}
       {{- end }}
 
-      {{ .CommonAnnotations.summary }}
-
       {{- with (index .Alerts 0) }}
-      Instance: <code>{{ .Labels.instance }}</code>
-
       <a href="{{ .GeneratorURL }}">Открыть в Grafana</a> · <a href="{{ .SilenceURL }}">Заглушить</a>
       {{- end }}
       {{- end }}

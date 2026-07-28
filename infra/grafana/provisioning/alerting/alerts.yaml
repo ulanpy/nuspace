@@ -55,8 +55,7 @@ groups:
               type: threshold
         noDataState: NoData
         execErrState: Error
-        annotations:
-          summary: Prometheus не может scrape /metrics (up=0)
+        annotations: {}
         isPaused: false
         notification_settings:
           receiver: Telegram
