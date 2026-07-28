@@ -1,6 +1,6 @@
 # schedule_sync_job.tf
-# Cloud Run Job + Cloud Scheduler: parse registrar PDFs daily → GCS JSON.
-# FastAPI on the VM pulls the artifact into Meilisearch (no PDF parse on API VM).
+# Cloud Run Job + Cloud Scheduler: parse registrar PDFs → GCS JSON.
+# FastAPI pulls the artifact into Meilisearch on GCS OBJECT_FINALIZE (Pub/Sub → /gcs-hook).
 #
 # Note: Cloud Scheduler no longer requires an App Engine app when region is set.
 
@@ -132,9 +132,11 @@ resource "google_cloud_scheduler_job" "schedule_sync_daily" {
   ]
 
   name             = "${var.schedule_sync_job_name}-daily"
-  description      = "Parse registrar schedule PDFs and upload JSON to GCS (every 24h)"
+  description      = "Parse registrar schedule PDFs and upload JSON to GCS (cron from schedule_sync_cron)"
   schedule         = var.schedule_sync_cron
   time_zone        = "UTC"
+  # Must exceed Cloud Run Job wall time (parse ~1–2m); Scheduler waits for HTTP :run accept only,
+  # but keep headroom for API latency.
   attempt_deadline = "320s"
   region           = var.region
   project          = var.project_id

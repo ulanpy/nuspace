@@ -68,7 +68,7 @@ Heavy PDF parsing runs in Cloud Run Job `schedule-sync-job` (daily 03:00 UTC) an
 
 `gs://{media_bucket}/registrar/course_schedule_catalog.json`
 
-FastAPI only downloads that JSON into Meilisearch on startup / every 24h.
+FastAPI downloads that JSON into Meilisearch on startup and on GCS OBJECT_FINALIZE (Pub/Sub → `/api/bucket/gcs-hook`).
 
 **Cutover after first `terraform apply`:**
 

@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timedelta
 from typing import Annotated, List
@@ -5,16 +6,19 @@ from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from google.cloud.storage import Bucket
 
-from backend.modules.auth.dependencies import get_creds_or_401
 from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import Config
+from backend.modules.auth.dependencies import get_creds_or_401
+from backend.modules.courses.registrar.schedule_sync import sync_schedule_catalog
 from backend.modules.google_bucket import dependencies as deps
 from backend.modules.google_bucket import schemas
 from backend.modules.media.dependencies import get_media_service
+from backend.modules.media.models import EntityType, MediaFormat
 from backend.modules.media.schemas import MediaUpsertData
 from backend.modules.media.service import MediaService
 
 router = APIRouter(prefix="/bucket", tags=["Google Bucket Routes"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/upload-url", response_model=List[schemas.SignedUrlResponse])
@@ -45,9 +49,7 @@ async def generate_upload_url(
 
         required_headers = {
             config.GCS_METADATA_HEADERS["filename"]: str(filename),
-            config.GCS_METADATA_HEADERS[
-                "media_table"
-            ]: item.entity_type.value,
+            config.GCS_METADATA_HEADERS["media_table"]: item.entity_type.value,
             config.GCS_METADATA_HEADERS["entity_id"]: str(item.entity_id),
             config.GCS_METADATA_HEADERS["media_format"]: item.media_format.value,
             config.GCS_METADATA_HEADERS["media_order"]: str(item.media_order),
@@ -57,9 +59,7 @@ async def generate_upload_url(
 
         if config.USE_GCS_EMULATOR:
             app_base_url = request_app_base_url(request, config)
-            signed_url = (
-                f"{app_base_url}/api/bucket/local-upload/{config.BUCKET_NAME}/{filename}"
-            )
+            signed_url = f"{app_base_url}/api/bucket/local-upload/{config.BUCKET_NAME}/{filename}"
             media_data = MediaUpsertData(
                 name=filename,
                 mime_type=item.mime_type,
@@ -99,16 +99,72 @@ async def generate_upload_url(
     return urls
 
 
+def _media_upsert_from_event(gcs_event: schemas.GCSEventData) -> MediaUpsertData | None:
+    """Return media upsert payload, or None if this event is not a media upload."""
+    metadata = gcs_event.metadata
+    if metadata is None:
+        return None
+    try:
+        return MediaUpsertData(
+            name=metadata.filename,
+            mime_type=metadata.mime_type,
+            entity_type=EntityType(metadata.media_table),
+            entity_id=int(metadata.entity_id),
+            media_format=MediaFormat(metadata.media_format),
+            media_order=int(metadata.media_order),
+        )
+    except (ValueError, TypeError, AttributeError):
+        return None
+
+
 @router.post("/gcs-hook")
 async def gcs_webhook(
-    media_metadata: MediaUpsertData = Depends(deps.get_media_metadata),
-    validate_routing_prefix: bool = Depends(deps.validate_routing_prefix),
+    request: Request,
+    pubsub_message: schemas.PubSubMessage,
     _jwt_claims: dict = Depends(deps.verify_pubsub_token),
     media_service: MediaService = Depends(get_media_service),
 ):
     """
-    Processes GCS notifications from Pub/Sub and upserts media records.
+    Pub/Sub push for GCS OBJECT_FINALIZE:
+    - registrar schedule catalog JSON → reindex Meilisearch
+    - media uploads (routing-prefix + custom metadata) → media upsert
     """
+    config: Config = request.app.state.config
+
+    try:
+        gcs_event = pubsub_message.message.gcs_event
+    except Exception:
+        return {"status": "ok"}
+
+    # Cloud Run Job artifact: ignore meta.json; only catalog triggers reindex.
+    if gcs_event.name == config.SCHEDULE_SYNC_GCS_OBJECT:
+        try:
+            count = await sync_schedule_catalog(
+                request.app.state.meilisearch_client,
+                storage_client=request.app.state.storage_client,
+                bucket_name=config.BUCKET_NAME,
+                gcs_object=config.SCHEDULE_SYNC_GCS_OBJECT,
+                prefer_local_fixture=False,
+            )
+            logger.info(
+                "Schedule catalog reindexed from GCS finalize (%s docs)",
+                count,
+            )
+            return {"status": "ok", "schedule_docs": count}
+        except Exception:
+            logger.exception("Failed to sync schedule catalog from GCS finalize")
+            # Non-2xx so Pub/Sub retries.
+            raise HTTPException(status_code=500, detail="schedule_catalog_sync_failed")
+
+    # Media path: must live under this backend's routing prefix.
+    parts = gcs_event.name.split("/", maxsplit=1)
+    if len(parts) < 2 or parts[0] != config.ROUTING_PREFIX:
+        return {"status": "ok"}
+
+    media_metadata = _media_upsert_from_event(gcs_event)
+    if media_metadata is None:
+        return {"status": "ok"}
+
     try:
         await media_service.upsert(media_metadata)
     except Exception:
