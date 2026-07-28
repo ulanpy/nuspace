@@ -193,9 +193,27 @@ class DegreeAuditService:
         return work, unmapped
 
     async def _fetch_transcript_from_registrar(self, username: str, password: str) -> Transcript:
-        async with self._client_factory() as client:
-            pdf_bytes = await client.fetch_unofficial_transcript_pdf(username, password)
-        return parse_transcript_bytes(_normalize_pdf_bytes(pdf_bytes))
+        try:
+            async with self._client_factory() as client:
+                pdf_bytes = await client.fetch_unofficial_transcript_pdf(username, password)
+        except ValueError as exc:
+            if str(exc) == "Invalid registrar credentials":
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="invalid_registrar_credentials",
+                ) from exc
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="registrar_transcript_unavailable",
+            ) from exc
+
+        try:
+            return parse_transcript_bytes(_normalize_pdf_bytes(pdf_bytes))
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="invalid_transcript_pdf",
+            )
 
     def _load_minor_requirements(self, minor: str) -> List:
         if minor in self._minor_requirements_cache:
