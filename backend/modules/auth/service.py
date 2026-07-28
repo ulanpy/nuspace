@@ -1,3 +1,4 @@
+import logging
 import random
 import secrets
 from urllib.parse import urljoin, urlparse
@@ -23,6 +24,8 @@ from backend.modules.auth.mock import build_mock_creds, get_mock_user_by_sub
 from backend.modules.auth.oauth import exchange_code_for_credentials
 from backend.modules.auth.repository import UserRepository
 from backend.modules.auth.schemas import CurrentUserResponse, UserSchema
+
+logger = logging.getLogger(__name__)
 
 OAUTH_ORIGIN_KEY_PREFIX = "oauth_origin:"
 
@@ -251,16 +254,28 @@ class AuthService:
         try:
             creds = await exchange_code_for_credentials(request, self.kc_manager)
         except MismatchingStateError as exc:
+            logger.warning("OAuth callback state mismatch: %s", exc)
             await redis.delete(csrf_key)
             raise HTTPException(
                 status_code=400, detail="Login session expired. Please try again."
             ) from exc
         except OAuthError as exc:
+            logger.warning(
+                "OAuth callback provider error: error=%s description=%s",
+                getattr(exc, "error", None),
+                getattr(exc, "description", None),
+            )
             await redis.delete(csrf_key)
             raise HTTPException(
                 status_code=400, detail=f"Authorization failed: {exc.error}"
             ) from exc
         except Exception as exc:
+            # Was silently mapped to 502 — log root cause for Loki/Tempo debugging.
+            logger.exception(
+                "OAuth callback credential exchange failed: %s: %s",
+                type(exc).__name__,
+                exc,
+            )
             await redis.delete(csrf_key)
             raise HTTPException(
                 status_code=502, detail="Unexpected error while contacting identity provider."
