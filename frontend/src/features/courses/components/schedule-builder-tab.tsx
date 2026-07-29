@@ -29,6 +29,7 @@ import {
 import { SignInCard } from "@/components/molecules/sign-in-card";
 import { CalendarPlus, ChevronDown, ClipboardCopy, Copy, Crop, Loader2, Plus, Pencil, RefreshCcw, RotateCcw, Trash2, Wand2, X } from "lucide-react";
 import { ConfirmationModal } from './confirmation-modal';
+import { ScheduleQualitySummary } from "./schedule-quality-summary";
 import { useSyllabusLinks } from '../utils/use-syllabus-links';
 import { toast } from "@/hooks/toast";
 import { useUser } from "@/hooks/use-user";
@@ -834,49 +835,6 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
     setActiveRequirements(buildRequirementDetailsFromCourse(course));
   };
 
-  // Check for time clashes
-  const hasClash = useMemo(() => {
-    if (selectedEvents.length < 2) return false;
-
-    // Group events by day
-    const eventsByDay: Record<string, Array<{ start: number; end: number; id: string }>> = {};
-
-    selectedEvents.forEach(({ section }) => {
-      const [start, end] = parseTimeRange(section.times);
-      // Only process events with valid times where start < end
-      if (start == null || end == null || start >= end) return;
-      if (!section.days || section.days.length === 0) return;
-
-      section.days.split("").forEach((day) => {
-        if (!day.trim()) return;
-        if (!eventsByDay[day]) {
-          eventsByDay[day] = [];
-        }
-        eventsByDay[day].push({ start, end, id: `${section.id}-${day}` });
-      });
-    });
-
-    // Check for overlaps on each day
-    for (const day in eventsByDay) {
-      const dayEvents = eventsByDay[day];
-      if (dayEvents.length < 2) continue;
-
-      for (let i = 0; i < dayEvents.length; i++) {
-        for (let j = i + 1; j < dayEvents.length; j++) {
-          const event1 = dayEvents[i];
-          const event2 = dayEvents[j];
-          // Events overlap if: start1 < end2 && start2 < end1
-          // This means they have a time period in common
-          if (event1.start < event2.end && event2.start < event1.end) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
-  }, [selectedEvents]);
-
   if (isAuthLoading) {
     return <ScheduleBuilderSkeleton />;
   }
@@ -1249,14 +1207,9 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              {selectedEvents.length > 0 && (
-                <Badge
-                  variant={hasClash ? "destructive" : "default"}
-                  className="shrink-0 text-xs font-semibold"
-                >
-                  {hasClash ? "Clash" : "Fit"}
-                </Badge>
-              )}
+              <ScheduleQualitySummary
+                sections={selectedEvents.map(({ section }) => section)}
+              />
             </div>
             <Button
               type="button"
