@@ -180,6 +180,10 @@ function SectionPickerSheet({
 
   const pick = (sectionId: number) => {
     if (!activeGroup) return;
+    // Already selected — no-op (avoids refetch / full shelf re-render).
+    if (sectionId && activeGroup.sections.some((s) => s.id === sectionId && s.is_selected)) {
+      return;
+    }
     const nextIds = computeNextSectionSelection(
       course.sections,
       activeGroup.typeKey,
@@ -270,6 +274,7 @@ function SectionPickerSheet({
           {sortedSections.map((section) => {
             const selected = section.is_selected;
             const nuspaceCount = section.selected_count ?? 0;
+            const capacity = section.capacity ?? 0;
             const clashes = sectionConflicts(section, [
               ...otherSelectedSections,
               ...course.sections.filter(
@@ -309,6 +314,14 @@ function SectionPickerSheet({
                           <Check className="size-3" />
                           Selected
                         </Badge>
+                      ) : null}
+                      {capacity > 0 ? (
+                        <span
+                          className="tabular-nums text-[11px] text-muted-foreground"
+                          title="Section seat capacity"
+                        >
+                          {capacity} seats
+                        </span>
                       ) : null}
                     </div>
                     <p className="mt-1 text-xs font-medium tabular-nums">
