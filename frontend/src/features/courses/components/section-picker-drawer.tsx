@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import NuspaceLogoIcon from "@/assets/svg/nuspace_logo.svg";
-import { Check, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { PlannerCourse, PlannerSchedule, PlannerSection } from "../types";
 import { parseSectionDays, sectionsTimeConflict } from "../utils/schedule-quality";
 
@@ -31,7 +31,6 @@ type Props = {
   schedule: PlannerSchedule;
   activeCourseId: number | null;
   loadingSections: Record<number, boolean>;
-  selecting: boolean;
   onSelectSection: (courseId: number, sectionIds: number[]) => void;
   /** Open drawer for a course/type (e.g. from clicking a grid block). */
   openRequest?: { courseId: number; typeKey: string; nonce: number } | null;
@@ -47,7 +46,6 @@ export function SectionSelectorBar({
   schedule,
   activeCourseId,
   loadingSections,
-  selecting,
   onSelectSection,
   openRequest = null,
 }: Props) {
@@ -76,7 +74,7 @@ export function SectionSelectorBar({
   const sectionGroups = groupSectionsByType(activeCourse.sections);
 
   const openGroup = (typeKey: string) => {
-    if (!hasSections || selecting || isLoading) return;
+    if (!hasSections || isLoading) return;
     setActiveTypeKey(typeKey);
     setOpen(true);
   };
@@ -98,7 +96,7 @@ export function SectionSelectorBar({
                 <button
                   key={`${activeCourse.id}-${group.typeKey}`}
                   type="button"
-                  disabled={!hasSections || selecting || isLoading}
+                  disabled={!hasSections || isLoading}
                   onClick={() => openGroup(group.typeKey)}
                   className={cn(
                     "inline-flex max-w-full items-center gap-1.5 rounded-xl border px-3 py-2 text-left text-xs transition-colors",
@@ -129,7 +127,6 @@ export function SectionSelectorBar({
         groups={sectionGroups}
         activeTypeKey={activeTypeKey}
         onActiveTypeKeyChange={setActiveTypeKey}
-        selecting={selecting}
         onSelectSection={onSelectSection}
         otherSelectedSections={collectOtherSelectedSections(schedule, activeCourse.id)}
       />
@@ -144,7 +141,6 @@ function SectionPickerSheet({
   groups,
   activeTypeKey,
   onActiveTypeKeyChange,
-  selecting,
   onSelectSection,
   otherSelectedSections,
 }: {
@@ -154,7 +150,6 @@ function SectionPickerSheet({
   groups: SectionGroup[];
   activeTypeKey: string | null;
   onActiveTypeKeyChange: (key: string) => void;
-  selecting: boolean;
   onSelectSection: (courseId: number, sectionIds: number[]) => void;
   otherSelectedSections: PlannerSection[];
 }) {
@@ -190,16 +185,6 @@ function SectionPickerSheet({
       sectionId,
     );
     onSelectSection(course.id, nextIds);
-
-    if (!sectionId) return;
-
-    const nextEmpty = groups.find((group) => {
-      if (group.typeKey === activeGroup.typeKey) return false;
-      return !group.sections.some((section) => nextIds.includes(section.id));
-    });
-    if (nextEmpty) {
-      onActiveTypeKeyChange(nextEmpty.typeKey);
-    }
   };
 
   const hasSelection = Boolean(activeGroup?.sections.some((s) => s.is_selected));
@@ -264,7 +249,7 @@ function SectionPickerSheet({
               variant="ghost"
               size="xs"
               className="h-7 text-xs text-muted-foreground"
-              disabled={selecting || !hasSelection}
+              disabled={!hasSelection}
               onClick={() => activeGroup && pick(0)}
             >
               Deselect
@@ -288,7 +273,6 @@ function SectionPickerSheet({
               <button
                 key={section.id}
                 type="button"
-                disabled={selecting}
                 onClick={() => pick(section.id)}
                 className={cn(
                   "w-full rounded-xl border p-3 text-left transition-colors",
@@ -307,12 +291,6 @@ function SectionPickerSheet({
                       {clashes ? (
                         <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">
                           Clash
-                        </Badge>
-                      ) : null}
-                      {selected ? (
-                        <Badge variant="secondary" className="h-5 gap-0.5 px-1.5 text-[10px]">
-                          <Check className="size-3" />
-                          Selected
                         </Badge>
                       ) : null}
                       {capacity > 0 ? (

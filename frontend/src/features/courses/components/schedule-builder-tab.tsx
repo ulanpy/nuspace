@@ -517,6 +517,8 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
     },
   });
 
+  const latestSectionSelectionRef = useRef<Record<number, string>>({});
+
   const selectSectionMutation = useMutation({
     mutationFn: ({
       courseId,
@@ -528,7 +530,65 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
       gradeStatisticsApi.selectPlannerSections(courseId, {
         section_ids: sectionIds,
       }),
-    onSuccess: invalidatePlanner,
+    onMutate: async ({ courseId, sectionIds }) => {
+      const selectionKey = sectionIds.slice().sort((a, b) => a - b).join(",");
+      latestSectionSelectionRef.current[courseId] = selectionKey;
+
+      const queryKey = ["plannerSchedule", selectedScheduleId] as const;
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<PlannerSchedule>(queryKey);
+      if (previous) {
+        const selected = new Set(sectionIds);
+        queryClient.setQueryData<PlannerSchedule>(queryKey, {
+          ...previous,
+          courses: previous.courses.map((course) =>
+            course.id !== courseId
+              ? course
+              : {
+                  ...course,
+                  sections: course.sections.map((section) => ({
+                    ...section,
+                    is_selected: selected.has(section.id),
+                  })),
+                },
+          ),
+        });
+      }
+      return { previous, courseId, selectionKey };
+    },
+    onError: (_error, variables, context) => {
+      if (!context) return;
+      if (latestSectionSelectionRef.current[variables.courseId] !== context.selectionKey) {
+        return;
+      }
+      if (context.previous && selectedScheduleId != null) {
+        queryClient.setQueryData(["plannerSchedule", selectedScheduleId], context.previous);
+      }
+      toast({
+        variant: "error",
+        title: "Couldn't update section",
+        description: "Please try again.",
+      });
+    },
+    onSuccess: (updatedCourse, variables, context) => {
+      if (!context) return;
+      if (latestSectionSelectionRef.current[variables.courseId] !== context.selectionKey) {
+        return;
+      }
+      if (selectedScheduleId == null) return;
+      const queryKey = ["plannerSchedule", selectedScheduleId] as const;
+      const current = queryClient.getQueryData<PlannerSchedule>(queryKey);
+      if (!current) {
+        void queryClient.invalidateQueries({ queryKey });
+        return;
+      }
+      queryClient.setQueryData<PlannerSchedule>(queryKey, {
+        ...current,
+        courses: current.courses.map((course) =>
+          course.id === updatedCourse.id ? updatedCourse : course,
+        ),
+      });
+    },
   });
 
   const autoBuildMutation = useMutation({
@@ -1257,7 +1317,6 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
             schedule={planner}
             events={selectedEvents}
             onSelect={selectSectionMutation}
-            selecting={selectSectionMutation.isPending}
             loadingSections={loadingSections}
             onOpenSectionPicker={({ course, section }) => {
               setActiveCourseId(course.id);
@@ -1470,7 +1529,6 @@ const SchedulePreview = ({
   schedule,
   events,
   onSelect,
-  selecting,
   loadingSections,
   onOpenSectionPicker,
   activeCourseId,
@@ -1480,7 +1538,6 @@ const SchedulePreview = ({
   schedule: PlannerSchedule | null;
   events: SectionEvent[];
   onSelect: MutationRef<SelectArgs>;
-  selecting: boolean;
   loadingSections: Record<number, boolean>;
   onOpenSectionPicker: (sectionEvent: SectionEvent) => void;
   activeCourseId: number | null;
@@ -1614,7 +1671,6 @@ const SchedulePreview = ({
         onSelectSection={(courseId, sectionIds) =>
           onSelect.mutate({ courseId, sectionIds })
         }
-        selecting={selecting}
         loadingSections={loadingSections}
         activeCourseId={activeCourseId}
         openRequest={pickerOpenRequest}
