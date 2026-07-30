@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import NuspaceLogoIcon from "@/assets/svg/nuspace_logo.svg";
 import { Check, ChevronRight } from "lucide-react";
 import type { PlannerCourse, PlannerSchedule, PlannerSection } from "../types";
+import { parseSectionDays, sectionsTimeConflict } from "../utils/schedule-quality";
 
 const nuspaceLogoSrc =
   typeof NuspaceLogoIcon === "string"
@@ -32,7 +33,15 @@ type Props = {
   loadingSections: Record<number, boolean>;
   selecting: boolean;
   onSelectSection: (courseId: number, sectionIds: number[]) => void;
+  /** Open drawer for a course/type (e.g. from clicking a grid block). */
+  openRequest?: { courseId: number; typeKey: string; nonce: number } | null;
 };
+
+export function getSectionTypeKey(sectionCode?: string | null): string {
+  if (!sectionCode) return "SECTION";
+  const letters = sectionCode.replace(/[\d\s]+/g, "").toUpperCase();
+  return letters || "SECTION";
+}
 
 export function SectionSelectorBar({
   schedule,
@@ -40,28 +49,26 @@ export function SectionSelectorBar({
   loadingSections,
   selecting,
   onSelectSection,
+  openRequest = null,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [activeTypeKey, setActiveTypeKey] = useState<string | null>(null);
 
-  if (!schedule.courses.length) {
-    return (
-      <div className="rounded-lg border border-dashed border-border/60 bg-muted/10 p-4 text-sm text-muted-foreground">
-        Add courses to start selecting time slots.
-      </div>
-    );
-  }
+  const activeCourse = schedule.courses.length
+    ? activeCourseId
+      ? schedule.courses.find((course) => course.id === activeCourseId)
+      : schedule.courses[0]
+    : undefined;
 
-  const activeCourse = activeCourseId
-    ? schedule.courses.find((course) => course.id === activeCourseId)
-    : schedule.courses[0];
+  useEffect(() => {
+    if (!openRequest || !activeCourse) return;
+    if (openRequest.courseId !== activeCourse.id) return;
+    setActiveTypeKey(openRequest.typeKey);
+    setOpen(true);
+  }, [openRequest, activeCourse?.id]);
 
-  if (!activeCourse) {
-    return (
-      <div className="rounded-lg border border-dashed border-border/60 bg-muted/10 p-4 text-sm text-muted-foreground">
-        Add courses to start selecting time slots.
-      </div>
-    );
+  if (!schedule.courses.length || !activeCourse) {
+    return null;
   }
 
   const hasSections = activeCourse.sections.length > 0;
@@ -347,18 +354,7 @@ function collectOtherSelectedSections(
 }
 
 function sectionConflicts(candidate: PlannerSection, others: PlannerSection[]): boolean {
-  const [cStart, cEnd] = parseTimeRange(candidate.times ?? "");
-  if (cStart == null || cEnd == null) return false;
-  const cDays = new Set((candidate.days || "").toUpperCase().split("").filter(Boolean));
-  for (const other of others) {
-    const [oStart, oEnd] = parseTimeRange(other.times ?? "");
-    if (oStart == null || oEnd == null) continue;
-    const oDays = (other.days || "").toUpperCase().split("").filter(Boolean);
-    const sharedDay = oDays.some((d) => cDays.has(d));
-    if (!sharedDay) continue;
-    if (cStart < oEnd && oStart < cEnd) return true;
-  }
-  return false;
+  return others.some((other) => sectionsTimeConflict(candidate, other));
 }
 
 function groupSectionsByType(sections: PlannerSection[]): SectionGroup[] {
@@ -395,12 +391,6 @@ function computeNextSectionSelection(
   return remainingSelections;
 }
 
-function getSectionTypeKey(sectionCode?: string | null): string {
-  if (!sectionCode) return "SECTION";
-  const letters = sectionCode.replace(/[\d\s]+/g, "").toUpperCase();
-  return letters || "SECTION";
-}
-
 function getSectionTypeLabel(typeKey: string): string {
   const dictionary: Record<string, string> = {
     L: "Lecture",
@@ -416,7 +406,7 @@ function getSectionTypeLabel(typeKey: string): string {
 const dayOrder = ["M", "T", "W", "R", "F", "S"];
 
 function DayIndicators({ days }: { days: string | null }) {
-  const active = new Set((days ?? "").toUpperCase().split(""));
+  const active = new Set(parseSectionDays(days));
   return (
     <div className="flex shrink-0 gap-0.5">
       {dayOrder.map((day) => (

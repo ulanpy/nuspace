@@ -8,6 +8,7 @@ export const MIN_LUNCH_MINUTES = 30;
 export const MIN_QUICK_BREAK_MINUTES = 15;
 
 const DAY_ORDER = ["M", "T", "W", "R", "F", "S", "U"] as const;
+const DAY_KEYS = new Set<string>(DAY_ORDER);
 const DAY_LABEL: Record<string, string> = {
   M: "Mon",
   T: "Tue",
@@ -17,6 +18,32 @@ const DAY_LABEL: Record<string, string> = {
   S: "Sat",
   U: "Sun",
 };
+
+/** Registrar days often arrive as "T R" / "M W F" — only keep real day letters. */
+export function parseSectionDays(days: string | null | undefined): string[] {
+  if (!days) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const ch of days.toUpperCase()) {
+    if (!DAY_KEYS.has(ch) || seen.has(ch)) continue;
+    seen.add(ch);
+    out.push(ch);
+  }
+  return out;
+}
+
+/** True when two sections share a day and overlapping clock time (exclusive ends). */
+export function sectionsTimeConflict(
+  a: { days?: string | null; times?: string | null },
+  b: { days?: string | null; times?: string | null },
+): boolean {
+  const [aStart, aEnd] = parseTimeRange(a.times ?? "");
+  const [bStart, bEnd] = parseTimeRange(b.times ?? "");
+  if (aStart == null || aEnd == null || bStart == null || bEnd == null) return false;
+  const aDays = new Set(parseSectionDays(a.days));
+  if (!parseSectionDays(b.days).some((day) => aDays.has(day))) return false;
+  return aStart < bEnd && bStart < aEnd;
+}
 
 export type TimeBlock = { day: string; start: number; end: number };
 
@@ -160,10 +187,7 @@ function collectBlocks(sections: SectionLike[]): TimeBlock[] {
   for (const section of sections) {
     const [start, end] = parseTimeRange(section.times ?? "");
     if (start == null || end == null || start >= end) continue;
-    const days = section.days ?? "";
-    for (const ch of days) {
-      const day = ch.toUpperCase();
-      if (!DAY_LABEL[day]) continue;
+    for (const day of parseSectionDays(section.days)) {
       out.push({ day, start, end });
     }
   }

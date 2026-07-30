@@ -29,7 +29,8 @@ import { SignInCard } from "@/components/molecules/sign-in-card";
 import { CalendarPlus, ChevronDown, ClipboardCopy, Copy, Crop, Loader2, Plus, Pencil, RefreshCcw, RotateCcw, Trash2, Wand2, X } from "lucide-react";
 import { ConfirmationModal } from './confirmation-modal';
 import { ScheduleFitBadge, ScheduleInsightsButton } from "./schedule-quality-summary";
-import { SectionSelectorBar } from "./section-picker-drawer";
+import { SectionSelectorBar, getSectionTypeKey } from "./section-picker-drawer";
+import { parseSectionDays } from "../utils/schedule-quality";
 import { useSyllabusLinks } from '../utils/use-syllabus-links';
 import { toast } from "@/hooks/toast";
 import { useUser } from "@/hooks/use-user";
@@ -248,10 +249,14 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
   const searchResultsListRef = useRef<HTMLDivElement | null>(null);
   const searchLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const { getLinkForCode: getSyllabusLink } = useSyllabusLinks("/data/course_links.csv");
-  const [activeSection, setActiveSection] = useState<SectionEvent | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [activeRequirements, setActiveRequirements] = useState<CourseRequirementDetail | null>(null);
   const [activeCourseId, setActiveCourseId] = useState<number | null>(null);
+  const [pickerOpenRequest, setPickerOpenRequest] = useState<{
+    courseId: number;
+    typeKey: string;
+    nonce: number;
+  } | null>(null);
   const [collapseEmptyEdges, setCollapseEmptyEdges] = useState(false);
   const autoFetchedCourses = useRef<Set<number>>(new Set());
   const planner = plannerQuery.data ?? null;
@@ -1254,27 +1259,18 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
             onSelect={selectSectionMutation}
             selecting={selectSectionMutation.isPending}
             loadingSections={loadingSections}
-            onShowDetails={setActiveSection}
+            onOpenSectionPicker={({ course, section }) => {
+              setActiveCourseId(course.id);
+              setPickerOpenRequest({
+                courseId: course.id,
+                typeKey: getSectionTypeKey(section.section_code),
+                nonce: Date.now(),
+              });
+            }}
             activeCourseId={activeCourseId}
+            pickerOpenRequest={pickerOpenRequest}
             collapseEmptyEdges={collapseEmptyEdges}
           />
-          {activeSection && (
-            <SectionDetailModal
-              sectionEvent={activeSection}
-              onClose={() => setActiveSection(null)}
-              onRemove={() => {
-                const { course, section } = activeSection;
-                const remainingSectionIds = course.sections
-                  .filter((s) => s.is_selected && s.id !== section.id)
-                  .map((s) => s.id);
-                selectSectionMutation.mutate(
-                  { courseId: course.id, sectionIds: remainingSectionIds },
-                  { onSuccess: () => setActiveSection(null) },
-                );
-              }}
-              removing={selectSectionMutation.isPending}
-            />
-          )}
         </section>
       </div>
       {activeRequirements && (
@@ -1476,8 +1472,9 @@ const SchedulePreview = ({
   onSelect,
   selecting,
   loadingSections,
-  onShowDetails,
+  onOpenSectionPicker,
   activeCourseId,
+  pickerOpenRequest,
   collapseEmptyEdges,
 }: {
   schedule: PlannerSchedule | null;
@@ -1485,8 +1482,9 @@ const SchedulePreview = ({
   onSelect: MutationRef<SelectArgs>;
   selecting: boolean;
   loadingSections: Record<number, boolean>;
-  onShowDetails: (sectionEvent: SectionEvent) => void;
+  onOpenSectionPicker: (sectionEvent: SectionEvent) => void;
   activeCourseId: number | null;
+  pickerOpenRequest: { courseId: number; typeKey: string; nonce: number } | null;
   collapseEmptyEdges: boolean;
 }) => {
   const timedEvents = useMemo(
@@ -1539,7 +1537,7 @@ const SchedulePreview = ({
       if (start == null || end == null) {
         return;
       }
-      const days = (section.days || "").split("").filter((char) => dayDefs.some((d) => d.key === char));
+      const days = parseSectionDays(section.days);
       days.forEach((day) => {
         const intervals = intervalsByDay[day] || [];
         intervals.forEach((interval) => {
@@ -1559,7 +1557,7 @@ const SchedulePreview = ({
   const visibleDays = useMemo(() => {
     const used = new Set<string>();
     timedEvents.forEach(({ section }) => {
-      for (const day of section.days || "") {
+      for (const day of parseSectionDays(section.days)) {
         used.add(day);
       }
     });
@@ -1595,6 +1593,7 @@ const SchedulePreview = ({
     );
   }
 
+  const hasCourses = schedule.courses.length > 0;
   const hasSections = schedule.courses.some((course) => course.sections.length);
   const hourHeight = 84;
   const hours = Array.from({ length: endHourExclusive - startHour }, (_, idx) => startHour + idx);
@@ -1602,6 +1601,11 @@ const SchedulePreview = ({
   const dayCount = visibleDays.length;
   const gridTemplateColumns = `64px repeat(${dayCount}, minmax(7.5rem, 1fr))`;
   const minGridWidth = 64 + dayCount * 120;
+  const emptyGridMessage = !hasCourses
+    ? "Your week will show up here."
+    : hasSections
+      ? "Select a section to populate the grid."
+      : "Refresh courses to load section times.";
 
   return (
     <div className="mt-4 space-y-4">
@@ -1613,12 +1617,11 @@ const SchedulePreview = ({
         selecting={selecting}
         loadingSections={loadingSections}
         activeCourseId={activeCourseId}
+        openRequest={pickerOpenRequest}
       />
       {filteredEvents.length === 0 ? (
         <div className="flex h-64 items-center justify-center rounded-xl border border-border/60 bg-muted/10 p-4 text-sm text-muted-foreground">
-          {hasSections
-            ? "Select a section to populate the grid."
-            : "Load registrar sections to start visualizing your schedule."}
+          {emptyGridMessage}
         </div>
       ) : (
         <>
@@ -1626,7 +1629,7 @@ const SchedulePreview = ({
           <ScheduleAgenda
             events={filteredEvents}
             clashingSectionIds={clashingSectionIds}
-            onShowDetails={onShowDetails}
+            onOpenSectionPicker={onOpenSectionPicker}
             collapseEmptyEdges={collapseEmptyEdges}
           />
         </div>
@@ -1671,16 +1674,14 @@ const SchedulePreview = ({
                     />
                   ))}
                   {filteredEvents
-                    .filter(({ section }) => section.days.includes(day.key))
+                    .filter(({ section }) => parseSectionDays(section.days).includes(day.key))
                     .map(({ course, section }) => {
                       const [start, end] = parseTimeRange(section.times);
                       if (start == null || end == null) return null;
-                      const demandRatio = computeDemandRatio(section);
-                      const slotColors = getDemandClasses(demandRatio);
                       const isClashing = clashingSectionIds.has(section.id);
                       const clashClasses = isClashing
                         ? "bg-destructive text-destructive-foreground border border-destructive/70 ring-2 ring-destructive/60"
-                        : `border-2 border-transparent ${slotColors.bg} ${slotColors.text}`;
+                        : "border-2 border-transparent bg-secondary/60 text-secondary-foreground hover:bg-secondary/80";
                       return (
                         <div
                           key={`${section.id}-${day.key}`}
@@ -1692,11 +1693,11 @@ const SchedulePreview = ({
                           }}
                           role="button"
                           tabIndex={0}
-                          onClick={() => onShowDetails({ course, section })}
+                          onClick={() => onOpenSectionPicker({ course, section })}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") {
                               e.preventDefault();
-                              onShowDetails({ course, section });
+                              onOpenSectionPicker({ course, section });
                             }
                           }}
                         >
@@ -1731,16 +1732,16 @@ const SchedulePreview = ({
 const ScheduleAgenda = ({
   events,
   clashingSectionIds,
-  onShowDetails,
+  onOpenSectionPicker,
   collapseEmptyEdges,
 }: {
   events: SectionEvent[];
   clashingSectionIds: Set<number>;
-  onShowDetails: (sectionEvent: SectionEvent) => void;
+  onOpenSectionPicker: (sectionEvent: SectionEvent) => void;
   collapseEmptyEdges: boolean;
 }) => {
   const daysWithEvents = dayDefs.filter((day) =>
-    events.some(({ section }) => section.days.includes(day.key)),
+    events.some(({ section }) => parseSectionDays(section.days).includes(day.key)),
   );
   const visibleDayTabs = collapseEmptyEdges
     ? (() => {
@@ -1768,7 +1769,7 @@ const ScheduleAgenda = ({
   }, [events, collapseEmptyEdges]);
 
   const dayEvents = events
-    .filter(({ section }) => section.days.includes(selectedDay))
+    .filter(({ section }) => parseSectionDays(section.days).includes(selectedDay))
     .map((event) => ({ event, start: parseTimeRange(event.section.times)[0] ?? 0 }))
     .sort((a, b) => a.start - b.start)
     .map(({ event }) => event);
@@ -1805,25 +1806,23 @@ const ScheduleAgenda = ({
       ) : (
         <div className="space-y-2">
           {dayEvents.map(({ course, section }) => {
-            const demandRatio = computeDemandRatio(section);
-            const slotColors = getDemandClasses(demandRatio);
             const isClashing = clashingSectionIds.has(section.id);
             return (
               <div
                 key={section.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => onShowDetails({ course, section })}
+                onClick={() => onOpenSectionPicker({ course, section })}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    onShowDetails({ course, section });
+                    onOpenSectionPicker({ course, section });
                   }
                 }}
                 className={`cursor-pointer rounded-xl border p-3 shadow-sm transition-colors ${
                   isClashing
                     ? "border-destructive/70 bg-destructive text-destructive-foreground ring-2 ring-destructive/60"
-                    : `border-border/60 ${slotColors.bg} ${slotColors.text}`
+                    : "border-border/60 bg-secondary/60 text-secondary-foreground hover:bg-secondary/80"
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -1849,87 +1848,6 @@ const ScheduleAgenda = ({
         </div>
       )}
     </div>
-  );
-};
-
-interface SectionDetailModalProps {
-  sectionEvent: SectionEvent;
-  onClose: () => void;
-  onRemove: () => void;
-  removing: boolean;
-}
-
-const SectionDetailModal = ({ sectionEvent, onClose, onRemove, removing }: SectionDetailModalProps) => {
-  const { course, section } = sectionEvent;
-  const selected = section.selected_count ?? 0;
-  const enrolled = section.enrollment_snapshot ?? 0;
-  const capacity = section.capacity ?? 0;
-  const demandRatio = computeDemandRatio(section);
-  const demandLabel = getDemandLabel(demandRatio);
-  const showBar = capacity > 0;
-
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [onClose]);
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <div
-        className="my-auto w-full max-w-lg overflow-auto rounded-2xl border border-border/60 bg-card p-6 shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-        style={{ maxHeight: "calc(100vh - 2rem)" }}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-muted-foreground">
-              {course.course_code}
-              <span className="ml-1.5 font-normal">{section.section_code}</span>
-            </p>
-            <h2 className="text-xl font-bold leading-tight">{course.title || course.course_code}</h2>
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0">
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="mt-4 space-y-3 text-sm">
-          <div className="flex justify-between text-muted-foreground">
-            <span>Days & time</span>
-            <span className="flex items-center gap-2 font-medium text-foreground">
-              <DayIndicators days={section.days} />
-              {section.times || "N/A"}
-            </span>
-          </div>
-          <DetailRow label="Room" value={section.room || "TBD"} />
-          <DetailRow label="Faculty" value={section.faculty || "TBD"} />
-        </div>
-        {showBar && (
-          <DemandBar capacity={capacity} picked={selected} enrolled={enrolled} />
-        )}
-        <Button
-          variant="outline"
-          className="mt-4 w-full text-destructive hover:text-destructive"
-          onClick={onRemove}
-          disabled={removing}
-        >
-          {removing ? "Removing…" : "Remove this section"}
-        </Button>
-        <p className="mt-4 text-xs text-muted-foreground">
-          Picked counts number of students who have selected this section.
-        </p>
-      </div>
-    </div>,
-    document.body
   );
 };
 
@@ -2037,106 +1955,6 @@ const CourseRequirementModal = ({ details, onClose }: CourseRequirementModalProp
   );
 };
 
-const DetailRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex items-center justify-between">
-    <span className="text-muted-foreground">{label}</span>
-    <span className="font-medium">{value}</span>
-  </div>
-);
-
-const DemandBar = ({
-  capacity,
-  picked,
-  enrolled,
-}: {
-  capacity: number;
-  picked: number;
-  enrolled: number;
-}) => {
-  const safePicked = Math.max(0, Math.min(picked, capacity));
-  const safeEnrolled = Math.max(0, Math.min(enrolled, capacity));
-  const pickedPercent = capacity > 0 ? (safePicked / capacity) * 100 : 0;
-  const enrolledPercent = capacity > 0 ? (safeEnrolled / capacity) * 100 : 0;
-  const markersOverlap = Math.abs(pickedPercent - enrolledPercent) < 4;
-  return (
-    <div className="mt-6 space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-4 text-xs">
-      <div className="relative h-3 rounded-full bg-muted">
-        <div
-          className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background bg-primary shadow"
-          style={{ left: `${pickedPercent}%`, top: markersOverlap ? "35%" : "50%" }}
-        />
-        <div
-          className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-45 border-2 border-background bg-muted-foreground/70 shadow"
-          style={{ left: `${enrolledPercent}%`, top: markersOverlap ? "65%" : "50%" }}
-        />
-      </div>
-      <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
-        <div className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-primary" />
-          <span className="text-foreground">Picked {picked}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-muted-foreground/70" />
-          <span className="text-foreground">Enrolled {enrolled}</span>
-        </div>
-        <span className="ml-auto text-foreground">Capacity {capacity}</span>
-      </div>
-    </div>
-  );
-};
-
-const dayOrder = ["M", "T", "W", "R", "F", "S"];
-
-const DayIndicators = ({ days }: { days: string | null }) => {
-  const active = new Set((days ?? "").toUpperCase().split(""));
-  return (
-    <div className="flex gap-1">
-      {dayOrder.map((day) => (
-        <span
-          key={day}
-          className={`flex h-6 w-6 items-center justify-center rounded text-[10px] ${active.has(day) ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-            }`}
-        >
-          {day}
-        </span>
-      ))}
-    </div>
-  );
-};
-
-function computeDemandRatio(section: PlannerSection): number {
-  const capacity = section.capacity ?? Number.POSITIVE_INFINITY;
-  if (!isFinite(capacity) || capacity <= 0) {
-    return 0;
-  }
-  const selected = section.selected_count ?? 0;
-  const enrolled = section.enrollment_snapshot ?? 0;
-  const demand = Math.max(selected, enrolled);
-  return demand / capacity;
-}
-
-function getDemandClasses(ratio: number): { bg: string; text: string } {
-  if (ratio >= 1.0) {
-    return {
-      bg: "bg-destructive/40 hover:bg-destructive/50 dark:bg-destructive/30 dark:hover:bg-destructive/40",
-      text: "text-destructive-foreground",
-    };
-  }
-  if (ratio >= 0.75) {
-    return {
-      bg: "bg-warning/40 hover:bg-warning/50 dark:bg-warning/25 dark:hover:bg-warning/35",
-      text: "text-warning-foreground",
-    };
-  }
-  if (ratio >= 0.5) {
-    return {
-      bg: "bg-primary/30 hover:bg-primary/40 dark:bg-primary/20 dark:hover:bg-primary/30",
-      text: "text-primary",
-    };
-  }
-  return { bg: "bg-secondary/60 hover:bg-secondary/80", text: "text-secondary-foreground" };
-}
-
 function truncateFaculty(faculty: string | null | undefined): string {
   if (!faculty) return "";
   const maxLength = 24;
@@ -2152,13 +1970,6 @@ function truncateRoom(room: string | null | undefined): string {
         return room.split("-")[0];
     }
     return room.split(/( |cap)/g)[0]
-}
-
-function getDemandLabel(ratio: number): string {
-  if (ratio >= 1.0) return "Over capacity";
-  if (ratio >= 0.75) return "High demand";
-  if (ratio >= 0.5) return "Moderate demand";
-  return "Low demand";
 }
 
 function parseTimeRange(value: string): [number | null, number | null] {
