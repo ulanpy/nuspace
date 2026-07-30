@@ -28,7 +28,7 @@
 ## Tech Stack
 
 ### Backend
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Python 3.12](https://img.shields.io/badge/Python_3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
@@ -37,8 +37,8 @@
 
 ### Frontend
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)
+![React 19](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Vite 7](https://img.shields.io/badge/Vite_7-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
 ### DevOps & Infrastructure
@@ -53,7 +53,7 @@
 
 Before setting up the project, ensure you have the following installed:
 
-- [Docker](https://www.docker.com/)
+- [Docker](https://www.docker.com/) with Docker Compose (v2 recommended)
 - [Git](https://git-scm.com/) 
 
 ## Quick Start
@@ -73,7 +73,9 @@ Create a `.env` file using the provided example:
 cp .env.example .env
 ```
 
-**Important:** Add your `TELEGRAM_BOT_TOKEN` (create a bot through [@BotFather](https://t.me/botfather) if needed).
+**Important:** `infra/.env.example` is a local development template. Add a valid `TELEGRAM_BOT_TOKEN` (create a bot through [@BotFather](https://t.me/botfather) if needed). With `MOCK_KEYCLOAK=True` and `USE_GCS_EMULATOR=True`, Keycloak and GCP values marked as `secret` may remain local placeholders. Use development-only values for application secrets. `GEMINI_API_KEY` is needed only for local Gemini event extraction, while Grafana credentials are needed for the monitoring profile.
+
+Staging and production receive their environment configuration through GCP Secret Manager. Do not reuse local placeholder values there; set `IS_DEBUG=False`, `MOCK_KEYCLOAK=False`, and `USE_GCS_EMULATOR=False`.
 
 ### 3. Build and Run
 
@@ -93,11 +95,11 @@ Access the application at [localhost](http://localhost) to confirm everything is
 
 ## Documentation
 
-- [Workload Identity Federation](docs/wif-setup.md) - GitHub Actions authentication with GCP for CI/CD pipeline
-- [Monitoring Guide](infra/README.md) - What monitoring service stack is used and their connection details
-- [Terraform Setup](terraform/README.md) - Provision cloud services for stage/production environments by IoC
-- [WireGuard VPN](infra/wg-easy/README.md) - Secure VPN access to monitoring tools and internal services
-- [SSH Access](docs/ssh-access.md) - Production/Staging server SSH is available only via VPN and OS Login
+- [Workload Identity Federation](docs/wif-setup.md) - GitHub Actions authentication with GCP for the deployment pipeline
+- [Monitoring Guide](infra/README.md) - Local and production monitoring stack configuration
+- [Terraform Setup](terraform/README.md) - GCP infrastructure for staging and production
+- [WireGuard VPN](infra/wg-easy/README.md) - Secure access to monitoring tools and internal services
+- [SSH Access](docs/ssh-access.md) - Staging and production access through VPN and OS Login
 
 ## Contributing
 
@@ -111,5 +113,5 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 For questions or support, reach out to:
 
-- **Email:** [ulan.sharipov@nu.edu.kz](mailto:ulan.sharipov@nu.edu.kz)
+- **Email:** [ulan.sharipov@alumni.nu.edu.kz](mailto:ulan.sharipov@alumni.nu.edu.kz)
 - **Nuspace dev chat:** https://t.me/nuspacedevcommunity
