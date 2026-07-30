@@ -2,7 +2,7 @@ from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, Query
 
-from backend.modules.auth.dependencies import get_creds_or_401
+from backend.modules.auth.dependencies import get_creds_or_401, get_creds_or_guest
 from backend.modules.courses.planner.dependencies import get_planner_service
 from backend.modules.courses.planner.schemas import (
     PlannerAutoBuildResponse,
@@ -32,6 +32,7 @@ router = APIRouter(prefix="/planner", tags=["Schedule Planner"])
     summary="List registrar semesters for planner dropdowns",
 )
 async def list_semesters(
+    _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     service: PlannerService = Depends(get_planner_service),
 ) -> List[SemesterOption]:
     return await service.list_semesters()

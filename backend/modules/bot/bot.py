@@ -1,13 +1,21 @@
+from typing import Annotated
+
+from aiogram import Bot, Dispatcher
 from aiogram.types import Update
-from fastapi import APIRouter, Request, Response, status
-from aiogram import Dispatcher, Bot
+from fastapi import APIRouter, Depends, Request, Response, status
+
 from backend.core.configs.config import config
+from backend.modules.auth.dependencies import mark_access_actor
 
 web_router = APIRouter(tags=["Bot Routes"])
+_mark_telegram = mark_access_actor("telegram")
 
 
 @web_router.post("/webhook")
-async def webhook(request: Request) -> Response:
+async def webhook(
+    request: Request,
+    _: Annotated[None, Depends(_mark_telegram)],
+) -> Response:
     """
     Webhook for the bot. Receives updates from Telegram and processes them.
     """

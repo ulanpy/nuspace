@@ -104,11 +104,17 @@ def instrument_app(app: FastAPI):
                     exception_type=exc_type,
                     project=PROJECT,
                 ).inc()
+            state = request.state
             emit_access_log(
                 method=method,
                 path=path_template,
+                # Actual URL path for logs (Prometheus keeps path_template only).
+                raw_path=raw_path,
                 status_code=status,
                 duration_seconds=duration,
                 exception_type=exc_type,
                 traceback_text=exc_tb,
+                user_sub=getattr(state, "user_sub", None),
+                is_guest=getattr(state, "is_guest", None),
+                actor=getattr(state, "actor", None),
             )

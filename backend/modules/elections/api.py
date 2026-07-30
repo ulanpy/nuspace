@@ -1,7 +1,10 @@
-
 import asyncio
-from fastapi import APIRouter, Request
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
+
+from backend.modules.auth.dependencies import get_creds_or_guest
 from backend.modules.elections.schemas import SurveyResponseCount
 from backend.modules.elections.service import get_survey_responses_count
 
@@ -9,6 +12,7 @@ router = APIRouter(
     prefix="/elections",
     tags=["elections"],
 )
+
 
 async def survey_event_generator(request: Request):
     """
@@ -27,7 +31,10 @@ async def survey_event_generator(request: Request):
 
 
 @router.get("/counter/stream")
-async def stream_election_counter(request: Request):
+async def stream_election_counter(
+    request: Request,
+    _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
+):
     """
     Stream the number of submitted responses for the election survey.
     """
@@ -36,7 +43,9 @@ async def stream_election_counter(request: Request):
 
 
 @router.get("/counter", response_model=SurveyResponseCount)
-async def get_election_counter() -> SurveyResponseCount:
+async def get_election_counter(
+    _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
+) -> SurveyResponseCount:
     """
     Get the number of submitted responses for the election survey.
     """

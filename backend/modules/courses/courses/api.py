@@ -10,7 +10,7 @@ from typing import Annotated, List
 
 import httpx
 from backend.common.dependencies import get_infra
-from backend.modules.auth.dependencies import get_creds_or_401
+from backend.modules.auth.dependencies import get_creds_or_401, get_creds_or_guest
 from backend.common.schemas import Infra
 from backend.core.configs.config import config
 from backend.modules.courses.courses import schemas
@@ -271,6 +271,7 @@ async def delete_course_item(
 
 @router.get("/courses", response_model=schemas.ListBaseCourseResponse)
 async def get_courses(
+    _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     infra: Infra = Depends(get_infra),
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),

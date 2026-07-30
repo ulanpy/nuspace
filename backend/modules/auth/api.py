@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from jose import JWTError
 from redis.asyncio import Redis
 
-from backend.modules.auth.dependencies import get_creds_or_401
+from backend.modules.auth.dependencies import get_creds_or_401, mark_access_actor, set_request_access_actor
 from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import config
 from backend.modules.auth import dependencies as deps
@@ -20,11 +20,14 @@ from backend.modules.auth.schemas import CurrentUserResponse, Sub
 from backend.modules.auth.service import AuthService
 
 router = APIRouter(tags=["Auth Routes"])
+# Auth-flow routes must not call get_creds_* (refresh-token rotation / pre-login).
+_mark_auth_flow = mark_access_actor("auth_flow", is_guest=True)
 
 
 @router.get("/login")
 async def login(
     request: Request,
+    _: Annotated[None, Depends(_mark_auth_flow)],
     auth_service: AuthService = Depends(deps.get_auth_service),
     redis: Redis = Depends(deps.get_redis),
     state: str | None = None,
@@ -52,6 +55,7 @@ async def login(
 @router.get("/auth/callback")
 async def auth_callback(
     request: Request,
+    _: Annotated[None, Depends(_mark_auth_flow)],
     auth_service: AuthService = Depends(deps.get_auth_service),
     redis: Redis = Depends(deps.get_redis),
     state: str | None = None,
@@ -66,6 +70,7 @@ async def auth_callback(
 async def bind_tg(
     request: Request,
     sub_param: Sub,
+    _: Annotated[None, Depends(_mark_auth_flow)],
     auth_service: AuthService = Depends(deps.get_auth_service),
 ):
     bot: Bot = request.app.state.bot
@@ -80,7 +85,9 @@ async def bind_tg(
 
 @router.post("/refresh-token", response_description="Refresh token")
 async def refresh_token(
+    request: Request,
     response: Response,
+    _: Annotated[None, Depends(_mark_auth_flow)],
     auth_service: AuthService = Depends(deps.get_auth_service),
     kc_refresh_token: Annotated[str | None, Cookie(alias=config.COOKIE_REFRESH_NAME)] = None,
 ):
@@ -99,6 +106,12 @@ async def refresh_token(
             response,
             new_app_token_str,
             auth_service.app_token_manager.token_expiry.total_seconds(),
+        )
+        set_request_access_actor(
+            request,
+            user_sub=new_app_claims.get("sub"),
+            is_guest=False,
+            actor="user",
         )
         return {**new_kc_creds, "app_token_claims": new_app_claims}
     except JWTError as exc:
@@ -128,6 +141,7 @@ async def get_current_user(
 @router.get("/logout")
 async def logout(
     response: Response,
+    _: Annotated[None, Depends(_mark_auth_flow)],
     auth_service: AuthService = Depends(deps.get_auth_service),
     refresh_token: Annotated[str | None, Cookie(alias=config.COOKIE_REFRESH_NAME)] = None,
 ):

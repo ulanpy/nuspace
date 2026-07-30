@@ -1,4 +1,5 @@
-from typing import Annotated
+from collections.abc import Callable, Coroutine
+from typing import Annotated, Any
 
 from backend.common.dependencies import get_db_session
 from backend.core.configs.config import config
@@ -13,6 +14,40 @@ from jose import JWTError, jwt
 from jwt import ExpiredSignatureError as PyJWTExpiredSignatureError
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
+
+
+def set_request_access_actor(
+    request: Request,
+    *,
+    user_sub: str | None = None,
+    is_guest: bool = False,
+    actor: str | None = None,
+) -> None:
+    """Attach identity fields for structured access logs (read by middleware)."""
+    if user_sub is not None:
+        request.state.user_sub = user_sub
+    request.state.is_guest = is_guest
+    if actor is not None:
+        request.state.actor = actor
+
+
+def mark_access_actor(
+    actor: str,
+    *,
+    user_sub: str | None = None,
+    is_guest: bool = False,
+) -> Callable[[Request], Coroutine[Any, Any, None]]:
+    """Depends factory for non-user callers (Pub/Sub, emulators, etc.)."""
+
+    async def _dep(request: Request) -> None:
+        set_request_access_actor(
+            request,
+            user_sub=user_sub,
+            is_guest=is_guest,
+            actor=actor,
+        )
+
+    return _dep
 
 
 def get_keycloak_manager(request: Request) -> KeyCloakManager:
@@ -40,6 +75,7 @@ def get_auth_service(
 
 
 async def get_creds_or_401(
+    request: Request,
     response: Response,
     db_session: AsyncSession = Depends(get_db_session),
     kc_manager: KeyCloakManager = Depends(get_keycloak_manager),
@@ -156,10 +192,17 @@ async def get_creds_or_401(
             detail="Application access denied: App token could not be established.",
         )
 
+    set_request_access_actor(
+        request,
+        user_sub=kc_principal["sub"],
+        is_guest=False,
+        actor="user",
+    )
     return kc_principal, app_principal
 
 
 async def get_creds_or_guest(
+    request: Request,
     response: Response,
     db_session: AsyncSession = Depends(get_db_session),
     kc_manager: KeyCloakManager = Depends(get_keycloak_manager),
@@ -173,10 +216,16 @@ async def get_creds_or_guest(
     guest_app = {"role": UserRole.default.value, "communities": [], "is_guest": True}
 
     if not access_token or not refresh_token:
+        set_request_access_actor(
+            request,
+            is_guest=True,
+            actor="guest",
+        )
         return guest_kc, guest_app
 
     try:
         return await get_creds_or_401(
+            request=request,
             response=response,
             db_session=db_session,
             kc_manager=kc_manager,
@@ -186,6 +235,11 @@ async def get_creds_or_guest(
             app_token_cookie=app_token_cookie,
         )
     except Exception:
+        set_request_access_actor(
+            request,
+            is_guest=True,
+            actor="guest",
+        )
         return guest_kc, guest_app
 
 

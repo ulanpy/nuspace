@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Query, Request
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query, Request
 from httpx import HTTPError
 
 from backend.common.utils import meilisearch
+from backend.modules.auth.dependencies import get_creds_or_guest
 from backend.modules.media.models import EntityType
 
 router = APIRouter(tags=["Search Routes"])
@@ -12,6 +15,7 @@ async def full_search(
     request: Request,
     keyword: str,
     storage_name: EntityType,
+    _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     page: int = 1,
     size: int = Query(10, ge=1, le=30),
 ):

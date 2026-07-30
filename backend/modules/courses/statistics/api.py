@@ -1,9 +1,10 @@
-from typing import List
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.dependencies import get_db_session
+from backend.modules.auth.dependencies import get_creds_or_guest
 from backend.modules.courses.statistics import schemas
 from backend.modules.courses.statistics.service import list_grade_reports
 
@@ -12,6 +13,7 @@ router = APIRouter(tags=["Course Statistics"])
 
 @router.get("/grades/terms", response_model=schemas.ListGradeTermsResponse)
 async def list_grade_terms(
+    _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     db_session: AsyncSession = Depends(get_db_session),
 ) -> schemas.ListGradeTermsResponse:
     """
@@ -34,6 +36,7 @@ async def list_grade_terms(
 @router.get("/grades", response_model=schemas.ListGradeReportResponse)
 async def get_grades(
     request: Request,
+    _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     size: int = Query(20, ge=1, le=100),
     page: int = 1,
     keyword: str | None = Query(

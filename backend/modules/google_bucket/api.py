@@ -8,7 +8,7 @@ from google.cloud.storage import Bucket
 
 from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import Config
-from backend.modules.auth.dependencies import get_creds_or_401
+from backend.modules.auth.dependencies import get_creds_or_401, mark_access_actor
 from backend.modules.courses.registrar.schedule_sync import sync_schedule_catalog
 from backend.modules.google_bucket import dependencies as deps
 from backend.modules.google_bucket import schemas
@@ -19,6 +19,7 @@ from backend.modules.media.service import MediaService
 
 router = APIRouter(prefix="/bucket", tags=["Google Bucket Routes"])
 logger = logging.getLogger(__name__)
+_mark_gcs_emulator = mark_access_actor("gcs_emulator")
 
 
 @router.post("/upload-url", response_model=List[schemas.SignedUrlResponse])
@@ -177,6 +178,7 @@ async def local_upload_proxy(
     request: Request,
     bucket: str,
     full_path: str,
+    _: Annotated[None, Depends(_mark_gcs_emulator)],
 ):
     """
     Dev-only upload proxy: accepts PUT body and uploads to the emulator via storage client.
@@ -200,6 +202,7 @@ async def local_download_proxy(
     request: Request,
     bucket: str,
     full_path: str,
+    _: Annotated[None, Depends(_mark_gcs_emulator)],
 ):
     """
     Dev-only download proxy: reads from emulator via storage client and returns bytes.

@@ -3,7 +3,7 @@ from typing import Annotated
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status, Cookie
 
-from backend.modules.auth.dependencies import get_creds_or_401
+from backend.modules.auth.dependencies import get_creds_or_401, get_creds_or_guest
 from backend.modules.opportunities import schemas
 from backend.modules.opportunities.policy import OpportunityPolicy
 from backend.modules.opportunities.service import OpportunitiesDigestService
@@ -16,6 +16,7 @@ router = APIRouter(prefix="/opportunities", tags=["Opportunities Digest"])
 
 @router.get("", response_model=schemas.OpportunityListResponse)
 async def list_opportunities(
+    _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     filters: schemas.OpportunityFilter = Depends(get_opportunity_filters),
     service: OpportunitiesDigestService = Depends(get_opportunities_digest_service),
 ):
@@ -25,6 +26,7 @@ async def list_opportunities(
 @router.get("/{id}", response_model=schemas.OpportunityResponseDto)
 async def get_opportunity(
     id: int,
+    _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     service: OpportunitiesDigestService = Depends(get_opportunities_digest_service),
 ):
     record = await service.get(id)

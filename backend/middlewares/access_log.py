@@ -45,19 +45,34 @@ def emit_access_log(
     duration_seconds: float,
     exception_type: str | None = None,
     traceback_text: str | None = None,
+    user_sub: str | None = None,
+    is_guest: bool | None = None,
+    actor: str | None = None,
+    raw_path: str | None = None,
 ) -> None:
-    """Write one JSON access log line. Fields align with dashboard $method/$path filters."""
+    """Write one JSON access log line. Fields align with dashboard $method/$path filters.
+
+    ``path`` is the low-cardinality route template (or ``[unmatched]``).
+    ``raw_path`` is the actual request URL path (always set; for browsing unmatched 404s).
+    """
     from backend.telemetry import current_trace_ids
 
     level = _level_for_status(status_code)
     payload: dict[str, Any] = {
         "method": method,
         "path": path,
+        "raw_path": raw_path,
         "status_code": status_code,
         "duration_ms": round(duration_seconds * 1000, 3),
         "level": level,
         "log_type": "access",
+        # Always present: real JWT sub, or null (never a sentinel like "guest").
+        "user_sub": user_sub,
     }
+    if is_guest is not None:
+        payload["is_guest"] = is_guest
+    if actor is not None:
+        payload["actor"] = actor
     trace_id, span_id = current_trace_ids()
     if trace_id:
         payload["trace_id"] = trace_id

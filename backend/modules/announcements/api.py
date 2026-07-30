@@ -16,7 +16,9 @@ router = APIRouter(
 )
 
 @router.get("/telegram")
-async def get_announcements_from_telegram():
+async def get_announcements_from_telegram(
+    _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
+):
     """
     Get latest announcements from the public Telegram channel.
     """

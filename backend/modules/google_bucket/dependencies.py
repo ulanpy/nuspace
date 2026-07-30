@@ -6,6 +6,7 @@ from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2 import id_token
 
 from backend.core.configs.config import Config
+from backend.modules.auth.dependencies import set_request_access_actor
 from backend.modules.media.models import EntityType
 from backend.modules.media.models import MediaFormat
 from backend.modules.google_bucket import schemas
@@ -42,6 +43,7 @@ async def verify_pubsub_token(request: Request) -> dict:
     if claims.get("email") != expected_email or claims.get("email_verified") is False:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token_email")
 
+    set_request_access_actor(request, actor="pubsub")
     return claims
 
 

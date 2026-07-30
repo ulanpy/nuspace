@@ -2963,7 +2963,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "code",
-          "expr": "sum by(level)(count_over_time({service_name=\"fastapi\"} | json | log_type=\"access\" | method=~\"$method\" | path=~\"$path\" | status_code=~\"$status_code\" | level=~\"$level\" [$__interval]))",
+          "expr": "sum by(level)(count_over_time({service_name=\"fastapi\"} | json | log_type=\"access\" | method=~\"$method\" | path=~\"$path\" | status_code=~\"$status_code\" | level=~\"$level\" | user_sub=~\"$user_sub\" [$__interval]))",
           "legendFormat": "{{level}}",
           "queryType": "range",
           "refId": "A"
@@ -2977,7 +2977,7 @@
         "type": "loki",
         "uid": "P8E80F9AEF21F6940"
       },
-      "description": "Structured JSON access logs from the backend. Filtered by Method/Path. Expand a line for status_code, duration_ms, path, and TraceID (opens Tempo).",
+      "description": "Structured JSON access logs from the backend. Filtered by Method/Path/User Sub. path is the route template (or [unmatched]); raw_path is the actual URL. Expand a line for status_code, duration_ms, raw_path, user_sub, and TraceID (opens Tempo).",
       "gridPos": {
         "h": 12,
         "w": 24,
@@ -3005,7 +3005,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "code",
-          "expr": "{service_name=\"fastapi\"} | json | log_type=\"access\" | method=~\"$method\" | path=~\"$path\" | status_code=~\"$status_code\" | level=~\"$level\"",
+          "expr": "{service_name=\"fastapi\"} | json | log_type=\"access\" | method=~\"$method\" | path=~\"$path\" | status_code=~\"$status_code\" | level=~\"$level\" | user_sub=~\"$user_sub\"",
           "legendFormat": "",
           "queryType": "range",
           "refId": "A"
@@ -3288,6 +3288,26 @@
         "skipUrlSync": false,
         "type": "custom",
         "description": "Access-log level from middleware: info (2xx/3xx), warn (4xx), error (5xx). Applies to Logs panels only."
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "description": "Keycloak user sub (UUID). Paste an exact sub to see that user's access logs. Default .* = all (including null guests). Applies to Logs panels only — not a Prometheus label.",
+        "label": "User Sub",
+        "name": "user_sub",
+        "options": [
+          {
+            "selected": true,
+            "text": ".*",
+            "value": ".*"
+          }
+        ],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
       }
     ]
   },
