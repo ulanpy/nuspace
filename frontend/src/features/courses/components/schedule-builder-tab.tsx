@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { gradeStatisticsApi } from '../api/grade-statistics-api';
@@ -29,6 +28,8 @@ import {
 import { SignInCard } from "@/components/molecules/sign-in-card";
 import { CalendarPlus, ChevronDown, ClipboardCopy, Copy, Crop, Loader2, Plus, Pencil, RefreshCcw, RotateCcw, Trash2, Wand2, X } from "lucide-react";
 import { ConfirmationModal } from './confirmation-modal';
+import { ScheduleFitBadge, ScheduleInsightsButton } from "./schedule-quality-summary";
+import { SectionSelectorBar } from "./section-picker-drawer";
 import { useSyllabusLinks } from '../utils/use-syllabus-links';
 import { toast } from "@/hooks/toast";
 import { useUser } from "@/hooks/use-user";
@@ -42,6 +43,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const COLLAPSE_EMPTY_EDGES_KEY = "planner.collapseEmptyEdges";
 
@@ -834,49 +836,6 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
     setActiveRequirements(buildRequirementDetailsFromCourse(course));
   };
 
-  // Check for time clashes
-  const hasClash = useMemo(() => {
-    if (selectedEvents.length < 2) return false;
-
-    // Group events by day
-    const eventsByDay: Record<string, Array<{ start: number; end: number; id: string }>> = {};
-
-    selectedEvents.forEach(({ section }) => {
-      const [start, end] = parseTimeRange(section.times);
-      // Only process events with valid times where start < end
-      if (start == null || end == null || start >= end) return;
-      if (!section.days || section.days.length === 0) return;
-
-      section.days.split("").forEach((day) => {
-        if (!day.trim()) return;
-        if (!eventsByDay[day]) {
-          eventsByDay[day] = [];
-        }
-        eventsByDay[day].push({ start, end, id: `${section.id}-${day}` });
-      });
-    });
-
-    // Check for overlaps on each day
-    for (const day in eventsByDay) {
-      const dayEvents = eventsByDay[day];
-      if (dayEvents.length < 2) continue;
-
-      for (let i = 0; i < dayEvents.length; i++) {
-        for (let j = i + 1; j < dayEvents.length; j++) {
-          const event1 = dayEvents[i];
-          const event2 = dayEvents[j];
-          // Events overlap if: start1 < end2 && start2 < end1
-          // This means they have a time period in common
-          if (event1.start < event2.end && event2.start < event1.end) {
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
-  }, [selectedEvents]);
-
   if (isAuthLoading) {
     return <ScheduleBuilderSkeleton />;
   }
@@ -1249,28 +1208,45 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              {selectedEvents.length > 0 && (
-                <Badge
-                  variant={hasClash ? "destructive" : "default"}
-                  className="shrink-0 text-xs font-semibold"
+              <ScheduleFitBadge
+                sections={selectedEvents.map(({ section }) => section)}
+              />
+              <div className="flex items-center gap-1.5">
+                <Switch
+                  id="collapse-empty-edges"
+                  size="sm"
+                  checked={collapseEmptyEdges}
+                  onCheckedChange={handleCollapseEmptyEdgesChange}
+                />
+                <Label
+                  htmlFor="collapse-empty-edges"
+                  className="cursor-pointer text-xs font-normal text-muted-foreground"
                 >
-                  {hasClash ? "Clash" : "Fit"}
-                </Badge>
-              )}
+                  <Crop className="size-3.5 shrink-0 opacity-70" aria-hidden="true" />
+                  Crop
+                </Label>
+              </div>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 shrink-0 gap-1.5"
-              disabled={!selectedEvents.length}
-              onClick={() => {
-                void handleCopyShortlist();
-              }}
-            >
-              <ClipboardCopy className="size-3.5" />
-              Copy as text
-            </Button>
+            <div className="flex shrink-0 items-center gap-0.5">
+              <TooltipProvider delayDuration={400}>
+                <ScheduleInsightsButton
+                  sections={selectedEvents.map(({ section }) => section)}
+                />
+              </TooltipProvider>
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                className="h-7 gap-1 px-2 font-medium text-muted-foreground hover:text-foreground"
+                disabled={!selectedEvents.length}
+                onClick={() => {
+                  void handleCopyShortlist();
+                }}
+              >
+                <ClipboardCopy className="size-3.5" />
+                Copy
+              </Button>
+            </div>
           </div>
           <SchedulePreview
             schedule={planner}
@@ -1281,7 +1257,6 @@ export const ScheduleBuilderTab = ({ user }: ScheduleBuilderTabProps) => {
             onShowDetails={setActiveSection}
             activeCourseId={activeCourseId}
             collapseEmptyEdges={collapseEmptyEdges}
-            onCollapseEmptyEdgesChange={handleCollapseEmptyEdgesChange}
           />
           {activeSection && (
             <SectionDetailModal
@@ -1504,7 +1479,6 @@ const SchedulePreview = ({
   onShowDetails,
   activeCourseId,
   collapseEmptyEdges,
-  onCollapseEmptyEdgesChange,
 }: {
   schedule: PlannerSchedule | null;
   events: SectionEvent[];
@@ -1514,7 +1488,6 @@ const SchedulePreview = ({
   onShowDetails: (sectionEvent: SectionEvent) => void;
   activeCourseId: number | null;
   collapseEmptyEdges: boolean;
-  onCollapseEmptyEdgesChange: (checked: boolean) => void;
 }) => {
   const timedEvents = useMemo(
     () => events.filter(({ section }) => {
@@ -1634,7 +1607,9 @@ const SchedulePreview = ({
     <div className="mt-4 space-y-4">
       <SectionSelectorBar
         schedule={schedule}
-        onSelect={onSelect}
+        onSelectSection={(courseId, sectionIds) =>
+          onSelect.mutate({ courseId, sectionIds })
+        }
         selecting={selecting}
         loadingSections={loadingSections}
         activeCourseId={activeCourseId}
@@ -1647,23 +1622,6 @@ const SchedulePreview = ({
         </div>
       ) : (
         <>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Switch
-              id="collapse-empty-edges"
-              size="sm"
-              checked={collapseEmptyEdges}
-              onCheckedChange={onCollapseEmptyEdgesChange}
-            />
-            <Label
-              htmlFor="collapse-empty-edges"
-              className="cursor-pointer text-xs font-normal text-muted-foreground"
-            >
-              <Crop className="size-3.5 shrink-0 opacity-70" aria-hidden="true" />
-              Crop empty edges
-            </Label>
-          </div>
-        </div>
         <div className="md:hidden">
           <ScheduleAgenda
             events={filteredEvents}
@@ -1885,104 +1843,6 @@ const ScheduleAgenda = ({
                 {section.room && (
                   <p className="truncate text-xs text-current opacity-80">{section.room}</p>
                 )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const SectionSelectorBar = ({
-  schedule,
-  onSelect,
-  selecting,
-  loadingSections,
-  activeCourseId,
-}: {
-  schedule: PlannerSchedule;
-  onSelect: MutationRef<SelectArgs>;
-  selecting: boolean;
-  loadingSections: Record<number, boolean>;
-  activeCourseId: number | null;
-}) => {
-  if (!schedule.courses.length) {
-    return (
-      <div className="rounded-lg border border-dashed border-border/60 bg-muted/10 p-4 text-sm text-muted-foreground">
-        Add courses to start selecting time slots.
-      </div>
-    );
-  }
-
-  const activeCourse = activeCourseId
-    ? schedule.courses.find((course) => course.id === activeCourseId)
-    : schedule.courses[0];
-
-  if (!activeCourse) {
-    return (
-      <div className="rounded-lg border border-dashed border-border/60 bg-muted/10 p-4 text-sm text-muted-foreground">
-        Add courses to start selecting time slots.
-      </div>
-    );
-  }
-
-  const hasSections = activeCourse.sections.length > 0;
-  const isLoading = Boolean(loadingSections[activeCourse.id]);
-  const sectionGroups = groupSectionsByType(activeCourse.sections);
-
-  return (
-    <div className="rounded-lg bg-card/70 p-4">
-      {sectionGroups.length === 0 ? (
-        <div className="rounded-md border border-dashed border-border/60 px-3 py-2 text-[11px] text-muted-foreground">
-          {isLoading
-            ? "Pulling sections from registrar..."
-            : "Use the global refresh to fetch registrar sections."}
-        </div>
-      ) : (
-        <div className="flex flex-wrap gap-3">
-          {sectionGroups.map((group) => {
-            const selectedSectionId =
-              group.sections.find((section) => section.is_selected)?.id ?? "";
-            return (
-              <div key={`${activeCourse.id}-${group.typeKey}`} className="w-[200px] flex-shrink-0">
-                <Select
-                  value={selectedSectionId ? String(selectedSectionId) : undefined}
-                  onValueChange={(value) => {
-                    if (!schedule.id) return;
-                    const sectionId = value === "__clear__" ? 0 : Number(value);
-                    const nextIds = computeNextSectionSelection(
-                      activeCourse.sections,
-                      group.typeKey,
-                      sectionId,
-                    );
-                    onSelect.mutate({
-                      courseId: activeCourse.id,
-                      sectionIds: nextIds,
-                    });
-                  }}
-                  disabled={!hasSections || selecting || isLoading}
-                >
-                  <SelectTrigger className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-xs shadow-sm focus:ring-2 focus:ring-ring">
-                    <SelectValue placeholder={isLoading ? "Loading..." : "Select a slot"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__clear__">
-                      {isLoading ? "Loading..." : "Select a slot"}
-                    </SelectItem>
-                    {group.sections.map((section) => {
-                      const facultyDisplay = section.faculty
-                        ? ` · ${truncateFaculty(section.faculty)}`
-                        : "";
-                      return (
-                        <SelectItem key={section.id} value={String(section.id)}>
-                          {`${section.section_code || "Section"} · ${section.days} ${section.times
-                            }${facultyDisplay}`}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
               </div>
             );
           })}
@@ -2325,62 +2185,4 @@ function formatHour(value: number): string {
   const suffix = value >= 12 ? "PM" : "AM";
   const hour = ((value + 11) % 12) + 1;
   return `${hour} ${suffix}`;
-}
-
-type SectionGroup = {
-  typeKey: string;
-  label: string;
-  sections: PlannerSection[];
-};
-
-function groupSectionsByType(sections: PlannerSection[]): SectionGroup[] {
-  const map: Record<string, SectionGroup> = {};
-  sections.forEach((section) => {
-    const typeKey = getSectionTypeKey(section.section_code);
-    if (!map[typeKey]) {
-      map[typeKey] = {
-        typeKey,
-        label: getSectionTypeLabel(typeKey),
-        sections: [],
-      };
-    }
-    map[typeKey].sections.push(section);
-  });
-  return Object.values(map);
-}
-
-function computeNextSectionSelection(
-  sections: PlannerSection[],
-  targetType: string,
-  newSectionId: number,
-): number[] {
-  const remainingSelections = sections
-    .filter(
-      (section) => section.is_selected && getSectionTypeKey(section.section_code) !== targetType,
-    )
-    .map((section) => section.id);
-  if (newSectionId) {
-    if (!remainingSelections.includes(newSectionId)) {
-      remainingSelections.push(newSectionId);
-    }
-  }
-  return remainingSelections;
-}
-
-function getSectionTypeKey(sectionCode?: string | null): string {
-  if (!sectionCode) return "SECTION";
-  const letters = sectionCode.replace(/[\d\s]+/g, "").toUpperCase();
-  return letters || "SECTION";
-}
-
-function getSectionTypeLabel(typeKey: string): string {
-  const dictionary: Record<string, string> = {
-    L: "Lecture",
-    R: "Recitation",
-    LAB: "Lab",
-    PBLV: "Problem-based",
-    PBL: "Problem-based",
-    S: "Seminar",
-  };
-  return dictionary[typeKey] ?? typeKey;
 }

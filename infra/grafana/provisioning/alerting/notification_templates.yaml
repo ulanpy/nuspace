@@ -8,7 +8,7 @@ templates:
       {{- if eq .Status "firing" -}}
       🔴 <b>FastAPI недоступен</b>
       {{- else -}}
-      ✅ <b>FastAPI восстановлен</b>
+      ✅ <b>FastAPI доступен</b>
       {{- with (index .Alerts 0) }}
       {{- $downtime := .EndsAt.Sub .StartsAt }}
       Даунтайм: <code>{{ printf "%.0f" $downtime.Seconds }}</code> с ({{ $downtime }})
