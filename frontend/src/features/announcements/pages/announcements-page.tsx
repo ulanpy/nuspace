@@ -1,216 +1,190 @@
 "use client";
 
+import { ArrowRight, Calendar, Users } from "lucide-react";
 import Link from "@/router/link";
-import { Calendar, ArrowRight, Users } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
-import { TelegramFeed } from '@/features/announcements/components/telegram-feed';
+import { TelegramFeed } from "@/features/announcements/components/telegram-feed";
 import { useAnnouncementsBundle } from "@/features/announcements/api/use-announcements-bundle";
 import { PresidentialElectionBanner } from "@/features/elections/presidential-election-banner";
 import { FadeInImage } from "@/components/shared/fade-in-image";
+import { FeaturedEventCard } from "@/features/announcements/components/featured-event-card";
+import {
+  EventPosterStrip,
+  EventPosterStripSkeleton,
+} from "@/features/announcements/components/event-poster-strip";
+import {
+  RecruitmentEventRow,
+  RecruitmentEventRowSkeleton,
+} from "@/features/announcements/components/recruitment-event-row";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ROUTES } from "@/data/routes";
+import type { Event } from "@/features/shared/campus/types";
 
 /** Flip to `true` when you want the election block back on announcements. */
 const SHOW_PRESIDENTIAL_ELECTION_BANNER = false;
+const STRIP_LIMIT = 6;
 
 function getGreeting(): string {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    return "Good evening";
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
 }
 
-function isEventOngoing(event: any) {
-    const now = Date.now();
-    const start = new Date(event.start_datetime).getTime();
-    const end = new Date(event.end_datetime).getTime();
-    return start <= now && end > now;
+function isEventOngoing(event: Event) {
+  const now = Date.now();
+  const start = new Date(event.start_datetime).getTime();
+  const end = new Date(event.end_datetime).getTime();
+  return start <= now && end > now;
 }
 
-function EventRowSkeleton({ thumbClassName }: { thumbClassName: string }) {
-    return (
-        <div className="flex items-center gap-4 p-4 rounded-xl border bg-card">
-            <div className={`${thumbClassName} animate-pulse rounded-lg bg-muted`} />
-            <div className="flex-1 space-y-2">
-                <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
-                <div className="h-3 w-1/3 animate-pulse rounded bg-muted" />
-            </div>
-        </div>
-    );
+function pickFeaturedEvent(events: Event[]): {
+  featured: Event | null;
+  rest: Event[];
+} {
+  if (events.length === 0) {
+    return { featured: null, rest: [] };
+  }
+
+  const ongoingIndex = events.findIndex(isEventOngoing);
+  const featuredIndex = ongoingIndex >= 0 ? ongoingIndex : 0;
+  const featured = events[featuredIndex];
+  const rest = events.filter((_, index) => index !== featuredIndex).slice(0, STRIP_LIMIT);
+
+  return { featured, rest };
 }
 
 export default function AnnouncementsPage() {
-    const { user } = useUser();
-    const greeting = getGreeting();
+  const { user } = useUser();
+  const greeting = getGreeting();
 
-    const { data: bundle, isLoading: bundleLoading } = useAnnouncementsBundle();
+  const { data: bundle, isLoading: bundleLoading } = useAnnouncementsBundle();
 
-    const upcomingEvents = (bundle?.events?.items || []).filter(
-        (event: any) => event.type !== "recruitment"
-    );
-    const recruitmentEvents = bundle?.recruitment_events?.items ?? [];
+  const upcomingEvents = ((bundle?.events?.items || []) as Event[]).filter(
+    (event) => event.type !== "recruitment",
+  );
+  const recruitmentEvents = (bundle?.recruitment_events?.items ?? []) as Event[];
+  const { featured, rest } = pickFeaturedEvent(upcomingEvents);
 
-    return (
-        <div className="container mx-auto px-4 py-8 space-y-8">
-            {SHOW_PRESIDENTIAL_ELECTION_BANNER ? <PresidentialElectionBanner /> : null}
+  return (
+    <div className="container mx-auto space-y-8 px-4 py-8">
+      {SHOW_PRESIDENTIAL_ELECTION_BANNER ? <PresidentialElectionBanner /> : null}
 
-            <div className="flex items-center gap-4">
-                {user?.picture && (
-                    <FadeInImage
-                        src={user.picture}
-                        alt=""
-                        priority
-                        className="h-12 w-12 sm:h-14 sm:w-14 rounded-full"
-                    />
-                )}
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold">
-                        {greeting}, {user?.given_name || "there"}!
-                    </h1>
-                    <p className="text-muted-foreground">Here's what's happening at Nuspace</p>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold">Current Events</h2>
-                            <Link
-                                href="/events"
-                                className="text-sm text-primary hover:underline flex items-center gap-1"
-                            >
-                                View all <ArrowRight className="w-4 h-4" />
-                            </Link>
-                        </div>
-
-                        {bundleLoading ? (
-                            <div className="space-y-3">
-                                {Array.from({ length: 3 }).map((_, idx) => (
-                                    <EventRowSkeleton key={idx} thumbClassName="h-16 w-16 flex-shrink-0" />
-                                ))}
-                            </div>
-                        ) : upcomingEvents.length > 0 ? (
-                            <div className="space-y-3">
-                                {upcomingEvents.slice(0, 5).map((event: any, index: number) => (
-                                    <Link
-                                        key={event.id}
-                                        href={`/events/?id=${event.id}`}
-                                        className="flex items-center gap-4 p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors"
-                                    >
-                                        {event.media?.[0]?.url ? (
-                                            <FadeInImage
-                                                src={event.media[0].url}
-                                                alt={event.name}
-                                                priority={index < 2}
-                                                className="h-16 w-16 flex-shrink-0 rounded-lg"
-                                            />
-                                        ) : (
-                                            <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                                <Calendar className="w-6 h-6 text-primary" />
-                                            </div>
-                                        )}
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="font-medium truncate flex-1">{event.name}</h3>
-                                                {isEventOngoing(event) && (
-                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200 flex-shrink-0">
-                                                        Ongoing
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-sm text-muted-foreground">
-                                                {new Date(event.start_datetime).toLocaleDateString()} • {event.place}
-                                            </p>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="p-8 text-center rounded-xl border bg-card">
-                                <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-                                <p className="text-muted-foreground">No upcoming events</p>
-                                <Link
-                                    href="/events"
-                                    className="inline-block mt-3 text-sm text-primary hover:underline"
-                                >
-                                    Browse all events
-                                </Link>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold">Now Recruiting</h2>
-                            <Link
-                                href="/events"
-                                className="text-sm text-primary hover:underline flex items-center gap-1"
-                            >
-                                View all <ArrowRight className="w-4 h-4" />
-                            </Link>
-                        </div>
-
-                        {bundleLoading ? (
-                            <div className="space-y-3">
-                                {Array.from({ length: 3 }).map((_, idx) => (
-                                    <EventRowSkeleton key={idx} thumbClassName="h-12 w-12 flex-shrink-0" />
-                                ))}
-                            </div>
-                        ) : recruitmentEvents.length > 0 ? (
-                            <div className="space-y-3">
-                                {recruitmentEvents.map((event: any) => (
-                                    <Link
-                                        key={event.id}
-                                        href={`/events/?id=${event.id}`}
-                                        className="flex items-start gap-3 p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors"
-                                    >
-                                        {event.media?.[0]?.url ? (
-                                            <FadeInImage
-                                                src={event.media[0].url}
-                                                alt={event.name}
-                                                className="h-12 w-12 flex-shrink-0 rounded-lg"
-                                            />
-                                        ) : (
-                                            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                                <Users className="w-6 h-6 text-primary" />
-                                            </div>
-                                        )}
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-medium truncate">{event.name}</h3>
-                                            <p className="text-sm text-muted-foreground line-clamp-2">
-                                                {event.place}
-                                            </p>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
-                                                <span>
-                                                    {new Date(event.start_datetime).toLocaleDateString()}
-                                                </span>
-                                                <span className="capitalize px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                                                    Recruitment
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                                    </Link>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="p-6 text-center rounded-xl border bg-card">
-                                <Users className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-                                <p className="text-muted-foreground">No recruitment events right now</p>
-                                <Link
-                                    href="/events"
-                                    className="inline-block mt-3 text-sm text-primary hover:underline"
-                                >
-                                    Browse all events
-                                </Link>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="lg:col-span-1">
-                    <TelegramFeed />
-                </div>
-            </div>
+      <div className="flex items-center gap-4">
+        {user?.picture ? (
+          <FadeInImage
+            src={user.picture}
+            alt=""
+            priority
+            className="h-12 w-12 rounded-full sm:h-14 sm:w-14"
+          />
+        ) : null}
+        <div>
+          <h1 className="text-2xl font-bold sm:text-3xl">
+            {greeting}, {user?.name || "there"}!
+          </h1>
+          <p className="text-muted-foreground">Here's what's happening at Nuspace</p>
         </div>
-    );
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-8 lg:col-span-2">
+          <section className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">Current Events</h2>
+              <Button asChild variant="link" size="sm" className="h-auto gap-1 px-0">
+                <Link href={ROUTES.EVENTS.ROOT}>
+                  View all
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+
+            {bundleLoading ? (
+              <div className="space-y-4">
+                <Card>
+                  <CardContent className="flex gap-4 p-4 sm:gap-5 sm:p-5">
+                    <Skeleton className="aspect-[3/4] w-28 flex-shrink-0 rounded-lg sm:w-36" />
+                    <div className="flex-1 space-y-3">
+                      <Skeleton className="h-5 w-24" />
+                      <Skeleton className="h-6 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-4 w-2/5" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <EventPosterStripSkeleton />
+              </div>
+            ) : featured ? (
+              <div className="space-y-4">
+                <FeaturedEventCard event={featured} isOngoing={isEventOngoing(featured)} />
+                {rest.length > 0 ? (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">More upcoming</p>
+                      <EventPosterStrip events={rest} />
+                    </div>
+                  </>
+                ) : null}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Calendar className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
+                  <p className="text-muted-foreground">No upcoming events</p>
+                  <Button asChild variant="link" className="mt-2">
+                    <Link href={ROUTES.EVENTS.ROOT}>Browse all events</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">Club Recruitments</h2>
+              <Button asChild variant="link" size="sm" className="h-auto gap-1 px-0">
+                <Link href={ROUTES.EVENTS.ROOT}>
+                  View all
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+
+            {bundleLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, idx) => (
+                  <RecruitmentEventRowSkeleton key={idx} />
+                ))}
+              </div>
+            ) : recruitmentEvents.length > 0 ? (
+              <div className="space-y-3">
+                {recruitmentEvents.map((event) => (
+                  <RecruitmentEventRow key={event.id} event={event} />
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <Users className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
+                  <p className="text-muted-foreground">No recruitment events right now</p>
+                  <Button asChild variant="link" className="mt-2">
+                    <Link href={ROUTES.EVENTS.ROOT}>Browse all events</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </section>
+        </div>
+
+        <div className="lg:col-span-1">
+          <TelegramFeed />
+        </div>
+      </div>
+    </div>
+  );
 }

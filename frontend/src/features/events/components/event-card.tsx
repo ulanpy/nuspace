@@ -2,27 +2,26 @@
 
 import { useState } from "react";
 import Link from "@/router/link";
-import { Calendar } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Calendar, MapPin } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FadeInImage } from "@/components/shared/fade-in-image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Event } from "@/features/shared/campus/types";
-import { CountdownHeaderBar } from './countdown-header-bar';
+import { CountdownHeaderBar } from "./countdown-header-bar";
 import { ROUTES } from "@/data/routes";
 import { getPolicyColor, getPolicyDisplay } from "@/features/events/utils/event-formatters";
 import { formatInCampusTime, isoToCampusWallClock } from "@/features/events/utils/campus-datetime";
 
 interface EventCardProps extends Event {
-  compact?: boolean;
   /** First row / LCP posters should load eagerly */
   priorityImage?: boolean;
 }
 
 export function EventCardSkeleton() {
   return (
-    <Card className="h-full flex flex-col overflow-hidden">
-      <Skeleton className="h-8 w-full rounded-none rounded-t-lg" />
+    <Card className="flex h-full flex-col overflow-hidden">
+      <Skeleton className="h-7 w-full rounded-none rounded-t-lg" />
       <Skeleton className="aspect-[3/4] w-full rounded-none" />
       <div className="space-y-2 p-3">
         <Skeleton className="h-4 w-[80%]" />
@@ -33,76 +32,84 @@ export function EventCardSkeleton() {
   );
 }
 
+function formatEventDate(dateString: string) {
+  const { date: eventLocalDate } = isoToCampusWallClock(dateString);
+  const { date: today } = isoToCampusWallClock(new Date().toISOString());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const timeLabel = formatInCampusTime(dateString, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  if (eventLocalDate.getTime() === today.getTime()) {
+    return `Today at ${timeLabel}`;
+  }
+  if (eventLocalDate.getTime() === tomorrow.getTime()) {
+    return `Tomorrow at ${timeLabel}`;
+  }
+
+  const day = eventLocalDate.getDate();
+  const month = formatInCampusTime(dateString, { month: "short" });
+  const year = eventLocalDate.getFullYear();
+  const currentYear = today.getFullYear();
+
+  if (year === currentYear) {
+    return `${day} ${month} at ${timeLabel}`;
+  }
+  return `${day} ${month} ${year} at ${timeLabel}`;
+}
+
 export function EventCard(props: EventCardProps) {
-  const { 
+  const {
     id,
-    name, 
-    start_datetime, 
+    name,
+    start_datetime,
     end_datetime,
-    policy, 
+    place,
+    policy,
     media,
     priorityImage = false,
- } = props;
+  } = props;
 
   const [imageError, setImageError] = useState(false);
 
-  const formatEventDate = (dateString: string) => {
-    const { date: eventLocalDate } = isoToCampusWallClock(dateString);
-    const { date: today } = isoToCampusWallClock(new Date().toISOString());
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const timeLabel = formatInCampusTime(dateString, {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-
-    if (eventLocalDate.getTime() === today.getTime()) {
-      return `Today at ${timeLabel}`;
-    }
-    if (eventLocalDate.getTime() === tomorrow.getTime()) {
-      return `Tomorrow at ${timeLabel}`;
-    }
-
-    const day = eventLocalDate.getDate();
-    const month = formatInCampusTime(dateString, { month: "short" });
-    const year = eventLocalDate.getFullYear();
-    const currentYear = today.getFullYear();
-
-    if (year === currentYear) {
-      return `${day} ${month} at ${timeLabel}`;
-    }
-    return `${day} ${month} ${year} at ${timeLabel}`;
-  };
-
-  const isUpcoming = new Date(start_datetime).getTime() > Date.now();
-
-  // Calculate duration in minutes for the countdown component
-  const durationMinutes = Math.round((new Date(end_datetime).getTime() - new Date(start_datetime).getTime()) / (1000 * 60));
+  const durationMinutes = Math.round(
+    (new Date(end_datetime).getTime() - new Date(start_datetime).getTime()) / (1000 * 60),
+  );
 
   return (
-    <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
-      <CountdownHeaderBar eventDateIso={start_datetime} durationMinutes={durationMinutes} />
-      <Link href={ROUTES.EVENTS.DETAIL_FN(String(id))}>
-        <div className="aspect-[3/4] relative overflow-hidden bg-muted">
-          {media && media.length > 0 && media[0]?.url && !imageError ? (
-            <FadeInImage
-              src={media[0].url}
-              alt={name}
-              fill
-              priority={priorityImage}
-              onError={() => setImageError(true)}
-            />
+    <Card className="group h-full overflow-hidden transition-shadow hover:shadow-md">
+      <Link
+        href={ROUTES.EVENTS.DETAIL_FN(String(id))}
+        className="flex h-full flex-col"
+      >
+        <CountdownHeaderBar
+          eventDateIso={start_datetime}
+          durationMinutes={durationMinutes}
+        />
+
+        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+          {media?.[0]?.url && !imageError ? (
+            <div className="absolute inset-0 transition-transform duration-300 group-hover:scale-[1.02]">
+              <FadeInImage
+                src={media[0].url}
+                alt={name}
+                fill
+                priority={priorityImage}
+                onError={() => setImageError(true)}
+              />
+            </div>
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
+            <div className="flex h-full w-full items-center justify-center">
               <div className="text-center">
-                <Calendar className="h-12 w-12 text-muted-foreground opacity-50 mx-auto mb-1" />
-                <p className="text-xs text-muted-foreground">No poster available</p>
+                <Calendar className="mx-auto mb-1 h-10 w-10 text-muted-foreground opacity-50" />
+                <p className="text-xs text-muted-foreground">No poster</p>
               </div>
             </div>
           )}
-          
-          {/* Policy badge overlay - bottom left */}
+
           <div className="absolute bottom-2 left-2 z-10">
             <Badge
               variant="outline"
@@ -111,45 +118,27 @@ export function EventCard(props: EventCardProps) {
               {getPolicyDisplay(policy)}
             </Badge>
           </div>
-          
-          {/* Profile image overlay - bottom right */}
-          <div className="absolute bottom-2 right-2 z-10">
-            {props.creator?.picture && (
-              <FadeInImage
-                src={props.creator.picture}
-                alt={`${props.creator.name} ${props.creator.surname}`}
-                className="h-8 w-8 rounded-full border-2 border-white shadow-md object-cover"
-              />
-            )}
-          </div>
         </div>
-      </Link>
-      <CardHeader className="p-3 pb-2 flex-shrink-0">
-        <div className="space-y-1">
-          <Link
-            href={ROUTES.EVENTS.DETAIL_FN(String(id))}
-            className="hover:underline"
-          >
-            <h3 className="text-base font-semibold line-clamp-2 leading-tight">{name}</h3>
-          </Link>
-          <div className="text-sm text-muted-foreground line-clamp-1">
-            {props.creator
-              ? `by ${props.creator.name} ${props.creator.surname}`
-              : "by Unknown Organizer"}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-3 pt-0 mt-auto">
-        <div className="space-y-2">
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
-            <span className="line-clamp-1">
-              {formatEventDate(start_datetime)}
-            </span>
-          </div>
 
-        </div>
-      </CardContent>
+        <CardContent className="flex flex-1 flex-col gap-2 p-3">
+          <h3 className="text-sm font-semibold leading-snug line-clamp-2 sm:text-base group-hover:underline">
+            {name}
+          </h3>
+
+          <div className="mt-auto space-y-1 text-xs text-muted-foreground sm:text-sm">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">{formatEventDate(start_datetime)}</span>
+            </div>
+            {place ? (
+              <div className="flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="truncate">{place}</span>
+              </div>
+            ) : null}
+          </div>
+        </CardContent>
+      </Link>
     </Card>
   );
 }

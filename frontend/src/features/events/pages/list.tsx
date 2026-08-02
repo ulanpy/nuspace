@@ -1,61 +1,106 @@
 "use client";
 
-import MotionWrapper from "@/components/shared/motion-wrapper";
-import { EventCard, EventCardSkeleton } from '@/features/events/components/event-card';
-import { InfiniteList } from '@/components/virtual/infinite-list';
-import { Event } from "@/features/shared/campus/types";
 import { useState } from "react";
-import { Calendar, ChevronDown, Users, X } from "lucide-react";
+import { Calendar, Plus, Users, X } from "lucide-react";
+import MotionWrapper from "@/components/shared/motion-wrapper";
+import { EventCard, EventCardSkeleton } from "@/features/events/components/event-card";
+import { InfiniteList } from "@/components/virtual/infinite-list";
+import { Event } from "@/features/shared/campus/types";
 import { PageContainer } from "@/components/shared/page-container";
 import { PageHeader } from "@/components/shared/page-header";
-import { EventModal } from '@/features/events/components/event-modal';
-import { TimeFilter } from '@/features/events/api/events-api';
+import { EventModal } from "@/features/events/components/event-modal";
+import { TimeFilter } from "@/features/events/api/events-api";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { TelegramConnectCard } from '@/features/sgotinish/components/telegram-connect-card';
-import { useUser } from '@/hooks/use-user';
-import { useAuthGate } from '@/hooks/use-auth-gate';
-import { AuthWallModal } from '@/components/molecules/auth-wall-modal';
+import { ButtonGroup } from "@/components/ui/button-group";
+import { Separator } from "@/components/ui/separator";
+import { TelegramConnectCard } from "@/features/sgotinish/components/telegram-connect-card";
+import { useUser } from "@/hooks/use-user";
+import { useAuthGate } from "@/hooks/use-auth-gate";
+import { AuthWallModal } from "@/components/molecules/auth-wall-modal";
+import { cn } from "@/lib/utils";
 
-const renderEmptyEvents = (
-  filterType: string,
-  eventTypeFilter: string | null,
-  clearFilters: () => void,
-) => () => (
-  <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-6 py-12 text-center">
-    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-      <Calendar className="h-6 w-6" aria-hidden="true" />
-    </div>
-    <h3 className="mb-2 text-lg font-bold">No events match these filters</h3>
-    <p className="mb-5 max-w-[52ch] text-sm text-muted-foreground">
-      {eventTypeFilter === "recruitment" && filterType === "upcoming" && "No upcoming recruitment events at the moment."}
-      {eventTypeFilter === "recruitment" && filterType === "today" && "No recruitment events scheduled for today."}
-      {eventTypeFilter === "recruitment" && filterType === "week" && "No recruitment events scheduled for this week."}
-      {eventTypeFilter === "recruitment" && filterType === "month" && "No recruitment events scheduled for this month."}
-      {!eventTypeFilter && filterType === "upcoming" && "No upcoming events at the moment."}
-      {!eventTypeFilter && filterType === "today" && "No events scheduled for today."}
-      {!eventTypeFilter && filterType === "week" && "No events scheduled for this week."}
-      {!eventTypeFilter && filterType === "month" && "No events scheduled for this month."}
-    </p>
-    {(eventTypeFilter || filterType !== "upcoming") && (
-      <Button variant="outline" size="sm" onClick={clearFilters}>
-        Clear filters
-      </Button>
-    )}
-  </div>
-);
-
-const filterOptions = [
-  { value: "upcoming", label: "All Upcoming" },
-  { value: "today", label: "Today" },
-  { value: "week", label: "This Week" },
-  { value: "month", label: "This Month" },
+const filterOptions: { value: TimeFilter; label: string; shortLabel: string }[] = [
+  { value: "upcoming", label: "Upcoming", shortLabel: "All" },
+  { value: "today", label: "Today", shortLabel: "Today" },
+  { value: "week", label: "This Week", shortLabel: "Week" },
+  { value: "month", label: "This Month", shortLabel: "Month" },
 ];
+
+const emptyCopy = (
+  filterType: TimeFilter,
+  eventTypeFilter: string | null,
+): { title: string; description: string } => {
+  if (eventTypeFilter === "recruitment") {
+    switch (filterType) {
+      case "today":
+        return {
+          title: "No recruitment today",
+          description: "Nothing recruiting today — try a wider time range.",
+        };
+      case "week":
+        return {
+          title: "No recruitment this week",
+          description: "Check next month or clear filters to browse all openings.",
+        };
+      case "month":
+        return {
+          title: "No recruitment this month",
+          description: "There are no recruitment posts in this window right now.",
+        };
+      default:
+        return {
+          title: "No recruitment right now",
+          description: "Clubs and teams will show up here when they open applications.",
+        };
+    }
+  }
+
+  switch (filterType) {
+    case "today":
+      return {
+        title: "Nothing on today",
+        description: "No campus events scheduled for today. Peek at this week instead.",
+      };
+    case "week":
+      return {
+        title: "Quiet week",
+        description: "No events this week yet. Try the full upcoming list.",
+      };
+    case "month":
+      return {
+        title: "No events this month",
+        description: "Widen the filter or check back later for new posts.",
+      };
+    default:
+      return {
+        title: "No upcoming events",
+        description: "When something is posted on campus, it will land here.",
+      };
+  }
+};
+
+const renderEmptyEvents =
+  (filterType: TimeFilter, eventTypeFilter: string | null, clearFilters: () => void) =>
+  () => {
+    const { title, description } = emptyCopy(filterType, eventTypeFilter);
+    const hasActiveFilters = Boolean(eventTypeFilter) || filterType !== "upcoming";
+
+    return (
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-muted/20 px-6 py-16 text-center">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Calendar className="h-6 w-6" aria-hidden="true" />
+        </div>
+        <h3 className="mb-2 text-lg font-semibold">{title}</h3>
+        <p className="mb-5 max-w-[48ch] text-sm text-muted-foreground">{description}</p>
+        {hasActiveFilters ? (
+          <Button variant="outline" size="sm" onClick={clearFilters}>
+            Clear filters
+          </Button>
+        ) : null}
+      </div>
+    );
+  };
 
 export default function Events() {
   const { user } = useUser();
@@ -64,18 +109,13 @@ export default function Events() {
   const [eventTypeFilter, setEventTypeFilter] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const currentFilterLabel = filterOptions.find(option => option.value === timeFilter)?.label || "All Upcoming";
-
   const clearFilters = () => {
     setTimeFilter("upcoming");
     setEventTypeFilter(null);
   };
 
   const renderEventCard = (event: Event, index: number) => (
-    <EventCard
-      {...event}
-      priorityImage={index < 4}
-    />
+    <EventCard {...event} priorityImage={index < 4} />
   );
 
   const renderEventsLoading = () => (
@@ -88,95 +128,95 @@ export default function Events() {
 
   return (
     <MotionWrapper>
-      <PageContainer padding="default">
-        <div className="flex items-center justify-between mb-6">
-          <PageHeader title="Events" subtitle="Find what is happening across campus." className="mb-0" />
-            <Button
-              onClick={() => requireAuth(() => setIsCreateModalOpen(true))}
-              size="sm"
-              className="flex items-center gap-2 px-4"
-            >
-              <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Create Event</span>
-              <span className="sm:hidden">Create</span>
-            </Button>
-          </div>
+      <PageContainer maxWidth="wide" padding="default">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <PageHeader
+            title="Events"
+            subtitle="Posters, dates, and campus happenings — browse what’s next."
+            className="mb-0"
+          />
+          <Button
+            onClick={() => requireAuth(() => setIsCreateModalOpen(true))}
+            size="sm"
+            className="w-fit gap-2 self-start"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Create Event</span>
+            <span className="sm:hidden">Create</span>
+          </Button>
+        </div>
 
-        <main>
-          {user && !user.tg_id && (
+        <main className="space-y-6">
+          {user && !user.tg_id ? (
             <TelegramConnectCard
               user={user}
-              className="mb-6"
               title="Connect Telegram to publish instantly"
               description="Create and publish campus events through nuspacebot without extra steps."
               dismissKey="nuspace_events_tg_banner_dismissed"
             />
-          )}
+          ) : null}
 
-          <div className="mb-6">
-            <div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-10 flex-shrink-0 justify-between px-3 text-xs sm:px-4 sm:text-sm"
-                  >
-                    <span className="hidden sm:inline">{currentFilterLabel}</span>
-                    <span className="sm:hidden">{timeFilter === "upcoming" ? "Upcoming" : timeFilter === "today" ? "Today" : timeFilter === "week" ? "Week" : timeFilter === "month" ? "Month" : "Upcoming"}</span>
-                    <ChevronDown className="h-3 w-3 ml-1 sm:h-4 sm:w-4 sm:ml-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-48"
-                  align="start"
-                >
-                  {filterOptions.map((option) => (
-                    <DropdownMenuItem
-                      key={option.value}
-                      onClick={() => setTimeFilter(option.value as TimeFilter)}
-                      className={timeFilter === option.value ? "bg-primary/10 text-primary" : ""}
-                    >
-                      {option.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+          <div className="space-y-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="overflow-x-auto pb-0.5">
+                <ButtonGroup className="min-w-max">
+                  {filterOptions.map((option) => {
+                    const active = timeFilter === option.value;
+                    return (
+                      <Button
+                        key={option.value}
+                        variant={active ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setTimeFilter(option.value)}
+                        className={cn(
+                          "h-9 px-3 text-xs sm:text-sm",
+                          !active && "bg-background",
+                        )}
+                        aria-pressed={active}
+                      >
+                        <span className="hidden sm:inline">{option.label}</span>
+                        <span className="sm:hidden">{option.shortLabel}</span>
+                      </Button>
+                    );
+                  })}
+                </ButtonGroup>
+              </div>
 
               <Button
                 variant={eventTypeFilter === "recruitment" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setEventTypeFilter(eventTypeFilter === "recruitment" ? null : "recruitment")}
-                className={`
-                  h-10 flex-shrink-0 px-3 text-xs sm:px-4 sm:text-sm gap-1 sm:gap-2
-                  ${eventTypeFilter === "recruitment"
-                    ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90'
-                    : ''
-                  }
-                `}
+                onClick={() =>
+                  setEventTypeFilter(eventTypeFilter === "recruitment" ? null : "recruitment")
+                }
+                className="h-9 w-fit gap-2"
+                aria-pressed={eventTypeFilter === "recruitment"}
               >
-                <Users className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Now Recruiting</span>
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Club Recruitments</span>
                 <span className="sm:hidden">Recruiting</span>
               </Button>
-
             </div>
 
-            {eventTypeFilter === "recruitment" && (
-              <div className="flex flex-wrap gap-2 mt-3">
-                <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">
+            {eventTypeFilter === "recruitment" ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" className="gap-1.5 pr-1">
                   <Users className="h-3 w-3" />
-                  <span>Recruiting</span>
+                  Recruiting
                   <button
+                    type="button"
                     onClick={() => setEventTypeFilter(null)}
-                    className="ml-1 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label="Remove recruiting filter"
                   >
                     <X className="h-3 w-3" />
                   </button>
-                </div>
+                </Badge>
+                <Separator orientation="vertical" className="h-4" />
+                <Button variant="ghost" size="xs" onClick={clearFilters}>
+                  Clear all
+                </Button>
               </div>
-            )}
+            ) : null}
           </div>
 
           <InfiniteList
@@ -190,16 +230,12 @@ export default function Events() {
             }}
             renderItem={renderEventCard}
             renderLoading={renderEventsLoading}
-            renderEmpty={renderEmptyEvents(
-              timeFilter,
-              eventTypeFilter,
-              clearFilters,
-            )}
+            renderEmpty={renderEmptyEvents(timeFilter, eventTypeFilter, clearFilters)}
             showSearch={false}
             gridLayout={{
               mobile: 2,
               tablet: 3,
-              desktop: 4
+              desktop: 4,
             }}
           />
         </main>

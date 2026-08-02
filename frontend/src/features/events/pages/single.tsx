@@ -5,7 +5,6 @@ import {
   Calendar,
   Clock,
   MapPin,
-  Users,
   CalendarPlus,
   Share2,
   Pencil,
@@ -206,11 +205,6 @@ const EventDetailView = ({
             <h1 className="text-3xl lg:text-4xl font-bold leading-tight break-words">
               {event.name}
             </h1>
-            {event.creator ? (
-              <div className="text-muted-foreground text-lg break-words">
-                by {event.creator.name} {event.creator.surname}
-              </div>
-            ) : null}
           </div>
 
           <div className="space-y-3 text-muted-foreground">
@@ -251,37 +245,6 @@ const EventDetailView = ({
               <Share2 className="h-4 w-4" />
             </Button>
           </div>
-
-          {event.creator && (
-            <div className="pt-6 mt-2 border-t space-y-3">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Organizer
-              </h3>
-              <div className="flex flex-wrap gap-x-6 gap-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-                    {event.creator.picture ? (
-                      <img
-                        src={event.creator.picture}
-                        alt={`${event.creator.name}'s profile`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Users className="h-4 w-4 text-primary" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm break-words">
-                      {`${event.creator.name} ${event.creator.surname}`}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Event Organizer
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
