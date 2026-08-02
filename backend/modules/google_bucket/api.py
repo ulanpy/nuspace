@@ -1,4 +1,3 @@
-import logging
 import uuid
 from datetime import datetime, timedelta
 from typing import Annotated, List
@@ -9,22 +8,16 @@ from google.cloud.storage import Bucket
 from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import Config
 from backend.modules.auth.dependencies import get_creds_or_401, mark_access_actor
-from backend.modules.courses.registrar.schedule_catalog_claim import (
-    mark_schedule_catalog_sync_done,
-    release_schedule_catalog_sync_lock,
-    schedule_catalog_sync_token,
-    try_acquire_schedule_catalog_sync,
-)
-from backend.modules.courses.registrar.schedule_sync import sync_schedule_catalog
 from backend.modules.google_bucket import dependencies as deps
 from backend.modules.google_bucket import schemas
+from backend.modules.google_bucket.dependencies import ScheduleCatalogFinalizeFailed
+from backend.modules.google_bucket.interfaces import ScheduleCatalogOnFinalize
 from backend.modules.media.dependencies import get_media_service
 from backend.modules.media.models import EntityType, MediaFormat
 from backend.modules.media.schemas import MediaUpsertData
 from backend.modules.media.service import MediaService
 
 router = APIRouter(prefix="/bucket", tags=["Google Bucket Routes"])
-logger = logging.getLogger(__name__)
 _mark_gcs_emulator = mark_access_actor("gcs_emulator")
 
 
@@ -130,6 +123,7 @@ async def gcs_webhook(
     pubsub_message: schemas.PubSubMessage,
     _jwt_claims: dict = Depends(deps.verify_pubsub_token),
     media_service: MediaService = Depends(get_media_service),
+    schedule_catalog: ScheduleCatalogOnFinalize = Depends(deps.get_schedule_catalog_on_finalize),
 ):
     """
     Pub/Sub push for GCS OBJECT_FINALIZE:
@@ -143,37 +137,23 @@ async def gcs_webhook(
     except Exception:
         return {"status": "ok"}
 
-    # Cloud Run Job artifact: ignore meta.json; only catalog triggers reindex.
+    # Route: catalog artifact → registrar; ignore meta.json and other objects.
     if gcs_event.name == config.SCHEDULE_SYNC_GCS_OBJECT:
-        token = schedule_catalog_sync_token(
-            generation=gcs_event.generation,
-            md5_hash=gcs_event.md5Hash,
-            etag=gcs_event.etag,
-        )
-        redis = request.app.state.redis
-        if not await try_acquire_schedule_catalog_sync(redis, token):
-            return {"status": "ok", "skipped": True, "reason": "duplicate_or_in_flight"}
-
         try:
-            count = await sync_schedule_catalog(
-                request.app.state.meilisearch_client,
-                storage_client=request.app.state.storage_client,
-                bucket_name=config.BUCKET_NAME,
-                gcs_object=config.SCHEDULE_SYNC_GCS_OBJECT,
-                prefer_local_fixture=False,
+            result = await schedule_catalog.on_object_finalize(
+                generation=gcs_event.generation,
+                md5_hash=gcs_event.md5Hash,
+                etag=gcs_event.etag,
             )
-            await mark_schedule_catalog_sync_done(redis, token)
-            logger.info(
-                "Schedule catalog reindexed from GCS finalize (%s docs, gen=%s)",
-                count,
-                token,
-            )
-            return {"status": "ok", "schedule_docs": count}
-        except Exception:
-            await release_schedule_catalog_sync_lock(redis, token)
-            logger.exception("Failed to sync schedule catalog from GCS finalize")
-            # Non-2xx so Pub/Sub retries.
+        except ScheduleCatalogFinalizeFailed:
             raise HTTPException(status_code=500, detail="schedule_catalog_sync_failed")
+        if result.skipped:
+            return {
+                "status": "ok",
+                "skipped": True,
+                "reason": result.reason,
+            }
+        return {"status": "ok", "schedule_docs": result.schedule_docs}
 
     # Media path: must live under this backend's routing prefix.
     parts = gcs_event.name.split("/", maxsplit=1)

@@ -1,16 +1,67 @@
 import asyncio
 import json
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import HTTPException, Request, status
 from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2 import id_token
 
 from backend.core.configs.config import Config
 from backend.modules.auth.dependencies import set_request_access_actor
-from backend.modules.media.models import EntityType
-from backend.modules.media.models import MediaFormat
+from backend.modules.courses.registrar.service import (
+    RegistrarService,
+    ScheduleCatalogFinalizeError,
+)
 from backend.modules.google_bucket import schemas
+from backend.modules.google_bucket.interfaces import (
+    ScheduleCatalogFinalizeOutcome,
+    ScheduleCatalogOnFinalize,
+)
+from backend.modules.media.models import EntityType, MediaFormat
 from backend.modules.media.schemas import MediaUpsertData
+
+
+class ScheduleCatalogFinalizeFailed(Exception):
+    """Port-level failure for catalog finalize; API maps to HTTP 5xx."""
+
+
+class _ScheduleCatalogOnFinalizeAdapter:
+    """Adapts RegistrarService catalog finalize to google_bucket port."""
+
+    def __init__(self, registrar: RegistrarService) -> None:
+        self._registrar = registrar
+
+    async def on_object_finalize(
+        self,
+        *,
+        generation: str | None,
+        md5_hash: str | None = None,
+        etag: str | None = None,
+    ) -> ScheduleCatalogFinalizeOutcome:
+        try:
+            result = await self._registrar.on_catalog_object_finalize(
+                generation=generation,
+                md5_hash=md5_hash,
+                etag=etag,
+            )
+        except ScheduleCatalogFinalizeError as exc:
+            raise ScheduleCatalogFinalizeFailed(str(exc)) from exc
+        return ScheduleCatalogFinalizeOutcome(
+            skipped=result.skipped,
+            schedule_docs=result.schedule_docs,
+            reason=result.reason,
+        )
+
+
+def get_schedule_catalog_on_finalize(request: Request) -> ScheduleCatalogOnFinalize:
+    config: Config = request.app.state.config
+    registrar = RegistrarService(
+        meilisearch_client=request.app.state.meilisearch_client,
+        redis=request.app.state.redis,
+        storage_client=request.app.state.storage_client,
+        bucket_name=config.BUCKET_NAME,
+        schedule_gcs_object=config.SCHEDULE_SYNC_GCS_OBJECT,
+    )
+    return _ScheduleCatalogOnFinalizeAdapter(registrar)
 
 
 async def verify_pubsub_token(request: Request) -> dict:

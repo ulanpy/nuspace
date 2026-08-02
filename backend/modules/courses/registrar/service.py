@@ -1,13 +1,23 @@
+import asyncio
 import logging
 import re
-import asyncio
 from dataclasses import dataclass
 from typing import Dict, Sequence
 
-from fastapi import HTTPException
-from httpx import AsyncClient
-
 from backend.common.utils import meilisearch as meilisearch_utils
+from backend.modules.courses.registrar.clients.public_course_catalog import (
+    PublicCourseCatalogClient,
+)
+from backend.modules.courses.registrar.clients.registrar_client import RegistrarClient
+from backend.modules.courses.registrar.parsers.registrar_parser import (
+    parse_personal_schedule_pdf,
+    parse_schedule,
+)
+from backend.modules.courses.registrar.schedule_gcs import SCHEDULE_GCS_OBJECT
+from backend.modules.courses.registrar.schedule_sync import (
+    SCHEDULE_INDEX_UID,
+    sync_schedule_catalog,
+)
 from backend.modules.courses.registrar.schemas import (
     CourseScheduleEntry,
     CourseSearchRequest,
@@ -15,15 +25,15 @@ from backend.modules.courses.registrar.schemas import (
     ScheduleResponse,
     SemesterOption,
 )
-from backend.modules.courses.registrar.clients.registrar_client import RegistrarClient
-from backend.modules.courses.registrar.parsers.registrar_parser import (
-    parse_personal_schedule_pdf,
-    parse_schedule,
-)
-from backend.modules.courses.registrar.clients.public_course_catalog import (
-    PublicCourseCatalogClient,
-)
-from backend.modules.courses.registrar.schedule_sync import SCHEDULE_INDEX_UID
+from fastapi import HTTPException
+from google.cloud import storage
+from httpx import AsyncClient
+from redis.asyncio import Redis
+
+logger = logging.getLogger(__name__)
+
+_CATALOG_SYNC_LOCK_TTL_SECONDS = 120
+_CATALOG_SYNC_PROCESSED_TTL_SECONDS = 86_400
 
 
 @dataclass
@@ -36,27 +46,48 @@ class CoursePriorityRecord:
     priority_3: str | None = None
     priority_4: str | None = None
 
+
+@dataclass(frozen=True)
+class ScheduleCatalogFinalizeResult:
+    skipped: bool
+    schedule_docs: int = 0
+    reason: str | None = None
+
+
+class ScheduleCatalogFinalizeError(Exception):
+    """Sync failed after claim; caller should signal Pub/Sub retry (HTTP 5xx)."""
+
+
 class RegistrarService:
     """
     Service for synchronizing student schedules from NU registrar system.
-    
+
     Provides high-level interface for fetching and processing schedule data.
     Uses dependency injection for client factory to enable testing and
     different client implementations.
-    
+
     Args:
         client_factory: Factory function for creating registrar clients (default: RegistrarClient)
     """
+
     def __init__(
         self,
         client_factory=RegistrarClient,
         public_client_factory=PublicCourseCatalogClient,
         *,
         meilisearch_client: AsyncClient | None = None,
+        redis: Redis | None = None,
+        storage_client: storage.Client | None = None,
+        bucket_name: str | None = None,
+        schedule_gcs_object: str = SCHEDULE_GCS_OBJECT,
     ) -> None:
         self.client_factory = client_factory
         self.public_client_factory = public_client_factory
         self.meilisearch_client = meilisearch_client
+        self.redis = redis
+        self.storage_client = storage_client
+        self.bucket_name = bucket_name
+        self.schedule_gcs_object = schedule_gcs_object
         self.schedule_index_uid = SCHEDULE_INDEX_UID
         self._active_semester: SemesterOption | None = None
 
@@ -118,9 +149,11 @@ class RegistrarService:
             term_label = hit.get("term")
             if term_id and term_label:
                 unique_terms[str(term_id)] = str(term_label)
-        
+
         if not unique_terms:
-            raise HTTPException(status_code=404, detail="No synced registrar semesters found in the index.")
+            raise HTTPException(
+                status_code=404, detail="No synced registrar semesters found in the index."
+            )
 
         semesters = [SemesterOption(label=label, value=id) for id, label in unique_terms.items()]
 
@@ -144,7 +177,7 @@ class RegistrarService:
             page=request.page,
             size=request.size,
             strict_code_match=False,
-            term_label_fallback=active_term.label
+            term_label_fallback=active_term.label,
         )
 
         if not items:
@@ -162,7 +195,7 @@ class RegistrarService:
         sections = await self._schedule_sections_from_index(
             course_code=course_code,
             term=term,
-            )
+        )
         if sections:
             return sections
         raise HTTPException(status_code=502, detail="schedule_unavailable")
@@ -383,7 +416,6 @@ class RegistrarService:
         hit_term_label = str(hit.get("term") or "").strip()
         return term_str == hit_term_id or term_str == hit_term_label
 
-
     @staticmethod
     def normalize_course_code(value: str | None) -> str:
         if not value:
@@ -393,6 +425,114 @@ class RegistrarService:
         normalized = normalized.replace("-", "").replace(" ", "")
         return normalized
 
+    async def on_catalog_object_finalize(
+        self,
+        *,
+        generation: str | None,
+        md5_hash: str | None = None,
+        etag: str | None = None,
+    ) -> ScheduleCatalogFinalizeResult:
+        """GCS catalog finalize: Redis dedupe/claim, then reindex Meilisearch."""
+        token = self._catalog_sync_token(
+            generation=generation,
+            md5_hash=md5_hash,
+            etag=etag,
+        )
+        if not await self._try_acquire_catalog_sync(token):
+            return ScheduleCatalogFinalizeResult(
+                skipped=True,
+                reason="duplicate_or_in_flight",
+            )
+
+        try:
+            if (
+                self.meilisearch_client is None
+                or self.storage_client is None
+                or not self.bucket_name
+            ):
+                raise ScheduleCatalogFinalizeError(
+                    "registrar service missing meilisearch/storage for catalog sync"
+                )
+            count = await sync_schedule_catalog(
+                self.meilisearch_client,
+                storage_client=self.storage_client,
+                bucket_name=self.bucket_name,
+                gcs_object=self.schedule_gcs_object,
+                prefer_local_fixture=False,
+            )
+            await self._mark_catalog_sync_done(token)
+            logger.info(
+                "Schedule catalog reindexed from GCS finalize (%s docs, gen=%s)",
+                count,
+                token,
+            )
+            return ScheduleCatalogFinalizeResult(skipped=False, schedule_docs=count)
+        except ScheduleCatalogFinalizeError:
+            await self._release_catalog_sync_lock(token)
+            raise
+        except Exception as exc:
+            await self._release_catalog_sync_lock(token)
+            logger.exception("Failed to sync schedule catalog from GCS finalize")
+            raise ScheduleCatalogFinalizeError("schedule_catalog_sync_failed") from exc
+
+    @staticmethod
+    def _catalog_sync_token(
+        *,
+        generation: str | None,
+        md5_hash: str | None = None,
+        etag: str | None = None,
+    ) -> str:
+        for candidate in (generation, md5_hash, etag):
+            if candidate:
+                return candidate
+        return "unknown"
+
+    @staticmethod
+    def _catalog_processed_key(token: str) -> str:
+        return f"schedule_catalog:processed:{token}"
+
+    @staticmethod
+    def _catalog_lock_key(token: str) -> str:
+        return f"schedule_catalog:lock:{token}"
+
+    async def _try_acquire_catalog_sync(self, token: str) -> bool:
+        if self.redis is None:
+            raise ScheduleCatalogFinalizeError("registrar service missing redis")
+
+        processed_key = self._catalog_processed_key(token)
+        lock_key = self._catalog_lock_key(token)
+
+        if await self.redis.exists(processed_key):
+            logger.info("Schedule catalog sync skip: already processed (%s)", token)
+            return False
+
+        acquired = await self.redis.set(lock_key, "1", nx=True, ex=_CATALOG_SYNC_LOCK_TTL_SECONDS)
+        if not acquired:
+            logger.info("Schedule catalog sync skip: lock held (%s)", token)
+            return False
+
+        if await self.redis.exists(processed_key):
+            await self.redis.delete(lock_key)
+            logger.info("Schedule catalog sync skip: processed during claim (%s)", token)
+            return False
+
+        return True
+
+    async def _mark_catalog_sync_done(self, token: str) -> None:
+        if self.redis is None:
+            return
+        processed_key = self._catalog_processed_key(token)
+        lock_key = self._catalog_lock_key(token)
+        async with self.redis.pipeline(transaction=True) as pipe:
+            pipe.set(processed_key, "1", ex=_CATALOG_SYNC_PROCESSED_TTL_SECONDS)
+            pipe.delete(lock_key)
+            await pipe.execute()
+
+    async def _release_catalog_sync_lock(self, token: str) -> None:
+        if self.redis is None:
+            return
+        await self.redis.delete(self._catalog_lock_key(token))
+
 
 def _coerce_int(val):
     try:
@@ -401,4 +541,3 @@ def _coerce_int(val):
         return int(val)
     except (TypeError, ValueError):
         return None
-
