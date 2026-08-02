@@ -48,10 +48,6 @@ async def setup_bot(
             commands=[
                 BotCommand(command="start", description="start"),
                 BotCommand(command="otinish", description="Submit an SG appeal"),
-                BotCommand(
-                    command="close",
-                    description="Close a ticket (reply to a ticket message)",
-                ),
                 BotCommand(command="course", description="Course grade statistics"),
                 BotCommand(command="post", description="Publish replied post as campus event"),
             ],

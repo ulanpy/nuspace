@@ -8,7 +8,6 @@ import {
   BookOpen,
   Users,
   Info,
-  Shield,
   Briefcase,
   Menu,
   LogOut,
@@ -54,11 +53,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: <Briefcase size={20} />,
   },
   { to: ROUTES.CONTACTS, label: "Contacts", icon: <Info size={20} /> },
-  {
-    to: ROUTES.SGOTINISH.ROOT,
-    label: "SG otinish",
-    icon: <Shield size={20} />,
-  },
+  // SG otinish: re-add when ready (ROUTES.SGOTINISH.ROOT, Shield icon).
 ];
 
 interface NuspaceLogoProps {
