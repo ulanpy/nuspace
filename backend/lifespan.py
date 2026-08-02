@@ -3,13 +3,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from google.auth.credentials import Credentials
 
+# Register Rabbit subscribers before the broker starts.
+import backend.modules.notification.tasks  # noqa: F401
 from backend.bootstrap.db import cleanup_db, setup_db
 from backend.bootstrap.gcp import setup_gcp
 from backend.bootstrap.meilisearch import cleanup_meilisearch, setup_meilisearch
 from backend.bootstrap.rbq import cleanup_rbq, setup_rbq
 from backend.bootstrap.redis import cleanup_redis, setup_redis
 from backend.core.configs.config import Config
-from backend.modules.routers import routers
 from backend.modules.auth.app_token import AppTokenManager
 from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.bot.startup import cleanup_bot, setup_bot
@@ -26,10 +27,7 @@ from backend.modules.courses.search_indexes import (
 from backend.modules.opportunities.search_indexes import (
     MEILISEARCH_INDEXES as OPPORTUNITIES_MEILI_INDEXES,
 )
-
-# Register Rabbit subscribers before the broker starts.
-import backend.modules.notification.tasks  # noqa: F401
-import backend.modules.notion.tasks  # noqa: F401
+from backend.modules.routers import routers
 
 
 @asynccontextmanager

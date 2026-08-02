@@ -152,6 +152,8 @@ services:
     environment:
       - WATCHPACK_POLLING=true # Enable polling for file changes in Docker
       - CHOKIDAR_USEPOLLING=true # Enable polling for file changes (Docker-friendly)
+      # Local stack uses the test bot token; keep deeplinks off prod @nuspacebot.
+      - VITE_TELEGRAM_BOT_USERNAME=${VITE_TELEGRAM_BOT_USERNAME:-anonopenspacebot}
     networks:
       - nuros
     depends_on:

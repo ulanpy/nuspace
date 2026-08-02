@@ -66,17 +66,6 @@ export function BackNavigationProvider({ children }: { children: React.ReactNode
         return ROUTES.HOME;
       }
 
-      const SG_STUDENT_DETAIL_PREFIX = ROUTES.SGOTINISH.STUDENT.TICKET.DETAIL.replace(":id", "");
-      if (path.startsWith(SG_STUDENT_DETAIL_PREFIX)) {
-        return ROUTES.SGOTINISH.STUDENT.ROOT;
-      }
-      const SG_MEMBER_DETAIL_PREFIX = ROUTES.SGOTINISH.SG.TICKET.DETAIL.replace(":id", "");
-      if (path.startsWith(SG_MEMBER_DETAIL_PREFIX)) {
-        return ROUTES.SGOTINISH.SG.ROOT;
-      }
-      if (path.startsWith(ROUTES.SGOTINISH.STUDENT.ROOT) || path.startsWith(ROUTES.SGOTINISH.SG.ROOT)) {
-        return ROUTES.SGOTINISH.ROOT;
-      }
       if (path.startsWith(ROUTES.SGOTINISH.ROOT)) {
         return ROUTES.HOME;
       }

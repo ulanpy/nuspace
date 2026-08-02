@@ -34,6 +34,8 @@ class Config(BaseSettings):
     IS_DEBUG: bool
     TELEGRAM_BOT_TOKEN: str
     TG_WEBHOOK_SECRET_TOKEN: str
+    # Fallback Telegram chat (Grafana alerts + SG Otinish when ministry chat_id is null).
+    TELEGRAM_CHAT_ID: int | None = None
     NUSPACE: str
     DEV_APP_URL: str = "http://localhost"
     GCP_PROJECT_ID: str

@@ -20,7 +20,7 @@ export function TelegramConnectCard({
   user,
   className,
   title = "Get appeal updates on Telegram",
-  description = "nuspacebot notifies you when your non-anonymous appeals get a response.",
+  description = "nuspacebot notifies you when your non-anonymous appeals change status.",
   dismissKey = DISMISS_KEY,
 }: TelegramConnectCardProps) {
   const [dismissed, setDismissed] = useState(() => {

@@ -1,77 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "@/router/navigation";
 import MotionWrapper from "@/components/shared/motion-wrapper";
-import StudentDashboard from '../components/student-dashboard';
-import SGDashboard from '../components/sg-dashboard';
 import { useUser } from "@/hooks/use-user";
-import { Shield, GraduationCap, Users } from "lucide-react";
-import { CreateAppealButton } from '../components/create-appeal-button';
-import CreateTicketModal from '../components/create-ticket-modal'; // Import the modal
-import { TelegramConnectCard } from '../components/telegram-connect-card';
-import { useAuthGate } from "@/hooks/use-auth-gate";
-import { AuthWallModal } from "@/components/molecules/auth-wall-modal";
 import { PageContainer } from "@/components/shared/page-container";
 import { PageHeader } from "@/components/shared/page-header";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SGMembersManagement } from "../components/sg-members-management";
+import { Button } from "@/components/ui/button";
+import { BindTelegramButton } from "@/components/molecules/buttons/bind-telegram-button";
+import { OtinishStats } from "@/features/sgotinish/components/otinish-stats";
+import { ExternalLink, MessageCircle } from "lucide-react";
 
-type DashboardTab = "student" | "sg-tickets" | "sg-members";
+const BOT_USERNAME =
+  import.meta.env.VITE_TELEGRAM_BOT_USERNAME?.replace(/^@/, "") || "nuspacebot";
+const OTINISH_DEEPLINK = `https://t.me/${BOT_USERNAME}?start=otinish`;
+
+const STEPS = [
+  {
+    title: "Ask",
+    body: "Open the bot, pick a topic, and write what's going on — in your own words.",
+  },
+  {
+    title: "SG gets it — anonymously",
+    body: "Student Government sees the appeal, not your name or profile. No need to find who to ping.",
+  },
+  {
+    title: "Chat until it's done",
+    body: "While the channel is open, just type in the bot — messages go to SG. Send /close when you're finished.",
+  },
+] as const;
 
 export default function SgotinishPage() {
   const { user, isLoading } = useUser();
-  const { requireAuth, isModalOpen, closeModal } = useAuthGate();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const tabParam = searchParams.get("tab");
-  const initialTab: DashboardTab =
-    tabParam === "sg-members"
-      ? "sg-members"
-      : tabParam === "sg" || tabParam === "sg-tickets"
-        ? "sg-tickets"
-        : "student";
-  const [activeDashboard, setActiveDashboard] = useState<DashboardTab>(initialTab);
-  const [isCreateTicketModalOpen, setCreateTicketModalOpen] = useState(false); // State for the new modal
-
-  const isSgMember = user && ["boss", "capo", "soldier"].includes(user.role);
-
-  const handleCreateAppeal = () => requireAuth(() => setCreateTicketModalOpen(true));
-
-  const effectiveDashboard: DashboardTab = isSgMember ? activeDashboard : "student";
-
-  const renderDashboardContent = () => {
-    if (effectiveDashboard === "sg-tickets") {
-      return <SGDashboard />;
-    }
-    if (effectiveDashboard === "sg-members") {
-      return (
-        <PageContainer padding="default">
-          <PageHeader title="SG Members" subtitle="Manage SG hierarchy and membership permissions." />
-          <SGMembersManagement currentUser={user} />
-        </PageContainer>
-      );
-    }
-
-    return (
-      <StudentDashboard
-        user={user}
-        createAppealButton={<CreateAppealButton onClick={handleCreateAppeal} />}
-      />
-    );
-  };
-
-  useEffect(() => {
-    if (!isSgMember) return;
-    const params = new URLSearchParams(searchParams.toString());
-    if (activeDashboard === "student") {
-      params.delete("tab");
-    } else {
-      params.set("tab", activeDashboard);
-    }
-    const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
-    router.replace(newUrl);
-  }, [activeDashboard, isSgMember, searchParams, router]);
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
@@ -79,49 +37,61 @@ export default function SgotinishPage() {
 
   return (
     <MotionWrapper>
-      <PageContainer padding="none">
-        {user && !user.tg_id && (
-          <TelegramConnectCard user={user} className="mb-6" />
-        )}
-        {isSgMember && (
-          <Tabs
-            value={effectiveDashboard}
-            onValueChange={(value) => setActiveDashboard((value as DashboardTab))}
-            className="mb-6"
-          >
-            <TabsList className="grid w-full max-w-2xl grid-cols-3 bg-muted/60">
-              <TabsTrigger value="student" className="gap-2">
-                <GraduationCap className="h-4 w-4" />
-                <span>Student</span>
-              </TabsTrigger>
-              <TabsTrigger value="sg-tickets" className="gap-2">
-                <Shield className="h-4 w-4" />
-                <span>SG Tickets</span>
-              </TabsTrigger>
-              <TabsTrigger value="sg-members" className="gap-2">
-                <Users className="h-4 w-4" />
-                <span>SG Members</span>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        )}
-        {renderDashboardContent()}
-      </PageContainer>
+      <PageContainer>
+        <PageHeader
+          title="SG Otinish"
+          subtitle="Ask Student Government anonymously in Telegram — they see the issue, not who you are, and reply in the same chat."
+        />
 
-      {/* Render the Create Ticket Modal */}
-      <CreateTicketModal
-        isOpen={isCreateTicketModalOpen}
-        onClose={() => setCreateTicketModalOpen(false)}
-        onSuccess={() => {
-          setCreateTicketModalOpen(false);
-          // Optional: Show a success toast notification here
-        }}
-      />
-      <AuthWallModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        message="You need to be logged in to create a new appeal."
-      />
+        <div className="mx-auto mt-10 max-w-lg space-y-12">
+          <OtinishStats />
+
+          <ol className="relative space-y-0">
+            {STEPS.map((step, index) => (
+              <li key={step.title} className="relative flex gap-4 pb-8 last:pb-0">
+                {index < STEPS.length - 1 && (
+                  <span
+                    className="absolute left-[15px] top-9 bottom-0 w-px bg-border"
+                    aria-hidden
+                  />
+                )}
+                <span className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-background text-sm font-semibold text-foreground">
+                  {index + 1}
+                </span>
+                <div className="min-w-0 pt-0.5">
+                  <p className="font-medium text-foreground">{step.title}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                    {step.body}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          {user && !user.tg_id && (
+            <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-100">
+              <p>
+                Link Telegram to your nuspace account first — otherwise the bot
+                can’t start an appeal.
+              </p>
+              <BindTelegramButton />
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <Button asChild size="lg" className="w-full gap-2">
+              <a href={OTINISH_DEEPLINK} target="_blank" rel="noreferrer">
+                <MessageCircle className="h-5 w-5" />
+                Ask in Telegram
+                <ExternalLink className="h-4 w-4 opacity-70" />
+              </a>
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              @{BOT_USERNAME} · category, then one message
+            </p>
+          </div>
+        </div>
+      </PageContainer>
     </MotionWrapper>
   );
 }

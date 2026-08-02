@@ -14,6 +14,7 @@ from .db_session import DatabaseMiddleware
 from .event_post import EventPostMiddleware
 from .i18n import I18N
 from .meilisearch import MeilisearchMiddleware
+from .otinish import OtinishMiddleware
 from .public_url import UrlMiddleware
 from .redis import RedisMiddleware
 from .telegram_link import TelegramLinkMiddleware
@@ -39,6 +40,7 @@ def setup_middlewares(
         UrlMiddleware(config.PUBLIC_WEBHOOK_URL),
         I18N(),
         TelegramLinkMiddleware(),
+        OtinishMiddleware(),
         BucketClientMiddleware(storage_client),
         MeilisearchMiddleware(meilisearch_client),
         EventPostMiddleware(

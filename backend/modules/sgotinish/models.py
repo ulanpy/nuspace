@@ -1,12 +1,19 @@
-from datetime import datetime
-from backend.common.datetime_utils import utc_now
 from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, String, Text, Boolean
+from backend.common.datetime_utils import utc_now
+from backend.core.database.models.base import Base
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from backend.core.database.models.base import Base
 
 
 class TicketStatus(PyEnum):
@@ -17,141 +24,92 @@ class TicketStatus(PyEnum):
 
 
 class TicketCategory(PyEnum):
-    academic = "academic"
-    administrative = "administrative"
-    technical = "technical"
-    complaint = "complaint"
-    suggestion = "suggestion"
-    other = "other"
+    """One category per SG ministry (slug == SgMinistry.slug)."""
+
+    education = "education"
+    culture = "culture"
+    research = "research"
+    residential = "residential"
+    sports = "sports"
+    student_rights = "student_rights"
+    student_fund = "student_fund"
+    external_affairs = "external_affairs"
 
 
-class ConversationStatus(PyEnum):
-    active = "active"
-    archived = "archived"
+class SgMinistry(Base):
+    """SG ministry inbox: telegram_chat_id nullable → fallback TELEGRAM_CHAT_ID."""
+
+    __tablename__ = "sg_ministries"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
+    slug: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    telegram_chat_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    tickets = relationship("Ticket", back_populates="ministry")
 
 
 class Ticket(Base):
     __tablename__ = "tickets"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
-
-    author_sub: Mapped[str] = mapped_column(
-        ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, index=True
-    )
     category: Mapped[TicketCategory] = mapped_column(
-        SQLEnum(TicketCategory, name="ticket_category"), nullable=False, index=True
+        SQLEnum(TicketCategory, name="ticket_category", native_enum=True),
+        nullable=False,
+        index=True,
     )
-    title: Mapped[str] = mapped_column(nullable=False)
-    body: Mapped[str] = mapped_column(nullable=False)
+    ministry_id: Mapped[int] = mapped_column(
+        ForeignKey("sg_ministries.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    body: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[TicketStatus] = mapped_column(
-        SQLEnum(TicketStatus, name="ticket_status"), default=TicketStatus.open, nullable=False, index=True
+        SQLEnum(TicketStatus, name="ticket_status"),
+        default=TicketStatus.open,
+        nullable=False,
+        index=True,
     )
-    is_anonymous: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    owner_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    author_telegram_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
+    assignee_telegram_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
-    author = relationship("User")
-    conversations = relationship("Conversation", back_populates="ticket", cascade="all, delete-orphan")
+    ministry = relationship("SgMinistry", back_populates="tickets")
+    telegram_messages = relationship(
+        "TicketTelegramMessage",
+        back_populates="ticket",
+        cascade="all, delete-orphan",
+    )
 
 
-class Conversation(Base):
-    __tablename__ = "conversations"
+class TicketTelegramMessage(Base):
+    """Maps any bot-related Telegram message_id to a ticket (DM or ministry chat)."""
+
+    __tablename__ = "ticket_telegram_messages"
+    __table_args__ = (
+        UniqueConstraint("chat_id", "telegram_message_id", name="uq_ticket_tg_msg_chat_message"),
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
-
     ticket_id: Mapped[int] = mapped_column(
         ForeignKey("tickets.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    sg_member_sub: Mapped[str] = mapped_column(
-        ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, index=True
-    )
-    status: Mapped[ConversationStatus] = mapped_column(
-        SQLEnum(ConversationStatus, name="conversation_status"), default=ConversationStatus.active, nullable=False, index=True
-    )
-    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
+    telegram_message_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
-    ticket = relationship("Ticket", back_populates="conversations")
-    sg_member = relationship("User")
-    messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan")
-
-
-class Message(Base):
-    __tablename__ = "messages"
-
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
-
-    conversation_id: Mapped[int] = mapped_column(
-        ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True
-    )
-    sender_sub: Mapped[str] = mapped_column(
-        ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, index=True
-    )
-    body: Mapped[str] = mapped_column(Text, nullable=False)
-    is_from_sg_member: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    sent_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
-
-    conversation = relationship("Conversation", back_populates="messages")
-    sender = relationship("User")
-    read_statuses = relationship("MessageReadStatus", back_populates="message", cascade="all, delete-orphan")
-    read_statuses_anon = relationship(
-        "MessageReadStatusAnon", back_populates="message", cascade="all, delete-orphan"
-    )
-
-
-class MessageReadStatus(Base):
-    __tablename__ = "message_read_status"
-
-    message_id: Mapped[int] = mapped_column(
-        ForeignKey("messages.id", ondelete="CASCADE"), primary_key=True, nullable=False
-    )
-    user_sub: Mapped[str] = mapped_column(
-        ForeignKey("users.sub", ondelete="CASCADE"), primary_key=True, nullable=False
-    )
-    read_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
-
-    message = relationship("Message", back_populates="read_statuses")
-    user = relationship("User")
-
-
-class MessageReadStatusAnon(Base):
-    __tablename__ = "message_read_status_anon"
-
-    message_id: Mapped[int] = mapped_column(
-        ForeignKey("messages.id", ondelete="CASCADE"), primary_key=True, nullable=False
-    )
-    owner_hash: Mapped[str] = mapped_column(String(64), primary_key=True, nullable=False)
-    read_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
-
-    message = relationship("Message", back_populates="read_statuses_anon")
+    ticket = relationship("Ticket", back_populates="telegram_messages")
 
 
 class Department(Base):
+    """Kept for users.department_id FK; NU academic departments, not SG ministries."""
+
     __tablename__ = "departments"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     is_special: Mapped[bool] = mapped_column(default=False, nullable=False)
-
-
-class PermissionType(PyEnum):
-    VIEW = "view"
-    ASSIGN = "assign"
-    DELEGATE = "delegate"
-
-
-class TicketAccess(Base):
-    __tablename__ = "ticket_access"
-
-    ticket_id: Mapped[int] = mapped_column(ForeignKey("tickets.id", ondelete="CASCADE"), primary_key=True)
-    user_sub: Mapped[str] = mapped_column(ForeignKey("users.sub", ondelete="CASCADE"), primary_key=True)
-    permission: Mapped[PermissionType] = mapped_column(
-        SQLEnum(PermissionType, name="permission_type"), primary_key=True
-    )
-
-    granted_by_sub: Mapped[str | None] = mapped_column(ForeignKey("users.sub", ondelete="SET NULL"), nullable=True)
-    granted_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
-
-    ticket = relationship("Ticket")
-    user = relationship("User", foreign_keys=[user_sub])
-    granter = relationship("User", foreign_keys=[granted_by_sub])

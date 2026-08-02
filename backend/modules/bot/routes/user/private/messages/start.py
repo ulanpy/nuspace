@@ -3,7 +3,6 @@ from typing import Callable
 from aiogram import Router
 from aiogram.filters import CommandStart
 from aiogram.types import Message
-
 from backend.modules.bot.keyboards.kb import kb_url
 
 router = Router()

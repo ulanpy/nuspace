@@ -1,79 +1,56 @@
-# SGotinish module changes
+# SGotinish
 
-This note documents recent changes in `backend/modules/sgotinish` and related
-database models that affect tickets, messages, and anonymity.
+Telegram-first Student Government appeals (anon-chat style channel).
 
-## Ticket anonymity (WarpKey / owner_hash)
+## User flow
 
-- Tickets can be accessed via a client-generated secret key (WarpKey).
-- The client generates `WarpKey`, computes `owner_hash = SHA256(WarpKey)`,
-  and sends only the hash to the backend.
-- For anonymous tickets:
-  - `tickets.author_sub` is set to `NULL`.
-  - `tickets.owner_hash` stores the 64-char hex digest.
+1. Link NU Telegram on the website (once).
+2. `/otinish` or `t.me/<bot>?start=otinish`
+3. Pick a **ministry category** → one text message → card in student DM + ministry inbox
+4. Student enters an **open channel** (one open ticket max)
+5. SG member taps **Answer** → `start=otinish_t_<id>` → first claimer becomes assignee
+6. While open, non-command DMs pipe both ways
+7. Ministry chat: **status only** (claimed / closed)
+8. `/close` with confirmation — unclaimed: student may abandon; claimed: only claimer
 
-### New/updated ticket endpoints
+## Ministries / routing
 
-- `POST /tickets`
-  - Accepts `owner_hash` when `is_anonymous=true`.
-  - Enforces `owner_hash` validation in `TicketCreateDTO`.
-- `POST /tickets/by-owner-hash`
-  - Fetch a ticket by hash (for `/t?key=...` flow).
+Table `sg_ministries` (`slug`, `name`, `telegram_chat_id`, `is_active`):
 
-## Message anonymity
+| slug | Ministry |
+|------|----------|
+| education | Minister of Education |
+| culture | Minister of Culture |
+| research | Minister of Research and Innovations |
+| residential | Minister of Residential Life and Security |
+| sports | Minister of Sports and Health |
+| student_rights | Student Rights Committee |
+| student_fund | Student Fund Budget Committee |
+| external_affairs | Minister of External Affairs |
 
-When an anonymous ticket author posts a message:
+`tickets.category` matches `sg_ministries.slug`. `tickets.ministry_id` is set at create (future transfer updates this).
 
-- `messages.sender_sub` is stored as `NULL`.
-- Read status is stored in a new table keyed by `owner_hash`, not `user_sub`.
+If `telegram_chat_id` is NULL → post to `TELEGRAM_CHAT_ID` from env (dev/fallback). Set real chat ids in DB when ministries create groups:
 
-### New table
+```sql
+UPDATE sg_ministries SET telegram_chat_id = -100… WHERE slug = 'education';
+```
 
-- `message_read_status_anon`
-  - `message_id`
-  - `owner_hash`
-  - `read_at`
+## Ticket fields
 
-### Message endpoints (updated behavior)
+- `category`, `ministry_id`, `body`, `status`, `author_telegram_id`, `assignee_telegram_id`
+- `ticket_telegram_messages` for delivery threading
 
-The following endpoints accept `owner_hash` in query string:
+## Config
 
-- `POST /messages`
-- `GET /messages`
-- `GET /messages/{message_id}`
-- `POST /messages/{message_id}/read`
+```
+TELEGRAM_CHAT_ID=<fallback chat id>
+```
 
-If `owner_hash` matches the ticket hash:
+## Website
 
-- Read/write access is permitted for the anonymous owner.
-- Read receipts are stored in `message_read_status_anon`.
+`/sgotinish` is a guide + deeplink CTA, plus public aggregate stats from `GET /api/sgotinish/stats` (totals, answered %, closed, this week, top ministries — no bodies or Telegram IDs).
 
-## Unread counts for anonymous tickets
+## Migrations
 
-There is a separate unread count path for anonymous owners:
-
-- `get_unread_messages_count_for_tickets_by_owner_hash(...)`
-  - Counts only SG member messages as unread.
-  - Uses `message_read_status_anon` to track reads.
-
-## Notifications
-
-For anonymous ticket authors, message notifications to SG members no longer
-require a `sender` user object. The recipient is still the assigned SG member.
-
-## Related model changes
-
-In `backend/core/database/models/sgotinish.py`:
-
-- `Ticket.owner_hash` (string, nullable, indexed)
-- `Message.read_statuses_anon` relationship
-- `MessageReadStatusAnon` model
-
-## Migration notes
-
-Add migrations for:
-
-- `tickets.owner_hash`
-- `message_read_status_anon` table
-
-No automatic migrations are created here; generate them in your own workflow.
+Revision `0da5c3c1dd0a` (from `ac5e84afee18`): bot-first tickets, `sg_ministries` seed, new categories. Clears legacy tickets when swapping the category enum.

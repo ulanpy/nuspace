@@ -4,7 +4,6 @@ from aiogram import Router
 from aiogram.filters import CommandObject, CommandStart
 from aiogram.types import Message
 from aiogram.utils.deep_linking import decode_payload
-
 from backend.modules.bot.keyboards.kb import kb_confirmation
 from backend.modules.bot.services.link import DeeplinkStartResult, TelegramLinkService
 
@@ -19,8 +18,17 @@ async def user_start_link(
     _: Callable[[str], str],
 ) -> None:
     """Handle /start with encoded payload from the website linking flow."""
-    payload: str = decode_payload(command.args)
-    sub, confirmation_number = payload.split("&")
+    # Plain otinish create / claim payloads are handled by the otinish router.
+    args = (command.args or "").strip()
+    if args == "otinish" or args.startswith("otinish_t_"):
+        return
+
+    try:
+        payload = decode_payload(command.args)
+        sub, confirmation_number = payload.split("&")
+    except (ValueError, UnicodeDecodeError, AttributeError):
+        await m.answer(_("Некорректная ссылка"))
+        return
 
     result = await telegram_link_service.handle_deeplink_start(sub, m.from_user.id)
     if result == DeeplinkStartResult.invalid_sub:

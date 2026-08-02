@@ -2,7 +2,6 @@ from typing import Callable
 
 from aiogram import Router
 from aiogram.types import CallbackQuery
-
 from backend.modules.bot.keyboards.callback_factory import ConfirmTelegramUser
 from backend.modules.bot.services.link import TelegramLinkService
 

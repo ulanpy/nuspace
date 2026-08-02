@@ -2,11 +2,11 @@
 
 from aiogram import F, Router
 from aiogram.enums.chat_type import ChatType
-
+from backend.modules.bot.routes.user.private.callback.confirmation import router as confirmation
+from backend.modules.bot.routes.user.private.messages.otinish import router as otinish
+from backend.modules.bot.routes.user.private.messages.post_event import router as post_event
 from backend.modules.bot.routes.user.private.messages.start import router as start
 from backend.modules.bot.routes.user.private.messages.start_deeplink import router as start_deeplink
-from backend.modules.bot.routes.user.private.messages.post_event import router as post_event
-from backend.modules.bot.routes.user.private.callback.confirmation import router as confirmation
 
 
 def setup_private_callback_router() -> Router:
@@ -16,7 +16,7 @@ def setup_private_callback_router() -> Router:
 
 
 def setup_private_message_router() -> Router:
-    # Order matters: deep-link /start before plain /start.
+    # Order matters: otinish deep-link /start before account-link /start.
     router: Router = Router(name="Private message router")
     router.include_router(start_deeplink)
     router.include_router(start)
@@ -27,7 +27,10 @@ def setup_private_message_router() -> Router:
 def setup_private_routers() -> Router:
     router: Router = Router(name="Private router")
     router.message.filter(F.chat.type == ChatType.PRIVATE)
+    router.callback_query.filter(F.message.chat.type == ChatType.PRIVATE)
 
+    # Otinish (commands + callbacks + reply bridge) once under private scope.
+    router.include_router(otinish)
     router.include_router(setup_private_callback_router())
     router.include_router(setup_private_message_router())
     return router

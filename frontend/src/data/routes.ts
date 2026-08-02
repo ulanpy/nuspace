@@ -33,20 +33,6 @@ export const ROUTES = {
   },
   SGOTINISH: {
     ROOT: "/sgotinish",
-    STUDENT: {
-      ROOT: "/sgotinish/student",
-      TICKET: {
-        DETAIL: "/sgotinish/student/ticket?id=:id",
-        DETAIL_FN: (id: string | number) => `/sgotinish/student/ticket?id=${id}`,
-      },
-    },
-    SG: {
-      ROOT: "/sgotinish/sg",
-      TICKET: {
-        DETAIL: "/sgotinish/sg/ticket?id=:id",
-        DETAIL_FN: (id: string | number) => `/sgotinish/sg/ticket?id=${id}`,
-      },
-    },
   },
 };
 
