@@ -5,17 +5,26 @@ templates:
     name: nuspace
     template: |
       {{ define "nuspace.telegram.message" -}}
+      {{- $alert := index .Alerts 0 -}}
+      {{- $summary := or $alert.Annotations.summary $alert.Labels.alertname "Alert" -}}
+      {{- $description := $alert.Annotations.description -}}
       {{- if eq .Status "firing" -}}
-      🔴 <b>FastAPI недоступен</b>
+      🔴 <b>{{ $summary }}</b>
+      {{- if $description }}
+
+      {{ $description }}
+      {{- end }}
       {{- else -}}
-      ✅ <b>FastAPI доступен</b>
-      {{- with (index .Alerts 0) }}
+      ✅ <b>{{ $summary }}</b> — восстановлено
+      {{- with $alert }}
+      {{- if and .StartsAt .EndsAt }}
       {{- $downtime := .EndsAt.Sub .StartsAt }}
-      Даунтайм: <code>{{ printf "%.0f" $downtime.Seconds }}</code> с ({{ $downtime }})
+      Длительность: <code>{{ printf "%.0f" $downtime.Seconds }}</code> с
+      {{- end }}
       {{- end }}
       {{- end }}
 
-      {{- with (index .Alerts 0) }}
+      {{- with $alert }}
       <a href="{{ .GeneratorURL }}">Открыть в Grafana</a> · <a href="{{ .SilenceURL }}">Заглушить</a>
       {{- end }}
       {{- end }}

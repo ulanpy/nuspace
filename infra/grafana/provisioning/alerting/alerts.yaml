@@ -2,12 +2,13 @@ apiVersion: 1
 
 groups:
   - orgId: 1
-    name: 10s-evals
+    name: nuspace-core
     folder: Alerts
-    interval: 10s
+    interval: 1m
     rules:
+      # 1) Application scrape target is down for 2m (survives deploys / blips)
       - uid: aepykpcwa3jlsc
-        title: Server Status
+        title: Application Down
         condition: C
         data:
           - refId: A
@@ -17,7 +18,7 @@ groups:
             datasourceUid: PBFA97CFB590B2093
             model:
               disableTextWrap: false
-              editorMode: builder
+              editorMode: code
               expr: up{job="application"}
               fullMetaSearch: false
               includeNullMetadata: true
@@ -53,9 +54,194 @@ groups:
               maxDataPoints: 43200
               refId: C
               type: threshold
-        noDataState: NoData
+        noDataState: Alerting
         execErrState: Error
-        annotations: {}
+        for: 2m
+        annotations:
+          summary: FastAPI недоступен
+          description: up{job="application"} == 0 уже 2+ минуты (scrape /metrics не отвечает).
+        labels:
+          severity: critical
+        isPaused: false
+        notification_settings:
+          receiver: Telegram
+
+      # 2) Sustained 5xx — server-side failures users can see
+      - uid: nuspace5xx001
+        title: HTTP 5xx Spike
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              disableTextWrap: false
+              editorMode: code
+              expr: sum(increase(fastapi_http_responses_total{status_code=~"5.."}[10m]))
+              fullMetaSearch: false
+              includeNullMetadata: true
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              maxDataPoints: 43200
+              range: false
+              refId: A
+              useBackend: false
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 3
+                    type: gte
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: Рост HTTP 5xx
+          description: ≥3 ответов 5xx за 10 минут (держит 2+ мин). Смотри FastAPI Full Observability → 5xx / logs.
+        labels:
+          severity: critical
+        isPaused: false
+        notification_settings:
+          receiver: Telegram
+
+      # 3) 404 on real FastAPI routes only (excludes scanner noise → [unmatched])
+      - uid: nuspace404001
+        title: HTTP 404 on Matched Routes
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              disableTextWrap: false
+              editorMode: code
+              expr: sum(increase(fastapi_http_responses_total{status_code="404", path!="[unmatched]"}[15m]))
+              fullMetaSearch: false
+              includeNullMetadata: true
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              maxDataPoints: 43200
+              range: false
+              refId: A
+              useBackend: false
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 5
+                    type: gte
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: Рост 404 на наших ручках
+          description: ≥5 ответов 404 за 15 минут на matched routes (path!="[unmatched]"). Сканеры не считаются. Проверь 4xx by Path на дашборде.
+        labels:
+          severity: warning
+        isPaused: false
+        notification_settings:
+          receiver: Telegram
+
+      # 4) Unhandled exceptions in the FastAPI middleware counter
+      - uid: nuspaceexc001
+        title: Unhandled Exceptions
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              disableTextWrap: false
+              editorMode: code
+              expr: sum(increase(fastapi_http_exceptions_total[10m]))
+              fullMetaSearch: false
+              includeNullMetadata: true
+              instant: true
+              intervalMs: 1000
+              legendFormat: __auto
+              maxDataPoints: 43200
+              range: false
+              refId: A
+              useBackend: false
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 1
+                    type: gte
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: Unhandled exception в FastAPI
+          description: ≥1 необработанное исключение за 10 минут. Смотри logs / exceptions на дашборде.
+        labels:
+          severity: critical
         isPaused: false
         notification_settings:
           receiver: Telegram
