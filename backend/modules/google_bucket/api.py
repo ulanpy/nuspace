@@ -9,6 +9,12 @@ from google.cloud.storage import Bucket
 from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import Config
 from backend.modules.auth.dependencies import get_creds_or_401, mark_access_actor
+from backend.modules.courses.registrar.schedule_catalog_claim import (
+    mark_schedule_catalog_sync_done,
+    release_schedule_catalog_sync_lock,
+    schedule_catalog_sync_token,
+    try_acquire_schedule_catalog_sync,
+)
 from backend.modules.courses.registrar.schedule_sync import sync_schedule_catalog
 from backend.modules.google_bucket import dependencies as deps
 from backend.modules.google_bucket import schemas
@@ -139,6 +145,15 @@ async def gcs_webhook(
 
     # Cloud Run Job artifact: ignore meta.json; only catalog triggers reindex.
     if gcs_event.name == config.SCHEDULE_SYNC_GCS_OBJECT:
+        token = schedule_catalog_sync_token(
+            generation=gcs_event.generation,
+            md5_hash=gcs_event.md5Hash,
+            etag=gcs_event.etag,
+        )
+        redis = request.app.state.redis
+        if not await try_acquire_schedule_catalog_sync(redis, token):
+            return {"status": "ok", "skipped": True, "reason": "duplicate_or_in_flight"}
+
         try:
             count = await sync_schedule_catalog(
                 request.app.state.meilisearch_client,
@@ -147,12 +162,15 @@ async def gcs_webhook(
                 gcs_object=config.SCHEDULE_SYNC_GCS_OBJECT,
                 prefer_local_fixture=False,
             )
+            await mark_schedule_catalog_sync_done(redis, token)
             logger.info(
-                "Schedule catalog reindexed from GCS finalize (%s docs)",
+                "Schedule catalog reindexed from GCS finalize (%s docs, gen=%s)",
                 count,
+                token,
             )
             return {"status": "ok", "schedule_docs": count}
         except Exception:
+            await release_schedule_catalog_sync_lock(redis, token)
             logger.exception("Failed to sync schedule catalog from GCS finalize")
             # Non-2xx so Pub/Sub retries.
             raise HTTPException(status_code=500, detail="schedule_catalog_sync_failed")
