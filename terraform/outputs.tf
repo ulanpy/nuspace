@@ -20,17 +20,6 @@ output "vm_service_account_email" {
   description = "Email of the service account attached to the VM"
 }
 
-# Logs bucket information
-output "logs_bucket_name" {
-  value       = google_storage_bucket.logs_bucket.name
-  description = "Name of the logs bucket"
-}
-
-output "logs_bucket_url" {
-  value       = format("gs://%s", google_storage_bucket.logs_bucket.name)
-  description = "URL of the logs bucket"
-}
-
 output "backups_bucket_name" {
   value       = google_storage_bucket.backups.name
   description = "GCS bucket for WAL-G and pg_dump backups"
