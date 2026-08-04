@@ -105,8 +105,7 @@ services:
     container_name: nginx
     image: nginx:latest
     networks:
-      nuros:
-        ipv4_address: 172.28.0.8
+      - nuros
     restart: always
     ports:
       - "80:80"
@@ -309,9 +308,7 @@ services:
       - NET_ADMIN
       - SYS_MODULE
     networks:
-      # - nuros
-      nuros:
-        ipv4_address: 172.28.0.5
+      - nuros
     environment:
       - INSECURE=true
       # - PORT=51821

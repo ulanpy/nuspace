@@ -15,7 +15,7 @@ class AsyncDatabaseManager:
             config.DATABASE_URL,
             query_cache_size=1200,
             pool_size=20,
-            max_overflow=200,
+            max_overflow=20,
             future=True,
             echo=False,
         )
@@ -24,12 +24,6 @@ class AsyncDatabaseManager:
             bind=self.async_engine,
             expire_on_commit=False,
         )
-
-    # === Deprecated. Will be removed starting from October 2025 ===
-    async def create_all_tables(self) -> None:
-        async with self.async_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        await self.async_engine.dispose()
 
     # this function returns async session used in fastapi dependency injections
     async def get_async_session(self) -> AsyncGenerator[AsyncSession, None]:

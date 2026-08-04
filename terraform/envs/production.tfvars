@@ -14,7 +14,7 @@ region     = "europe-central2"
 zone       = "europe-central2-a"
 
 vm_name          = "nuspace-instance"
-vm_machine_type  = "e2-medium"
+vm_machine_type  = "e2-standard-2"
 vm_instance_tags = ["https-server"]
 static_ip_name   = "nuspace-static-ip"
 
