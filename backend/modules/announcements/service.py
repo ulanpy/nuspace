@@ -43,7 +43,7 @@ class AnnouncementsService:
         infra,
         user: tuple[dict, dict],
         events_page: int = 1,
-        events_size: int = 5,
+        events_size: int = 11,
         recruitment_events_page: int = 1,
         recruitment_events_size: int = 5,
     ) -> schemas.AnnouncementsBundleResponse:

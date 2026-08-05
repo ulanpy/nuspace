@@ -22,11 +22,16 @@ export type AnnouncementsBundleResponse = {
   };
 };
 
+/** Featured (1) + More upcoming strip (10) on desktop; strip-only on mobile. */
+const EVENTS_SIZE = 11;
+
 export function useAnnouncementsBundle() {
   return useQuery({
-    queryKey: ["announcements", "bundle", { v: 2 }],
+    queryKey: ["announcements", "bundle", { v: 3, events_size: EVENTS_SIZE }],
     queryFn: async () => {
-      return await apiCall<AnnouncementsBundleResponse>("/announcements/bundle");
+      return await apiCall<AnnouncementsBundleResponse>(
+        `/announcements/bundle?events_size=${EVENTS_SIZE}`,
+      );
     },
   });
 }

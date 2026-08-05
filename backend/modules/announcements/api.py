@@ -32,7 +32,7 @@ async def get_announcements_bundle_route(
     infra: Infra = Depends(get_infra),
     service: AnnouncementsService = Depends(get_announcements_service),
     events_page: int = Query(1, ge=1),
-    events_size: int = Query(5, ge=1, le=100),
+    events_size: int = Query(11, ge=1, le=100),
     recruitment_events_page: int = Query(1, ge=1),
     recruitment_events_size: int = Query(5, ge=1, le=100),
 ) -> schemas.AnnouncementsBundleResponse:
@@ -40,7 +40,7 @@ async def get_announcements_bundle_route(
     Single endpoint for the announcements landing page to reduce initial request fan-out.
 
     Defaults:
-    - events: page=1 size=5 (approved + upcoming)
+    - events: page=1 size=11 (1 featured + up to 10 in More upcoming)
     - recruitment_events: page=1 size=5 (approved + upcoming + type=recruitment)
     """
     return await service.get_bundle(

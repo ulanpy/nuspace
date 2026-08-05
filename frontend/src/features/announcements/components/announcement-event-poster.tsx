@@ -10,6 +10,8 @@ type AnnouncementEventPosterProps = {
   className?: string;
   priority?: boolean;
   fallback?: "calendar" | "users";
+  /** contain keeps the full poster readable; cover crops to fill */
+  fit?: "contain" | "cover";
 };
 
 export function AnnouncementEventPoster({
@@ -18,6 +20,7 @@ export function AnnouncementEventPoster({
   className,
   priority = false,
   fallback = "calendar",
+  fit = "cover",
 }: AnnouncementEventPosterProps) {
   const FallbackIcon = fallback === "users" ? Users : Calendar;
 
@@ -34,7 +37,11 @@ export function AnnouncementEventPoster({
           alt={alt}
           fill
           priority={priority}
-          className="absolute inset-0"
+          className="absolute inset-0 size-full"
+          imgClassName={cn(
+            "size-full",
+            fit === "contain" ? "object-contain" : "object-cover object-center",
+          )}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-primary/10">

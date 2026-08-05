@@ -119,7 +119,7 @@ export default function Events() {
   );
 
   const renderEventsLoading = () => (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
       {Array.from({ length: 8 }, (_, i) => (
         <EventCardSkeleton key={i} />
       ))}
@@ -129,16 +129,16 @@ export default function Events() {
   return (
     <MotionWrapper>
       <PageContainer maxWidth="wide" padding="default">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="mb-4 flex items-start justify-between gap-3 sm:mb-8">
           <PageHeader
             title="Events"
             subtitle="Posters, dates, and campus happenings — browse what’s next."
-            className="mb-0"
+            className="mb-0 min-w-0"
           />
           <Button
             onClick={() => requireAuth(() => setIsCreateModalOpen(true))}
             size="sm"
-            className="w-fit gap-2 self-start"
+            className="shrink-0 gap-1.5"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Create Event</span>
@@ -146,7 +146,7 @@ export default function Events() {
           </Button>
         </div>
 
-        <main className="space-y-6">
+        <main className="space-y-4 sm:space-y-6">
           {user && !user.tg_id ? (
             <TelegramConnectCard
               user={user}
@@ -156,31 +156,29 @@ export default function Events() {
             />
           ) : null}
 
-          <div className="space-y-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="overflow-x-auto pb-0.5">
-                <ButtonGroup className="min-w-max">
-                  {filterOptions.map((option) => {
-                    const active = timeFilter === option.value;
-                    return (
-                      <Button
-                        key={option.value}
-                        variant={active ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setTimeFilter(option.value)}
-                        className={cn(
-                          "h-9 px-3 text-xs sm:text-sm",
-                          !active && "bg-background",
-                        )}
-                        aria-pressed={active}
-                      >
-                        <span className="hidden sm:inline">{option.label}</span>
-                        <span className="sm:hidden">{option.shortLabel}</span>
-                      </Button>
-                    );
-                  })}
-                </ButtonGroup>
-              </div>
+          <div className="space-y-2.5 sm:space-y-3">
+            <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
+              <ButtonGroup className="min-w-max">
+                {filterOptions.map((option) => {
+                  const active = timeFilter === option.value;
+                  return (
+                    <Button
+                      key={option.value}
+                      variant={active ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setTimeFilter(option.value)}
+                      className={cn(
+                        "px-2.5 text-xs sm:px-3 sm:text-sm",
+                        !active && "bg-background",
+                      )}
+                      aria-pressed={active}
+                    >
+                      <span className="hidden sm:inline">{option.label}</span>
+                      <span className="sm:hidden">{option.shortLabel}</span>
+                    </Button>
+                  );
+                })}
+              </ButtonGroup>
 
               <Button
                 variant={eventTypeFilter === "recruitment" ? "default" : "outline"}
@@ -188,7 +186,10 @@ export default function Events() {
                 onClick={() =>
                   setEventTypeFilter(eventTypeFilter === "recruitment" ? null : "recruitment")
                 }
-                className="h-9 w-fit gap-2"
+                className={cn(
+                  "shrink-0 gap-1.5 px-2.5 text-xs sm:px-3 sm:text-sm",
+                  eventTypeFilter !== "recruitment" && "bg-background",
+                )}
                 aria-pressed={eventTypeFilter === "recruitment"}
               >
                 <Users className="h-4 w-4" />

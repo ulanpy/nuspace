@@ -186,13 +186,26 @@ export function InfiniteList<T>({
           <div className="w-full">
             {/* Grid or regular scrolling implementation */}
             {gridLayout ? (
-              <div className={`grid gap-4 ${
-                gridLayout.mobile ? `grid-cols-${gridLayout.mobile}` : 'grid-cols-1'
-              } ${
-                gridLayout.tablet ? `md:grid-cols-${gridLayout.tablet}` : ''
-              } ${
-                gridLayout.desktop ? `lg:grid-cols-${gridLayout.desktop}` : ''
-              }`}>
+              <div
+                className={[
+                  'grid gap-2.5 sm:gap-4',
+                  gridLayout.mobile === 1
+                    ? 'grid-cols-1'
+                    : gridLayout.mobile === 3
+                      ? 'grid-cols-3'
+                      : 'grid-cols-2',
+                  gridLayout.tablet === 2
+                    ? 'md:grid-cols-2'
+                    : gridLayout.tablet === 4
+                      ? 'md:grid-cols-4'
+                      : 'md:grid-cols-3',
+                  gridLayout.desktop === 3
+                    ? 'lg:grid-cols-3'
+                    : gridLayout.desktop === 5
+                      ? 'lg:grid-cols-5'
+                      : 'lg:grid-cols-4',
+                ].join(' ')}
+              >
                 {items.map((item, index) => (
                   <div key={index}>
                     {renderItem(item, index)}

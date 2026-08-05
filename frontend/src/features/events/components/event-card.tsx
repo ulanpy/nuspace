@@ -21,9 +21,9 @@ interface EventCardProps extends Event {
 export function EventCardSkeleton() {
   return (
     <Card className="flex h-full flex-col overflow-hidden">
-      <Skeleton className="h-7 w-full rounded-none rounded-t-lg" />
+      <Skeleton className="h-6 w-full rounded-none rounded-t-lg" />
       <Skeleton className="aspect-[3/4] w-full rounded-none" />
-      <div className="space-y-2 p-3">
+      <div className="space-y-1.5 p-2.5 sm:space-y-2 sm:p-3">
         <Skeleton className="h-4 w-[80%]" />
         <Skeleton className="h-3 w-1/2" />
         <Skeleton className="h-3 w-2/3" />
@@ -99,50 +99,51 @@ export function EventCard(props: EventCardProps) {
                 alt={name}
                 fill
                 priority={priorityImage}
+                imgClassName="object-cover object-center"
                 onError={() => setImageError(true)}
               />
             </div>
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <div className="text-center">
-                <Calendar className="mx-auto mb-1 h-10 w-10 text-muted-foreground opacity-50" />
+                <Calendar className="mx-auto mb-1 h-8 w-8 text-muted-foreground opacity-50 sm:h-10 sm:w-10" />
                 <p className="text-xs text-muted-foreground">No poster</p>
               </div>
             </div>
           )}
 
-          <div className="absolute bottom-2 left-2 z-10 flex flex-wrap gap-1.5">
+          <div className="absolute bottom-1.5 left-1.5 z-10 flex max-w-[calc(100%-0.75rem)] flex-wrap gap-1 sm:bottom-2 sm:left-2 sm:gap-1.5">
             <Badge
               variant="outline"
-              className={`text-xs backdrop-blur-sm ${getPolicyColor(policy)}`}
+              className={`px-1.5 py-0 text-[10px] backdrop-blur-sm sm:px-2.5 sm:py-0.5 sm:text-xs ${getPolicyColor(policy)}`}
             >
               {getPolicyDisplay(policy)}
             </Badge>
             {is_going ? (
               <Badge
                 variant="default"
-                className="gap-1 text-xs shadow-sm"
+                className="gap-0.5 px-1.5 py-0 text-[10px] shadow-sm sm:gap-1 sm:px-2.5 sm:py-0.5 sm:text-xs"
               >
-                <Check className="h-3 w-3" />
+                <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                 Going
               </Badge>
             ) : null}
           </div>
         </div>
 
-        <CardContent className="flex flex-1 flex-col gap-2 p-3">
-          <h3 className="text-sm font-semibold leading-snug line-clamp-2 sm:text-base group-hover:underline">
+        <CardContent className="flex flex-1 flex-col gap-1.5 p-2.5 sm:gap-2 sm:p-3">
+          <h3 className="text-xs font-semibold leading-snug line-clamp-2 sm:text-base group-hover:underline">
             {name}
           </h3>
 
-          <div className="mt-auto space-y-1 text-xs text-muted-foreground sm:text-sm">
-            <div className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+          <div className="mt-auto space-y-0.5 text-[11px] text-muted-foreground sm:space-y-1 sm:text-sm">
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <Calendar className="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5" />
               <span className="truncate">{formatEventDate(start_datetime)}</span>
             </div>
             {place ? (
-              <div className="flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+              <div className="flex items-center gap-1 sm:gap-1.5">
+                <MapPin className="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5" />
                 <span className="truncate">{place}</span>
               </div>
             ) : null}

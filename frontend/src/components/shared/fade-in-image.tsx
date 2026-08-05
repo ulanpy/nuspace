@@ -7,12 +7,15 @@ type FadeInImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "onLoad" | "on
   priority?: boolean;
   fill?: boolean;
   fallbackSrc?: string;
+  /** Extra classes for the <img> (e.g. object-contain). */
+  imgClassName?: string;
   onLoad?: ImgHTMLAttributes<HTMLImageElement>["onLoad"];
   onError?: ImgHTMLAttributes<HTMLImageElement>["onError"];
 };
 
 export function FadeInImage({
   className,
+  imgClassName,
   priority = false,
   fill = false,
   fallbackSrc,
@@ -42,6 +45,7 @@ export function FadeInImage({
         className={cn(
           "h-full w-full object-cover transition-opacity duration-300 ease-out",
           loaded ? "opacity-100" : "opacity-0",
+          imgClassName,
         )}
         onLoad={(e) => {
           setLoaded(true);
