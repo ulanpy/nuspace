@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "@/router/link";
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, Check, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FadeInImage } from "@/components/shared/fade-in-image";
@@ -70,6 +70,7 @@ export function EventCard(props: EventCardProps) {
     place,
     policy,
     media,
+    is_going,
     priorityImage = false,
   } = props;
 
@@ -110,13 +111,22 @@ export function EventCard(props: EventCardProps) {
             </div>
           )}
 
-          <div className="absolute bottom-2 left-2 z-10">
+          <div className="absolute bottom-2 left-2 z-10 flex flex-wrap gap-1.5">
             <Badge
               variant="outline"
               className={`text-xs backdrop-blur-sm ${getPolicyColor(policy)}`}
             >
               {getPolicyDisplay(policy)}
             </Badge>
+            {is_going ? (
+              <Badge
+                variant="default"
+                className="gap-1 text-xs shadow-sm"
+              >
+                <Check className="h-3 w-3" />
+                Going
+              </Badge>
+            ) : null}
           </div>
         </div>
 

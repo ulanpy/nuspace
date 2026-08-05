@@ -6,7 +6,13 @@ from pydantic import BaseModel, Field, field_validator
 
 from backend.common.datetime_utils import almaty_to_utc
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
-from backend.modules.campuscurrent.models import EventStatus, EventTag, EventType, RegistrationPolicy
+from backend.modules.campuscurrent.models import (
+    EventAccessPurpose,
+    EventStatus,
+    EventTag,
+    EventType,
+    RegistrationPolicy,
+)
 from backend.modules.media.schemas import MediaResponse
 
 
@@ -163,9 +169,85 @@ class EventResponse(BaseEventSchema):
     media: List[MediaResponse] = Field(default_factory=list)
     creator: ShortUserResponse
     permissions: ResourcePermissions = Field(default_factory=ResourcePermissions)
+    attendees_count: int = Field(default=0, ge=0)
+    is_going: bool = False
 
     class Config:
         from_attributes = True
+
+
+class EventGoingResponse(BaseModel):
+    attendees_count: int = Field(..., ge=0)
+    is_going: bool
+
+
+class EventAttendeeResponse(BaseModel):
+    sub: str
+    name: str
+    surname: str
+    picture: str
+    email: str
+    going_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ListEventAttendeesResponse(BaseModel):
+    items: List[EventAttendeeResponse] = Field(default_factory=list)
+    total: int = Field(..., ge=0)
+    page: int = Field(..., ge=1)
+    size: int = Field(..., ge=1)
+    has_next: bool
+
+
+class EventAttendeesExportFormat(str, Enum):
+    csv = "csv"
+    xlsx = "xlsx"
+
+
+class EventAccessInviteCreateRequest(BaseModel):
+    purpose: EventAccessPurpose = Field(
+        ...,
+        description="transfer = one-time ownership claim; co_view = share attendee list access",
+    )
+
+
+class EventAccessInviteCreatedResponse(BaseModel):
+    id: int
+    purpose: EventAccessPurpose
+    token: str
+    url_path: str
+    expires_at: datetime
+
+
+class EventAccessInviteResponse(BaseModel):
+    id: int
+    purpose: EventAccessPurpose
+    created_by_sub: str
+    expires_at: datetime
+    revoked_at: datetime | None = None
+    accepted_at: datetime | None = None
+    accepted_by_sub: str | None = None
+    created_at: datetime
+    is_active: bool
+
+    class Config:
+        from_attributes = True
+
+
+class ListEventAccessInvitesResponse(BaseModel):
+    items: List[EventAccessInviteResponse] = Field(default_factory=list)
+
+
+class EventAccessInviteAcceptRequest(BaseModel):
+    token: str = Field(..., min_length=16)
+
+
+class EventAccessInviteAcceptResponse(BaseModel):
+    event_id: int
+    purpose: EventAccessPurpose
+    action: str
 
 
 class EventFilter(BaseModel):

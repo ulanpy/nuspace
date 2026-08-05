@@ -4,9 +4,9 @@ import { useSearchParams } from "@/router/navigation";
 
 export const useEvent = () => {
   const searchParams = useSearchParams();
-  // Get ID from query parameter for static export compatibility
-  // URL format: /events/?id=123
-  const id = searchParams.get('id') || undefined;
+  // URL format: /events?id=123 (strip accidental JSON quotes from router encoding)
+  const rawId = searchParams.get("id");
+  const id = rawId?.replace(/^"|"$/g, "") || undefined;
   
   const {
     data: event,

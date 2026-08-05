@@ -1,7 +1,16 @@
 import { apiCall } from "@/utils/api";
 import { queryOptions } from "@tanstack/react-query";
 import * as Routes from "@/data/routes";
-import { CreateEventData, EditEventData, Event } from "@/features/shared/campus/types";
+import {
+  CreateEventData,
+  EditEventData,
+  Event,
+  EventAccessInvite,
+  EventAccessInviteAcceptResponse,
+  EventAccessInviteCreated,
+  EventAccessPurpose,
+  EventGoingResponse,
+} from "@/features/shared/campus/types";
 
 export type TimeFilter = "upcoming" | "today" | "week" | "month";
 
@@ -85,5 +94,38 @@ export const campuscurrentAPI = {
     return apiCall<void>(`/` + Routes.EVENTS + `/${id}`, {
       method: "DELETE",
     });
+  },
+  setGoing: (id: string) => {
+    return apiCall<EventGoingResponse>(`/` + Routes.EVENTS + `/${id}/going`, {
+      method: "PUT",
+    });
+  },
+  unsetGoing: (id: string) => {
+    return apiCall<EventGoingResponse>(`/` + Routes.EVENTS + `/${id}/going`, {
+      method: "DELETE",
+    });
+  },
+  createAccessInvite: (id: string, purpose: EventAccessPurpose) => {
+    return apiCall<EventAccessInviteCreated>(
+      `/` + Routes.EVENTS + `/${id}/access-invites`,
+      { method: "POST", json: { purpose } },
+    );
+  },
+  listAccessInvites: (id: string) => {
+    return apiCall<{ items: EventAccessInvite[] }>(
+      `/` + Routes.EVENTS + `/${id}/access-invites`,
+    );
+  },
+  revokeAccessInvite: (id: string, inviteId: number) => {
+    return apiCall<void>(
+      `/` + Routes.EVENTS + `/${id}/access-invites/${inviteId}`,
+      { method: "DELETE" },
+    );
+  },
+  acceptAccessInvite: (token: string) => {
+    return apiCall<EventAccessInviteAcceptResponse>(
+      `/` + Routes.EVENTS + `/access-invites/accept`,
+      { method: "POST", json: { token } },
+    );
   },
 };

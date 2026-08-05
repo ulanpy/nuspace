@@ -65,31 +65,41 @@ export function EventDetailsForm() {
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="policy">Entry Policy</Label>
+      <div className="space-y-2 md:col-span-2">
+        <Label htmlFor="policy">How people join</Label>
         <Select
           value={formData.policy || "open"}
           disabled={!isFieldEditable("policy")}
           onValueChange={(value) => handleSelectChange("policy", value)}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select entry policy" />
+            <SelectValue placeholder="Select how people join" />
           </SelectTrigger>
           <SelectContent className="z-[11050]">
-            {Object.values(EventPolicy).map((policy) => (
-              <SelectItem key={policy} value={policy}>
-                {policy}
-              </SelectItem>
-            ))}
+            <SelectItem value={EventPolicy.open}>Open</SelectItem>
+            <SelectItem value={EventPolicy.registration}>
+              Registration — external form
+            </SelectItem>
           </SelectContent>
         </Select>
+        {(formData.policy || EventPolicy.open) === EventPolicy.open ? (
+          <p className="text-sm text-muted-foreground">
+            Guests can tap <span className="text-foreground/80">I’m going</span> on the
+            event page. You’ll see the count and Who’s going list for planning.
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Use your own Google Form, Typeform, etc. We’ll show a Register button that
+            opens your link.
+          </p>
+        )}
       </div>
 
       {formData.policy === EventPolicy.registration && (
         <div className="space-y-2 md:col-span-2">
           <div className="flex justify-between">
-            <Label htmlFor="registration_link">Registration Link</Label>
-            <span className="text-xs text-gray-500">
+            <Label htmlFor="registration_link">Registration link</Label>
+            <span className="text-xs text-muted-foreground">
               {(formData as any).registration_link?.length || 0} / 2048
             </span>
           </div>
@@ -99,12 +109,15 @@ export function EventDetailsForm() {
             value={(formData as any).registration_link || ""}
             disabled={!isFieldEditable('registration_link')}
             onChange={handleInputChange}
-            placeholder="https://example.com/register"
+            placeholder="https://forms.gle/…"
             required
             maxLength={2048}
             type="url"
             inputMode="url"
           />
+          <p className="text-sm text-muted-foreground">
+            Paste the form URL people should complete to sign up.
+          </p>
         </div>
       )}
 

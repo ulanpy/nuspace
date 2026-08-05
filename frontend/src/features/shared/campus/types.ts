@@ -57,7 +57,37 @@ import { Media } from "@/features/media/types/types";
     export interface EventPermissions {
       can_edit: boolean;
       can_delete: boolean;
+      can_view_attendees?: boolean;
+      can_share_access?: boolean;
       editable_fields: EventEditableFields[]
+    }
+
+    export type EventAccessPurpose = "transfer" | "co_view";
+
+    export interface EventAccessInviteCreated {
+      id: number;
+      purpose: EventAccessPurpose;
+      token: string;
+      url_path: string;
+      expires_at: string;
+    }
+
+    export interface EventAccessInvite {
+      id: number;
+      purpose: EventAccessPurpose;
+      created_by_sub: string;
+      expires_at: string;
+      revoked_at?: string | null;
+      accepted_at?: string | null;
+      accepted_by_sub?: string | null;
+      created_at: string;
+      is_active: boolean;
+    }
+
+    export interface EventAccessInviteAcceptResponse {
+      event_id: number;
+      purpose: EventAccessPurpose;
+      action: "transferred" | "granted" | string;
     }
 
     export interface CommunityPermissions {
@@ -183,6 +213,30 @@ import { Media } from "@/features/media/types/types";
       media: Media[];
       creator?: HeadUser;
       permissions?: EventPermissions;
+      attendees_count?: number;
+      is_going?: boolean;
+    }
+
+    export interface EventGoingResponse {
+      attendees_count: number;
+      is_going: boolean;
+    }
+
+    export interface EventAttendee {
+      sub: string;
+      name: string;
+      surname: string;
+      picture: string;
+      email: string;
+      going_at: string;
+    }
+
+    export interface ListEventAttendeesResponse {
+      items: EventAttendee[];
+      total: number;
+      page: number;
+      size: number;
+      has_next: boolean;
     }
 
     export interface CreateEventData {

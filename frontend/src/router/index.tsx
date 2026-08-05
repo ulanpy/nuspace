@@ -92,7 +92,7 @@ function CommunitiesRoute() {
 
 function EventsRoute() {
   const searchParams = useSearchParams()
-  const id = searchParams.get('id')
+  const id = searchParams.get('id')?.replace(/^"|"$/g, '')
   return (
     <ProtectedLayout>
       <EventsLayout>{id ? <EventDetailPage /> : <EventsListPage />}</EventsLayout>

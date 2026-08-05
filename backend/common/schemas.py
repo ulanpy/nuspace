@@ -22,6 +22,8 @@ class ShortUserResponse(BaseModel):
 class ResourcePermissions(BaseModel):
     can_edit: bool = False
     can_delete: bool = False
+    can_view_attendees: bool = False
+    can_share_access: bool = False
     editable_fields: List[str] = []
 
 

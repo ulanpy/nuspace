@@ -80,12 +80,48 @@ class EventPolicy(BasePolicy):
                 detail="Only event creator or admin can delete events",
             )
 
-    def get_permissions(self, event: Event) -> ResourcePermissions:
+    def check_rsvp(self, event: Event) -> None:
+        """Authenticated users may RSVP on approved or cancelled events they can read."""
+        self.check_read_one(event=event)
+
+        if event.status not in {EventStatus.approved, EventStatus.cancelled}:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only RSVP to approved or cancelled events",
+            )
+
+    def check_list_attendees(self, event: Event, *, is_viewer: bool = False) -> None:
+        if self.is_admin:
+            return
+
+        if self._is_owner(event.creator_sub) or is_viewer:
+            return
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only event creator, co-viewer, or admin can view attendees",
+        )
+
+    def check_share_access(self, event: Event) -> None:
+        if self.is_admin:
+            return
+
+        if not self._is_owner(event.creator_sub):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only event creator or admin can share access",
+            )
+
+    def get_permissions(
+        self, event: Event, *, is_attendee_viewer: bool = False
+    ) -> ResourcePermissions:
         permissions = ResourcePermissions()
 
         if self.is_admin:
             permissions.can_edit = True
             permissions.can_delete = True
+            permissions.can_view_attendees = True
+            permissions.can_share_access = True
             permissions.editable_fields = [
                 "name",
                 "place",
@@ -103,6 +139,8 @@ class EventPolicy(BasePolicy):
         if self._is_owner(event.creator_sub):
             permissions.can_edit = True
             permissions.can_delete = True
+            permissions.can_view_attendees = True
+            permissions.can_share_access = True
             permissions.editable_fields = [
                 "name",
                 "place",
@@ -114,5 +152,9 @@ class EventPolicy(BasePolicy):
                 "registration_link",
                 "status",
             ]
+            return permissions
+
+        if is_attendee_viewer:
+            permissions.can_view_attendees = True
 
         return permissions

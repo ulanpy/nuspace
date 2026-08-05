@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Calendar, Clock, MapPin } from "lucide-react";
+import { ArrowRight, Calendar, Check, Clock, MapPin } from "lucide-react";
 import Link from "@/router/link";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -50,6 +50,12 @@ export function FeaturedEventCard({ event, isOngoing = false }: FeaturedEventCar
                 <Badge variant="outline" className={getPolicyColor(event.policy)}>
                   {getPolicyDisplay(event.policy)}
                 </Badge>
+                {event.is_going ? (
+                  <Badge variant="default" className="gap-1">
+                    <Check className="h-3 w-3" />
+                    Going
+                  </Badge>
+                ) : null}
               </div>
 
               <h3 className="text-lg font-semibold leading-snug sm:text-xl line-clamp-3">

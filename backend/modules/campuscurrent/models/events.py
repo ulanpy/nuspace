@@ -1,12 +1,12 @@
 from datetime import datetime
-from backend.common.datetime_utils import utc_now
 from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, PrimaryKeyConstraint, String
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
+from backend.common.datetime_utils import utc_now
 from backend.core.database.models.base import Base
 
 
@@ -45,6 +45,11 @@ class CollaboratorType(PyEnum):
     community = "community"
 
 
+class EventAccessPurpose(PyEnum):
+    transfer = "transfer"
+    co_view = "co_view"
+
+
 class EventBotSubmissionStatus(PyEnum):
     """Lifecycle of a Telegram → Event ingestion attempt."""
 
@@ -73,10 +78,6 @@ class EventCollaborator(Base):
         ForeignKey("communities.id", ondelete="CASCADE"), nullable=True, index=True
     )
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
-
-    event = relationship("Event", back_populates="collaborators")
-    user = relationship("User")
-    community = relationship("Community")
 
 
 class Event(Base):
@@ -110,12 +111,6 @@ class Event(Base):
 
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
-
-    creator = relationship("User")
-    collaborators = relationship(
-        "EventCollaborator", back_populates="event", cascade="all, delete-orphan"
-    )
-    bot_submissions = relationship("EventBotSubmission", back_populates="event")
 
 
 class EventBotSubmission(Base):
@@ -166,20 +161,60 @@ class EventBotSubmission(Base):
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
-    submitter = relationship("User")
-    event = relationship("Event", back_populates="bot_submissions")
+
+class EventAttendee(Base):
+    __tablename__ = "event_attendees"
+    __table_args__ = (PrimaryKeyConstraint("event_id", "user_sub"),)
+
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_sub: Mapped[str] = mapped_column(
+        ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
+    )
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
 
 
-# class EventAttendee(Base):
-#     __tablename__ = "event_attendees"
+class EventAccessInvite(Base):
+    """Secret invite link: transfer ownership or share attendee-list access."""
 
-#     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
-#     event_id: Mapped[int] = mapped_column(
-#         ForeignKey("events.id", ondelete="CASCADE"), nullable=False
-#     )
-#     user_sub: Mapped[str] = mapped_column(
-#         ForeignKey("users.sub", ondelete="CASCADE"), nullable=False
-#     )
-#     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
-#     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now,
-# nullable=False)
+    __tablename__ = "event_access_invites"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, nullable=False)
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    purpose: Mapped[EventAccessPurpose] = mapped_column(
+        SQLEnum(EventAccessPurpose, name="event_access_purpose"),
+        nullable=False,
+        index=True,
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    created_by_sub: Mapped[str] = mapped_column(
+        ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+    accepted_at = Column(DateTime(timezone=True), nullable=True)
+    accepted_by_sub: Mapped[str | None] = mapped_column(
+        ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, index=True
+    )
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class EventAttendeeViewer(Base):
+    """Users granted co-view access to an event's attendee list (not full ownership)."""
+
+    __tablename__ = "event_attendee_viewers"
+    __table_args__ = (PrimaryKeyConstraint("event_id", "user_sub"),)
+
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_sub: Mapped[str] = mapped_column(
+        ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
+    )
+    granted_by_sub: Mapped[str] = mapped_column(
+        ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
+    )
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
