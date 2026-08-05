@@ -17,6 +17,21 @@ _DISCOVERY_PAGES = [
 ]
 
 
+def _normalize_html(text: str) -> str:
+    # Drupal often emits Fall&nbsp;2026; treat it as a normal space for matching.
+    return text.replace("&nbsp;", " ").replace("&#160;", " ").replace("\xa0", " ")
+
+
+def is_term_downgrade(discovered_term_id: str, current_term_id: str | None) -> bool:
+    """True when discovered term_id is numerically older than the catalog we already have."""
+    if not current_term_id:
+        return False
+    try:
+        return int(discovered_term_id) < int(current_term_id)
+    except (TypeError, ValueError):
+        return False
+
+
 async def discover_latest_term() -> dict:
     """Scrape registrar pages to find the latest term label + termid."""
     async with httpx.AsyncClient(verify=False, timeout=30) as client:
@@ -24,7 +39,7 @@ async def discover_latest_term() -> dict:
         for url in _DISCOVERY_PAGES:
             resp = await client.get(url)
             resp.raise_for_status()
-            texts.append(resp.text)
+            texts.append(_normalize_html(resp.text))
 
     candidates: list[dict] = []
     for text in texts:

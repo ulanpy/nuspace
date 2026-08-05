@@ -6,10 +6,13 @@ import json
 from unittest.mock import MagicMock
 
 from backend.modules.courses.registrar.schedule_gcs import (
+    SCHEDULE_GCS_META_OBJECT,
     SCHEDULE_GCS_OBJECT,
     download_schedule_catalog,
+    download_schedule_meta,
     load_local_schedule_catalog_fixture,
     upload_schedule_catalog,
+    upload_schedule_meta,
 )
 from backend.modules.courses.registrar.schedule_sync import _merge_priorities_into_schedule
 
@@ -94,3 +97,29 @@ def test_merge_priorities_into_schedule():
     assert merged[0]["prerequisite"] == "X"
     assert merged[0]["priority_1"] == "P1"
     assert "prerequisite" not in merged[1]
+
+
+def test_download_schedule_meta_returns_dict():
+    blob = MagicMock()
+    blob.exists.return_value = True
+    blob.download_as_bytes.return_value = b'{"term_id": "825", "updated": true}'
+    bucket = MagicMock()
+    bucket.blob.return_value = blob
+    client = MagicMock()
+    client.bucket.return_value = bucket
+
+    assert download_schedule_meta(client, "bucket") == {"term_id": "825", "updated": True}
+    bucket.blob.assert_called_once_with(SCHEDULE_GCS_META_OBJECT)
+
+
+def test_upload_schedule_meta_writes_only_meta():
+    meta_blob = MagicMock()
+    bucket = MagicMock()
+    bucket.blob.return_value = meta_blob
+    client = MagicMock()
+    client.bucket.return_value = bucket
+
+    upload_schedule_meta(client, "bucket", {"term_id": "825", "updated": False})
+    meta_blob.upload_from_string.assert_called_once()
+    raw = meta_blob.upload_from_string.call_args[0][0]
+    assert json.loads(raw)["updated"] is False

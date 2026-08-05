@@ -14,11 +14,16 @@ from datetime import datetime, timezone
 
 from google.cloud import storage
 
-from backend.modules.courses.registrar.schedule_discovery import discover_latest_term
+from backend.modules.courses.registrar.schedule_discovery import (
+    discover_latest_term,
+    is_term_downgrade,
+)
 from backend.modules.courses.registrar.schedule_gcs import (
     SCHEDULE_GCS_META_OBJECT,
     SCHEDULE_GCS_OBJECT,
+    download_schedule_meta,
     upload_schedule_catalog,
+    upload_schedule_meta,
 )
 from backend.modules.courses.registrar.schedule_sync_worker import build_schedule_documents
 
@@ -39,18 +44,41 @@ async def run() -> int:
     meta_object = os.environ.get("SCHEDULE_SYNC_GCS_META_OBJECT", SCHEDULE_GCS_META_OBJECT)
 
     latest = await discover_latest_term()
+    term_label = latest["label"]
+    term_id = latest["termid"]
+    logger.info("Discovered term %s (termid=%s)", term_label, term_id)
+
+    client = storage.Client(project=project_id)
+    existing_meta = download_schedule_meta(client, bucket_name, object_name=meta_object)
+    current_term_id = (existing_meta or {}).get("term_id")
+    current_term_id = str(current_term_id) if current_term_id is not None else None
+    checked_at = datetime.now(timezone.utc).isoformat()
+
+    if is_term_downgrade(term_id, current_term_id):
+        skip_meta = {
+            **(existing_meta or {}),
+            "catalog_object": (existing_meta or {}).get("catalog_object", catalog_object),
+            "updated": False,
+            "checked_at": checked_at,
+        }
+        upload_schedule_meta(client, bucket_name, skip_meta, object_name=meta_object)
+        logger.info(
+            "Skipping upload: discovered termid=%s is older than current termid=%s (updated=false)",
+            term_id,
+            current_term_id,
+        )
+        return 0
+
     pdf_url = (
         "https://registrar.nu.edu.kz/registrar_downloads/json?method=printDocument"
-        f"&name=school_schedule_by_term&termid={latest['termid']}"
+        f"&name=school_schedule_by_term&termid={term_id}"
     )
     priority_pdf_url = (
         "https://registrar.nu.edu.kz/registrar_downloads/json?method=printDocument"
-        f"&name=course_requirements&termid={latest['termid']}"
+        f"&name=course_requirements&termid={term_id}"
     )
-    term_label = latest["label"]
-    term_id = latest["termid"]
 
-    logger.info("Discovered term %s (termid=%s); parsing schedule PDFs", term_label, term_id)
+    logger.info("Parsing schedule PDFs for %s (termid=%s)", term_label, term_id)
     documents = await build_schedule_documents(
         pdf_url=pdf_url,
         term_label=term_label,
@@ -66,7 +94,6 @@ async def run() -> int:
         )
         return 0
 
-    client = storage.Client(project=project_id)
     upload_schedule_catalog(
         client,
         bucket_name,
@@ -77,13 +104,15 @@ async def run() -> int:
             "term_id": term_id,
             "term_label": term_label,
             "doc_count": len(documents),
-            "synced_at": datetime.now(timezone.utc).isoformat(),
+            "synced_at": checked_at,
             "catalog_object": catalog_object,
+            "updated": True,
+            "checked_at": checked_at,
         },
     )
 
     logger.info(
-        "Uploaded %s schedule docs to gs://%s/%s (meta: gs://%s/%s)",
+        "Uploaded %s schedule docs to gs://%s/%s (meta: gs://%s/%s, updated=true)",
         len(documents),
         bucket_name,
         catalog_object,
@@ -105,7 +134,7 @@ def main() -> None:
         logger.exception("Schedule sync job failed")
         raise SystemExit(1) from None
     if count == 0:
-        logger.info("Job finished without uploading (empty parse result)")
+        logger.info("Job finished without uploading catalog")
     raise SystemExit(0)
 
 

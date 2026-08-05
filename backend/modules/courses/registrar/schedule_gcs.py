@@ -48,6 +48,36 @@ def load_local_schedule_catalog_fixture() -> list[dict] | None:
     return data
 
 
+def download_schedule_meta(
+    storage_client: storage.Client,
+    bucket_name: str,
+    *,
+    object_name: str = SCHEDULE_GCS_META_OBJECT,
+) -> dict | None:
+    """Return existing meta.json dict, or None if missing/unreadable."""
+    try:
+        blob = storage_client.bucket(bucket_name).blob(object_name)
+        if not blob.exists():
+            return None
+        data = json.loads(blob.download_as_bytes().decode("utf-8"))
+    except Exception:
+        logger.exception("Failed to download schedule meta from gs://%s/%s", bucket_name, object_name)
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def upload_schedule_meta(
+    storage_client: storage.Client,
+    bucket_name: str,
+    meta: dict,
+    *,
+    object_name: str = SCHEDULE_GCS_META_OBJECT,
+) -> None:
+    """Write meta.json only (does not touch the catalog artifact)."""
+    blob = storage_client.bucket(bucket_name).blob(object_name)
+    blob.upload_from_string(json.dumps(meta, ensure_ascii=False), content_type="application/json")
+
+
 def download_schedule_catalog(
     storage_client: storage.Client,
     bucket_name: str,
