@@ -222,10 +222,6 @@ class RegistrarService:
         )
 
         hits = result.get("hits", [])
-        normalized_target = (
-            self.normalize_course_code(keyword) if strict_code_match and keyword else None
-        )
-
         summaries: list[dict] = []
         for hit in hits:
             if not self._matches_term(hit, term):
@@ -233,7 +229,7 @@ class RegistrarService:
             code = hit.get("course_code") or ""
             if not code:
                 continue
-            if normalized_target and self.normalize_course_code(code) != normalized_target:
+            if strict_code_match and keyword and not self.course_codes_match(code, keyword):
                 continue
             summaries.append(
                 self._build_course_summary_from_hit(hit, term_label_fallback=term_label_fallback)
@@ -298,7 +294,9 @@ class RegistrarService:
             (
                 hit
                 for hit in hits
-                if self.normalize_course_code(hit.get("course_code")) == normalized
+                if self.course_codes_match(hit.get("course_code"), course_code)
+                or self.course_codes_match(hit.get("course_code"), normalized)
+                or self.course_codes_match(hit.get("abbr"), course_code)
             ),
             None,
         )
@@ -340,12 +338,11 @@ class RegistrarService:
             )
             hits = result.get("hits", [])
 
-        normalized_target = self.normalize_course_code(course_code)
         for hit in hits:
             if not self._matches_term(hit, term):
                 continue
             code = hit.get("course_code") or ""
-            if normalized_target and self.normalize_course_code(code) != normalized_target:
+            if course_code and not self.course_codes_match(code, course_code):
                 continue
             return self._map_sections_from_hit(hit)
         return []
@@ -424,6 +421,27 @@ class RegistrarService:
         normalized = re.sub(r"\s*/\s*", "/", normalized)
         normalized = normalized.replace("-", "").replace(" ", "")
         return normalized
+
+    @classmethod
+    def course_codes_match(cls, left: str | None, right: str | None) -> bool:
+        """
+        Match course codes including registrar cross-lists.
+
+        Examples:
+        - WCS 210 == WCS 210
+        - WCS 210 ~= WCS 210/ASC 200
+        - ASC 200 ~= WCS 210/ASC 200
+        - WCS 210/ASC 200 ~= ASC 200/WCS 210
+        """
+        a = cls.normalize_course_code(left)
+        b = cls.normalize_course_code(right)
+        if not a or not b:
+            return False
+        if a == b:
+            return True
+        a_parts = {part for part in a.split("/") if part}
+        b_parts = {part for part in b.split("/") if part}
+        return bool(a_parts & b_parts)
 
     async def on_catalog_object_finalize(
         self,

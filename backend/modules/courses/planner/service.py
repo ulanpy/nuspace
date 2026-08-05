@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Dict, Iterable, List, Optional, Sequence
 
 from fastapi import HTTPException
@@ -40,6 +41,8 @@ from backend.modules.courses.models.grade_report import (
     PlannerScheduleCourse,
     PlannerScheduleSection,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class PlannerService:
@@ -224,11 +227,26 @@ class PlannerService:
     ) -> PlannerScheduleResponse:
         schedule = await self._resolve_schedule(student_sub, schedule_id)
         for course in schedule.courses:
-            await self._fetch_course_sections(
-                student_sub=student_sub,
-                course=course,
-                refresh=True,
-            )
+            try:
+                await self._fetch_course_sections(
+                    student_sub=student_sub,
+                    course=course,
+                    refresh=True,
+                )
+            except HTTPException as exc:
+                # Keep stale sections when a course is missing/unavailable in the
+                # catalog (e.g. cancelled or temporarily absent after a new parse).
+                # One bad course must not fail the whole schedule refresh.
+                if exc.status_code in (502, 503, 504):
+                    logger.warning(
+                        "planner refresh skipped course_id=%s code=%s status=%s detail=%s",
+                        course.id,
+                        course.course_code,
+                        exc.status_code,
+                        exc.detail,
+                    )
+                    continue
+                raise
         refreshed = await self._resolve_schedule(student_sub, schedule.id)
         return await self._serialize_schedule_with_counts(refreshed)
 
@@ -574,6 +592,8 @@ class PlannerService:
 
         if response:
             for item in response.items:
+                if self.course_catalog.course_codes_match(item.course_code, course_code):
+                    return item
                 if (
                     self.course_catalog.normalize_course_code(item.course_code)
                     == normalized_target
