@@ -8,6 +8,11 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
+from backend.modules.courses.registrar.http import (
+    ensure_registrar_response,
+    registrar_unavailable_from_request_error,
+)
+
 
 
 PCC_HOST = "https://registrar.nu.edu.kz/my-registrar/public-course-catalog/json"
@@ -52,22 +57,25 @@ class PublicCourseCatalogClient:
     async def _request(self, method: str, params: Optional[Dict[str, Any]] = None) -> Any:
         """Helper function to send requests to the public course catalog endpoint."""
         client = await self._ensure_client()
-        if params is not None:
-            payload = {
-                **params,
-                "method": method,
-            }
-            response = await client.post(
-                PCC_HOST,
-                data=payload,
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
-            )
-        else:
-            response = await client.get(
-                PCC_HOST,
-                params={"method": method},
-            )
-        response.raise_for_status()
+        try:
+            if params is not None:
+                payload = {
+                    **params,
+                    "method": method,
+                }
+                response = await client.post(
+                    PCC_HOST,
+                    data=payload,
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                )
+            else:
+                response = await client.get(
+                    PCC_HOST,
+                    params={"method": method},
+                )
+        except httpx.RequestError as exc:
+            raise registrar_unavailable_from_request_error(exc) from exc
+        ensure_registrar_response(response)
         try:
             return response.json()
         except json.JSONDecodeError as exc:  # pragma: no cover - defensive

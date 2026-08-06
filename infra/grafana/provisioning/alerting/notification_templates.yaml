@@ -16,10 +16,12 @@ templates:
       {{- end }}
       {{- else -}}
       ✅ <b>{{ $summary }}</b> — восстановлено
-      {{- with $alert }}
-      {{- if and .StartsAt .EndsAt }}
-      {{- $downtime := .EndsAt.Sub .StartsAt }}
-      Длительность: <code>{{ printf "%.0f" $downtime.Seconds }}</code> с
+      {{- range .Alerts.Resolved }}
+      {{- $downtime := .EndsAt.Sub .StartsAt -}}
+      {{- if gt $downtime.Seconds 60.0 }}
+      Длительность алерта: {{ humanizeDuration $downtime }}
+      {{- else }}
+      (окно метрики очистилось — смотри время 🔴 и ✅ в чате)
       {{- end }}
       {{- end }}
       {{- end }}

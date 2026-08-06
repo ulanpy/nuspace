@@ -1,6 +1,7 @@
 import importlib.util
 from pathlib import Path
 
+import httpx
 import pytest
 
 CLIENT_PATH = (
@@ -90,3 +91,27 @@ async def test_fetch_schedule_skips_reg_when_not_accessible(monkeypatch):
 
     assert result == {"data": []}
     assert calls == ["login:student:secret", "schedule:current"]
+
+
+@pytest.mark.asyncio
+async def test_login_raises_unavailable_when_registrar_returns_500(monkeypatch):
+    from backend.modules.courses.registrar.errors import RegistrarUnavailableError
+
+    client = RegistrarClient()
+    request = httpx.Request("POST", "https://registrar.nu.edu.kz/index.php")
+    response = httpx.Response(500, request=request)
+
+    class FakeClient:
+        cookies = httpx.Cookies()
+
+        async def post(self, *args, **kwargs):
+            return response
+
+    async def fake_ensure_client():
+        return FakeClient()
+
+    monkeypatch.setattr(client, "_ensure_client", fake_ensure_client)
+
+    with pytest.raises(RegistrarUnavailableError, match="registrar_unavailable"):
+        await client.login(username="student", password="secret")
+

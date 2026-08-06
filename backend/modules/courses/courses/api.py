@@ -18,6 +18,7 @@ from backend.modules.courses.courses.dependencies import get_student_course_serv
 from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
 from backend.modules.courses.courses.policy import StudentCoursePolicy
 from backend.modules.courses.courses.service import StudentCourseService
+from backend.modules.courses.registrar.errors import RegistrarUnavailableError
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, status
 from fastapi.responses import Response
 
@@ -69,10 +70,18 @@ async def sync_courses_from_registrar(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
     except ValueError as e:
-        # Registrar login failures bubble up as ValueError
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+        if str(e) == "Invalid registrar credentials":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="invalid_registrar_credentials",
+            )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-    
+    except RegistrarUnavailableError:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="registrar_unavailable",
+        )
 
 
 @router.post("/registered_courses/sync/pdf", response_model=schemas.RegistrarSyncResponse)

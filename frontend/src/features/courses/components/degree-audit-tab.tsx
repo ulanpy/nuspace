@@ -19,6 +19,7 @@ import Link from "@/router/link";
 import { ROUTES } from "@/data/routes";
 
 import { gradeStatisticsApi } from "../api/grade-statistics-api";
+import { getRegistrarErrorMessage } from "@/utils/api";
 import {
   DegreeAuditResponse,
   DegreeAuditCatalogResponse,
@@ -88,6 +89,15 @@ function rowsToTcMappings(rows: TcMappingRowState[]): DegreeAuditTCMapping[] {
       mapped_code: r.mappedCode.trim(),
       mapped_credits: Number.parseFloat(String(r.mappedCredits).replace(",", ".")) || 0,
     }));
+}
+
+function getAuditErrorMessage(error: Error | null, usePdfUpload: boolean): string {
+  return getRegistrarErrorMessage(
+    error,
+    usePdfUpload
+      ? "Unable to parse the PDF transcript. Please upload a valid NU transcript."
+      : "Unable to fetch transcript from Registrar. Please check your password.",
+  );
 }
 
 export function DegreeAuditTab({ user }: DegreeAuditTabProps) {
@@ -394,10 +404,7 @@ export function DegreeAuditTab({ user }: DegreeAuditTabProps) {
               <AlertCircle />
               <AlertTitle>Audit failed</AlertTitle>
               <AlertDescription>
-                {auditMutation.error?.message ||
-                  (usePdfUpload
-                    ? "Unable to parse the PDF transcript. Please upload a valid NU transcript."
-                    : "Unable to fetch transcript from Registrar. Please check your password.")}
+                {getAuditErrorMessage(auditMutation.error, usePdfUpload)}
               </AlertDescription>
             </Alert>
           )}
@@ -823,10 +830,7 @@ export function DegreeAuditTab({ user }: DegreeAuditTabProps) {
               <AlertCircle />
               <AlertTitle>Audit failed</AlertTitle>
               <AlertDescription>
-                {auditMutation.error?.message ||
-                  (usePdfUpload
-                    ? "Unable to parse the PDF transcript. Please upload a valid NU transcript."
-                    : "Unable to fetch transcript from Registrar. Please check your password.")}
+                {getAuditErrorMessage(auditMutation.error, usePdfUpload)}
               </AlertDescription>
             </Alert>
           ) : null}
@@ -1017,8 +1021,10 @@ export function DegreeAuditTab({ user }: DegreeAuditTabProps) {
               <AlertCircle />
               <AlertTitle>Audit failed</AlertTitle>
               <AlertDescription>
-                {auditMutation.error?.message ||
-                  "Audit failed. Check your transcript or credentials and try again."}
+                {getAuditErrorMessage(
+                  auditMutation.error,
+                  pendingAudit?.mode === "pdf",
+                )}
               </AlertDescription>
             </Alert>
           ) : null}

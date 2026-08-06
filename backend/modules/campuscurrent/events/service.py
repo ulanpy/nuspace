@@ -280,10 +280,11 @@ class EventService:
         policy.check_list_attendees(event=event, is_viewer=is_viewer)
 
         rows = await self.repo.list_all_attendees_for_export(event.id)
-        safe_name = (
-            "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in event.name)[:60]
-            or "event"
+        # HTTP Content-Disposition filename= must be latin-1; isalnum() allows Cyrillic.
+        safe_name = "".join(
+            ch if ch.isascii() and (ch.isalnum() or ch in "-_") else "_" for ch in event.name
         )
+        safe_name = "_".join(part for part in safe_name.split("_") if part)[:60] or "event"
 
         if export_format == schemas.EventAttendeesExportFormat.csv:
             content = build_attendees_csv(event, rows)

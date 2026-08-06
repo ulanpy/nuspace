@@ -31,6 +31,7 @@ from backend.modules.courses.degree_audit.transcript_parser import (
     parse_transcript_bytes,
 )
 from backend.modules.courses.registrar.clients.registrar_client import RegistrarClient
+from backend.modules.courses.registrar.errors import RegistrarUnavailableError
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -205,6 +206,11 @@ class DegreeAuditService:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="registrar_transcript_unavailable",
+            ) from exc
+        except RegistrarUnavailableError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=exc.detail,
             ) from exc
 
         try:

@@ -16,6 +16,7 @@ import {
 import { RefreshCcw, AlertCircle, ShieldCheck, Eye, EyeOff, Upload, ChevronDown } from "lucide-react";
 import { RegistrarSyncResponse } from "../types";
 import { gradeStatisticsApi } from '../api/grade-statistics-api';
+import { getRegistrarErrorMessage } from "@/utils/api";
 import { toast } from "@/hooks/toast";
 import GoogleCalendarIcon from "@/assets/svg/google_calendar_icon.svg";
 
@@ -108,9 +109,12 @@ export function SynchronizeCoursesControl({
     } catch (err) {
       console.error("Failed to sync courses", err);
       setError(
-        usePdfUpload
-          ? "Failed to sync courses from PDF. Please upload the Registrar Personal Schedule PDF, not Personal Timetable."
-          : "Failed to sync courses. Please double-check your password and try again. If the problem persists, please contact us"
+        getRegistrarErrorMessage(
+          err,
+          usePdfUpload
+            ? "Failed to sync courses from PDF. Please upload the Registrar Personal Schedule PDF, not Personal Timetable."
+            : "Failed to sync courses. Please double-check your password and try again. If the problem persists, please contact us",
+        ),
       );
     } finally {
       setIsSubmitting(false);

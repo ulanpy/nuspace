@@ -67,19 +67,21 @@ groups:
           receiver: Telegram
 
       # 2) Sustained 5xx — server-side failures users can see
+      # Sliding 15m window: raise threshold so a few registrar/client blips don't page.
+      # for:5m avoids Pending→Firing→OK flaps on a single deploy/scrape hiccup.
       - uid: nuspace5xx001
         title: HTTP 5xx Spike
         condition: C
         data:
           - refId: A
             relativeTimeRange:
-              from: 600
+              from: 900
               to: 0
             datasourceUid: PBFA97CFB590B2093
             model:
               disableTextWrap: false
               editorMode: code
-              expr: sum(increase(fastapi_http_responses_total{status_code=~"5.."}[10m]))
+              expr: sum(increase(fastapi_http_responses_total{status_code=~"5.."}[15m]))
               fullMetaSearch: false
               includeNullMetadata: true
               instant: true
@@ -95,7 +97,7 @@ groups:
               conditions:
                 - evaluator:
                     params:
-                      - 3
+                      - 10
                     type: gte
                   operator:
                     type: and
@@ -116,10 +118,10 @@ groups:
               type: threshold
         noDataState: OK
         execErrState: Error
-        for: 2m
+        for: 5m
         annotations:
           summary: Рост HTTP 5xx
-          description: ≥3 ответов 5xx за 10 минут (держит 2+ мин). Смотри FastAPI Full Observability → 5xx / logs.
+          description: ≥10 ответов 5xx за 15 минут (держит 5+ мин). Смотри FastAPI Full Observability → 5xx / logs.
         labels:
           severity: critical
         isPaused: false
@@ -187,19 +189,21 @@ groups:
           receiver: Telegram
 
       # 4) Unhandled exceptions in the FastAPI middleware counter
+      # ≥1 was too noisy: one registrar login failure pages, then resolves ~10m later
+      # when the spike leaves the window, then fires again on the next user retry.
       - uid: nuspaceexc001
         title: Unhandled Exceptions
         condition: C
         data:
           - refId: A
             relativeTimeRange:
-              from: 600
+              from: 900
               to: 0
             datasourceUid: PBFA97CFB590B2093
             model:
               disableTextWrap: false
               editorMode: code
-              expr: sum(increase(fastapi_http_exceptions_total[10m]))
+              expr: sum(increase(fastapi_http_exceptions_total[15m]))
               fullMetaSearch: false
               includeNullMetadata: true
               instant: true
@@ -215,7 +219,7 @@ groups:
               conditions:
                 - evaluator:
                     params:
-                      - 1
+                      - 3
                     type: gte
                   operator:
                     type: and
@@ -236,10 +240,10 @@ groups:
               type: threshold
         noDataState: OK
         execErrState: Error
-        for: 2m
+        for: 5m
         annotations:
           summary: Unhandled exception в FastAPI
-          description: ≥1 необработанное исключение за 10 минут. Смотри logs / exceptions на дашборде.
+          description: ≥3 необработанных исключений за 15 минут (держит 5+ мин). Смотри logs / exceptions на дашборде.
         labels:
           severity: critical
         isPaused: false

@@ -1,10 +1,33 @@
 const API_BASE_URL = "/api";
 
 export class ApiError extends Error {
-  constructor(public response: Response) {
-    super("ApiError:" + response.status);
+  constructor(
+    public response: Response,
+    public detail?: string,
+  ) {
+    super(detail ?? `ApiError:${response.status}`);
   }
 }
+
+export function getRegistrarErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    if (
+      error.detail === "registrar_unavailable" ||
+      error.detail === "registrar_transcript_unavailable" ||
+      error.response.status === 502
+    ) {
+      return "NU Registrar is temporarily unavailable. Please try again later or use PDF upload instead.";
+    }
+    if (
+      error.detail === "invalid_registrar_credentials" ||
+      error.response.status === 401
+    ) {
+      return "Invalid registrar password. Please check your credentials and try again.";
+    }
+  }
+  return fallback;
+}
+
 // Helper function for API calls
 export const apiCall = async <T>(
   endpoint: string,
@@ -27,7 +50,16 @@ export const apiCall = async <T>(
   });
 
   if (!response.ok) {
-    throw new ApiError(response);
+    let detail: string | undefined;
+    try {
+      const body = await response.json();
+      if (typeof body?.detail === "string") {
+        detail = body.detail;
+      }
+    } catch {
+      // ignore non-JSON error bodies
+    }
+    throw new ApiError(response, detail);
   }
 
   // Handle empty responses (e.g., 204 No Content) and non-JSON payloads gracefully

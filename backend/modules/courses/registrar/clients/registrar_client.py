@@ -6,6 +6,11 @@ import re
 import httpx
 from httpx import Cookies
 
+from backend.modules.courses.registrar.http import (
+    ensure_registrar_response,
+    registrar_unavailable_from_request_error,
+)
+
 
 HOST = "https://registrar.nu.edu.kz"
 LOGIN_PATH = "/index.php"
@@ -58,15 +63,17 @@ class RegistrarClient:
             "form_id": "user_login",
             "op": "Log in",
         }
-        response = await client.post(
-            LOGIN_PATH,
-            params={"q": "user/login"},
-            data=payload,
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-            follow_redirects=True,
-        )
-        if response.status_code >= 400:
-            response.raise_for_status()
+        try:
+            response = await client.post(
+                LOGIN_PATH,
+                params={"q": "user/login"},
+                data=payload,
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                follow_redirects=True,
+            )
+        except httpx.RequestError as exc:
+            raise registrar_unavailable_from_request_error(exc) from exc
+        ensure_registrar_response(response)
 
         cookies: Cookies = client.cookies
         if not any(cookie for cookie in cookies.jar if cookie.name == "AUTHSSL"):
@@ -84,8 +91,11 @@ class RegistrarClient:
         contains rows. Prefer `current` for sync; use `reg` only as fallback.
         """
         client = await self._ensure_client()
-        response = await client.get(SCHEDULE_HTML_PATH)
-        response.raise_for_status()
+        try:
+            response = await client.get(SCHEDULE_HTML_PATH)
+        except httpx.RequestError as exc:
+            raise registrar_unavailable_from_request_error(exc) from exc
+        ensure_registrar_response(response)
         html = response.text
         marker = "jQuery.extend(Drupal.settings, "
         if marker not in html:
@@ -105,17 +115,20 @@ class RegistrarClient:
 
     async def _get_schedule(self, schedule_type: str) -> dict[str, Any]:
         client = await self._ensure_client()
-        response = await client.get(
-            SCHEDULE_JSON_PATH,
-            params={
-                "method": "getTimetable",
-                "type": schedule_type,
-                "page": 1,
-                "start": 0,
-                "limit": 50,
-            },
-        )
-        response.raise_for_status()
+        try:
+            response = await client.get(
+                SCHEDULE_JSON_PATH,
+                params={
+                    "method": "getTimetable",
+                    "type": schedule_type,
+                    "page": 1,
+                    "start": 0,
+                    "limit": 50,
+                },
+            )
+        except httpx.RequestError as exc:
+            raise registrar_unavailable_from_request_error(exc) from exc
+        ensure_registrar_response(response)
         return response.json()
 
     async def fetch_schedule(self, username: str, password: str) -> dict[str, Any]:
@@ -151,11 +164,14 @@ class RegistrarClient:
         """
         await self.login(username=username, password=password)
         client = await self._ensure_client()
-        resp = await client.get(
-            "/my-registrar/unofficial-transcript/json",
-            params={"method": "getData", "_dc": str(int(time.time() * 1000))},
-        )
-        resp.raise_for_status()
+        try:
+            resp = await client.get(
+                "/my-registrar/unofficial-transcript/json",
+                params={"method": "getData", "_dc": str(int(time.time() * 1000))},
+            )
+        except httpx.RequestError as exc:
+            raise registrar_unavailable_from_request_error(exc) from exc
+        ensure_registrar_response(resp)
         content_type = resp.headers.get("Content-Type", "").lower()
         if "application/json" in content_type or "text/json" in content_type:
             return "json", resp.json()
@@ -167,11 +183,14 @@ class RegistrarClient:
         """
         await self.login(username=username, password=password)
         client = await self._ensure_client()
-        resp = await client.get(
-            "/my-registrar/unofficial-transcript/json",
-            params={"method": "getData", "_dc": str(int(time.time() * 1000))},
-        )
-        resp.raise_for_status()
+        try:
+            resp = await client.get(
+                "/my-registrar/unofficial-transcript/json",
+                params={"method": "getData", "_dc": str(int(time.time() * 1000))},
+            )
+        except httpx.RequestError as exc:
+            raise registrar_unavailable_from_request_error(exc) from exc
+        ensure_registrar_response(resp)
         content_type = resp.headers.get("Content-Type", "").lower()
         body = resp.content
 
@@ -190,8 +209,11 @@ class RegistrarClient:
             if m:
                 url = m.group(1)
                 # Support both absolute and relative links.
-                pdf_resp = await client.get(url)
-                pdf_resp.raise_for_status()
+                try:
+                    pdf_resp = await client.get(url)
+                except httpx.RequestError as exc:
+                    raise registrar_unavailable_from_request_error(exc) from exc
+                ensure_registrar_response(pdf_resp)
                 pdf_ct = pdf_resp.headers.get("Content-Type", "").lower()
                 if "pdf" in pdf_ct or pdf_resp.content.lstrip().startswith(b"%PDF"):
                     return pdf_resp.content

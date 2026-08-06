@@ -1,4 +1,5 @@
 from typing import Annotated
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
@@ -179,11 +180,13 @@ async def export_event_attendees(
     content, filename, media_type = await event_service.export_attendees(
         event_id=event_id, user=user, export_format=format
     )
+    # filename= must be latin-1; filename* is RFC 5987 UTF-8 (same value when ASCII).
+    disposition = f"attachment; filename=\"{filename}\"; filename*=UTF-8''{quote(filename)}"
     return Response(
         content=content,
         media_type=media_type,
         headers={
-            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Disposition": disposition,
             "Cache-Control": "no-store",
         },
     )

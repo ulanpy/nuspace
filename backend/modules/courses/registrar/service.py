@@ -9,6 +9,7 @@ from backend.modules.courses.registrar.clients.public_course_catalog import (
     PublicCourseCatalogClient,
 )
 from backend.modules.courses.registrar.clients.registrar_client import RegistrarClient
+from backend.modules.courses.registrar.errors import RegistrarUnavailableError
 from backend.modules.courses.registrar.parsers.registrar_parser import (
     parse_personal_schedule_pdf,
     parse_schedule,
@@ -119,6 +120,8 @@ class RegistrarService:
                 )
         except ValueError as exc:  # registrar returned non-JSON payload
             raise HTTPException(status_code=502, detail=str(exc)) from exc
+        except RegistrarUnavailableError as exc:
+            raise HTTPException(status_code=502, detail=exc.detail) from exc
 
         items = data.get("items", [])
         return CourseSearchResponse(**data)

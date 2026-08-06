@@ -305,7 +305,7 @@ const EventDetailView = ({
               <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0" />
               <span className="text-base text-foreground/90">{event.place}</span>
             </div>
-            {showAttendeesCount ? (
+            {showAttendeesCount && attendeesCount > 0 ? (
               <div className="flex items-start gap-3">
                 <Users className="mt-0.5 h-5 w-5 flex-shrink-0" />
                 <span className="text-base text-foreground/90">
@@ -319,10 +319,16 @@ const EventDetailView = ({
             <div className="space-y-3 rounded-xl border border-border/60 bg-muted/25 p-4">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-foreground">
-                  {isGoing ? "You're going" : "Planning to attend?"}
+                  {isGoing
+                    ? "You're going"
+                    : attendeesCount === 0
+                      ? "Be the first to go"
+                      : "Planning to attend?"}
                 </p>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                Helps organizers estimate attendance.
+                  {attendeesCount === 0 && !isGoing
+                    ? "Mark I'm going so organizers can plan seats and materials."
+                    : "Helps organizers estimate attendance."}
                 </p>
               </div>
               <Button
