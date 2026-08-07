@@ -50,12 +50,13 @@ class PlannerService:
         self,
         repository: PlannerRepository,
         course_catalog: CourseCatalogLookup,
+        active_semester: SemesterOption,
     ):
         self.repository = repository
         self.course_catalog = course_catalog
+        self.active_semester = active_semester
         self.autobuilder = PlannerAutoBuilder()
         self.serializer = PlannerSerializer(course_catalog)
-        self._active_semester: SemesterOption | None = None
 
     async def _resolve_schedule(
         self,
@@ -251,8 +252,7 @@ class PlannerService:
         return await self._serialize_schedule_with_counts(refreshed)
 
     async def list_semesters(self) -> List[SemesterOption]:
-        active = await self._get_active_semester()
-        return [active]
+        return [self.active_semester]
 
     async def search_courses(
         self,
@@ -263,7 +263,7 @@ class PlannerService:
         page: int,
     ) -> PlannerCourseSearchResponse:
         _ = term_value  # Planner is locked to the active registrar term.
-        active_term = await self._get_active_semester()
+        active_term = self.active_semester
         request = CourseSearchRequest(
             course_code=course_code,
             term=active_term.value,
@@ -281,7 +281,7 @@ class PlannerService:
         schedule_id: Optional[int] = None,
     ) -> None:
         schedule = await self._resolve_schedule(student_sub, schedule_id)
-        resolved_term = term_value or (await self._get_active_semester()).value
+        resolved_term = term_value or self.active_semester.value
         await self.repository.reset_schedule_courses(schedule.id, resolved_term)
         await self.repository.session.commit()
 
@@ -294,7 +294,7 @@ class PlannerService:
         schedule_id: Optional[int] = None,
     ) -> PlannerCourseResponse:
         schedule = await self._resolve_schedule(student_sub, schedule_id)
-        active_term = await self._get_active_semester()
+        active_term = self.active_semester
         summary: CourseSummary | None = await self._find_course_summary(
             course_code=payload.course_code,
             term_value=active_term.value,
@@ -344,7 +344,7 @@ class PlannerService:
         course: PlannerScheduleCourse,
         refresh: bool = False,
     ) -> List[PlannerSectionResponse]:
-        active_term = await self._get_active_semester()
+        active_term = self.active_semester
         term_value = active_term.value
         if course.term_value != term_value:
             course.term_value = term_value
@@ -507,12 +507,6 @@ class PlannerService:
             message=builder_result.message,
         )
 
-    # ----- Internal helpers ----- #
-    async def _get_active_semester(self) -> SemesterOption:
-        if self._active_semester is None:
-            self._active_semester = await self.course_catalog.get_active_semester()
-        return self._active_semester
-
     async def _serialize_schedule_with_counts(
         self,
         schedule: PlannerSchedule,
@@ -522,7 +516,7 @@ class PlannerService:
         priority_map = await self.course_catalog.fetch_course_priorities(
             [course.course_code for course in schedule.courses]
         )
-        term_label_fallback = (await self._get_active_semester()).label
+        term_label_fallback = self.active_semester.label
         return self.serializer.serialize_schedule(
             schedule,
             selection_counts,
@@ -538,7 +532,7 @@ class PlannerService:
         selection_counts = await self.repository.get_selection_counts_for_courses([course.id])
         if priority_map is None:
             priority_map = await self.course_catalog.fetch_course_priorities([course.course_code])
-        term_label_fallback = (await self._get_active_semester()).label
+        term_label_fallback = self.active_semester.label
         return self.serializer.serialize_course(
             course,
             selection_counts.get(course.id, {}),

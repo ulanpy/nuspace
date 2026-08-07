@@ -11,6 +11,7 @@ from backend.modules.courses.registrar.schedule_gcs import (
     download_schedule_catalog,
     download_schedule_meta,
     load_local_schedule_catalog_fixture,
+    load_local_schedule_meta_fixture,
     upload_schedule_catalog,
     upload_schedule_meta,
 )
@@ -22,6 +23,12 @@ def test_load_local_schedule_catalog_fixture_reads_committed_file():
     assert docs is not None
     assert len(docs) > 0
     assert "course_code" in docs[0]
+
+
+def test_load_local_schedule_meta_fixture_reads_committed_file():
+    meta = load_local_schedule_meta_fixture()
+    assert meta is not None
+    assert meta["term_id"] == "825"
 
 
 def test_download_missing_object_returns_none():

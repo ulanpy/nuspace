@@ -29,7 +29,7 @@ router = APIRouter(prefix="/planner", tags=["Schedule Planner"])
 @router.get(
     "/semesters",
     response_model=List[SemesterOption],
-    summary="List registrar semesters for planner dropdowns",
+    summary="List current registrar semester",
 )
 async def list_semesters(
     _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],

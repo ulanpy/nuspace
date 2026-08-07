@@ -5,9 +5,9 @@ from backend.common.dependencies import get_db_session, get_infra
 from backend.common.schemas import Infra
 from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.calendar.google_calendar_service import GoogleCalendarService
-from backend.modules.courses.registrar.service import RegistrarService
 from backend.modules.courses.courses.repository import CourseRepository
 from backend.modules.courses.courses.service import StudentCourseService
+from backend.modules.courses.registrar.service import RegistrarService
 
 
 async def get_student_course_service(
@@ -20,7 +20,10 @@ async def get_student_course_service(
     calendar_service = GoogleCalendarService(kc_manager=kc_manager) if kc_manager else None
     return StudentCourseService(
         repository=repository,
-        registrar=RegistrarService(meilisearch_client=infra.meilisearch_client),
+        registrar=RegistrarService(
+            meilisearch_client=infra.meilisearch_client,
+            active_semester=request.app.state.active_registrar_semester,
+        ),
         infra=infra,
         kc_manager=kc_manager,
         calendar_sync=calendar_service,

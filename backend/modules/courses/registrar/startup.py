@@ -1,5 +1,6 @@
 from backend.core.configs.config import config
 from backend.modules.courses.registrar.schedule_sync import sync_schedule_catalog
+from backend.modules.courses.registrar.service import RegistrarService
 from fastapi import FastAPI
 
 
@@ -10,6 +11,16 @@ async def setup_schedule_catalog(app: FastAPI) -> None:
     (no periodic in-process refresher).
     """
     storage_client = app.state.storage_client
+
+    registrar = RegistrarService(
+        storage_client=storage_client,
+        bucket_name=app.state.config.BUCKET_NAME,
+    )
+    app.state.active_registrar_semester = await registrar.load_active_semester(
+        prefer_local_fixture=app.state.config.IS_DEBUG,
+    )
+    if app.state.active_registrar_semester is None:
+        print("Active registrar semester metadata is unavailable")
 
     try:
         count = await sync_schedule_catalog(

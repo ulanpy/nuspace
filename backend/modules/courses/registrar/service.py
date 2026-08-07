@@ -14,7 +14,12 @@ from backend.modules.courses.registrar.parsers.registrar_parser import (
     parse_personal_schedule_pdf,
     parse_schedule,
 )
-from backend.modules.courses.registrar.schedule_gcs import SCHEDULE_GCS_OBJECT
+from backend.modules.courses.registrar.schedule_gcs import (
+    SCHEDULE_GCS_META_OBJECT,
+    SCHEDULE_GCS_OBJECT,
+    download_schedule_meta,
+    load_local_schedule_meta_fixture,
+)
 from backend.modules.courses.registrar.schedule_sync import (
     SCHEDULE_INDEX_UID,
     sync_schedule_catalog,
@@ -81,6 +86,7 @@ class RegistrarService:
         storage_client: storage.Client | None = None,
         bucket_name: str | None = None,
         schedule_gcs_object: str = SCHEDULE_GCS_OBJECT,
+        active_semester: SemesterOption | None = None,
     ) -> None:
         self.client_factory = client_factory
         self.public_client_factory = public_client_factory
@@ -90,7 +96,7 @@ class RegistrarService:
         self.bucket_name = bucket_name
         self.schedule_gcs_object = schedule_gcs_object
         self.schedule_index_uid = SCHEDULE_INDEX_UID
-        self._active_semester: SemesterOption | None = None
+        self.active_semester = active_semester
 
     async def sync_schedule(self, username: str, password: str) -> ScheduleResponse:
         async with self.client_factory() as client:
@@ -98,13 +104,16 @@ class RegistrarService:
         schedule: ScheduleResponse = parse_schedule(raw)
         return schedule
 
+
     def parse_schedule_pdf(self, pdf_file: bytes) -> ScheduleResponse:
         return parse_personal_schedule_pdf(pdf_file)
+
 
     async def list_semesters(self) -> list[SemesterOption]:
         async with self.public_client_factory() as client:
             semesters = await client.get_semesters()
         return [SemesterOption(**semester) for semester in semesters]
+
 
     async def search_courses_pcc(self, request: CourseSearchRequest) -> CourseSearchResponse:
         """
@@ -123,53 +132,39 @@ class RegistrarService:
         except RegistrarUnavailableError as exc:
             raise HTTPException(status_code=502, detail=exc.detail) from exc
 
+
         items = data.get("items", [])
         return CourseSearchResponse(**data)
 
     async def get_active_semester(self) -> SemesterOption:
-        """
-        Return the most recent registrar semester found within the search index.
-        Result is cached per service instance to avoid redundant HTTP calls.
-        """
-        if self._active_semester:
-            return self._active_semester
+        """Return the semester read from the schedule catalog's GCS metadata."""
+        if self.active_semester is None:
+            raise HTTPException(status_code=503, detail="Active registrar semester is unavailable")
+        return self.active_semester
 
-        if not self.meilisearch_client:
-            raise HTTPException(status_code=503, detail="Meilisearch client not available")
-
-        # Get a large batch of documents to find all unique terms
-        search_result = await meilisearch_utils.get(
-            client=self.meilisearch_client,
-            storage_name=self.schedule_index_uid,
-            keyword="",
-            page=1,
-            size=1000,  # Get up to 1000 docs to find terms
-        )
-        hits = search_result.get("hits", [])
-        unique_terms: dict[str, str] = {}
-        for hit in hits:
-            term_id = hit.get("term_id")
-            term_label = hit.get("term")
-            if term_id and term_label:
-                unique_terms[str(term_id)] = str(term_label)
-
-        if not unique_terms:
-            raise HTTPException(
-                status_code=404, detail="No synced registrar semesters found in the index."
+    async def load_active_semester(self, *, prefer_local_fixture: bool = False) -> SemesterOption | None:
+        """Load the active semester from the catalog's ``meta.json`` sidecar."""
+        if prefer_local_fixture:
+            meta = load_local_schedule_meta_fixture()
+        elif not self.storage_client or not self.bucket_name:
+            logger.error("Cannot load active semester: GCS client or bucket is unavailable")
+            return None
+        else:
+            meta = await asyncio.to_thread(
+                download_schedule_meta,
+                self.storage_client,
+                self.bucket_name,
+                object_name=SCHEDULE_GCS_META_OBJECT,
             )
+        if not meta:
+            return None
 
-        semesters = [SemesterOption(label=label, value=id) for id, label in unique_terms.items()]
-
-        def _semester_sort_key(option: SemesterOption) -> tuple[int, str]:
-            try:
-                numeric_value = int(option.value)
-            except (TypeError, ValueError):
-                numeric_value = -1
-            return (numeric_value, option.label)
-
-        latest = max(semesters, key=_semester_sort_key)
-        self._active_semester = latest
-        return latest
+        term_id = meta.get("term_id")
+        term_label = meta.get("term_label")
+        if not term_id or not term_label:
+            logger.error("Schedule meta.json has no term_id or term_label")
+            return None
+        return SemesterOption(label=str(term_label), value=str(term_id))
 
     async def search_courses(self, request: CourseSearchRequest) -> CourseSearchResponse:
         keyword = request.course_code or ""

@@ -6,7 +6,6 @@ from backend.modules.courses.registrar.schemas import (
     CourseScheduleEntry,
     CourseSearchRequest,
     CourseSearchResponse,
-    SemesterOption,
 )
 from backend.modules.courses.registrar.service import CoursePriorityRecord
 
@@ -19,8 +18,6 @@ class CourseCatalogLookup(Protocol):
         course_code: str,
         term: str,
     ) -> list[CourseScheduleEntry]: ...
-
-    async def get_active_semester(self) -> SemesterOption: ...
 
     async def fetch_course_priorities(
         self, course_codes: list[str]

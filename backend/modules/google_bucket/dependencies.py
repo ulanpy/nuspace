@@ -51,6 +51,9 @@ class _ScheduleCatalogOnFinalizeAdapter:
             reason=result.reason,
         )
 
+    async def load_active_semester(self):
+        return await self._registrar.load_active_semester()
+
 
 def get_schedule_catalog_on_finalize(request: Request) -> ScheduleCatalogOnFinalize:
     config: Config = request.app.state.config

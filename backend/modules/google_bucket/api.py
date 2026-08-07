@@ -8,6 +8,7 @@ from google.cloud.storage import Bucket
 from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import Config
 from backend.modules.auth.dependencies import get_creds_or_401, mark_access_actor
+from backend.modules.courses.registrar.schedule_gcs import SCHEDULE_GCS_META_OBJECT
 from backend.modules.google_bucket import dependencies as deps
 from backend.modules.google_bucket import schemas
 from backend.modules.google_bucket.dependencies import ScheduleCatalogFinalizeFailed
@@ -137,7 +138,15 @@ async def gcs_webhook(
     except Exception:
         return {"status": "ok"}
 
-    # Route: catalog artifact → registrar; ignore meta.json and other objects.
+    # Route: metadata sidecar → update the active semester shared by requests.
+    if gcs_event.name == SCHEDULE_GCS_META_OBJECT:
+        active_semester = await schedule_catalog.load_active_semester()
+        if active_semester is None:
+            raise HTTPException(status_code=500, detail="active_semester_refresh_failed")
+        request.app.state.active_registrar_semester = active_semester
+        return {"status": "ok", "active_semester": active_semester.value}
+
+    # Route: catalog artifact → registrar; ignore other objects.
     if gcs_event.name == config.SCHEDULE_SYNC_GCS_OBJECT:
         try:
             result = await schedule_catalog.on_object_finalize(

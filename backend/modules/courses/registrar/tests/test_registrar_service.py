@@ -1,7 +1,33 @@
 import pytest
+from unittest.mock import MagicMock
 
 from backend.modules.courses.registrar import service as registrar_service
 from backend.modules.courses.registrar.service import RegistrarService
+
+
+@pytest.mark.asyncio
+async def test_load_active_semester_reads_schedule_meta(monkeypatch):
+    service = RegistrarService(storage_client=MagicMock(), bucket_name="bucket")
+
+    monkeypatch.setattr(
+        registrar_service,
+        "download_schedule_meta",
+        lambda *_args, **_kwargs: {"term_id": "825", "term_label": "Fall 2026"},
+    )
+
+    semester = await service.load_active_semester()
+
+    assert semester is not None
+    assert semester.value == "825"
+    assert semester.label == "Fall 2026"
+
+
+@pytest.mark.asyncio
+async def test_get_active_semester_uses_injected_startup_value():
+    semester = registrar_service.SemesterOption(label="Fall 2026", value="825")
+    service = RegistrarService(active_semester=semester)
+
+    assert await service.get_active_semester() == semester
 
 
 @pytest.mark.parametrize(
@@ -113,4 +139,3 @@ async def test_fetch_course_priorities_returns_empty_without_exact_match(monkeyp
     result = await service.fetch_course_priorities(["MATH 162"])
 
     assert result == {}
-

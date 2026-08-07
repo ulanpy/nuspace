@@ -48,6 +48,19 @@ def load_local_schedule_catalog_fixture() -> list[dict] | None:
     return data
 
 
+def load_local_schedule_meta_fixture() -> dict | None:
+    """Load the committed schedule metadata for local debug."""
+    if not SCHEDULE_FIXTURE_META.is_file():
+        logger.info("Local schedule fixture meta missing at %s", SCHEDULE_FIXTURE_META)
+        return None
+    try:
+        data = json.loads(SCHEDULE_FIXTURE_META.read_text(encoding="utf-8"))
+    except Exception:
+        logger.exception("Failed to read local schedule fixture meta at %s", SCHEDULE_FIXTURE_META)
+        return None
+    return data if isinstance(data, dict) else None
+
+
 def download_schedule_meta(
     storage_client: storage.Client,
     bucket_name: str,
