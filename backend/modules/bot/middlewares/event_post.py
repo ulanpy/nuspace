@@ -37,10 +37,10 @@ class EventPostMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        db_session = data.get("db_session")
-        if db_session is not None:
+        uow = data.get("uow")
+        if uow is not None:
             data["event_post_service"] = build_event_post_service(
-                db_session=db_session,
+                uow=uow,
                 meilisearch_client=self.meilisearch_client,
                 storage_client=self.storage_client,
                 redis=self.redis,

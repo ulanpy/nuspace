@@ -32,9 +32,9 @@ from backend.modules.courses.degree_audit.transcript_parser import (
 )
 from backend.modules.courses.registrar.clients.registrar_client import RegistrarClient
 from backend.modules.courses.registrar.errors import RegistrarUnavailableError
+from backend.core.database.uow import UnitOfWork
 from fastapi import HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class DegreeAuditService:
@@ -55,6 +55,7 @@ class DegreeAuditService:
             from backend.modules.courses.degree_audit.degree_audit import (
                 discover_requirements_by_year,
             )
+
             self._requirements_catalog = discover_requirements_by_year(REQUIREMENTS_BASE)
         return self._requirements_catalog
 
@@ -63,6 +64,7 @@ class DegreeAuditService:
             from backend.modules.courses.degree_audit.degree_audit import (
                 discover_minor_requirements,
             )
+
             self._minor_requirements_catalog = discover_minor_requirements(REQUIREMENTS_BASE)
         return self._minor_requirements_catalog
 
@@ -70,8 +72,7 @@ class DegreeAuditService:
         catalog = self._ensure_catalog()
         minor_catalog = self._ensure_minor_catalog()
         years = [
-            CatalogYear(year=year, majors=list(majors.keys()))
-            for year, majors in catalog.items()
+            CatalogYear(year=year, majors=list(majors.keys())) for year, majors in catalog.items()
         ]
         minors = list(minor_catalog.keys())
         return CatalogResponse(years=years, minors=minors)
@@ -90,7 +91,7 @@ class DegreeAuditService:
                 reqs = self._load_minor_requirements(name)
             else:
                 raise
-            
+
         return [
             DegreeRequirement(
                 course_code=req.course_code,
@@ -133,7 +134,7 @@ class DegreeAuditService:
         username: str,
         password: str,
         student_sub: str,
-        session: AsyncSession,
+        uow: UnitOfWork,
         tc_mappings: List[TCMapping] | None = None,
     ) -> AuditResponse:
         transcript = await self._fetch_transcript_from_registrar(username, password)
@@ -141,7 +142,7 @@ class DegreeAuditService:
         response = self._run_audits(work, year=year, majors=majors, minors=minors)
         response.unmapped_tc_courses = unmapped_tc
         await self._save_result(
-            session=session,
+            uow=uow,
             student_sub=student_sub,
             year=year,
             majors=majors,
@@ -158,7 +159,7 @@ class DegreeAuditService:
         minors: List[str],
         pdf_file: bytes,
         student_sub: str,
-        session: AsyncSession,
+        uow: UnitOfWork,
         tc_mappings: List[TCMapping] | None = None,
     ) -> AuditResponse:
         try:
@@ -172,7 +173,7 @@ class DegreeAuditService:
         response = self._run_audits(work, year=year, majors=majors, minors=minors)
         response.unmapped_tc_courses = unmapped_tc
         await self._save_result(
-            session=session,
+            uow=uow,
             student_sub=student_sub,
             year=year,
             majors=majors,
@@ -234,6 +235,7 @@ class DegreeAuditService:
             )
 
         from backend.modules.courses.degree_audit.degree_audit import load_requirements
+
         requirements = load_requirements(
             path, special_dir=REQUIREMENTS_BASE / "additional_tables", admission_year="2025"
         )
@@ -244,6 +246,7 @@ class DegreeAuditService:
         self, transcript: Transcript, *, year: str, majors: List[str], minors: List[str]
     ) -> AuditResponse:
         from backend.modules.courses.degree_audit.schemas import AuditProgramResult
+
         audits = []
         csv_b64 = None
 
@@ -272,13 +275,15 @@ class DegreeAuditService:
                 csv_data = audit_results_to_csv_string(audit_results, summary=summary_raw)
                 csv_b64 = base64.b64encode(csv_data.encode("utf-8")).decode("ascii")
 
-            audits.append(AuditProgramResult(
-                name=major,
-                type="major",
-                results=results_out,
-                summary=summary,
-                warnings=[],
-            ))
+            audits.append(
+                AuditProgramResult(
+                    name=major,
+                    type="major",
+                    results=results_out,
+                    summary=summary,
+                    warnings=[],
+                )
+            )
 
         for minor in minors:
             requirements = self._load_minor_requirements(minor)
@@ -301,13 +306,15 @@ class DegreeAuditService:
             ]
             summary = AuditSummary(**summary_raw) if summary_raw else None
 
-            audits.append(AuditProgramResult(
-                name=minor,
-                type="minor",
-                results=results_out,
-                summary=summary,
-                warnings=[],
-            ))
+            audits.append(
+                AuditProgramResult(
+                    name=minor,
+                    type="minor",
+                    results=results_out,
+                    summary=summary,
+                    warnings=[],
+                )
+            )
 
         return AuditResponse(
             year=year,
@@ -320,7 +327,7 @@ class DegreeAuditService:
     async def _save_result(
         self,
         *,
-        session: AsyncSession,
+        uow: UnitOfWork,
         student_sub: str,
         year: str,
         majors: List[str],
@@ -333,30 +340,30 @@ class DegreeAuditService:
             DegreeAuditResult.admission_year == year,
             DegreeAuditResult.major == major_key,
         )
-        result = await session.execute(existing_stmt)
-        row: DegreeAuditResult | None = result.scalars().first()
-        payload = dict(
-            student_sub=student_sub,
-            admission_year=year,
-            major=major_key,
-            results=[r.model_dump() for r in response.audits],
-            summary=None,
-            warnings=[],
-            csv_base64=response.csv_base64,
-        )
-        if row:
-            for k, v in payload.items():
-                setattr(row, k, v)
-        else:
-            row = DegreeAuditResult(**payload)
-            session.add(row)
-        await session.commit()
+        async with uow:
+            session = uow.require_session()
+            result = await session.execute(existing_stmt)
+            row: DegreeAuditResult | None = result.scalars().first()
+            payload = dict(
+                student_sub=student_sub,
+                admission_year=year,
+                major=major_key,
+                results=[r.model_dump() for r in response.audits],
+                summary=None,
+                warnings=[],
+                csv_base64=response.csv_base64,
+            )
+            if row:
+                for k, v in payload.items():
+                    setattr(row, k, v)
+            else:
+                session.add(DegreeAuditResult(**payload))
 
     async def get_cached_result(
         self,
         *,
         student_sub: str,
-        session: AsyncSession,
+        uow: UnitOfWork,
         year: Optional[str] = None,
         major: Optional[str] = None,
     ) -> Optional[AuditResponse]:
@@ -366,11 +373,12 @@ class DegreeAuditService:
         if major:
             stmt = stmt.where(DegreeAuditResult.major == major)
         stmt = stmt.order_by(DegreeAuditResult.updated_at.desc())
-        result = await session.execute(stmt)
-        row: DegreeAuditResult | None = result.scalars().first()
+        async with uow:
+            result = await uow.require_session().execute(stmt)
+            row: DegreeAuditResult | None = result.scalars().first()
         if not row:
             return None
-        
+
         try:
             parsed = json.loads(row.major)
             majors = parsed.get("majors", [])
@@ -380,18 +388,27 @@ class DegreeAuditService:
             minors = []
 
         from backend.modules.courses.degree_audit.schemas import AuditProgramResult
-        
-        if row.results and isinstance(row.results, list) and len(row.results) > 0 and "name" in row.results[0]:
+
+        if (
+            row.results
+            and isinstance(row.results, list)
+            and len(row.results) > 0
+            and "name" in row.results[0]
+        ):
             audits = [AuditProgramResult(**a) for a in row.results]
         else:
-            audits = [AuditProgramResult(
-                name=row.major,
-                type="major",
-                results=[AuditRequirementResult(**r) for r in row.results] if row.results else [],
-                summary=AuditSummary(**row.summary) if row.summary else None,
-                warnings=row.warnings or [],
-            )]
-            
+            audits = [
+                AuditProgramResult(
+                    name=row.major,
+                    type="major",
+                    results=(
+                        [AuditRequirementResult(**r) for r in row.results] if row.results else []
+                    ),
+                    summary=AuditSummary(**row.summary) if row.summary else None,
+                    warnings=row.warnings or [],
+                )
+            ]
+
         return AuditResponse(
             year=row.admission_year,
             majors=majors,
@@ -422,4 +439,3 @@ def _try_b64(value: bytes | str) -> bytes | None:
         return base64.b64decode(value, validate=True)
     except Exception:
         return None
-

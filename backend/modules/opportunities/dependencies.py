@@ -1,7 +1,7 @@
-from fastapi import Query, Depends, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-from backend.common.dependencies import get_db_session, get_infra
+from fastapi import Depends, Query, Request
+from backend.common.dependencies import get_infra, get_uow
 from backend.common.schemas import Infra
+from backend.core.database.uow import UnitOfWork
 from backend.modules.opportunities import schemas
 from backend.modules.opportunities.service import OpportunitiesDigestService
 from backend.modules.auth.keycloak_manager import KeyCloakManager
@@ -9,8 +9,12 @@ from backend.modules.calendar.google_calendar_service import GoogleCalendarServi
 
 
 def get_opportunity_filters(
-    type: list[schemas.OpportunityType] | None = Query(default=None, description="Filter by opportunity types"),
-    majors: list[schemas.OpportunityMajor] | None = Query(default=None, description="Filter by majors"),
+    type: list[schemas.OpportunityType] | None = Query(
+        default=None, description="Filter by opportunity types"
+    ),
+    majors: list[schemas.OpportunityMajor] | None = Query(
+        default=None, description="Filter by majors"
+    ),
     education_level: list[schemas.EducationLevel] | None = Query(
         default=None, description="Filter by education levels"
     ),
@@ -31,15 +35,16 @@ def get_opportunity_filters(
         size=size,
     )
 
+
 def get_opportunities_digest_service(
     request: Request,
-    db: AsyncSession = Depends(get_db_session),
+    uow: UnitOfWork = Depends(get_uow),
     infra: Infra = Depends(get_infra),
 ) -> OpportunitiesDigestService:
     kc_manager: KeyCloakManager | None = request.app.state.kc_manager if request else None
     calendar_service = GoogleCalendarService(kc_manager=kc_manager) if kc_manager else None
     return OpportunitiesDigestService(
-        db_session=db,
+        uow=uow,
         meilisearch_client=infra.meilisearch_client,
         calendar_sync=calendar_service,
     )

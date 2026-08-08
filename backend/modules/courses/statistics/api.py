@@ -1,9 +1,8 @@
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from backend.common.dependencies import get_db_session
+from backend.common.dependencies import get_uow
+from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.dependencies import get_creds_or_guest
 from backend.modules.courses.statistics import schemas
 from backend.modules.courses.statistics.service import list_grade_reports
@@ -14,7 +13,7 @@ router = APIRouter(tags=["Course Statistics"])
 @router.get("/grades/terms", response_model=schemas.ListGradeTermsResponse)
 async def list_grade_terms(
     _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    db_session: AsyncSession = Depends(get_db_session),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> schemas.ListGradeTermsResponse:
     """
     Returns distinct grade report terms (e.g., FA2024, SP2025) for filtering.
@@ -25,8 +24,9 @@ async def list_grade_terms(
     from backend.modules.courses.models.grade_report import GradeReport
 
     stmt = select(GradeReport.term).distinct().order_by(GradeReport.term.desc())
-    result = await db_session.execute(stmt)
-    terms: List[str] = list(result.scalars().all())
+    async with uow:
+        result = await uow.require_session().execute(stmt)
+        terms: List[str] = list(result.scalars().all())
 
     # Remove null/empty terms that may exist in legacy data
     filtered_terms = [term for term in terms if term]
@@ -46,7 +46,7 @@ async def get_grades(
         default=None,
         description="Filter by semester/term code (e.g., FA2024)",
     ),
-    db_session: AsyncSession = Depends(get_db_session),
+    uow: UnitOfWork = Depends(get_uow),
 ) -> schemas.ListGradeReportResponse:
     """
     Retrieves a paginated list of grade reports statistics with optional keyword search.
@@ -70,7 +70,7 @@ async def get_grades(
     """
 
     return await list_grade_reports(
-        session=db_session,
+        uow=uow,
         meilisearch_client=request.app.state.meilisearch_client,
         page=page,
         size=size,

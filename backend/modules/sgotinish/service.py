@@ -1,11 +1,13 @@
 import re
+import inspect
+from functools import wraps
 
 from backend.core.configs.config import config
 from backend.modules.sgotinish.models import Ticket, TicketCategory, TicketStatus
 from backend.modules.sgotinish.repository import OtinishRepository
 from backend.modules.sgotinish.schemas import CategoryStat, OtinishPublicStats
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
+from backend.core.database.uow import UnitOfWork
 
 MAX_TICKET_BODY_LENGTH = 3500
 
@@ -59,10 +61,32 @@ class OpenChannelExistsError(Exception):
         super().__init__(f"Open channel already exists for ticket #{ticket.id}")
 
 
+def uow_scoped(cls):
+    for name, method in vars(cls).items():
+        if not inspect.iscoroutinefunction(method):
+            continue
+
+        @wraps(method)
+        async def wrapped(self, *args, __method=method, **kwargs):
+            async with self.uow:
+                return await __method(self, *args, **kwargs)
+
+        setattr(cls, name, wrapped)
+    return cls
+
+
+@uow_scoped
 class OtinishService:
-    def __init__(self, db_session: AsyncSession):
-        self.db_session = db_session
-        self.repository = OtinishRepository(db_session)
+    def __init__(self, uow: UnitOfWork):
+        self.uow = uow
+
+    @property
+    def db_session(self):
+        return self.uow.require_session()
+
+    @property
+    def repository(self) -> OtinishRepository:
+        return self.uow.get_repo(OtinishRepository)
 
     async def is_linked_student(self, telegram_id: int) -> bool:
         return await self.repository.get_user_by_telegram_id(telegram_id) is not None

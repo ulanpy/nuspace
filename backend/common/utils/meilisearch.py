@@ -101,7 +101,7 @@ async def sync_with_db(
     columns_for_searching: list[str],
     primary_key: str = "id",
 ):
-    async for session in db_manager.get_async_session():
+    async with db_manager.async_session_maker() as session:
         pk_column = getattr(model, primary_key)
         columns_to_select = [pk_column] + [getattr(model, col) for col in columns_for_searching]
         result = await session.execute(select(*columns_to_select))
@@ -118,14 +118,14 @@ async def sync_with_db(
                     doc[key] = val
             data.append(doc)
 
-        try:
-            await meilisearch_client.delete(f"/indexes/{storage_name}")
-            await meilisearch_client.post(
-                "/indexes", json={"uid": storage_name, "primaryKey": primary_key}
-            )
-            await meilisearch_client.post(
-                f"/indexes/{storage_name}/documents",
-                json=data,
-            )
-        except Exception as e:
-            print(f"Meilisearch error: {e}")  # now you’ll at least see any JSON‐encoding problems
+    try:
+        await meilisearch_client.delete(f"/indexes/{storage_name}")
+        await meilisearch_client.post(
+            "/indexes", json={"uid": storage_name, "primaryKey": primary_key}
+        )
+        await meilisearch_client.post(
+            f"/indexes/{storage_name}/documents",
+            json=data,
+        )
+    except Exception as e:
+        print(f"Meilisearch error: {e}")

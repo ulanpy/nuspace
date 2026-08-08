@@ -1,20 +1,40 @@
-from typing import List
+from collections.abc import Awaitable, Callable
+from typing import Any, List, TypeVar
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.common.utils import response_builder
-from backend.modules.courses.models.grade_report import CourseItem, CourseTemplate, StudentCourse, TemplateItem
+from backend.core.database.uow import UnitOfWork
+from backend.modules.courses.models.grade_report import (
+    CourseItem,
+    CourseTemplate,
+    StudentCourse,
+    TemplateItem,
+)
 from backend.modules.courses.courses import schemas as student_course_schemas
 from backend.modules.courses.templates import schemas
 from backend.modules.courses.templates.policy import TemplatePolicy
 
+T = TypeVar("T")
+
+
+def within_uow(method: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
+    async def wrapped(self: "TemplateService", *args: Any, **kwargs: Any) -> T:
+        async with self.uow:
+            return await method(self, *args, **kwargs)
+
+    return wrapped
+
 
 class TemplateService:
-    def __init__(self, db_session: AsyncSession):
-        self.db_session = db_session
+    def __init__(self, uow: UnitOfWork):
+        self.uow = uow
+
+    @property
+    def db_session(self):
+        return self.uow.require_session()
 
     async def _get_template_or_404(self, template_id: int) -> CourseTemplate:
         stmt = (
@@ -70,6 +90,7 @@ class TemplateService:
         result = await self.db_session.execute(stmt)
         return result.scalars().one()
 
+    @within_uow
     async def add_template(
         self,
         payload: schemas.TemplateCreate,
@@ -81,8 +102,7 @@ class TemplateService:
         if payload.student_sub == "me":
             payload.student_sub = user[0].get("sub")
         template_data = schemas._TemplateCreateData(
-            course_id=payload.course_id,
-            student_sub=payload.student_sub
+            course_id=payload.course_id, student_sub=payload.student_sub
         )
         template = CourseTemplate(**template_data.model_dump())
         self.db_session.add(template)
@@ -100,6 +120,7 @@ class TemplateService:
         template_responses = await self._build_template_responses([template], user)
         return template_responses[0]
 
+    @within_uow
     async def update_template(
         self,
         template_id: int,
@@ -134,11 +155,13 @@ class TemplateService:
         template_responses = await self._build_template_responses([template], user)
         return template_responses[0]
 
+    @within_uow
     async def delete_template(self, template_id: int, user: tuple[dict, dict]) -> None:
         template = await self._get_template_or_404(template_id)
         TemplatePolicy(user=user).check_delete(template)
         await self.db_session.delete(template)
 
+    @within_uow
     async def import_template_into_student_course(
         self,
         *,
@@ -151,9 +174,7 @@ class TemplateService:
         student_course = await self._get_student_course_or_404(student_course_id)
         TemplatePolicy(user=user).check_import(template, student_course)
 
-        existing_stmt = select(CourseItem).where(
-            CourseItem.student_course_id == student_course.id
-        )
+        existing_stmt = select(CourseItem).where(CourseItem.student_course_id == student_course.id)
         existing_result = await self.db_session.execute(existing_stmt)
         existing_items: List[CourseItem] = list(existing_result.scalars().all())
         for item in existing_items:
@@ -169,9 +190,9 @@ class TemplateService:
             course_item = CourseItem(
                 student_course_id=student_course.id,
                 item_name=item.item_name,
-                total_weight_pct=float(item.total_weight_pct)
-                if item.total_weight_pct is not None
-                else None,
+                total_weight_pct=(
+                    float(item.total_weight_pct) if item.total_weight_pct is not None else None
+                ),
                 obtained_score=None,
                 max_score=None,
             )
@@ -182,8 +203,7 @@ class TemplateService:
             await self.db_session.refresh(item)
 
         response_items = [
-            student_course_schemas.BaseCourseItem.model_validate(item)
-            for item in created_items
+            student_course_schemas.BaseCourseItem.model_validate(item) for item in created_items
         ]
 
         return schemas.TemplateImportResponse(
@@ -191,6 +211,7 @@ class TemplateService:
             items=response_items,
         )
 
+    @within_uow
     async def get_template_by_id(
         self, template_id: int, user: tuple[dict, dict]
     ) -> schemas.TemplateResponse:
@@ -200,6 +221,7 @@ class TemplateService:
         template_responses = await self._build_template_responses([template], user)
         return template_responses[0]
 
+    @within_uow
     async def get_templates(
         self, user: tuple[dict, dict], course_id: int | None, page: int, size: int
     ) -> schemas.ListTemplateDTO:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from backend.core.database.uow import UnitOfWork
 
 from backend.modules.bot.repository import BotUserRepository
 
@@ -18,16 +18,17 @@ class DeeplinkStartResult(str, Enum):
 class TelegramLinkService:
     def __init__(
         self,
-        db_session: AsyncSession,
-        user_repository: BotUserRepository | None = None,
+        uow: UnitOfWork,
     ) -> None:
-        self.user_repository = user_repository or BotUserRepository(db_session)
+        self.uow = uow
 
     async def handle_deeplink_start(self, sub: str, telegram_id: int) -> DeeplinkStartResult:
-        if not await self.user_repository.exists_by_sub(sub):
-            return DeeplinkStartResult.invalid_sub
-        if await self.user_repository.is_linked_by_telegram_id(telegram_id):
-            return DeeplinkStartResult.already_linked
+        async with self.uow:
+            repo = self.uow.get_repo(BotUserRepository)
+            if not await repo.exists_by_sub(sub):
+                return DeeplinkStartResult.invalid_sub
+            if await repo.is_linked_by_telegram_id(telegram_id):
+                return DeeplinkStartResult.already_linked
         return DeeplinkStartResult.needs_confirmation
 
     async def confirm_link(
@@ -40,5 +41,6 @@ class TelegramLinkService:
     ) -> bool:
         if picked_number != expected_number:
             return False
-        await self.user_repository.link_telegram_id(sub, telegram_id)
+        async with self.uow:
+            await self.uow.get_repo(BotUserRepository).link_telegram_id(sub, telegram_id)
         return True

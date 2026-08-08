@@ -5,22 +5,20 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
+from backend.common.schemas import Infra
+from backend.core.configs.config import Config, config
+from backend.core.database.uow import UnitOfWork
+from backend.modules.campuscurrent.events import schemas as event_schemas
+from backend.modules.campuscurrent.events.service import EventService
+from backend.modules.campuscurrent.models.events import EventType, RegistrationPolicy
+from backend.modules.media.dependencies import build_media_service
+from backend.modules.media.models import EntityType, MediaFormat
+from backend.modules.media.schemas import MediaUpsertData
+from backend.modules.media.service import MediaService
 from google.auth.credentials import Credentials
 from google.cloud import storage
 from httpx import AsyncClient
 from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from backend.common.schemas import Infra
-from backend.core.configs.config import Config, config
-from backend.modules.media.models import EntityType
-from backend.modules.campuscurrent.models.events import EventType, RegistrationPolicy
-from backend.modules.media.models import MediaFormat
-from backend.modules.campuscurrent.events import schemas as event_schemas
-from backend.modules.campuscurrent.events.service import EventService
-from backend.modules.media.dependencies import build_media_service
-from backend.modules.media.schemas import MediaUpsertData
-from backend.modules.media.service import MediaService
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +29,7 @@ class EventServicePublisher:
     def __init__(
         self,
         *,
-        db_session: AsyncSession,
+        uow: UnitOfWork,
         meilisearch_client: AsyncClient,
         storage_client: storage.Client,
         redis: Redis,
@@ -39,7 +37,6 @@ class EventServicePublisher:
         signing_credentials: Credentials | None = None,
         app_config: Config | None = None,
     ) -> None:
-        self.db_session = db_session
         self.storage_client = storage_client
         self.infra = Infra(
             meilisearch_client=meilisearch_client,
@@ -49,9 +46,10 @@ class EventServicePublisher:
             redis=redis,
             broker=broker,
         )
-        self.media_service: MediaService = build_media_service(db_session, self.infra)
+        self.uow = uow
+        self.media_service: MediaService = build_media_service(self.uow, self.infra)
         self.event_service = EventService(
-            db_session=db_session,
+            uow=self.uow,
             media_attachment_resolver=self.media_service,
         )
 
@@ -98,9 +96,7 @@ class EventServicePublisher:
                     mime_type=image_mime_type or "image/jpeg",
                 )
             except Exception:
-                logger.exception(
-                    "Failed to attach Telegram image to event_id=%s", created.id
-                )
+                logger.exception("Failed to attach Telegram image to event_id=%s", created.id)
         return created.id
 
     async def _attach_carousel_image(

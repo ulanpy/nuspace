@@ -39,7 +39,8 @@ class EventRepository:
         await self.db_session.refresh(event)
         return event
 
-    async def upsert_search(self, meilisearch_client: AsyncClient, event: Event) -> None:
+    @staticmethod
+    async def upsert_search(meilisearch_client: AsyncClient, event: Event) -> None:
         await meilisearch.upsert(
             client=meilisearch_client,
             storage_name=Event.__tablename__,
@@ -51,7 +52,8 @@ class EventRepository:
             },
         )
 
-    async def delete_from_search(self, meilisearch_client: AsyncClient, event_id: int) -> None:
+    @staticmethod
+    async def delete_from_search(meilisearch_client: AsyncClient, event_id: int) -> None:
         await meilisearch.delete(
             client=meilisearch_client,
             storage_name=Event.__tablename__,
@@ -276,9 +278,7 @@ class EventRepository:
         result = await self.db_session.execute(stmt)
         return result.scalar_one_or_none() is not None
 
-    async def list_attendee_viewer_event_ids(
-        self, event_ids: List[int], user_sub: str
-    ) -> set[int]:
+    async def list_attendee_viewer_event_ids(self, event_ids: List[int], user_sub: str) -> set[int]:
         if not event_ids or not user_sub:
             return set()
         stmt = select(EventAttendeeViewer.event_id).where(
@@ -329,9 +329,7 @@ class EventRepository:
         await self.db_session.refresh(invite)
         return invite
 
-    async def get_access_invite_by_token_hash(
-        self, token_hash: str
-    ) -> EventAccessInvite | None:
+    async def get_access_invite_by_token_hash(self, token_hash: str) -> EventAccessInvite | None:
         stmt = select(EventAccessInvite).where(EventAccessInvite.token_hash == token_hash)
         result = await self.db_session.execute(stmt)
         return result.scalars().first()

@@ -1,11 +1,11 @@
 from typing import List
 
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.schemas import Infra, ShortUserResponse
 from backend.common.utils import response_builder
 from backend.common.utils.enums import ResourceAction
+from backend.core.database.uow import UnitOfWork
 from backend.modules.campuscurrent.communities import schemas
 from backend.modules.campuscurrent.communities.interfaces import MediaAttachmentResolver
 from backend.modules.campuscurrent.communities.policy import CommunityPolicy
@@ -23,25 +23,23 @@ from backend.modules.media.schemas import MediaResponse
 class CommunityService:
     def __init__(
         self,
-        db_session: AsyncSession,
+        uow: UnitOfWork,
         media_attachment_resolver: MediaAttachmentResolver,
-        repo: CommunityRepository | None = None,
     ):
-        self.db_session = db_session
+        self.uow = uow
         self.media_attachment_resolver = media_attachment_resolver
-        self.repo = repo or CommunityRepository(db_session)
 
     async def _get_community_or_404(self, community_id: int) -> Community:
-        community = await self.repo.get_by_id(community_id)
+        async with self.uow:
+            community = await self.uow.get_repo(CommunityRepository).get_by_id(community_id)
         if community is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Community not found")
         return community
 
     async def _ensure_user_exists(self, sub: str) -> None:
-        if await self.repo.get_user_by_sub(sub) is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        async with self.uow:
+            if await self.uow.get_repo(CommunityRepository).get_user_by_sub(sub) is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     async def create_community(
         self, infra: Infra, community_data: schemas.CommunityCreateRequest, user: tuple[dict, dict]
@@ -54,24 +52,11 @@ class CommunityService:
         await self._ensure_user_exists(head_sub)
         community_data.head = head_sub
 
-        community: Community = await self.repo.add_community(community_data)
-        await self.repo.upsert_search(infra.meilisearch_client, community)
-
-        media_objs: List[Media] = await self.repo.list_media(
-            community_ids=[community.id],
-            media_formats=[MediaFormat.profile, MediaFormat.banner],
-        )
-        media_results: List[List[MediaResponse]] = await self.media_attachment_resolver.map_to_resources(
-            media_objects=media_objs, resources=[community]
-        )
-
-        return response_builder.build_schema(
-            schemas.CommunityResponse,
-            schemas.CommunityResponse.model_validate(community),
-            head_user=ShortUserResponse.model_validate(community.head_user),
-            media=media_results[0] if media_results else [],
-            permissions=get_community_permissions(community, user),
-        )
+        async with self.uow:
+            repo = self.uow.get_repo(CommunityRepository)
+            community: Community = await repo.add_community(community_data)
+        await repo.upsert_search(infra.meilisearch_client, community)
+        return await self._build_community_response(community, infra, user)
 
     async def update_community(
         self,
@@ -80,14 +65,19 @@ class CommunityService:
         new_data: schemas.CommunityUpdateRequest,
         user: tuple[dict, dict],
     ) -> schemas.CommunityResponse:
-        community = await self._get_community_or_404(community_id)
-        await CommunityPolicy(user=user).check_permission(
-            action=ResourceAction.UPDATE, community=community, community_data=new_data
-        )
-
         media_ids_to_delete = new_data.media_ids_to_delete or []
-        community = await self.repo.update_community(community=community, new_data=new_data)
-        await self.repo.upsert_search(infra.meilisearch_client, community)
+        async with self.uow:
+            repo = self.uow.get_repo(CommunityRepository)
+            community = await repo.get_by_id(community_id)
+            if community is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
+                )
+            await CommunityPolicy(user=user).check_permission(
+                action=ResourceAction.UPDATE, community=community, community_data=new_data
+            )
+            community = await repo.update_community(community=community, new_data=new_data)
+        await repo.upsert_search(infra.meilisearch_client, community)
 
         if media_ids_to_delete:
             await self._delete_community_media(infra, community, media_ids_to_delete)
@@ -122,21 +112,23 @@ class CommunityService:
     async def delete_community(
         self, infra: Infra, community_id: int, user: tuple[dict, dict]
     ) -> None:
-        community = await self._get_community_or_404(community_id)
-        await CommunityPolicy(user=user).check_permission(
-            action=ResourceAction.DELETE, community=community
-        )
-
-        media_objects: List[Media] = await self.repo.list_media(community_ids=[community.id])
-        await self.media_attachment_resolver.delete_many(media_objects)
-
-        deleted_community = await self.repo.delete_community(community)
-        if not deleted_community:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
+        async with self.uow:
+            repo = self.uow.get_repo(CommunityRepository)
+            community = await repo.get_by_id(community_id)
+            if community is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
+                )
+            await CommunityPolicy(user=user).check_permission(
+                action=ResourceAction.DELETE, community=community
             )
-
-        await self.repo.delete_from_search(infra.meilisearch_client, community_id)
+            media_objects: List[Media] = await repo.list_media(community_ids=[community.id])
+            if not await repo.delete_community(community):
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
+                )
+        await self.media_attachment_resolver.delete_many(media_objects)
+        await repo.delete_from_search(infra.meilisearch_client, community_id)
 
     async def list_communities(
         self,
@@ -154,15 +146,21 @@ class CommunityService:
 
         head_sub = user[0].get("sub") if head_sub == "me" else head_sub
 
-        communities, count, keyword_no_results = await self.repo.list_communities(
-            page=page,
-            size=size,
-            community_type=community_type,
-            community_category=community_category,
-            head_sub=head_sub,
-            keyword=keyword,
-            meilisearch_client=infra.meilisearch_client,
-        )
+        async with self.uow:
+            repo = self.uow.get_repo(CommunityRepository)
+            communities, count, keyword_no_results = await repo.list_communities(
+                page=page,
+                size=size,
+                community_type=community_type,
+                community_category=community_category,
+                head_sub=head_sub,
+                keyword=keyword,
+                meilisearch_client=infra.meilisearch_client,
+            )
+            media_objs: List[Media] = await repo.list_media(
+                community_ids=[community.id for community in communities],
+                media_formats=[MediaFormat.profile, MediaFormat.banner],
+            )
 
         if keyword_no_results:
             return schemas.ListCommunity(
@@ -174,12 +172,10 @@ class CommunityService:
                 has_next=False,
             )
 
-        media_objs: List[Media] = await self.repo.list_media(
-            community_ids=[community.id for community in communities],
-            media_formats=[MediaFormat.profile, MediaFormat.banner],
-        )
-        media_results: List[List[MediaResponse]] = await self.media_attachment_resolver.map_to_resources(
-            media_objects=media_objs, resources=communities
+        media_results: List[List[MediaResponse]] = (
+            await self.media_attachment_resolver.map_to_resources(
+                media_objects=media_objs, resources=communities
+            )
         )
 
         community_responses: List[schemas.CommunityResponse] = [
@@ -214,14 +210,22 @@ class CommunityService:
     async def _build_community_response(
         self, community: Community, infra: Infra, user: tuple[dict, dict]
     ) -> schemas.CommunityResponse:
-        await self.repo.load_relations(community, ["head_user"])
-
-        media_objs: List[Media] = await self.repo.list_media(
-            community_ids=[community.id],
-            media_formats=[MediaFormat.profile, MediaFormat.banner],
-        )
-        media_results: List[List[MediaResponse]] = await self.media_attachment_resolver.map_to_resources(
-            media_objects=media_objs, resources=[community]
+        async with self.uow:
+            repo = self.uow.get_repo(CommunityRepository)
+            community = await repo.get_by_id(community.id)
+            if community is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
+                )
+            await repo.load_relations(community, ["head_user"])
+            media_objs: List[Media] = await repo.list_media(
+                community_ids=[community.id],
+                media_formats=[MediaFormat.profile, MediaFormat.banner],
+            )
+        media_results: List[List[MediaResponse]] = (
+            await self.media_attachment_resolver.map_to_resources(
+                media_objects=media_objs, resources=[community]
+            )
         )
 
         return response_builder.build_schema(

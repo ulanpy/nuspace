@@ -2,9 +2,9 @@ from typing import List
 
 import httpx
 from sqlalchemy import case, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.utils import meilisearch, response_builder
+from backend.core.database.uow import UnitOfWork
 from backend.modules.media.models import EntityType
 from backend.modules.courses.models.grade_report import GradeReport
 from backend.modules.courses.statistics import schemas
@@ -12,7 +12,7 @@ from backend.modules.courses.statistics import schemas
 
 async def list_grade_reports(
     *,
-    session: AsyncSession,
+    uow: UnitOfWork,
     meilisearch_client: httpx.AsyncClient,
     page: int = 1,
     size: int = 20,
@@ -55,8 +55,9 @@ async def list_grade_reports(
             else_=len(grade_report_ids),
         )
         stmt = select(GradeReport).where(*conditions).order_by(order_clause)
-        result = await session.execute(stmt)
-        grades: List[GradeReport] = list(result.scalars().all())
+        async with uow:
+            result = await uow.require_session().execute(stmt)
+            grades: List[GradeReport] = list(result.scalars().all())
     else:
         page_num = max(1, page or 1)
         stmt = (
@@ -66,15 +67,18 @@ async def list_grade_reports(
             .offset((page_num - 1) * size)
             .limit(size)
         )
-        result = await session.execute(stmt)
-        grades = list(result.scalars().all())
+        async with uow:
+            session = uow.require_session()
+            result = await session.execute(stmt)
+            grades = list(result.scalars().all())
 
     if keyword:
         count = meili_result.get("estimatedTotalHits", 0)
     else:
         count_stmt = select(func.count()).select_from(GradeReport).where(*conditions)
-        count_result = await session.execute(count_stmt)
-        count: int = count_result.scalar() or 0
+        async with uow:
+            count_result = await uow.require_session().execute(count_stmt)
+            count: int = count_result.scalar() or 0
 
     total_pages: int = response_builder.calculate_pages(count=count, size=size)
 

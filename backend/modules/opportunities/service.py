@@ -1,7 +1,9 @@
-
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from backend.modules.opportunities.models import Opportunity, OpportunityEligibility, OpportunityMajorMap
+from backend.core.database.uow import UnitOfWork
+from backend.modules.opportunities.models import (
+    Opportunity,
+    OpportunityEligibility,
+    OpportunityMajorMap,
+)
 from backend.common.utils import response_builder
 from backend.modules.opportunities import schemas
 from backend.modules.opportunities.repository import OpportunitiesRepository
@@ -17,12 +19,12 @@ class OpportunitiesDigestService:
 
     def __init__(
         self,
-        db_session: AsyncSession,
+        uow: UnitOfWork,
         meilisearch_client=None,
-        repo: OpportunitiesRepository | None = None,
         calendar_sync: CalendarEventSync | None = None,
     ):
-        self.repo = repo or OpportunitiesRepository(db_session, meilisearch_client=meilisearch_client)
+        self.uow = uow
+        self.meilisearch_client = meilisearch_client
         self.calendar_sync = calendar_sync
 
     async def _build_opportunity_responses(
@@ -35,13 +37,9 @@ class OpportunitiesDigestService:
         responses: list[schemas.OpportunityResponseDto] = []
         for opp in opportunities:
             eligibilities = [
-                schemas.OpportunityEligibilityBase.model_validate(el)
-                for el in opp.eligibilities
+                schemas.OpportunityEligibilityBase.model_validate(el) for el in opp.eligibilities
             ]
-            majors = [
-                schemas.OpportunityMajorMapBase.model_validate(m)
-                for m in opp.majors
-            ]
+            majors = [schemas.OpportunityMajorMapBase.model_validate(m) for m in opp.majors]
             responses.append(
                 response_builder.build_schema(
                     schemas.OpportunityResponseDto,
@@ -53,7 +51,10 @@ class OpportunitiesDigestService:
         return responses
 
     async def list(self, flt: schemas.OpportunityFilter) -> schemas.OpportunityListResponse:
-        items, total = await self.repo.list(flt)
+        async with self.uow:
+            items, total = await self.uow.get_repo(
+                lambda session: OpportunitiesRepository(session, self.meilisearch_client)
+            ).list(flt)
         total_pages = (total + flt.size - 1) // flt.size if flt.size else 0
         return schemas.OpportunityListResponse(
             items=await self._build_opportunity_responses(items),
@@ -65,26 +66,40 @@ class OpportunitiesDigestService:
         )
 
     async def get(self, id: int) -> schemas.OpportunityResponseDto | None:
-        record = await self.repo.get(id)
+        async with self.uow:
+            record = await self.uow.get_repo(
+                lambda session: OpportunitiesRepository(session, self.meilisearch_client)
+            ).get(id)
         if not record:
             return None
         built = await self._build_opportunity_responses([record])
         return built[0] if built else None
 
     async def create(self, payload: schemas.OpportunityCreateDto) -> schemas.OpportunityResponseDto:
-        record: Opportunity = await self.repo.create(payload)
+        async with self.uow:
+            record: Opportunity = await self.uow.get_repo(
+                lambda session: OpportunitiesRepository(session, self.meilisearch_client)
+            ).create(payload)
         built = await self._build_opportunity_responses([record])
         return built[0]
 
-    async def update(self, id: int, payload: schemas.OpportunityUpdateDto) -> schemas.OpportunityResponseDto | None:
-        record: Opportunity | None = await self.repo.update(id, payload)
+    async def update(
+        self, id: int, payload: schemas.OpportunityUpdateDto
+    ) -> schemas.OpportunityResponseDto | None:
+        async with self.uow:
+            record: Opportunity | None = await self.uow.get_repo(
+                lambda session: OpportunitiesRepository(session, self.meilisearch_client)
+            ).update(id, payload)
         if not record:
             return None
         built = await self._build_opportunity_responses([record])
         return built[0] if built else None
 
     async def delete(self, id: int) -> bool:
-        return await self.repo.delete(id)
+        async with self.uow:
+            return await self.uow.get_repo(
+                lambda session: OpportunitiesRepository(session, self.meilisearch_client)
+            ).delete(id)
 
     async def add_to_calendar(
         self,
@@ -96,7 +111,10 @@ class OpportunitiesDigestService:
         if not self.calendar_sync:
             raise ValueError("Calendar service is not configured")
 
-        record = await self.repo.get(opportunity_id)
+        async with self.uow:
+            record = await self.uow.get_repo(
+                lambda session: OpportunitiesRepository(session, self.meilisearch_client)
+            ).get(opportunity_id)
         if not record:
             raise ValueError("Opportunity not found")
         if not record.deadline:
@@ -137,4 +155,6 @@ class OpportunitiesDigestService:
             kc_refresh_token=kc_refresh_token,
         )
 
-        return schemas.OpportunityCalendarResponse(created=created + updated, google_errors=google_errors)
+        return schemas.OpportunityCalendarResponse(
+            created=created + updated, google_errors=google_errors
+        )

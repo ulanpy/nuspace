@@ -7,18 +7,20 @@ from zoneinfo import ZoneInfo
 
 from backend.common.schemas import Infra
 from backend.common.utils import meilisearch, response_builder
-from backend.modules.media.models import EntityType
+from backend.core.database.uow import UnitOfWork
+from backend.modules.auth.keycloak_manager import KeyCloakManager
+from backend.modules.courses.courses import schemas
+from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
+from backend.modules.courses.courses.ics_export import events_to_ics
+from backend.modules.courses.courses.interfaces import CalendarEventSync, StudentScheduleRegistrar
+from backend.modules.courses.courses.policy import CourseItemPolicy
+from backend.modules.courses.courses.repository import CourseRepository
 from backend.modules.courses.models.grade_report import (
     Course,
     CourseItem,
     StudentCourse,
     StudentSchedule,
 )
-from backend.modules.auth.keycloak_manager import KeyCloakManager
-from backend.modules.courses.courses import schemas
-from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
-from backend.modules.courses.courses.ics_export import events_to_ics
-from backend.modules.courses.courses.repository import CourseRepository
 from backend.modules.courses.registrar.schemas import (
     CourseSearchRequest,
     SchedulePreferences,
@@ -26,29 +28,30 @@ from backend.modules.courses.registrar.schemas import (
     SemesterOption,
     UserScheduleItem,
 )
-from backend.modules.courses.courses.interfaces import CalendarEventSync, StudentScheduleRegistrar
+from backend.modules.media.models import EntityType
 from fastapi import HTTPException, status
-from backend.modules.courses.courses.policy import CourseItemPolicy, StudentCoursePolicy
 
 
 class StudentCourseService:
     def __init__(
         self,
-        repository: CourseRepository,
+        uow: UnitOfWork,
         registrar: StudentScheduleRegistrar,
         *,
         infra: Infra | None = None,
         kc_manager: KeyCloakManager | None = None,
         calendar_sync: CalendarEventSync | None = None,
     ):
-        self.repository = repository
+        self.uow = uow
         self._registrar = registrar
         self.infra = infra
         self.kc_manager = kc_manager
         self.calendar_sync = calendar_sync
 
     async def _get_course_item_or_404(self, item_id: int) -> CourseItem:
-        item = await self.repository.get_course_item_by_id(item_id)
+        async with self.uow:
+            course_repo = self.uow.get_repo(CourseRepository)
+            item = await course_repo.get_course_item_by_id(item_id)
         if item is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Course item not found."
@@ -56,7 +59,9 @@ class StudentCourseService:
         return item
 
     async def _get_student_course_or_404(self, student_course_id: int) -> StudentCourse:
-        student_course = await self.repository.get_student_course_by_id(student_course_id)
+        async with self.uow:
+            course_repo = self.uow.get_repo(CourseRepository)
+            student_course = await course_repo.get_student_course_by_id(student_course_id)
         if student_course is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -73,13 +78,17 @@ class StudentCourseService:
         @param student_sub: The student's sub.
         @return: A list of registered courses with class averages.
         """
-        registered_courses: List[StudentCourse] = await self.repository.fetch_registered_courses(student_sub)
-        if not registered_courses:
-            return []
+        async with self.uow:
+            course_repo = self.uow.get_repo(CourseRepository)
+            registered_courses: List[StudentCourse] = await course_repo.fetch_registered_courses(
+                student_sub
+            )
+            if not registered_courses:
+                return []
 
-        class_averages: dict[int, float] = await self.repository.fetch_class_averages(
-            course_ids=[reg.course_id for reg in registered_courses]
-        )
+            class_averages: dict[int, float] = await course_repo.fetch_class_averages(
+                course_ids=[reg.course_id for reg in registered_courses]
+            )
 
         result: List[schemas.RegisteredCourseResponse] = []
         for reg in registered_courses:
@@ -89,15 +98,11 @@ class StudentCourseService:
                     id=reg.id,
                     course=schemas.BaseCourseSchema.model_validate(reg.course),
                     items=[schemas.BaseCourseItem.model_validate(item) for item in reg.items],
-                    class_average=(
-                        float(class_average) if class_average is not None else None
-                    ),
+                    class_average=(float(class_average) if class_average is not None else None),
                 )
             )
 
         return result
-
-
 
     async def get_courses(
         self,
@@ -133,15 +138,19 @@ class StudentCourseService:
                 return schemas.ListBaseCourseResponse(courses=[], total_pages=1)
 
         if keyword and course_ids:
-            courses = await self.repository.fetch_courses_by_ids(course_ids, term=term)
+            async with self.uow:
+                course_repo = self.uow.get_repo(CourseRepository)
+                courses = await course_repo.fetch_courses_by_ids(course_ids, term=term)
             count = meili_result.get("estimatedTotalHits", 0) if meili_result else len(courses)
         else:
-            courses = await self.repository.fetch_courses_page(
-                term=term,
-                page=page,
-                size=size,
-            )
-            count = await self.repository.count_courses(term=term)
+            async with self.uow:
+                course_repo = self.uow.get_repo(CourseRepository)
+                courses = await course_repo.fetch_courses_page(
+                    term=term,
+                    page=page,
+                    size=size,
+                )
+                count = await course_repo.count_courses(term=term)
 
         total_pages: int = response_builder.calculate_pages(count=count, size=size)
 
@@ -156,23 +165,23 @@ class StudentCourseService:
         course_item_data: schemas.CourseItemCreate,
         user: tuple[dict, dict],
     ) -> schemas.BaseCourseItem:
-        student_course = await self._get_student_course_or_404(
-            course_item_data.student_course_id
-        )
+        student_course = await self._get_student_course_or_404(course_item_data.student_course_id)
         CourseItemPolicy(user=user).check_create(student_course=student_course)
 
         student_sub = user[0].get("sub")
-        registered = await self.repository.fetch_student_course_for_owner(
-            student_course_id=course_item_data.student_course_id,
-            student_sub=student_sub,
-        )
-        if not registered:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Registered course not found for this user.",
+        async with self.uow:
+            course_repo = self.uow.get_repo(CourseRepository)
+            registered = await course_repo.fetch_student_course_for_owner(
+                student_course_id=course_item_data.student_course_id,
+                student_sub=student_sub,
             )
+            if not registered:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Registered course not found for this user.",
+                )
 
-        course_item = await self.repository.add_course_item(course_item_data)
+            course_item = await course_repo.add_course_item(course_item_data)
         return schemas.BaseCourseItem.model_validate(course_item)
 
     async def update_course_item(
@@ -181,21 +190,45 @@ class StudentCourseService:
         item_update: schemas.CourseItemUpdate,
         user: tuple[dict, dict],
     ) -> schemas.BaseCourseItem:
-        item = await self._get_course_item_or_404(item_id)
-        student_course = await self._get_student_course_or_404(item.student_course_id)
-        CourseItemPolicy(user=user).check_update(
-            student_course=student_course, item_data=item_update
-        )
-        updated = await self.repository.update_course_item(item=item, update_data=item_update)
+        async with self.uow:
+            course_repo = self.uow.get_repo(CourseRepository)
+            item = await course_repo.get_course_item_by_id(item_id)
+            if item is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Course item not found."
+                )
+            student_course = await course_repo.get_student_course_by_id(item.student_course_id)
+            if student_course is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Student course registration not found",
+                )
+            CourseItemPolicy(user=user).check_update(
+                student_course=student_course, item_data=item_update
+            )
+            updated = await course_repo.update_course_item(item=item, update_data=item_update)
         return schemas.BaseCourseItem.model_validate(updated)
 
     async def delete_course_item(self, item_id: int, user: tuple[dict, dict]) -> None:
-        item = await self._get_course_item_or_404(item_id)
-        student_course = await self._get_student_course_or_404(item.student_course_id)
-        CourseItemPolicy(user=user).check_delete(student_course=student_course)
-        await self.repository.delete_course_item(item=item)
+        async with self.uow:
+            course_repo = self.uow.get_repo(CourseRepository)
+            item = await course_repo.get_course_item_by_id(item_id)
+            if item is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Course item not found."
+                )
+            student_course = await course_repo.get_student_course_by_id(item.student_course_id)
+            if student_course is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Student course registration not found",
+                )
+            CourseItemPolicy(user=user).check_delete(student_course=student_course)
+            await course_repo.delete_course_item(item=item)
 
-    def _determine_current_semester(self, semesters: List[SemesterOption], current_date: datetime) -> str | None:
+    def _determine_current_semester(
+        self, semesters: List[SemesterOption], current_date: datetime
+    ) -> str | None:
         """
         Determine current semester based on current date.
         Mapping:
@@ -206,7 +239,7 @@ class StudentCourseService:
         """
         month = current_date.month
         year = current_date.year
-        
+
         if 1 <= month <= 5:
             season = "Spring"
         elif 6 <= month <= 7:
@@ -216,13 +249,13 @@ class StudentCourseService:
         else:  # December
             season = "Spring"
             year = year + 1
-        
+
         # Find matching semester
         target_label = f"{season} {year}"
         for semester in semesters:
             if semester.label == target_label:
                 return semester.value
-        
+
         return None
 
     @staticmethod
@@ -349,12 +382,12 @@ class StudentCourseService:
     ) -> Course | None:
         """
         Get course from database or fetch from registrar and create it.
-        
+
         Args:
             course_code: Normalized course code like "PHYS 161"
             term_value: Term value like "822" (used for registrar API)
             registrar_service: Service to query registrar API
-            
+
         Returns:
             Course object or None if not found
         """
@@ -378,7 +411,6 @@ class StudentCourseService:
             search_request = CourseSearchRequest(
                 course_code=candidate,
                 term=term_value,
-                
                 page=1,
             )
             search_response = await self._registrar.search_courses_pcc(search_request)
@@ -426,7 +458,8 @@ class StudentCourseService:
                         # adjust term_value to hit term if present
                         if getattr(item, "term", None):
                             try:
-                                # item.term may be label like "Fall 2025"; we keep current term_value
+                                # item.term may be a label like "Fall 2025";
+                                # keep the current term value.
                                 pass
                             except Exception:
                                 pass
@@ -446,10 +479,15 @@ class StudentCourseService:
         except (ValueError, TypeError):
             return None
 
-        existing_by_registrar: Course | None = await self.repository.find_course_by_registrar_id(registrar_id)
+        async with self.uow:
+            course_repo = self.uow.get_repo(CourseRepository)
+            existing_by_registrar: Course | None = await course_repo.find_course_by_registrar_id(
+                registrar_id
+            )
+
         if existing_by_registrar:
             return existing_by_registrar
-            
+
         course_data = schemas.CourseCreate(
             registrar_id=registrar_id,
             course_code=self._normalize_course_code(matching_course.course_code),
@@ -464,35 +502,36 @@ class StudentCourseService:
             credits=int(matching_course.credits) if matching_course.credits else None,
             term=matching_course.term,  # Use term from registrar response
         )
-        
-        return await self.repository.create_course(course_data)
+
+        async with self.uow:
+            course_repo = self.uow.get_repo(CourseRepository)
+            return await course_repo.create_course(course_data)
 
     async def sync_courses_from_registrar(
-        self, 
-        student_sub: str, 
-        password: str, 
+        self,
+        student_sub: str,
+        password: str,
         username: str,
     ) -> schemas.RegistrarSyncResponse:
         """
         Sync courses from registrar for a student.
-        
+
         Resync behavior:
         - Keeps courses that are still in the schedule
         - Adds new courses from the schedule
         - Deletes student_courses that are no longer in the schedule
-        
+
         Args:
             student_sub: Student's subject identifier
             password: Student's registrar password
             username: Student's registrar username
-            
+
         Returns:
             RegistrarSyncResponse containing course list and sync statistics
         """
         # Get student's schedule from registrar
         schedule_response: ScheduleResponse = await self._registrar.sync_schedule(
-            username=username,
-            password=password
+            username=username, password=password
         )
         return await self._sync_courses_from_schedule_response(
             student_sub=student_sub,
@@ -504,9 +543,7 @@ class StudentCourseService:
         student_sub: str,
         pdf_file: bytes,
     ) -> schemas.RegistrarSyncResponse:
-        schedule_response = self._registrar.parse_schedule_pdf(
-            _normalize_pdf_bytes(pdf_file)
-        )
+        schedule_response = self._registrar.parse_schedule_pdf(_normalize_pdf_bytes(pdf_file))
         return await self._sync_courses_from_schedule_response(
             student_sub=student_sub,
             schedule_response=schedule_response,
@@ -521,21 +558,20 @@ class StudentCourseService:
         # Get semesters to determine current term
         semesters: list[SemesterOption] = await self._registrar.list_semesters()
         current_term_value = self._determine_current_semester(
-            semesters=semesters,
-            current_date=datetime.now()
+            semesters=semesters, current_date=datetime.now()
         )
-        
+
         if current_term_value is None:
             raise SemesterResolutionError("Unable to determine current registrar semester.")
-        
+
         # Get current term label
-        current_term_label = next((sem.label for sem in semesters if sem.value == current_term_value), None)
+        current_term_label = next(
+            (sem.label for sem in semesters if sem.value == current_term_value), None
+        )
         if current_term_label is None:
             raise SemesterResolutionError("Unable to resolve current registrar semester label.")
-        
-        fallback_term_value = self._resolve_fallback_term_value(semesters, current_term_value)
 
-        
+        fallback_term_value = self._resolve_fallback_term_value(semesters, current_term_value)
 
         # Extract unique course codes from schedule (store only normalized full codes;
         # matching against existing registrations handles cross-list variants)
@@ -553,11 +589,11 @@ class StudentCourseService:
                 continue
             schedule_codes.add(normalized_code)
 
-        
-        
         # Get all existing student courses for this student
-        existing_registrations = await self.repository.fetch_registered_courses(student_sub)
-        
+        async with self.uow:
+            course_repo = self.uow.get_repo(CourseRepository)
+            existing_registrations = await course_repo.fetch_registered_courses(student_sub)
+
         # Map existing courses: course_code -> (StudentCourse, Course)
         existing_courses_map = {}
         for reg in existing_registrations:
@@ -577,7 +613,7 @@ class StudentCourseService:
                 for part in parts:
                     if part and part not in existing_courses_map:
                         existing_courses_map[part] = (reg, reg.course)
-        
+
         # Determine which courses to add and which to keep/delete
         matched_existing_codes: set[str] = set()
         courses_to_add: list[str] = []
@@ -592,35 +628,40 @@ class StudentCourseService:
 
         courses_to_delete = set(existing_courses_map.keys()) - matched_existing_codes
 
-        # Delete courses no longer in schedule
-        for course_code in courses_to_delete:
-            student_course, _ = existing_courses_map[course_code]
-            await self.repository.delete_student_course(student_course)
-        
-        # Add new courses from schedule
-        added_courses = []
+        # Delete courses no longer in schedule.
+        # TODO: add batch delete instead for loop
+        async with self.uow:
+            course_repo = self.uow.get_repo(CourseRepository)
+            for course_code in courses_to_delete:
+                student_course, _ = existing_courses_map[course_code]
+                await course_repo.delete_student_course(student_course)
+
+        # Resolve registrar courses before opening the registration transaction.
+        # `_get_or_create_course` may call the registrar, so keeping the UoW open
+        # around this loop would recreate the pool-starvation issue.
+        resolved_courses: list[Course] = []
         for course_code in courses_to_add:
-            # Get or create course
             course = await self._get_or_create_course(
                 course_code=course_code,
                 term_value=current_term_value,
                 fallback_term_value=fallback_term_value,
             )
-            
-            if not course:
-                continue
-            
-            # Create student course registration
-            registration_data = schemas.RegisteredCourseCreate(
-                course_id=course.id,
-                student_sub=student_sub
-            )
-            student_course = await self.repository.add_student_course(registration_data)
-            added_courses.append(student_course)
-        
+            if course is not None:
+                resolved_courses.append(course)
+
+        added_courses: list[StudentCourse] = []
+        async with self.uow:
+            course_repo = self.uow.get_repo(CourseRepository)
+            for course in resolved_courses:
+                registration_data = schemas.RegisteredCourseCreate(
+                    course_id=course.id,
+                    student_sub=student_sub,
+                )
+                added_courses.append(await course_repo.add_student_course(registration_data))
+
         # Build response with all current courses
         all_current_courses = []
-        
+
         # Add kept courses
         for course_code in courses_to_keep:
             student_course, course = existing_courses_map[course_code]
@@ -628,33 +669,34 @@ class StudentCourseService:
                 schemas.RegisteredCourseResponse(
                     id=student_course.id,
                     course=schemas.BaseCourseSchema.model_validate(course),
-                    items=[schemas.BaseCourseItem.model_validate(item) for item in student_course.items]
+                    items=[
+                        schemas.BaseCourseItem.model_validate(item) for item in student_course.items
+                    ],
                 )
             )
-        
+
         # Add newly added courses
         for student_course in added_courses:
             all_current_courses.append(
                 schemas.RegisteredCourseResponse(
                     id=student_course.id,
                     course=schemas.BaseCourseSchema.model_validate(student_course.course),
-                    items=[]
+                    items=[],
                 )
             )
-        
+
         # Upsert schedule snapshot
-        schedule_entries = [
-            [item.model_dump() for item in day]
-            for day in schedule_response.data
-        ]
+        schedule_entries = [[item.model_dump() for item in day] for day in schedule_response.data]
         preferences = schedule_response.preferences.model_dump()
-        await self.repository.upsert_schedule(
-            student_sub=student_sub,
-            term_value=current_term_value,
-            term_label=current_term_label,
-            schedule_data=schedule_entries,
-            preferences=preferences,
-        )
+        async with self.uow:
+            course_repo = self.uow.get_repo(CourseRepository)
+            await course_repo.upsert_schedule(
+                student_sub=student_sub,
+                term_value=current_term_value,
+                term_label=current_term_label,
+                schedule_data=schedule_entries,
+                preferences=preferences,
+            )
 
         synced_at = datetime.now(timezone.utc)
 
@@ -674,14 +716,18 @@ class StudentCourseService:
         self,
         student_sub: str,
     ) -> schemas.StudentScheduleResponse | None:
-        schedule_record: StudentSchedule | None = await self.repository.get_latest_schedule(student_sub)
+
+        async with self.uow:
+            course_repo = self.uow.get_repo(CourseRepository)
+            schedule_record: StudentSchedule | None = await course_repo.get_latest_schedule(
+                student_sub
+            )
 
         if not schedule_record:
             return None
 
         normalized_week: list[list[UserScheduleItem]] = [
-            [UserScheduleItem(**item) for item in day]
-            for day in schedule_record.schedule_data
+            [UserScheduleItem(**item) for item in day] for day in schedule_record.schedule_data
         ]
 
         schedule = ScheduleResponse(
@@ -712,13 +758,16 @@ class StudentCourseService:
         if not active_infra or not active_infra.meilisearch_client:
             raise ValueError("Meilisearch client is not available")
 
-        schedule_record: StudentSchedule | None = await self.repository.get_latest_schedule(student_sub)
+        async with self.uow:
+            course_repo = self.uow.get_repo(CourseRepository)
+            schedule_record: StudentSchedule | None = await course_repo.get_latest_schedule(
+                student_sub
+            )
         if not schedule_record:
             raise ValueError("No schedule found for student")
 
         normalized_week: list[list[UserScheduleItem]] = [
-            [UserScheduleItem(**item) for item in day]
-            for day in schedule_record.schedule_data
+            [UserScheduleItem(**item) for item in day] for day in schedule_record.schedule_data
         ]
 
         code_lookup: dict[str, str] = {}
@@ -750,8 +799,7 @@ class StudentCourseService:
             return normalized_code, window, chosen
 
         lookup_tasks = [
-            fetch_course_window(normalized, raw)
-            for normalized, raw in code_lookup.items()
+            fetch_course_window(normalized, raw) for normalized, raw in code_lookup.items()
         ]
         lookup_results = await asyncio.gather(*lookup_tasks, return_exceptions=True)
 
@@ -803,7 +851,11 @@ class StudentCourseService:
                 )
 
                 course_name = item.label or item.title or ""
-                summary = f"{item.course_code} — {course_name}" if course_name else (item.course_code or "")
+                summary = (
+                    f"{item.course_code} — {course_name}"
+                    if course_name
+                    else (item.course_code or "")
+                )
                 description_parts = [item.label or item.title or "", item.info or ""]
                 description = "\\n".join([p for p in description_parts if p])
 
@@ -813,7 +865,9 @@ class StudentCourseService:
                     skip_date = first_occurrence + timedelta(weeks=7)
                     if skip_date <= end_date:
                         exdates.append(
-                            datetime.combine(skip_date, time(start_time.hh, start_time.mm), tzinfo=local_tz)
+                            datetime.combine(
+                                skip_date, time(start_time.hh, start_time.mm), tzinfo=local_tz
+                            )
                         )
 
                 recurrence: list[str] = [

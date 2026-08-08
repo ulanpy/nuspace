@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.configs.config import config
+from backend.core.database.uow import UnitOfWork
 from backend.modules.campuscurrent.models import Community
 from backend.modules.auth.models import User, UserRole
 
@@ -19,22 +20,25 @@ class AppTokenManager:
         # Make app token expire slightly before access token
         self.token_expiry = timedelta(minutes=config.APP_TOKEN_EXPIRY_MINUTES)
 
-    async def create_app_token(self, user_sub: str, db_session: AsyncSession) -> tuple[str, dict]:
+    async def create_app_token(self, user_sub: str, uow: UnitOfWork) -> tuple[str, dict]:
         """
         Creates application-specific token with roles and permissions
         Returns (token, claims)
         """
         user_stmt = select(User).where(User.sub == user_sub)
-        user_result = await db_session.execute(user_stmt)
-        user: User | None = user_result.scalars().first()
-        if not user:
-            logger.error("App token creation failed: user %s not found", user_sub)
-            raise RuntimeError(f"User {user_sub} not found while creating app token")
 
-        user_role: UserRole = user.role
-        communities_stmt = select(Community).where(Community.head == user_sub)
-        communities_result = await db_session.execute(communities_stmt)
-        headed_communities: List[Community] = list(communities_result.scalars().all())
+        async with uow:
+            db_session: AsyncSession = uow.session
+            user_result = await db_session.execute(user_stmt)
+            user: User | None = user_result.scalars().first()
+            if not user:
+                logger.error("App token creation failed: user %s not found", user_sub)
+                raise RuntimeError(f"User {user_sub} not found while creating app token")
+
+            user_role: UserRole = user.role
+            communities_stmt = select(Community).where(Community.head == user_sub)
+            communities_result = await db_session.execute(communities_stmt)
+            headed_communities: List[Community] = list(communities_result.scalars().all())
 
         tg_id = user.telegram_id
 

@@ -10,35 +10,44 @@ from backend.modules.media.models import Media
 from backend.modules.media.interfaces import ObjectStorage
 from backend.modules.media.repository import MediaRepository
 from backend.modules.media.schemas import MediaResponse, MediaUpsertData
-
+from backend.core.database.uow import UnitOfWork
 T = TypeVar("T", bound=DeclarativeMeta)
 
 
 class MediaService:
     def __init__(
         self,
-        repository: MediaRepository,
+        uow: UnitOfWork,
         storage: ObjectStorage,
     ):
-        self.repository = repository
+        self.uow = uow
         self.storage = storage
 
     async def upsert(self, data: MediaUpsertData) -> Media:
-        return await self.repository.upsert(data)
+        async with self.uow:
+            media_repo = self.uow.get_repo(MediaRepository)
+            return await media_repo.upsert(data)
 
     async def delete(self, media: Media) -> None:
         await self.storage.delete_object(media.name)
-        await self.repository.delete(media)
+
+        async with self.uow:
+            media_repo = self.uow.get_repo(MediaRepository)
+            await media_repo.delete(media)
 
     async def delete_many(self, media_objects: List[Media]) -> None:
         if not media_objects:
             return
         await self.storage.delete_objects([media.name for media in media_objects])
-        for media in media_objects:
-            await self.repository.delete(media)
+        async with self.uow:
+            media_repo = self.uow.get_repo(MediaRepository)
+            for media in media_objects:
+                await media_repo.delete(media)
 
     async def list_by_ids(self, media_ids: list[int]) -> list[Media]:
-        return await self.repository.list_by_ids(media_ids)
+        async with self.uow:
+            media_repo = self.uow.get_repo(MediaRepository)
+            return await media_repo.list_by_ids(media_ids)
 
     async def build_url_map(self, media_objects: List[Media]) -> dict[int, str]:
         if not media_objects:

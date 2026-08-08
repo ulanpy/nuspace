@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import logging
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from backend.core.database.uow import UnitOfWork
 
-from backend.modules.campuscurrent.models.events import EventBotSubmission, EventBotSubmissionStatus, RegistrationPolicy
+from backend.modules.campuscurrent.models.events import (
+    EventBotSubmission,
+    EventBotSubmissionStatus,
+    RegistrationPolicy,
+)
 from backend.modules.auth.models import UserScope
 from backend.modules.bot.interfaces import CampusEventPublisher, EventDraftExtractor
 from backend.modules.bot.repository import BotUserRepository, EventBotSubmissionRepository
@@ -12,7 +16,6 @@ from backend.modules.bot.schemas.event_post import (
     EventPostResult,
     TelegramEventPostInput,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -27,19 +30,26 @@ class EventPostService:
     def __init__(
         self,
         *,
-        db_session: AsyncSession,
+        uow: UnitOfWork,
         draft_extractor: EventDraftExtractor,
         event_publisher: CampusEventPublisher,
-        submission_repository: EventBotSubmissionRepository | None = None,
-        user_repository: BotUserRepository | None = None,
     ) -> None:
-        self.db_session = db_session
+        self.uow = uow
         self.draft_extractor = draft_extractor
         self.event_publisher = event_publisher
-        self.submission_repository = submission_repository or EventBotSubmissionRepository(
-            db_session
-        )
-        self.user_repository = user_repository or BotUserRepository(db_session)
+
+    async def _get_user(self, telegram_id: int):
+        async with self.uow:
+            return await self.uow.get_repo(BotUserRepository).get_by_telegram_id(telegram_id)
+
+    async def _create_submission(self, submission: EventBotSubmission) -> EventBotSubmission:
+        async with self.uow:
+            return await self.uow.get_repo(EventBotSubmissionRepository).create(submission)
+
+    async def _save_submission(self, submission: EventBotSubmission) -> EventBotSubmission:
+        async with self.uow:
+            managed = await self.uow.require_session().merge(submission)
+            return await self.uow.get_repo(EventBotSubmissionRepository).save(managed)
 
     async def submit_from_telegram(
         self,
@@ -48,7 +58,7 @@ class EventPostService:
         image_bytes: bytes | None = None,
         image_mime_type: str | None = None,
     ) -> EventPostResult:
-        user = await self.user_repository.get_by_telegram_id(payload.submitter_telegram_id)
+        user = await self._get_user(payload.submitter_telegram_id)
         if user is None:
             raise PermissionError(
                 "Telegram account is not linked. Sign in on Nuspace and bind Telegram first."
@@ -72,13 +82,13 @@ class EventPostService:
             raw_payload=payload.raw_payload,
             registration_link=payload.link_urls[0] if payload.link_urls else None,
         )
-        await self.submission_repository.create(submission)
+        submission = await self._create_submission(submission)
 
         caption = (payload.caption or "").strip()
         if not caption:
             submission.status = EventBotSubmissionStatus.needs_info
             submission.reject_reason = "missing_caption"
-            await self.submission_repository.save(submission)
+            await self._save_submission(submission)
             return EventPostResult(
                 submission_id=submission.id,
                 status=submission.status,
@@ -98,7 +108,7 @@ class EventPostService:
             logger.exception("Gemini event extraction failed for submission")
             submission.status = EventBotSubmissionStatus.failed
             submission.reject_reason = str(exc)[:500]
-            await self.submission_repository.save(submission)
+            await self._save_submission(submission)
             return EventPostResult(
                 submission_id=submission.id,
                 status=submission.status,
@@ -112,7 +122,7 @@ class EventPostService:
         if draft.reject:
             submission.status = EventBotSubmissionStatus.rejected
             submission.reject_reason = draft.reject_reason or "rejected_by_model"
-            await self.submission_repository.save(submission)
+            await self._save_submission(submission)
             return EventPostResult(
                 submission_id=submission.id,
                 status=submission.status,
@@ -127,7 +137,7 @@ class EventPostService:
                 if draft.missing_fields
                 else "incomplete"
             )
-            await self.submission_repository.save(submission)
+            await self._save_submission(submission)
             missing = ", ".join(draft.missing_fields) if draft.missing_fields else "required fields"
             return EventPostResult(
                 submission_id=submission.id,
@@ -155,7 +165,7 @@ class EventPostService:
 
         submission.event_id = event_id
         submission.status = EventBotSubmissionStatus.published
-        await self.submission_repository.save(submission)
+        await self._save_submission(submission)
 
         return EventPostResult(
             submission_id=submission.id,

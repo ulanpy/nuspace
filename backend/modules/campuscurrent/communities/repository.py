@@ -61,7 +61,8 @@ class CommunityRepository:
         except Exception:
             return False
 
-    async def upsert_search(self, meilisearch_client: AsyncClient, community: Community) -> None:
+    @staticmethod
+    async def upsert_search(meilisearch_client: AsyncClient, community: Community) -> None:
         await meilisearch.upsert(
             client=meilisearch_client,
             storage_name=Community.__tablename__,
@@ -72,9 +73,8 @@ class CommunityRepository:
             },
         )
 
-    async def delete_from_search(
-        self, meilisearch_client: AsyncClient, community_id: int
-    ) -> None:
+    @staticmethod
+    async def delete_from_search(meilisearch_client: AsyncClient, community_id: int) -> None:
         await meilisearch.delete(
             client=meilisearch_client,
             storage_name=Community.__tablename__,
@@ -134,11 +134,7 @@ class CommunityRepository:
         if keyword:
             conditions.append(Community.id.in_(community_ids))
 
-        base_stmt = (
-            select(Community)
-            .where(*conditions)
-            .options(selectinload(Community.head_user))
-        )
+        base_stmt = select(Community).where(*conditions).options(selectinload(Community.head_user))
 
         if keyword:
             order_clause = case(
@@ -155,9 +151,7 @@ class CommunityRepository:
         else:
             page_num = max(1, page or 1)
             stmt = (
-                base_stmt.order_by(Community.name.asc())
-                .offset((page_num - 1) * size)
-                .limit(size)
+                base_stmt.order_by(Community.name.asc()).offset((page_num - 1) * size).limit(size)
             )
             result = await self.db_session.execute(stmt)
             communities = list(result.scalars().all())
@@ -167,7 +161,9 @@ class CommunityRepository:
 
         return communities, count, keyword_no_results
 
-    async def load_relations(self, community: Community, relations: list[str] | None = None) -> None:
+    async def load_relations(
+        self, community: Community, relations: list[str] | None = None
+    ) -> None:
         await self.db_session.refresh(community, relations or ["head_user"])
 
     async def get_by_id(self, community_id: int) -> Community | None:

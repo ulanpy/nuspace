@@ -3,13 +3,18 @@ from __future__ import annotations
 import logging
 from typing import Dict, Iterable, List, Optional, Sequence
 
-from fastapi import HTTPException
-
+from backend.core.database.uow import UnitOfWork
+from backend.modules.courses.models.grade_report import (
+    PlannerSchedule,
+    PlannerScheduleCourse,
+    PlannerScheduleSection,
+)
 from backend.modules.courses.planner.autobuilder import PlannerAutoBuilder
 from backend.modules.courses.planner.constants import (
     DEFAULT_SCHEDULE_NAME,
     MAX_PLANNER_SCHEDULES_PER_STUDENT,
 )
+from backend.modules.courses.planner.interfaces import CourseCatalogLookup
 from backend.modules.courses.planner.repository import PlannerRepository
 from backend.modules.courses.planner.schemas import (
     AutoBuildCourseResult,
@@ -28,19 +33,13 @@ from backend.modules.courses.planner.schemas import (
 )
 from backend.modules.courses.planner.serializers import PlannerSerializer
 from backend.modules.courses.registrar.schemas import (
-    CourseSummary,
     CourseSearchRequest,
     CourseSearchResponse,
+    CourseSummary,
     SemesterOption,
 )
-from backend.modules.courses.planner.interfaces import CourseCatalogLookup
 from backend.modules.courses.registrar.service import CoursePriorityRecord
-
-from backend.modules.courses.models.grade_report import (
-    PlannerSchedule,
-    PlannerScheduleCourse,
-    PlannerScheduleSection,
-)
+from fastapi import HTTPException
 
 logger = logging.getLogger(__name__)
 
@@ -48,11 +47,11 @@ logger = logging.getLogger(__name__)
 class PlannerService:
     def __init__(
         self,
-        repository: PlannerRepository,
+        uow: UnitOfWork,
         course_catalog: CourseCatalogLookup,
         active_semester: SemesterOption,
     ):
-        self.repository = repository
+        self.uow = uow
         self.course_catalog = course_catalog
         self.active_semester = active_semester
         self.autobuilder = PlannerAutoBuilder()
@@ -64,25 +63,30 @@ class PlannerService:
         schedule_id: Optional[int] = None,
     ) -> PlannerSchedule:
         if schedule_id is not None:
-            schedule = await self.repository.get_schedule_by_id(schedule_id, student_sub)
+            async with self.uow:
+                planner_repo = self.uow.get_repo(PlannerRepository)
+                schedule = await planner_repo.get_schedule_by_id(schedule_id, student_sub)
             if schedule is None:
                 raise HTTPException(status_code=404, detail="Schedule not found")
             return schedule
 
-        schedule = await self.repository.get_default_schedule_for_student(student_sub)
-        if schedule is None:
-            schedule = await self.repository.create_schedule(
-                student_sub=student_sub,
-                name=DEFAULT_SCHEDULE_NAME,
-            )
-            await self.repository.session.commit()
-            schedule = await self.repository.get_schedule_by_id(schedule.id, student_sub)
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            schedule = await planner_repo.get_default_schedule_for_student(student_sub)
             if schedule is None:
-                raise HTTPException(status_code=500, detail="Failed to create planner schedule")
+                schedule = await planner_repo.create_schedule(
+                    student_sub=student_sub,
+                    name=DEFAULT_SCHEDULE_NAME,
+                )
+                schedule = await planner_repo.get_schedule_by_id(schedule.id, student_sub)
+                if schedule is None:
+                    raise HTTPException(status_code=500, detail="Failed to create planner schedule")
         return schedule
 
     async def _ensure_schedule_capacity(self, student_sub: str) -> None:
-        count = await self.repository.count_schedules_for_student(student_sub)
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            count = await planner_repo.count_schedules_for_student(student_sub)
         if count >= MAX_PLANNER_SCHEDULES_PER_STUDENT:
             raise HTTPException(
                 status_code=409,
@@ -107,10 +111,12 @@ class PlannerService:
         return base[:64]
 
     async def list_schedules(self, student_sub: str) -> PlannerScheduleListResponse:
-        schedules = await self.repository.list_schedules_for_student(student_sub)
-        if not schedules:
-            await self._resolve_schedule(student_sub)
-            schedules = await self.repository.list_schedules_for_student(student_sub)
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            schedules = await planner_repo.list_schedules_for_student(student_sub)
+            if not schedules:
+                await self._resolve_schedule(student_sub)
+                schedules = await planner_repo.list_schedules_for_student(student_sub)
 
         items = [
             PlannerScheduleSummary(
@@ -133,13 +139,17 @@ class PlannerService:
         payload: PlannerScheduleCreateRequest,
     ) -> PlannerScheduleSummary:
         await self._ensure_schedule_capacity(student_sub)
-        existing_count = await self.repository.count_schedules_for_student(student_sub)
-        name = (payload.name or "").strip() or self._default_schedule_name(existing_count)
-        schedule = await self.repository.create_schedule(
-            student_sub=student_sub,
-            name=name,
-        )
-        await self.repository.session.commit()
+
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            existing_count = await planner_repo.count_schedules_for_student(student_sub)
+
+            name = (payload.name or "").strip() or self._default_schedule_name(existing_count)
+            schedule = await planner_repo.create_schedule(
+                student_sub=student_sub,
+                name=name,
+            )
+
         return PlannerScheduleSummary(
             id=schedule.id,
             name=schedule.name,
@@ -156,18 +166,17 @@ class PlannerService:
         await self._ensure_schedule_capacity(student_sub)
         source = await self._resolve_schedule(student_sub, schedule_id)
         name = (payload.name or "").strip() or self._duplicate_schedule_name(source.name)
-        duplicate = await self.repository.duplicate_schedule(
-            source,
-            student_sub=student_sub,
-            name=name,
-        )
-        await self.repository.session.commit()
-        reloaded = await self.repository.get_schedule_by_id(duplicate.id, student_sub)
-        target = reloaded or duplicate
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            duplicate = await planner_repo.duplicate_schedule(
+                source,
+                student_sub=student_sub,
+                name=name,
+            )
         return PlannerScheduleSummary(
-            id=target.id,
-            name=target.name,
-            course_count=len(target.courses),
+            id=duplicate.id,
+            name=duplicate.name,
+            course_count=len(duplicate.courses),
         )
 
     async def update_schedule_variant(
@@ -177,21 +186,22 @@ class PlannerService:
         schedule_id: int,
         payload: PlannerScheduleUpdateRequest,
     ) -> PlannerScheduleSummary:
-        await self._resolve_schedule(student_sub, schedule_id)
-        await self.repository.update_schedule_name(
-            schedule_id=schedule_id,
-            student_sub=student_sub,
-            name=payload.name.strip(),
-        )
-        await self.repository.session.commit()
-        refreshed = await self.repository.get_schedule_by_id(schedule_id, student_sub)
-        if refreshed is None:
-            raise HTTPException(status_code=404, detail="Schedule not found")
-        return PlannerScheduleSummary(
-            id=refreshed.id,
-            name=refreshed.name,
-            course_count=len(refreshed.courses),
-        )
+
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            schedule = await planner_repo.get_schedule_by_id(schedule_id, student_sub)
+            if schedule is None:
+                raise HTTPException(status_code=404, detail="Schedule not found")
+            await planner_repo.update_schedule_name(
+                schedule_id=schedule.id,
+                student_sub=student_sub,
+                name=payload.name.strip(),
+            )
+            schedule.name = payload.name.strip()
+            result = PlannerScheduleSummary(
+                id=schedule.id, name=schedule.name, course_count=len(schedule.courses)
+            )
+        return result
 
     async def delete_schedule_variant(
         self,
@@ -199,19 +209,21 @@ class PlannerService:
         student_sub: str,
         schedule_id: int,
     ) -> None:
-        count = await self.repository.count_schedules_for_student(student_sub)
-        if count <= 1:
-            raise HTTPException(
-                status_code=409,
-                detail={
-                    "code": "cannot_delete_last_schedule",
-                    "message": "At least one schedule variant must remain.",
-                },
-            )
-        deleted = await self.repository.delete_schedule(schedule_id, student_sub)
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            count = await planner_repo.count_schedules_for_student(student_sub)
+            if count <= 1:
+                raise HTTPException(
+                    status_code=409,
+                    detail={
+                        "code": "cannot_delete_last_schedule",
+                        "message": "At least one schedule variant must remain.",
+                    },
+                )
+            deleted = await planner_repo.delete_schedule(schedule_id, student_sub)
+
         if not deleted:
             raise HTTPException(status_code=404, detail="Schedule not found")
-        await self.repository.session.commit()
 
     async def get_schedule(
         self,
@@ -282,8 +294,10 @@ class PlannerService:
     ) -> None:
         schedule = await self._resolve_schedule(student_sub, schedule_id)
         resolved_term = term_value or self.active_semester.value
-        await self.repository.reset_schedule_courses(schedule.id, resolved_term)
-        await self.repository.session.commit()
+
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            await planner_repo.reset_schedule_courses(schedule.id, resolved_term)
 
     # ----- Course management ----- #
     async def add_course(
@@ -306,22 +320,26 @@ class PlannerService:
             )
 
         level = summary.level or payload.level
-        course = await self.repository.add_course_to_planner_schedule(
-            schedule_id=schedule.id,
-            registrar_course_id=summary.registrar_id,
-            course_code=summary.course_code,
-            level=level,
-            school=summary.school or None,
-            term_value=active_term.value,
-            term_label=summary.term or payload.term_label or active_term.label,
-            metadata_json={
-                "title": summary.title,
-                "credits": summary.credits,
-            },
-        )
-        await self.repository.session.commit()
-
-        course = await self.repository.get_course(course.id, student_sub)
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            course = await planner_repo.add_course_to_planner_schedule(
+                schedule_id=schedule.id,
+                registrar_course_id=summary.registrar_id,
+                course_code=summary.course_code,
+                level=level,
+                school=summary.school or None,
+                term_value=active_term.value,
+                term_label=summary.term or payload.term_label or active_term.label,
+                metadata_json={
+                    "title": summary.title,
+                    "credits": summary.credits,
+                },
+            )
+            # `sections` is serialized after this transaction. Reload the aggregate
+            # with its collection eager-loaded so no detached lazy load is attempted.
+            course = await planner_repo.get_course(course.id, student_sub)
+            if course is None:
+                raise HTTPException(status_code=500, detail="Failed to create planner course")
         return await self._serialize_course_with_counts(course)
 
     async def remove_course(
@@ -330,12 +348,13 @@ class PlannerService:
         student_sub: str,
         course_id: int,
     ) -> None:
-        course = await self.repository.get_course(course_id, student_sub)
-        if course is None:
-            raise HTTPException(status_code=404, detail="Course not found")
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            course = await planner_repo.get_course(course_id, student_sub)
+            if course is None:
+                raise HTTPException(status_code=404, detail="Course not found")
 
-        await self.repository.delete_course(course)
-        await self.repository.session.commit()
+            await planner_repo.delete_course(course)
 
     async def _fetch_course_sections(
         self,
@@ -355,6 +374,7 @@ class PlannerService:
                 course_code=course.course_code,
                 term=term_value,
             )
+
             # Merge multiple meetings for the same section_code into one section entry.
             def _merge_text(base: str | None, new_val: str | None) -> str:
                 parts = []
@@ -381,8 +401,16 @@ class PlannerService:
                 }
                 current["days"] = _merge_text(current["days"], entry.days)
                 current["times"] = _merge_text(current["times"], entry.times)
-                current["room"] = _merge_text(current.get("room"), entry.room) if entry.room else current.get("room")
-                current["faculty"] = _merge_text(current.get("faculty"), entry.faculty) if entry.faculty else current.get("faculty")
+                current["room"] = (
+                    _merge_text(current.get("room"), entry.room)
+                    if entry.room
+                    else current.get("room")
+                )
+                current["faculty"] = (
+                    _merge_text(current.get("faculty"), entry.faculty)
+                    if entry.faculty
+                    else current.get("faculty")
+                )
                 if current.get("capacity") is None and entry.capacity is not None:
                     current["capacity"] = entry.capacity
                 if current.get("enrollment") is None and entry.enrollment is not None:
@@ -390,21 +418,31 @@ class PlannerService:
                 merged[key] = current
 
             payload = list(merged.values())
-            new_sections = await self.repository.replace_sections(
-                course=course,
-                sections_payload=payload,
-            )
-            capacity_total = self._calculate_capacity_total(new_sections)
-            enrollment_total = self._calculate_enrollment_total(new_sections)
-            await self.repository.update_course_capacity(
-                course_id=course.id,
-                capacity_total=capacity_total,
-                enrollment_total=enrollment_total,
-            )
-            await self.repository.session.commit()
-            course = await self.repository.get_course(course.id, student_sub)
+            async with self.uow:
+                planner_repo = self.uow.get_repo(PlannerRepository)
+                # The caller holds a detached course aggregate. Reload it in this
+                # session before `replace_sections` reads its existing sections.
+                managed_course = await planner_repo.get_course(course.id, student_sub)
+                if managed_course is None:
+                    raise HTTPException(status_code=404, detail="Course not found")
+                new_sections = await planner_repo.replace_sections(
+                    course=managed_course,
+                    sections_payload=payload,
+                )
+                capacity_total = self._calculate_capacity_total(new_sections)
+                enrollment_total = self._calculate_enrollment_total(new_sections)
+                await planner_repo.update_course_capacity(
+                    course_id=managed_course.id,
+                    capacity_total=capacity_total,
+                    enrollment_total=enrollment_total,
+                )
+                course = await planner_repo.get_course(managed_course.id, student_sub)
+                if course is None:
+                    raise HTTPException(status_code=404, detail="Course not found")
 
-        selection_counts = await self.repository.get_selection_counts_for_courses([course.id])
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            selection_counts = await planner_repo.get_selection_counts_for_courses([course.id])
         counts = selection_counts.get(course.id, {})
         return [
             self.serializer.serialize_section(
@@ -438,9 +476,10 @@ class PlannerService:
         course: PlannerScheduleCourse,
         section_ids: Sequence[int],
     ) -> PlannerCourseResponse:
-        await self.repository.select_sections(course_id=course.id, section_ids=section_ids)
-        await self.repository.session.commit()
-        refreshed = await self.repository.get_course(course.id, student_sub)
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            await planner_repo.select_sections(course_id=course.id, section_ids=section_ids)
+            refreshed = await planner_repo.get_course(course.id, student_sub)
         return await self._serialize_course_with_counts(refreshed)
 
     async def select_sections_for_student(
@@ -478,13 +517,14 @@ class PlannerService:
 
         builder_result = self.autobuilder.build(schedule)
 
-        for course in schedule.courses:
-            chosen_section_ids = builder_result.get(course.id)
-            await self.repository.select_sections(
-                course_id=course.id,
-                section_ids=list(chosen_section_ids) if chosen_section_ids else [],
-            )
-        await self.repository.session.commit()
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            for course in schedule.courses:
+                chosen_section_ids = builder_result.get(course.id)
+                await planner_repo.select_sections(
+                    course_id=course.id,
+                    section_ids=list(chosen_section_ids) if chosen_section_ids else [],
+                )
 
         refreshed = await self._resolve_schedule(student_sub, schedule.id)
         scheduled = []
@@ -512,7 +552,9 @@ class PlannerService:
         schedule: PlannerSchedule,
     ) -> PlannerScheduleResponse:
         course_ids = [course.id for course in schedule.courses]
-        selection_counts = await self.repository.get_selection_counts_for_courses(course_ids)
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            selection_counts = await planner_repo.get_selection_counts_for_courses(course_ids)
         priority_map = await self.course_catalog.fetch_course_priorities(
             [course.course_code for course in schedule.courses]
         )
@@ -529,7 +571,9 @@ class PlannerService:
         course: PlannerScheduleCourse,
         priority_map: Dict[str, CoursePriorityRecord] | None = None,
     ) -> PlannerCourseResponse:
-        selection_counts = await self.repository.get_selection_counts_for_courses([course.id])
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            selection_counts = await planner_repo.get_selection_counts_for_courses([course.id])
         if priority_map is None:
             priority_map = await self.course_catalog.fetch_course_priorities([course.course_code])
         term_label_fallback = self.active_semester.label
@@ -588,10 +632,7 @@ class PlannerService:
             for item in response.items:
                 if self.course_catalog.course_codes_match(item.course_code, course_code):
                     return item
-                if (
-                    self.course_catalog.normalize_course_code(item.course_code)
-                    == normalized_target
-                ):
+                if self.course_catalog.normalize_course_code(item.course_code) == normalized_target:
                     return item
 
         return None
@@ -602,7 +643,9 @@ class PlannerService:
         student_sub: str,
         course_id: int,
     ) -> PlannerScheduleCourse:
-        course = await self.repository.get_course(course_id, student_sub)
+        async with self.uow:
+            planner_repo = self.uow.get_repo(PlannerRepository)
+            course = await planner_repo.get_course(course_id, student_sub)
         if course is None:
             raise HTTPException(status_code=404, detail="Course not found")
         return course

@@ -1,0 +1,7 @@
+services:
+  fastapi:
+    # Keep local mock services and fixtures enabled, but run Uvicorn as one
+    # process without the reloader so k6 measures a production-like server.
+    environment:
+      UVICORN_RELOAD: "false"
+    cpus: 1.0

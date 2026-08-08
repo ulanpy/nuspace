@@ -1,9 +1,11 @@
-from typing import AsyncGenerator
+# backend/common/dependencies.py
 
 from backend.common.schemas import Infra
 from backend.core.database.manager import AsyncDatabaseManager
 from fastapi import Request
-from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.core.database.uow import UnitOfWork
+from collections.abc import AsyncGenerator
 
 
 async def get_infra(request: Request) -> Infra:
@@ -18,8 +20,10 @@ async def get_infra(request: Request) -> Infra:
     )
 
 
-async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
-    """Retrieve the database session from the shared db_manager."""
+async def get_uow(request: Request) -> AsyncGenerator[UnitOfWork, None]:
+    """Dependency to get a UnitOfWork instance."""
     db_manager: AsyncDatabaseManager = request.app.state.db_manager
-    async for session in db_manager.get_async_session():
-        yield session
+    uow = UnitOfWork(session_factory=db_manager.get_session_maker())
+    yield uow
+
+

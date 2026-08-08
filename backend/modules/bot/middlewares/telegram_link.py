@@ -15,7 +15,7 @@ class TelegramLinkMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        db_session = data.get("db_session")
-        if db_session is not None:
-            data["telegram_link_service"] = TelegramLinkService(db_session)
+        uow = data.get("uow")
+        if uow is not None:
+            data["telegram_link_service"] = TelegramLinkService(uow)
         return await handler(event, data)

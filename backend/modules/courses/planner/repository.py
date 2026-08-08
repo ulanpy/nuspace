@@ -24,8 +24,10 @@ class PlannerRepository:
         return selectinload(PlannerSchedule.courses).selectinload(PlannerScheduleCourse.sections)
 
     async def count_schedules_for_student(self, student_sub: str) -> int:
-        stmt = select(func.count()).select_from(PlannerSchedule).where(
-            PlannerSchedule.student_sub == student_sub
+        stmt = (
+            select(func.count())
+            .select_from(PlannerSchedule)
+            .where(PlannerSchedule.student_sub == student_sub)
         )
         result = await self.session.execute(stmt)
         return int(result.scalar_one())
@@ -136,7 +138,9 @@ class PlannerRepository:
                 enrollment_total=course.enrollment_total,
             )
             self.session.add(new_course)
+            # Allocate the PK before using it for copied sections.
             await self.session.flush()
+
             for section in course.sections:
                 self.session.add(
                     PlannerScheduleSection(
@@ -180,14 +184,11 @@ class PlannerRepository:
         if not course_ids:
             return {}
 
-        course_meta_stmt = (
-            select(
-                PlannerScheduleCourse.id,
-                PlannerScheduleCourse.course_code,
-                PlannerScheduleCourse.term_value,
-            )
-            .where(PlannerScheduleCourse.id.in_(course_ids))
-        )
+        course_meta_stmt = select(
+            PlannerScheduleCourse.id,
+            PlannerScheduleCourse.course_code,
+            PlannerScheduleCourse.term_value,
+        ).where(PlannerScheduleCourse.id.in_(course_ids))
         result = await self.session.execute(course_meta_stmt)
         course_meta = {
             course_id: (course_code, term_value)
@@ -200,9 +201,13 @@ class PlannerRepository:
         for course_code, term_value in set(course_meta.values()):
             base_condition = PlannerScheduleCourse.course_code == course_code
             if term_value is None:
-                course_filters.append(and_(base_condition, PlannerScheduleCourse.term_value.is_(None)))
+                course_filters.append(
+                    and_(base_condition, PlannerScheduleCourse.term_value.is_(None))
+                )
             else:
-                course_filters.append(and_(base_condition, PlannerScheduleCourse.term_value == term_value))
+                course_filters.append(
+                    and_(base_condition, PlannerScheduleCourse.term_value == term_value)
+                )
 
         if not course_filters:
             return {}

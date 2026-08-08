@@ -1,19 +1,20 @@
 from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
 
-from backend.common.dependencies import get_db_session
-from backend.core.configs.config import config
-from backend.modules.auth.models import UserRole
-from backend.modules.auth.app_token import AppTokenManager
-from backend.modules.auth.cookies import set_app_token_cookie, set_kc_auth_cookies
-from backend.modules.auth.keycloak_manager import KeyCloakManager
-from backend.modules.auth.mock import get_mock_user_by_sub
-from backend.modules.auth.service import AuthService
 from fastapi import Cookie, Depends, HTTPException, Request, Response, status
 from jose import JWTError, jwt
 from jwt import ExpiredSignatureError as PyJWTExpiredSignatureError
 from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.common.dependencies import get_uow
+from backend.core.configs.config import config
+from backend.core.database.uow import UnitOfWork
+from backend.modules.auth.app_token import AppTokenManager
+from backend.modules.auth.cookies import set_app_token_cookie, set_kc_auth_cookies
+from backend.modules.auth.keycloak_manager import KeyCloakManager
+from backend.modules.auth.mock import get_mock_user_by_sub
+from backend.modules.auth.models import UserRole
+from backend.modules.auth.service import AuthService
 
 
 def set_request_access_actor(
@@ -63,12 +64,12 @@ def get_redis(request: Request) -> Redis:
 
 
 def get_auth_service(
-    db_session: AsyncSession = Depends(get_db_session),
+    uow: UnitOfWork = Depends(get_uow),
     kc_manager: KeyCloakManager = Depends(get_keycloak_manager),
     app_token_manager: AppTokenManager = Depends(get_app_token_manager),
 ) -> AuthService:
     return AuthService(
-        db_session=db_session,
+        uow=uow,
         kc_manager=kc_manager,
         app_token_manager=app_token_manager,
     )
@@ -77,7 +78,7 @@ def get_auth_service(
 async def get_creds_or_401(
     request: Request,
     response: Response,
-    db_session: AsyncSession = Depends(get_db_session),
+    uow: UnitOfWork = Depends(get_uow),
     kc_manager: KeyCloakManager = Depends(get_keycloak_manager),
     app_token_manager: AppTokenManager = Depends(get_app_token_manager),
     access_token: Annotated[str | None, Cookie(alias=config.COOKIE_ACCESS_NAME)] = None,
@@ -146,8 +147,8 @@ async def get_creds_or_401(
             detail="Could not establish Keycloak principal.",
         )
 
-    auth_service = AuthService(db_session, kc_manager, app_token_manager)
     try:
+        auth_service = AuthService(uow, kc_manager, app_token_manager)
         await auth_service.ensure_user_from_access_token(access_token, kc_principal)
     except HTTPException:
         raise
@@ -172,7 +173,7 @@ async def get_creds_or_401(
     if issue_new_app_token:
         try:
             new_app_token_str, new_app_claims = await app_token_manager.create_app_token(
-                kc_principal["sub"], db_session
+                kc_principal["sub"], uow
             )
             set_app_token_cookie(
                 response,
@@ -204,7 +205,7 @@ async def get_creds_or_401(
 async def get_creds_or_guest(
     request: Request,
     response: Response,
-    db_session: AsyncSession = Depends(get_db_session),
+    uow: UnitOfWork = Depends(get_uow),
     kc_manager: KeyCloakManager = Depends(get_keycloak_manager),
     app_token_manager: AppTokenManager = Depends(get_app_token_manager),
     access_token: Annotated[str | None, Cookie(alias=config.COOKIE_ACCESS_NAME)] = None,
@@ -227,7 +228,7 @@ async def get_creds_or_guest(
         return await get_creds_or_401(
             request=request,
             response=response,
-            db_session=db_session,
+            uow=uow,
             kc_manager=kc_manager,
             app_token_manager=app_token_manager,
             access_token=access_token,

@@ -26,6 +26,22 @@ cd infra
 docker compose -f docker-compose --profile monitoring up -d 
 ```
 
+### Benchmark mode
+
+To measure FastAPI on one CPU without Uvicorn reload while retaining the local
+mock environment, start the stack with the benchmark override:
+
+```sh
+cd infra
+docker compose -f docker-compose.yml -f docker-compose.bench.yml up -d --build --force-recreate fastapi
+```
+
+Return to the normal hot-reload server with:
+
+```sh
+docker compose up -d --build --force-recreate fastapi
+```
+
 ### Service Addresses
 
 | Service                                                         | Addresses               |

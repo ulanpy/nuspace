@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from backend.common.dependencies import get_db_session
+from backend.common.dependencies import get_uow
 from backend.modules.auth.dependencies import get_creds_or_401
 from backend.core.configs.config import config
+from backend.core.database.uow import UnitOfWork
 from backend.modules.courses.degree_audit.dependencies import get_degree_audit_service
 from backend.modules.courses.degree_audit.schemas import (
     AuditRequestPDF,
@@ -15,7 +16,6 @@ from backend.modules.courses.degree_audit.schemas import (
 )
 from backend.modules.courses.degree_audit.service import DegreeAuditService
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/degree-audit", tags=["Degree Audit"])
 
@@ -41,7 +41,7 @@ async def list_catalog(
 async def audit_from_registrar(
     payload: AuditRequestRegistrar,
     _creds: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
+    uow: UnitOfWork = Depends(get_uow),
     service: DegreeAuditService = Depends(get_degree_audit_service),
 ) -> AuditResponse:
     return await service.audit_with_registrar(
@@ -51,7 +51,7 @@ async def audit_from_registrar(
         username=payload.username if not config.IS_DEBUG else "bauyrzhan.kizatov",
         password=payload.password,
         student_sub=_creds[1]["sub"],
-        session=db_session,
+        uow=uow,
         tc_mappings=payload.tc_mappings,
     )
 
@@ -65,7 +65,7 @@ async def audit_from_registrar(
 async def audit_from_pdf(
     payload: AuditRequestPDF,
     _creds: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    db_session: AsyncSession = Depends(get_db_session),
+    uow: UnitOfWork = Depends(get_uow),
     service: DegreeAuditService = Depends(get_degree_audit_service),
 ) -> AuditResponse:
     return await service.audit_with_pdf(
@@ -74,7 +74,7 @@ async def audit_from_pdf(
         minors=payload.minors,
         pdf_file=payload.pdf_file,
         student_sub=_creds[1]["sub"],
-        session=db_session,
+        uow=uow,
         tc_mappings=payload.tc_mappings,
     )
 
@@ -103,13 +103,12 @@ async def get_cached_result(
     year: str | None = None,
     major: str | None = None,
     _creds: Annotated[tuple[dict, dict], Depends(get_creds_or_401)] = None,
-    db_session: AsyncSession = Depends(get_db_session),
+    uow: UnitOfWork = Depends(get_uow),
     service: DegreeAuditService = Depends(get_degree_audit_service),
 ) -> AuditResponse | None:
     return await service.get_cached_result(
         student_sub=_creds[1]["sub"],
-        session=db_session,
+        uow=uow,
         year=year,
         major=major,
     )
-

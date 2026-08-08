@@ -8,11 +8,10 @@ from fastapi import HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
 from jose import JWTError
 from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import config
-from backend.modules.auth.models import UserRole, UserScope
+from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.app_token import AppTokenManager
 from backend.modules.auth.cookies import (
     set_app_token_cookie,
@@ -21,6 +20,7 @@ from backend.modules.auth.cookies import (
 )
 from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.auth.mock import build_mock_creds, get_mock_user_by_sub
+from backend.modules.auth.models import User, UserRole, UserScope
 from backend.modules.auth.oauth import exchange_code_for_credentials
 from backend.modules.auth.repository import UserRepository
 from backend.modules.auth.schemas import CurrentUserResponse, UserSchema
@@ -33,14 +33,13 @@ OAUTH_ORIGIN_KEY_PREFIX = "oauth_origin:"
 class AuthService:
     def __init__(
         self,
-        db_session: AsyncSession,
+        uow: UnitOfWork,
         kc_manager: KeyCloakManager,
         app_token_manager: AppTokenManager,
     ):
-        self.db_session = db_session
+        self.uow = uow
         self.kc_manager = kc_manager
         self.app_token_manager = app_token_manager
-        self.user_repository = UserRepository(db_session)
 
     async def ensure_login_state(
         self,
@@ -190,12 +189,14 @@ class AuthService:
         return {**kc_principal, **userinfo}
 
     async def ensure_user_from_kc_principal(self, kc_principal: dict):
-        user = await self.user_repository.get_by_sub(kc_principal["sub"])
-        if user:
-            return user
-        return await self.user_repository.upsert(
-            self.user_schema_from_kc_principal(kc_principal)
-        )
+        async with self.uow:
+            user_repo = self.uow.get_repo(UserRepository)  # Ensure repository is initialized
+            user = await user_repo.get_by_sub(kc_principal["sub"])
+            if user:
+                return user
+            return await user_repo.upsert(
+                self.user_schema_from_kc_principal(kc_principal)
+            )
 
     async def ensure_user_from_access_token(
         self, access_token: str, kc_principal: dict
@@ -208,7 +209,9 @@ class AuthService:
         return await self.ensure_user_from_kc_principal(profile)
 
     async def ensure_telegram_linked(self, sub: str) -> bool:
-        user = await self.user_repository.get_by_sub(sub)
+        async with self.uow:
+            user_repo = self.uow.get_repo(UserRepository)  # Ensure repository is initialized
+            user = await user_repo.get_by_sub(sub)
         if not user or not user.telegram_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -217,7 +220,9 @@ class AuthService:
         return True
 
     async def get_user_role_or_403(self, sub: str) -> UserRole:
-        user = await self.user_repository.get_by_sub(sub)
+        async with self.uow:
+            user_repo = self.uow.get_repo(UserRepository)  # Ensure repository is initialized
+            user = await user_repo.get_by_sub(sub)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -291,9 +296,11 @@ class AuthService:
                 ) from exc
 
         user_schema = self.user_schema_from_creds(creds)
-        user = await self.user_repository.upsert(user_schema)
+        async with self.uow:
+            user_repo = self.uow.get_repo(UserRepository)  # Ensure repository is initialized
+            user = await user_repo.upsert(user_schema)
         app_token_str, _claims = await self.app_token_manager.create_app_token(
-            user.sub, self.db_session
+            user.sub, self.uow
         )
 
         redirect_response = RedirectResponse(url=redirect_url, status_code=303)
@@ -329,7 +336,7 @@ class AuthService:
 
         await self.ensure_user_from_access_token(access_token, kc_principal)
         new_app_token_str, new_app_claims = await self.app_token_manager.create_app_token(
-            kc_principal["sub"], self.db_session
+            kc_principal["sub"], self.uow
         )
         return new_kc_creds, new_app_claims, new_app_token_str
 
@@ -345,12 +352,15 @@ class AuthService:
                 detail="App token subject mismatch.",
             )
 
-        user = await self.user_repository.get_by_sub(sub)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
+        # открываем короткую транзакцию, чтобы получить пользователя из базы данных
+        async with self.uow:
+            user_repo = self.uow.get_repo(UserRepository)  # Ensure repository is initialized
+            user: User | None = await user_repo.get_by_sub(sub)
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="User not found",
+                )
 
         user_data_for_response = {
             **kc_principal,

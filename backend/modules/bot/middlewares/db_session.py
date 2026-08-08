@@ -1,10 +1,10 @@
-import contextlib
 from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 
 from backend.core.database.manager import AsyncDatabaseManager
+from backend.core.database.uow import UnitOfWork
 
 
 class DatabaseMiddleware(BaseMiddleware):
@@ -18,6 +18,7 @@ class DatabaseMiddleware(BaseMiddleware):
         data: dict[str, Any],
     ) -> Any:
 
-        async with contextlib.asynccontextmanager(self.db_manager.get_async_session)() as session:
-            data["db_session"] = session
-            return await handler(event, data)
+        # Do not acquire a connection for the whole Telegram update. Services open
+        # a short transaction only around their database work.
+        data["uow"] = UnitOfWork(self.db_manager.get_session_maker())
+        return await handler(event, data)

@@ -5,7 +5,7 @@ from urllib.parse import quote
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
+from backend.core.database.uow import UnitOfWork
 
 from backend.modules.bot.consts import GRADES_PAGE_SIZE
 from backend.modules.bot.keyboards.callback_factory import CourseGradesPage
@@ -71,7 +71,7 @@ def build_grades_message(
         return f'📊 По запросу "<b>{keyword}</b>" ничего не найдено.{footer}'
 
     lines = [
-        f'📊 <b>{keyword}</b> — стр. {response.page}/{response.total_pages} '
+        f"📊 <b>{keyword}</b> — стр. {response.page}/{response.total_pages} "
         f"({response.total} секций)",
         "",
     ]
@@ -104,13 +104,13 @@ def build_grades_keyboard(page: int, total_pages: int) -> InlineKeyboardMarkup |
 
 async def fetch_grades_page(
     *,
-    db_session: AsyncSession,
+    uow: UnitOfWork,
     meilisearch_client: httpx.AsyncClient,
     keyword: str,
     page: int,
 ) -> schemas.ListGradeReportResponse:
     return await list_grade_reports(
-        session=db_session,
+        uow=uow,
         meilisearch_client=meilisearch_client,
         keyword=keyword,
         page=page,
@@ -121,7 +121,7 @@ async def fetch_grades_page(
 async def send_grades_page(
     message: Message,
     *,
-    db_session: AsyncSession,
+    uow: UnitOfWork,
     meilisearch_client: httpx.AsyncClient,
     redis: Redis,
     keyword: str,
@@ -133,7 +133,7 @@ async def send_grades_page(
 
     await set_grades_context(redis, message.chat.id, message.from_user.id, keyword)
     response = await fetch_grades_page(
-        db_session=db_session,
+        uow=uow,
         meilisearch_client=meilisearch_client,
         keyword=keyword,
         page=page,

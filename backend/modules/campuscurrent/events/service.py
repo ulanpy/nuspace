@@ -5,11 +5,11 @@ from datetime import timedelta
 from typing import List
 
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.datetime_utils import utc_now
 from backend.common.schemas import Infra, ShortUserResponse
 from backend.common.utils import response_builder
+from backend.core.database.uow import UnitOfWork
 from backend.modules.campuscurrent.events import schemas, utils
 from backend.modules.campuscurrent.events.attendees_export import (
     build_attendees_csv,
@@ -27,23 +27,25 @@ _ACCESS_INVITE_TTL = timedelta(days=7)
 class EventService:
     def __init__(
         self,
-        db_session: AsyncSession,
         media_attachment_resolver: MediaAttachmentResolver,
-        repo: EventRepository | None = None,
+        uow: UnitOfWork,
     ):
-        self.db_session = db_session
         self.media_attachment_resolver = media_attachment_resolver
-        self.repo = repo or EventRepository(db_session)
+        self.uow = uow
 
     async def _get_event_or_404(self, event_id: int) -> Event:
-        event = await self.repo.get_event_by_id(event_id)
+        async with self.uow:
+            repo = self.uow.get_repo(EventRepository)
+            event = await repo.get_event_by_id(event_id)
         if event is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
         return event
 
     async def _ensure_user_exists(self, sub: str) -> None:
-        if await self.repo.get_user_by_sub(sub) is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        async with self.uow:
+            repo = self.uow.get_repo(EventRepository)
+            if await repo.get_user_by_sub(sub) is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     async def add_event(
         self,
@@ -62,8 +64,11 @@ class EventService:
             user=user
         ).enrich_event_data(event_data)
 
-        event: Event = await self.repo.create_event(event_data)
-        await self.repo.upsert_search(infra.meilisearch_client, event)
+        async with self.uow:
+            event_repo = self.uow.get_repo(EventRepository)
+            event: Event = await event_repo.create_event(event_data)
+
+        await event_repo.upsert_search(infra.meilisearch_client, event)
 
         event_responses = await self._build_event_responses([event], infra, user)
         return event_responses[0]
@@ -75,12 +80,17 @@ class EventService:
         event_data: schemas.EventUpdateRequest,
         user: tuple[dict, dict],
     ) -> schemas.EventResponse:
-        event = await self._get_event_or_404(event_id)
-        EventPolicy(user=user).check_update(event=event, event_data=event_data)
-
         media_ids_to_delete = event_data.media_ids_to_delete or []
-        event: Event = await self.repo.update_event(event=event, event_data=event_data)
-        await self.repo.upsert_search(infra.meilisearch_client, event)
+        async with self.uow:
+            event_repo = self.uow.get_repo(EventRepository)
+            event = await event_repo.get_event_by_id(event_id)
+            if event is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+            EventPolicy(user=user).check_update(event=event, event_data=event_data)
+            event: Event = await event_repo.update_event(event=event, event_data=event_data)
+
+        # add to meilisearch index after commit
+        await event_repo.upsert_search(infra.meilisearch_client, event)
 
         if media_ids_to_delete:
             await self._delete_event_media(infra, event, media_ids_to_delete)
@@ -114,19 +124,21 @@ class EventService:
         await self.media_attachment_resolver.delete_many(media_objects)
 
     async def delete_event(self, infra: Infra, event_id: int, user: tuple[dict, dict]) -> None:
-        event = await self._get_event_or_404(event_id)
-        EventPolicy(user=user).check_delete(event=event)
+        async with self.uow:
+            repo = self.uow.get_repo(EventRepository)
+            event = await repo.get_event_by_id(event_id)
+            if event is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+            EventPolicy(user=user).check_delete(event=event)
+            media_objects: List[Media] = await repo.list_media(event_ids=[event.id])
+            event_deleted, _ = await repo.delete_event_and_media(
+                event=event, media_objects=media_objects
+            )
+            if not event_deleted:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
-        media_objects: List[Media] = await self.repo.list_media(event_ids=[event.id])
         await self.media_attachment_resolver.delete_many(media_objects)
-
-        event_deleted, _ = await self.repo.delete_event_and_media(event=event, media_objects=[])
-        if not event_deleted:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-
-        await self.repo.delete_from_search(
-            meilisearch_client=infra.meilisearch_client, event_id=event_id
-        )
+        await EventRepository.delete_from_search(infra.meilisearch_client, event_id)
 
     def _is_guest(self, user: tuple[dict, dict]) -> bool:
         return bool(user[1].get("is_guest")) or user[0].get("sub") == "guest"
@@ -141,28 +153,26 @@ class EventService:
             return []
 
         event_ids: List[int] = [event.id for event in events]
-        all_media_objs: List[Media] = await self.repo.list_media(
-            event_ids=event_ids,
-            event_media_formats=[MediaFormat.carousel],
-        )
+        async with self.uow:
+            repo = self.uow.get_repo(EventRepository)
+            all_media_objs: List[Media] = await repo.list_media(
+                event_ids=event_ids,
+                event_media_formats=[MediaFormat.carousel],
+            )
+            attendees_count_by_id = await repo.count_attendees_by_event_ids(event_ids)
+            creators_by_event_id = await repo.list_creators_by_event_ids(event_ids)
+            going_event_ids: set[int] = set()
+            viewer_event_ids: set[int] = set()
+            if not self._is_guest(user):
+                user_sub = user[0].get("sub")
+                going_event_ids = await repo.list_going_event_ids(event_ids, user_sub)
+                viewer_event_ids = await repo.list_attendee_viewer_event_ids(event_ids, user_sub)
 
         url_map = await self.media_attachment_resolver.build_url_map(all_media_objs)
-
         event_media_by_id = defaultdict(list)
         for media in all_media_objs:
             if media.entity_type == EntityType.community_events:
                 event_media_by_id[media.entity_id].append(media)
-
-        attendees_count_by_id = await self.repo.count_attendees_by_event_ids(event_ids)
-        creators_by_event_id = await self.repo.list_creators_by_event_ids(event_ids)
-        going_event_ids: set[int] = set()
-        viewer_event_ids: set[int] = set()
-        if not self._is_guest(user):
-            user_sub = user[0].get("sub")
-            going_event_ids = await self.repo.list_going_event_ids(event_ids, user_sub)
-            viewer_event_ids = await self.repo.list_attendee_viewer_event_ids(
-                event_ids, user_sub
-            )
 
         event_responses: List[schemas.EventResponse] = []
         for event in events:
@@ -209,26 +219,34 @@ class EventService:
         return True
 
     async def set_going(self, event_id: int, user: tuple[dict, dict]) -> schemas.EventGoingResponse:
-        event = await self._get_event_or_404(event_id)
-        EventPolicy(user=user).check_rsvp(event=event)
-
         user_sub = user[0]["sub"]
-        await self.repo.add_attendee(event_id=event.id, user_sub=user_sub)
+        async with self.uow:
+            repo = self.uow.get_repo(EventRepository)
+            event = await repo.get_event_by_id(event_id)
+            if event is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+            EventPolicy(user=user).check_rsvp(event=event)
+            await repo.add_attendee(event_id=event.id, user_sub=user_sub)
+            attendees_count = await repo.count_attendees(event.id)
         return schemas.EventGoingResponse(
-            attendees_count=await self.repo.count_attendees(event.id),
+            attendees_count=attendees_count,
             is_going=True,
         )
 
     async def unset_going(
         self, event_id: int, user: tuple[dict, dict]
     ) -> schemas.EventGoingResponse:
-        event = await self._get_event_or_404(event_id)
-        EventPolicy(user=user).check_rsvp(event=event)
-
         user_sub = user[0]["sub"]
-        await self.repo.remove_attendee(event_id=event.id, user_sub=user_sub)
+        async with self.uow:
+            repo = self.uow.get_repo(EventRepository)
+            event = await repo.get_event_by_id(event_id)
+            if event is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+            EventPolicy(user=user).check_rsvp(event=event)
+            await repo.remove_attendee(event_id=event.id, user_sub=user_sub)
+            attendees_count = await repo.count_attendees(event.id)
         return schemas.EventGoingResponse(
-            attendees_count=await self.repo.count_attendees(event.id),
+            attendees_count=attendees_count,
             is_going=False,
         )
 
@@ -240,13 +258,16 @@ class EventService:
         page: int = 1,
         size: int = 20,
     ) -> schemas.ListEventAttendeesResponse:
-        event = await self._get_event_or_404(event_id)
-        policy = EventPolicy(user=user)
-        policy.check_read_one(event=event)
-        is_viewer = await self.repo.is_attendee_viewer(event.id, policy.user_sub)
-        policy.check_list_attendees(event=event, is_viewer=is_viewer)
-
-        rows, total = await self.repo.list_attendees(event.id, page=page, size=size)
+        async with self.uow:
+            repo = self.uow.get_repo(EventRepository)
+            event = await repo.get_event_by_id(event_id)
+            if event is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+            policy = EventPolicy(user=user)
+            policy.check_read_one(event=event)
+            is_viewer = await repo.is_attendee_viewer(event.id, policy.user_sub)
+            policy.check_list_attendees(event=event, is_viewer=is_viewer)
+            rows, total = await repo.list_attendees(event.id, page=page, size=size)
         items = [
             schemas.EventAttendeeResponse(
                 sub=user_row.sub,
@@ -273,13 +294,16 @@ class EventService:
         user: tuple[dict, dict],
         export_format: schemas.EventAttendeesExportFormat,
     ) -> tuple[bytes, str, str]:
-        event = await self._get_event_or_404(event_id)
-        policy = EventPolicy(user=user)
-        policy.check_read_one(event=event)
-        is_viewer = await self.repo.is_attendee_viewer(event.id, policy.user_sub)
-        policy.check_list_attendees(event=event, is_viewer=is_viewer)
-
-        rows = await self.repo.list_all_attendees_for_export(event.id)
+        async with self.uow:
+            repo = self.uow.get_repo(EventRepository)
+            event = await repo.get_event_by_id(event_id)
+            if event is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+            policy = EventPolicy(user=user)
+            policy.check_read_one(event=event)
+            is_viewer = await repo.is_attendee_viewer(event.id, policy.user_sub)
+            policy.check_list_attendees(event=event, is_viewer=is_viewer)
+            rows = await repo.list_all_attendees_for_export(event.id)
         # HTTP Content-Disposition filename= must be latin-1; isalnum() allows Cyrillic.
         safe_name = "".join(
             ch if ch.isascii() and (ch.isalnum() or ch in "-_") else "_" for ch in event.name
@@ -318,25 +342,64 @@ class EventService:
             user[0].get("sub") if event_filter.creator_sub == "me" else event_filter.creator_sub
         )
 
-        events, count, keyword_no_results = await self.repo.list_events(
-            event_filter=event_filter,
-            creator_sub=creator_sub,
-            meilisearch_client=infra.meilisearch_client,
-        )
-
-        if keyword_no_results:
-            return schemas.ListEventResponse(
-                items=[],
-                total_pages=1,
-                total=0,
-                page=event_filter.page,
-                size=event_filter.size,
-                has_next=False,
+        async with self.uow:
+            repo = self.uow.get_repo(EventRepository)
+            events, count, keyword_no_results = await repo.list_events(
+                event_filter=event_filter,
+                creator_sub=creator_sub,
+                meilisearch_client=infra.meilisearch_client,
             )
 
-        event_responses: List[schemas.EventResponse] = await self._build_event_responses(
-            events, infra, user
-        )
+            if keyword_no_results:
+                return schemas.ListEventResponse(
+                    items=[],
+                    total_pages=1,
+                    total=0,
+                    page=event_filter.page,
+                    size=event_filter.size,
+                    has_next=False,
+                )
+
+            event_ids = [event.id for event in events]
+            all_media_objs = await repo.list_media(
+                event_ids=event_ids,
+                event_media_formats=[MediaFormat.carousel],
+            )
+            attendees_count_by_id = await repo.count_attendees_by_event_ids(event_ids)
+            creators_by_event_id = await repo.list_creators_by_event_ids(event_ids)
+            going_event_ids: set[int] = set()
+            viewer_event_ids: set[int] = set()
+            if not self._is_guest(user):
+                user_sub = user[0].get("sub")
+                going_event_ids = await repo.list_going_event_ids(event_ids, user_sub)
+                viewer_event_ids = await repo.list_attendee_viewer_event_ids(event_ids, user_sub)
+
+        url_map = await self.media_attachment_resolver.build_url_map(all_media_objs)
+        event_media_by_id = defaultdict(list)
+        for media in all_media_objs:
+            event_media_by_id[media.entity_id].append(media)
+        event_responses = []
+        for event in events:
+            creator = creators_by_event_id.get(event.id)
+            if creator is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Creator not found"
+                )
+            event_responses.append(
+                response_builder.build_schema(
+                    schemas.EventResponse,
+                    schemas.BaseEventSchema.model_validate(event),
+                    media=self.media_attachment_resolver.to_responses(
+                        event_media_by_id[event.id], url_map
+                    ),
+                    creator=ShortUserResponse.model_validate(creator),
+                    permissions=EventPolicy(user=user).get_permissions(
+                        event, is_attendee_viewer=event.id in viewer_event_ids
+                    ),
+                    attendees_count=attendees_count_by_id.get(event.id, 0),
+                    is_going=event.id in going_event_ids,
+                )
+            )
 
         total_pages: int = response_builder.calculate_pages(count=count, size=event_filter.size)
         page = event_filter.page
@@ -358,20 +421,23 @@ class EventService:
         user: tuple[dict, dict],
         body: schemas.EventAccessInviteCreateRequest,
     ) -> schemas.EventAccessInviteCreatedResponse:
-        event = await self._get_event_or_404(event_id)
-        policy = EventPolicy(user=user)
-        policy.check_share_access(event=event)
-
         raw_token = secrets.token_urlsafe(32)
         token_hash = self._hash_access_token(raw_token)
         expires_at = utc_now() + _ACCESS_INVITE_TTL
-        invite = await self.repo.create_access_invite(
-            event_id=event.id,
-            purpose=body.purpose,
-            token_hash=token_hash,
-            created_by_sub=policy.user_sub,
-            expires_at=expires_at,
-        )
+        async with self.uow:
+            repo = self.uow.get_repo(EventRepository)
+            event = await repo.get_event_by_id(event_id)
+            if event is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+            policy = EventPolicy(user=user)
+            policy.check_share_access(event=event)
+            invite = await repo.create_access_invite(
+                event_id=event.id,
+                purpose=body.purpose,
+                token_hash=token_hash,
+                created_by_sub=policy.user_sub,
+                expires_at=expires_at,
+            )
         return schemas.EventAccessInviteCreatedResponse(
             id=invite.id,
             purpose=invite.purpose,
@@ -383,11 +449,14 @@ class EventService:
     async def list_access_invites(
         self, event_id: int, user: tuple[dict, dict]
     ) -> schemas.ListEventAccessInvitesResponse:
-        event = await self._get_event_or_404(event_id)
-        EventPolicy(user=user).check_share_access(event=event)
-
         now = utc_now()
-        invites = await self.repo.list_access_invites(event.id)
+        async with self.uow:
+            repo = self.uow.get_repo(EventRepository)
+            event = await repo.get_event_by_id(event_id)
+            if event is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+            EventPolicy(user=user).check_share_access(event=event)
+            invites = await repo.list_access_invites(event.id)
         items = [
             schemas.EventAccessInviteResponse(
                 id=invite.id,
@@ -408,67 +477,68 @@ class EventService:
     async def revoke_access_invite(
         self, event_id: int, invite_id: int, user: tuple[dict, dict]
     ) -> None:
-        event = await self._get_event_or_404(event_id)
-        EventPolicy(user=user).check_share_access(event=event)
-
-        invite = await self.repo.get_access_invite(invite_id)
-        if invite is None or invite.event_id != event.id:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invite not found")
-        if invite.revoked_at is None:
-            invite.revoked_at = utc_now()
-            await self.db_session.flush()
+        async with self.uow:
+            repo = self.uow.get_repo(EventRepository)
+            event = await repo.get_event_by_id(event_id)
+            if event is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+            EventPolicy(user=user).check_share_access(event=event)
+            invite = await repo.get_access_invite(invite_id)
+            if invite is None or invite.event_id != event.id:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Invite not found"
+                )
+            if invite.revoked_at is None:
+                invite.revoked_at = utc_now()
+                await self.uow.require_session().flush()
 
     async def accept_access_invite(
         self, user: tuple[dict, dict], body: schemas.EventAccessInviteAcceptRequest
     ) -> schemas.EventAccessInviteAcceptResponse:
         policy = EventPolicy(user=user)
         token_hash = self._hash_access_token(body.token.strip())
-        invite = await self.repo.get_access_invite_by_token_hash(token_hash)
-        if invite is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invite not found")
-
-        if not self._invite_is_active(invite):
-            raise HTTPException(
-                status_code=status.HTTP_410_GONE,
-                detail="Invite is expired, revoked, or already used",
-            )
-
-        event = await self._get_event_or_404(invite.event_id)
-        if invite.created_by_sub == policy.user_sub:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="You cannot accept your own access invite",
-            )
-
-        if invite.purpose == EventAccessPurpose.transfer:
-            if event.creator_sub == policy.user_sub:
+        async with self.uow:
+            repo = self.uow.get_repo(EventRepository)
+            invite = await repo.get_access_invite_by_token_hash(token_hash)
+            if invite is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Invite not found"
+                )
+            if not self._invite_is_active(invite):
+                raise HTTPException(
+                    status_code=status.HTTP_410_GONE,
+                    detail="Invite is expired, revoked, or already used",
+                )
+            event = await repo.get_event_by_id(invite.event_id)
+            if event is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+            if invite.created_by_sub == policy.user_sub:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="You already own this event",
+                    detail="You cannot accept your own access invite",
                 )
-            await self.repo.transfer_event_ownership(event, policy.user_sub)
-            invite.accepted_at = utc_now()
-            invite.accepted_by_sub = policy.user_sub
-            await self.db_session.flush()
-            return schemas.EventAccessInviteAcceptResponse(
-                event_id=event.id,
-                purpose=invite.purpose,
-                action="transferred",
-            )
-
-        # co_view: reusable until expiry/revoke; mark first acceptor for audit
-        await self.repo.add_attendee_viewer(
-            event_id=event.id,
-            user_sub=policy.user_sub,
-            granted_by_sub=invite.created_by_sub,
-        )
-        if invite.accepted_at is None:
-            invite.accepted_at = utc_now()
-            invite.accepted_by_sub = policy.user_sub
-            await self.db_session.flush()
-
+            if invite.purpose == EventAccessPurpose.transfer:
+                if event.creator_sub == policy.user_sub:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST, detail="You already own this event"
+                    )
+                await repo.transfer_event_ownership(event, policy.user_sub)
+                invite.accepted_at = utc_now()
+                invite.accepted_by_sub = policy.user_sub
+                await self.uow.require_session().flush()
+                action = "transferred"
+            else:
+                await repo.add_attendee_viewer(
+                    event_id=event.id,
+                    user_sub=policy.user_sub,
+                    granted_by_sub=invite.created_by_sub,
+                )
+                if invite.accepted_at is None:
+                    invite.accepted_at = utc_now()
+                    invite.accepted_by_sub = policy.user_sub
+                    await self.uow.require_session().flush()
+                action = "granted"
+            response_event_id, purpose = event.id, invite.purpose
         return schemas.EventAccessInviteAcceptResponse(
-            event_id=event.id,
-            purpose=invite.purpose,
-            action="granted",
+            event_id=response_event_id, purpose=purpose, action=action
         )

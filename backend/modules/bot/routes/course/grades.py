@@ -5,7 +5,7 @@ from aiogram import Router
 from aiogram.filters import Command, CommandObject
 from aiogram.types import CallbackQuery, Message
 from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
+from backend.core.database.uow import UnitOfWork
 
 from backend.modules.bot.keyboards.callback_factory import CourseGradesPage
 from backend.modules.bot.services.grades import (
@@ -23,7 +23,7 @@ router = Router(name="Course grades router")
 async def course_command(
     message: Message,
     command: CommandObject,
-    db_session: AsyncSession,
+    uow: UnitOfWork,
     meilisearch_client: httpx.AsyncClient,
     redis: Redis,
     public_url: str,
@@ -35,7 +35,7 @@ async def course_command(
 
     await send_grades_page(
         message,
-        db_session=db_session,
+        uow=uow,
         meilisearch_client=meilisearch_client,
         redis=redis,
         keyword=keyword,
@@ -48,7 +48,7 @@ async def course_command(
 async def course_grades_page(
     callback: CallbackQuery,
     callback_data: CourseGradesPage,
-    db_session: AsyncSession,
+    uow: UnitOfWork,
     meilisearch_client: httpx.AsyncClient,
     redis: Redis,
     public_url: str,
@@ -63,7 +63,7 @@ async def course_grades_page(
         return
 
     response = await fetch_grades_page(
-        db_session=db_session,
+        uow=uow,
         meilisearch_client=meilisearch_client,
         keyword=keyword,
         page=callback_data.page,
