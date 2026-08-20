@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/utils/utils";
+import { formatAcademicTerm } from "../utils/term-utils";
 
 interface GradeStatisticsCardProps {
   statistics: GradeStatistics;
@@ -53,7 +54,7 @@ export function GradeStatisticsCard({
   const gradeDistribution = getGradeDistribution(statistics);
   const difficulty = getDifficultyLevel(statistics.avg_gpa, statistics.std_dev);
   const selectDisabled = Boolean(onToggleSelect) && disableAdd && !isSelected;
-  const withdrawalPct = Number(statistics.pct_W_AW);
+  const withdrawalPct = statistics.pct_W_AW;
   const totalPct = (statistics.pct_A ?? 0) + (statistics.pct_B ?? 0) + (statistics.pct_C ?? 0) + (statistics.pct_D ?? 0) + (statistics.pct_F ?? 0);
   const grades = [
     { grade: "A", percent: statistics.pct_A ?? 0 },
@@ -89,7 +90,7 @@ export function GradeStatisticsCard({
                 {statistics.section}
               </Badge>
               <Badge variant="secondary" className="text-[11px] shrink-0">
-                {statistics.term}
+                {formatAcademicTerm(statistics.term)}
               </Badge>
               <Badge
                 variant="outline"
@@ -159,12 +160,19 @@ export function GradeStatisticsCard({
             </div>
           )}
 
-          <div className="flex items-center gap-1.5 text-sm">
-            <AlertTriangle className={cn("h-3.5 w-3.5", withdrawalPct > 5 ? "text-destructive" : "text-muted-foreground")} />
-            <span className={cn(withdrawalPct > 5 ? "text-destructive" : "text-muted-foreground")}>
-              <strong className="tabular-nums">{formatPercentage(withdrawalPct)}</strong> withdrew
-            </span>
-          </div>
+          {withdrawalPct == null ? (
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground" title="The source report did not publish W/AW data.">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <span>Withdrawal data not reported</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-sm">
+              <AlertTriangle className={cn("h-3.5 w-3.5", withdrawalPct > 5 ? "text-destructive" : "text-muted-foreground")} />
+              <span className={cn(withdrawalPct > 5 ? "text-destructive" : "text-muted-foreground")}>
+                <strong className="tabular-nums">{formatPercentage(withdrawalPct)}</strong> withdrew
+              </span>
+            </div>
+          )}
 
           <button
             type="button"
@@ -205,6 +213,11 @@ export function GradeStatisticsCard({
 
         {showPieChart && showChart && gradeDistribution.length > 0 && (
           <div className="pt-4 border-t border-border">
+            {statistics.pct_W_AW == null ? (
+              <p className="mb-3 text-xs text-muted-foreground">
+                W/AW withdrawal data was not published for this report.
+              </p>
+            ) : null}
             <GradeDistributionChart data={gradeDistribution} title="" />
           </div>
         )}

@@ -1,11 +1,11 @@
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, Query, Request
 from backend.common.dependencies import get_uow
 from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.dependencies import get_creds_or_guest
 from backend.modules.courses.statistics import schemas
 from backend.modules.courses.statistics.service import list_grade_reports
+from fastapi import APIRouter, Depends, Query, Request
 
 router = APIRouter(tags=["Course Statistics"])
 
@@ -19,9 +19,8 @@ async def list_grade_terms(
     Returns distinct grade report terms (e.g., FA2024, SP2025) for filtering.
     """
 
-    from sqlalchemy import select
-
     from backend.modules.courses.models.grade_report import GradeReport
+    from sqlalchemy import select
 
     stmt = select(GradeReport.term).distinct().order_by(GradeReport.term.desc())
     async with uow:
@@ -42,9 +41,12 @@ async def get_grades(
     keyword: str | None = Query(
         default=None, description="Search keyword for course code or course title"
     ),
-    term: str | None = Query(
+    term: list[str] | None = Query(
         default=None,
-        description="Filter by semester/term code (e.g., FA2024)",
+        description=(
+            "Filter by one or more semester/term codes. Repeat the parameter, "
+            "e.g. ?term=FA2024&term=SP2025."
+        ),
     ),
     uow: UnitOfWork = Depends(get_uow),
 ) -> schemas.ListGradeReportResponse:
@@ -58,7 +60,7 @@ async def get_grades(
     - `size`: Number of grade reports per page (default: 20, max: 100)
     - `page`: Page number to retrieve (default: 1)
     - `keyword`: Search term for course code or course title (optional)
-    - `term`: Filter results by semester/term code (optional)
+    - `term`: Filter results by one or more semester/term codes (optional)
 
     **Returns:**
     - List of grade reports and pagination info
@@ -75,5 +77,5 @@ async def get_grades(
         page=page,
         size=size,
         keyword=keyword,
-        term=term,
+        terms=term,
     )

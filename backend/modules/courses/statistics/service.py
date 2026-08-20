@@ -1,13 +1,13 @@
+import json
 from typing import List
 
 import httpx
-from sqlalchemy import case, func, select
-
 from backend.common.utils import meilisearch, response_builder
 from backend.core.database.uow import UnitOfWork
-from backend.modules.media.models import EntityType
 from backend.modules.courses.models.grade_report import GradeReport
 from backend.modules.courses.statistics import schemas
+from backend.modules.media.models import EntityType
+from sqlalchemy import case, func, select
 
 
 async def list_grade_reports(
@@ -17,11 +17,19 @@ async def list_grade_reports(
     page: int = 1,
     size: int = 20,
     keyword: str | None = None,
-    term: str | None = None,
+    terms: list[str] | None = None,
 ) -> schemas.ListGradeReportResponse:
     conditions = []
-    meili_filters = [f"term = {term}"] if term else None
+    selected_terms = list(dict.fromkeys(term.strip() for term in terms or [] if term.strip()))
+    meili_filters = (
+        [f"term IN [{', '.join(json.dumps(term) for term in selected_terms)}]"]
+        if selected_terms
+        else None
+    )
     meili_result = None
+
+    if selected_terms:
+        conditions.append(GradeReport.term.in_(selected_terms))
 
     if keyword:
         meili_result = await meilisearch.get(

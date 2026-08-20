@@ -1,0 +1,697 @@
+course_code,course_title,section,grades_count,avg_gpa,std_dev,median_gpa,pct_A,pct_B,pct_C,pct_D,pct_F,pct_P,pct_I,pct_AU,pct_W_AW,letters_count,term,faculty
+ACCT 201,Introduction to Accounting,1L,51,3.43,0.66,3.67,51.9,42.3,1.9,0.0,1.9,0.0,0.0,0.0,,52,SP2026,Mirat Akshalov
+ACCT 201,Introduction to Accounting,1L,51,3.43,0.66,3.67,51.9,42.3,1.9,0.0,1.9,0.0,0.0,0.0,,52,SP2026,ChristianSofilkanitsch
+ACCT 201,Introduction to Accounting,2L,30,3.29,0.54,3.16,33.3,66.7,0.0,0.0,0.0,0.0,0.0,0.0,,30,SP2026,Mirat Akshalov
+ACCT 201,Introduction to Accounting,2L,30,3.29,0.54,3.16,33.3,66.7,0.0,0.0,0.0,0.0,0.0,0.0,,30,SP2026,ChristianSofilkanitsch
+BBA 203,Responsible Leadership(Ethics),1L,7,3.67,0.27,3.67,71.4,28.6,0.0,0.0,0.0,0.0,0.0,0.0,,7,SP2026,Mirat Akshalov
+BBA 203,Responsible Leadership(Ethics),1L,7,3.67,0.27,3.67,71.4,28.6,0.0,0.0,0.0,0.0,0.0,0.0,,7,SP2026,David Reinhard
+BBA 209,"Environmental, Social andGovernance Factors (ESG)for Business",1L,9,3.07,0.57,3.33,33.3,44.4,22.2,0.0,0.0,0.0,0.0,0.0,,9,SP2026,Mirat Akshalov
+BBA 209,"Environmental, Social andGovernance Factors (ESG)for Business",1L,9,3.07,0.57,3.33,33.3,44.4,22.2,0.0,0.0,0.0,0.0,0.0,,9,SP2026,RozaNurgozhayeva
+BBA 260,Operations Management,1L,7,3.52,0.33,3.67,57.1,42.9,0.0,0.0,0.0,0.0,0.0,0.0,,7,SP2026,Mirat Akshalov
+BBA 260,Operations Management,1L,7,3.52,0.33,3.67,57.1,42.9,0.0,0.0,0.0,0.0,0.0,0.0,,7,SP2026,Narendra Singh
+BUS 101,Core Course in Business,1L,569,3.7,0.43,3.67,80.0,16.5,1.7,0.3,0.2,0.0,0.0,0.0,,576,SP2026,Mirat Akshalov
+BUS 101,Core Course in Business,1L,569,3.7,0.43,3.67,80.0,16.5,1.7,0.3,0.2,0.0,0.0,0.0,,576,SP2026,SaniyaBarbolova
+BUS 101,Core Course in Business,1L,569,3.7,0.43,3.67,80.0,16.5,1.7,0.3,0.2,0.0,0.0,0.0,,576,SP2026,ZharaskhanTemirkhanov
+BUS 101,Core Course in Business,1L,569,3.7,0.43,3.67,80.0,16.5,1.7,0.3,0.2,0.0,0.0,0.0,,576,SP2026,MoldirKaiynbayeva
+BUS 101,Core Course in Business,1L,569,3.7,0.43,3.67,80.0,16.5,1.7,0.3,0.2,0.0,0.0,0.0,,576,SP2026,Raola Yerbolat
+BUS 420,Business Law,1L,55,2.99,0.66,3.0,18.2,69.1,10.9,0.0,1.8,0.0,0.0,0.0,,55,SP2026,Mirat Akshalov
+BUS 420,Business Law,1L,55,2.99,0.66,3.0,18.2,69.1,10.9,0.0,1.8,0.0,0.0,0.0,,55,SP2026,RozaNurgozhayeva
+FIN 201,Principles of Finance,1L,30,3.04,0.61,3.0,23.3,53.3,23.3,0.0,0.0,0.0,0.0,0.0,,30,SP2026,Mirat Akshalov
+FIN 201,Principles of Finance,1L,30,3.04,0.61,3.0,23.3,53.3,23.3,0.0,0.0,0.0,0.0,0.0,,30,SP2026,Tom Vinaimont
+FIN 201,Principles of Finance,2L,49,3.15,0.83,3.33,43.1,37.3,11.8,2.0,2.0,0.0,0.0,0.0,,51,SP2026,Mirat Akshalov
+FIN 201,Principles of Finance,2L,49,3.15,0.83,3.33,43.1,37.3,11.8,2.0,2.0,0.0,0.0,0.0,,51,SP2026,Tom Vinaimont
+OM 201,Operations Management,1L,47,3.44,0.62,3.67,61.7,27.7,10.6,0.0,0.0,0.0,0.0,0.0,,47,SP2026,Mirat Akshalov
+OM 201,Operations Management,1L,47,3.44,0.62,3.67,61.7,27.7,10.6,0.0,0.0,0.0,0.0,0.0,,47,SP2026,Narendra Singh
+CHME 202,Fluid Mechanics,1L,29,3.2,0.99,3.67,55.2,27.6,10.3,3.4,3.4,0.0,0.0,0.0,,29,SP2026,Yanwei Wang
+CHME 203,Organic and PolymerChemistry,1L,31,3.27,0.62,3.33,45.2,45.2,6.5,3.2,0.0,0.0,0.0,0.0,,31,SP2026,AzharMukasheva
+CHME 303,Separation Processes,1L,27,2.8,0.75,3.0,14.8,59.3,22.2,3.7,0.0,0.0,0.0,0.0,,27,SP2026,StavrosPoulopoulos
+CHME 303,Separation Processes,1L,27,2.8,0.75,3.0,14.8,59.3,22.2,3.7,0.0,0.0,0.0,0.0,,27,SP2026,SabinaKhamzina
+CHME 304,Chemical ReactionEngineering,1L,26,2.94,0.78,3.0,15.4,69.2,11.5,0.0,3.8,0.0,0.0,0.0,,26,SP2026,StavrosPoulopoulos
+CHME 305L,Chemical EngineeringLaboratory I,1Lb,8,3.38,0.28,3.33,37.5,62.5,0.0,0.0,0.0,0.0,0.0,0.0,,8,SP2026,AzharMukasheva
+CHME 305L,Chemical EngineeringLaboratory I,2Lb,8,3.67,0.0,3.67,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,8,SP2026,AzharMukasheva
+CHME 305L,Chemical EngineeringLaboratory I,3Lb,8,4.0,0.0,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,8,SP2026,AzharMukasheva
+CHME 352,Research Practice,1L,26,3.65,0.32,3.67,74.1,22.2,0.0,0.0,0.0,0.0,0.0,0.0,,27,SP2026,LyazzatMukhangaliyeva
+CHME 402,Materials Chemistry,1L,47,3.28,0.49,3.33,31.9,57.4,10.6,0.0,0.0,0.0,0.0,0.0,,47,SP2026,Aishuak Konarov
+CHME 403,Chemical Process Controland Safety,1L,48,2.6,0.81,2.67,10.4,54.2,27.1,6.2,2.1,0.0,0.0,0.0,,48,SP2026,Dhawal Shah
+CHME 421,Tissue Engineering,1L,29,3.16,0.6,3.33,23.3,63.3,6.7,3.3,0.0,0.0,0.0,0.0,,30,SP2026,Cevat Erisken
+CHME 454,Transport Phenomena andOperations,1L,14,2.88,0.43,2.84,7.1,71.4,21.4,0.0,0.0,0.0,0.0,0.0,,14,SP2026,Sergey Spotar
+CHME 461,Powder technology,1L,22,3.08,0.46,3.0,18.2,72.7,9.1,0.0,0.0,0.0,0.0,0.0,,22,SP2026,Boris Golman
+CEE 202,Environmental Engineering,1L,64,3.03,0.48,3.0,13.8,67.7,16.9,0.0,0.0,0.0,0.0,0.0,,65,SP2026,Mert Guney
+CEE 203,Structural Analysis,1L,65,2.29,1.14,2.33,19.7,22.7,30.3,18.2,7.6,0.0,0.0,0.0,,66,SP2026,ElnaraKussinova
+CEE 301,Structural Design – Steel,1L,63,1.98,0.98,2.0,3.1,32.8,35.9,15.6,10.9,0.0,0.0,0.0,,64,SP2026,Dichuan Zhang
+CEE 303,Geotechnical Design,1L,54,2.64,0.76,3.0,5.5,61.8,23.6,5.5,1.8,0.0,0.0,0.0,,55,SP2026,Sung Moon
+CEE 305,Hydraulics and Hydrology,1L,51,3.18,1.0,3.67,51.9,28.8,9.6,3.8,3.8,0.0,0.0,0.0,,52,SP2026,Ferhat Karaca
+CEE 350,Water and WastewaterTreatment Processes,1L,11,2.79,1.19,3.0,25.0,33.3,25.0,0.0,8.3,0.0,0.0,0.0,,12,SP2026,Woojin Lee
+CEE 400,Transportation Engineering,1L,55,3.38,0.35,3.33,38.2,60.0,1.8,0.0,0.0,0.0,0.0,0.0,,55,SP2026,Chang Shon
+CEE 454,Foundation Engineering,1L,46,3.65,0.45,3.67,73.9,26.1,0.0,0.0,0.0,0.0,0.0,0.0,,46,SP2026,AlfrendoSatyanaga
+CEE 457,Air Quality Management,1L,42,3.86,0.29,4.0,92.9,7.1,0.0,0.0,0.0,0.0,0.0,0.0,,42,SP2026,Ferhat Karaca
+CEE 458,Modern InformationTechnology in Construction,1L,42,4.0,0.0,4.0,97.7,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,43,SP2026,AlfrendoSatyanaga
+CEE 463,Individual Research Projectin Civil & EnvironmentalEngineering 1,1L,15,3.4,0.51,3.33,46.7,46.7,6.7,0.0,0.0,0.0,0.0,0.0,,15,SP2026,Jong Kim
+CEE 463,Individual Research Projectin Civil & EnvironmentalEngineering 1,1L,15,3.4,0.51,3.33,46.7,46.7,6.7,0.0,0.0,0.0,0.0,0.0,,15,SP2026,BakhytAubakirova
+CEE 465,Structure and Properties ofConcrete Materials,1L,14,3.07,0.54,3.33,14.3,71.4,14.3,0.0,0.0,0.0,0.0,0.0,,14,SP2026,Shazim Memon
+CEE 466,Introduction to FiniteElement Methods,1L,22,2.62,0.68,2.67,9.1,54.5,27.3,9.1,0.0,0.0,0.0,0.0,,22,SP2026,ElnaraKussinova
+CEE 470,Construction EngineeringEconomics,1L,55,3.13,0.67,3.33,34.5,50.9,10.9,3.6,0.0,0.0,0.0,0.0,,55,SP2026,Abid Nadeem
+ELCE 201L,Circuit Theory Laboratory,1Lb,20,3.53,0.28,3.67,60.0,40.0,0.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,ShyngysSalakchinov
+ELCE 201L,Circuit Theory Laboratory,2Lb,10,3.07,0.91,3.34,50.0,10.0,40.0,0.0,0.0,0.0,0.0,0.0,,10,SP2026,ShyngysSalakchinov
+ELCE 201L,Circuit Theory Laboratory,3Lb,20,3.87,0.23,4.0,85.7,9.5,0.0,0.0,0.0,0.0,0.0,0.0,,21,SP2026,GulsimKulsharova
+ELCE 201L,Circuit Theory Laboratory,4Lb,20,3.82,0.2,3.84,95.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,GulsimKulsharova
+ELCE 201,Circuits Theory II,1L,72,2.64,0.93,2.67,19.2,35.6,35.6,4.1,4.1,0.0,0.0,0.0,,73,SP2026,GalymzhanNauryzbayev
+ELCE 202,Digital Logic Design,1L,25,3.67,0.22,3.67,80.0,20.0,0.0,0.0,0.0,0.0,0.0,0.0,,25,SP2026,SultangaliArzykulov
+ELCE 202L,Digital Logic DesignLaboratory,2Lb,22,3.77,0.24,3.67,86.4,13.6,0.0,0.0,0.0,0.0,0.0,0.0,,22,SP2026,AliyaNurmukhanbetova
+ELCE 202L,Digital Logic DesignLaboratory,3Lb,27,3.64,0.35,3.67,66.7,33.3,0.0,0.0,0.0,0.0,0.0,0.0,,27,SP2026,AliyaNurmukhanbetova
+ELCE 202,Digital Logic Design,1L,74,3.25,0.71,3.33,48.6,37.8,12.2,0.0,1.4,0.0,0.0,0.0,,74,SP2026,SultangaliArzykulov
+ELCE 300,Microprocessor Systems,1L,29,2.97,0.54,3.0,16.7,66.7,13.3,0.0,0.0,0.0,0.0,0.0,,30,SP2026,MohammadHashmi
+ELCE 300L,Microprocessor SystemsLaboratory,2Lb,14,3.31,0.28,3.33,28.6,71.4,0.0,0.0,0.0,0.0,0.0,0.0,,14,SP2026,ShyngysSalakchinov
+ELCE 300,Microprocessor Systems,1L,45,2.53,0.98,2.67,13.0,41.3,37.0,0.0,6.5,0.0,0.0,0.0,,46,SP2026,MohammadHashmi
+ELCE 302,Electric Machines,1L,16,3.63,0.27,3.67,87.5,12.5,0.0,0.0,0.0,0.0,0.0,0.0,,16,SP2026,Prashant Jamwal
+ELCE 302,Electric Machines,1L,17,2.88,1.03,3.0,41.2,17.6,35.3,0.0,5.9,0.0,0.0,0.0,,17,SP2026,Prashant Jamwal
+ELCE 303,Power System Analysis,1L,23,2.81,0.85,3.0,13.0,65.2,17.4,0.0,4.3,0.0,0.0,0.0,,23,SP2026,Mehdi Bagheri
+ELCE 305,Data Structures andAlgorithms,1L,19,2.72,0.97,3.0,14.3,47.6,19.0,4.8,4.8,0.0,0.0,0.0,,21,SP2026,AinurRakhymbay
+ELCE 305,Data Structures andAlgorithms,1L,19,2.72,0.97,3.0,14.3,47.6,19.0,4.8,4.8,0.0,0.0,0.0,,21,SP2026,Aresh Dadlani
+ELCE 308,Communication Systems,1L,26,2.95,0.56,3.0,18.5,66.7,7.4,3.7,0.0,0.0,0.0,0.0,,27,SP2026,SultangaliArzykulov
+ELCE 311,Interdisciplinary DesignProject,1L,44,3.31,0.45,3.33,34.1,63.6,2.3,0.0,0.0,0.0,0.0,0.0,,44,SP2026,AliyaNurmukhanbetova
+ELCE 350,Electromagnetics I,1L,32,3.53,0.53,3.67,62.9,25.7,2.9,0.0,0.0,0.0,0.0,0.0,,35,SP2026,Carlo Molardi
+ELCE 352,Applied SimulationLaboratory,1Lb,14,3.67,0.57,4.0,64.7,11.8,5.9,0.0,0.0,0.0,0.0,0.0,,17,SP2026,AinurRakhymbay
+ELCE 458,Numerical OptimizationTechniques and ComputerApplications,1L,9,3.26,0.74,3.33,36.4,36.4,9.1,0.0,0.0,0.0,0.0,0.0,,11,SP2026,AinurRakhymbay
+ELCE 458,Numerical OptimizationTechniques and ComputerApplications,1L,9,3.26,0.74,3.33,36.4,36.4,9.1,0.0,0.0,0.0,0.0,0.0,,11,SP2026,Aresh Dadlani
+ELCE 461,Industrial Automation,1L,27,3.21,1.02,3.67,55.6,29.6,7.4,3.7,3.7,0.0,0.0,0.0,,27,SP2026,AinurRakhymbay
+ELCE 461,Industrial Automation,1L,27,3.21,1.02,3.67,55.6,29.6,7.4,3.7,3.7,0.0,0.0,0.0,,27,SP2026,Mehdi Shafiee
+ELCE 461,Industrial Automation,1L,27,3.21,1.02,3.67,55.6,29.6,7.4,3.7,3.7,0.0,0.0,0.0,,27,SP2026,AinurRakhymbay
+ELCE 461,Industrial Automation,1L,27,3.21,1.02,3.67,55.6,29.6,7.4,3.7,3.7,0.0,0.0,0.0,,27,SP2026,Mehdi Shafiee
+ELCE 468,Robots For Rehabilitation,1L,14,3.53,0.47,3.67,78.6,14.3,7.1,0.0,0.0,0.0,0.0,0.0,,14,SP2026,Prashant Jamwal
+ELCE 486,Photonics for Engineering,1L,37,3.95,0.15,4.0,97.3,2.7,0.0,0.0,0.0,0.0,0.0,0.0,,37,SP2026,Daniele Tosi
+ENG 101,Programming for Engineers,1L,93,3.2,0.89,3.33,47.4,37.9,8.4,0.0,4.2,0.0,0.0,0.0,,95,SP2026,ArailymSerikbay
+ENG 102,Engineering Materials I,1L,71,3.05,0.61,3.0,21.9,63.0,11.0,0.0,1.4,0.0,0.0,0.0,,73,SP2026,Chang Shon
+ENG 102,Engineering Materials I,2L,90,3.12,0.57,3.0,17.4,69.6,9.8,0.0,1.1,0.0,0.0,0.0,,92,SP2026,Asma Perveen
+ENG 103,Engineering Materials II,1L,85,2.83,0.77,3.0,16.5,57.6,21.2,2.4,2.4,0.0,0.0,0.0,,85,SP2026,Annie Ng
+ENG 103,Engineering Materials II,1L,85,2.83,0.77,3.0,16.5,57.6,21.2,2.4,2.4,0.0,0.0,0.0,,85,SP2026,Nurxat Nuraje
+ENG 103,Engineering Materials II,2L,54,2.65,0.92,2.84,14.3,42.9,32.1,1.8,5.4,0.0,0.0,0.0,,56,SP2026,Annie Ng
+ENG 103,Engineering Materials II,2L,54,2.65,0.92,2.84,14.3,42.9,32.1,1.8,5.4,0.0,0.0,0.0,,56,SP2026,Nurxat Nuraje
+ENG 201,Applied Probability andStatistics,1L,58,2.42,0.94,2.33,9.2,33.8,32.3,10.8,3.1,0.0,0.0,0.0,,65,SP2026,ElnaraKussinova
+ENG 201,Applied Probability andStatistics,2L,27,2.99,0.92,3.33,44.4,25.9,22.2,7.4,0.0,0.0,0.0,0.0,,27,SP2026,Aishuak Konarov
+ENG 201,Applied Probability andStatistics,3L,74,3.26,0.65,3.33,45.9,39.2,12.2,2.7,0.0,0.0,0.0,0.0,,74,SP2026,Yerkin Abdildin
+ENG 201,Applied Probability andStatistics,4L,36,3.45,0.72,3.67,69.4,13.9,16.7,0.0,0.0,0.0,0.0,0.0,,36,SP2026,Behrouz Maham
+ENG 201,Applied Probability andStatistics,5L,40,3.58,0.6,3.67,75.0,20.0,2.5,2.5,0.0,0.0,0.0,0.0,,40,SP2026,Behrouz Maham
+ENG 202,Numerical Methods inEngineering,1L,62,3.17,0.64,3.33,39.1,42.2,12.5,3.1,0.0,0.0,0.0,0.0,,64,SP2026,SaltanatAkhmadi
+ENG 202,Numerical Methods inEngineering,2L,73,2.64,0.79,2.67,13.7,47.9,27.4,11.0,0.0,0.0,0.0,0.0,,73,SP2026,Md. Hazrat Ali
+ENG 202,Numerical Methods inEngineering,3L,30,2.42,1.13,2.67,22.6,29.0,25.8,12.9,6.5,0.0,0.0,0.0,,31,SP2026,Boris Golman
+ENG 400,Capstone Project,1L,44,3.69,0.64,3.84,88.6,9.1,0.0,0.0,2.3,0.0,0.0,0.0,,44,SP2026,GalymzhanNauryzbayev
+ENG 400,Capstone Project,2L,46,3.59,0.24,3.67,73.9,26.1,0.0,0.0,0.0,0.0,0.0,0.0,,46,SP2026,Dhawal Shah
+ENG 400,Capstone Project,2L,46,3.59,0.24,3.67,73.9,26.1,0.0,0.0,0.0,0.0,0.0,0.0,,46,SP2026,SabinaKhamzina
+ENG 400,Capstone Project,3L,69,3.25,0.39,3.33,21.7,71.0,7.2,0.0,0.0,0.0,0.0,0.0,,69,SP2026,Mert Guney
+ENG 400,Capstone Project,4L,46,3.47,0.38,3.67,56.5,41.3,2.2,0.0,0.0,0.0,0.0,0.0,,46,SP2026,Yerkin Abdildin
+ENG 400,Capstone Project,4L,46,3.47,0.38,3.67,56.5,41.3,2.2,0.0,0.0,0.0,0.0,0.0,,46,SP2026,Essam Shehab
+MAE 205,Material andManufacturing I,1L,71,2.5,0.81,2.67,9.6,45.2,28.8,13.7,0.0,0.0,2.7,0.0,,73,SP2026,Didier Talamona
+MAE 206,Engineering Dynamics I,1L,76,2.56,0.99,3.0,11.7,53.2,15.6,13.0,5.2,0.0,0.0,0.0,,77,SP2026,Md. Hazrat Ali
+MAE 302,Machine Elements Design,1L,58,2.06,0.8,2.16,0.0,31.7,36.5,19.0,4.8,0.0,0.0,0.0,,63,SP2026,Sherif Gouda
+MAE 305,Fluid Mechanics II,1L,23,2.81,0.69,3.0,16.0,40.0,36.0,0.0,0.0,0.0,0.0,0.0,,25,SP2026,Sergey Spotar
+MAE 306,Computer AidedEngineering,1L,57,3.64,0.68,4.0,70.0,21.7,0.0,1.7,1.7,0.0,0.0,0.0,,60,SP2026,KonstantinosKostas
+MAE 350,Structural Mechanics II,1L,25,2.32,1.05,2.67,6.9,37.9,24.1,10.3,6.9,0.0,0.0,0.0,,29,SP2026,Didier Talamona
+MAE 351,Vehicle Propulsion Systems,1L,39,3.27,0.52,3.33,42.5,45.0,10.0,0.0,0.0,0.0,0.0,0.0,,40,SP2026,AltayZhakatayev
+MAE 454,Aerodynamics,1L,36,2.62,0.53,2.67,2.6,60.5,28.9,2.6,0.0,0.0,0.0,0.0,,38,SP2026,Amgad Salama
+MAE 457,Feasibility Analysis ofClean Energy Technologies,1L,41,3.17,0.47,3.33,24.4,65.9,9.8,0.0,0.0,0.0,0.0,0.0,,41,SP2026,YerbolSarbassov
+MAE 463,Micro-Electro-MechanicalSystems and Microsystemstechnology,1L,33,3.02,0.35,3.0,8.8,82.4,5.9,0.0,0.0,0.0,0.0,0.0,,34,SP2026,GulnurKalimuldina
+MAE 464,Mechanics of SoftMaterials,1L,29,3.26,0.44,3.33,34.5,58.6,6.9,0.0,0.0,0.0,0.0,0.0,,29,SP2026,GulnurKalimuldina
+MAE 465,Introduction toMaintenance Engineering,1L,43,3.17,0.53,3.33,18.6,72.1,9.3,0.0,0.0,0.0,0.0,0.0,,43,SP2026,AltayZhakatayev
+MAE 469,Fundamentals of SpaceFlight Dynamics,1L,17,2.63,0.96,2.67,16.7,50.0,16.7,5.6,5.6,0.0,0.0,0.0,,18,SP2026,Dmitriy Sizov
+CSCI 111,Web Programming andProblem Solving,1L,32,2.79,0.72,3.0,12.5,56.2,25.0,6.2,0.0,0.0,0.0,0.0,,32,SP2026,Iliyas Tursynbek
+CSCI 111,Web Programming andProblem Solving,2L,41,3.23,0.75,3.33,45.5,27.3,18.2,2.3,0.0,0.0,0.0,0.0,,44,SP2026,TalgatManglayev
+CSCI 111,Web Programming andProblem Solving,3L,41,2.99,0.78,3.0,26.2,47.6,21.4,0.0,2.4,0.0,0.0,0.0,,42,SP2026,Irina Dolzhikova
+CSCI 115,ProgrammingFundamentals,1L,73,2.89,0.89,3.0,26.9,41.0,16.7,7.7,1.3,0.0,0.0,0.0,,78,SP2026,Minho Lee
+CSCI 115,ProgrammingFundamentals,2L,33,2.89,0.75,3.0,14.3,57.1,20.0,0.0,2.9,0.0,0.0,0.0,,35,SP2026,Minho Lee
+CSCI 115,ProgrammingFundamentals,3L,35,3.26,0.5,3.33,26.2,50.0,7.1,0.0,0.0,0.0,0.0,0.0,,42,SP2026,Anwar Ghani
+CSCI 115,ProgrammingFundamentals,4L,24,2.25,1.06,2.5,15.4,30.8,15.4,26.9,3.8,0.0,0.0,0.0,,26,SP2026,Sain Saginbekov
+CSCI 151,Programming for Scientistsand Engineers,1L,37,1.59,1.21,1.67,4.8,16.7,28.6,14.3,23.8,0.0,0.0,0.0,,42,SP2026,Hashim Ali
+CSCI 151,Programming for Scientistsand Engineers,2L,42,1.61,1.24,1.67,8.3,10.4,27.1,20.8,20.8,0.0,0.0,0.0,,48,SP2026,ShinnazarSeytnazarov
+CSCI 152,Performance and DataStructures,1L,73,2.74,0.75,3.0,10.5,52.6,27.6,3.9,1.3,0.0,0.0,0.0,,76,SP2026,Jean MarieGuillaumeGerard deNivelle
+CSCI 152,Performance and DataStructures,2L,120,2.72,0.71,2.84,6.6,63.1,26.2,0.0,2.5,0.0,0.0,0.0,,122,SP2026,Ben Tyler
+CSCI 152,Performance and DataStructures,3L,52,2.71,0.83,2.67,17.3,50.0,26.9,1.9,3.8,0.0,0.0,0.0,,52,SP2026,Yesdaulet Izenov
+CSCI 245,System Analysis and Design,1L,133,3.84,0.31,4.0,88.0,11.3,0.8,0.0,0.0,0.0,0.0,0.0,,133,SP2026,AskarBoranbayev
+CSCI 262,Software ProjectManagement,1L,132,3.56,0.42,3.67,59.1,39.4,1.5,0.0,0.0,0.0,0.0,0.0,,132,SP2026,AskarBoranbayev
+CSCI 270,Algorithms,1L,73,2.73,0.82,3.0,16.0,45.3,28.0,6.7,1.3,0.0,0.0,0.0,,75,SP2026,MeiramMurzabulatov
+CSCI 270,Algorithms,2L,83,2.63,0.93,2.67,20.2,36.9,29.8,9.5,2.4,0.0,0.0,0.0,,84,SP2026,Adnan Yazici
+CSCI 270,Algorithms,3L,75,2.63,0.86,2.67,13.2,43.4,34.2,5.3,2.6,0.0,0.0,0.0,,76,SP2026,MuhammedDemirci
+CSCI 272,Formal Languages,1L,75,2.27,0.82,2.33,5.3,34.2,44.7,10.5,3.9,0.0,0.0,0.0,,76,SP2026,Ben Tyler
+CSCI 272,Formal Languages,2L,90,2.1,1.02,2.33,4.2,35.4,32.3,11.5,10.4,0.0,0.0,0.0,,96,SP2026,Jean MarieGuillaumeGerard deNivelle
+CSCI 272,Formal Languages,3L,72,2.17,0.85,2.33,8.0,24.0,46.7,13.3,4.0,0.0,0.0,0.0,,75,SP2026,MeiramMurzabulatov
+CSCI 281,Human-ComputerInteraction,1L,5,2.13,1.38,2.33,0.0,33.3,33.3,0.0,16.7,0.0,0.0,0.0,,6,SP2026,Antonio Cerone
+CSCI 307,Research Methods,1L,143,3.17,0.79,3.33,36.8,49.3,9.0,1.4,2.8,0.0,0.0,0.0,,144,SP2026,Michael Lewis
+CSCI 307,Research Methods,2L,137,3.04,0.82,3.33,33.6,49.3,8.6,3.6,2.9,0.0,0.0,0.0,,140,SP2026,SaidaMussakhojayeva
+CSCI 332,Operating Systems,1L,84,2.27,0.96,2.33,9.4,34.1,34.1,15.3,5.9,0.0,0.0,0.0,,85,SP2026,DimitriosZormpas
+CSCI 332,Operating Systems,2L,130,2.14,1.06,2.33,8.3,31.6,28.6,21.8,7.5,0.0,0.8,0.0,,133,SP2026,Jurn Gyu Park
+CSCI 332,Operating Systems,3L,84,2.15,0.89,2.33,2.4,30.6,47.1,11.8,7.1,0.0,0.0,0.0,,85,SP2026,Latif Zohaib
+CSCI 333,Computer Networks,1L,77,2.19,1.03,2.0,10.3,29.5,33.3,20.5,5.1,0.0,0.0,0.0,,78,SP2026,Sain Saginbekov
+CSCI 333,Computer Networks,2L,128,2.38,0.94,2.67,9.2,41.5,30.0,13.1,4.6,0.0,0.0,0.0,,130,SP2026,Latif Zohaib
+CSCI 333,Computer Networks,3L,65,2.18,0.88,2.33,5.9,26.5,41.2,19.1,2.9,0.0,0.0,0.0,,68,SP2026,ShinnazarSeytnazarov
+CSCI 363,Software Testing andQuality Assurance,1L,27,2.99,0.74,3.0,27.6,44.8,17.2,3.4,0.0,0.0,0.0,0.0,,29,SP2026,TanselDokeroglu
+CSCI 409,Senior Project II,1L,232,3.77,0.38,3.67,90.2,7.3,0.4,1.3,0.0,0.0,0.0,0.0,,234,SP2026,Anh Tu Nguyen
+CSCI 409,Senior Project II,1L,232,3.77,0.38,3.67,90.2,7.3,0.4,1.3,0.0,0.0,0.0,0.0,,234,SP2026,Enver Ever
+CSCI 435,Blockchain andCryptocurrencies,1L,11,3.73,0.42,4.0,53.3,20.0,0.0,0.0,0.0,0.0,0.0,20.0,,15,SP2026,Talgar Bayan
+CSCI 436,Introduction to CloudComputing,1L,10,3.37,1.23,3.84,53.8,15.4,0.0,0.0,7.7,0.0,0.0,15.4,,13,SP2026,SyedMuhammadUmair Arif
+CSCI 437,Internet of Things:Technologies andApplications,1L,7,3.24,0.71,3.67,36.4,18.2,9.1,0.0,0.0,0.0,0.0,9.1,,11,SP2026,DimitriosZormpas
+CSCI 447,Machine Learning: Theoryand Practice,1L,66,3.24,0.51,3.33,39.4,53.0,7.6,0.0,0.0,0.0,0.0,0.0,,66,SP2026,Siamac Fazli
+CSCI 490,Brain Computer Interface,1L,20,3.05,0.85,3.0,22.7,59.1,4.5,0.0,4.5,0.0,0.0,9.1,,22,SP2026,Siamac Fazli
+CSCI 496,Generative ArtificialIntelligence,1L,27,3.07,0.69,3.33,20.0,42.9,11.4,2.9,0.0,0.0,0.0,11.4,,35,SP2026,Minho Lee
+ROBT 202,System Dynamics andModeling,1L,35,2.8,1.17,3.33,35.1,27.0,21.6,5.4,5.4,0.0,0.0,0.0,,37,SP2026,MatteoRubagotti
+ROBT 204,Electrical and ElectronicCircuits II with Lab,1L,31,2.69,1.03,3.0,27.3,27.3,33.3,3.0,3.0,0.0,0.0,0.0,,33,SP2026,Ton Duc Do
+ROBT 206,Microcontrollers with Lab,10Lb,79,2.79,1.12,3.0,32.5,38.8,15.0,5.0,7.5,0.0,0.0,0.0,,80,SP2026,TogzhanSyrymova
+ROBT 206,Microcontrollers with Lab,2L,54,2.91,1.11,3.16,46.3,24.1,18.5,5.6,5.6,0.0,0.0,0.0,,54,SP2026,TogzhanSyrymova
+ROBT 206,Microcontrollers with Lab,4Lb,131,3.19,0.7,3.33,42.9,38.3,15.0,2.3,0.0,0.0,0.0,0.0,,133,SP2026,AnaraSandygulova
+ROBT 304,Electromechanical Systemswith lab,1L,27,3.09,0.64,3.0,29.6,51.9,18.5,0.0,0.0,0.0,0.0,0.0,,27,SP2026,AibekNiyetkaliyev
+ROBT 308,Industrial Automation,1L,18,2.94,0.73,3.16,26.3,36.8,31.6,0.0,0.0,0.0,0.0,0.0,,19,SP2026,Tohid Alizadeh
+ROBT 312,Robotics I: Kinematics andDynamics,1L,27,3.06,0.69,3.33,33.3,44.4,22.2,0.0,0.0,0.0,0.0,0.0,,27,SP2026,MicheleFolgheraiter
+ROBT 391,Research methods,1L,25,3.73,0.35,4.0,80.0,20.0,0.0,0.0,0.0,0.0,0.0,0.0,,25,SP2026,AnaraSandygulova
+ROBT 402,Robotic/MechatronicSystem Design,1L,16,3.4,0.49,3.5,50.0,37.5,12.5,0.0,0.0,0.0,0.0,0.0,,16,SP2026,AlmasShintemirov
+ROBT 492,Capstone Project II,1P,16,3.63,0.38,3.67,75.0,25.0,0.0,0.0,0.0,0.0,0.0,0.0,,16,SP2026,TogzhanSyrymova
+PETE 202,Transport Phenomena,1L,18,3.2,0.59,3.16,38.9,44.4,16.7,0.0,0.0,0.0,0.0,0.0,,18,SP2026,PeymanPourafshary
+PETE 203,Drilling Engineering withLaboratories,1L,21,3.05,1.02,3.33,38.1,42.9,9.5,4.8,4.8,0.0,0.0,0.0,,21,SP2026,Irawan Sonny
+PETE 204,Reservoir Rock and FluidProperties with Lab,1L,25,2.36,0.66,2.0,0.0,32.0,64.0,4.0,0.0,0.0,0.0,0.0,,25,SP2026,Ali Shafiei
+PETE 305,Well Test Analysis,1L,26,2.83,0.63,3.0,15.4,53.8,30.8,0.0,0.0,0.0,0.0,0.0,,26,SP2026,Masoud Riazi
+PETE 306,Reservoir Engineering II,1L,26,2.96,0.63,3.0,15.4,65.4,19.2,0.0,0.0,0.0,0.0,0.0,,26,SP2026,Randy Hazlett
+PETE 307,Production Engineering,1L,29,3.0,0.75,3.33,24.1,51.7,20.7,3.4,0.0,0.0,0.0,0.0,,29,SP2026,Shams Kalam
+PETE 311,Reservoir Simulation,1L,24,3.5,0.43,3.67,58.3,41.7,0.0,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Mian UmerShafiq
+PETE 404,Petroleum Geomechanics,1L,16,2.73,0.35,2.67,0.0,66.7,22.2,0.0,0.0,0.0,0.0,0.0,,18,SP2026,Ali Shafiei
+PETE 407,Capstone Design Project II,1IS,18,3.72,0.29,3.67,72.2,27.8,0.0,0.0,0.0,0.0,0.0,0.0,,18,SP2026,Mian UmerShafiq
+MINE 201,Mineral Processing,1L,15,2.73,0.98,3.0,6.7,66.7,13.3,6.7,6.7,0.0,0.0,0.0,,15,SP2026,Ata Akcil
+MINE 303,Mine Services andMaterials Handling,1L,9,3.26,0.5,3.33,33.3,55.6,11.1,0.0,0.0,0.0,0.0,0.0,,9,SP2026,Amoussou CoffiAdoko
+MINE 304,Resource Estimation,1L,17,2.79,0.59,2.67,11.8,64.7,23.5,0.0,0.0,0.0,0.0,0.0,,17,SP2026,NasserMadaniesfahani
+MINE 305,Rock Breakage,1L,9,3.37,0.45,3.33,33.3,66.7,0.0,0.0,0.0,0.0,0.0,0.0,,9,SP2026,Saffet Yagiz
+MINE 306,Underground MiningSystems and Design,1L,9,3.07,0.66,3.0,33.3,44.4,22.2,0.0,0.0,0.0,0.0,0.0,,9,SP2026,Fidelis Suorineni
+MINE 307,Surface Mining System andDesign,1L,9,2.78,0.73,3.0,22.2,55.6,22.2,0.0,0.0,0.0,0.0,0.0,,9,SP2026,Ali Mortazavi
+MINE 403,Mine Risk Management,1L,6,2.72,1.37,3.33,16.7,66.7,0.0,0.0,16.7,0.0,0.0,0.0,,6,SP2026,Sergei Sabanov
+MINE 404,"Health, Safety andSustainability in Mining",1L,11,2.94,1.05,3.33,18.2,63.6,9.1,0.0,9.1,0.0,0.0,0.0,,11,SP2026,Sergei Sabanov
+GEOL 101,Fundamentals of Geology,1L,79,3.19,0.71,3.33,37.0,48.1,11.1,0.0,1.2,0.0,0.0,0.0,,81,SP2026,George Mathews
+GEOL 103,Introduction to Geology,1L,141,3.3,0.67,3.33,44.5,43.8,6.2,0.7,1.4,0.0,0.0,0.0,,146,SP2026,George Mathews
+GEOL 204,Sedimentology andstrartigraphy,1L,11,3.36,1.22,4.0,63.6,27.3,0.0,0.0,9.1,0.0,0.0,0.0,,11,SP2026,Milovan Fustic
+GEOL 205,Paleontology,1L,12,2.69,1.03,3.0,8.3,75.0,0.0,8.3,8.3,0.0,0.0,0.0,,12,SP2026,Davit Vasilyan
+GEOL 301,Igneous and metamorphicpetrology,1L,10,2.53,1.11,3.0,10.0,50.0,20.0,10.0,10.0,0.0,0.0,0.0,,10,SP2026,Kamal Regmi
+GEOL 304,Geophysics,1L,13,2.95,1.0,3.33,23.1,61.5,7.7,0.0,7.7,0.0,0.0,0.0,,13,SP2026,Mahmoud Leila
+GEOL 306,Geodynamics,1L,11,3.48,0.48,3.33,45.5,54.5,0.0,0.0,0.0,0.0,0.0,0.0,,11,SP2026,SebastianusWillem Josef DenBrok
+GEOL 307,Geographic InformationSystems,1L,21,3.43,0.34,3.33,47.6,52.4,0.0,0.0,0.0,0.0,0.0,0.0,,21,SP2026,Emil Bayramov
+GEOL 309,Hydrogeology,1L,12,2.83,0.66,2.84,16.7,58.3,25.0,0.0,0.0,0.0,0.0,0.0,,12,SP2026,MarzhanBaigaliyeva
+GEOL 403,Geostatistics,1L,22,3.5,0.27,3.5,50.0,50.0,0.0,0.0,0.0,0.0,0.0,0.0,,22,SP2026,Emil Bayramov
+GEOL 405,Research Project II,1IS,12,3.36,0.61,3.5,50.0,41.7,8.3,0.0,0.0,0.0,0.0,0.0,,12,SP2026,SebastianusWillem Josef DenBrok
+GEOL 411,Photography forGeosciences,1L,9,3.52,0.41,3.67,60.0,30.0,0.0,0.0,0.0,0.0,0.0,0.0,,10,SP2026,SebastianusWillem Josef DenBrok
+SMG 400,Engineering Economics,1L,20,2.97,0.52,3.0,15.0,65.0,20.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,ZaureshAtakhanova
+BIOL 101,Introductory Biology,1L,66,2.78,0.78,3.0,11.1,52.8,23.6,2.8,1.4,0.0,0.0,0.0,,72,SP2026,ZarinaSautbayeva
+BIOL 101,Introductory Biology,2L,81,3.06,0.59,3.0,23.9,48.9,19.3,0.0,0.0,0.0,0.0,0.0,,88,SP2026,yingqiu Xie
+BIOL 101,Introductory Biology,3L,78,2.73,1.01,3.0,22.5,38.8,27.5,1.2,7.5,0.0,0.0,0.0,,80,SP2026,Nurtilek Galimov
+BIOL 101,Introductory Biology,4L,84,2.87,0.83,3.0,22.2,44.4,21.1,3.3,2.2,0.0,0.0,0.0,,90,SP2026,AigerimSoltabayeva
+BIOL 110L,Modern Biology ILaboratory,2Lb,16,3.46,0.4,3.33,43.8,56.2,0.0,0.0,0.0,0.0,0.0,0.0,,16,SP2026,Burkitkan Akbay
+BIOL 110L,Modern Biology ILaboratory,3Lb,17,3.06,0.43,3.0,17.6,76.5,5.9,0.0,0.0,0.0,0.0,0.0,,17,SP2026,Burkitkan Akbay
+BIOL 110L,Modern Biology ILaboratory,4Lb,15,3.0,0.95,3.33,18.8,62.5,6.2,0.0,6.2,0.0,0.0,0.0,,16,SP2026,Nurtilek Galimov
+BIOL 110L,Modern Biology ILaboratory,5Lb,15,3.2,0.45,3.33,25.0,62.5,6.2,0.0,0.0,0.0,0.0,0.0,,16,SP2026,ZarinaSautbayeva
+BIOL 110L,Modern Biology ILaboratory,6Lb,17,3.31,0.61,3.33,47.1,47.1,0.0,5.9,0.0,0.0,0.0,0.0,,17,SP2026,ZarinaSautbayeva
+BIOL 110,Modern Biology I,1L,13,2.36,0.83,2.33,7.7,38.5,38.5,15.4,0.0,0.0,0.0,0.0,,13,SP2026,Alexandr Pak
+BIOL 110,Modern Biology I,2L,68,2.53,1.04,2.67,20.0,30.0,32.9,10.0,4.3,0.0,0.0,0.0,,70,SP2026,OlenaFilchakova
+BIOL 120,Modern Biology II,1L,17,2.69,0.92,3.0,5.9,70.6,17.6,0.0,5.9,0.0,0.0,0.0,,17,SP2026,Alexandr Pak
+BIOL 230,Human Anatomy andPhysiology I,1L,18,2.96,0.96,3.0,33.3,55.6,5.6,0.0,5.6,0.0,0.0,0.0,,18,SP2026,Sergey Yegorov
+BIOL 301,Molecular Cell Biology,1L,7,3.24,0.83,3.33,42.9,42.9,14.3,0.0,0.0,0.0,0.0,0.0,,7,SP2026,Ivan Vorobyev
+BIOL 301,Molecular Cell Biology,1L,51,3.2,0.38,3.33,23.5,70.6,5.9,0.0,0.0,0.0,0.0,0.0,,51,SP2026,Ivan Vorobyev
+BIOL 305L,Introduction toMicrobiology Laboratory,2Lb,18,2.87,0.91,3.0,36.8,21.1,26.3,10.5,0.0,0.0,0.0,0.0,,19,SP2026,Nurtilek Galimov
+BIOL 305,Introduction toMicrobiology,1L,26,2.95,0.5,3.0,11.5,69.2,19.2,0.0,0.0,0.0,0.0,0.0,,26,SP2026,DamiraKanayeva
+BIOL 310,Immunology,1L,50,3.77,0.27,4.0,78.0,22.0,0.0,0.0,0.0,0.0,0.0,0.0,,50,SP2026,Timo Burster
+BIOL 321,Bioethics,1L,23,2.8,0.5,2.67,12.5,54.2,29.2,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Otilia Nuta
+BIOL 331,Human Anatomy andPhysiology II,1L,23,3.26,0.54,3.33,34.8,56.5,8.7,0.0,0.0,0.0,0.0,0.0,,23,SP2026,Tursonjan Tokay
+BIOL 333,Environmental Biology,1L,35,3.6,0.29,3.67,62.9,37.1,0.0,0.0,0.0,0.0,0.0,0.0,,35,SP2026,NatalieBarteneva
+BIOL 341,Biochemistry I,1L,70,3.62,0.43,3.67,65.7,32.9,1.4,0.0,0.0,0.0,0.0,0.0,,70,SP2026,Timo Burster
+BIOL 355,Critical ResearchReasoning,1L,20,3.23,0.38,3.33,19.0,71.4,4.8,0.0,0.0,0.0,0.0,0.0,,21,SP2026,Otilia Nuta
+BIOL 355,Critical ResearchReasoning,2L,14,3.43,0.21,3.33,35.7,64.3,0.0,0.0,0.0,0.0,0.0,0.0,,14,SP2026,yingqiu Xie
+BIOL 370,Genetics,1L,22,3.46,0.47,3.67,52.2,43.5,0.0,0.0,0.0,0.0,0.0,0.0,,23,SP2026,ZhanatMuminova
+BIOL 425,Biomedical ResearchMethods,1L,20,2.82,1.04,2.84,33.3,28.6,23.8,9.5,0.0,0.0,0.0,4.8,,21,SP2026,Dos Sarbassov
+BIOL 440,Neuroscience,1L,58,3.4,0.69,3.67,54.2,28.8,15.3,0.0,0.0,0.0,0.0,0.0,,59,SP2026,OlenaFilchakova
+BIOL 445,Medical Microbiology,1L,37,3.54,0.47,3.67,52.6,42.1,2.6,0.0,0.0,0.0,0.0,0.0,,38,SP2026,ZhanatMuminova
+BIOL 450,Food Microbiology,1L,16,3.5,0.37,3.33,41.2,52.9,0.0,0.0,0.0,0.0,0.0,0.0,,17,SP2026,DamiraKanayeva
+BIOL 471,Light and Electronmicroscopy concepts andtechniques,1L,6,3.28,0.39,3.33,28.6,57.1,0.0,0.0,0.0,0.0,0.0,0.0,,7,SP2026,Ivan Vorobyev
+BIOL 481,Neuroimmunology,1L,6,3.39,0.44,3.67,66.7,33.3,0.0,0.0,0.0,0.0,0.0,0.0,,6,SP2026,Sergey Yegorov
+BIOL 492,Research Experience inBiology,1P,34,3.4,0.33,3.33,47.1,52.9,0.0,0.0,0.0,0.0,0.0,0.0,,34,SP2026,Dos Sarbassov
+BIOL 492,Research Experience inBiology,2P,32,3.54,0.57,3.67,75.0,15.6,9.4,0.0,0.0,0.0,0.0,0.0,,32,SP2026,Tri Pham
+CHEM 100,Introduction to Chemistry,1L,72,3.1,0.68,3.33,29.7,51.4,13.5,1.4,1.4,0.0,0.0,0.0,,74,SP2026,ZhannatAshikbayeva
+CHEM 101L,General Chemistry I lab,1ChLb,24,3.06,0.91,3.33,41.7,37.5,16.7,0.0,4.2,0.0,0.0,0.0,,24,SP2026,AisuluZhanbossinova
+CHEM 101L,General Chemistry I lab,2ChLb,12,2.97,0.61,3.16,25.0,41.7,33.3,0.0,0.0,0.0,0.0,0.0,,12,SP2026,Roza Oztopcu
+CHEM 101L,General Chemistry I lab,4ChLb,19,3.47,0.46,3.67,52.6,42.1,5.3,0.0,0.0,0.0,0.0,0.0,,19,SP2026,Roza Oztopcu
+CHEM 101L,General Chemistry I lab,6ChLb,20,2.37,1.17,2.67,14.3,42.9,19.0,4.8,14.3,0.0,0.0,0.0,,21,SP2026,Aliya Toleuova
+CHEM 101L,General Chemistry I lab,7ChLb,20,2.28,0.99,2.5,0.0,47.6,38.1,0.0,9.5,0.0,0.0,0.0,,21,SP2026,Saule Issayeva
+CHEM 101L,General Chemistry I lab,9ChLb,6,2.66,0.52,2.66,0.0,50.0,50.0,0.0,0.0,0.0,0.0,0.0,,6,SP2026,AkmaralSuleimenova
+CHEM 101L,General Chemistry I lab,10ChLb,7,3.52,0.42,3.67,57.1,42.9,0.0,0.0,0.0,0.0,0.0,0.0,,7,SP2026,AisuluZhanbossinova
+CHEM 101,General Chemistry I,1L,37,2.23,0.94,2.33,7.5,32.5,32.5,15.0,5.0,0.0,0.0,0.0,,40,SP2026,Khalil Amro
+CHEM 101,General Chemistry I,2L,47,2.07,0.73,2.33,0.0,20.8,64.6,6.2,6.2,0.0,0.0,0.0,,48,SP2026,AkmaralSuleimenova
+CHEM 101,General Chemistry I,3L,8,2.12,0.64,2.0,0.0,12.5,75.0,12.5,0.0,0.0,0.0,0.0,,8,SP2026,AkmaralSuleimenova
+CHEM 102,General Chemistry II,1L,19,2.46,1.04,2.67,15.8,36.8,31.6,10.5,5.3,0.0,0.0,0.0,,19,SP2026,AigerimGalyamova
+CHEM 102,General Chemistry II,2L,27,1.85,1.36,2.0,14.8,14.8,37.0,7.4,25.9,0.0,0.0,0.0,,27,SP2026,Roza Oztopcu
+CHEM 102,General Chemistry II,3L,40,2.43,0.87,2.67,5.0,50.0,30.0,12.5,2.5,0.0,0.0,0.0,,40,SP2026,AisuluZhanbossinova
+CHEM 102,General Chemistry II,4L,19,2.35,1.0,2.33,15.8,31.6,31.6,15.8,5.3,0.0,0.0,0.0,,19,SP2026,SandugashKalybekkyzy
+CHEM 102,General Chemistry II,5L,33,2.39,0.88,2.33,9.1,39.4,33.3,15.2,3.0,0.0,0.0,0.0,,33,SP2026,Aliya Toleuova
+CHEM 102,General Chemistry II,6L,31,2.46,1.09,2.67,15.6,37.5,31.2,3.1,9.4,0.0,0.0,0.0,,32,SP2026,Aliya Toleuova
+CHEM 102,General Chemistry II,7L,29,1.77,0.92,2.0,3.4,17.2,41.4,27.6,10.3,0.0,0.0,0.0,,29,SP2026,Ellina Mun
+CHEM 105,Introduction toEnvironmental Science,1L,73,2.96,0.62,3.0,24.0,52.0,21.3,0.0,0.0,0.0,0.0,0.0,,75,SP2026,ZhannatAshikbayeva
+CHEM 105,Introduction toEnvironmental Science,2L,73,3.23,0.47,3.33,30.1,63.0,6.8,0.0,0.0,0.0,0.0,0.0,,73,SP2026,ZhannatAshikbayeva
+CHEM 105,Introduction toEnvironmental Science,3L,41,3.42,0.41,3.33,45.2,52.4,0.0,0.0,0.0,0.0,0.0,0.0,,42,SP2026,Saule Issayeva
+CHEM 211L,Organic Chemistry I Lab,1Lb,5,3.53,0.56,3.67,60.0,40.0,0.0,0.0,0.0,0.0,0.0,0.0,,5,SP2026,Ozgur Oztopcu
+CHEM 211L,Organic Chemistry I Lab,2Lb,5,2.27,1.38,2.33,16.7,16.7,33.3,0.0,16.7,0.0,0.0,0.0,,6,SP2026,Rauan Smail
+CHEM 211,Organic Chemistry I,1L,5,1.67,1.25,2.0,0.0,20.0,40.0,20.0,20.0,0.0,0.0,0.0,,5,SP2026,SalimgereyAdilov
+CHEM 211,Organic Chemistry I,1L,5,1.67,1.25,2.0,0.0,20.0,40.0,20.0,20.0,0.0,0.0,0.0,,5,SP2026,AhmedElkamhawy
+CHEM 211,Organic Chemistry I,2L,18,2.59,1.03,2.84,16.7,50.0,16.7,11.1,5.6,0.0,0.0,0.0,,18,SP2026,SalimgereyAdilov
+CHEM 211,Organic Chemistry I,2L,18,2.59,1.03,2.84,16.7,50.0,16.7,11.1,5.6,0.0,0.0,0.0,,18,SP2026,AhmedElkamhawy
+CHEM 212L,Organic Chemistry II Lab,1ChLb,21,3.67,0.38,3.67,66.7,33.3,0.0,0.0,0.0,0.0,0.0,0.0,,21,SP2026,Ozgur Oztopcu
+CHEM 212L,Organic Chemistry II Lab,2ChLb,13,3.41,0.44,3.33,38.5,53.8,7.7,0.0,0.0,0.0,0.0,0.0,,13,SP2026,Ozgur Oztopcu
+CHEM 212L,Organic Chemistry II Lab,4ChLb,6,2.94,0.68,3.0,11.1,44.4,11.1,0.0,0.0,0.0,0.0,0.0,,9,SP2026,Rauan Smail
+CHEM 212,Organic Chemistry II,1L,22,2.52,1.14,3.0,18.2,40.9,22.7,9.1,9.1,0.0,0.0,0.0,,22,SP2026,IrshadKammakakam
+CHEM 212,Organic Chemistry II,2L,7,1.76,1.72,1.0,22.2,0.0,11.1,22.2,22.2,0.0,0.0,0.0,,9,SP2026,DavitHayrapetyan
+CHEM 212,Organic Chemistry II,3L,24,2.92,0.94,3.0,25.0,50.0,16.7,4.2,4.2,0.0,0.0,0.0,,24,SP2026,IrshadKammakakam
+CHEM 250,Descriptive InorganicChemistry,1L,39,2.94,1.09,3.33,32.6,34.9,16.3,0.0,7.0,0.0,0.0,0.0,,43,SP2026,Timur Atabaev
+CHEM 320L,Instrumental Analysis Lab,1ChLb,27,3.42,0.27,3.33,37.0,63.0,0.0,0.0,0.0,0.0,0.0,0.0,,27,SP2026,RostislavBukasov
+CHEM 320,Instrumental Analysis,1L,29,2.79,0.64,2.67,16.7,43.3,36.7,0.0,0.0,0.0,0.0,0.0,,30,SP2026,RostislavBukasov
+CHEM 332L,Physical Chemistry II Lab,1ChLb,19,3.14,0.57,3.0,31.6,63.2,5.3,0.0,0.0,0.0,0.0,0.0,,19,SP2026,Haiyan Fan
+CHEM 332,Physical Chemistry II,1L,23,2.57,0.7,2.33,17.4,26.1,52.2,4.3,0.0,0.0,0.0,0.0,,23,SP2026,Haiyan Fan
+CHEM 341L,Biochemistry I Lab,1ChLb,20,2.87,0.62,3.0,20.0,45.0,35.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,AkmaralSuleimenova
+CHEM 341L,Biochemistry I Lab,2ChLb,10,3.13,0.55,3.33,30.0,60.0,10.0,0.0,0.0,0.0,0.0,0.0,,10,SP2026,AkmaralSuleimenova
+CHEM 380,Research Methods,1L,21,3.24,0.84,3.33,36.4,50.0,4.5,0.0,4.5,0.0,0.0,0.0,,22,SP2026,AndreyKhalimon
+CHEM 380,Research Methods,2L,12,3.03,0.48,3.0,16.7,66.7,16.7,0.0,0.0,0.0,0.0,0.0,,12,SP2026,AndreyKhalimon
+CHEM 400,Chemistry Seminar,1S,14,3.93,0.19,4.0,86.7,6.7,0.0,0.0,0.0,0.0,0.0,0.0,,15,SP2026,SalimgereyAdilov
+CHEM 411,Advanced OrganicChemistry I,1L,20,3.07,0.7,3.0,36.4,27.3,27.3,0.0,0.0,0.0,0.0,9.1,,22,SP2026,DavitHayrapetyan
+CHEM 431,Computational Chemistry,1L,6,3.89,0.17,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,6,SP2026,Mannix Balanay
+CHEM 433,Surfactants and Colloids,1L,22,2.92,0.85,3.0,36.4,31.8,27.3,4.5,0.0,0.0,0.0,0.0,,22,SP2026,Vesselin Paunov
+CHEM 445,Drug Discovery andDevelopment,1L,20,3.15,0.48,3.0,21.7,56.5,8.7,0.0,0.0,0.0,0.0,13.0,,23,SP2026,Ellina Mun
+CHEM 445,Drug Discovery andDevelopment,1L,20,3.15,0.48,3.0,21.7,56.5,8.7,0.0,0.0,0.0,0.0,13.0,,23,SP2026,AhmedElkamhawy
+CHEM 489,Directed Research II,1L,20,3.78,0.31,4.0,80.0,20.0,0.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,SalimgereyAdilov
+CHEM 490,Nanochemistry,1L,7,3.29,0.65,3.33,42.9,42.9,14.3,0.0,0.0,0.0,0.0,0.0,,7,SP2026,Timur Atabaev
+MATH 109,Mathematical Discovery,1L,55,3.33,0.76,3.67,50.0,28.3,11.7,1.7,0.0,0.0,0.0,0.0,,60,SP2026,Catalina Troshev
+MATH 109,Mathematical Discovery,2L,40,3.38,0.89,3.67,56.1,29.3,7.3,2.4,2.4,0.0,0.0,0.0,,41,SP2026,Catalina Troshev
+MATH 161,Calculus I,1L,228,2.81,1.06,3.0,29.4,42.4,15.6,3.9,7.4,0.0,0.0,0.0,,231,SP2026,Amin Esfahani
+MATH 161,Calculus I,2L,257,3.04,0.9,3.33,35.1,42.4,14.5,2.3,3.8,0.0,0.0,0.0,,262,SP2026,Andrey Melnikov
+MATH 162,Calculus II,1L,153,2.63,1.09,3.0,22.2,43.0,15.2,8.2,8.2,0.0,0.0,0.0,,158,SP2026,Manat Mustafa
+MATH 162,Calculus II,2L,197,2.45,1.08,2.67,18.1,33.3,26.2,9.0,7.1,0.0,0.0,0.0,,210,SP2026,Samat Kassabek
+MATH 162,Calculus II,3L,201,2.63,1.0,2.67,19.7,40.4,24.5,6.2,5.8,0.0,0.0,0.0,,208,SP2026,Yerlan Amanbek
+MATH 162,Calculus II,4L,207,2.48,1.02,2.67,14.3,42.9,27.1,7.1,7.1,0.0,0.0,0.0,,210,SP2026,Samat Kassabek
+MATH 251,Discrete Mathematics,1L,68,2.66,1.06,3.0,23.9,33.8,26.8,5.6,5.6,0.0,0.0,0.0,,71,SP2026,AigerimMadiyeva
+MATH 251,Discrete Mathematics,2L,72,2.51,1.16,2.67,22.2,38.9,18.1,11.1,9.7,0.0,0.0,0.0,,72,SP2026,AigerimMadiyeva
+MATH 263,Calculus III,1L,62,2.61,0.99,2.67,18.8,39.1,28.1,4.7,6.2,0.0,1.6,0.0,,64,SP2026,BibinurShupeyeva
+MATH 273,Linear Algebra withApplications,2L,98,3.51,0.49,3.67,60.2,36.7,3.1,0.0,0.0,0.0,0.0,0.0,,98,SP2026,Viktor Ten
+MATH 273,Linear Algebra withApplications,3L,90,3.58,0.42,3.67,63.3,34.4,2.2,0.0,0.0,0.0,0.0,0.0,,90,SP2026,Viktor Ten
+MATH 274,Introduction to DifferentialEquations,1L,69,2.54,1.01,2.67,16.7,40.3,25.0,8.3,5.6,0.0,0.0,0.0,,72,SP2026,AchenefTesfahun
+MATH 274,Introduction to DifferentialEquations,2L,58,2.83,0.95,3.0,21.5,36.9,23.1,4.6,3.1,0.0,1.5,0.0,,65,SP2026,Dongming Wei
+MATH 275,Mathematics for ArtificialIntelligence,1L,46,2.8,1.3,3.33,38.3,31.9,12.8,2.1,12.8,0.0,0.0,0.0,,47,SP2026,Manat Mustafa
+MATH 302,Abstract Algebra I,1L,68,2.36,1.14,2.33,21.9,20.5,27.4,17.8,5.5,0.0,0.0,0.0,,73,SP2026,Eunghyun Lee
+MATH 310,Applied Statistical Methods,1L,58,2.81,1.14,3.0,32.3,32.3,17.7,3.2,8.1,0.0,0.0,0.0,,62,SP2026,BibinurShupeyeva
+MATH 321,Probability,1L,54,2.12,0.91,2.0,3.7,31.5,37.0,24.1,3.7,0.0,0.0,0.0,,54,SP2026,ZhansayaTleuliyeva
+MATH 321,Probability,2L,89,2.4,0.94,2.67,13.5,37.1,31.5,14.6,3.4,0.0,0.0,0.0,,89,SP2026,ZhansayaTleuliyeva
+MATH 321,Probability,3L,82,2.12,1.06,2.0,9.4,24.7,37.6,15.3,9.4,0.0,0.0,0.0,,85,SP2026,ZhansayaTleuliyeva
+MATH 321,Probability,4L,45,1.91,1.07,2.0,6.5,17.4,45.7,15.2,13.0,0.0,0.0,0.0,,46,SP2026,AigerimMadiyeva
+MATH 322,Mathematical Statistics,1L,55,3.0,0.92,3.0,33.9,35.6,18.6,3.4,1.7,0.0,0.0,0.0,,59,SP2026,Kerem Ugurlu
+MATH 350,Research Methods,1L,71,3.49,0.5,3.67,56.0,37.3,0.0,0.0,1.3,0.0,0.0,0.0,,75,SP2026,DurvudkhanSuragan
+MATH 350,Research Methods,2L,77,3.62,0.33,3.67,67.9,30.8,0.0,0.0,0.0,0.0,0.0,0.0,,78,SP2026,DurvudkhanSuragan
+MATH 351,Numerical Methods withApplications,1L,20,3.02,0.91,3.0,33.3,33.3,23.8,4.8,0.0,0.0,0.0,0.0,,21,SP2026,Alejandro JavierCastro Castilla
+MATH 351,Numerical Methods withApplications,2L,57,2.84,0.88,3.0,20.7,51.7,20.7,1.7,3.4,0.0,0.0,0.0,,58,SP2026,Yerlan Amanbek
+MATH 361,Real Analysis I,1L,71,2.21,0.86,2.0,6.8,24.3,47.3,14.9,2.7,0.0,0.0,0.0,,74,SP2026,Adilbek Kairzhan
+MATH 361,Real Analysis I,2L,66,2.25,0.76,2.33,5.8,26.1,52.2,10.1,1.4,0.0,0.0,0.0,,69,SP2026,Adilbek Kairzhan
+MATH 407,Graph Theory,1L,61,3.47,0.7,3.67,61.9,27.0,6.3,0.0,1.6,0.0,0.0,0.0,,63,SP2026,Adilet Otemissov
+MATH 411,Linear Programming,1L,72,3.02,0.73,3.33,23.0,52.7,20.3,0.0,1.4,0.0,0.0,0.0,,74,SP2026,Adilet Otemissov
+MATH 412,Nonlinear Optimization,1L,74,3.09,0.77,3.16,29.6,43.2,16.0,2.5,0.0,0.0,0.0,0.0,,81,SP2026,RustemTakhanov
+MATH 423,Actuarial Mathematics II,1L,73,2.77,0.79,3.0,18.7,45.3,28.0,4.0,1.3,0.0,0.0,0.0,,75,SP2026,Dongming Wei
+MATH 440,Regression Analysis,1L,81,3.61,0.29,3.67,70.7,28.0,0.0,0.0,0.0,0.0,0.0,0.0,,82,SP2026,Piotr SebastianSkrzypacz
+MATH 455,Stochastic Calculus,1L,60,2.87,1.15,3.34,46.2,12.3,23.1,6.2,4.6,0.0,0.0,0.0,,65,SP2026,Kerem Ugurlu
+MATH 456,Introduction to Lie Groupsand Representations,1L,11,3.12,0.52,3.0,16.7,66.7,8.3,0.0,0.0,0.0,0.0,0.0,,12,SP2026,ZhibekKadyrsizova
+MATH 461,Real Analysis II,1L,31,3.6,0.45,3.67,60.0,25.7,2.9,0.0,0.0,0.0,0.0,0.0,,35,SP2026,Eunghyun Lee
+MATH 462,Advanced Linear Algebra,1L,45,2.48,1.22,2.67,20.7,24.1,12.1,15.5,5.2,0.0,0.0,0.0,,58,SP2026,ZhibekKadyrsizova
+MATH 465,Introduction to DifferentialGeometry,1L,18,3.17,0.85,3.16,34.8,30.4,8.7,4.3,0.0,0.0,0.0,0.0,,23,SP2026,Amin Esfahani
+MATH 466,Nonlinear ContinuumMechanics,1L,49,3.28,0.95,3.67,45.6,26.3,10.5,0.0,3.5,0.0,0.0,0.0,,57,SP2026,Andrey Melnikov
+MATH 482,Fourier Analysis,1L,48,2.67,0.91,2.67,17.2,32.8,27.6,3.4,1.7,0.0,0.0,0.0,,58,SP2026,AchenefTesfahun
+MATH 491,Special Topics inMathematics II,2L,5,3.07,0.72,3.33,40.0,40.0,20.0,0.0,0.0,0.0,0.0,0.0,,5,SP2026,Alejandro JavierCastro Castilla
+PHYS 161,Physics I for Scientists andEngineers with Laboratory,1L,153,2.61,0.99,2.67,14.6,48.1,22.8,5.1,6.3,0.0,0.0,0.0,,158,SP2026,ErnazarAbdikamalov
+PHYS 162,Physics II for Scientists andEngineers with Laboratory,1L,215,3.29,0.61,3.33,34.8,57.5,3.2,0.9,0.9,0.0,0.0,0.0,,221,SP2026,AskhatJumabekov
+PHYS 162,Physics II for Scientists andEngineers with Laboratory,2L,184,3.28,0.56,3.33,31.2,60.4,3.1,0.5,0.5,0.0,0.0,0.0,,192,SP2026,Kyunghwan Oh
+PHYS 162,Physics II for Scientists andEngineers with Laboratory,3L,224,3.26,0.76,3.33,41.3,47.8,3.9,2.6,1.7,0.0,0.0,0.0,,230,SP2026,Marat Kaikanov
+PHYS 202,Introductory Astrophysics,1L,43,2.71,0.93,2.67,18.9,32.1,22.6,5.7,1.9,0.0,0.0,1.9,,53,SP2026,Dana Alina
+PHYS 222,Classical Mechanics II,1L,14,3.69,0.67,4.0,78.6,7.1,14.3,0.0,0.0,0.0,0.0,0.0,,14,SP2026,RaynerRodriguezGuzman
+PHYS 270,Introduction to ScientificComputing and DataAnalysis,1L,24,3.61,0.31,3.67,64.0,32.0,0.0,0.0,0.0,0.0,0.0,0.0,,25,SP2026,ErnazarAbdikamalov
+PHYS 270,Introduction to ScientificComputing and DataAnalysis,1L,24,3.61,0.31,3.67,64.0,32.0,0.0,0.0,0.0,0.0,0.0,0.0,,25,SP2026,Dana Alina
+PHYS 280,Thermodynamics andStatistical Physics,1L,19,2.49,0.8,2.33,9.5,33.3,42.9,4.8,0.0,0.0,0.0,0.0,,21,SP2026,ZhandosUtegulov
+PHYS 362,Classical ElectrodynamicsII,1L,6,3.5,0.66,3.66,50.0,33.3,16.7,0.0,0.0,0.0,0.0,0.0,,6,SP2026,BakhtiyarOrazbayev
+PHYS 370,Optics with Laboratory,1Lb,9,2.59,1.22,3.0,22.2,44.4,22.2,0.0,11.1,0.0,0.0,0.0,,9,SP2026,AlexanderTikhonov
+PHYS 370,Optics with Laboratory,1Lb,9,2.59,1.22,3.0,22.2,44.4,22.2,0.0,11.1,0.0,0.0,0.0,,9,SP2026,BekdauletShukirgaliyev
+PHYS 451,Quantum Mechanics I,1L,6,2.72,0.71,2.66,16.7,33.3,50.0,0.0,0.0,0.0,0.0,0.0,,6,SP2026,Sergiy Bubin
+PHYS 491,Directed Study of AdvancedPhysics Topics,1IS,9,3.3,0.54,3.33,25.0,50.0,0.0,0.0,0.0,0.0,0.0,0.0,,12,SP2026,AntonDesyatnikov
+ECON 101,Introduction toMicroeconomics,1L,159,3.03,0.73,3.0,26.9,47.4,16.4,1.2,1.2,0.0,0.0,0.0,,171,SP2026,Alejandro MeloPonce
+ECON 102,Introduction toMacroeconomics,1L,161,2.59,1.04,2.67,18.0,40.7,24.6,6.0,7.2,0.0,0.0,0.0,,167,SP2026,GaliyaSagyndykova
+ECON 102,Introduction toMacroeconomics,2L,170,3.04,0.69,3.0,24.7,60.0,12.4,2.4,0.6,0.0,0.0,0.0,,170,SP2026,Mehmet Demir
+ECON 120,Managerial Economics,1L,170,3.06,0.78,3.33,28.4,49.4,16.5,0.0,2.3,0.0,0.0,0.0,,176,SP2026,AigerimSarsenbayeva
+ECON 201,IntermediateMicroeconomics,1L,43,2.63,1.04,2.67,20.5,40.9,29.5,0.0,6.8,0.0,2.3,0.0,,44,SP2026,Oleg Rubanov
+ECON 202,IntermediateMacroeconomics,1L,166,2.61,0.94,2.67,17.1,42.4,28.8,4.7,4.7,0.0,0.0,0.0,,170,SP2026,ZhannaKapsalyamova
+ECON 211,Economic Statistics,1L,52,2.63,0.83,2.67,11.5,50.0,32.7,1.9,3.8,0.0,0.0,0.0,,52,SP2026,Vladyslav Nora
+ECON 301,Econometrics I,1L,39,2.53,0.86,2.67,14.6,34.1,39.0,4.9,2.4,0.0,4.9,0.0,,41,SP2026,Nino Buliskeria
+ECON 319,Matching Theory andApplications,1L,34,2.42,0.6,2.33,5.6,30.6,58.3,0.0,0.0,0.0,0.0,0.0,,36,SP2026,Ahmet Altinok
+ECON 319,Matching Theory andApplications,2L,35,2.41,0.68,2.33,5.1,33.3,48.7,0.0,2.6,0.0,0.0,0.0,,39,SP2026,Ahmet Altinok
+ECON 335,Economics of Information,1L,36,2.83,0.94,3.0,30.6,36.1,22.2,11.1,0.0,0.0,0.0,0.0,,36,SP2026,Levent Kockesen
+ECON 335,Economics of Information,2L,38,2.47,1.0,2.67,15.4,43.6,25.6,5.1,7.7,0.0,0.0,0.0,,39,SP2026,Levent Kockesen
+ECON 336,Programming forEconomists,1L,32,2.69,0.83,2.67,18.2,45.5,27.3,3.0,3.0,0.0,0.0,0.0,,33,SP2026,Rajarshi Bhowal
+ECON 336,Programming forEconomists,2L,34,2.96,0.65,2.67,25.7,48.6,22.9,0.0,0.0,0.0,0.0,0.0,,35,SP2026,Rajarshi Bhowal
+ECON 337,Empirical Finance,1L,37,2.78,0.95,3.0,27.0,40.5,24.3,5.4,2.7,0.0,0.0,0.0,,37,SP2026,AigerimSarsenbayeva
+ECON 337,Empirical Finance,2L,45,3.07,0.67,3.0,26.7,62.2,8.9,0.0,2.2,0.0,0.0,0.0,,45,SP2026,AigerimSarsenbayeva
+ECON 341,Economic SimulationModeling,1L,15,3.07,1.3,3.33,43.8,37.5,0.0,0.0,12.5,0.0,0.0,0.0,,16,SP2026,ZhannaKapsalyamova
+ECON 341,Economic SimulationModeling,2L,19,3.46,0.6,3.67,68.4,21.1,10.5,0.0,0.0,0.0,0.0,0.0,,19,SP2026,ZhannaKapsalyamova
+ECON 413,Econometrics II TimeSeries,1L,28,2.83,0.52,2.67,10.0,66.7,16.7,0.0,0.0,0.0,0.0,0.0,,30,SP2026,Josef Ruzicka
+ECON 413,Econometrics II TimeSeries,2L,51,2.61,0.61,2.67,9.8,43.1,45.1,2.0,0.0,0.0,0.0,0.0,,51,SP2026,Josef Ruzicka
+ECON 415,Industrial Organization,1L,37,2.53,0.71,2.33,8.1,27.0,64.9,0.0,0.0,0.0,0.0,0.0,,37,SP2026,AndreyTkachenko
+ECON 415,Industrial Organization,2L,35,2.59,1.0,2.67,16.7,44.4,27.8,2.8,5.6,0.0,0.0,0.0,,36,SP2026,AndreyTkachenko
+ECON 434,Introduction to Big DataAnalytics,1L,38,2.85,1.04,3.33,28.9,34.2,31.6,0.0,5.3,0.0,0.0,0.0,,38,SP2026,Rajarshi Bhowal
+ECON 498,Advanced Special Topics inEconomics,1L,21,3.49,0.43,3.33,47.6,52.4,0.0,0.0,0.0,0.0,0.0,0.0,,21,SP2026,Alejandro MeloPonce
+HST 100,History of Kazakhstan,1L,24,2.57,0.87,2.84,12.5,50.0,25.0,12.5,0.0,0.0,0.0,0.0,,24,SP2026,RozaliyaGaripova
+HST 100,History of Kazakhstan,21S,22,2.23,0.92,2.5,4.2,41.7,29.2,8.3,8.3,0.0,0.0,0.0,,24,SP2026,DianaKopbayeva
+HST 100,History of Kazakhstan,3S,24,2.6,0.86,2.67,16.7,37.5,29.2,16.7,0.0,0.0,0.0,0.0,,24,SP2026,Mikhail Akulov
+HST 100,History of Kazakhstan,4S,13,2.54,1.09,3.0,12.5,31.2,25.0,6.2,6.2,0.0,0.0,0.0,,16,SP2026,DianaKopbayeva
+HST 100,History of Kazakhstan,5S,16,1.83,1.28,2.0,5.0,30.0,20.0,5.0,20.0,0.0,0.0,0.0,,20,SP2026,DianaKopbayeva
+HST 100,History of Kazakhstan,7S,23,2.99,0.76,3.0,33.3,41.7,16.7,4.2,0.0,0.0,0.0,0.0,,24,SP2026,NikolayTsyrempilov
+HST 100,History of Kazakhstan,8S,24,2.89,0.98,3.0,29.2,37.5,25.0,4.2,4.2,0.0,0.0,0.0,,24,SP2026,NikolayTsyrempilov
+HST 100,History of Kazakhstan,9S,24,2.87,0.74,2.67,20.8,45.8,29.2,4.2,0.0,0.0,0.0,0.0,,24,SP2026,NikolayTsyrempilov
+HST 100,History of Kazakhstan,10S,24,2.64,0.81,2.67,12.5,45.8,37.5,0.0,4.2,0.0,0.0,0.0,,24,SP2026,Mikhail Akulov
+HST 100,History of Kazakhstan,11S,24,3.01,0.73,3.16,25.0,54.2,16.7,4.2,0.0,0.0,0.0,0.0,,24,SP2026,Mikhail Akulov
+HST 100,History of Kazakhstan,12S,24,3.03,0.65,3.0,33.3,37.5,29.2,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Mikhail Akulov
+HST 100,History of Kazakhstan,13S,16,2.44,1.35,2.67,29.4,35.3,11.8,0.0,17.6,0.0,0.0,0.0,,17,SP2026,DianaKopbayeva
+HST 100,History of Kazakhstan,14S,10,1.9,1.04,2.16,0.0,36.4,36.4,0.0,18.2,0.0,0.0,0.0,,11,SP2026,DianaKopbayeva
+HST 100,History of Kazakhstan,16S,24,3.03,0.61,3.16,29.2,45.8,25.0,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Mollie Arbuthnot
+HST 100,History of Kazakhstan,17S,24,3.28,0.63,3.33,45.8,50.0,0.0,4.2,0.0,0.0,0.0,0.0,,24,SP2026,Mollie Arbuthnot
+HST 100,History of Kazakhstan,19S,22,3.24,0.55,3.33,33.3,50.0,8.3,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Mollie Arbuthnot
+HST 100,History of Kazakhstan,21S,21,2.43,0.89,2.33,8.7,30.4,34.8,17.4,0.0,0.0,0.0,0.0,,23,SP2026,DianaKopbayeva
+HST 100,History of Kazakhstan,22S,21,2.71,1.28,3.33,25.0,33.3,16.7,0.0,12.5,0.0,0.0,0.0,,24,SP2026,DianaKopbayeva
+HST 100,History of Kazakhstan,24S,16,2.29,1.13,2.33,12.5,31.2,37.5,6.2,12.5,0.0,0.0,0.0,,16,SP2026,DianaKopbayeva
+HST 100,History of Kazakhstan,25S,13,2.23,1.17,2.33,15.4,23.1,46.2,0.0,15.4,0.0,0.0,0.0,,13,SP2026,DianaKopbayeva
+HST 100,History of Kazakhstan,26S,21,3.32,0.4,3.33,41.7,45.8,0.0,0.0,0.0,0.0,0.0,0.0,,24,SP2026,MeiramgulKussainova
+HST 100,History of Kazakhstan,27S,23,3.1,0.54,3.33,20.8,54.2,20.8,0.0,0.0,0.0,0.0,0.0,,24,SP2026,MeiramgulKussainova
+HST 100,History of Kazakhstan,28S,24,3.27,0.56,3.33,41.7,54.2,4.2,0.0,0.0,0.0,0.0,0.0,,24,SP2026,MeiramgulKussainova
+HST 100,History of Kazakhstan,29S,20,3.37,0.61,3.67,55.0,35.0,10.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Aybike Tezel
+HST 100,History of Kazakhstan,30S,19,3.21,0.57,3.33,25.0,55.0,15.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Aybike Tezel
+HST 100,History of Kazakhstan,31S,19,3.33,0.52,3.33,40.0,50.0,5.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Aybike Tezel
+HST 100,History of Kazakhstan,32S,20,3.3,0.6,3.33,45.0,45.0,10.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Aybike Tezel
+HST 100,History of Kazakhstan,33S,20,3.17,0.62,3.16,30.0,50.0,20.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Aybike Tezel
+HST 100,History of Kazakhstan,34S,20,3.3,0.75,3.5,50.0,25.0,25.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Aybike Tezel
+HST 123,Introduction to the Historyof Science and Technology,1L,53,3.53,0.38,3.67,79.6,13.0,5.6,0.0,0.0,0.0,0.0,0.0,,54,SP2026,Di Lu
+HST 124,Introduction to the Historyof Medicine,1L,52,3.6,0.15,3.67,81.1,17.0,0.0,0.0,0.0,0.0,0.0,0.0,,53,SP2026,Di Lu
+HST 132,European History II (from1700),1L,30,3.5,0.41,3.67,56.7,40.0,3.3,0.0,0.0,0.0,0.0,0.0,,30,SP2026,Curtis Murphy
+HST 205,The Mongol Empire,1L,24,3.47,0.69,3.67,53.6,17.9,14.3,0.0,0.0,0.0,0.0,0.0,,28,SP2026,Aybike Tezel
+HST 243,Soviet History ThroughFilm,1L,36,3.29,0.55,3.33,45.9,43.2,8.1,0.0,0.0,0.0,0.0,0.0,,37,SP2026,Mollie Arbuthnot
+HST 273/REL 273,History of Sufism in theMiddle East and CentralAsia,1L,28,3.36,0.59,3.33,39.3,53.6,7.1,0.0,0.0,0.0,0.0,0.0,,28,SP2026,Daniel Beben
+HST 319/PHIL 319,Philosophy of History,1L,14,1.64,1.69,1.33,17.6,17.6,5.9,5.9,35.3,0.0,0.0,0.0,,17,SP2026,Chandler Hatch
+HST 336,The TotalitarianPhenomenon,1L,26,2.85,0.84,3.0,20.7,41.4,20.7,6.9,0.0,0.0,0.0,3.4,,29,SP2026,Mikhail Akulov
+HST 440/REL 440,Religions in the Soviet andPost-Soviet Eras,1S,18,3.2,0.4,3.33,22.2,77.8,0.0,0.0,0.0,0.0,0.0,0.0,,18,SP2026,NikolayTsyrempilov
+HST 447/WLL 447,Media and Memory Politicsin the Post-Soviet Space,1L,20,3.02,0.6,3.0,15.0,65.0,20.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Amanda Murphy
+HST 462/REL 462,History of Islam UnderRussian Rule,1S,8,1.83,1.4,1.83,8.3,8.3,33.3,0.0,16.7,0.0,0.0,0.0,,12,SP2026,RozaliyaGaripova
+HST 499,History Capstone:UndergraduateDissertation,1IS,11,3.58,0.5,3.67,63.6,27.3,9.1,0.0,0.0,0.0,0.0,0.0,,11,SP2026,Curtis Murphy
+PHIL 207,Introduction to IslamicPhilosophy and Theology,1L,27,3.09,0.81,3.33,31.0,48.3,10.3,0.0,3.4,0.0,0.0,0.0,,29,SP2026,Bakinaz Abdalla
+PHIL 210,Ethics,10S,49,2.27,1.08,2.33,12.0,36.0,30.0,10.0,10.0,0.0,0.0,0.0,,50,SP2026,Mihnea Capraru
+PHIL 210,Ethics,3S,38,3.01,0.77,3.33,27.5,50.0,10.0,7.5,0.0,0.0,0.0,0.0,,40,SP2026,Donovan Cox
+PHIL 210,Ethics,4S,40,3.08,0.78,3.33,30.0,57.5,7.5,2.5,2.5,0.0,0.0,0.0,,40,SP2026,Donovan Cox
+PHIL 210,Ethics,6S,35,2.02,1.29,2.33,10.9,19.6,19.6,13.0,13.0,0.0,0.0,0.0,,46,SP2026,Chandler Hatch
+PHIL 210,Ethics,7S,49,3.01,0.72,3.0,24.0,60.0,10.0,2.0,2.0,0.0,0.0,0.0,,50,SP2026,Matthew Heeney
+PHIL 210,Ethics,8S,38,3.09,0.49,3.0,20.0,67.5,7.5,0.0,0.0,0.0,0.0,0.0,,40,SP2026,Donovan Cox
+PHIL 210,Ethics,9S,37,3.0,1.09,3.0,40.0,30.0,15.0,2.5,5.0,0.0,0.0,0.0,,40,SP2026,Mihnea Capraru
+PHIL 210,Ethics,10S,27,3.11,1.01,3.67,48.3,24.1,10.3,10.3,0.0,0.0,0.0,0.0,,29,SP2026,Mihnea Capraru
+PHIL 210,Ethics,12S,46,2.9,0.57,3.0,10.0,64.0,14.0,4.0,0.0,0.0,0.0,0.0,,50,SP2026,Matthew Heeney
+PHIL 210,Ethics,14S,35,2.68,0.86,3.0,10.3,51.3,15.4,10.3,2.6,0.0,0.0,0.0,,39,SP2026,Ted Parent
+PHIL 210,Ethics,15S,31,2.42,1.42,2.67,29.0,22.6,25.8,6.5,16.1,0.0,0.0,0.0,,31,SP2026,Mihnea Capraru
+PHIL 210,Ethics,16S,40,2.83,0.73,3.0,18.0,38.0,22.0,2.0,0.0,0.0,0.0,0.0,,50,SP2026,JamesHutchinson
+PHIL 210,Ethics,17S,48,2.97,0.8,3.0,20.4,67.3,4.1,2.0,4.1,0.0,0.0,0.0,,49,SP2026,Donovan Cox
+PHIL 240,Formal Logic,1L,25,3.12,1.09,3.67,50.0,10.7,21.4,3.6,3.6,0.0,0.0,0.0,,28,SP2026,Mihnea Capraru
+HST 319/PHIL 319,Philosophy of History,1L,14,1.64,1.69,1.33,17.6,17.6,5.9,5.9,35.3,0.0,0.0,0.0,,17,SP2026,Chandler Hatch
+PHIL 350,History of 19th and 20thCentury Philosophy,1L,27,2.58,0.81,2.67,7.1,67.9,10.7,7.1,3.6,0.0,0.0,0.0,,28,SP2026,JamesHutchinson
+WLL 375/PHIL 375,Philosophy of Art,1L,21,2.67,1.04,2.67,22.7,40.9,22.7,0.0,9.1,0.0,0.0,0.0,,22,SP2026,Matthew Heeney
+PHIL 399,Special Topics inPhilosophy,1L,24,3.17,0.71,3.33,32.0,52.0,8.0,4.0,0.0,0.0,0.0,0.0,,25,SP2026,Ted Parent
+HST 273/REL 273,History of Sufism in theMiddle East and CentralAsia,1L,28,3.36,0.59,3.33,39.3,53.6,7.1,0.0,0.0,0.0,0.0,0.0,,28,SP2026,Daniel Beben
+REL 435/ANT 435,The Archaeology of Ritual,1L,13,2.92,0.88,3.0,28.6,42.9,14.3,7.1,0.0,0.0,0.0,0.0,,14,SP2026,KatherineErdman
+HST 440/REL 440,Religions in the Soviet andPost-Soviet Eras,1S,18,3.2,0.4,3.33,22.2,77.8,0.0,0.0,0.0,0.0,0.0,0.0,,18,SP2026,NikolayTsyrempilov
+HST 462/REL 462,History of Islam UnderRussian Rule,1S,8,1.83,1.4,1.83,8.3,8.3,33.3,0.0,16.7,0.0,0.0,0.0,,12,SP2026,RozaliyaGaripova
+KAZ 201,Academic Kazakh I,1L,15,3.22,0.32,3.33,18.8,75.0,0.0,0.0,0.0,0.0,0.0,0.0,,16,SP2026,Aidar Balabekov
+KAZ 201,Academic Kazakh I,2L,17,3.02,0.42,3.0,5.9,82.4,11.8,0.0,0.0,0.0,0.0,0.0,,17,SP2026,Aidar Balabekov
+KAZ 201,Academic Kazakh I,3L,12,3.0,0.91,3.16,35.7,28.6,14.3,7.1,0.0,0.0,0.0,0.0,,14,SP2026,GulzhamilyaShalabayeva
+KAZ 201,Academic Kazakh I,4L,14,2.95,0.55,3.0,18.8,56.2,12.5,0.0,0.0,0.0,0.0,0.0,,16,SP2026,Kulyan Kopesh
+KAZ 201,Academic Kazakh I,5L,15,2.98,0.45,3.0,12.5,62.5,18.8,0.0,0.0,0.0,0.0,0.0,,16,SP2026,Kulyan Kopesh
+KAZ 201,Academic Kazakh I,6L,13,2.49,0.79,2.33,15.4,30.8,46.2,7.7,0.0,0.0,0.0,0.0,,13,SP2026,RaushanMyrzabekova
+KAZ 201,Academic Kazakh I,7L,16,3.06,0.9,3.0,25.0,68.8,0.0,0.0,6.2,0.0,0.0,0.0,,16,SP2026,Aidar Balabekov
+KAZ 202,Academic Kazakh II,10L,10,2.5,0.55,2.67,0.0,60.0,40.0,0.0,0.0,0.0,0.0,0.0,,10,SP2026,BakytAkbuzauova
+KAZ 202,Academic Kazakh II,2L,14,2.67,1.0,2.84,13.3,40.0,33.3,0.0,6.7,0.0,0.0,0.0,,15,SP2026,RaushanMyrzabekova
+KAZ 202,Academic Kazakh II,3L,14,3.19,0.36,3.33,21.4,78.6,0.0,0.0,0.0,0.0,0.0,0.0,,14,SP2026,BakytAkbuzauova
+KAZ 202,Academic Kazakh II,4L,13,3.0,0.96,3.33,21.4,64.3,0.0,0.0,7.1,0.0,0.0,0.0,,14,SP2026,BakytAkbuzauova
+KAZ 202,Academic Kazakh II,5L,17,3.18,0.89,3.33,47.1,47.1,0.0,0.0,5.9,0.0,0.0,0.0,,17,SP2026,BakytAkbuzauova
+KAZ 202,Academic Kazakh II,6L,15,2.84,1.09,3.33,31.2,37.5,12.5,6.2,6.2,0.0,0.0,0.0,,16,SP2026,GulzhamilyaShalabayeva
+KAZ 202,Academic Kazakh II,7L,16,3.17,0.62,3.16,37.5,50.0,12.5,0.0,0.0,0.0,0.0,0.0,,16,SP2026,GulzhamilyaShalabayeva
+KAZ 202,Academic Kazakh II,8L,15,2.98,0.89,3.0,31.2,50.0,0.0,12.5,0.0,0.0,0.0,0.0,,16,SP2026,GulzhamilyaShalabayeva
+KAZ 202,Academic Kazakh II,10L,15,3.07,0.54,3.0,18.8,62.5,12.5,0.0,0.0,0.0,0.0,0.0,,16,SP2026,BakytAkbuzauova
+KAZ 300,Kazakh Studies in the Post-Colonial Era,1L,166,3.27,0.52,3.33,30.2,59.2,8.9,0.0,0.0,0.0,0.0,0.0,,169,SP2026,MeiramgulKussainova
+KAZ 300,Kazakh Studies in the Post-Colonial Era,1L,166,3.27,0.52,3.33,30.2,59.2,8.9,0.0,0.0,0.0,0.0,0.0,,169,SP2026,UliSchamiloglu
+KAZ 300,Kazakh Studies in the Post-Colonial Era,1L,166,3.27,0.52,3.33,30.2,59.2,8.9,0.0,0.0,0.0,0.0,0.0,,169,SP2026,MoldiyarYergebekov
+KAZ 312,Kazakh discourse,1S,32,3.33,0.26,3.33,27.3,69.7,0.0,0.0,0.0,0.0,0.0,0.0,,33,SP2026,MeruyertIbrayeva
+KAZ 313,Kazakh for Business,1S,29,2.91,0.66,3.0,3.2,77.4,9.7,0.0,3.2,0.0,0.0,0.0,,31,SP2026,SamalAbzhanova
+KAZ 313,Kazakh for Business,2S,36,3.46,0.41,3.33,47.2,50.0,2.8,0.0,0.0,0.0,0.0,0.0,,36,SP2026,ZeinekhanKuzekova
+KAZ 313,Kazakh for Business,3S,30,2.91,0.51,3.0,13.3,66.7,20.0,0.0,0.0,0.0,0.0,0.0,,30,SP2026,SamalAbzhanova
+KAZ 313,Kazakh for Business,4S,29,3.52,0.39,3.33,36.7,60.0,0.0,0.0,0.0,0.0,0.0,0.0,,30,SP2026,ZeinepZhumatayeva
+KAZ 313,Kazakh for Business,5S,28,3.44,0.37,3.33,30.0,63.3,0.0,0.0,0.0,0.0,0.0,0.0,,30,SP2026,ZeinepZhumatayeva
+KAZ 349,Kazakh Mythology,1L,29,3.31,0.45,3.33,36.7,53.3,6.7,0.0,0.0,0.0,0.0,0.0,,30,SP2026,ZhanarBaiteliyeva
+KAZ 350,Kazakh Literature,1S,28,2.51,0.86,2.67,6.7,46.7,30.0,6.7,3.3,0.0,0.0,0.0,,30,SP2026,Mustafa Shokay
+KAZ 350,Kazakh Literature,2S,29,2.43,0.83,2.67,3.2,45.2,35.5,6.5,3.2,0.0,0.0,0.0,,31,SP2026,Mustafa Shokay
+KAZ 350,Kazakh Literature,3S,30,3.02,0.49,3.0,16.7,70.0,13.3,0.0,0.0,0.0,0.0,0.0,,30,SP2026,Mustafa Shokay
+KAZ 350,Kazakh Literature,4S,29,2.74,0.91,3.0,16.7,50.0,16.7,10.0,3.3,0.0,0.0,0.0,,30,SP2026,Mustafa Shokay
+KAZ 351,Kazakh Short Stories,1S,28,3.25,0.48,3.33,26.7,60.0,6.7,0.0,0.0,0.0,0.0,0.0,,30,SP2026,ZhanarAbdigapparova
+KAZ 356,Kazakh Music History,1S,35,3.34,0.44,3.33,34.3,60.0,5.7,0.0,0.0,0.0,0.0,0.0,,35,SP2026,MeiramgulKussainova
+KAZ 357,Literature of Alash,1L,28,3.43,0.43,3.33,40.0,50.0,3.3,0.0,0.0,0.0,0.0,0.0,,30,SP2026,ZhanarAbdigapparova
+KAZ 359,Professional Kazakh forMedicine,1L,30,3.33,0.26,3.33,26.7,73.3,0.0,0.0,0.0,0.0,0.0,0.0,,30,SP2026,Kulyan Kopesh
+KAZ 359,Professional Kazakh forMedicine,2L,29,3.25,0.36,3.33,20.0,76.7,0.0,0.0,0.0,0.0,0.0,0.0,,30,SP2026,Kulyan Kopesh
+KAZ 366,Kazakh Language forEngineers,1S,31,2.99,0.56,3.0,16.1,67.7,16.1,0.0,0.0,0.0,0.0,0.0,,31,SP2026,ZhaziraAgabekova
+KAZ 368,Onomastics: History andFunction of Names,1L,29,3.46,0.4,3.33,43.3,53.3,0.0,0.0,0.0,0.0,0.0,0.0,,30,SP2026,ZhaziraAgabekova
+KAZ 371,Contemporary KazakhLiterature,1L,26,3.41,0.59,3.67,46.7,26.7,13.3,0.0,0.0,0.0,0.0,0.0,,30,SP2026,Yermek Adayeva
+KAZ 371,Contemporary KazakhLiterature,2L,28,3.45,0.76,3.67,63.3,26.7,0.0,0.0,3.3,0.0,0.0,0.0,,30,SP2026,Yermek Adayeva
+KAZ 371,Contemporary KazakhLiterature,3L,30,3.19,0.83,3.67,51.6,29.0,12.9,0.0,3.2,0.0,0.0,0.0,,31,SP2026,Yermek Adayeva
+KAZ 371,Contemporary KazakhLiterature,4L,29,3.46,0.54,3.67,48.4,38.7,6.5,0.0,0.0,0.0,0.0,0.0,,31,SP2026,Yermek Adayeva
+KAZ 372,Language and ethnicity,1L,29,3.29,0.5,3.33,40.0,50.0,6.7,0.0,0.0,0.0,0.0,0.0,,30,SP2026,ZhanarBaiteliyeva
+KAZ 373,Kazakh Terminology,1S,31,3.33,0.33,3.33,35.5,64.5,0.0,0.0,0.0,0.0,0.0,0.0,,31,SP2026,Sarkyt Aliszhan
+KAZ 374,Kazakh Diplomacy,1S,33,3.58,0.47,3.67,64.7,29.4,2.9,0.0,0.0,0.0,0.0,0.0,,34,SP2026,ZeinekhanKuzekova
+KAZ 376,Language and Culture,1S,29,3.28,0.37,3.33,21.9,65.6,3.1,0.0,0.0,0.0,0.0,0.0,,32,SP2026,Sarkyt Aliszhan
+KAZ 377,InterculturalCommunication throughFilm,1S,31,3.3,0.38,3.33,21.9,75.0,0.0,0.0,0.0,0.0,0.0,0.0,,32,SP2026,ZeinepZhumatayeva
+KAZ 378,Kazakh for Social Science,1L,28,3.0,0.68,3.33,20.0,53.3,16.7,3.3,0.0,0.0,0.0,0.0,,30,SP2026,SamalAbzhanova
+KAZ 378,Kazakh for Social Science,2L,30,3.15,0.66,3.0,38.7,51.6,3.2,3.2,0.0,0.0,0.0,0.0,,31,SP2026,SamalAbzhanova
+KAZ 379,Kazakh Cinema,1L,48,3.07,0.49,3.0,12.5,77.1,10.4,0.0,0.0,0.0,0.0,0.0,,48,SP2026,MoldiyarYergebekov
+KAZ 411,Shoqan Studies: ADecolonialist Discourse,1L,12,3.28,0.47,3.33,33.3,58.3,8.3,0.0,0.0,0.0,0.0,0.0,,12,SP2026,Aigul Ismakova
+KAZ 412,Scientific Discourse ofAlash,1L,8,3.71,0.28,3.67,75.0,25.0,0.0,0.0,0.0,0.0,0.0,0.0,,8,SP2026,Aigul Ismakova
+KFL 102,Elementary Kazakh as aForeign Language II,1L,7,3.76,0.37,4.0,85.7,14.3,0.0,0.0,0.0,0.0,0.0,0.0,,7,SP2026,RaushanMyrzabekova
+TUR 100,"Languages, Cultures, andCommunities of the TurkicWorld",1L,45,3.39,0.73,3.33,40.0,55.6,0.0,2.2,2.2,0.0,0.0,0.0,,45,SP2026,Halit Akarca
+TUR 180/LING 180,Introduction to Turkiclanguages,1L,29,3.31,0.72,3.33,45.2,25.8,22.6,0.0,0.0,0.0,0.0,0.0,,31,SP2026,WulidanayiJumabay
+TUR 231,Istanbul in Literature andCulture,1L,37,3.23,0.74,3.33,35.1,54.1,8.1,0.0,2.7,0.0,0.0,0.0,,37,SP2026,Funda Guven
+TUR 235,Turkish Poetry inTranslation,1L,31,3.28,0.55,3.33,40.6,46.9,9.4,0.0,0.0,0.0,0.0,0.0,,32,SP2026,Funda Guven
+TUR 305,Introduction to Chagatayand Ottoman Turkish,1L,10,3.33,0.65,3.33,36.4,45.5,9.1,0.0,0.0,0.0,0.0,0.0,,11,SP2026,Uli Schamiloglu
+CHN 102,Beginning Mandarin II,1L,23,3.29,0.71,3.67,48.0,28.0,16.0,0.0,0.0,0.0,0.0,0.0,,25,SP2026,Lili Zhang
+CHN 102,Beginning Mandarin II,2L,24,3.29,0.76,3.34,46.2,30.8,15.4,0.0,0.0,0.0,0.0,3.8,,26,SP2026,Lili Zhang
+CHN 301,Upper IntermediateChinese I,1L,11,3.43,0.3,3.67,46.2,38.5,0.0,0.0,0.0,0.0,0.0,15.4,,13,SP2026,Lili Zhang
+DUT 101,Beginning Dutch I,1L,23,3.04,0.66,3.33,20.8,58.3,12.5,4.2,0.0,0.0,0.0,0.0,,24,SP2026,BastiaanLohmann
+DUT 101,Beginning Dutch I,2L,22,3.23,0.39,3.33,26.1,65.2,4.3,0.0,0.0,0.0,0.0,0.0,,23,SP2026,BastiaanLohmann
+GER 102,Beginning German II,1L,28,3.55,0.42,3.67,57.1,39.3,3.6,0.0,0.0,0.0,0.0,0.0,,28,SP2026,Florian Kuechler
+GER 202,Intermediate German II,1L,11,3.58,0.4,3.67,50.0,41.7,0.0,0.0,0.0,0.0,0.0,0.0,,12,SP2026,Florian Kuechler
+KOR 102,Beginning Korean II,1L,16,3.77,0.29,3.84,82.4,11.8,0.0,0.0,0.0,0.0,0.0,0.0,,17,SP2026,Joomi Kong
+KOR 102,Beginning Korean II,2L,24,3.72,0.4,4.0,73.1,19.2,0.0,0.0,0.0,0.0,0.0,0.0,,26,SP2026,Joomi Kong
+KOR 202,Intermediate Korean II,1L,24,3.63,0.57,3.84,75.0,20.8,4.2,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Joomi Kong
+LING 111,Linguistics for non-majors,1L,101,3.23,0.52,3.33,34.0,54.4,9.7,0.0,0.0,0.0,0.0,0.0,,103,SP2026,Olga Potanina
+LING 140,Language Variation andChange: the Story ofEnglish,1L,29,3.21,0.48,3.33,27.6,69.0,3.4,0.0,0.0,0.0,0.0,0.0,,29,SP2026,Olga Potanina
+TUR 180/LING 180,Introduction to Turkiclanguages,1L,29,3.31,0.72,3.33,45.2,25.8,22.6,0.0,0.0,0.0,0.0,0.0,,31,SP2026,WulidanayiJumabay
+LING 271,Introduction to CognitiveLinguistics,1L,26,3.09,0.94,3.33,35.7,46.4,0.0,7.1,3.6,0.0,0.0,0.0,,28,SP2026,Emad Mohamed
+LING 273,Survey of ResearchMethods in Linguistics,1L,12,2.97,1.0,3.34,46.2,15.4,23.1,7.7,0.0,0.0,0.0,0.0,,13,SP2026,AndreyFilchenko
+LING 278,Sounds of the World’sLanguages,1L,31,3.1,0.69,3.33,34.3,34.3,17.1,2.9,0.0,0.0,0.0,0.0,,35,SP2026,Clinton Parker
+LING 374,Language Contact inCentral Asia,1L,10,3.3,0.4,3.33,30.0,60.0,10.0,0.0,0.0,0.0,0.0,0.0,,10,SP2026,Benjamin Brosig
+LING 375,The Art and Science ofAnalyzing Languages:Morphosyntax of theWorld's Languages,1L,21,2.78,1.2,3.0,34.8,30.4,13.0,4.3,8.7,0.0,0.0,0.0,,23,SP2026,Clinton Parker
+LING 377,Historical Linguistics,1S,9,3.04,0.75,3.0,22.2,55.6,22.2,0.0,0.0,0.0,0.0,0.0,,9,SP2026,Benjamin Brosig
+LING 461,Experimental semantics,1S,13,3.69,0.48,4.0,84.6,15.4,0.0,0.0,0.0,0.0,0.0,0.0,,13,SP2026,GabrielMcGuire
+LING 461,Experimental semantics,1S,13,3.69,0.48,4.0,84.6,15.4,0.0,0.0,0.0,0.0,0.0,0.0,,13,SP2026,NikolayMikhailov
+LING 473,Advanced EmpiricalMethods in Linguistics,1L,9,3.19,0.56,3.0,44.4,44.4,11.1,0.0,0.0,0.0,0.0,0.0,,9,SP2026,Emad Mohamed
+LING 482,Language and Worldview,1L,23,2.62,0.91,3.0,8.7,56.5,26.1,4.3,4.3,0.0,0.0,0.0,,23,SP2026,Eva-MarieDubuisson
+PER 101,Beginning Persian I,1L,26,3.53,0.58,3.67,63.0,25.9,7.4,0.0,0.0,0.0,0.0,0.0,,27,SP2026,Marzieh SadatRazavi
+PER 101,Beginning Persian I,2L,24,3.79,0.31,4.0,79.2,20.8,0.0,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Marzieh SadatRazavi
+PER 102,Beginning Persian II,1L,5,3.87,0.3,4.0,80.0,20.0,0.0,0.0,0.0,0.0,0.0,0.0,,5,SP2026,Marzieh SadatRazavi
+POL 102,Beginning Polish II,2L,16,3.65,0.33,3.67,81.2,18.8,0.0,0.0,0.0,0.0,0.0,0.0,,16,SP2026,Katarzyna Galaj
+POL 102,Beginning Polish II,3L,11,3.52,0.6,3.67,58.3,25.0,8.3,0.0,0.0,0.0,0.0,8.3,,12,SP2026,Katarzyna Galaj
+POL 201,Intermediate Polish I,1L,14,3.43,0.67,3.67,64.3,21.4,14.3,0.0,0.0,0.0,0.0,0.0,,14,SP2026,Katarzyna Galaj
+SPA 102,Beginning Spanish II,1L,24,3.72,0.29,3.67,79.2,20.8,0.0,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Arturo Bellido
+SPA 102,Beginning Spanish II,2L,18,3.63,0.52,3.67,83.3,11.1,5.6,0.0,0.0,0.0,0.0,0.0,,18,SP2026,Edyta Denst-Garcia
+SPA 102,Beginning Spanish II,3L,11,3.61,0.36,3.67,54.5,45.5,0.0,0.0,0.0,0.0,0.0,0.0,,11,SP2026,Edyta Denst-Garcia
+SPA 202,Intermediate Spanish II,1L,14,3.62,0.39,3.67,64.3,35.7,0.0,0.0,0.0,0.0,0.0,0.0,,14,SP2026,Arturo Bellido
+SPA 202,Intermediate Spanish II,2L,19,3.63,0.27,3.67,73.7,26.3,0.0,0.0,0.0,0.0,0.0,0.0,,19,SP2026,Arturo Bellido
+SPA 311,Colloquial Spanish,1S,29,3.4,0.51,3.33,44.8,51.7,3.4,0.0,0.0,0.0,0.0,0.0,,29,SP2026,Edyta Denst-Garcia
+WLL 110,Introduction to LiteraryStudies,1L,103,3.0,0.77,3.33,19.4,67.0,8.7,1.9,2.9,0.0,0.0,0.0,,103,SP2026,Ivan Delazari
+WLL 211,World Literature II: fromthe 18th to the 20thcentury,1L,31,3.61,0.55,4.0,67.7,29.0,3.2,0.0,0.0,0.0,0.0,0.0,,31,SP2026,Maria Rybakova
+WLL 241,Survey of Folk Tales,1S,29,3.0,0.72,3.0,26.7,43.3,26.7,0.0,0.0,0.0,0.0,0.0,,30,SP2026,Gabriel McGuire
+WLL 248,Survey of Soviet Literatureand Culture,1L,25,2.53,1.14,2.33,23.1,23.1,30.8,15.4,3.8,0.0,0.0,0.0,,26,SP2026,YuliyaKozitskaya
+WLL 313,Dante's Inferno,1L,28,3.23,0.85,3.33,46.4,39.3,10.7,0.0,3.6,0.0,0.0,0.0,,28,SP2026,Maria Rybakova
+WLL 341,Soviet Literature asMultinational Literature,1L,24,3.22,1.08,3.67,54.2,29.2,4.2,8.3,4.2,0.0,0.0,0.0,,24,SP2026,YuliyaKozitskaya
+WLL 375/PHIL 375,Philosophy of Art,1L,21,2.67,1.04,2.67,22.7,40.9,22.7,0.0,9.1,0.0,0.0,0.0,,22,SP2026,Matthew Heeney
+WLL 399,Independent Study,1L,13,3.56,0.37,3.67,50.0,42.9,0.0,0.0,0.0,0.0,0.0,7.1,,14,SP2026,Florian Kuechler
+WLL 399,Independent Study,2L,5,3.87,0.3,4.0,80.0,20.0,0.0,0.0,0.0,0.0,0.0,0.0,,5,SP2026,Marzieh SadatRazavi
+HST 447/WLL 447,Media and Memory Politicsin the Post-Soviet Space,1L,20,3.02,0.6,3.0,15.0,65.0,20.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Amanda Murphy
+WLL 451,The Call of the Evil:Unmasking theVillain(ness) in PopularCulture and Literature,1L,32,3.53,0.35,3.67,56.2,43.8,0.0,0.0,0.0,0.0,0.0,0.0,,32,SP2026,Jenni Lehtinen
+WLL 499,"Languages, Linguistics, andLiteratures Capstone II",1CP,24,3.74,0.26,3.67,87.5,12.5,0.0,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Amanda Murphy
+PLS 101,Introduction to PoliticalScience,1L,86,3.29,0.34,3.33,17.0,79.5,0.0,1.1,0.0,0.0,0.0,0.0,,88,SP2026,Neil Collins
+PLS 140,Introduction toComparative Politics,1L,80,2.68,0.96,3.0,18.4,43.7,17.2,8.0,4.6,0.0,0.0,0.0,,87,SP2026,Caress Schenk
+PLS 150,Introduction toInternational Relations,1L,87,2.62,1.04,2.67,18.7,40.7,25.3,4.4,6.6,0.0,0.0,0.0,,91,SP2026,Bimal Adhikari
+PLS 210,Political Science ResearchMethods,1L,23,3.04,0.61,3.0,20.8,66.7,4.2,4.2,0.0,0.0,0.0,0.0,,24,SP2026,Dinara Pisareva
+PLS 210,Political Science ResearchMethods,1L,23,3.04,0.61,3.0,20.8,66.7,4.2,4.2,0.0,0.0,0.0,0.0,,24,SP2026,Andrey Semenov
+PLS 210,Political Science ResearchMethods,2L,26,3.22,0.39,3.33,19.2,76.9,3.8,0.0,0.0,0.0,0.0,0.0,,26,SP2026,Dinara Pisareva
+PLS 210,Political Science ResearchMethods,2L,26,3.22,0.39,3.33,19.2,76.9,3.8,0.0,0.0,0.0,0.0,0.0,,26,SP2026,Andrey Semenov
+PLS 211,Quantitative Methods,1L,17,2.3,0.93,2.33,10.0,30.0,35.0,5.0,5.0,0.0,0.0,0.0,,20,SP2026,Ho Koh
+PLS 211,Quantitative Methods,2L,28,2.63,0.78,2.67,7.1,57.1,32.1,0.0,3.6,0.0,0.0,0.0,,28,SP2026,Jessica Neafie
+PLS 315,Political Game Theory,1L,14,2.43,0.9,2.16,11.1,22.2,38.9,5.6,0.0,0.0,0.0,5.6,,18,SP2026,Chunho Park
+PLS 327,Contemporary PoliticalTheory,1L,11,3.39,0.51,3.33,41.7,41.7,8.3,0.0,0.0,0.0,0.0,0.0,,12,SP2026,Brian Smith
+PLS 345,"Revolutions, SocialMovements, andContentious Politics",1L,22,3.78,0.16,3.67,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,22,SP2026,Dinara Pisareva
+PLS 345,"Revolutions, SocialMovements, andContentious Politics",1L,22,3.78,0.16,3.67,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,22,SP2026,Andrey Semenov
+PLS 351,International PoliticalEconomy,1L,19,3.0,0.83,3.0,36.8,42.1,15.8,5.3,0.0,0.0,0.0,0.0,,19,SP2026,Maja Savevska
+PLS 355,European Union:Institutions and Policies,1L,20,2.98,0.76,3.0,28.6,47.6,14.3,4.8,0.0,0.0,0.0,0.0,,21,SP2026,Maja Savevska
+PLS 361,Memory Politics in EastAsia,1L,16,2.85,0.89,3.0,11.8,70.6,5.9,0.0,5.9,0.0,0.0,0.0,,17,SP2026,BerikbolDukeyev
+PLS 363,Visual Politics,1L,18,3.76,0.22,3.67,88.9,11.1,0.0,0.0,0.0,0.0,0.0,0.0,,18,SP2026,SabinaInsebayeva
+PLS 391,Intermediate Special Topicsin Comparative Politics,1L,11,3.91,0.15,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,11,SP2026,Alexei Trochev
+PLS 392,Politics of China,1L,24,3.37,0.27,3.33,20.8,79.2,0.0,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Neil Collins
+PLS 393,Modern Korean Politics,1L,15,3.42,0.39,3.33,41.2,47.1,0.0,0.0,0.0,0.0,0.0,0.0,,17,SP2026,Chun YoungPark
+PLS 435,Political Polarization inDemocracies,1L,9,3.19,0.67,3.33,30.0,50.0,10.0,0.0,0.0,0.0,0.0,10.0,,10,SP2026,Chunho Park
+PLS 441,Advanced Topics inComparative Politics,1L,12,2.39,0.66,2.33,8.3,25.0,58.3,8.3,0.0,0.0,0.0,0.0,,12,SP2026,ElmiraJoldybayeva
+PLS 445,Political Violence,1S,8,3.42,0.16,3.33,25.0,75.0,0.0,0.0,0.0,0.0,0.0,0.0,,8,SP2026,Helene Thibault
+PLS 451,Advanced Topics inInternational Relations,1L,15,3.44,0.24,3.33,31.2,62.5,0.0,0.0,0.0,0.0,0.0,6.2,,16,SP2026,Ho Koh
+PLS 457,International Security andConflict,1S,17,3.61,0.32,3.67,58.8,41.2,0.0,0.0,0.0,0.0,0.0,0.0,,17,SP2026,Chun YoungPark
+PLS 469,International Relations ofEurasia,1L,14,3.6,0.37,3.67,60.0,33.3,0.0,0.0,0.0,0.0,0.0,0.0,,15,SP2026,SabinaInsebayeva
+ANT 101,Being Human: AnIntroduction to Four FieldAnthropology,1L,106,3.47,0.69,3.67,59.3,33.3,3.7,0.0,1.9,0.0,0.0,0.0,,108,SP2026,Russell Zanca
+ANT 110,Introduction toSociocultural Anthropology,1L,140,3.37,0.51,3.33,44.7,45.3,2.0,0.7,0.7,0.0,0.0,0.0,,150,SP2026,Alima Bissenova
+ANT 140,World Prehistory,1L,85,3.23,0.78,3.33,39.8,47.7,5.7,0.0,3.4,0.0,0.0,0.0,,88,SP2026,Abay Namen
+ANT 214/SOC 214,Qualitative Methods,1S,27,2.95,1.2,3.33,48.1,25.9,11.1,7.4,7.4,0.0,0.0,0.0,,27,SP2026,KarinaMatkarimova
+ANT 214/SOC 214,Qualitative Methods,2S,54,3.02,1.06,3.33,37.0,40.7,14.8,0.0,7.4,0.0,0.0,0.0,,54,SP2026,PhilippSchroeder
+ANT 231,Frauds and Fallacies inArchaeology,1L,25,3.23,0.51,3.33,36.0,56.0,8.0,0.0,0.0,0.0,0.0,0.0,,25,SP2026,KatherineErdman
+ANT 232,"Life, Death and Economy:Archaeology of Central Asia",1L,25,3.04,0.77,3.33,28.0,64.0,4.0,0.0,4.0,0.0,0.0,0.0,,25,SP2026,Paula Dupuy
+ANT 270,Anthropology of Warfare,1L,24,3.17,0.46,3.33,30.8,53.8,7.7,0.0,0.0,0.0,0.0,0.0,,26,SP2026,Ulan Bigozhin
+ANT 286,Nomads: Around the worldand through time,1L,18,3.02,0.64,3.0,22.2,55.6,22.2,0.0,0.0,0.0,0.0,0.0,,18,SP2026,Paula Dupuy
+ANT 306,Anthropology ofPerformance,1L,22,3.5,0.43,3.67,48.0,40.0,0.0,0.0,0.0,0.0,0.0,0.0,,25,SP2026,SnezhanaAtanova
+ANT 317,"Museum space: collections,collectors and society",1L,20,3.37,0.68,3.67,52.4,33.3,4.8,4.8,0.0,0.0,0.0,0.0,,21,SP2026,SnezhanaAtanova
+ANT 361,"Human Evolution: Bones,Stones and Genomes",1L,11,2.64,1.3,3.33,23.1,30.8,7.7,15.4,7.7,0.0,0.0,7.7,,13,SP2026,Reed Coil
+ANT 386/SOC 386,Social Challenges ofClimate Change,1L,20,2.13,1.36,2.67,9.5,42.9,19.0,0.0,23.8,0.0,0.0,0.0,,21,SP2026,MatveyLomonosov
+ANT 412/SOC 412,Approaches to GlobalDevelopment,1L,27,2.67,1.14,3.0,25.9,37.0,22.2,7.4,7.4,0.0,0.0,0.0,,27,SP2026,PhilippSchroeder
+ANT 412/SOC 412,Approaches to GlobalDevelopment,2L,26,2.9,0.96,3.16,19.2,61.5,7.7,7.7,3.8,0.0,0.0,0.0,,26,SP2026,PhilippSchroeder
+REL 435/ANT 435,The Archaeology of Ritual,1L,13,2.92,0.88,3.0,28.6,42.9,14.3,7.1,0.0,0.0,0.0,0.0,,14,SP2026,KatherineErdman
+SOC 101,Introduction to Sociology,1L,102,3.02,0.87,3.33,33.3,44.8,12.4,4.8,1.9,0.0,0.0,0.0,,105,SP2026,KarinaMatkarimova
+SOC 201,Social Science ResearchMethods,2L,28,2.74,1.01,3.0,20.0,50.0,13.3,3.3,6.7,0.0,0.0,0.0,,30,SP2026,DanaBurkhanova
+SOC 201,Social Science ResearchMethods,3L,29,2.67,1.09,3.0,10.0,53.3,20.0,3.3,10.0,0.0,0.0,0.0,,30,SP2026,MatveyLomonosov
+SOC 203,Quantitative Methods inSociology,1L,25,2.83,1.07,3.0,28.0,52.0,8.0,4.0,8.0,0.0,0.0,0.0,,25,SP2026,DarkhanMedeuov
+SOC 210,Gender and Society,1L,26,3.33,0.33,3.33,34.6,65.4,0.0,0.0,0.0,0.0,0.0,0.0,,26,SP2026,Ana CristinaHenriquesMarques
+SOC 215,Sociology of Race andEthnicity,1L,27,3.36,0.46,3.33,37.0,55.6,7.4,0.0,0.0,0.0,0.0,0.0,,27,SP2026,SaltanatAkhmetova
+SOC 220,"Science, Technology, andSociety",1L,27,3.07,0.78,3.0,29.6,59.3,7.4,0.0,3.7,0.0,0.0,0.0,,27,SP2026,DarkhanMedeuov
+SOC 220,"Science, Technology, andSociety",2L,24,2.97,0.89,3.0,19.2,61.5,3.8,3.8,3.8,0.0,0.0,0.0,,26,SP2026,DarkhanMedeuov
+SOC 301,Classical SociologicalTheory,1L,29,2.84,0.71,3.0,13.8,65.5,17.2,0.0,3.4,0.0,0.0,0.0,,29,SP2026,DanaBurkhanova
+SOC 301,Classical SociologicalTheory,2L,25,2.55,0.83,2.67,3.7,51.9,29.6,3.7,3.7,0.0,0.0,0.0,,27,SP2026,Mikhail Sokolov
+SOC 310,Social Inequality,1L,25,3.16,0.76,3.33,24.0,68.0,4.0,0.0,4.0,0.0,0.0,0.0,,25,SP2026,Ana CristinaHenriquesMarques
+SOC 313,Social Foundations ofEducation,1L,27,2.88,0.61,3.0,22.2,44.4,33.3,0.0,0.0,0.0,0.0,0.0,,27,SP2026,KarinaMatkarimova
+SOC 320,Organized Crime andCorruption,1L,26,3.1,0.88,3.33,29.6,55.6,3.7,3.7,3.7,0.0,0.0,0.0,,27,SP2026,Gavin Slade
+SOC 410,Violence Against Women:An Intersectional Approach,1L,28,3.37,0.41,3.33,35.7,64.3,0.0,0.0,0.0,0.0,0.0,0.0,,28,SP2026,SaltanatAkhmetova
+ANT 412/SOC 412,Approaches to GlobalDevelopment,1L,27,2.67,1.14,3.0,25.9,37.0,22.2,7.4,7.4,0.0,0.0,0.0,,27,SP2026,PhilippSchroeder
+ANT 412/SOC 412,Approaches to GlobalDevelopment,2L,26,2.9,0.96,3.16,19.2,61.5,7.7,7.7,3.8,0.0,0.0,0.0,,26,SP2026,PhilippSchroeder
+SOC 416,Sociology of Punishment,1L,27,2.97,0.99,3.33,25.9,55.6,11.1,0.0,7.4,0.0,0.0,0.0,,27,SP2026,Gavin Slade
+SOC 425,Modern SociologicalTheory,1L,21,3.02,0.82,3.33,19.0,66.7,9.5,0.0,4.8,0.0,0.0,0.0,,21,SP2026,Mikhail Sokolov
+SOC 499,Capstone Seminar II,1S,18,3.43,0.41,3.67,55.6,44.4,0.0,0.0,0.0,0.0,0.0,0.0,,18,SP2026,DanaBurkhanova
+ANT 215/REL 215,What is Islam?AnthropologicalPerspectives,1L,25,3.2,0.82,3.33,44.0,48.0,4.0,0.0,4.0,0.0,0.0,0.0,,25,SP2026,Russell Zanca
+HST 245/WLL 245,Global History of Traveland Travel Literature,1L,28,3.3,0.51,3.33,37.9,51.7,6.9,0.0,0.0,0.0,0.0,0.0,,29,SP2026,Curtis Murphy
+HST 272/TUR 272,Modern Turkey: from theOttoman Empire to theTurkish Republic,1L,41,3.39,0.79,3.67,53.7,36.6,7.3,0.0,2.4,0.0,0.0,0.0,,41,SP2026,Halit Akarca
+HST 274/WLL 274,Texts and Contexts,2L,35,3.57,0.43,3.67,60.0,37.1,2.9,0.0,0.0,0.0,0.0,0.0,,35,SP2026,Jenni Lehtinen
+TUR 280/LING 280,Introduction to TurkicHistorical and ComparativeLinguistics,1L,34,3.12,0.82,3.16,37.1,37.1,20.0,2.9,0.0,0.0,0.0,0.0,,35,SP2026,WulidanayiJumabay
+WCS 135,Introduction to VisualCommunication,1L,77,3.6,0.39,3.67,66.2,31.2,2.6,0.0,0.0,0.0,0.0,0.0,,77,SP2026,Brandon Brock
+WCS 135,Introduction to VisualCommunication,1L,77,3.6,0.39,3.67,66.2,31.2,2.6,0.0,0.0,0.0,0.0,0.0,,77,SP2026,BellidoLanguasco
+WCS 150,Rhetoric and Composition,15L,17,2.49,1.0,2.33,11.1,33.3,38.9,5.6,5.6,0.0,0.0,0.0,,18,SP2026,Olga Campbell-Thomson
+WCS 150,Rhetoric and Composition,2L,8,2.12,1.08,2.33,12.5,25.0,37.5,12.5,12.5,0.0,0.0,0.0,,8,SP2026,BellidoLanguasco
+WCS 150,Rhetoric and Composition,30L,16,2.52,1.03,2.84,0.0,66.7,11.1,0.0,11.1,0.0,0.0,0.0,,18,SP2026,Marina Zaffari
+WCS 150,Rhetoric and Composition,4L,19,2.74,1.09,3.0,15.8,52.6,21.1,0.0,10.5,0.0,0.0,0.0,,19,SP2026,Elizabeth Abele
+WCS 150,Rhetoric and Composition,5L,17,2.92,1.14,3.33,22.2,61.1,0.0,0.0,11.1,0.0,0.0,0.0,,18,SP2026,Jane Hoelker
+WCS 150,Rhetoric and Composition,9L,7,2.95,0.7,3.33,12.5,50.0,25.0,0.0,0.0,0.0,0.0,0.0,,8,SP2026,NicholasWalmsley
+WCS 150,Rhetoric and Composition,10L,14,2.31,1.37,3.0,5.9,47.1,11.8,0.0,17.6,0.0,0.0,0.0,,17,SP2026,NicholasWalmsley
+WCS 150,Rhetoric and Composition,11L,20,3.9,0.19,4.0,95.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,J.C. Ross
+WCS 150,Rhetoric and Composition,12L,20,3.9,0.31,4.0,90.0,10.0,0.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,J.C. Ross
+WCS 150,Rhetoric and Composition,13L,20,3.92,0.24,4.0,95.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,J.C. Ross
+WCS 150,Rhetoric and Composition,14L,19,3.48,0.41,3.67,65.0,25.0,5.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Jeremy RichardSpring
+WCS 150,Rhetoric and Composition,15L,21,3.13,0.81,3.33,33.3,61.9,0.0,0.0,4.8,0.0,0.0,0.0,,21,SP2026,Olga Campbell-Thomson
+WCS 150,Rhetoric and Composition,16L,19,3.09,0.87,3.33,25.0,55.0,10.0,0.0,5.0,0.0,0.0,0.0,,20,SP2026,Olga Campbell-Thomson
+WCS 150,Rhetoric and Composition,17L,16,3.29,0.44,3.33,37.5,56.2,6.2,0.0,0.0,0.0,0.0,0.0,,16,SP2026,Michael Jones
+WCS 150,Rhetoric and Composition,18L,20,2.97,1.11,3.33,35.0,50.0,5.0,0.0,10.0,0.0,0.0,0.0,,20,SP2026,Fariza Tolesh
+WCS 150,Rhetoric and Composition,19L,20,3.32,0.38,3.33,30.0,70.0,0.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Fariza Tolesh
+WCS 150,Rhetoric and Composition,20L,19,3.33,0.4,3.33,40.0,50.0,5.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Fariza Tolesh
+WCS 150,Rhetoric and Composition,21L,20,3.77,0.16,3.67,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,BenjaminGibbon
+WCS 150,Rhetoric and Composition,22L,20,3.77,0.16,3.67,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,BenjaminGibbon
+WCS 150,Rhetoric and Composition,23L,20,3.74,0.14,3.67,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,BenjaminGibbon
+WCS 150,Rhetoric and Composition,24L,20,3.07,0.79,3.33,20.0,75.0,0.0,0.0,5.0,0.0,0.0,0.0,,20,SP2026,Nurly Marshal
+WCS 150,Rhetoric and Composition,25L,20,3.25,0.43,3.33,30.0,65.0,5.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Nurly Marshal
+WCS 150,Rhetoric and Composition,26L,19,3.19,0.68,3.33,35.0,50.0,5.0,5.0,0.0,0.0,0.0,0.0,,20,SP2026,Nurly Marshal
+WCS 150,Rhetoric and Composition,27L,18,3.28,0.64,3.5,47.4,36.8,10.5,0.0,0.0,0.0,0.0,0.0,,19,SP2026,Gulden Issina
+WCS 150,Rhetoric and Composition,28L,19,3.35,0.32,3.33,31.6,68.4,0.0,0.0,0.0,0.0,0.0,0.0,,19,SP2026,Gulden Issina
+WCS 150,Rhetoric and Composition,29L,20,3.33,0.43,3.33,30.0,65.0,5.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Gulden Issina
+WCS 150,Rhetoric and Composition,30L,20,3.52,0.25,3.67,60.0,40.0,0.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Marina Zaffari
+WCS 150,Rhetoric and Composition,31L,19,3.33,0.86,3.33,45.0,45.0,0.0,0.0,5.0,0.0,0.0,0.0,,20,SP2026,Marina Zaffari
+WCS 150,Rhetoric and Composition,32L,19,3.63,0.35,3.67,60.0,35.0,0.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Marina Zaffari
+WCS 150,Rhetoric and Composition,33L,19,3.42,0.25,3.33,40.0,55.0,0.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,AndrewDrybrough
+WCS 150,Rhetoric and Composition,34L,20,3.3,0.89,3.33,40.0,55.0,0.0,0.0,5.0,0.0,0.0,0.0,,20,SP2026,Shahreen BintiMat Nayan
+WCS 150,Rhetoric and Composition,35L,20,3.33,0.7,3.5,50.0,35.0,15.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Shahreen BintiMat Nayan
+WCS 150,Rhetoric and Composition,36L,20,2.75,1.49,3.33,40.0,35.0,5.0,0.0,20.0,0.0,0.0,0.0,,20,SP2026,Ian AlbertPeterkin Jr
+WCS 150,Rhetoric and Composition,37L,19,2.77,1.09,3.0,15.0,60.0,10.0,0.0,10.0,0.0,0.0,0.0,,20,SP2026,Ian AlbertPeterkin Jr
+WCS 150,Rhetoric and Composition,38L,19,2.91,0.99,3.0,25.0,50.0,10.0,5.0,5.0,0.0,0.0,0.0,,20,SP2026,Adam Hefty
+WCS 150,Rhetoric and Composition,39L,18,3.32,0.91,3.67,55.0,30.0,0.0,0.0,5.0,0.0,0.0,0.0,,20,SP2026,James Nielsen
+WCS 200,Introduction to PublicSpeaking,10L,23,3.48,0.84,3.67,62.5,29.2,0.0,0.0,4.2,0.0,0.0,0.0,,24,SP2026,Yamen Rahvan
+WCS 200,Introduction to PublicSpeaking,4L,22,3.77,0.26,3.84,75.0,16.7,0.0,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Tiffany Moore
+WCS 200,Introduction to PublicSpeaking,5L,24,3.32,0.8,3.5,50.0,45.8,0.0,0.0,4.2,0.0,0.0,0.0,,24,SP2026,Samira Esat
+WCS 200,Introduction to PublicSpeaking,6L,24,3.24,0.82,3.33,37.5,54.2,4.2,0.0,4.2,0.0,0.0,0.0,,24,SP2026,Samira Esat
+WCS 200,Introduction to PublicSpeaking,7L,24,3.17,0.72,3.33,20.8,75.0,0.0,0.0,4.2,0.0,0.0,0.0,,24,SP2026,Thomas CarlHughes
+WCS 200,Introduction to PublicSpeaking,8L,23,3.29,0.29,3.33,25.0,70.8,0.0,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Thomas CarlHughes
+WCS 200,Introduction to PublicSpeaking,9L,24,3.25,0.45,3.33,33.3,62.5,4.2,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Samira Esat
+WCS 200,Introduction to PublicSpeaking,10L,23,3.41,0.32,3.33,33.3,62.5,0.0,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Yamen Rahvan
+WCS 204,Gender andCommunication,1L,19,3.3,0.4,3.33,31.6,68.4,0.0,0.0,0.0,0.0,0.0,0.0,,19,SP2026,Elizabeth Abele
+WCS 205,InterculturalCommunication,1L,31,3.7,0.35,3.67,77.4,22.6,0.0,0.0,0.0,0.0,0.0,0.0,,31,SP2026,Marilyn Plumlee
+WCS 210,Technical and ProfessionalWriting,3L,24,3.46,0.4,3.67,62.5,37.5,0.0,0.0,0.0,0.0,0.0,0.0,,24,SP2026,James Nielsen
+WCS 210,Technical and ProfessionalWriting,4L,24,3.42,0.3,3.33,41.7,58.3,0.0,0.0,0.0,0.0,0.0,0.0,,24,SP2026,James Nielsen
+WCS 210,Technical and ProfessionalWriting,6L,24,3.06,0.66,3.33,25.0,54.2,20.8,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Gamze Oncul
+WCS 210,Technical and ProfessionalWriting,7L,22,3.3,0.54,3.33,33.3,54.2,4.2,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Gamze Oncul
+WCS 210,Technical and ProfessionalWriting,8L,23,3.13,0.5,3.33,16.7,62.5,16.7,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Gamze Oncul
+WCS 210,Technical and ProfessionalWriting,9L,23,3.2,0.42,3.33,20.8,70.8,4.2,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Carlos Abaunza
+WCS 210,Technical and ProfessionalWriting,10L,25,3.01,0.55,3.0,24.0,60.0,16.0,0.0,0.0,0.0,0.0,0.0,,25,SP2026,Carlos Abaunza
+WCS 210,Technical and ProfessionalWriting,11L,23,3.16,0.26,3.33,4.2,87.5,4.2,0.0,0.0,0.0,0.0,0.0,,24,SP2026,BakhtiarNaghdipour
+WCS 220,Science Writing,1L,22,3.2,0.79,3.33,31.8,63.6,0.0,0.0,4.5,0.0,0.0,0.0,,22,SP2026,Adam Hefty
+WCS 220,Science Writing,2L,25,3.37,0.46,3.33,40.0,60.0,0.0,0.0,0.0,0.0,0.0,0.0,,25,SP2026,Adam Hefty
+WCS 230,"Say What you Mean:Clarity, Precision, and Stylein Academic Writing",1L,21,3.05,0.82,3.33,27.3,59.1,4.5,0.0,4.5,0.0,0.0,0.0,,22,SP2026,Thomas Duke
+WCS 230,"Say What you Mean:Clarity, Precision, and Stylein Academic Writing",2L,25,3.69,0.37,3.67,84.0,16.0,0.0,0.0,0.0,0.0,0.0,0.0,,25,SP2026,Marilyn Plumlee
+WCS 230,"Say What you Mean:Clarity, Precision, and Stylein Academic Writing",3L,23,3.22,0.4,3.0,20.8,70.8,4.2,0.0,0.0,0.0,0.0,0.0,,24,SP2026,Thomas Duke
+WCS 240,Writing for Digital Media,2L,20,3.02,0.89,3.33,25.0,41.7,12.5,0.0,4.2,0.0,0.0,0.0,,24,SP2026,Brandon Brock
+WCS 240,Writing for Digital Media,3L,22,3.15,0.77,3.33,21.7,69.6,0.0,0.0,4.3,0.0,0.0,0.0,,23,SP2026,Michael Jones
+WCS 240,Writing for Digital Media,4L,24,3.75,0.57,4.0,87.5,4.2,8.3,0.0,0.0,0.0,0.0,0.0,,24,SP2026,James Swider
+WCS 240,Writing for Digital Media,5L,23,3.62,0.9,4.0,83.3,4.2,4.2,0.0,4.2,0.0,0.0,0.0,,24,SP2026,James Swider
+WCS 240,Writing for Digital Media,6L,21,3.37,0.68,3.67,50.0,33.3,0.0,4.2,0.0,0.0,0.0,0.0,,24,SP2026,Shahreen BintiMat Nayan
+WCS 250,Advanced Rhetoric andComposition,1L,18,3.54,0.35,3.67,50.0,40.0,0.0,0.0,0.0,0.0,0.0,0.0,,20,SP2026,Arlyce Menzies
+WCS 250,Advanced Rhetoric andComposition,2L,20,3.07,1.2,3.67,55.0,30.0,5.0,0.0,10.0,0.0,0.0,0.0,,20,SP2026,Arlyce Menzies
+WCS 250,Advanced Rhetoric andComposition,3L,11,3.55,1.2,4.0,69.2,7.7,0.0,0.0,7.7,0.0,0.0,0.0,,13,SP2026,NicholasWalmsley
+WCS 270,Academic and ProfessionalPresentations,1L,35,3.46,0.27,3.33,38.9,58.3,0.0,0.0,0.0,0.0,0.0,0.0,,36,SP2026,Thomas Duke
+WCS 270,Academic and ProfessionalPresentations,2L,35,3.26,0.64,3.33,27.8,66.7,0.0,0.0,2.8,0.0,0.0,0.0,,36,SP2026,Yamen Rahvan
+WCS 270,Academic and ProfessionalPresentations,3L,36,3.24,0.27,3.33,16.7,83.3,0.0,0.0,0.0,0.0,0.0,0.0,,36,SP2026,Thomas CarlHughes
+WCS 270,Academic and ProfessionalPresentations,4L,36,3.73,0.22,3.67,86.1,13.9,0.0,0.0,0.0,0.0,0.0,0.0,,36,SP2026,Tiffany Moore
+WCS 390,Writing Fellows I –Composition andCollaboration in Theory andPractice,1L,17,3.98,0.08,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,17,SP2026,Marilyn Plumlee
+WLL 235/WCS 260,Creative Writing:Introduction to FictionWriting I,1L,18,3.06,0.85,3.33,25.0,50.0,5.0,10.0,0.0,0.0,0.0,0.0,,20,SP2026,Jonathan Dupuy
+WLL 235/WCS 260,Creative Writing:Introduction to FictionWriting I,3L,16,3.44,0.62,3.67,47.4,26.3,10.5,0.0,0.0,0.0,0.0,0.0,,19,SP2026,Jonathan Dupuy
+WLL 235/WCS 260,Creative Writing:Introduction to FictionWriting I,4L,40,3.53,0.31,3.67,65.0,35.0,0.0,0.0,0.0,0.0,0.0,0.0,,40,SP2026,Ian AlbertPeterkin Jr
+WLL 462/WCS 462,Creative Nonfiction,1S,16,3.15,0.67,3.16,33.3,38.9,16.7,0.0,0.0,0.0,0.0,0.0,,18,SP2026,Jonathan Dupuy
+NUR 121,Introduction to BasicStatistics for Evidence-Based Practice,1L,5,3.8,0.18,3.67,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,5,SP2026,Nancy Stitt
+NUR 121,Introduction to BasicStatistics for Evidence-Based Practice,1L,5,3.8,0.18,3.67,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,5,SP2026,Jonas Cruz
+NUR 301,Nutrition for ClinicalPractice,1L,42,3.98,0.07,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,42,SP2026,Nancy Stitt
+NUR 301,Nutrition for ClinicalPractice,1L,42,3.98,0.07,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,42,SP2026,AssemZhakupova
+NUR 305,Research Methods forNursing,1L,42,3.75,0.22,3.67,92.9,7.1,0.0,0.0,0.0,0.0,0.0,0.0,,42,SP2026,Nancy Stitt
+NUR 305,Research Methods forNursing,1L,42,3.75,0.22,3.67,92.9,7.1,0.0,0.0,0.0,0.0,0.0,0.0,,42,SP2026,Yesbolat Sakko
+NUR 306,Medical-Surgical Nursing:Complex MedicalManagement for Acute andChronic Patient,1L,42,3.71,0.44,4.0,73.8,26.2,0.0,0.0,0.0,0.0,0.0,0.0,,42,SP2026,Joseph Almazan
+NUR 307,Health Promotion andDisease Prevention inCulturally DiversePopulations,1L,42,3.17,0.53,3.33,26.2,66.7,7.1,0.0,0.0,0.0,0.0,0.0,,42,SP2026,Paolo Colet
+NUR 313C,Medical-Surgical NursingII: Complex SurgicalManagement and Clinical,1L,5,3.8,0.18,3.67,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,5,SP2026,Ejercito Balay-Odao
+NUR 314C,Psychiatric Nursing andClinical,1L,5,3.8,0.18,3.67,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,5,SP2026,Ejercito Balay-Odao
+NUR 321,Ethics in Healthcare,1L,5,4.0,0.0,4.0,100.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,5,SP2026,Nancy Stitt
+NUR 402,Principles of HealthcareAdministration,1L,35,3.17,0.4,3.0,17.1,80.0,2.9,0.0,0.0,0.0,0.0,0.0,,35,SP2026,Nancy Stitt
+NUR 402,Principles of HealthcareAdministration,1L,35,3.17,0.4,3.0,17.1,80.0,2.9,0.0,0.0,0.0,0.0,0.0,,35,SP2026,AnargulKuntuganova
+NUR 405,Issues and Trends inNursing,1L,35,3.55,0.55,3.67,60.0,34.3,5.7,0.0,0.0,0.0,0.0,0.0,,35,SP2026,Nancy Stitt
+NUR 405,Issues and Trends inNursing,1L,35,3.55,0.55,3.67,60.0,34.3,5.7,0.0,0.0,0.0,0.0,0.0,,35,SP2026,AnargulKuntuganova
+NUR 406.2,Medical-Surgical Nursing:Complex Management,1L,35,3.55,0.31,3.67,65.7,34.3,0.0,0.0,0.0,0.0,0.0,0.0,,35,SP2026,Nancy Stitt
+NUR 407,Capstone: Clinical and EBPQuality ImprovementResearch,1L,35,3.24,0.43,3.33,42.9,57.1,0.0,0.0,0.0,0.0,0.0,0.0,,35,SP2026,Paolo Colet
+NUR 415C,Clinical Transitions,1ClinPract,5,3.6,0.28,3.67,60.0,40.0,0.0,0.0,0.0,0.0,0.0,0.0,,5,SP2026,Paolo Colet
+NUR 415C,Clinical Transitions,1ClinPract,5,3.6,0.28,3.67,60.0,40.0,0.0,0.0,0.0,0.0,0.0,0.0,,5,SP2026,Jonas Cruz
+NUR 422,Capstone II: Evidence-Based QualityImprovement/ResearchProject Completion,1L,5,2.93,0.69,2.67,40.0,20.0,40.0,0.0,0.0,0.0,0.0,0.0,,5,SP2026,Jonas Cruz
+NUSM 103,Biology for Medicalstudents II with Lab,1L,141,2.8,0.7,3.0,14.8,54.2,26.8,2.8,0.7,0.0,0.0,0.0,,142,SP2026,Jeanette KunzHalder
+NUSM 310,Capstone Project,1P,50,3.56,0.28,3.67,66.0,34.0,0.0,0.0,0.0,0.0,0.0,0.0,,50,SP2026,Larisa Lezina
+NUSM 404,Cellular and PathologicalBasis of Disease,1L,30,2.75,0.82,2.67,29.0,32.3,29.0,6.5,0.0,0.0,0.0,0.0,,31,SP2026,MatthewNaanlep Tanko
+NUSM 406,Immunology in Health andDisease,1L,30,3.39,0.39,3.33,45.2,51.6,0.0,0.0,0.0,0.0,0.0,0.0,,31,SP2026,Denis Bulanin
+NUSM 406,Immunology in Health andDisease,1L,30,3.39,0.39,3.33,45.2,51.6,0.0,0.0,0.0,0.0,0.0,0.0,,31,SP2026,Nikolai Barlev
+NUSM 407,Medical Microbiology,1L,32,2.99,0.43,3.0,6.1,78.8,12.1,0.0,0.0,0.0,0.0,0.0,,33,SP2026,Sanja Terzic
+NUSM 407,Medical Microbiology,1L,32,2.99,0.43,3.0,6.1,78.8,12.1,0.0,0.0,0.0,0.0,0.0,,33,SP2026,Syed HaniHassan Abidi

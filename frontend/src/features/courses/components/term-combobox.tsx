@@ -10,43 +10,49 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-
-const ALL_TERMS_VALUE = "all";
+import { formatAcademicTerm } from "../utils/term-utils";
 
 interface TermComboboxProps {
   terms: string[];
-  value: string | undefined;
-  onValueChange: (value: string | undefined) => void;
+  values: string[];
+  onValuesChange: (values: string[]) => void;
   disabled?: boolean;
   className?: string;
 }
 
 export function TermCombobox({
   terms,
-  value,
-  onValueChange,
+  values,
+  onValuesChange,
   disabled = false,
   className,
 }: TermComboboxProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
-  const options = useMemo(
-    () => [{ value: ALL_TERMS_VALUE, label: "All terms" }, ...terms.map((term) => ({ value: term, label: term }))],
-    [terms],
-  );
-
-  const selectedValue = value ?? ALL_TERMS_VALUE;
+  const selectedTerms = useMemo(() => new Set(values), [values]);
   const selectedLabel =
-    options.find((option) => option.value === selectedValue)?.label ?? "All terms";
+    values.length === 0
+      ? "All terms"
+      : values.length === 1
+        ? formatAcademicTerm(values[0])
+        : `${values.length} terms`;
 
   const filteredOptions = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return options;
-    return options.filter((option) =>
-      option.label.toLowerCase().includes(normalizedQuery),
+    if (!normalizedQuery) return terms;
+    return terms.filter((term) =>
+      `${term} ${formatAcademicTerm(term)}`.toLowerCase().includes(normalizedQuery),
     );
-  }, [options, query]);
+  }, [terms, query]);
+
+  const toggleTerm = (term: string) => {
+    onValuesChange(
+      selectedTerms.has(term)
+        ? values.filter((selectedTerm) => selectedTerm !== term)
+        : [...values, term],
+    );
+  };
 
   return (
     <Popover
@@ -73,8 +79,8 @@ export function TermCombobox({
           <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-64 gap-0 p-0">
-        <div className="border-b border-border p-2">
+      <PopoverContent align="start" className="w-64 p-2">
+        <div className="px-1 pb-2">
           <Input
             placeholder="Search terms..."
             value={query}
@@ -82,35 +88,40 @@ export function TermCombobox({
             className="h-9"
           />
         </div>
-        <ul className="max-h-60 overflow-y-auto p-1">
+        <button
+          type="button"
+          className={cn(
+            "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground",
+            values.length === 0 && "bg-accent text-accent-foreground",
+          )}
+          onClick={() => onValuesChange([])}
+        >
+          <Check className={cn("size-4 shrink-0", values.length === 0 ? "opacity-100" : "opacity-0")} />
+          <span>All terms</span>
+        </button>
+        <ul className="mt-1 max-h-60 overflow-y-auto">
           {filteredOptions.length === 0 ? (
             <li className="px-2 py-6 text-center text-sm text-muted-foreground">
               No terms found.
             </li>
           ) : (
-            filteredOptions.map((option) => (
-              <li key={option.value}>
+            filteredOptions.map((term) => (
+              <li key={term}>
                 <button
                   type="button"
                   className={cn(
                     "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground",
-                    selectedValue === option.value && "bg-accent text-accent-foreground",
+                    selectedTerms.has(term) && "bg-accent text-accent-foreground",
                   )}
-                  onClick={() => {
-                    onValueChange(
-                      option.value === ALL_TERMS_VALUE ? undefined : option.value,
-                    );
-                    setOpen(false);
-                    setQuery("");
-                  }}
+                  onClick={() => toggleTerm(term)}
                 >
                   <Check
                     className={cn(
                       "size-4 shrink-0",
-                      selectedValue === option.value ? "opacity-100" : "opacity-0",
+                      selectedTerms.has(term) ? "opacity-100" : "opacity-0",
                     )}
                   />
-                  <span className="truncate">{option.label}</span>
+                  <span className="truncate">{formatAcademicTerm(term)}</span>
                 </button>
               </li>
             ))

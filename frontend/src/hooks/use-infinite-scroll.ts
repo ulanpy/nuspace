@@ -70,6 +70,14 @@ export function useInfiniteScroll<T>({
       }
 
       Object.entries(additionalParams).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach((item) => {
+            if (item != null && item !== "") {
+              queryParams.append(key, String(item));
+            }
+          });
+          return;
+        }
         if (value != null && value !== "") {
           queryParams.set(key, String(value));
         }

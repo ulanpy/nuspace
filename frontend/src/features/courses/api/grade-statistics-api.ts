@@ -37,6 +37,7 @@ export const gradeStatisticsApi = {
     if (filters?.keyword) params.append('keyword', filters.keyword);
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.size) params.append('size', filters.size.toString());
+    filters?.term?.forEach((term) => params.append('term', term));
 
     return await apiCall(`/grades?${params.toString()}`);
   },

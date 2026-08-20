@@ -4,7 +4,6 @@ import React, { ReactNode, useCallback, useEffect, useState } from "react";
 import { InfiniteList } from "./infinite-list";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { PreSearchedItem } from "@/types/search";
 
@@ -122,7 +121,6 @@ function SearchToolbar({
     <div className="relative mb-6 overflow-visible">
       <div className="flex h-11 items-stretch overflow-visible rounded-md border border-input bg-background">
         {toolbarStart}
-        {toolbarStart ? <Separator orientation="vertical" className="my-2" /> : null}
         <div
           className={cn(
             "relative min-w-0 flex-1 focus-within:ring-2 focus-within:ring-inset focus-within:ring-ring focus-within:ring-offset-0",

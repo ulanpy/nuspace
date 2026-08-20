@@ -63,7 +63,8 @@ def run_pdftotext(pdf: Path, out_txt: Path):
     exe = shutil.which("pdftotext")
     if not exe:
         raise RuntimeError(
-            "pdftotext not found on PATH. Install poppler (e.g. poppler-utils / apk add poppler-utils)."
+            "pdftotext not found on PATH. "
+            "Install poppler (e.g. poppler-utils / apk add poppler-utils)."
         )
     subprocess.run([exe, "-layout", str(pdf), str(out_txt)], check=True)
 
@@ -79,7 +80,7 @@ ROW_LINE = re.compile(
     r"^(?P<code>[A-Z&/ ]+\d+[A-Z]?)[ ,]*(?P<title>.+?)\s+(?P<section>\d+)\s+"
     r"(?P<grades>\d+)\s+(?P<avg>[0-9.]+)\s+(?P<std>[0-9.]+)\s+(?P<median>[0-9.]+)\s+"
     r"(?P<pA>[0-9.]+)\s+(?P<pB>[0-9.]+)\s+(?P<pC>[0-9.]+)\s+(?P<pD>[0-9.]+)\s+(?P<pF>[0-9.]+)\s+"
-    r"(?P<pP>[0-9.]+)\s+(?P<pI>[0-9.]+)\s+(?P<pAU>[0-9.]+)\s+(?P<pW>[0-9.]+)\s+(?P<letters>\d+)"
+    r"(?P<pP>[0-9.]+)\s+(?P<pI>[0-9.]+)\s+(?P<pAU>[0-9.]+)(?:\s+(?P<pW>[0-9.]+))?\s+(?P<letters>\d+)"
 )
 
 
@@ -113,7 +114,9 @@ def parse_grade_text(text: str):
                 "pct_P": m.group("pP"),
                 "pct_I": m.group("pI"),
                 "pct_AU": m.group("pAU"),
-                "pct_W_AW": m.group("pW"),
+                # SP2026 reports deliberately omit the W/AW column. Keep that absence as
+                # NULL in the CSV/DB rather than misrepresenting it as a true 0% withdrawal rate.
+                "pct_W_AW": m.group("pW") or None,
                 "letters_count": m.group("letters"),
             }
         )

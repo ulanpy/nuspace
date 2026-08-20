@@ -37,6 +37,7 @@ export interface GradeStatisticsFilters {
   keyword?: string;
   page?: number;
   size?: number;
+  term?: string[];
 }
 
 export interface GradeDistribution {

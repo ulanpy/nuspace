@@ -14,7 +14,7 @@ const MAX_SELECTIONS = 8;
 
 export function CourseStatsTab({ initialKeyword = "" }: { initialKeyword?: string }) {
   const [selected, setSelected] = useState<GradeStatistics[]>([]);
-  const [selectedTerm, setSelectedTerm] = useState<string | undefined>(undefined);
+  const [selectedTerms, setSelectedTerms] = useState<string[]>([]);
   const [searchKeyword, setSearchKeyword] = useState(initialKeyword);
   const { terms, isLoading: isLoadingTerms } = useGradeTerms();
 
@@ -73,12 +73,12 @@ export function CourseStatsTab({ initialKeyword = "" }: { initialKeyword?: strin
     () => (
       <TermCombobox
         terms={terms}
-        value={selectedTerm}
-        onValueChange={setSelectedTerm}
+        values={selectedTerms}
+        onValuesChange={setSelectedTerms}
         disabled={isLoadingTerms}
       />
     ),
-    [isLoadingTerms, selectedTerm, terms],
+    [isLoadingTerms, selectedTerms, terms],
   );
 
   return (
@@ -95,7 +95,7 @@ export function CourseStatsTab({ initialKeyword = "" }: { initialKeyword?: strin
         apiEndpoint="/grades"
         size={12}
         keyword={searchKeyword}
-        additionalParams={{ term: selectedTerm }}
+        additionalParams={{ term: selectedTerms }}
         onSearchChange={setSearchKeyword}
         renderItem={renderItem}
         renderEmpty={renderEmpty}
@@ -108,4 +108,3 @@ export function CourseStatsTab({ initialKeyword = "" }: { initialKeyword?: strin
     </div>
   );
 }
-

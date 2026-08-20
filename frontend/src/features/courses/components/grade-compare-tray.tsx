@@ -10,6 +10,7 @@ import {
   getDifficultyLevel,
 } from "../utils/grade-utils";
 import { cn } from "@/utils/utils";
+import { formatAcademicTerm } from "../utils/term-utils";
 
 const MAX_SELECTIONS = 4;
 
@@ -37,22 +38,24 @@ const DIFFICULTY_RANK: Record<string, number> = {
 
 const barColors = ["bg-success", "bg-primary", "bg-warning", "bg-destructive/60", "bg-destructive"];
 
-function bestHigherIndexes(values: number[]): Set<number> {
-  if (values.length < 2) return new Set();
-  const best = Math.max(...values);
-  if (!values.some((v) => v < best)) return new Set();
-  return new Set(values.flatMap((v, i) => (v === best ? [i] : [])));
+function bestHigherIndexes(values: Array<number | null | undefined>): Set<number> {
+  const present = values.filter((value): value is number => value != null);
+  if (present.length < 2) return new Set();
+  const best = Math.max(...present);
+  if (!present.some((value) => value < best)) return new Set();
+  return new Set(values.flatMap((value, index) => (value === best ? [index] : [])));
 }
 
-function bestLowerIndexes(values: number[]): Set<number> {
-  if (values.length < 2) return new Set();
-  const best = Math.min(...values);
-  if (!values.some((v) => v > best)) return new Set();
-  return new Set(values.flatMap((v, i) => (v === best ? [i] : [])));
+function bestLowerIndexes(values: Array<number | null | undefined>): Set<number> {
+  const present = values.filter((value): value is number => value != null);
+  if (present.length < 2) return new Set();
+  const best = Math.min(...present);
+  if (!present.some((value) => value > best)) return new Set();
+  return new Set(values.flatMap((value, index) => (value === best ? [index] : [])));
 }
 
 function chipLabel(item: GradeStatistics) {
-  return `${item.course_code} ${item.section} · ${item.term}`;
+  return `${item.course_code} ${item.section} · ${formatAcademicTerm(item.term)}`;
 }
 
 function gradePercentiles(stats: GradeStatistics): number[] {
@@ -99,8 +102,10 @@ export function GradeCompareTray({
     {
       key: "withdrawal",
       label: "Withdrawal",
-      values: selected.map((s) => formatPercentage(s.pct_W_AW)),
-      highlightIndexes: bestLowerIndexes(selected.map((s) => s.pct_W_AW ?? 0)),
+      values: selected.map((s) =>
+        s.pct_W_AW == null ? "Not reported" : formatPercentage(s.pct_W_AW),
+      ),
+      highlightIndexes: bestLowerIndexes(selected.map((s) => s.pct_W_AW)),
     },
     {
       key: "median",
