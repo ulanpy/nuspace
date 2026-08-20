@@ -10,13 +10,10 @@ fi
 
 # Normalize IS_DEBUG so False/FALSE/0 from .env also count as prod.
 IS_DEBUG_NORM=$(printf '%s' "${IS_DEBUG:-true}" | tr '[:upper:]' '[:lower:]')
-# Keep hot reload independently switchable for local benchmarks.  Production
-# keeps the existing behavior: IS_DEBUG=false disables reload by default.
-RELOAD_NORM=$(printf '%s' "${UVICORN_RELOAD:-$IS_DEBUG_NORM}" | tr '[:upper:]' '[:lower:]')
 
 # Single uvicorn process (one pod / one container). Scale horizontally via k8s replicas later.
 # --no-access-log: replace uvicorn text access lines with structured JSON from middleware.
-if [ "$RELOAD_NORM" = "false" ] || [ "$RELOAD_NORM" = "0" ] || [ "$RELOAD_NORM" = "no" ]; then
+if [ "$IS_DEBUG_NORM" = "false" ] || [ "$IS_DEBUG_NORM" = "0" ] || [ "$IS_DEBUG_NORM" = "no" ]; then
     exec "$VENV_BIN/uvicorn" backend.main:app --host 0.0.0.0 --port 8000 --no-access-log
 else
     exec "$VENV_BIN/uvicorn" backend.main:app \

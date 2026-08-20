@@ -1,19 +1,16 @@
-
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
-
-from backend.common.dependencies import get_infra
-from backend.common.schemas import Infra
 from backend.modules.announcements import schemas
 from backend.modules.announcements.dependencies import get_announcements_service
 from backend.modules.announcements.service import AnnouncementsService, get_latest_telegram_post_id
 from backend.modules.auth.dependencies import get_creds_or_guest
+from fastapi import APIRouter, Depends, Query
 
 router = APIRouter(
     prefix="/announcements",
     tags=["announcements"],
 )
+
 
 @router.get("/telegram")
 async def get_announcements_from_telegram(
@@ -29,7 +26,6 @@ async def get_announcements_from_telegram(
 @router.get("/bundle", response_model=schemas.AnnouncementsBundleResponse)
 async def get_announcements_bundle_route(
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    infra: Infra = Depends(get_infra),
     service: AnnouncementsService = Depends(get_announcements_service),
     events_page: int = Query(1, ge=1),
     events_size: int = Query(11, ge=1, le=100),
@@ -44,7 +40,6 @@ async def get_announcements_bundle_route(
     - recruitment_events: page=1 size=5 (approved + upcoming + type=recruitment)
     """
     return await service.get_bundle(
-        infra=infra,
         user=user,
         events_page=events_page,
         events_size=events_size,

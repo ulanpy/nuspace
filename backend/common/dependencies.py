@@ -1,11 +1,11 @@
 # backend/common/dependencies.py
 
+from collections.abc import AsyncGenerator
+
 from backend.common.schemas import Infra
 from backend.core.database.manager import AsyncDatabaseManager
-from fastapi import Request
-
 from backend.core.database.uow import UnitOfWork
-from collections.abc import AsyncGenerator
+from fastapi import Request
 
 
 async def get_infra(request: Request) -> Infra:
@@ -25,5 +25,3 @@ async def get_uow(request: Request) -> AsyncGenerator[UnitOfWork, None]:
     db_manager: AsyncDatabaseManager = request.app.state.db_manager
     uow = UnitOfWork(session_factory=db_manager.get_session_maker())
     yield uow
-
-

@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.configs.config import config
 from backend.core.database.uow import UnitOfWork
-from backend.modules.campuscurrent.models import Community
 from backend.modules.auth.models import User, UserRole
+from backend.modules.campuscurrent.models import Community
 
 logger = logging.getLogger(__name__)
 
@@ -56,9 +56,5 @@ class AppTokenManager:
         return token, claims
 
     def validate_app_token(self, token: str) -> dict:
-        """Validates app token and returns claims"""
-        try:
-            return jwt.decode(token, self.secret_key, algorithms=["HS256"])
-        except jwt.ExpiredSignatureError:
-            # Let the caller handle expiration by creating new token
-            raise
+        """Validate an app token signature and expiry on every request."""
+        return jwt.decode(token, self.secret_key, algorithms=["HS256"])

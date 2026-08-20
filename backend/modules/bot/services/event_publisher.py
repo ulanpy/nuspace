@@ -47,10 +47,16 @@ class EventServicePublisher:
             broker=broker,
         )
         self.uow = uow
-        self.media_service: MediaService = build_media_service(self.uow, self.infra)
+        self.media_service: MediaService = build_media_service(
+            uow=self.uow,
+            storage_client=storage_client,
+            config=app_config or config,
+            signing_credentials=signing_credentials,
+        )
         self.event_service = EventService(
             uow=self.uow,
             media_attachment_resolver=self.media_service,
+            meilisearch_client=meilisearch_client,
         )
 
     async def publish_personal_event(
@@ -73,7 +79,6 @@ class EventServicePublisher:
             {"role": "default", "communities": []},
         )
         created = await self.event_service.add_event(
-            infra=self.infra,
             event_data=event_schemas.EventCreateRequest(
                 creator_sub=creator_sub,
                 name=name,

@@ -3,9 +3,7 @@ from html import escape
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import HTMLResponse
 
-from backend.common.dependencies import get_infra
 from backend.modules.auth.dependencies import get_creds_or_guest
-from backend.common.schemas import Infra
 from backend.modules.campuscurrent.events.dependencies import get_event_service
 from backend.modules.campuscurrent.events.service import EventService
 
@@ -17,7 +15,7 @@ def _build_public_url(request: Request) -> str:
     host = request.headers.get("x-forwarded-host", request.headers.get("host", ""))
     path = request.url.path
     if path.startswith("/api/og"):
-        path = path[len("/api/og"):] or "/"
+        path = path[len("/api/og") :] or "/"
     if request.url.query:
         path = f"{path}?{request.url.query}"
     if host:
@@ -95,12 +93,9 @@ async def get_event_og_by_query(
     request: Request,
     id: int,
     user=Depends(get_creds_or_guest),
-    infra: Infra = Depends(get_infra),
     event_service: EventService = Depends(get_event_service),
 ) -> HTMLResponse:
-    event_response = await event_service.get_event_by_id(
-        infra=infra, event_id=id, user=user
-    )
+    event_response = await event_service.get_event_by_id(event_id=id, user=user)
 
     html = _build_event_html(event_response, request)
     return HTMLResponse(content=html, status_code=status.HTTP_200_OK)

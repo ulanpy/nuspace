@@ -48,7 +48,6 @@ class Config(BaseSettings):
     MOCK_KEYCLOAK: bool  # always set True in local dev
     USE_GCS_EMULATOR: bool  # keep True for local dev; For staging/prod .env will have it False
     GCS_EMULATOR_HOST: str
-    INTEGRATION_SECRET: str
     QUALTRICS_API_TOKEN: str | None = None
     QUALTRICS_DATA_CENTER_ID: str | None = None
     QUALTRICS_SURVEY_ID: str | None = None
@@ -77,7 +76,10 @@ class Config(BaseSettings):
     # OpenTelemetry (OTLP → Alloy → Tempo). Empty endpoint disables trace export.
     OTEL_SERVICE_NAME: str = "fastapi"
     OTEL_EXPORTER_OTLP_ENDPOINT: str = "http://alloy:4317"
-    OTEL_TRACES_SAMPLER: str = "always_on"
+    # Per-process head-sampling budgets. At low traffic every request is traced;
+    # at high traffic the buckets protect the application from tracing overhead.
+    OTEL_TRACE_NORMAL_MAX_PER_SECOND: float = 10.0
+    OTEL_TRACE_CRITICAL_MAX_PER_SECOND: float = 10.0
 
     class Config:
         env_file = os.path.join(ENV_DIR, "infra/.env")

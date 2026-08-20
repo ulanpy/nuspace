@@ -3,7 +3,6 @@ import re
 from typing import Optional
 
 import httpx
-
 from backend.modules.announcements import schemas
 from backend.modules.announcements.interfaces import EventCatalog
 from backend.modules.campuscurrent.events import schemas as event_schemas
@@ -40,7 +39,6 @@ class AnnouncementsService:
     async def get_bundle(
         self,
         *,
-        infra,
         user: tuple[dict, dict],
         events_page: int = 1,
         events_size: int = 11,
@@ -59,9 +57,7 @@ class AnnouncementsService:
             event_status=event_schemas.EventStatus.approved,
             time_filter=event_schemas.TimeFilter.UPCOMING,
         )
-        events = await self.event_catalog.get_events(
-            user=user, event_filter=event_filter, infra=infra
-        )
+        events = await self.event_catalog.get_events(user=user, event_filter=event_filter)
 
         recruitment_filter = event_schemas.EventFilter(
             page=recruitment_events_page,
@@ -71,7 +67,7 @@ class AnnouncementsService:
             time_filter=event_schemas.TimeFilter.UPCOMING,
         )
         recruitment_events = await self.event_catalog.get_events(
-            user=user, event_filter=recruitment_filter, infra=infra
+            user=user, event_filter=recruitment_filter
         )
 
         return schemas.AnnouncementsBundleResponse(

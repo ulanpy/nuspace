@@ -584,8 +584,8 @@ class PlannerService:
             term_label_fallback=term_label_fallback,
         )
 
+    @staticmethod
     def _build_planner_search_response(
-        self,
         registrar_response: CourseSearchResponse,
     ) -> PlannerCourseSearchResponse:
         planner_items = [
@@ -673,3 +673,33 @@ class PlannerService:
         if not enrollments:
             return None
         return int(sum(enrollments))
+
+
+class PlannerCatalogSearchService:
+    """Read-only planner catalog use case; intentionally has no UoW dependency."""
+
+    def __init__(
+        self,
+        course_catalog: CourseCatalogLookup,
+        active_semester: SemesterOption,
+    ) -> None:
+        self.course_catalog = course_catalog
+        self.active_semester = active_semester
+
+    async def search_courses(
+        self,
+        *,
+        term_value: str,
+        course_code: Optional[str],
+        size: int,
+        page: int,
+    ) -> PlannerCourseSearchResponse:
+        _ = term_value  # Planner is locked to the active registrar term.
+        request = CourseSearchRequest(
+            course_code=course_code,
+            term=self.active_semester.value,
+            page=page,
+            size=size,
+        )
+        registrar_response = await self.course_catalog.search_courses(request)
+        return PlannerService._build_planner_search_response(registrar_response)

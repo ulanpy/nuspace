@@ -1,16 +1,15 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import List, Sequence, TypeVar
 
-from collections import defaultdict
-
-from sqlalchemy.orm import DeclarativeMeta
-
-from backend.modules.media.models import Media
+from backend.core.database.uow import UnitOfWork
 from backend.modules.media.interfaces import ObjectStorage
+from backend.modules.media.models import Media
 from backend.modules.media.repository import MediaRepository
 from backend.modules.media.schemas import MediaResponse, MediaUpsertData
-from backend.core.database.uow import UnitOfWork
+from sqlalchemy.orm import DeclarativeMeta
+
 T = TypeVar("T", bound=DeclarativeMeta)
 
 
@@ -33,7 +32,7 @@ class MediaService:
 
         async with self.uow:
             media_repo = self.uow.get_repo(MediaRepository)
-            await media_repo.delete(media)
+            await media_repo.delete_by_ids([media.id])
 
     async def delete_many(self, media_objects: List[Media]) -> None:
         if not media_objects:
@@ -41,8 +40,7 @@ class MediaService:
         await self.storage.delete_objects([media.name for media in media_objects])
         async with self.uow:
             media_repo = self.uow.get_repo(MediaRepository)
-            for media in media_objects:
-                await media_repo.delete(media)
+            await media_repo.delete_by_ids([media.id for media in media_objects])
 
     async def list_by_ids(self, media_ids: list[int]) -> list[Media]:
         async with self.uow:

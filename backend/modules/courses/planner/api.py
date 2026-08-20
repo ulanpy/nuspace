@@ -1,9 +1,10 @@
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, Query
-
 from backend.modules.auth.dependencies import get_creds_or_401, get_creds_or_guest
-from backend.modules.courses.planner.dependencies import get_planner_service
+from backend.modules.courses.planner.dependencies import (
+    get_planner_catalog_search_service,
+    get_planner_service,
+)
 from backend.modules.courses.planner.schemas import (
     PlannerAutoBuildResponse,
     PlannerCourseAddRequest,
@@ -19,9 +20,9 @@ from backend.modules.courses.planner.schemas import (
     PlannerSectionResponse,
     PlannerSectionSelectionRequest,
 )
-from backend.modules.courses.planner.service import PlannerService
+from backend.modules.courses.planner.service import PlannerCatalogSearchService, PlannerService
 from backend.modules.courses.registrar.schemas import SemesterOption
-
+from fastapi import APIRouter, Depends, Query, Request
 
 router = APIRouter(prefix="/planner", tags=["Schedule Planner"])
 
@@ -33,9 +34,11 @@ router = APIRouter(prefix="/planner", tags=["Schedule Planner"])
 )
 async def list_semesters(
     _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    service: PlannerService = Depends(get_planner_service),
+    request: Request,
 ) -> List[SemesterOption]:
-    return await service.list_semesters()
+    # This endpoint is a cached registrar metadata read; constructing a
+    # PlannerService/UoW for it only adds request lifecycle overhead.
+    return [request.app.state.active_registrar_semester]
 
 
 @router.get(
@@ -130,7 +133,7 @@ async def search_courses_for_planner(
     course_code: str | None = Query(None, min_length=1),
     page: int = Query(1, ge=1),
     size: int = Query(5, ge=1, le=20),
-    service: PlannerService = Depends(get_planner_service),
+    service: PlannerCatalogSearchService = Depends(get_planner_catalog_search_service),
 ) -> PlannerCourseSearchResponse:
     _ = principals
     return await service.search_courses(

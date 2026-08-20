@@ -7,7 +7,6 @@ from fastapi.responses import RedirectResponse
 from jose import JWTError
 from redis.asyncio import Redis
 
-from backend.modules.auth.dependencies import get_creds_or_401, mark_access_actor, set_request_access_actor
 from backend.common.request_url import request_app_base_url
 from backend.core.configs.config import config
 from backend.modules.auth import dependencies as deps
@@ -15,6 +14,11 @@ from backend.modules.auth.cookies import (
     set_app_token_cookie,
     set_kc_auth_cookies,
     unset_kc_auth_cookies,
+)
+from backend.modules.auth.dependencies import (
+    get_creds_or_401,
+    mark_access_actor,
+    set_request_access_actor,
 )
 from backend.modules.auth.schemas import CurrentUserResponse, Sub
 from backend.modules.auth.service import AuthService

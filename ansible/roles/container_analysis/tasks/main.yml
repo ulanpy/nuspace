@@ -3,10 +3,10 @@
   ansible.builtin.shell: |
     #!/bin/bash
     set -euo pipefail
-    docker ps --format "{{ '{{.Names}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|tempo|wg-easy|meilisearch)" > /tmp/running_containers.txt 2>/dev/null || true
+    docker ps --format "{{ '{{.Names}}' }}\t{{ '{{.Image}}' }}" | grep -E "(fastapi|nginx|redis|rabbitmq|prometheus|grafana|loki|alloy|tempo|pyroscope|wg-easy|meilisearch)" > /tmp/running_containers.txt 2>/dev/null || true
     MISSING_CONTAINERS=""
     NEED_RESTART=""
-    for container in fastapi nginx redis rabbitmq prometheus grafana loki tempo alloy wg-easy meilisearch; do
+    for container in fastapi nginx redis rabbitmq prometheus grafana loki tempo pyroscope alloy wg-easy meilisearch; do
       if ! grep -q "^${container}" /tmp/running_containers.txt; then
         MISSING_CONTAINERS="${MISSING_CONTAINERS} ${container}"
       elif [[ "${BACKEND_CHANGED:-false}" == "true" && "$container" =~ ^(fastapi)$ ]]; then
@@ -26,6 +26,8 @@
       elif [[ "${LOKI_CHANGED:-false}" == "true" && "$container" == "loki" ]]; then
         NEED_RESTART="${NEED_RESTART} ${container}"
       elif [[ "${TEMPO_CHANGED:-false}" == "true" && "$container" == "tempo" ]]; then
+        NEED_RESTART="${NEED_RESTART} ${container}"
+      elif [[ "${PYROSCOPE_CHANGED:-false}" == "true" && "$container" == "pyroscope" ]]; then
         NEED_RESTART="${NEED_RESTART} ${container}"
       elif [[ "${ALLOY_CHANGED:-false}" == "true" && "$container" == "alloy" ]]; then
         NEED_RESTART="${NEED_RESTART} ${container}"

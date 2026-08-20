@@ -7,6 +7,7 @@
 [![Node Exporter](https://img.shields.io/badge/Node%20Exporter-E6522C?logo=prometheus&logoColor=white)](#stack-components)
 [![cAdvisor](https://img.shields.io/badge/cAdvisor-2496ED?logo=docker&logoColor=white)](#stack-components)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](http://localhost/api/metrics)
+[![Pyroscope](https://img.shields.io/badge/Pyroscope-F46800?logo=grafana&logoColor=white)](http://localhost:4040)
 
 This directory contains monitoring infrastructure for local development and production/staging environments.
 
@@ -26,21 +27,6 @@ cd infra
 docker compose -f docker-compose --profile monitoring up -d 
 ```
 
-### Benchmark mode
-
-To measure FastAPI on one CPU without Uvicorn reload while retaining the local
-mock environment, start the stack with the benchmark override:
-
-```sh
-cd infra
-docker compose -f docker-compose.yml -f docker-compose.bench.yml up -d --build --force-recreate fastapi
-```
-
-Return to the normal hot-reload server with:
-
-```sh
-docker compose up -d --build --force-recreate fastapi
-```
 
 ### Service Addresses
 
@@ -61,6 +47,7 @@ docker compose up -d --build --force-recreate fastapi
 - **Prometheus** – metrics store
 - **Grafana Loki** – logs store
 - **Grafana** – Visualization
+- **Pyroscope** – continuous CPU profiles from FastAPI; use it during k6 runs to find hot functions and compare time ranges.
 
 ## Production/Staging Setup
 

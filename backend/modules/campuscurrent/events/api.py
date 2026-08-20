@@ -4,8 +4,6 @@ from urllib.parse import quote
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 
-from backend.common.dependencies import get_infra
-from backend.common.schemas import Infra
 from backend.modules.auth.dependencies import (
     get_creds_or_401,
     get_creds_or_guest,
@@ -21,7 +19,6 @@ router = APIRouter(tags=["Events Routes"])
 async def get_events(
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     event_filter: schemas.EventFilter = Depends(),
-    infra: Infra = Depends(get_infra),
     event_service: EventService = Depends(get_event_service),
 ) -> schemas.ListEventResponse:
     """
@@ -36,7 +33,6 @@ async def get_events(
     return await event_service.get_events(
         user=user,
         event_filter=event_filter,
-        infra=infra,
     )
 
 
@@ -44,7 +40,6 @@ async def get_events(
 async def add_event(
     event_data: schemas.EventCreateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    infra: Infra = Depends(get_infra),
     event_service: EventService = Depends(get_event_service),
 ) -> schemas.EventResponse:
     """
@@ -58,7 +53,7 @@ async def add_event(
     - `status`: approved
     - `tag`: regular (admins can change later)
     """
-    return await event_service.add_event(infra=infra, event_data=event_data, user=user)
+    return await event_service.add_event(event_data=event_data, user=user)
 
 
 @router.patch("/events/{event_id}", response_model=schemas.EventResponse)
@@ -66,7 +61,6 @@ async def update_event(
     event_id: int,
     event_data: schemas.EventUpdateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    infra: Infra = Depends(get_infra),
     event_service: EventService = Depends(get_event_service),
 ) -> schemas.EventResponse:
     """
@@ -76,16 +70,13 @@ async def update_event(
     - Admin can update any field
     - Event creator can update most fields except tag
     """
-    return await event_service.update_event(
-        infra=infra, event_id=event_id, event_data=event_data, user=user
-    )
+    return await event_service.update_event(event_id=event_id, event_data=event_data, user=user)
 
 
 @router.delete("/events/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_event(
     event_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    infra: Infra = Depends(get_infra),
     event_service: EventService = Depends(get_event_service),
 ):
     """
@@ -94,20 +85,19 @@ async def delete_event(
     **Access Policy:**
     - Event creator or admin
     """
-    await event_service.delete_event(infra=infra, event_id=event_id, user=user)
+    await event_service.delete_event(event_id=event_id, user=user)
 
 
 @router.get("/events/{event_id}", response_model=schemas.EventResponse)
 async def get_event(
     event_id: int,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
-    infra: Infra = Depends(get_infra),
     event_service: EventService = Depends(get_event_service),
 ) -> schemas.EventResponse:
     """
     Retrieves a specific event by ID.
     """
-    return await event_service.get_event_by_id(infra=infra, event_id=event_id, user=user)
+    return await event_service.get_event_by_id(event_id=event_id, user=user)
 
 
 @router.put("/events/{event_id}/going", response_model=schemas.EventGoingResponse)
@@ -234,9 +224,7 @@ async def revoke_event_access_invite(
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     event_service: EventService = Depends(get_event_service),
 ):
-    await event_service.revoke_access_invite(
-        event_id=event_id, invite_id=invite_id, user=user
-    )
+    await event_service.revoke_access_invite(event_id=event_id, invite_id=invite_id, user=user)
 
 
 @router.post(

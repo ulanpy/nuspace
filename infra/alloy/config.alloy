@@ -82,7 +82,8 @@ discovery.docker "linux" {
 	host = "unix:///var/run/docker.sock"
 }
 
-// Keep only the compose service "fastapi" (matches local + prod container_name: fastapi).
+// Keep FastAPI container logs for application errors, tracebacks and business
+// events. HTTP access logs are tailed separately from Nginx's buffered file.
 discovery.relabel "fastapi_logs" {
 	targets = discovery.docker.linux.targets
 
@@ -104,10 +105,8 @@ loki.source.docker "loki_default" {
 	forward_to = [loki.process.fastapi_json.receiver]
 }
 
-// Parse structured JSON access logs from FastAPI middleware.
-// stage.json fills the extracted map; stage.labels promotes from that map.
-// (Do not stage.match on extracted fields — match only sees real labels.)
-// Promote only low-cardinality fields; path stays in the JSON line body.
+// Parse any structured FastAPI error/business log without assuming every
+// process line is JSON (Uvicorn tracebacks remain visible as plain text).
 loki.process "fastapi_json" {
 	stage.json {
 		expressions = {
@@ -116,6 +115,42 @@ loki.process "fastapi_json" {
 			status_code = "status_code",
 			level       = "level",
 			log_type    = "log_type",
+		}
+	}
+
+	stage.labels {
+		values = {
+			method   = "",
+			level    = "",
+			log_type = "",
+		}
+	}
+
+	forward_to = [loki.write.loki_write.receiver]
+}
+
+local.file_match "nginx_access" {
+
+	path_targets = [{
+		__path__     = "/var/log/nginx/access.log",
+		service_name = "nginx",
+		platform     = "docker",
+	}]
+}
+
+loki.source.file "nginx_access" {
+	targets    = local.file_match.nginx_access.targets
+	forward_to = [loki.process.nginx_access_json.receiver]
+}
+
+// Nginx writes one JSON object per completed request. Promote only bounded
+// fields; user_sub, route, raw_path and request_id stay in the log body.
+loki.process "nginx_access_json" {
+	stage.json {
+		expressions = {
+			method   = "method",
+			level    = "level",
+			log_type = "log_type",
 		}
 	}
 

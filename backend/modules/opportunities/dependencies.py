@@ -1,14 +1,15 @@
 from fastapi import Depends, Query, Request
+
 from backend.common.dependencies import get_infra, get_uow
 from backend.common.schemas import Infra
 from backend.core.database.uow import UnitOfWork
-from backend.modules.opportunities import schemas
-from backend.modules.opportunities.service import OpportunitiesDigestService
 from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.calendar.google_calendar_service import GoogleCalendarService
+from backend.modules.opportunities import schemas
+from backend.modules.opportunities.service import OpportunitiesDigestService
 
 
-def get_opportunity_filters(
+async def get_opportunity_filters(
     type: list[schemas.OpportunityType] | None = Query(
         default=None, description="Filter by opportunity types"
     ),
@@ -36,7 +37,7 @@ def get_opportunity_filters(
     )
 
 
-def get_opportunities_digest_service(
+async def get_opportunities_digest_service(
     request: Request,
     uow: UnitOfWork = Depends(get_uow),
     infra: Infra = Depends(get_infra),

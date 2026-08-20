@@ -20,6 +20,13 @@ datasources:
     isDefault: true
     editable: false
 
+  - name: Pyroscope
+    type: grafana-pyroscope-datasource
+    uid: pyroscope
+    url: http://pyroscope:4040
+    access: proxy
+    editable: false
+
   - name: Loki
     type: loki
     uid: P8E80F9AEF21F6940

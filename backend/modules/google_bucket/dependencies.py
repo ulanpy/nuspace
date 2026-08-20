@@ -55,7 +55,7 @@ class _ScheduleCatalogOnFinalizeAdapter:
         return await self._registrar.load_active_semester()
 
 
-def get_schedule_catalog_on_finalize(request: Request) -> ScheduleCatalogOnFinalize:
+async def get_schedule_catalog_on_finalize(request: Request) -> ScheduleCatalogOnFinalize:
     config: Config = request.app.state.config
     registrar = RegistrarService(
         meilisearch_client=request.app.state.meilisearch_client,

@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from httpx import HTTPError
 
 from backend.common.utils import meilisearch
@@ -94,6 +94,10 @@ async def full_search(
 
         # Return only the slice for the requested page, after deduplication
         return unique_hits[target_start:target_end]
-    except HTTPError:
-        # Error handling similar to pre_search
-        pass
+    except HTTPError as exc:
+        # Do not turn an upstream timeout into an apparently successful empty
+        # search response.  It hides capacity problems from clients and k6.
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Search is temporarily unavailable",
+        ) from exc

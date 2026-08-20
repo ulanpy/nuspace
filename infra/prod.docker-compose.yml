@@ -66,6 +66,13 @@ services:
     networks:
       - nuros
     restart: always
+    # One client socket per in-flight request plus outbound connections (DB,
+    # Meilisearch, telemetry). Docker's default 1024 descriptors makes Uvicorn
+    # stop accepting connections under load before application limits are hit.
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
     depends_on:
       - postgres
       - nginx
@@ -107,6 +114,11 @@ services:
     networks:
       - nuros
     restart: always
+    # Each proxied request has client and upstream descriptors.
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
     ports:
       - "80:80"
       - "443:443"
@@ -116,17 +128,21 @@ services:
       - ../ssl/cloudflare.crt:/etc/ssl/cloudflare/origin.crt
       - ../ssl/cloudflare.key:/etc/ssl/cloudflare/origin.key
       - ./nginx/vpn-index.html:/etc/nginx/vpn-index.html:ro
+      - nginx-logs:/var/log/nginx
     # SSR Alternative: Change depends_on to frontend and remove out volume
     # depends_on:
     #   - frontend
     command: >
       /bin/sh -c "
+        if [ -L /var/log/nginx/access.log ]; then
+          rm /var/log/nginx/access.log && touch /var/log/nginx/access.log;
+        fi &&
         apt update && apt install -y inotify-tools &&
         (while inotifywait -e modify /etc/nginx/nginx.conf; do
           echo 'nginx config changed, copying and reloading Nginx...' &&
           nginx -t && nginx -s reload;
         done) &
-        nginx -g 'daemon off;'"
+        exec nginx -g 'daemon off;'"
 
   redis:
     image: redis:latest
@@ -195,6 +211,18 @@ services:
     networks:
       - nuros
 
+  pyroscope:
+    container_name: pyroscope
+    image: grafana/pyroscope:latest
+    user: "0" # named volume may be created with a different owner
+    command: ["-config.file=/etc/pyroscope/config.yaml", "-retention-period=7d"]
+    volumes:
+      - ./pyroscope/config.yaml:/etc/pyroscope/config.yaml:ro
+      - pyroscope_data:/var/lib/pyroscope
+    restart: unless-stopped
+    networks:
+      - nuros
+
   prometheus:
     container_name: prometheus
     image: prom/prometheus:latest
@@ -249,6 +277,7 @@ services:
       - DB_NAME=${DB_NAME}
       - GRAFANA_DB_USER=${GRAFANA_DB_USER:-grafana_ro}
       - GRAFANA_DB_PASSWORD=${GRAFANA_DB_PASSWORD}
+      - GF_PLUGINS_PREINSTALL_SYNC=grafana-pyroscope-app
     volumes:
       - "grafana-data:/var/lib/grafana"
       - "./grafana/provisioning/datasources/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
@@ -292,6 +321,7 @@ services:
       - /sys:/host/sys:ro
       - /sys:/sys:ro
       - /dev/disk/:/dev/disk:ro
+      - nginx-logs:/var/log/nginx:ro
     command: run --server.http.listen-addr=0.0.0.0:12345 --server.http.ui-path-prefix=/alloy/ --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     restart: unless-stopped
     networks:
@@ -300,6 +330,7 @@ services:
       - prometheus
       - loki
       - tempo
+      - pyroscope
 
   wg-easy:
     image: ghcr.io/wg-easy/wg-easy:15
@@ -328,12 +359,15 @@ networks:
   nuros:
     name: nuspace_nuros
     driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: "1460"
     ipam:
       config:
         - subnet: 172.28.0.0/24
           gateway: 172.28.0.1
 
 volumes:
+  nginx-logs:
   postgres-data:
   redis-data:
     driver: local
@@ -342,3 +376,4 @@ volumes:
   prometheus_data:
   loki_data:
   tempo_data:
+  pyroscope_data:

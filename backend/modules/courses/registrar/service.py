@@ -41,6 +41,26 @@ logger = logging.getLogger(__name__)
 _CATALOG_SYNC_LOCK_TTL_SECONDS = 120
 _CATALOG_SYNC_PROCESSED_TTL_SECONDS = 86_400
 
+# Planner search renders a course summary, never its sections. Asking Meilisearch
+# for the complete document made each five-item response about 17 KB because of
+# nested section data. Keep that payload out of the hot search path; callers
+# that need sections use _schedule_sections_from_index without this projection.
+_COURSE_SUMMARY_ATTRIBUTES = (
+    "course_code",
+    "title",
+    "term",
+    "term_id",
+    "credits_us",
+    "school",
+    "level",
+    "prerequisite",
+    "corequisite",
+    "antirequisite",
+    "priority_1",
+    "priority_2",
+    "priority_3",
+    "priority_4",
+)
 
 @dataclass
 class CoursePriorityRecord:
@@ -132,8 +152,6 @@ class RegistrarService:
         except RegistrarUnavailableError as exc:
             raise HTTPException(status_code=502, detail=exc.detail) from exc
 
-
-        items = data.get("items", [])
         return CourseSearchResponse(**data)
 
     async def get_active_semester(self) -> SemesterOption:
@@ -142,7 +160,11 @@ class RegistrarService:
             raise HTTPException(status_code=503, detail="Active registrar semester is unavailable")
         return self.active_semester
 
-    async def load_active_semester(self, *, prefer_local_fixture: bool = False) -> SemesterOption | None:
+    async def load_active_semester(
+        self,
+        *,
+        prefer_local_fixture: bool = False,
+    ) -> SemesterOption | None:
         """Load the active semester from the catalog's ``meta.json`` sidecar."""
         if prefer_local_fixture:
             meta = load_local_schedule_meta_fixture()
@@ -210,13 +232,13 @@ class RegistrarService:
     ) -> tuple[list[dict], bool]:
         page = max(page, 1)
         size = max(size, 1)
-
         result = await meilisearch_utils.get(
             client=self.meilisearch_client,
             storage_name=self.schedule_index_uid,
             keyword=keyword or "",
             page=page,
             size=size,
+            attributes_to_retrieve=_COURSE_SUMMARY_ATTRIBUTES,
         )
 
         hits = result.get("hits", [])
@@ -383,9 +405,6 @@ class RegistrarService:
         return {
             "registrar_id": course_code,
             "course_code": course_code,
-            "pre_req": "",
-            "anti_req": "",
-            "co_req": "",
             "level": hit.get("level") or None,
             "school": hit.get("school") or None,
             "description": None,

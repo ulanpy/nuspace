@@ -9,7 +9,7 @@ from backend.modules.campuscurrent.communities import api as communities_api
 from backend.modules.campuscurrent.communities import og as communities_og
 from backend.modules.campuscurrent.events import api as events_api
 from backend.modules.campuscurrent.events import og as events_og
-from backend.modules.campuscurrent.profile import api as profile_api
+from backend.modules.campuscurrent.profile import api as test_endpoint_api 
 from backend.modules.courses.courses import api as courses_api
 from backend.modules.courses.degree_audit import api as degree_audit_api
 from backend.modules.courses.planner import api as planner_api
@@ -28,7 +28,7 @@ routers: List[APIRouter] = [
     communities_og.router,
     events_api.router,
     events_og.router,
-    profile_api.router,
+    test_endpoint_api.router,
     search_api.router,
     google_bucket_api.router,
     web_router,

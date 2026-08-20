@@ -29,11 +29,18 @@
   poll: 0
   register: meilisearch_job
 
-# Observability stack in one compose invocation — avoids races (alloy/grafana depend_on tempo).
-- name: Recreate observability stack (tempo, prometheus, loki, alloy, grafana)
+# Observability stack in one compose invocation — avoids races (Alloy/Grafana
+# depend on the other observability services being present).
+- name: Pull Pyroscope image when its configuration changes
   ansible.builtin.command: >
     {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
-    up -d tempo prometheus loki alloy grafana
+    pull pyroscope
+  when: (pyroscope_changed | default(false)) | bool
+
+- name: Recreate observability stack (Pyroscope, Tempo, Prometheus, Loki, Alloy, Grafana)
+  ansible.builtin.command: >
+    {{ compose_cmd }} -f /home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml
+    up -d pyroscope tempo prometheus loki alloy grafana
 
   when: >
     (prometheus_changed | default(false)) | bool or
@@ -41,13 +48,15 @@
     (loki_changed | default(false)) | bool or
     (alloy_changed | default(false)) | bool or
     (tempo_changed | default(false)) | bool or
+    (pyroscope_changed | default(false)) | bool or
     (
       container_analysis is defined and (
         'prometheus' in container_analysis.stdout or
         'grafana' in container_analysis.stdout or
         'loki' in container_analysis.stdout or
         'alloy' in container_analysis.stdout or
-        'tempo' in container_analysis.stdout
+        'tempo' in container_analysis.stdout or
+        'pyroscope' in container_analysis.stdout
       )
     )
   async: 600
@@ -99,5 +108,4 @@
 - name: Prune all unused Docker assets
   ansible.builtin.command: docker system prune -a -f
   changed_when: false
-
 

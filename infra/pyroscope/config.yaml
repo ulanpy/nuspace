@@ -1,0 +1,7 @@
+target: all
+storage:
+  backend: filesystem
+  filesystem:
+    dir: /var/lib/pyroscope
+analytics:
+  reporting_enabled: false

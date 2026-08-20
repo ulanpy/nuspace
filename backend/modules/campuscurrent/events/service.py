@@ -5,9 +5,10 @@ from datetime import timedelta
 from typing import List
 
 from fastapi import HTTPException, status
+from httpx import AsyncClient
 
 from backend.common.datetime_utils import utc_now
-from backend.common.schemas import Infra, ShortUserResponse
+from backend.common.schemas import ShortUserResponse
 from backend.common.utils import response_builder
 from backend.core.database.uow import UnitOfWork
 from backend.modules.campuscurrent.events import schemas, utils
@@ -28,9 +29,11 @@ class EventService:
     def __init__(
         self,
         media_attachment_resolver: MediaAttachmentResolver,
+        meilisearch_client: AsyncClient,
         uow: UnitOfWork,
     ):
         self.media_attachment_resolver = media_attachment_resolver
+        self.meilisearch_client = meilisearch_client
         self.uow = uow
 
     async def _get_event_or_404(self, event_id: int) -> Event:
@@ -49,7 +52,6 @@ class EventService:
 
     async def add_event(
         self,
-        infra: Infra,
         event_data: schemas.EventCreateRequest,
         user: tuple[dict, dict],
     ) -> schemas.EventResponse:
@@ -68,14 +70,13 @@ class EventService:
             event_repo = self.uow.get_repo(EventRepository)
             event: Event = await event_repo.create_event(event_data)
 
-        await event_repo.upsert_search(infra.meilisearch_client, event)
+        await event_repo.upsert_search(self.meilisearch_client, event)
 
-        event_responses = await self._build_event_responses([event], infra, user)
+        event_responses = await self._build_event_responses([event], user)
         return event_responses[0]
 
     async def update_event(
         self,
-        infra: Infra,
         event_id: int,
         event_data: schemas.EventUpdateRequest,
         user: tuple[dict, dict],
@@ -90,17 +91,16 @@ class EventService:
             event: Event = await event_repo.update_event(event=event, event_data=event_data)
 
         # add to meilisearch index after commit
-        await event_repo.upsert_search(infra.meilisearch_client, event)
+        await event_repo.upsert_search(self.meilisearch_client, event)
 
         if media_ids_to_delete:
-            await self._delete_event_media(infra, event, media_ids_to_delete)
+            await self._delete_event_media(event, media_ids_to_delete)
 
-        event_responses = await self._build_event_responses([event], infra, user)
+        event_responses = await self._build_event_responses([event], user)
         return event_responses[0]
 
     async def _delete_event_media(
         self,
-        infra: Infra,
         event: Event,
         media_ids: List[int],
     ) -> None:
@@ -123,7 +123,7 @@ class EventService:
 
         await self.media_attachment_resolver.delete_many(media_objects)
 
-    async def delete_event(self, infra: Infra, event_id: int, user: tuple[dict, dict]) -> None:
+    async def delete_event(self, event_id: int, user: tuple[dict, dict]) -> None:
         async with self.uow:
             repo = self.uow.get_repo(EventRepository)
             event = await repo.get_event_by_id(event_id)
@@ -138,7 +138,7 @@ class EventService:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
         await self.media_attachment_resolver.delete_many(media_objects)
-        await EventRepository.delete_from_search(infra.meilisearch_client, event_id)
+        await EventRepository.delete_from_search(self.meilisearch_client, event_id)
 
     def _is_guest(self, user: tuple[dict, dict]) -> bool:
         return bool(user[1].get("is_guest")) or user[0].get("sub") == "guest"
@@ -146,7 +146,6 @@ class EventService:
     async def _build_event_responses(
         self,
         events: List[Event],
-        infra: Infra,
         user: tuple[dict, dict],
     ) -> List[schemas.EventResponse]:
         if not events:
@@ -322,16 +321,16 @@ class EventService:
         return content, filename, media_type
 
     async def get_event_by_id(
-        self, infra: Infra, event_id: int, user: tuple[dict, dict]
+        self, event_id: int, user: tuple[dict, dict]
     ) -> schemas.EventResponse:
         event = await self._get_event_or_404(event_id)
         EventPolicy(user=user).check_read_one(event=event)
 
-        event_responses = await self._build_event_responses([event], infra, user)
+        event_responses = await self._build_event_responses([event], user)
         return event_responses[0]
 
     async def get_events(
-        self, user: tuple[dict, dict], event_filter: schemas.EventFilter, infra: Infra
+        self, user: tuple[dict, dict], event_filter: schemas.EventFilter
     ) -> schemas.ListEventResponse:
         EventPolicy(user=user).check_read_list(
             creator_sub=event_filter.creator_sub,
@@ -344,10 +343,11 @@ class EventService:
 
         async with self.uow:
             repo = self.uow.get_repo(EventRepository)
-            events, count, keyword_no_results = await repo.list_events(
+            raw_screen_rows, count, keyword_no_results = await repo.list_events_for_screen(
                 event_filter=event_filter,
                 creator_sub=creator_sub,
-                meilisearch_client=infra.meilisearch_client,
+                meilisearch_client=self.meilisearch_client,
+                viewer_sub=None if self._is_guest(user) else user[0].get("sub"),
             )
 
             if keyword_no_results:
@@ -360,44 +360,23 @@ class EventService:
                     has_next=False,
                 )
 
-            event_ids = [event.id for event in events]
-            all_media_objs = await repo.list_media(
-                event_ids=event_ids,
-                event_media_formats=[MediaFormat.carousel],
-            )
-            attendees_count_by_id = await repo.count_attendees_by_event_ids(event_ids)
-            creators_by_event_id = await repo.list_creators_by_event_ids(event_ids)
-            going_event_ids: set[int] = set()
-            viewer_event_ids: set[int] = set()
-            if not self._is_guest(user):
-                user_sub = user[0].get("sub")
-                going_event_ids = await repo.list_going_event_ids(event_ids, user_sub)
-                viewer_event_ids = await repo.list_attendee_viewer_event_ids(event_ids, user_sub)
-
+        screen_rows, count = EventRepository.build_event_list_screen_rows(raw_screen_rows, count)
+        all_media_objs = [media for row in screen_rows for media in row.media]
         url_map = await self.media_attachment_resolver.build_url_map(all_media_objs)
-        event_media_by_id = defaultdict(list)
-        for media in all_media_objs:
-            event_media_by_id[media.entity_id].append(media)
         event_responses = []
-        for event in events:
-            creator = creators_by_event_id.get(event.id)
-            if creator is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail="Creator not found"
-                )
+        for row in screen_rows:
+            event = row.event
             event_responses.append(
                 response_builder.build_schema(
                     schemas.EventResponse,
                     schemas.BaseEventSchema.model_validate(event),
-                    media=self.media_attachment_resolver.to_responses(
-                        event_media_by_id[event.id], url_map
-                    ),
-                    creator=ShortUserResponse.model_validate(creator),
+                    media=self.media_attachment_resolver.to_responses(row.media, url_map),
+                    creator=ShortUserResponse.model_validate(row.creator),
                     permissions=EventPolicy(user=user).get_permissions(
-                        event, is_attendee_viewer=event.id in viewer_event_ids
+                        event, is_attendee_viewer=row.is_attendee_viewer
                     ),
-                    attendees_count=attendees_count_by_id.get(event.id, 0),
-                    is_going=event.id in going_event_ids,
+                    attendees_count=row.attendees_count,
+                    is_going=row.is_going,
                 )
             )
 

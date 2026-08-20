@@ -4,11 +4,11 @@ from fastapi import APIRouter, Depends
 
 from backend.modules.auth.dependencies import get_creds_or_guest
 
-router = APIRouter(tags=["Profile"])
+router = APIRouter(tags=["Test Endpoint"])
 
 
-@router.get("/profile")
+@router.get("/test_endpoint")
 async def get_profile(
-    _user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
 ):
+    """Test endpoint for load testing & benchmarking. Does nothing, returns nothing"""
     return

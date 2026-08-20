@@ -6,7 +6,6 @@ ARG IS_DEBUG=true
 
 # Set timezone and Python settings
 ENV TZ=UTC \
-    PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/nuros \
     UV_COMPILE_BYTECODE=1 \

@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - postgres-data:/var/lib/postgresql
+      - postgres-data:/var/lib/postgresql/data
 
   fastapi:
     container_name: fastapi
@@ -22,6 +22,13 @@ services:
     networks:
       - nuros
     restart: always
+    # One client socket per in-flight request plus outbound connections (DB,
+    # Meilisearch, telemetry). Docker's default 1024 descriptors makes Uvicorn
+    # stop accepting connections under load before application limits are hit.
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
     volumes:
       - ../backend:/nuros/backend # Hot-reload backend code only
       - fastapi-venv:/nuros/backend/.venv # Preserve image venv (bind mount hides it otherwise)
@@ -31,8 +38,8 @@ services:
       - gcs
       - nginx
       - cloudflared
-    environment:
-      - PYTHONUNBUFFERED=1
+    ports:
+      - "127.0.0.1:8000:8000"
 
   nginx:
     container_name: nginx
@@ -40,23 +47,33 @@ services:
     networks:
       - nuros
     restart: always
+    # Must exceed worker_connections; each proxied request has client and
+    # upstream descriptors.
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
     ports:
       - "80:80" # Expose Nginx on port 80 of localhost
     volumes:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf
       - ../frontend/dist:/var/www/my-app/dist # Make sure this folder exists in production builds
+      - nginx-logs:/var/log/nginx
     depends_on:
       - pgadmin
     command: [
         "/bin/sh",
         "-c",
         "
+        if [ -L /var/log/nginx/access.log ]; then
+          rm /var/log/nginx/access.log && touch /var/log/nginx/access.log;
+        fi &&
         apk -u add inotify-tools &&
         (while inotifywait -e modify /etc/nginx/nginx.conf; do
         echo 'nginx config changed, copying and reloading Nginx...' &&
         nginx -t && nginx -s reload;
         done) &
-        nginx -g 'daemon off;'
+        exec nginx -g 'daemon off;'
         ",
       ]
 
@@ -109,7 +126,7 @@ services:
     restart: always
     command: ["-scheme", "http", "-host", "0.0.0.0", "-port", "4443", "-backend", "filesystem", "-filesystem-root", "/data"]
     ports:
-      - "4443:4443"
+      - "127.0.0.1:4443:4443"
     volumes:
       - gcs_data:/data
 
@@ -156,6 +173,8 @@ services:
       - VITE_TELEGRAM_BOT_USERNAME=${VITE_TELEGRAM_BOT_USERNAME:-anonopenspacebot}
     networks:
       - nuros
+    ports:
+      - "127.0.0.1:5173:5173"
     depends_on:
       - cloudflared
 
@@ -189,6 +208,21 @@ services:
       - ./tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
       - tempo_data:/var/tempo
     restart: unless-stopped
+    networks:
+      - nuros
+    profiles:
+      - monitoring
+
+  pyroscope:
+    container_name: pyroscope
+    image: grafana/pyroscope:latest
+    user: "0" # local named volume may be created with a different owner
+    command: ["-config.file=/etc/pyroscope/config.yaml", "-retention-period=7d"]
+    volumes:
+      - ./pyroscope/config.yaml:/etc/pyroscope/config.yaml:ro
+      - pyroscope_data:/var/lib/pyroscope
+    ports:
+      - "4040:4040"
     networks:
       - nuros
     profiles:
@@ -252,6 +286,7 @@ services:
       - DB_NAME=${DB_NAME}
       - GRAFANA_DB_USER=${GRAFANA_DB_USER:-grafana_ro}
       - GRAFANA_DB_PASSWORD=${GRAFANA_DB_PASSWORD}
+      - GF_PLUGINS_PREINSTALL_SYNC=grafana-pyroscope-app
     ports:
       - "3000:3000"
     volumes:
@@ -302,6 +337,7 @@ services:
       - /sys:/host/sys:ro
       - /sys:/sys:ro
       - /dev/disk/:/dev/disk:ro
+      - nginx-logs:/var/log/nginx:ro
     command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     restart: unless-stopped
     ports:
@@ -314,6 +350,7 @@ services:
       - prometheus
       - loki
       - tempo
+      - pyroscope
     profiles:
       - monitoring
 
@@ -321,9 +358,12 @@ networks:
   nuros:
     name: nuspace_nuros
     driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: "1460"
 
 volumes:
   fastapi-venv:
+  nginx-logs:
   postgres-data:
   redis-data:
     driver: local
@@ -335,4 +375,5 @@ volumes:
   prometheus_data:
   loki_data:
   tempo_data:
+  pyroscope_data:
   gcs_data:

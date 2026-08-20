@@ -1,8 +1,7 @@
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.modules.media.models import Media
 from backend.modules.media.schemas import MediaUpsertData
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class MediaRepository:
@@ -48,3 +47,8 @@ class MediaRepository:
 
     async def delete(self, media: Media) -> None:
         await self.db_session.delete(media)
+
+    async def delete_by_ids(self, media_ids: list[int]) -> None:
+        if not media_ids:
+            return
+        await self.db_session.execute(delete(Media).where(Media.id.in_(media_ids)))

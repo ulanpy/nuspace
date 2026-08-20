@@ -169,7 +169,12 @@ class OpportunitiesRepository:
 
     async def get(self, id: int) -> Opportunity | None:
         result = await self.db.execute(
-            select(Opportunity).where(Opportunity.id == id)
+            select(Opportunity)
+            .where(Opportunity.id == id)
+            .options(
+                selectinload(Opportunity.eligibilities),
+                selectinload(Opportunity.majors),
+            )
         )
         return result.scalar_one_or_none()
 
@@ -244,4 +249,3 @@ class OpportunitiesRepository:
         await self.db.delete(record)
         await self.db.flush()
         return True
-

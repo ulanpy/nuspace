@@ -1,17 +1,19 @@
-from typing import Union, List
 from datetime import datetime, timezone
-from backend.common.utils.response_builder import build_schema
-from backend.modules.notification.models import Notification
-from backend.modules.notification import schemas
-from sqlalchemy.ext.asyncio import AsyncSession
-from backend.common.schemas import Infra
+from typing import List, Union
 
+from backend.common.schemas import Infra
+from backend.common.utils.response_builder import build_schema
+from backend.modules.notification import schemas
+from backend.modules.notification.models import Notification
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def send(
     *,
     infra: Infra,
-    notification_data: Union[schemas.RequestNotiification, List[schemas.RequestNotiification]],
+    notification_data: Union[
+        schemas.RequestNotiification, List[schemas.RequestNotiification]
+    ],
     session: AsyncSession,
 ):
     """
@@ -19,8 +21,7 @@ async def send(
 
     Args:
         infra (Infra): Infrastructure dependencies
-        notification_data (Union[schemas.RequestNotiification, List[schemas.RequestNotiification]]): 
-            Single notification or list of notifications
+        notification_data: Single notification or list of notification requests.
         session (AsyncSession): SQLAlchemy async database session
 
     Returns:
@@ -54,7 +55,7 @@ async def send(
         )
         await infra.broker.publish(modified_notification, queue="notifications")
         return modified_notification
-    
+
     # Handle list of notifications
     notification_instances = []
     for notification_schema in notification_data:
@@ -70,7 +71,7 @@ async def send(
             url=notification_schema.url,
         )
         notification_instances.append(notification_instance)
-    
+
     if not notification_instances:
         return []
 
@@ -106,6 +107,5 @@ async def send(
         )
         modified_notifications.append(modified_notification)
         await infra.broker.publish(modified_notification, queue="notifications")
-    
+
     return modified_notifications
-    

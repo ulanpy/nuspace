@@ -51,19 +51,19 @@ def mark_access_actor(
     return _dep
 
 
-def get_keycloak_manager(request: Request) -> KeyCloakManager:
+async def get_keycloak_manager(request: Request) -> KeyCloakManager:
     return request.app.state.kc_manager
 
 
-def get_app_token_manager(request: Request) -> AppTokenManager:
+async def get_app_token_manager(request: Request) -> AppTokenManager:
     return request.app.state.app_token_manager
 
 
-def get_redis(request: Request) -> Redis:
+async def get_redis(request: Request) -> Redis:
     return request.app.state.redis
 
 
-def get_auth_service(
+async def get_auth_service(
     uow: UnitOfWork = Depends(get_uow),
     kc_manager: KeyCloakManager = Depends(get_keycloak_manager),
     app_token_manager: AppTokenManager = Depends(get_app_token_manager),
@@ -78,7 +78,6 @@ def get_auth_service(
 async def get_creds_or_401(
     request: Request,
     response: Response,
-    uow: UnitOfWork = Depends(get_uow),
     kc_manager: KeyCloakManager = Depends(get_keycloak_manager),
     app_token_manager: AppTokenManager = Depends(get_app_token_manager),
     access_token: Annotated[str | None, Cookie(alias=config.COOKIE_ACCESS_NAME)] = None,
@@ -147,14 +146,8 @@ async def get_creds_or_401(
             detail="Could not establish Keycloak principal.",
         )
 
-    try:
-        auth_service = AuthService(uow, kc_manager, app_token_manager)
-        await auth_service.ensure_user_from_access_token(access_token, kc_principal)
-    except HTTPException:
-        raise
-
     app_principal: dict | None = None
-    issue_new_app_token = False
+    issue_new_app_token = True
 
     if keycloak_token_refreshed:
         issue_new_app_token = True
@@ -165,6 +158,8 @@ async def get_creds_or_401(
             app_principal = app_token_manager.validate_app_token(app_token_cookie)
             if app_principal.get("sub") != kc_principal.get("sub"):
                 issue_new_app_token = True
+            else:
+                issue_new_app_token = False
         except PyJWTExpiredSignatureError:
             issue_new_app_token = True
         except JWTError:
@@ -172,6 +167,18 @@ async def get_creds_or_401(
 
     if issue_new_app_token:
         try:
+            # A verified app token already carries the user claims needed by the
+            # request.  Looking the user up on every request turned authentication
+            # into a global DB-pool bottleneck under load.  Sync the user only when
+            # issuing or refreshing that short-lived token.
+            # Most protected reads carry a valid app token and never touch the
+            # database. Allocate a UoW only for the rare refresh/issuance path
+            # that actually needs a transaction.
+            uow = UnitOfWork(
+                session_factory=request.app.state.db_manager.get_session_maker()
+            )
+            auth_service = AuthService(uow, kc_manager, app_token_manager)
+            await auth_service.ensure_user_from_access_token(access_token, kc_principal)
             new_app_token_str, new_app_claims = await app_token_manager.create_app_token(
                 kc_principal["sub"], uow
             )
@@ -205,7 +212,6 @@ async def get_creds_or_401(
 async def get_creds_or_guest(
     request: Request,
     response: Response,
-    uow: UnitOfWork = Depends(get_uow),
     kc_manager: KeyCloakManager = Depends(get_keycloak_manager),
     app_token_manager: AppTokenManager = Depends(get_app_token_manager),
     access_token: Annotated[str | None, Cookie(alias=config.COOKIE_ACCESS_NAME)] = None,
@@ -228,7 +234,6 @@ async def get_creds_or_guest(
         return await get_creds_or_401(
             request=request,
             response=response,
-            uow=uow,
             kc_manager=kc_manager,
             app_token_manager=app_token_manager,
             access_token=access_token,

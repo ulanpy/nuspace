@@ -1,10 +1,39 @@
+import asyncio
+from collections.abc import Callable
 from enum import Enum
-from typing import Type
+from typing import Any, Sequence, Type
 
 from backend.core.database.manager import AsyncDatabaseManager
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.orm import DeclarativeBase
+
+
+async def wait_for_task(
+    client: AsyncClient,
+    response,
+    *,
+    timeout_seconds: float = 60.0,
+) -> None:
+    """Wait until an asynchronous Meilisearch write task has completed."""
+    response.raise_for_status()
+    task_uid = response.json().get("taskUid")
+    if task_uid is None:
+        return
+
+    deadline = asyncio.get_running_loop().time() + timeout_seconds
+    while True:
+        task_response = await client.get(f"/tasks/{task_uid}")
+        task_response.raise_for_status()
+        task = task_response.json()
+        status = task.get("status")
+        if status == "succeeded":
+            return
+        if status in {"failed", "canceled"}:
+            raise RuntimeError(f"Meilisearch task {task_uid} {status}: {task.get('error')}")
+        if asyncio.get_running_loop().time() >= deadline:
+            raise TimeoutError(f"Timed out waiting for Meilisearch task {task_uid}")
+        await asyncio.sleep(0.1)
 
 """
     To search for data, first, you should add key-value pairs to Meilisearch;
@@ -52,6 +81,7 @@ async def get(
     filters: list | None = None,
     page: int = 0,
     size: int = 20,
+    attributes_to_retrieve: Sequence[str] | None = None,
 ) -> dict:
     """
     Search for documents in Meilisearch.
@@ -79,8 +109,11 @@ async def get(
     payload = {"q": keyword, "limit": size, "offset": (page - 1) * size}
     if filters:
         payload["filter"] = filters
+    if attributes_to_retrieve is not None:
+        payload["attributesToRetrieve"] = list(attributes_to_retrieve)
 
     response = await client.post(f"/indexes/{storage_name}/search", json=payload)
+    response.raise_for_status()
     return response.json()
 
 
@@ -100,6 +133,7 @@ async def sync_with_db(
     model: Type[DeclarativeBase],
     columns_for_searching: list[str],
     primary_key: str = "id",
+    document_transformer: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
 ):
     async with db_manager.async_session_maker() as session:
         pk_column = getattr(model, primary_key)
@@ -116,16 +150,19 @@ async def sync_with_db(
                     doc[key] = val.value
                 else:
                     doc[key] = val
+            if document_transformer:
+                doc = document_transformer(doc)
             data.append(doc)
 
     try:
-        await meilisearch_client.delete(f"/indexes/{storage_name}")
-        await meilisearch_client.post(
+        response = await meilisearch_client.post(
             "/indexes", json={"uid": storage_name, "primaryKey": primary_key}
         )
-        await meilisearch_client.post(
+        await wait_for_task(meilisearch_client, response)
+        response = await meilisearch_client.post(
             f"/indexes/{storage_name}/documents",
             json=data,
         )
+        await wait_for_task(meilisearch_client, response)
     except Exception as e:
         print(f"Meilisearch error: {e}")

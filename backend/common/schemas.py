@@ -1,12 +1,12 @@
 from typing import List
 
 from backend.core.configs.config import Config
+from faststream.rabbit import RabbitBroker
 from google.auth.credentials import Credentials
 from google.cloud import storage
 from httpx import AsyncClient
-from redis.asyncio import Redis
-from faststream.rabbit import RabbitBroker
 from pydantic import BaseModel
+from redis.asyncio import Redis
 
 
 class ShortUserResponse(BaseModel):

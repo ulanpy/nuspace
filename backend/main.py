@@ -2,22 +2,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
+from backend.bootstrap.tracing import tracing_enabled
 from backend.core.configs.config import config
 from backend.lifespan import lifespan
-
-# Import both the instrumentor and the metrics_app
-from backend.middlewares.prometheus_metrics import instrument_app, metrics_app
-from backend.telemetry import instrument_fastapi, setup_tracer_provider
-
-setup_tracer_provider()
+from backend.middlewares.headers import AccessContextMiddleware
+from backend.middlewares.errors import UnhandledExceptionLoggingMiddleware
+from backend.middlewares.metrics import PrometheusMetricsMiddleware, metrics_app
+from backend.middlewares.tracing import TracingMiddleware
 
 app = FastAPI(
-    debug=True if config.IS_DEBUG else False,
+    debug=config.IS_DEBUG,
     lifespan=lifespan,
     root_path="/api",
-    docs_url="/docs" if config.IS_DEBUG else None,
-    redoc_url="/redoc" if config.IS_DEBUG else None,
-    openapi_url="/openapi.json" if config.IS_DEBUG else None,
+    docs_url="/docs",
+    openapi_url="/openapi.json",
     title="nuspace API",
     description=" Nuspace.kz is a SuperApp for NU students that streamlines communication and "
     "replaces disorganized Telegram chats with a more reliable solution. "
@@ -35,5 +33,8 @@ app.add_middleware(
 )
 app.add_middleware(SessionMiddleware, secret_key=config.SESSION_MIDDLEWARE_KEY)
 
-instrument_app(app)
-instrument_fastapi(app)
+app.add_middleware(PrometheusMetricsMiddleware)
+app.add_middleware(UnhandledExceptionLoggingMiddleware)
+app.add_middleware(AccessContextMiddleware)
+if tracing_enabled():
+    app.add_middleware(TracingMiddleware)

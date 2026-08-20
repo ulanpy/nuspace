@@ -1,8 +1,8 @@
 import os
 
-from fastapi import FastAPI
 from alembic import command
 from alembic.config import Config
+from fastapi import FastAPI
 
 from backend.core.configs.config import config as app_config
 from backend.core.database.manager import AsyncDatabaseManager
