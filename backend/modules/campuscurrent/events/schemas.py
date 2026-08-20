@@ -275,6 +275,10 @@ class EventFilter(BaseModel):
     keyword: Optional[str] = Field(
         default=None, description="Search keyword for event name or description"
     )
+    sort_by_display_datetime: bool = Field(
+        default=False,
+        description="Sort recruitment by deadline and other events by start time",
+    )
 
 
 class ListEventResponse(BaseModel):

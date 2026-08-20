@@ -7,9 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AnnouncementEventPoster } from "@/features/announcements/components/announcement-event-poster";
 import {
   formatEventDate,
+  getEventDisplayDatetime,
+  getEventDisplayLabel,
   formatEventTime,
   getPolicyColor,
   getPolicyDisplay,
+  isRecruitmentEvent,
 } from "@/features/events/utils/event-formatters";
 import { ROUTES } from "@/data/routes";
 import type { Event } from "@/features/shared/campus/types";
@@ -45,6 +48,7 @@ export function FeaturedEventCard({ event, isOngoing = false }: FeaturedEventCar
                   Ongoing
                 </Badge>
               ) : null}
+              {isRecruitmentEvent(event) ? <Badge variant="secondary">Recruitment</Badge> : null}
               <Badge variant="outline" className={getPolicyColor(event.policy)}>
                 {getPolicyDisplay(event.policy)}
               </Badge>
@@ -64,7 +68,8 @@ export function FeaturedEventCard({ event, isOngoing = false }: FeaturedEventCar
               <div className="flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
                 <span className="truncate">
-                  {formatEventDate(event.start_datetime)} · {formatEventTime(event.start_datetime)}
+                  {getEventDisplayLabel(event) ? `${getEventDisplayLabel(event)}: ` : ""}
+                  {formatEventDate(getEventDisplayDatetime(event))} · {formatEventTime(getEventDisplayDatetime(event))}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">

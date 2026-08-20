@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Calendar, Users } from "lucide-react";
+import { ArrowRight, Calendar } from "lucide-react";
 import Link from "@/router/link";
 import { useUser } from "@/hooks/use-user";
 import { TelegramFeed } from "@/features/announcements/components/telegram-feed";
@@ -12,10 +12,6 @@ import {
   EventPosterStrip,
   EventPosterStripSkeleton,
 } from "@/features/announcements/components/event-poster-strip";
-import {
-  RecruitmentEventRow,
-  RecruitmentEventRowSkeleton,
-} from "@/features/announcements/components/recruitment-event-row";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -35,6 +31,8 @@ function getGreeting(): string {
 }
 
 function isEventOngoing(event: Event) {
+  if (event.type === "recruitment") return false;
+
   const now = Date.now();
   const start = new Date(event.start_datetime).getTime();
   const end = new Date(event.end_datetime).getTime();
@@ -63,12 +61,9 @@ export default function AnnouncementsPage() {
 
   const { data: bundle, isLoading: bundleLoading } = useAnnouncementsBundle();
 
-  const upcomingEvents = ((bundle?.events?.items || []) as Event[]).filter(
-    (event) => event.type !== "recruitment",
-  );
-  const recruitmentEvents = (bundle?.recruitment_events?.items ?? []) as Event[];
-  const { featured, rest } = pickFeaturedEvent(upcomingEvents);
-  const mobileStripEvents = upcomingEvents.slice(0, STRIP_LIMIT);
+  const announcements = (bundle?.events?.items ?? []) as Event[];
+  const { featured, rest } = pickFeaturedEvent(announcements);
+  const mobileStripEvents = announcements.slice(0, STRIP_LIMIT);
 
   return (
     <div className="container mx-auto space-y-5 px-4 py-5 sm:space-y-8 sm:py-8">
@@ -126,24 +121,12 @@ export default function AnnouncementsPage() {
                   <EventPosterStripSkeleton />
                 </div>
               </>
-            ) : upcomingEvents.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Calendar className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
-                  <p className="text-muted-foreground">No upcoming events</p>
-                  <Button asChild variant="link" className="mt-2">
-                    <Link href={ROUTES.EVENTS.ROOT}>Browse all events</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
+            ) : announcements.length > 0 ? (
               <>
-                {/* Mobile: flat poster strip — quick scan, no featured hero */}
                 <div className="sm:hidden">
                   <EventPosterStrip events={mobileStripEvents} />
                 </div>
 
-                {/* Desktop+: featured + more upcoming */}
                 <div className="hidden space-y-4 sm:block">
                   {featured ? (
                     <FeaturedEventCard
@@ -164,43 +147,19 @@ export default function AnnouncementsPage() {
                   ) : null}
                 </div>
               </>
-            )}
-          </section>
+            ) : null}
 
-          <section className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">Club Recruitments</h2>
-              <Button asChild variant="link" size="sm" className="h-auto gap-1 px-0">
-                <Link href={ROUTES.EVENTS.ROOT}>
-                  View all
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-
-            {bundleLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, idx) => (
-                  <RecruitmentEventRowSkeleton key={idx} />
-                ))}
-              </div>
-            ) : recruitmentEvents.length > 0 ? (
-              <div className="space-y-3">
-                {recruitmentEvents.map((event) => (
-                  <RecruitmentEventRow key={event.id} event={event} />
-                ))}
-              </div>
-            ) : (
+            {!bundleLoading && announcements.length === 0 ? (
               <Card>
-                <CardContent className="p-6 text-center">
-                  <Users className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
-                  <p className="text-muted-foreground">No recruitment events right now</p>
+                <CardContent className="p-8 text-center">
+                  <Calendar className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
+                  <p className="text-muted-foreground">No upcoming announcements</p>
                   <Button asChild variant="link" className="mt-2">
                     <Link href={ROUTES.EVENTS.ROOT}>Browse all events</Link>
                   </Button>
                 </CardContent>
               </Card>
-            )}
+            ) : null}
           </section>
         </div>
 

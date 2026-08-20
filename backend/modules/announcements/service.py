@@ -6,7 +6,6 @@ import httpx
 from backend.modules.announcements import schemas
 from backend.modules.announcements.interfaces import EventCatalog
 from backend.modules.campuscurrent.events import schemas as event_schemas
-from backend.modules.campuscurrent.models.events import EventType
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +41,6 @@ class AnnouncementsService:
         user: tuple[dict, dict],
         events_page: int = 1,
         events_size: int = 11,
-        recruitment_events_page: int = 1,
-        recruitment_events_size: int = 5,
     ) -> schemas.AnnouncementsBundleResponse:
         """
         Aggregate data required by the announcements landing page into a single response.
@@ -56,21 +53,7 @@ class AnnouncementsService:
             size=events_size,
             event_status=event_schemas.EventStatus.approved,
             time_filter=event_schemas.TimeFilter.UPCOMING,
+            sort_by_display_datetime=True,
         )
         events = await self.event_catalog.get_events(user=user, event_filter=event_filter)
-
-        recruitment_filter = event_schemas.EventFilter(
-            page=recruitment_events_page,
-            size=recruitment_events_size,
-            event_status=event_schemas.EventStatus.approved,
-            event_type=EventType.recruitment,
-            time_filter=event_schemas.TimeFilter.UPCOMING,
-        )
-        recruitment_events = await self.event_catalog.get_events(
-            user=user, event_filter=recruitment_filter
-        )
-
-        return schemas.AnnouncementsBundleResponse(
-            events=events,
-            recruitment_events=recruitment_events,
-        )
+        return schemas.AnnouncementsBundleResponse(events=events)

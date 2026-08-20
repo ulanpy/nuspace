@@ -29,20 +29,15 @@ async def get_announcements_bundle_route(
     service: AnnouncementsService = Depends(get_announcements_service),
     events_page: int = Query(1, ge=1),
     events_size: int = Query(11, ge=1, le=100),
-    recruitment_events_page: int = Query(1, ge=1),
-    recruitment_events_size: int = Query(5, ge=1, le=100),
 ) -> schemas.AnnouncementsBundleResponse:
     """
     Single endpoint for the announcements landing page to reduce initial request fan-out.
 
-    Defaults:
-    - events: page=1 size=11 (1 featured + up to 10 in More upcoming)
-    - recruitment_events: page=1 size=5 (approved + upcoming + type=recruitment)
+    The single list contains approved upcoming events. Recruitment events are ordered by their
+    deadline; all other events are ordered by their start time.
     """
     return await service.get_bundle(
         user=user,
         events_page=events_page,
         events_size=events_size,
-        recruitment_events_page=recruitment_events_page,
-        recruitment_events_size=recruitment_events_size,
     )

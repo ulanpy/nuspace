@@ -3,7 +3,11 @@
 import Link from "@/router/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AnnouncementEventPoster } from "@/features/announcements/components/announcement-event-poster";
-import { formatEventDate } from "@/features/events/utils/event-formatters";
+import {
+  formatEventDate,
+  getEventDisplayDatetime,
+  isRecruitmentEvent,
+} from "@/features/events/utils/event-formatters";
 import { ROUTES } from "@/data/routes";
 import { cn } from "@/lib/utils";
 import type { Event } from "@/features/shared/campus/types";
@@ -49,8 +53,12 @@ export function EventPosterStrip({ events }: EventPosterStripProps) {
           />
           <div className="space-y-0.5 px-0.5">
             <p className="text-sm font-medium leading-snug line-clamp-2">{event.name}</p>
+            {isRecruitmentEvent(event) ? (
+              <p className="text-xs font-medium text-primary">Recruitment</p>
+            ) : null}
             <p className="text-xs text-muted-foreground">
-              {formatEventDate(event.start_datetime)}
+              {isRecruitmentEvent(event) ? "Deadline: " : ""}
+              {formatEventDate(getEventDisplayDatetime(event))}
             </p>
           </div>
         </Link>

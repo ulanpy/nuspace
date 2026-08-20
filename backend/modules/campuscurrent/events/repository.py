@@ -4,7 +4,7 @@ from functools import lru_cache
 from typing import List, Tuple
 
 from httpx import AsyncClient
-from sqlalchemy import and_, bindparam, func, literal, select
+from sqlalchemy import and_, bindparam, case, func, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.utils import meilisearch
@@ -16,6 +16,7 @@ from backend.modules.campuscurrent.models import (
     EventAccessPurpose,
     EventAttendee,
     EventAttendeeViewer,
+    EventType,
 )
 from backend.modules.media.models import EntityType, Media, MediaFormat
 
@@ -45,6 +46,7 @@ class _EventScreenQueryShape:
     has_end_date: bool
     has_viewer: bool
     is_keyword_search: bool
+    sort_by_display_datetime: bool
 
 
 def _build_event_screen_statement(
@@ -53,12 +55,21 @@ def _build_event_screen_statement(
     viewer_sub: str | None | object,
     offset: int | object | None,
     limit: int | object | None,
+    sort_by_display_datetime: bool = False,
 ):
     """Build the shared one-round-trip statement from already-shaped filters."""
+    sort_datetime = (
+        case(
+            (Event.type == EventType.recruitment, Event.end_datetime),
+            else_=Event.start_datetime,
+        )
+        if sort_by_display_datetime
+        else Event.start_datetime
+    )
     page_query = (
         select(Event, func.count().over().label("total"))
         .where(*filters)
-        .order_by(Event.start_datetime.asc())
+        .order_by(sort_datetime.asc())
     )
     if offset is not None and limit is not None:
         page_query = page_query.offset(offset).limit(limit)
@@ -123,7 +134,7 @@ def _build_event_screen_statement(
         stmt = stmt.outerjoin(going_events, going_events.c.event_id == Event.id).outerjoin(
             viewer_events, viewer_events.c.event_id == Event.id
         )
-    return stmt.order_by(Event.start_datetime.asc(), Media.media_order.asc(), Media.id.asc())
+    return stmt.order_by(sort_datetime.asc(), Media.media_order.asc(), Media.id.asc())
 
 
 @lru_cache(maxsize=128)
@@ -158,6 +169,7 @@ def _cached_event_screen_statement(shape: _EventScreenQueryShape):
         viewer_sub=bindparam("viewer_sub") if shape.has_viewer else None,
         offset=None if shape.is_keyword_search else bindparam("offset"),
         limit=None if shape.is_keyword_search else bindparam("limit"),
+        sort_by_display_datetime=shape.sort_by_display_datetime,
     )
 
 
@@ -237,7 +249,6 @@ class EventRepository:
         result = await self.db_session.execute(stmt)
         return {event_id: user for event_id, user in result.all()}
 
-
     async def list_events_for_screen(
         self,
         event_filter: schemas.EventFilter,
@@ -278,6 +289,7 @@ class EventRepository:
                 viewer_sub=viewer_sub,
                 offset=None if event_filter.keyword else (page - 1) * event_filter.size,
                 limit=None if event_filter.keyword else event_filter.size,
+                sort_by_display_datetime=event_filter.sort_by_display_datetime,
             )
         else:
             shape = _EventScreenQueryShape(
@@ -290,6 +302,7 @@ class EventRepository:
                 has_end_date=event_filter.end_date is not None,
                 has_viewer=viewer_sub is not None,
                 is_keyword_search=event_filter.keyword is not None,
+                sort_by_display_datetime=event_filter.sort_by_display_datetime,
             )
             execute_parameters = {}
             if shape.has_registration_policy:

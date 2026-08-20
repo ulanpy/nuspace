@@ -1,6 +1,5 @@
-from pydantic import BaseModel
-
 from backend.modules.campuscurrent.events.schemas import ListEventResponse
+from pydantic import BaseModel
 
 
 class AnnouncementsBundleResponse(BaseModel):
@@ -9,4 +8,3 @@ class AnnouncementsBundleResponse(BaseModel):
     """
 
     events: ListEventResponse
-    recruitment_events: ListEventResponse
