@@ -48,9 +48,20 @@
     #!/bin/bash
     set -e
     COMPOSE_FILE="/home/{{ ansible_user }}/nuspace/infra/prod.docker-compose.yml"
-    {{ compose_cmd }} -f "$COMPOSE_FILE" up -d postgres
+
+    # Do not invoke Compose for an existing database container.  If Compose sees a
+    # changed network definition, it may try to recreate the shared network and fail
+    # while unrelated production services still have active endpoints on it.
+    if docker inspect postgres >/dev/null 2>&1; then
+      if [ "$(docker inspect -f '{{"{{.State.Running}}"}}' postgres)" != "true" ]; then
+        docker start postgres >/dev/null
+      fi
+    else
+      {{ compose_cmd }} -f "$COMPOSE_FILE" up -d postgres
+    fi
+
     for i in {1..30}; do
-      if {{ compose_cmd }} -f "$COMPOSE_FILE" exec -T postgres sh -lc 'pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1'; then
+      if docker exec postgres sh -lc 'pg_isready -h 127.0.0.1 -p 5432 >/dev/null 2>&1'; then
         echo "Postgres is ready"
         exit 0
       fi
