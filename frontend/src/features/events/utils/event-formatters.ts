@@ -1,4 +1,4 @@
-import type { EventPolicy } from "@/features/shared/campus/types";
+import type { Event, EventPolicy } from "@/features/shared/campus/types";
 import { formatInCampusTime } from "@/features/events/utils/campus-datetime";
 
 export const formatEventDate = (dateString: string) => {
@@ -14,6 +14,15 @@ export const formatEventTime = (dateString: string) => {
     minute: "2-digit",
   });
 };
+
+export const isRecruitmentEvent = (event: Pick<Event, "type">) => event.type === "recruitment";
+
+export const getEventDisplayDatetime = (
+  event: Pick<Event, "type" | "start_datetime" | "end_datetime">,
+) => (isRecruitmentEvent(event) ? event.end_datetime : event.start_datetime);
+
+export const getEventDisplayLabel = (event: Pick<Event, "type">) =>
+  isRecruitmentEvent(event) ? "Deadline" : null;
 
 export const getPolicyDisplay = (policy: EventPolicy | string) => {
   switch (policy) {

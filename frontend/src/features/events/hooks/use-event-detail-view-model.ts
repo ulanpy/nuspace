@@ -53,8 +53,6 @@ export const useEventDetailViewModel = () => {
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showShareAccessModal, setShowShareAccessModal] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
 
   const isPast = useMemo(() => {
     if (!event) return false;
@@ -112,12 +110,6 @@ export const useEventDetailViewModel = () => {
     () => setShowShareAccessModal(false),
     [],
   );
-
-  const handleImageLoad = useCallback(() => setImageLoaded(true), []);
-  const handleImageError = useCallback(() => {
-    setImageError(true);
-    setImageLoaded(false);
-  }, []);
 
   const handleToggleGoing = useCallback(() => {
     if (!event) return;
@@ -215,10 +207,6 @@ export const useEventDetailViewModel = () => {
     showShareAccessModal,
     closeShareAccessModal,
     canShareAccess,
-    imageLoaded,
-    imageError,
-    handleImageLoad,
-    handleImageError,
     attendeesCount: event?.attendees_count ?? 0,
     showAttendeesCount,
     canViewAttendees,

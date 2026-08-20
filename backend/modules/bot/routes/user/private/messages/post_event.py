@@ -4,9 +4,11 @@ from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 from backend.modules.bot.keyboards.kb import kb_url
 from backend.modules.bot.services.event_post import EventPostService
+from backend.modules.bot.utils.telegram_event_album import load_event_album_messages
 from backend.modules.bot.utils.telegram_event_payload import build_telegram_event_post_input
-from backend.modules.bot.utils.telegram_media import download_message_image
+from backend.modules.bot.utils.telegram_media import download_message_images
 from backend.modules.campuscurrent.models.events import EventBotSubmissionStatus
+from redis.asyncio import Redis
 
 router = Router(name="Post event router")
 
@@ -48,6 +50,7 @@ async def post_event_command(
     event_post_service: EventPostService,
     public_url: str,
     bot: Bot,
+    redis: Redis,
 ) -> None:
     """
     Reply to a forwarded (or any) post with /post to publish it as a campus event.
@@ -72,16 +75,20 @@ async def post_event_command(
     status_msg = await message.answer("Parsing post and creating event…")
 
     try:
+        album_messages = await load_event_album_messages(
+            redis,
+            source_message=source,
+            bot=bot,
+        )
         payload = build_telegram_event_post_input(
             command_message=message,
             source_message=source,
+            album_messages=album_messages,
         )
-        image = await download_message_image(bot, source)
-        image_bytes, image_mime_type = image if image else (None, None)
+        images = await download_message_images(bot, album_messages)
         result = await event_post_service.submit_from_telegram(
             payload,
-            image_bytes=image_bytes,
-            image_mime_type=image_mime_type,
+            images=images,
         )
     except PermissionError as exc:
         await _safe_edit(status_msg, str(exc), reply_markup=kb_url(url=public_url))

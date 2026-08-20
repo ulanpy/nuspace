@@ -25,3 +25,20 @@ async def download_message_image(bot: Bot, message: Message) -> tuple[bytes, str
         return buffer.getvalue(), document.mime_type
 
     return None
+
+
+async def download_message_images(
+    bot: Bot,
+    messages: list[Message],
+    *,
+    max_images: int = 5,
+) -> list[tuple[bytes, str]]:
+    """Download up to ``max_images`` usable images from Telegram messages in order."""
+    images: list[tuple[bytes, str]] = []
+    for message in messages:
+        image = await download_message_image(bot, message)
+        if image is not None:
+            images.append(image)
+        if len(images) == max_images:
+            break
+    return images

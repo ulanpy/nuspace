@@ -11,6 +11,7 @@ from backend.core.database.manager import AsyncDatabaseManager
 
 from .bucket_client import BucketClientMiddleware
 from .db_session import DatabaseMiddleware
+from .event_album import EventAlbumMiddleware
 from .event_post import EventPostMiddleware
 from .i18n import I18N
 from .meilisearch import MeilisearchMiddleware
@@ -57,3 +58,4 @@ def setup_middlewares(
         dp.message.middleware(middleware)
         dp.callback_query.middleware(middleware)
         dp.chat_member.middleware(middleware)
+    dp.message.middleware(EventAlbumMiddleware(redis))

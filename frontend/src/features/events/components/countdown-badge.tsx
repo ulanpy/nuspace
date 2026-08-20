@@ -7,6 +7,7 @@ import { useGlobalSecondTicker } from '@/hooks/use-global-second-ticker';
 interface CountdownBadgeProps {
   eventDateIso: string;
   durationMinutes: number;
+  isDeadline?: boolean;
   className?: string;
 }
 
@@ -45,7 +46,12 @@ function formatOngoing(ms: number): string {
   return `${minutes}m left`;
 }
 
-export function CountdownBadge({ eventDateIso, durationMinutes, className = "" }: CountdownBadgeProps) {
+export function CountdownBadge({
+  eventDateIso,
+  durationMinutes,
+  isDeadline = false,
+  className = "",
+}: CountdownBadgeProps) {
   const nowMs = useGlobalSecondTicker();
 
   const { remainingMs, tone, label, isOngoing, isFinished, animate } = useMemo(() => {
@@ -57,6 +63,37 @@ export function CountdownBadge({ eventDateIso, durationMinutes, className = "" }
     const fifteenMinMs = 15 * 60 * 1000;
     const oneHourMs = 60 * 60 * 1000;
     const fiveHoursMs = 5 * oneHourMs;
+
+    if (isDeadline) {
+      if (remaining <= 0) {
+        return {
+          remainingMs: 0,
+          tone: "bg-gray-500 text-white",
+          label: "Deadline passed",
+          isOngoing: false,
+          isFinished: true,
+          animate: false,
+        };
+      }
+
+      let tone = "bg-blue-100 text-blue-900";
+      if (remaining <= fifteenMinMs) {
+        tone = "bg-red-500 text-white";
+      } else if (remaining <= oneHourMs) {
+        tone = "bg-yellow-500 text-black";
+      } else if (remaining <= fiveHoursMs) {
+        tone = "bg-green-600 text-white";
+      }
+
+      return {
+        remainingMs: remaining,
+        tone,
+        label: "Deadline",
+        isOngoing: false,
+        isFinished: false,
+        animate: false,
+      };
+    }
 
     // Event is finished
     if (ongoingRemaining <= 0) {
@@ -105,15 +142,19 @@ export function CountdownBadge({ eventDateIso, durationMinutes, className = "" }
     }
 
     return { remainingMs: 0, tone: "", label: "", isOngoing: false, isFinished: false, animate: false };
-  }, [eventDateIso, durationMinutes, nowMs]);
+  }, [eventDateIso, durationMinutes, isDeadline, nowMs]);
 
   if (!label) return null;
 
-  const timeText = isOngoing
-    ? formatOngoing(remainingMs)
-    : isFinished
-    ? `Ended ${formatPast(nowMs - (new Date(eventDateIso).getTime() + durationMinutes * 60 * 1000))}`
-    : formatRemaining(remainingMs);
+  const timeText = isDeadline
+    ? isFinished
+      ? `Deadline passed ${formatPast(nowMs - new Date(eventDateIso).getTime())}`
+      : `${formatRemaining(remainingMs)} left`
+    : isOngoing
+      ? formatOngoing(remainingMs)
+      : isFinished
+        ? `Ended ${formatPast(nowMs - (new Date(eventDateIso).getTime() + durationMinutes * 60 * 1000))}`
+        : formatRemaining(remainingMs);
 
   return (
     <Badge className={`${tone} ${className} ${animate ? 'animate-pulse' : ''}`}>

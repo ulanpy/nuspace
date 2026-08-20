@@ -3,13 +3,16 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from datetime import datetime
 
-from google import genai
-from google.genai import types
-
+from backend.common.datetime_utils import CAMPUS_TZ
 from backend.core.configs.config import Config, config
 from backend.modules.bot.schemas.event_post import ExtractedEventDraft
-from backend.modules.bot.services.event_extraction_prompt import EVENT_EXTRACTION_SYSTEM_PROMPT
+from backend.modules.bot.services.event_extraction_prompt import (
+    build_event_extraction_system_prompt,
+)
+from google import genai
+from google.genai import types
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +89,7 @@ class GeminiEventExtractor:
             user_content += "\n\nDetected links:\n" + "\n".join(links)
 
         generation_config = types.GenerateContentConfig(
-            system_instruction=EVENT_EXTRACTION_SYSTEM_PROMPT,
+            system_instruction=build_event_extraction_system_prompt(datetime.now(CAMPUS_TZ)),
             temperature=0.2,
             response_mime_type="application/json",
             response_schema=_RESPONSE_SCHEMA,

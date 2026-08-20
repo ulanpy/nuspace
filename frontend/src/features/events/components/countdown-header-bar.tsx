@@ -6,6 +6,7 @@ import { useGlobalSecondTicker } from '@/hooks/use-global-second-ticker';
 interface CountdownHeaderBarProps {
   eventDateIso: string;
   durationMinutes: number;
+  isDeadline?: boolean;
   className?: string;
 }
 
@@ -64,7 +65,12 @@ function formatPast(ms: number): string {
   return `just now`;
 }
 
-export function CountdownHeaderBar({ eventDateIso, durationMinutes, className = "" }: CountdownHeaderBarProps) {
+export function CountdownHeaderBar({
+  eventDateIso,
+  durationMinutes,
+  isDeadline = false,
+  className = "",
+}: CountdownHeaderBarProps) {
   const nowMs = useGlobalSecondTicker();
 
   const { remainingMs, bgClass, textClass, show, label, isOngoing, isFinished, animate } = useMemo(() => {
@@ -76,6 +82,45 @@ export function CountdownHeaderBar({ eventDateIso, durationMinutes, className = 
     const fifteenMinMs = 15 * 60 * 1000;
     const oneHourMs = 60 * 60 * 1000;
     const fiveHoursMs = 5 * oneHourMs;
+
+    if (isDeadline) {
+      if (remaining <= 0) {
+        return {
+          remainingMs: 0,
+          bgClass: "bg-gray-500/80",
+          textClass: "text-white",
+          show: true,
+          label: "Deadline passed",
+          isOngoing: false,
+          isFinished: true,
+          animate: false,
+        };
+      }
+
+      let bgClass = "bg-blue-500/20";
+      let textClass = "text-blue-900 dark:text-blue-100";
+      if (remaining <= fifteenMinMs) {
+        bgClass = "bg-rose-600/80";
+        textClass = "text-white";
+      } else if (remaining <= oneHourMs) {
+        bgClass = "bg-amber-400/85";
+        textClass = "text-black";
+      } else if (remaining <= fiveHoursMs) {
+        bgClass = "bg-emerald-600/80";
+        textClass = "text-white";
+      }
+
+      return {
+        remainingMs: remaining,
+        bgClass,
+        textClass,
+        show: true,
+        label: "Deadline",
+        isOngoing: false,
+        isFinished: false,
+        animate: false,
+      };
+    }
 
     // Event is finished
     if (ongoingRemaining <= 0) {
@@ -134,15 +179,19 @@ export function CountdownHeaderBar({ eventDateIso, durationMinutes, className = 
     }
 
     return { remainingMs: 0, bgClass: "", textClass: "", show: false, label: "", isOngoing: false, isFinished: false, animate: false };
-  }, [eventDateIso, durationMinutes, nowMs]);
+  }, [eventDateIso, durationMinutes, isDeadline, nowMs]);
 
   if (!show) return null;
 
-  const timeText = isOngoing 
-    ? formatOngoing(remainingMs)
-    : isFinished 
-    ? formatPast(nowMs - (new Date(eventDateIso).getTime() + (durationMinutes * 60 * 1000)))
-    : formatRemaining(remainingMs);
+  const timeText = isDeadline
+    ? isFinished
+      ? formatPast(nowMs - new Date(eventDateIso).getTime())
+      : `${formatRemaining(remainingMs)} left`
+    : isOngoing
+      ? formatOngoing(remainingMs)
+      : isFinished
+        ? formatPast(nowMs - (new Date(eventDateIso).getTime() + durationMinutes * 60 * 1000))
+        : formatRemaining(remainingMs);
 
   return (
     <div className={`rounded-t-lg ${bgClass} ${className} ${animate ? 'animate-pulse' : ''}`}>

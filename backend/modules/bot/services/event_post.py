@@ -3,18 +3,17 @@ from __future__ import annotations
 import logging
 
 from backend.core.database.uow import UnitOfWork
-
-from backend.modules.campuscurrent.models.events import (
-    EventBotSubmission,
-    EventBotSubmissionStatus,
-    RegistrationPolicy,
-)
 from backend.modules.auth.models import UserScope
 from backend.modules.bot.interfaces import CampusEventPublisher, EventDraftExtractor
 from backend.modules.bot.repository import BotUserRepository, EventBotSubmissionRepository
 from backend.modules.bot.schemas.event_post import (
     EventPostResult,
     TelegramEventPostInput,
+)
+from backend.modules.campuscurrent.models.events import (
+    EventBotSubmission,
+    EventBotSubmissionStatus,
+    RegistrationPolicy,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,8 +54,7 @@ class EventPostService:
         self,
         payload: TelegramEventPostInput,
         *,
-        image_bytes: bytes | None = None,
-        image_mime_type: str | None = None,
+        images: list[tuple[bytes, str]] | None = None,
     ) -> EventPostResult:
         user = await self._get_user(payload.submitter_telegram_id)
         if user is None:
@@ -159,8 +157,7 @@ class EventPostService:
             event_type=draft.type,
             policy=draft.policy or RegistrationPolicy.open,
             registration_link=draft.registration_link or submission.registration_link,
-            image_bytes=image_bytes,
-            image_mime_type=image_mime_type,
+            images=images,
         )
 
         submission.event_id = event_id

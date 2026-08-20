@@ -6,7 +6,7 @@ export const MEDIA_CONFIGS = {
   campusCurrentEvents: {
     entityType: EntityType.community_events,
     mediaFormat: MediaFormat.carousel,
-    maxFiles: 1,
+    maxFiles: 5,
     maxFileSize: 10, // MB
     allowedTypes: ['image/png', 'image/jpg', 'image/jpeg', 'image/webp'],
     enableMainSelection: true,

@@ -41,6 +41,7 @@ const EventMediaUploadBridge = forwardRef<EventUploadHandle>(function EventMedia
         entity_type: EntityType.community_events,
         entityId,
         mediaFormat: config.mediaFormat,
+        startOrder: isEditMode ? event?.media?.length ?? 0 : 0,
       });
     },
     getMarkedForDeletion: () => mediaToDelete,

@@ -6,7 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AnnouncementEventPoster } from "@/features/announcements/components/announcement-event-poster";
-import { formatEventDate } from "@/features/events/utils/event-formatters";
+import {
+  formatEventDate,
+  getEventDisplayDatetime,
+} from "@/features/events/utils/event-formatters";
 import { ROUTES } from "@/data/routes";
 import type { Event } from "@/features/shared/campus/types";
 
@@ -44,7 +47,7 @@ export function RecruitmentEventRow({ event }: RecruitmentEventRowProps) {
           <p className="text-sm text-muted-foreground truncate">{event.place}</p>
           <div className="flex flex-wrap items-center gap-2 pt-0.5">
             <span className="text-xs text-muted-foreground">
-              {formatEventDate(event.start_datetime)}
+              Deadline: {formatEventDate(getEventDisplayDatetime(event))}
             </span>
             <Badge variant="secondary" className="text-xs">
               Recruitment

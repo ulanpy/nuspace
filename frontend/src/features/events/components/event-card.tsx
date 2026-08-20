@@ -10,7 +10,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Event } from "@/features/shared/campus/types";
 import { CountdownHeaderBar } from "./countdown-header-bar";
 import { ROUTES } from "@/data/routes";
-import { getPolicyColor, getPolicyDisplay } from "@/features/events/utils/event-formatters";
+import {
+  getEventDisplayDatetime,
+  getEventDisplayLabel,
+  getPolicyColor,
+  getPolicyDisplay,
+  isRecruitmentEvent,
+} from "@/features/events/utils/event-formatters";
 import { formatInCampusTime, isoToCampusWallClock } from "@/features/events/utils/campus-datetime";
 
 interface EventCardProps extends Event {
@@ -79,6 +85,9 @@ export function EventCard(props: EventCardProps) {
   const durationMinutes = Math.round(
     (new Date(end_datetime).getTime() - new Date(start_datetime).getTime()) / (1000 * 60),
   );
+  const isRecruitment = isRecruitmentEvent(props);
+  const displayDatetime = getEventDisplayDatetime(props);
+  const displayLabel = getEventDisplayLabel(props);
 
   return (
     <Card className="group h-full overflow-hidden transition-shadow hover:shadow-md">
@@ -87,8 +96,9 @@ export function EventCard(props: EventCardProps) {
         className="flex h-full flex-col"
       >
         <CountdownHeaderBar
-          eventDateIso={start_datetime}
+          eventDateIso={displayDatetime}
           durationMinutes={durationMinutes}
+          isDeadline={isRecruitment}
         />
 
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
@@ -139,7 +149,10 @@ export function EventCard(props: EventCardProps) {
           <div className="mt-auto space-y-0.5 text-[11px] text-muted-foreground sm:space-y-1 sm:text-sm">
             <div className="flex items-center gap-1 sm:gap-1.5">
               <Calendar className="h-3 w-3 flex-shrink-0 sm:h-3.5 sm:w-3.5" />
-              <span className="truncate">{formatEventDate(start_datetime)}</span>
+              <span className="truncate">
+                {displayLabel ? `${displayLabel}: ` : ""}
+                {formatEventDate(displayDatetime)}
+              </span>
             </div>
             {place ? (
               <div className="flex items-center gap-1 sm:gap-1.5">

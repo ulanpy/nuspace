@@ -21,6 +21,7 @@ import { PageContainer } from "@/components/shared/page-container";
 import { Badge } from "@/components/ui/badge";
 import { AuthWallModal } from "@/components/molecules/auth-wall-modal";
 import { EventModal } from '@/features/events/components/event-modal';
+import { EventMediaCarousel } from "@/features/events/components/event-media-carousel";
 import { ShareAccessDialog } from "@/features/events/components/share-access-dialog";
 import { CountdownBadge } from '@/features/events/components/countdown-badge';
 import { MarkdownContent } from '@/components/molecules/markdown-content';
@@ -34,8 +35,11 @@ import {
 import {
   formatEventDate,
   formatEventTime,
+  getEventDisplayDatetime,
+  getEventDisplayLabel,
   getPolicyColor,
   getPolicyDisplay,
+  isRecruitmentEvent,
 } from '@/features/events/utils/event-formatters';
 import { formatInCampusTime } from "@/features/events/utils/campus-datetime";
 
@@ -80,10 +84,6 @@ export default function EventDetailPage() {
     closeEditModal,
     showShareAccessModal,
     closeShareAccessModal,
-    imageLoaded,
-    imageError,
-    handleImageLoad,
-    handleImageError,
     attendeesCount,
     showAttendeesCount,
     canViewAttendees,
@@ -128,10 +128,6 @@ export default function EventDetailPage() {
             closeEditModal={closeEditModal}
             showShareAccessModal={showShareAccessModal}
             closeShareAccessModal={closeShareAccessModal}
-            imageLoaded={imageLoaded}
-            imageError={imageError}
-            handleImageLoad={handleImageLoad}
-            handleImageError={handleImageError}
             attendeesCount={attendeesCount}
             showAttendeesCount={showAttendeesCount}
             canViewAttendees={canViewAttendees}
@@ -173,10 +169,6 @@ type EventDetailViewProps = {
   closeEditModal: () => void;
   showShareAccessModal: boolean;
   closeShareAccessModal: () => void;
-  imageLoaded: boolean;
-  imageError: boolean;
-  handleImageLoad: () => void;
-  handleImageError: () => void;
   attendeesCount: number;
   showAttendeesCount: boolean;
   canViewAttendees: boolean;
@@ -207,10 +199,6 @@ const EventDetailView = ({
   closeEditModal,
   showShareAccessModal,
   closeShareAccessModal,
-  imageLoaded,
-  imageError,
-  handleImageLoad,
-  handleImageError,
   attendeesCount,
   showAttendeesCount,
   canViewAttendees,
@@ -224,6 +212,10 @@ const EventDetailView = ({
   handleExportAttendees,
   isExporting,
 }: EventDetailViewProps) => {
+  const isRecruitment = isRecruitmentEvent(event);
+  const displayDatetime = getEventDisplayDatetime(event);
+  const displayLabel = getEventDisplayLabel(event);
+
   return (
     <PageContainer maxWidth="full" padding="default" className="pb-20">
       <Button
@@ -237,37 +229,8 @@ const EventDetailView = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
         <div className="lg:sticky lg:top-6 lg:self-start">
-          <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-muted shadow-sm lg:max-h-[600px]">
-            {event.media && event.media.length > 0 && !imageError ? (
-              <>
-                {!imageLoaded && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="animate-pulse flex items-center justify-center w-full h-full bg-muted">
-                      <Calendar className="h-16 w-16 text-muted-foreground opacity-50" />
-                    </div>
-                  </div>
-                )}
-                <img
-                  src={event.media[0].url || "/placeholder.svg"}
-                  alt={event.name}
-                  className={`w-full h-full object-contain object-center transition-opacity duration-300 ${
-                    imageLoaded ? "opacity-100" : "opacity-0"
-                  }`}
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                  loading="lazy"
-                />
-              </>
-            ) : (
-              <div className="w-full h-full bg-muted flex items-center justify-center">
-                <div className="text-center">
-                  <Calendar className="h-16 w-16 text-muted-foreground opacity-50 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    No poster available
-                  </p>
-                </div>
-              </div>
-            )}
+          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-muted shadow-sm lg:max-h-[600px]">
+            <EventMediaCarousel eventName={event.name} media={event.media ?? []} />
           </div>
         </div>
 
@@ -282,8 +245,9 @@ const EventDetailView = ({
                 {getPolicyDisplay(event.policy)}
               </Badge>
               <CountdownBadge
-                eventDateIso={event.start_datetime}
+                eventDateIso={displayDatetime}
                 durationMinutes={durationMinutes}
+                isDeadline={isRecruitment}
               />
             </div>
 
@@ -296,9 +260,10 @@ const EventDetailView = ({
             <div className="flex items-start gap-3">
               <Calendar className="mt-0.5 h-5 w-5 flex-shrink-0" />
               <span className="text-base text-foreground/90">
-                {formatEventDate(event.start_datetime)}
+                {displayLabel ? `${displayLabel}: ` : ""}
+                {formatEventDate(displayDatetime)}
                 <span className="text-muted-foreground"> · </span>
-                {formatEventTime(event.start_datetime)}
+                {formatEventTime(displayDatetime)}
               </span>
             </div>
             <div className="flex items-start gap-3">

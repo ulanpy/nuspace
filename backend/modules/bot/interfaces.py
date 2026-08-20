@@ -5,8 +5,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Protocol
 
-from backend.modules.campuscurrent.models.events import EventType, RegistrationPolicy
 from backend.modules.bot.schemas.event_post import ExtractedEventDraft
+from backend.modules.campuscurrent.models.events import EventType, RegistrationPolicy
 
 
 class EventDraftExtractor(Protocol):
@@ -36,8 +36,7 @@ class CampusEventPublisher(Protocol):
         event_type: EventType,
         policy: RegistrationPolicy,
         registration_link: str | None = None,
-        image_bytes: bytes | None = None,
-        image_mime_type: str | None = None,
+        images: list[tuple[bytes, str]] | None = None,
     ) -> int:
-        """Return created event id. Optionally attach a carousel image."""
+        """Return created event id. Optionally attach up to five carousel images."""
         ...

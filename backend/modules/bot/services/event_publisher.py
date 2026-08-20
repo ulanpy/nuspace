@@ -71,8 +71,7 @@ class EventServicePublisher:
         event_type: EventType,
         policy: RegistrationPolicy,
         registration_link: str | None = None,
-        image_bytes: bytes | None = None,
-        image_mime_type: str | None = None,
+        images: list[tuple[bytes, str]] | None = None,
     ) -> int:
         user = (
             {"sub": creator_sub},
@@ -92,16 +91,19 @@ class EventServicePublisher:
             ),
             user=user,
         )
-        if image_bytes:
+        for media_order, (image_bytes, mime_type) in enumerate((images or [])[:5]):
             try:
                 await self._attach_carousel_image(
                     creator_sub=creator_sub,
                     event_id=created.id,
                     image_bytes=image_bytes,
-                    mime_type=image_mime_type or "image/jpeg",
+                    mime_type=mime_type,
+                    media_order=media_order,
                 )
             except Exception:
-                logger.exception("Failed to attach Telegram image to event_id=%s", created.id)
+                logger.exception(
+                    "Failed to attach Telegram image %s to event_id=%s", media_order, created.id
+                )
         return created.id
 
     async def _attach_carousel_image(
@@ -111,6 +113,7 @@ class EventServicePublisher:
         event_id: int,
         image_bytes: bytes,
         mime_type: str,
+        media_order: int,
     ) -> None:
         cfg = self.infra.config
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
@@ -122,7 +125,7 @@ class EventServicePublisher:
             "media-table": EntityType.community_events.value,
             "entity-id": str(event_id),
             "media-format": MediaFormat.carousel.value,
-            "media-order": "0",
+            "media-order": str(media_order),
             "mime-type": mime_type,
         }
 
@@ -138,6 +141,6 @@ class EventServicePublisher:
                 entity_type=EntityType.community_events,
                 entity_id=event_id,
                 media_format=MediaFormat.carousel,
-                media_order=0,
+                media_order=media_order,
             )
         )

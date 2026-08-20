@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Sequence
 
 from aiogram.types import Message
 
@@ -30,6 +31,25 @@ def _largest_photo_unique_id(message: Message) -> str | None:
     if not message.photo:
         return None
     return message.photo[-1].file_unique_id
+
+
+def _merge_album_text(messages: Sequence[Message]) -> str | None:
+    """Return all non-empty captions/texts from an album, in message order."""
+    parts = [(message.caption or message.text or "").strip() for message in messages]
+    text = "\n\n".join(part for part in parts if part)
+    return text or None
+
+
+def _merge_album_urls(messages: Sequence[Message]) -> list[str]:
+    """Preserve URL order while combining captions from every album item."""
+    seen: set[str] = set()
+    urls: list[str] = []
+    for message in messages:
+        for url in _entity_urls(message):
+            if url not in seen:
+                seen.add(url)
+                urls.append(url)
+    return urls
 
 
 def _origin_fields(message: Message) -> dict:
@@ -88,11 +108,13 @@ def build_telegram_event_post_input(
     *,
     command_message: Message,
     source_message: Message,
+    album_messages: Sequence[Message] | None = None,
 ) -> TelegramEventPostInput:
     """
     Build ingestion payload from the forwarded/source message the user replied to.
 
     `command_message` is the /post reply; `source_message` is reply_to_message.
+    When the source belongs to a Telegram album, ``album_messages`` supplies all its items.
     """
     if command_message.from_user is None:
         raise ValueError("Missing Telegram user on /post command")
@@ -103,15 +125,20 @@ def build_telegram_event_post_input(
     except Exception:
         raw_payload = None
 
+    source_messages = list(album_messages or [source_message])
+    if all(message.message_id != source_message.message_id for message in source_messages):
+        source_messages.append(source_message)
+    source_messages.sort(key=lambda message: message.message_id)
+
     origin = _origin_fields(source_message)
-    caption = source_message.caption or source_message.text
+    caption = _merge_album_text(source_messages)
 
     return TelegramEventPostInput(
         submitter_telegram_id=command_message.from_user.id,
         bot_chat_id=command_message.chat.id,
         bot_message_id=source_message.message_id,
         caption=caption,
-        link_urls=_entity_urls(source_message),
+        link_urls=_merge_album_urls(source_messages),
         media_file_unique_id=_largest_photo_unique_id(source_message),
         raw_payload=raw_payload,
         **origin,
