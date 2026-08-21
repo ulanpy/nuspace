@@ -4,29 +4,6 @@ templates:
   - orgId: 1
     name: nuspace
     template: |
-      {{ define "nuspace.telegram.message" -}}
-      {{- $alert := index .Alerts 0 -}}
-      {{- $summary := or $alert.Annotations.summary $alert.Labels.alertname "Alert" -}}
-      {{- $description := $alert.Annotations.description -}}
-      {{- if eq .Status "firing" -}}
-      🔴 <b>{{ $summary }}</b>
-      {{- if $description }}
-
-      {{ $description }}
-      {{- end }}
-      {{- else -}}
-      ✅ <b>{{ $summary }}</b> — восстановлено
-      {{- range .Alerts.Resolved }}
-      {{- $downtime := .EndsAt.Sub .StartsAt -}}
-      {{- if gt $downtime.Seconds 60.0 }}
-      Длительность алерта: {{ humanizeDuration $downtime }}
-      {{- else }}
-      (окно метрики очистилось — смотри время 🔴 и ✅ в чате)
-      {{- end }}
-      {{- end }}
-      {{- end }}
-
-      {{- with $alert }}
-      <a href="{{ .GeneratorURL }}">Открыть в Grafana</a> · <a href="{{ .SilenceURL }}">Заглушить</a>
-      {{- end }}
-      {{- end }}
+      {{ define "nuspace.telegram.message" }}
+      {{ if eq .Status "firing" }}🔴 Alert firing{{ else }}✅ Alert resolved{{ end }}
+      {{ end }}
