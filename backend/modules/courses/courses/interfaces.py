@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import List, Protocol, Tuple
 
 from backend.modules.courses.registrar.schemas import (
-    CourseSearchRequest,
-    CourseSearchResponse,
+    CatalogCourse,
     ScheduleResponse,
     SemesterOption,
 )
@@ -16,9 +15,11 @@ class StudentScheduleRegistrar(Protocol):
 
     async def sync_schedule(self, username: str, password: str) -> ScheduleResponse: ...
 
-    async def list_semesters(self) -> list[SemesterOption]: ...
+    async def get_active_semester(self) -> SemesterOption: ...
 
-    async def search_courses_pcc(self, request: CourseSearchRequest) -> CourseSearchResponse: ...
+    async def find_catalog_course(
+        self, *, course_code: str, term_value: str
+    ) -> CatalogCourse | None: ...
 
     def parse_schedule_pdf(self, pdf_file: bytes) -> ScheduleResponse: ...
 

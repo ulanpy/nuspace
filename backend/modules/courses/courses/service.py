@@ -10,7 +10,7 @@ from backend.common.utils import meilisearch, response_builder
 from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.courses.courses import schemas
-from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError
+from backend.modules.courses.courses.errors import CourseLookupError
 from backend.modules.courses.courses.ics_export import events_to_ics
 from backend.modules.courses.courses.interfaces import CalendarEventSync, StudentScheduleRegistrar
 from backend.modules.courses.courses.policy import CourseItemPolicy
@@ -22,7 +22,6 @@ from backend.modules.courses.models.grade_report import (
     StudentSchedule,
 )
 from backend.modules.courses.registrar.schemas import (
-    CourseSearchRequest,
     SchedulePreferences,
     ScheduleResponse,
     SemesterOption,
@@ -378,15 +377,13 @@ class StudentCourseService:
         self,
         course_code: str,
         term_value: str,
-        fallback_term_value: str | None = None,
     ) -> Course | None:
         """
-        Get course from database or fetch from registrar and create it.
+        Get a term-specific offering from the local database or Meilisearch.
 
         Args:
             course_code: Normalized course code like "PHYS 161"
-            term_value: Term value like "822" (used for registrar API)
-            registrar_service: Service to query registrar API
+            term_value: Active schedule-catalog term identifier.
 
         Returns:
             Course object or None if not found
@@ -394,7 +391,6 @@ class StudentCourseService:
         if not course_code:
             return None
 
-        matching_course = None
         candidates = [course_code]
         if "/" in course_code:
             parts = [p.strip() for p in course_code.split("/") if p.strip()]
@@ -406,101 +402,40 @@ class StudentCourseService:
                 if part and part not in candidates:
                     candidates.append(part)
 
-        # try primary term
+        matching_course = None
         for candidate in candidates:
-            search_request = CourseSearchRequest(
+            matching_course = await self._registrar.find_catalog_course(
                 course_code=candidate,
-                term=term_value,
-                page=1,
+                term_value=term_value,
             )
-            search_response = await self._registrar.search_courses_pcc(search_request)
-
-            for item in search_response.items:
-                normalized_item_code = self._normalize_course_code(item.course_code)
-                if normalized_item_code == candidate:
-                    matching_course = item
-                    break
             if matching_course:
                 break
 
-        # fallback term if needed
-        if not matching_course and fallback_term_value:
-            for candidate in candidates:
-                fallback_request = CourseSearchRequest(
-                    course_code=candidate,
-                    term=fallback_term_value,
-                    page=1,
-                )
-                fallback_response = await self._registrar.search_courses_pcc(fallback_request)
-                for item in fallback_response.items:
-                    normalized_item_code = self._normalize_course_code(item.course_code)
-                    if normalized_item_code == candidate:
-                        matching_course = item
-                        break
-                if matching_course:
-                    break
-        if not matching_course and not fallback_term_value:
-            pass
-
-        # last-resort: search without term filter to discover course/term if catalog has it
         if not matching_course:
-            for candidate in candidates:
-                any_term_request = CourseSearchRequest(
-                    course_code=candidate,
-                    term=None,
-                    page=1,
-                )
-                any_term_response = await self._registrar.search_courses_pcc(any_term_request)
-                for item in any_term_response.items:
-                    normalized_item_code = self._normalize_course_code(item.course_code)
-                    if normalized_item_code == candidate:
-                        matching_course = item
-                        # adjust term_value to hit term if present
-                        if getattr(item, "term", None):
-                            try:
-                                # item.term may be a label like "Fall 2025";
-                                # keep the current term value.
-                                pass
-                            except Exception:
-                                pass
-                        break
-                if matching_course:
-                    break
-
-        if not matching_course:
-            raise CourseLookupError(
-                f"Course not found in registrar for term {term_value}"
-                + (f" (fallback tried: {fallback_term_value})" if fallback_term_value else "")
-            )
-
-        # Insert course into database (using term label from response)
-        try:
-            registrar_id = int(matching_course.registrar_id)
-        except (ValueError, TypeError):
-            return None
+            raise CourseLookupError(f"Course not found in schedule catalog for term {term_value}")
 
         async with self.uow:
             course_repo = self.uow.get_repo(CourseRepository)
-            existing_by_registrar: Course | None = await course_repo.find_course_by_registrar_id(
-                registrar_id
+            existing: Course | None = await course_repo.find_course_by_catalog_id(
+                matching_course.catalog_id
             )
 
-        if existing_by_registrar:
-            return existing_by_registrar
+        if existing:
+            return existing
 
         course_data = schemas.CourseCreate(
-            registrar_id=registrar_id,
+            catalog_id=matching_course.catalog_id,
+            catalog_term_id=matching_course.term_id,
             course_code=self._normalize_course_code(matching_course.course_code),
-            pre_req=matching_course.pre_req,
-            anti_req=matching_course.anti_req,
-            co_req=matching_course.co_req,
-            level=matching_course.level,
-            school=matching_course.school,
-            description=matching_course.description,
-            department=matching_course.department,
+            pre_req=matching_course.prerequisite,
+            anti_req=matching_course.antirequisite,
+            co_req=matching_course.corequisite,
+            level=matching_course.level or "Unknown",
+            school=matching_course.school or "Unknown",
+            department=matching_course.school,
             title=matching_course.title,
-            credits=int(matching_course.credits) if matching_course.credits else None,
-            term=matching_course.term,  # Use term from registrar response
+            credits=int(matching_course.credits) if matching_course.credits is not None else None,
+            term=matching_course.term,
         )
 
         async with self.uow:
@@ -555,23 +490,9 @@ class StudentCourseService:
         student_sub: str,
         schedule_response: ScheduleResponse,
     ) -> schemas.RegistrarSyncResponse:
-        # Get semesters to determine current term
-        semesters: list[SemesterOption] = await self._registrar.list_semesters()
-        current_term_value = self._determine_current_semester(
-            semesters=semesters, current_date=datetime.now()
-        )
-
-        if current_term_value is None:
-            raise SemesterResolutionError("Unable to determine current registrar semester.")
-
-        # Get current term label
-        current_term_label = next(
-            (sem.label for sem in semesters if sem.value == current_term_value), None
-        )
-        if current_term_label is None:
-            raise SemesterResolutionError("Unable to resolve current registrar semester label.")
-
-        fallback_term_value = self._resolve_fallback_term_value(semesters, current_term_value)
+        active_term = await self._registrar.get_active_semester()
+        current_term_value = active_term.value
+        current_term_label = active_term.label
 
         # Extract unique course codes from schedule (store only normalized full codes;
         # matching against existing registrations handles cross-list variants)
@@ -644,7 +565,6 @@ class StudentCourseService:
             course = await self._get_or_create_course(
                 course_code=course_code,
                 term_value=current_term_value,
-                fallback_term_value=fallback_term_value,
             )
             if course is not None:
                 resolved_courses.append(course)

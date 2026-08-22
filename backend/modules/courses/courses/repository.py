@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-from typing import Dict, List, Sequence
 from datetime import datetime, timezone
+from typing import Dict, List, Sequence
 
-from sqlalchemy import case, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
-
+from backend.modules.courses.courses import schemas
 from backend.modules.courses.models.grade_report import (
     Course,
     CourseItem,
     StudentCourse,
     StudentSchedule,
 )
-from backend.modules.courses.courses import schemas
+from sqlalchemy import case, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 
 class CourseRepository:
@@ -24,6 +23,11 @@ class CourseRepository:
 
     async def find_course_by_registrar_id(self, registrar_id: int) -> Course | None:
         stmt = select(Course).where(Course.registrar_id == registrar_id)
+        result = await self.db_session.execute(stmt)
+        return result.scalars().first()
+
+    async def find_course_by_catalog_id(self, catalog_id: str) -> Course | None:
+        stmt = select(Course).where(Course.catalog_id == catalog_id)
         result = await self.db_session.execute(stmt)
         return result.scalars().first()
 

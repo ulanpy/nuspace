@@ -11,7 +11,9 @@ from pydantic import BaseModel, Field
 
 
 class CourseCreate(BaseModel):
-    registrar_id: int
+    registrar_id: int | None = None
+    catalog_id: str | None = None
+    catalog_term_id: str | None = None
     course_code: str
     pre_req: str | None = None
     anti_req: str | None = None
@@ -27,7 +29,9 @@ class CourseCreate(BaseModel):
 
 class BaseCourseSchema(BaseModel):
     id: int
-    registrar_id: int
+    registrar_id: int | None
+    catalog_id: str | None
+    catalog_term_id: str | None
     course_code: str
     pre_req: str | None
     anti_req: str | None
@@ -186,4 +190,3 @@ class GoogleCalendarExportResponse(BaseModel):
     missing_dates: List[str] = []
     lookup_errors: List[str] = []
     google_errors: List[str] = []
-

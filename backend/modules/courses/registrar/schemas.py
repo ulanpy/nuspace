@@ -1,4 +1,5 @@
 from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -31,6 +32,7 @@ class ScheduleResponse(BaseModel):
     data: List[List[UserScheduleItem]]
     preferences: SchedulePreferences
 
+
 class SemesterOption(BaseModel):
     label: str
     value: str
@@ -53,6 +55,22 @@ class CourseSummary(BaseModel):
     priority_2: Optional[str] = None
     priority_3: Optional[str] = None
     priority_4: Optional[str] = None
+
+
+class CatalogCourse(BaseModel):
+    """A term-specific offering from the Meilisearch schedule catalog."""
+
+    catalog_id: str
+    course_code: str
+    term: str
+    term_id: str
+    title: str | None = None
+    school: str | None = None
+    level: str | None = None
+    credits: float | None = None
+    prerequisite: str | None = None
+    corequisite: str | None = None
+    antirequisite: str | None = None
 
 
 class CourseSearchResponse(BaseModel):

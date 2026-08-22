@@ -25,6 +25,7 @@ from backend.modules.courses.registrar.schedule_sync import (
     sync_schedule_catalog,
 )
 from backend.modules.courses.registrar.schemas import (
+    CatalogCourse,
     CourseScheduleEntry,
     CourseSearchRequest,
     CourseSearchResponse,
@@ -61,6 +62,7 @@ _COURSE_SUMMARY_ATTRIBUTES = (
     "priority_3",
     "priority_4",
 )
+
 
 @dataclass
 class CoursePriorityRecord:
@@ -124,16 +126,13 @@ class RegistrarService:
         schedule: ScheduleResponse = parse_schedule(raw)
         return schedule
 
-
     def parse_schedule_pdf(self, pdf_file: bytes) -> ScheduleResponse:
         return parse_personal_schedule_pdf(pdf_file)
-
 
     async def list_semesters(self) -> list[SemesterOption]:
         async with self.public_client_factory() as client:
             semesters = await client.get_semesters()
         return [SemesterOption(**semester) for semester in semesters]
-
 
     async def search_courses_pcc(self, request: CourseSearchRequest) -> CourseSearchResponse:
         """
@@ -205,6 +204,48 @@ class RegistrarService:
 
         cursor = request.page + 1 if has_next else None
         return CourseSearchResponse(items=items, cursor=cursor)
+
+    async def find_catalog_course(
+        self, *, course_code: str, term_value: str
+    ) -> CatalogCourse | None:
+        """Return the exact offering for one code in the active schedule catalog."""
+        if not course_code or not self.meilisearch_client:
+            return None
+
+        result = await meilisearch_utils.get(
+            client=self.meilisearch_client,
+            storage_name=self.schedule_index_uid,
+            keyword=course_code,
+            page=1,
+            size=20,
+        )
+        for hit in result.get("hits", []):
+            if not self._matches_term(hit, term_value):
+                continue
+            if not self.course_codes_match(hit.get("course_code"), course_code):
+                continue
+            catalog_id = hit.get("id")
+            if not catalog_id:
+                continue
+            credits = hit.get("credits_us")
+            try:
+                parsed_credits = float(credits) if credits not in (None, "") else None
+            except (TypeError, ValueError):
+                parsed_credits = None
+            return CatalogCourse(
+                catalog_id=str(catalog_id),
+                course_code=hit.get("course_code") or course_code,
+                term=hit.get("term") or "",
+                term_id=str(hit.get("term_id") or term_value),
+                title=hit.get("title"),
+                school=hit.get("school"),
+                level=hit.get("level"),
+                credits=parsed_credits,
+                prerequisite=hit.get("prerequisite"),
+                corequisite=hit.get("corequisite"),
+                antirequisite=hit.get("antirequisite"),
+            )
+        return None
 
     async def get_course_schedule(
         self,
