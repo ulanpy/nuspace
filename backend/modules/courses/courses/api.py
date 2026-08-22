@@ -54,7 +54,7 @@ async def sync_courses_from_registrar(
     try:
         student_sub = user[0].get("sub")
         student_username = (
-            user[0].get("email").split("@")[0] if not config.IS_DEBUG else "ulan.sharipov"
+            user[0].get("email").split("@")[0] if not config.IS_DEBUG else "bauyrzhan.kizatov"
         )
         sync_result = await service.sync_courses_from_registrar(
             student_sub=student_sub,

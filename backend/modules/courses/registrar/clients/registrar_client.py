@@ -1,16 +1,14 @@
 import json
-from typing import Any
-import time
 import re
+import time
+from typing import Any
 
 import httpx
-from httpx import Cookies
-
 from backend.modules.courses.registrar.http import (
     ensure_registrar_response,
     registrar_unavailable_from_request_error,
 )
-
+from httpx import Cookies
 
 HOST = "https://registrar.nu.edu.kz"
 LOGIN_PATH = "/index.php"
@@ -85,10 +83,11 @@ class RegistrarClient:
 
         Known keys:
           - current: published/active personal timetable for the term
-          - reg: registration-period timetable tab (often empty outside add/drop)
+          - reg: registration timetable tab
 
-        Important: access[type] == 1 means the tab is *available*, not that it
-        contains rows. Prefer `current` for sync; use `reg` only as fallback.
+        ``access[type] == 1`` means only that the tab can be requested. It
+        does not indicate a registration window or guarantee that the tab has
+        rows; both ``current`` and ``reg`` can be available at once.
         """
         client = await self._ensure_client()
         try:
@@ -131,32 +130,64 @@ class RegistrarClient:
         ensure_registrar_response(response)
         return response.json()
 
+    async def _get_student_schedule_table(self, schedule_type: str) -> Any:
+        """Fetch Registrar's rendered schedule table, including Online classes."""
+        client = await self._ensure_client()
+        try:
+            response = await client.get(
+                SCHEDULE_JSON_PATH,
+                params={
+                    "_dc": str(int(time.time() * 1000)),
+                    "method": "drawStudentSchedule",
+                    "type": schedule_type,
+                },
+            )
+        except httpx.RequestError as exc:
+            raise registrar_unavailable_from_request_error(exc) from exc
+        ensure_registrar_response(response)
+        try:
+            return response.json()
+        except json.JSONDecodeError:
+            return response.text
+
     async def fetch_schedule(self, username: str, password: str) -> dict[str, Any]:
         """
         Fetch personal timetable.
 
         Strategy:
-          1. Always try `current` first (live weekly schedule).
-          2. If empty and registration tab is available, try `reg`.
-          3. Return the first non-empty payload (or the empty `current` response).
+          1. During registration/add-drop, a non-empty ``reg`` payload is the
+             upcoming/current term while ``current`` can still be the prior term.
+          2. Outside that window ``reg`` is empty even when its tab is available,
+             so fall back to ``current``.
+          3. Fetch ``drawStudentSchedule`` for the selected type as well. Its
+             rendered table contains TBA/Online classes omitted by getTimetable.
+          4. Access flags are request guards only; payload row count chooses the
+             schedule type.
         """
         await self.login(username=username, password=password)
         access = await self._get_schedule_access()
 
-        primary = await self._get_schedule("current")
-        if self._schedule_entry_count(primary) > 0:
-            return primary
-
-        # `reg` is available during registration windows but is frequently empty
-        # mid-term; only use it when current has nothing.
+        # A non-empty registration view wins during registration/add-drop.
         if access.get("reg") == 1:
             registration = await self._get_schedule("reg")
             if self._schedule_entry_count(registration) > 0:
-                return registration
+                schedule_type = "reg"
+                primary = registration
+            else:
+                schedule_type = "current"
+                primary = await self._get_schedule(schedule_type)
+        else:
+            schedule_type = "current"
+            primary = await self._get_schedule(schedule_type)
 
-        return primary
+        table = await self._get_student_schedule_table(schedule_type)
+        if isinstance(primary, dict):
+            return {**primary, "student_schedule_table": table}
+        return {"data": primary, "student_schedule_table": table}
 
-    async def fetch_unofficial_transcript_raw(self, username: str, password: str) -> tuple[str, Any]:
+    async def fetch_unofficial_transcript_raw(
+        self, username: str, password: str
+    ) -> tuple[str, Any]:
         """
         Fetch unofficial transcript payload directly from registrar.
         Returns tuple of (content_type, payload) where payload is JSON (dict)
@@ -205,7 +236,11 @@ class RegistrarClient:
             pass
 
         if text:
-            m = re.search(r'(?:href|src)="([^"]*transcriptRenderDocumentPDF[^"]+)"', text, re.IGNORECASE)
+            m = re.search(
+                r'(?:href|src)="([^"]*transcriptRenderDocumentPDF[^"]+)"',
+                text,
+                re.IGNORECASE,
+            )
             if m:
                 url = m.group(1)
                 # Support both absolute and relative links.

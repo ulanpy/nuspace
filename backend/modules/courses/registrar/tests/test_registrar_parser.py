@@ -1,8 +1,8 @@
+import pytest
 from backend.modules.courses.registrar.parsers.registrar_parser import (
     _parse_personal_schedule_text,
     parse_schedule,
 )
-import pytest
 
 
 def build_entry(header: str) -> list[dict[str, str]]:
@@ -75,6 +75,37 @@ def test_online_classes_added_to_preferences() -> None:
     assert "CSCI 299" in schedule.preferences.classes
     assert "MATH 299" in schedule.preferences.classes
     assert all(item.course_code != "CSCI 299" for day in schedule.data for item in day)
+
+
+def test_online_table_row_with_blank_weekdays_is_added_to_preferences() -> None:
+    data = [
+        {
+            "TIME": "11:00 PM 11:59 PM TBA BIOL 490 Honors Thesis Research",
+            "MONDAY": "",
+            "TUESDAY": "",
+            "WEDNESDAY": "",
+            "THURSDAY": "",
+            "FRIDAY": "",
+            "SATURDAY": "",
+            "SUNDAY": "",
+        }
+    ]
+
+    schedule = parse_schedule(data)
+
+    assert schedule.preferences.classes == ["BIOL 490"]
+    assert all(not day for day in schedule.data)
+
+
+def test_rendered_student_schedule_adds_online_course_to_preferences() -> None:
+    data = {
+        "data": [],
+        "student_schedule_table": "Online classes<br>BIOL 490 Honors Thesis Research",
+    }
+
+    schedule = parse_schedule(data)
+
+    assert schedule.preferences.classes == ["BIOL 490"]
 
 
 def test_personal_schedule_pdf_text_keeps_online_classes_as_courses() -> None:

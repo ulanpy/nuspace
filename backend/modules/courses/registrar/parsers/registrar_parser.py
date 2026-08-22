@@ -201,11 +201,24 @@ def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
             week[index].append(item)
             add_class_preference(item["course_code"])
 
+        # Registrar's ``reg`` payload represents Online classes as ordinary
+        # table rows: their weekday cells are blank and their course label is
+        # stored in another column (currently ``TIME``). Scan every cell so
+        # those TBA/online courses reach the registered-course sync without
+        # inventing a calendar slot for them.
+        for value in entry.values():
+            parse_online_classes(value)
+
         for key, value in entry.items():
             if "ONLINE" in str(key).upper() and value:
                 parse_online_classes(value)
 
     scan_online_sections(data)
+    if isinstance(data, dict) and "student_schedule_table" in data:
+        # drawStudentSchedule is the rendered full schedule table. Unlike
+        # getTimetable, it includes TBA/Online classes; extract their codes for
+        # registered-course sync without treating them as timed calendar items.
+        parse_online_classes(data["student_schedule_table"])
 
     color_cycle = (color for color in COLORS)
     for course_code in preferences["classes"]:
