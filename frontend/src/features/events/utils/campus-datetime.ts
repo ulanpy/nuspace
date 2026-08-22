@@ -6,6 +6,43 @@ export const CAMPUS_UTC_OFFSET = "+05:00";
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
+export type EventTimePreset = "upcoming" | "today" | "week" | "month";
+
+/**
+ * Build the active range for an events-list preset in campus time and return
+ * UTC instants for the API. The lower bound is the current client instant;
+ * the upper bound is exclusive so adjacent ranges never overlap.
+ */
+export function getEventTimeRange(preset: EventTimePreset): {
+  from_datetime: string;
+  to_datetime?: string;
+} {
+  const now = new Date();
+  if (preset === "upcoming") return { from_datetime: now.toISOString() };
+
+  const campusNow = new Date(now.getTime() + 5 * 60 * 60 * 1000);
+  const year = campusNow.getUTCFullYear();
+  const month = campusNow.getUTCMonth();
+  const day = campusNow.getUTCDate();
+  const campusWeekday = campusNow.getUTCDay();
+
+  let endYear = year;
+  let endMonth = month;
+  let endDay = day + 1;
+  if (preset === "week") {
+    endDay = day + (((8 - campusWeekday) % 7) || 7);
+  } else if (preset === "month") {
+    endMonth += 1;
+    endDay = 1;
+  }
+
+  const campusMidnightUtc = Date.UTC(endYear, endMonth, endDay) - 5 * 60 * 60 * 1000;
+  return {
+    from_datetime: now.toISOString(),
+    to_datetime: new Date(campusMidnightUtc).toISOString(),
+  };
+}
+
 /**
  * Build an ISO-8601 string for a campus wall-clock date/time (form fields).
  * Example: 2026-08-29 19:00 → "2026-08-29T19:00:00+05:00"

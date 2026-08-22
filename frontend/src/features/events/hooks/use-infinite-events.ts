@@ -1,12 +1,10 @@
 import { useInfiniteScroll } from '@/hooks/use-infinite-scroll';
 import { Event } from '@/features/shared/campus/types';
 import * as Routes from '@/data/routes';
-import { TimeFilter } from '@/features/events/api/events-api';
 
 export type UseInfiniteEventsParams = {
-  time_filter?: TimeFilter;
-  start_date?: string;
-  end_date?: string;
+  from_datetime?: string;
+  to_datetime?: string;
   registration_policy?: string | null;
   event_type?: string | null;
   event_status?: string | null;
@@ -17,9 +15,8 @@ export type UseInfiniteEventsParams = {
 
 export function useInfiniteEvents(params: UseInfiniteEventsParams = {}) {
   const {
-    time_filter,
-    start_date,
-    end_date,
+    from_datetime,
+    to_datetime,
     registration_policy,
     event_type,
     event_status = "approved",
@@ -34,9 +31,8 @@ export function useInfiniteEvents(params: UseInfiniteEventsParams = {}) {
     size,
     keyword,
     additionalParams: {
-      time_filter,
-      start_date,
-      end_date,
+      from_datetime,
+      to_datetime,
       registration_policy,
       event_type,
       event_status,

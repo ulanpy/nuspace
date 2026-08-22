@@ -1,11 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { campuscurrentAPI, TimeFilter } from '@/features/events/api/events-api';
+import { campuscurrentAPI } from '@/features/events/api/events-api';
 import { useState } from "react";
 
 export type UseEventsParams = {
-  time_filter?: TimeFilter;
-  start_date?: string;
-  end_date?: string;
+  from_datetime?: string;
+  to_datetime?: string;
   registration_policy?: string | null;
   event_type?: string | null;
   event_status?: string | null;

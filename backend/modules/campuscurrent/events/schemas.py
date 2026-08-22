@@ -1,8 +1,8 @@
-from datetime import date, datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from backend.common.datetime_utils import almaty_to_utc
 from backend.common.schemas import ResourcePermissions, ShortUserResponse
@@ -14,15 +14,6 @@ from backend.modules.campuscurrent.models import (
     RegistrationPolicy,
 )
 from backend.modules.media.schemas import MediaResponse
-
-
-class TimeFilter(str, Enum):
-    """Enum for predefined time filters in event queries."""
-
-    UPCOMING = "upcoming"
-    TODAY = "today"
-    WEEK = "week"
-    MONTH = "month"
 
 
 class EventCreateRequest(BaseModel):
@@ -260,14 +251,13 @@ class EventFilter(BaseModel):
     )
     event_type: Optional[EventType] = Field(default=None, description="Filter by event type")
     event_status: Optional[EventStatus] = Field(default=None, description="Filter by event status")
-    time_filter: Optional[TimeFilter] = Field(
-        default=None, description="Predefined time filter: upcoming, today, week, month"
+    from_datetime: Optional[datetime] = Field(
+        default=None,
+        description="Inclusive ISO-8601 range start with an explicit timezone, normalized to UTC",
     )
-    start_date: Optional[date] = Field(
-        default=None, description="Start date for filtering events (format: YYYY-MM-DD)"
-    )
-    end_date: Optional[date] = Field(
-        default=None, description="End date for filtering events (format: YYYY-MM-DD)"
+    to_datetime: Optional[datetime] = Field(
+        default=None,
+        description="Exclusive ISO-8601 range end with an explicit timezone, normalized to UTC",
     )
     creator_sub: Optional[str] = Field(
         default=None, description="Filter by event creator. Use 'me' for current user's events"
@@ -275,10 +265,21 @@ class EventFilter(BaseModel):
     keyword: Optional[str] = Field(
         default=None, description="Search keyword for event name or description"
     )
-    sort_by_display_datetime: bool = Field(
-        default=False,
-        description="Sort recruitment by deadline and other events by start time",
-    )
+
+    @field_validator("from_datetime", "to_datetime")
+    @classmethod
+    def validate_range_datetime(cls, value: datetime | None) -> datetime | None:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            raise ValueError("Range datetimes must include an explicit timezone")
+        return value.astimezone(timezone.utc)
+
+    @model_validator(mode="after")
+    def validate_range(self) -> "EventFilter":
+        if self.from_datetime and self.to_datetime and self.from_datetime >= self.to_datetime:
+            raise ValueError("from_datetime must be before to_datetime")
+        return self
 
 
 class ListEventResponse(BaseModel):

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Calendar, Plus, Users, X } from "lucide-react";
 import MotionWrapper from "@/components/shared/motion-wrapper";
 import { EventCard, EventCardSkeleton } from "@/features/events/components/event-card";
@@ -9,7 +9,7 @@ import { Event } from "@/features/shared/campus/types";
 import { PageContainer } from "@/components/shared/page-container";
 import { PageHeader } from "@/components/shared/page-header";
 import { EventModal } from "@/features/events/components/event-modal";
-import { TimeFilter } from "@/features/events/api/events-api";
+import { EventTimePreset, getEventTimeRange } from "@/features/events/utils/campus-datetime";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -20,7 +20,7 @@ import { useAuthGate } from "@/hooks/use-auth-gate";
 import { AuthWallModal } from "@/components/molecules/auth-wall-modal";
 import { cn } from "@/lib/utils";
 
-const filterOptions: { value: TimeFilter; label: string; shortLabel: string }[] = [
+const filterOptions: { value: EventTimePreset; label: string; shortLabel: string }[] = [
   { value: "upcoming", label: "Upcoming", shortLabel: "All" },
   { value: "today", label: "Today", shortLabel: "Today" },
   { value: "week", label: "This Week", shortLabel: "Week" },
@@ -28,7 +28,7 @@ const filterOptions: { value: TimeFilter; label: string; shortLabel: string }[] 
 ];
 
 const emptyCopy = (
-  filterType: TimeFilter,
+  filterType: EventTimePreset,
   eventTypeFilter: string | null,
 ): { title: string; description: string } => {
   if (eventTypeFilter === "recruitment") {
@@ -81,7 +81,7 @@ const emptyCopy = (
 };
 
 const renderEmptyEvents =
-  (filterType: TimeFilter, eventTypeFilter: string | null, clearFilters: () => void) =>
+  (filterType: EventTimePreset, eventTypeFilter: string | null, clearFilters: () => void) =>
   () => {
     const { title, description } = emptyCopy(filterType, eventTypeFilter);
     const hasActiveFilters = Boolean(eventTypeFilter) || filterType !== "upcoming";
@@ -105,9 +105,10 @@ const renderEmptyEvents =
 export default function Events() {
   const { user } = useUser();
   const { requireAuth, isModalOpen, closeModal } = useAuthGate();
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>("upcoming");
+  const [timeFilter, setTimeFilter] = useState<EventTimePreset>("upcoming");
   const [eventTypeFilter, setEventTypeFilter] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const timeRange = useMemo(() => getEventTimeRange(timeFilter), [timeFilter]);
 
   const clearFilters = () => {
     setTimeFilter("upcoming");
@@ -225,7 +226,7 @@ export default function Events() {
             apiEndpoint="/events"
             size={12}
             additionalParams={{
-              time_filter: timeFilter,
+              ...timeRange,
               event_status: "approved",
               event_type: eventTypeFilter,
             }}

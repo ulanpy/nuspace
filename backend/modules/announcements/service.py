@@ -1,5 +1,6 @@
 import logging
 import re
+from datetime import datetime, timezone
 from typing import Optional
 
 import httpx
@@ -48,12 +49,13 @@ class AnnouncementsService:
         NOTE: We intentionally run these sequentially because SQLAlchemy AsyncSession is
         not safe to use concurrently across tasks.
         """
-        event_filter = event_schemas.EventFilter(
-            page=events_page,
-            size=events_size,
-            event_status=event_schemas.EventStatus.approved,
-            time_filter=event_schemas.TimeFilter.UPCOMING,
-            sort_by_display_datetime=True,
+        event_filter = event_schemas.EventFilter.model_validate(
+            {
+                "page": events_page,
+                "size": events_size,
+                "event_status": event_schemas.EventStatus.approved,
+                "from_datetime": datetime.now(timezone.utc),
+            }
         )
         events = await self.event_catalog.get_events(user=user, event_filter=event_filter)
         return schemas.AnnouncementsBundleResponse(events=events)

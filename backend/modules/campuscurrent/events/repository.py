@@ -4,12 +4,12 @@ from functools import lru_cache
 from typing import List, Tuple
 
 from httpx import AsyncClient
-from sqlalchemy import and_, bindparam, case, func, literal, select
+from sqlalchemy import and_, bindparam, case, func, literal, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.common.utils import meilisearch
 from backend.modules.auth.models import User
-from backend.modules.campuscurrent.events import schemas, utils
+from backend.modules.campuscurrent.events import schemas
 from backend.modules.campuscurrent.models import (
     Event,
     EventAccessInvite,
@@ -42,11 +42,10 @@ class _EventScreenQueryShape:
     has_event_type: bool
     has_event_status: bool
     has_creator_sub: bool
-    has_start_date: bool
-    has_end_date: bool
+    has_from_datetime: bool
+    has_to_datetime: bool
     has_viewer: bool
     is_keyword_search: bool
-    sort_by_display_datetime: bool
 
 
 def _build_event_screen_statement(
@@ -55,21 +54,16 @@ def _build_event_screen_statement(
     viewer_sub: str | None | object,
     offset: int | object | None,
     limit: int | object | None,
-    sort_by_display_datetime: bool = False,
 ):
     """Build the shared one-round-trip statement from already-shaped filters."""
-    sort_datetime = (
-        case(
-            (Event.type == EventType.recruitment, Event.end_datetime),
-            else_=Event.start_datetime,
-        )
-        if sort_by_display_datetime
-        else Event.start_datetime
+    sort_datetime = case(
+        (Event.type == EventType.recruitment, Event.end_datetime),
+        else_=Event.start_datetime,
     )
     page_query = (
         select(Event, func.count().over().label("total"))
         .where(*filters)
-        .order_by(sort_datetime.asc())
+        .order_by(sort_datetime.asc(), Event.id.asc())
     )
     if offset is not None and limit is not None:
         page_query = page_query.offset(offset).limit(limit)
@@ -134,7 +128,9 @@ def _build_event_screen_statement(
         stmt = stmt.outerjoin(going_events, going_events.c.event_id == Event.id).outerjoin(
             viewer_events, viewer_events.c.event_id == Event.id
         )
-    return stmt.order_by(sort_datetime.asc(), Media.media_order.asc(), Media.id.asc())
+    return stmt.order_by(
+        sort_datetime.asc(), Event.id.asc(), Media.media_order.asc(), Media.id.asc()
+    )
 
 
 @lru_cache(maxsize=128)
@@ -143,8 +139,7 @@ def _cached_event_screen_statement(shape: _EventScreenQueryShape):
 
     SQLAlchemy statements are immutable.  Reusing this graph avoids allocating
     CTEs, joins and bind objects for every request while keeping actual values
-    as database parameters.  Time filters stay uncached because their bounds
-    are deliberately calculated from the current time for each request.
+    as database parameters.
     """
     filters = []
     if shape.has_registration_policy:
@@ -158,18 +153,22 @@ def _cached_event_screen_statement(shape: _EventScreenQueryShape):
     if shape.has_creator_sub:
         filters.append(Event.creator_sub == bindparam("creator_sub"))
 
-    campus_start_date = func.date(func.timezone("Asia/Almaty", Event.start_datetime))
-    if shape.has_start_date:
-        filters.append(campus_start_date >= bindparam("start_date"))
-    if shape.has_end_date:
-        filters.append(campus_start_date <= bindparam("end_date"))
+    if shape.has_from_datetime or shape.has_to_datetime:
+        recruitment_filters = [Event.type == EventType.recruitment]
+        event_filters = [Event.type != EventType.recruitment]
+        if shape.has_from_datetime:
+            recruitment_filters.append(Event.end_datetime > bindparam("from_datetime"))
+            event_filters.append(Event.end_datetime > bindparam("from_datetime"))
+        if shape.has_to_datetime:
+            recruitment_filters.append(Event.end_datetime < bindparam("to_datetime"))
+            event_filters.append(Event.start_datetime < bindparam("to_datetime"))
+        filters.append(or_(and_(*recruitment_filters), and_(*event_filters)))
 
     return _build_event_screen_statement(
         filters,
         viewer_sub=bindparam("viewer_sub") if shape.has_viewer else None,
         offset=None if shape.is_keyword_search else bindparam("offset"),
         limit=None if shape.is_keyword_search else bindparam("limit"),
-        sort_by_display_datetime=shape.sort_by_display_datetime,
     )
 
 
@@ -280,51 +279,38 @@ class EventRepository:
                 return [], meili_result.get("estimatedTotalHits", 0), True
 
         page = max(1, event_filter.page or 1)
-        execute_parameters: dict[str, object] | None = None
-        if event_filter.time_filter:
-            # Bounds for these filters depend on the current instant, so they
-            # intentionally remain per-request expressions.
-            stmt = _build_event_screen_statement(
-                self._build_event_filters(event_filter, creator_sub, event_ids),
-                viewer_sub=viewer_sub,
-                offset=None if event_filter.keyword else (page - 1) * event_filter.size,
-                limit=None if event_filter.keyword else event_filter.size,
-                sort_by_display_datetime=event_filter.sort_by_display_datetime,
-            )
-        else:
-            shape = _EventScreenQueryShape(
-                has_registration_policy=event_filter.registration_policy is not None,
-                has_event_ids=event_ids is not None,
-                has_event_type=event_filter.event_type is not None,
-                has_event_status=event_filter.event_status is not None,
-                has_creator_sub=creator_sub is not None,
-                has_start_date=event_filter.start_date is not None,
-                has_end_date=event_filter.end_date is not None,
-                has_viewer=viewer_sub is not None,
-                is_keyword_search=event_filter.keyword is not None,
-                sort_by_display_datetime=event_filter.sort_by_display_datetime,
-            )
-            execute_parameters = {}
-            if shape.has_registration_policy:
-                execute_parameters["registration_policy"] = event_filter.registration_policy
-            if shape.has_event_ids:
-                execute_parameters["event_ids"] = event_ids
-            if shape.has_event_type:
-                execute_parameters["event_type"] = event_filter.event_type
-            if shape.has_event_status:
-                execute_parameters["event_status"] = event_filter.event_status
-            if shape.has_creator_sub:
-                execute_parameters["creator_sub"] = creator_sub
-            if shape.has_start_date:
-                execute_parameters["start_date"] = event_filter.start_date
-            if shape.has_end_date:
-                execute_parameters["end_date"] = event_filter.end_date
-            if shape.has_viewer:
-                execute_parameters["viewer_sub"] = viewer_sub
-            if not shape.is_keyword_search:
-                execute_parameters["offset"] = (page - 1) * event_filter.size
-                execute_parameters["limit"] = event_filter.size
-            stmt = _cached_event_screen_statement(shape)
+        shape = _EventScreenQueryShape(
+            has_registration_policy=event_filter.registration_policy is not None,
+            has_event_ids=event_ids is not None,
+            has_event_type=event_filter.event_type is not None,
+            has_event_status=event_filter.event_status is not None,
+            has_creator_sub=creator_sub is not None,
+            has_from_datetime=event_filter.from_datetime is not None,
+            has_to_datetime=event_filter.to_datetime is not None,
+            has_viewer=viewer_sub is not None,
+            is_keyword_search=event_filter.keyword is not None,
+        )
+        execute_parameters: dict[str, object] = {}
+        if shape.has_registration_policy:
+            execute_parameters["registration_policy"] = event_filter.registration_policy
+        if shape.has_event_ids:
+            execute_parameters["event_ids"] = event_ids
+        if shape.has_event_type:
+            execute_parameters["event_type"] = event_filter.event_type
+        if shape.has_event_status:
+            execute_parameters["event_status"] = event_filter.event_status
+        if shape.has_creator_sub:
+            execute_parameters["creator_sub"] = creator_sub
+        if shape.has_from_datetime:
+            execute_parameters["from_datetime"] = event_filter.from_datetime
+        if shape.has_to_datetime:
+            execute_parameters["to_datetime"] = event_filter.to_datetime
+        if shape.has_viewer:
+            execute_parameters["viewer_sub"] = viewer_sub
+        if not shape.is_keyword_search:
+            execute_parameters["offset"] = (page - 1) * event_filter.size
+            execute_parameters["limit"] = event_filter.size
+        stmt = _cached_event_screen_statement(shape)
 
         result = await self.db_session.execute(stmt, execute_parameters)
         keyword_total = meili_result.get("estimatedTotalHits", 0) if event_filter.keyword else None
@@ -361,36 +347,6 @@ class EventRepository:
                 item.media.append(media)
 
         return list(rows.values()), total or 0
-
-    @staticmethod
-    def _build_event_filters(
-        event_filter: schemas.EventFilter,
-        creator_sub: str | None,
-        event_ids: list[int] | None = None,
-    ) -> list:
-        filters = []
-        if event_filter.registration_policy:
-            filters.append(Event.policy == event_filter.registration_policy)
-        if event_ids is not None:
-            filters.append(Event.id.in_(event_ids))
-        if event_filter.event_type:
-            filters.append(Event.type == event_filter.event_type)
-        if event_filter.event_status:
-            filters.append(Event.status == event_filter.event_status)
-        if creator_sub:
-            filters.append(Event.creator_sub == creator_sub)
-
-        if event_filter.time_filter:
-            filters.extend(
-                utils.build_time_filter_expressions(time_filter=event_filter.time_filter)
-            )
-        else:
-            campus_start_date = func.date(func.timezone("Asia/Almaty", Event.start_datetime))
-            if event_filter.start_date:
-                filters.append(campus_start_date >= event_filter.start_date)
-            if event_filter.end_date:
-                filters.append(campus_start_date <= event_filter.end_date)
-        return filters
 
     async def list_media(
         self,

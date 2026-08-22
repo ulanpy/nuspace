@@ -12,13 +12,10 @@ import {
   EventGoingResponse,
 } from "@/features/shared/campus/types";
 
-export type TimeFilter = "upcoming" | "today" | "week" | "month";
-
 export const campuscurrentAPI = {
   getEventsQueryOptions: (params: {
-    time_filter?: TimeFilter;
-    start_date?: string;
-    end_date?: string;
+    from_datetime?: string;
+    to_datetime?: string;
     page?: number;
     size?: number;
     registration_policy?: string | null;
@@ -32,13 +29,8 @@ export const campuscurrentAPI = {
     // Access policy: by default we show approved events in the public listing
     queryParams.set("event_status", params.event_status ?? "approved");
 
-    // Use time_filter if provided, otherwise fall back to start_date/end_date
-    if (params.time_filter) {
-      queryParams.set("time_filter", params.time_filter);
-    } else {
-      if (params.start_date) queryParams.set("start_date", params.start_date);
-      if (params.end_date) queryParams.set("end_date", params.end_date);
-    }
+    if (params.from_datetime) queryParams.set("from_datetime", params.from_datetime);
+    if (params.to_datetime) queryParams.set("to_datetime", params.to_datetime);
 
     // Pagination
     queryParams.set("page", String(params.page ?? 1));
