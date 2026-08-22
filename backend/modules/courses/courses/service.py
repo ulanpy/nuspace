@@ -432,9 +432,12 @@ class StudentCourseService:
             co_req=matching_course.corequisite,
             level=matching_course.level or "Unknown",
             school=matching_course.school or "Unknown",
-            department=matching_course.school,
             title=matching_course.title,
-            credits=int(matching_course.credits) if matching_course.credits is not None else None,
+            credits=(
+                int(matching_course.credits_ects)
+                if matching_course.credits_ects is not None
+                else None
+            ),
             term=matching_course.term,
         )
 

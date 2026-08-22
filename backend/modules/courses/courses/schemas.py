@@ -11,17 +11,14 @@ from pydantic import BaseModel, Field
 
 
 class CourseCreate(BaseModel):
-    registrar_id: int | None = None
-    catalog_id: str | None = None
-    catalog_term_id: str | None = None
+    catalog_id: str
+    catalog_term_id: str
     course_code: str
     pre_req: str | None = None
     anti_req: str | None = None
     co_req: str | None = None
     level: str
     school: str
-    description: str | None = None
-    department: str | None = None
     title: str | None = None
     credits: int | None = None
     term: str | None = None
@@ -29,17 +26,14 @@ class CourseCreate(BaseModel):
 
 class BaseCourseSchema(BaseModel):
     id: int
-    registrar_id: int | None
-    catalog_id: str | None
-    catalog_term_id: str | None
+    catalog_id: str
+    catalog_term_id: str
     course_code: str
     pre_req: str | None
     anti_req: str | None
     co_req: str | None
     level: str
     school: str
-    description: str | None
-    department: str | None
     title: str | None
     credits: int | None
     term: str | None

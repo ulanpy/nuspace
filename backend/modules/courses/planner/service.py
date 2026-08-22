@@ -324,7 +324,7 @@ class PlannerService:
             planner_repo = self.uow.get_repo(PlannerRepository)
             course = await planner_repo.add_course_to_planner_schedule(
                 schedule_id=schedule.id,
-                registrar_course_id=summary.registrar_id,
+                catalog_id=summary.catalog_id,
                 course_code=summary.course_code,
                 level=level,
                 school=summary.school or None,
@@ -534,7 +534,7 @@ class PlannerService:
             scheduled.append(
                 AutoBuildCourseResult(
                     course_id=course.id,
-                    registrar_course_id=course.registrar_course_id,
+                    catalog_id=course.catalog_id,
                     course_code=course.course_code,
                     selected_section_id=primary_section.id if primary_section else None,
                     selected_section_code=primary_section.section_code if primary_section else None,

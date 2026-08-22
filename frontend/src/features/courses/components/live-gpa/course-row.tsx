@@ -130,7 +130,7 @@ export function CourseRow({
   onSelect,
 }: CourseRowProps) {
   const { course, items } = registeredCourse;
-  const accent = getDepartmentAccent(course.department);
+  const accent = getDepartmentAccent(course.school);
   const pendingCount = items.filter((item) => !hasCompleteScore(item)).length;
 
   return (
@@ -166,7 +166,7 @@ export function CourseRow({
           )}
         </div>
         <p className="mt-1 truncate text-[12px] leading-none text-muted-foreground">
-          {course.title || course.department || "Course"}
+          {course.title || course.school || "Course"}
         </p>
       </div>
     </button>

@@ -21,11 +21,6 @@ class CourseRepository:
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    async def find_course_by_registrar_id(self, registrar_id: int) -> Course | None:
-        stmt = select(Course).where(Course.registrar_id == registrar_id)
-        result = await self.db_session.execute(stmt)
-        return result.scalars().first()
-
     async def find_course_by_catalog_id(self, catalog_id: str) -> Course | None:
         stmt = select(Course).where(Course.catalog_id == catalog_id)
         result = await self.db_session.execute(stmt)

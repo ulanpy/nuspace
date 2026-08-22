@@ -18,6 +18,30 @@ def _clean_header(cell: Any) -> str:
     return str(cell).replace("\xa0", " ").strip()
 
 
+def _header_token(value: str) -> str:
+    """Normalize PDF-extracted headers, including line-wrapped labels."""
+    return "".join(ch for ch in value.lower() if ch.isalnum())
+
+
+_CANONICAL_HEADERS = {
+    "school": "School",
+    "level": "Level",
+    "courseabbr": "Course Abbr",
+    "st": "S/T",
+    "coursetitle": "Course Title",
+    "crus": "Cr(US)",
+    "crects": "Cr(ECTS)",
+    "startdate": "Start date",
+    "enddate": "End date",
+    "days": "Days",
+    "time": "Time",
+    "enr": "Enr",
+    "cap": "Cap",
+    "faculty": "Faculty",
+    "room": "Room",
+}
+
+
 def _get_field(record: Dict[str, Any], *keys: str) -> Any:
     """
     Return the first non-empty value for the provided keys (case-sensitive),
@@ -38,7 +62,7 @@ def _find_header_row(rows: Sequence[Sequence[Any]]) -> tuple[int, List[str]]:
     target = "courseabbr"
     for idx, row in enumerate(rows[:120]):  # scan a generous number of rows across tables
         headers = [_clean_header(c) for c in row]
-        normalized = ["".join(ch for ch in h.lower() if ch.isalnum()) for h in headers]
+        normalized = [_header_token(header) for header in headers]
         if any(h == target for h in normalized):
             return idx, headers
     raise ValueError("Could not find header row containing 'Course Abbr'")
@@ -59,7 +83,9 @@ def _parse_rows(
     sections_by_course: Dict[str, list] = {}
 
     header_row_idx, headers = _find_header_row(rows)
-    header_map = {i: h for i, h in enumerate(headers)}
+    header_map = {
+        i: _CANONICAL_HEADERS.get(_header_token(header), header) for i, header in enumerate(headers)
+    }
 
     for row in rows[header_row_idx + 1 :]:
         if not any(row):
@@ -130,7 +156,9 @@ def _parse_rows(
     return list(courses.values())
 
 
-def parse_schedule_pdf(pdf_bytes: bytes, term_label: str | None = None, term_id: str | None = None) -> List[Dict[str, Any]]:
+def parse_schedule_pdf(
+    pdf_bytes: bytes, term_label: str | None = None, term_id: str | None = None
+) -> List[Dict[str, Any]]:
     """
     Parse the registrar schedule PDF into a list of course documents with embedded sections.
     """
@@ -147,4 +175,3 @@ def parse_schedule_pdf(pdf_bytes: bytes, term_label: str | None = None, term_id:
         raise ValueError("No tables found in schedule PDF")
 
     return _parse_rows(rows, term_label=term_label, term_id=term_id)
-

@@ -36,7 +36,7 @@ export function CourseWorkspace({
     );
   }
 
-  const accent = getDepartmentAccent(course.course.department);
+  const accent = getDepartmentAccent(course.course.school);
   const gpa = calculateCourseGPA(course.items);
   const grade = scoreToGrade(calculateCourseScore(course.items));
 

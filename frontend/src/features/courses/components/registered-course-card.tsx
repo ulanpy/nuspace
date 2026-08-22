@@ -18,7 +18,7 @@ import {
   getGPAColorClass,
 } from '../utils/grade-utils';
 import { RegisteredCourseItem } from './registered-course-item';
-import { BookOpen, Info, Plus, Share2, UsersRound, CircleSlash2, HelpCircle } from "lucide-react";
+import { BookOpen, Info, Plus, Share2, UsersRound, CircleSlash2 } from "lucide-react";
 
 interface RegisteredCourseCardProps {
   registeredCourse: RegisteredCourse;
@@ -47,7 +47,6 @@ export function RegisteredCourseCard({
 }: RegisteredCourseCardProps) {
   const [showAssignments, setShowAssignments] = useState(false);
   const [showClassAverageModal, setShowClassAverageModal] = useState(false);
-  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const { course } = registeredCourse;
   const courseScore = calculateCourseScore(registeredCourse.items);
   const courseGPA = calculateCourseGPA(registeredCourse.items);
@@ -93,7 +92,7 @@ export function RegisteredCourseCard({
   ];
 
   const infoLineParts = [courseDetails];
-  if (course.department) infoLineParts.push(course.department);
+  if (course.school) infoLineParts.push(course.school);
   if (course.level) infoLineParts.push(course.level);
   const infoLine = infoLineParts.filter(Boolean).join(" • ");
 
@@ -120,17 +119,6 @@ export function RegisteredCourseCard({
               <CardTitle className="text-base font-semibold leading-tight text-foreground">
                 {course.course_code}
               </CardTitle>
-              {course.description && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowDescriptionModal(true)}
-                  aria-label="Course description"
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </Button>
-              )}
               <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
                 {course.school && (
                   <Badge variant="outline" className="rounded-full border-border/60 bg-transparent">
@@ -138,7 +126,7 @@ export function RegisteredCourseCard({
                   </Badge>
                 )}
                 <Badge variant="outline" className="rounded-full border-border/60 bg-transparent">
-                  {credits} Cr
+                  {credits} ECTS
                 </Badge>
               </div>
             </div>
@@ -308,20 +296,6 @@ export function RegisteredCourseCard({
         </div>
       </Modal>
 
-      {course.description && (
-        <Modal
-          isOpen={showDescriptionModal}
-          onClose={() => setShowDescriptionModal(false)}
-          title="Course description"
-          className="max-w-lg"
-        >
-          <div className="space-y-2">
-            <p className="text-sm leading-6 text-muted-foreground whitespace-pre-line">
-              {course.description}
-            </p>
-          </div>
-        </Modal>
-      )}
     </Card>
   );
 }

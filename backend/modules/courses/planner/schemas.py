@@ -27,7 +27,7 @@ class PlannerSectionResponse(BaseModel):
 
 class PlannerCourseResponse(BaseModel):
     id: int
-    registrar_course_id: str
+    catalog_id: str
     course_code: str
     title: Optional[str]
     level: Optional[str]
@@ -106,7 +106,7 @@ class PlannerCourseSearchResponse(BaseModel):
 
 class AutoBuildCourseResult(BaseModel):
     course_id: int
-    registrar_course_id: str
+    catalog_id: str
     course_code: str
     selected_section_id: Optional[int]
     selected_section_code: Optional[str]
@@ -117,4 +117,3 @@ class PlannerAutoBuildResponse(BaseModel):
     scheduled: List[AutoBuildCourseResult]
     unscheduled_courses: List[str]
     message: str
-

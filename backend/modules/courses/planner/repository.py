@@ -2,16 +2,15 @@ from __future__ import annotations
 
 from typing import Dict, Iterable, List, Optional, Sequence
 
-from sqlalchemy import and_, delete, func, or_, select, update
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
-
 from backend.modules.courses.models.grade_report import (
     Course,
     PlannerSchedule,
     PlannerScheduleCourse,
     PlannerScheduleSection,
 )
+from sqlalchemy import and_, delete, func, or_, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 
 class PlannerRepository:
@@ -127,7 +126,7 @@ class PlannerRepository:
         for course in loaded.courses:
             new_course = PlannerScheduleCourse(
                 planner_schedule_id=new_schedule.id,
-                registrar_course_id=course.registrar_course_id,
+                catalog_id=course.catalog_id,
                 course_code=course.course_code,
                 level=course.level,
                 school=course.school,
@@ -178,7 +177,7 @@ class PlannerRepository:
     ) -> Dict[int, Dict[str, int]]:
         """
         Return how many students picked each section, aggregated by course_code + term.
-        Using course_code instead of registrar_course_id avoids mismatches between
+        Using course_code instead of catalog_id avoids mismatches between
         data sources (PCC IDs vs Meilisearch course codes).
         """
         if not course_ids:
@@ -251,7 +250,7 @@ class PlannerRepository:
         self,
         *,
         schedule_id: int,
-        registrar_course_id: str,
+        catalog_id: str,
         course_code: str,
         level: Optional[str],
         school: Optional[str],
@@ -261,7 +260,7 @@ class PlannerRepository:
     ) -> PlannerScheduleCourse:
         course = PlannerScheduleCourse(
             planner_schedule_id=schedule_id,
-            registrar_course_id=registrar_course_id,
+            catalog_id=catalog_id,
             course_code=course_code,
             level=level,
             school=school,

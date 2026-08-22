@@ -53,14 +53,8 @@ class Course(Base):
     """Term-specific course offering hydrated from the schedule catalog."""
 
     __tablename__ = "courses"
-    __table_args__ = (UniqueConstraint("registrar_id", name="uq_courses_registrar_id"),)
-
     id: Mapped[int] = mapped_column(primary_key=True)
-    # Legacy PCC identifier. New offerings are identified by the schedule catalog.
-    registrar_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
-    catalog_id: Mapped[str | None] = mapped_column(
-        String(128), nullable=True, unique=True, index=True
-    )
+    catalog_id: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True)
     catalog_term_id: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
     course_code: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     pre_req: Mapped[str] = mapped_column(String(2048), nullable=True)
@@ -68,8 +62,6 @@ class Course(Base):
     co_req: Mapped[str] = mapped_column(String(2048), nullable=True)
     level: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     school: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
-    description: Mapped[str] = mapped_column(String(4096), nullable=True)
-    department: Mapped[str] = mapped_column(String(512), nullable=True)
     title: Mapped[str] = mapped_column(String(512), nullable=True)
     credits: Mapped[int] = mapped_column(Integer, nullable=True)
     term: Mapped[str] = mapped_column(String(32), nullable=True, index=True)
@@ -250,7 +242,7 @@ class PlannerScheduleCourse(Base):
     planner_schedule_id: Mapped[int] = mapped_column(
         ForeignKey("planner_schedules.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    registrar_course_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    catalog_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     course_code: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     level: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     school: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)

@@ -51,15 +51,13 @@ export interface GradeDistribution {
 // ==== Live GPA / Courses types ====
 export interface BaseCourse {
   id: number;
-  registrar_id: number;
+  catalog_id: string;
   course_code: string;
   pre_req: string | null;
   anti_req: string | null;
   co_req: string | null;
   level: string;
   school: string;
-  description: string | null;
-  department: string | null;
   title: string | null;
   credits: number | null;
   term: string | null;
@@ -299,7 +297,7 @@ export interface PlannerSection {
 
 export interface PlannerCourse {
   id: number;
-  registrar_course_id: string;
+  catalog_id: string;
   course_code: string;
   title?: string | null;
   level?: string | null;
@@ -373,7 +371,7 @@ export interface PlannerSectionSelectionPayload {
 export interface PlannerAutoBuildResponse {
   scheduled: Array<{
     course_id: number;
-    registrar_course_id: string;
+    catalog_id: string;
     course_code: string;
     selected_section_id: number | null;
     selected_section_code: string | null;

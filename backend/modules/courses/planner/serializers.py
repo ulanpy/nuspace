@@ -7,12 +7,12 @@ from backend.modules.courses.models.grade_report import (
     PlannerScheduleCourse,
     PlannerScheduleSection,
 )
+from backend.modules.courses.planner.interfaces import CourseCatalogLookup
 from backend.modules.courses.planner.schemas import (
     PlannerCourseResponse,
     PlannerScheduleResponse,
     PlannerSectionResponse,
 )
-from backend.modules.courses.planner.interfaces import CourseCatalogLookup
 from backend.modules.courses.registrar.service import CoursePriorityRecord
 
 
@@ -60,7 +60,7 @@ class PlannerSerializer:
 
         return PlannerCourseResponse(
             id=course.id,
-            registrar_course_id=course.registrar_course_id,
+            catalog_id=course.catalog_id,
             course_code=course.course_code,
             title=(course.metadata_json or {}).get("title") or course.course_code,
             level=course.level or None,
@@ -101,4 +101,3 @@ class PlannerSerializer:
             is_selected=section.is_selected,
             selected_count=selected_count,
         )
-

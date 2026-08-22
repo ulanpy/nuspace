@@ -39,15 +39,13 @@ class SemesterOption(BaseModel):
 
 
 class CourseSummary(BaseModel):
-    registrar_id: str
+    catalog_id: str
     course_code: str
     pre_req: str
     anti_req: str
     co_req: str
     level: Optional[str] = None
     school: Optional[str] = None
-    description: Optional[str] = None
-    department: Optional[str] = None
     title: str
     credits: Optional[str] = None
     term: Optional[str] = None
@@ -67,7 +65,7 @@ class CatalogCourse(BaseModel):
     title: str | None = None
     school: str | None = None
     level: str | None = None
-    credits: float | None = None
+    credits_ects: float | None = None
     prerequisite: str | None = None
     corequisite: str | None = None
     antirequisite: str | None = None

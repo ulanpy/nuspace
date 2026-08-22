@@ -82,9 +82,9 @@ export function getCourseSummaryRows(
 
   return [
     { label: "Term", value: course.course.term || "—" },
-    { label: "Department", value: course.course.department || "—" },
+    { label: "School", value: course.course.school || "—" },
     { label: "Professor", value: professor || "Not in schedule" },
-    { label: "Credits", value: course.course.credits ? String(course.course.credits) : "—" },
+    { label: "ECTS", value: course.course.credits ? String(course.course.credits) : "—" },
     {
       label: "Assignments",
       value: pendingCount > 0 ? `${course.items.length} (${pendingCount} pending)` : String(course.items.length),

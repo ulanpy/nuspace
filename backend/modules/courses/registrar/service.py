@@ -5,11 +5,7 @@ from dataclasses import dataclass
 from typing import Dict, Sequence
 
 from backend.common.utils import meilisearch as meilisearch_utils
-from backend.modules.courses.registrar.clients.public_course_catalog import (
-    PublicCourseCatalogClient,
-)
 from backend.modules.courses.registrar.clients.registrar_client import RegistrarClient
-from backend.modules.courses.registrar.errors import RegistrarUnavailableError
 from backend.modules.courses.registrar.parsers.registrar_parser import (
     parse_personal_schedule_pdf,
     parse_schedule,
@@ -101,7 +97,6 @@ class RegistrarService:
     def __init__(
         self,
         client_factory=RegistrarClient,
-        public_client_factory=PublicCourseCatalogClient,
         *,
         meilisearch_client: AsyncClient | None = None,
         redis: Redis | None = None,
@@ -111,7 +106,6 @@ class RegistrarService:
         active_semester: SemesterOption | None = None,
     ) -> None:
         self.client_factory = client_factory
-        self.public_client_factory = public_client_factory
         self.meilisearch_client = meilisearch_client
         self.redis = redis
         self.storage_client = storage_client
@@ -128,30 +122,6 @@ class RegistrarService:
 
     def parse_schedule_pdf(self, pdf_file: bytes) -> ScheduleResponse:
         return parse_personal_schedule_pdf(pdf_file)
-
-    async def list_semesters(self) -> list[SemesterOption]:
-        async with self.public_client_factory() as client:
-            semesters = await client.get_semesters()
-        return [SemesterOption(**semester) for semester in semesters]
-
-    async def search_courses_pcc(self, request: CourseSearchRequest) -> CourseSearchResponse:
-        """
-        Search courses directly against the public course catalog (registrar live),
-        bypassing Meilisearch schedule index. Used by course sync as a reliable source.
-        """
-        try:
-            async with self.public_client_factory() as client:
-                data = await client.search(
-                    course_code=request.course_code,
-                    term=request.term or "",
-                    page=request.page,
-                )
-        except ValueError as exc:  # registrar returned non-JSON payload
-            raise HTTPException(status_code=502, detail=str(exc)) from exc
-        except RegistrarUnavailableError as exc:
-            raise HTTPException(status_code=502, detail=exc.detail) from exc
-
-        return CourseSearchResponse(**data)
 
     async def get_active_semester(self) -> SemesterOption:
         """Return the semester read from the schedule catalog's GCS metadata."""
@@ -227,11 +197,13 @@ class RegistrarService:
             catalog_id = hit.get("id")
             if not catalog_id:
                 continue
-            credits = hit.get("credits_us")
+            credits_ects = hit.get("credits_ects")
             try:
-                parsed_credits = float(credits) if credits not in (None, "") else None
+                parsed_credits_ects = (
+                    float(credits_ects) if credits_ects not in (None, "") else None
+                )
             except (TypeError, ValueError):
-                parsed_credits = None
+                parsed_credits_ects = None
             return CatalogCourse(
                 catalog_id=str(catalog_id),
                 course_code=hit.get("course_code") or course_code,
@@ -240,7 +212,7 @@ class RegistrarService:
                 title=hit.get("title"),
                 school=hit.get("school"),
                 level=hit.get("level"),
-                credits=parsed_credits,
+                credits_ects=parsed_credits_ects,
                 prerequisite=hit.get("prerequisite"),
                 corequisite=hit.get("corequisite"),
                 antirequisite=hit.get("antirequisite"),
@@ -440,16 +412,11 @@ class RegistrarService:
         term_label = (hit.get("term") or "").strip()
         if not term_label or term_label.lower() == "unknown term":
             term_label = term_label_fallback or ""
-        department = hit.get("department")
-        if not department:
-            department = hit.get("school") or "General"
         return {
-            "registrar_id": course_code,
+            "catalog_id": str(hit.get("id") or ""),
             "course_code": course_code,
             "level": hit.get("level") or None,
             "school": hit.get("school") or None,
-            "description": None,
-            "department": department,
             "title": hit.get("title") or "",
             "credits": credits_str,
             "term": term_label or "",

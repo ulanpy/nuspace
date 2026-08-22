@@ -1,20 +1,14 @@
-from backend.modules.courses.courses.service import StudentCourseService
-from backend.modules.courses.registrar.schemas import CourseSearchResponse, CourseSummary
 import pytest
+from backend.modules.courses.courses.service import StudentCourseService
+from backend.modules.courses.registrar.schemas import CatalogCourse
 
 
 def test_normalize_course_code_spaces_cross_list_wcs_wll() -> None:
-    assert (
-        StudentCourseService._normalize_course_code("WCS260/WLL235")
-        == "WCS 260/WLL 235"
-    )
+    assert StudentCourseService._normalize_course_code("WCS260/WLL235") == "WCS 260/WLL 235"
 
 
 def test_normalize_course_code_spaces_cross_list_wll_ant() -> None:
-    assert (
-        StudentCourseService._normalize_course_code(" WLL171 / ANT175 ")
-        == "WLL 171/ANT 175"
-    )
+    assert StudentCourseService._normalize_course_code(" WLL171 / ANT175 ") == "WLL 171/ANT 175"
 
 
 @pytest.mark.asyncio
@@ -28,45 +22,49 @@ async def test_get_or_create_course_searches_cross_list_parts():
         def __init__(self):
             self.calls: list[str] = []
 
-        async def search_courses(self, request):
-            self.calls.append(request.course_code)
-            if request.course_code in ("WLL 235", "WCS 260/WLL 235"):
-                return CourseSearchResponse(
-                    items=[
-                        CourseSummary(
-                            registrar_id="9999",
-                            course_code=request.course_code,
-                            pre_req="",
-                            anti_req="",
-                            co_req="",
-                            level="Undergraduate",
-                            school="SSH",
-                            description=None,
-                            department="WLL",
-                            title="Creative Writing",
-                            credits="6",
-                            term=request.term,
-                        )
-                    ]
+        async def find_catalog_course(self, *, course_code, term_value):
+            self.calls.append(course_code)
+            if course_code == "WLL 235":
+                return CatalogCourse(
+                    catalog_id="825-WLL-235",
+                    course_code="WLL 235",
+                    term="Fall 2026",
+                    term_id=term_value,
+                    title="Creative Writing",
+                    level="Undergraduate",
+                    school="SSH",
+                    credits_ects=6,
                 )
-            return CourseSearchResponse(items=[])
-
-        # Service now calls search_courses_pcc; delegate for compatibility.
-        async def search_courses_pcc(self, request):
-            return await self.search_courses(request)
+            return None
 
     class FakeRepo:
-        async def find_course_by_registrar_id(self, registrar_id: int):
+        last_data = None
+
+        async def find_course_by_catalog_id(self, catalog_id: str):
             return None
 
         async def create_course(self, data):
-            return {"created": True, "registrar_id": data.registrar_id}
+            self.last_data = data
+            return {"created": True, "catalog_id": data.catalog_id}
 
-    service = StudentCourseService(repository=FakeRepo(), registrar_service=FakeRegistrar())
+    class FakeUoW:
+        def __init__(self):
+            self.repo = FakeRepo()
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return None
+
+        def get_repo(self, _):
+            return self.repo
+
+    service = StudentCourseService(uow=FakeUoW(), registrar=FakeRegistrar())
     result = await service._get_or_create_course(
         course_code="WLL 235/WCS 260",
         term_value="822",
     )
 
-    assert result == {"created": True, "registrar_id": 9999}
-
+    assert result == {"created": True, "catalog_id": "825-WLL-235"}
+    assert service.uow.repo.last_data.credits == 6
