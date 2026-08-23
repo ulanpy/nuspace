@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Calculator } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Modal } from "@/components/shared/modal";
 import { SignInCard } from "@/components/molecules/sign-in-card";
 import { AssignmentModal } from "./assignment-modal";
@@ -39,6 +40,7 @@ export function LiveGpaTab({ user, viewModel }: LiveGpaTabProps) {
     sharing,
     syncCourses,
     syncCoursesFromPdf,
+    isInitialLoading,
   } = viewModel;
 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -115,6 +117,10 @@ export function LiveGpaTab({ user, viewModel }: LiveGpaTabProps) {
 
   const assignmentForm = assignment.form;
   const userEmail = user?.email ?? "";
+
+  if (isInitialLoading) {
+    return <MyCoursesSkeleton />;
+  }
 
   return (
     <div className="space-y-6">
@@ -295,6 +301,47 @@ export function LiveGpaTab({ user, viewModel }: LiveGpaTabProps) {
           </aside>
         </div>
       )}
+    </div>
+  );
+}
+
+function MyCoursesSkeleton() {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Loading courses">
+      <section className={cn("flex flex-col gap-4 px-4 py-3.5 sm:flex-row sm:items-center sm:gap-6 sm:px-5", coursesSurface.cardLg)}>
+        <Skeleton className="h-8 w-20" />
+        <div className="min-w-0 flex-1 sm:min-w-[180px] sm:px-2">
+          <Skeleton className="h-2 w-full rounded-full" />
+          <div className="mt-1.5 flex justify-between">
+            <Skeleton className="h-3 w-5" />
+            <Skeleton className="h-3 w-5" />
+          </div>
+        </div>
+        <div className="flex gap-6">
+          <div className="space-y-2"><Skeleton className="h-3 w-20" /><Skeleton className="h-5 w-10" /></div>
+          <div className="space-y-2"><Skeleton className="h-3 w-20" /><Skeleton className="h-5 w-10" /></div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)_300px] xl:items-start">
+        <section className={cn("order-2 space-y-3 p-3 xl:order-1", coursesSurface.cardLg)}>
+          <div className="flex items-center gap-2"><Skeleton className="h-4 w-14" /><Skeleton className="h-5 w-6 rounded-full" /></div>
+          {Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-16 w-full rounded-lg" />)}
+          <Skeleton className="h-9 w-full rounded-lg" />
+        </section>
+        <section className={cn("order-1 space-y-4 p-5 xl:order-2", coursesSurface.cardLg)}>
+          <Skeleton className="h-7 w-2/5" />
+          <Skeleton className="h-4 w-3/5" />
+          <Skeleton className="h-28 w-full rounded-xl" />
+          <Skeleton className="h-28 w-full rounded-xl" />
+        </section>
+        <aside className={cn("order-3 space-y-4 p-4", coursesSurface.cardLg)}>
+          <Skeleton className="h-5 w-28" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-4/5" />
+          <Skeleton className="h-9 w-full rounded-lg" />
+        </aside>
+      </div>
     </div>
   );
 }

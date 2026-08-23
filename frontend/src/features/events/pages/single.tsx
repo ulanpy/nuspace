@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   Calendar,
   MapPin,
-  CalendarPlus,
   Share2,
   Pencil,
   ExternalLink,
@@ -42,15 +41,15 @@ import {
   isRecruitmentEvent,
 } from '@/features/events/utils/event-formatters';
 import { formatInCampusTime } from "@/features/events/utils/campus-datetime";
+import GoogleCalendarIcon from "@/assets/svg/google_calendar_icon.svg";
 
-const actionIconMap: Record<EventActionId, LucideIcon> = {
-  calendar: CalendarPlus,
+const actionIconMap: Record<Exclude<EventActionId, "calendar">, LucideIcon> = {
   edit: Pencil,
   share_access: Link2,
 };
 
 const renderActionButton = (action: EventActionDescriptor) => {
-  const Icon = actionIconMap[action.id];
+  const Icon = action.id === "calendar" ? null : actionIconMap[action.id];
   return (
     <Button
       key={action.id}
@@ -59,7 +58,11 @@ const renderActionButton = (action: EventActionDescriptor) => {
       onClick={action.onClick}
       disabled={action.disabled}
     >
-      <Icon className="h-4 w-4" />
+      {Icon ? (
+        <Icon className="h-4 w-4" />
+      ) : (
+        <img src={GoogleCalendarIcon} alt="" className="h-4 w-4" aria-hidden="true" />
+      )}
       <span>{action.label}</span>
     </Button>
   );

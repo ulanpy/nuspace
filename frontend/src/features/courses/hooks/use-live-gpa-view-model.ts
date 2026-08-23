@@ -675,6 +675,7 @@ export function useLiveGpaViewModel(user: NullableUser) {
   }, [itemToDelete]);
 
   return {
+    isInitialLoading: user != null && !hasFetched,
     registeredCourses: registeredCoursesWithMeta,
     coursesIncludedInGpa,
     metrics: {

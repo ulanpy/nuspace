@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, startTransition, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "@/router/navigation";
 import { BookOpen, BarChart3, CalendarDays, GraduationCap } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -39,19 +39,11 @@ function isTabValue(value: string | null): value is TabValue {
   return tabOptions.some((t) => t.value === value);
 }
 
-function TabPanelFallback() {
-  return (
-    <div className="py-10 text-center text-sm text-muted-foreground">Loading…</div>
-  );
-}
-
 export default function GradeStatisticsPage() {
   const { user } = useUser();
   const viewModel = useLiveGpaViewModel(user);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [activeTab, setActiveTab] = useState<TabValue>("live-gpa");
-  // Content mounts in a transition so the tab chrome can paint first.
-  const [contentTab, setContentTab] = useState<TabValue>("live-gpa");
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -106,9 +98,6 @@ export default function GradeStatisticsPage() {
     const tab = searchParams.get("tab");
     if (!isTabValue(tab) || tab === activeTab) return;
     setActiveTab(tab);
-    startTransition(() => {
-      setContentTab(tab);
-    });
   }, [searchParams, activeTab]);
 
   const courseStatsKeyword = searchParams.get("keyword") ?? "";
@@ -122,16 +111,12 @@ export default function GradeStatisticsPage() {
   const handleTabChange = (value: string) => {
     if (!isTabValue(value) || value === activeTab) return;
 
-    // Paint the selected tab immediately; defer heavy panel mount + URL sync.
     setActiveTab(value);
-    startTransition(() => {
-      setContentTab(value);
-      const params = new URLSearchParams(searchParams.toString());
-      if (params.get("tab") !== value) {
-        params.set("tab", value);
-        router.replace(`?${params.toString()}`);
-      }
-    });
+    const params = new URLSearchParams(searchParams.toString());
+    if (params.get("tab") !== value) {
+      params.set("tab", value);
+      router.replace(`?${params.toString()}`);
+    }
   };
 
   return (
@@ -163,40 +148,32 @@ export default function GradeStatisticsPage() {
           </div>
 
           <TabsContent value="live-gpa" className="mt-4">
-            {contentTab === "live-gpa" ? (
+            {activeTab === "live-gpa" && (
               <LiveGpaTab user={user} viewModel={viewModel} />
-            ) : (
-              <TabPanelFallback />
             )}
           </TabsContent>
 
           <TabsContent value="course-stats" className="mt-4">
-            {contentTab === "course-stats" ? (
-              <Suspense fallback={<TabPanelFallback />}>
+            {activeTab === "course-stats" && (
+              <Suspense fallback={null}>
                 <CourseStatsTab initialKeyword={courseStatsKeyword} />
               </Suspense>
-            ) : (
-              <TabPanelFallback />
             )}
           </TabsContent>
 
           <TabsContent value="schedule-builder" className="mt-4">
-            {contentTab === "schedule-builder" ? (
-              <Suspense fallback={<TabPanelFallback />}>
+            {activeTab === "schedule-builder" && (
+              <Suspense fallback={null}>
                 <ScheduleBuilderTab user={user} />
               </Suspense>
-            ) : (
-              <TabPanelFallback />
             )}
           </TabsContent>
 
           <TabsContent value="degree-audit" className="mt-4">
-            {contentTab === "degree-audit" ? (
-              <Suspense fallback={<TabPanelFallback />}>
+            {activeTab === "degree-audit" && (
+              <Suspense fallback={null}>
                 <DegreeAuditTab user={user} />
               </Suspense>
-            ) : (
-              <TabPanelFallback />
             )}
           </TabsContent>
         </Tabs>
