@@ -15,7 +15,7 @@ export function useCreateCommunity() {
       console.error("Community creation failed:", error);
       toast({
         title: "Error",
-        description: "Failed to create community",
+        description: "Failed to create club",
         variant: "destructive",
       });
     },
@@ -28,7 +28,7 @@ export function useCreateCommunity() {
 
       toast({
         title: "Success",
-        description: "Community created successfully!",
+        description: "Club created successfully!",
       });
 
       return newCommunity;
@@ -37,7 +37,7 @@ export function useCreateCommunity() {
       // Error toast is handled in onError, but keep a fallback here just in case
       toast({
         title: "Error",
-        description: "Failed to create community",
+        description: "Failed to create club",
         variant: "destructive",
       });
       throw error;
@@ -49,4 +49,3 @@ export function useCreateCommunity() {
     isCreating: createCommunityMutation.isPending,
   };
 }
-

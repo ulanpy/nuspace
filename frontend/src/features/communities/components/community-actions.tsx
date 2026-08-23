@@ -26,7 +26,7 @@ export function CommunityActions({
 
   const primaryLabel = isProcessing
     ? (isEditMode ? "Updating…" : "Creating…")
-    : (isEditMode ? "Update Community" : "Create Community");
+    : (isEditMode ? "Update Club" : "Create Club");
 
   const lacksRequiredPermission = isEditMode
     ? permissions?.can_edit === false
@@ -64,7 +64,7 @@ export function CommunityActions({
             disabled={isProcessing}
             className="min-w-[140px]"
           >
-            Delete Community
+            Delete Club
           </Button>
         )}
         <Button
@@ -78,4 +78,3 @@ export function CommunityActions({
     </div>
   );
 }
-

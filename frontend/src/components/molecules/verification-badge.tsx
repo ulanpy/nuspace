@@ -32,20 +32,19 @@ export function VerificationBadge({ className, size = 14, label = "Verified" }: 
                   "inline-flex items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary p-0.5 focus:outline-none " +
                   (className ?? "")
                 }
-                aria-label="Verified community"
+                aria-label="Verified club"
               >
                 <BadgeCheck className="text-primary" width={size} height={size} />
               </button>
             </PopoverTrigger>
           </TooltipTrigger>
-          <TooltipContent side="top">This is a verified community</TooltipContent>
+          <TooltipContent side="top">This is a verified club</TooltipContent>
         </Tooltip>
         <PopoverContent className="w-fit px-3 py-2 text-xs" sideOffset={6}>
-          This is a verified community
+          This is a verified club
         </PopoverContent>
       </Popover>
     </TooltipProvider>
   );
 }
-
 

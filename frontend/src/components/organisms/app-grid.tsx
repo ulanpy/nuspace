@@ -54,7 +54,7 @@ export function AppGrid() {
     },
     {
       icon: <Users className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8" />,
-      title: "Communities",
+      title: "Club Wiki",
       href: ROUTES.COMMUNITIES.ROOT,
       gradient:
         "radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(37,99,235,0.15) 50%, rgba(29,78,216,0) 100%)",

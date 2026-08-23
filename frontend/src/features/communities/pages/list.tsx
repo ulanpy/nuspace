@@ -70,14 +70,14 @@ export default function CommunitiesPage() {
     <MotionWrapper>
       <PageContainer padding="default">
         <div className="flex items-center justify-between mb-6">
-          <PageHeader title="Communities" subtitle="Join communities and connect with like-minded people" className="mb-0" />
+          <PageHeader title="Club Wiki" subtitle="Discover student clubs and get in touch" className="mb-0" />
             <Button
               onClick={() => requireAuth(() => setIsCreateModalOpen(true))}
               size="sm"
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Create Community</span>
+              <span className="hidden sm:inline">Create Club</span>
               <span className="sm:hidden">Create</span>
             </Button>
           </div>
@@ -85,7 +85,7 @@ export default function CommunitiesPage() {
         <div className="mb-4">
           <Input
             type="text"
-            placeholder="Search communities..."
+            placeholder="Search clubs..."
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             className="w-full"
@@ -156,11 +156,11 @@ export default function CommunitiesPage() {
                 <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">
                   {selectedCommunityCategory === "All"
-                    ? "No communities found"
-                    : `No ${selectedCommunityCategory} communities found`}
+                    ? "No clubs found"
+                    : `No ${selectedCommunityCategory} clubs found`}
                 </h3>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  There are no {selectedCommunityCategory} communities available
+                  There are no {selectedCommunityCategory} clubs available
                   at the moment.
                 </p>
               </div>
@@ -185,7 +185,7 @@ export default function CommunitiesPage() {
         <AuthWallModal
           isOpen={isModalOpen}
           onClose={closeModal}
-          message="You need to be logged in to create communities."
+          message="You need to be logged in to create clubs."
         />
       </PageContainer>
     </MotionWrapper>

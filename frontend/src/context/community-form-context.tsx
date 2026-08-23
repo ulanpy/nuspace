@@ -147,10 +147,10 @@ export function CommunityFormProvider({
   const validateForm = (): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
     if (!formData.name || formData.name.trim().length < 3) {
-      errors.push("Community name must be at least 3 characters long");
+      errors.push("Club name must be at least 3 characters long");
     }
     if (formData.name && formData.name.length > 100) {
-      errors.push("Community name must be no more than 100 characters long");
+      errors.push("Club name must be no more than 100 characters long");
     }
 
     if (!formData.description || formData.description.trim().length === 0) {
@@ -169,11 +169,11 @@ export function CommunityFormProvider({
     }
 
     if (!isEditMode && !(formData as CreateCommunityData).type) {
-      errors.push("Community type is required");
+      errors.push("Club type is required");
     }
 
     if (!isEditMode && !(formData as CreateCommunityData).category) {
-      errors.push("Community category is required");
+      errors.push("Club category is required");
     }
 
     if (!isEditMode && !(formData as CreateCommunityData).established) {

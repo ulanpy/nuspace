@@ -83,10 +83,10 @@ export default function ProfilePage() {
                                 {user?.tg_id ? <TelegramStatus isConnected /> : <BindTelegramButton />}
                             </div>
 
-                            {/* My Communities Section */}
+                            {/* My Clubs Section */}
                             <div className="border-t pt-4">
                                 <div className="flex items-center justify-between">
-                                    <div className="text-sm">My Communities</div>
+                                    <div className="text-sm">My Clubs</div>
                                 </div>
                                 {communities.length > 0 ? (
                                     <div className="mt-3 space-y-2">
@@ -133,7 +133,7 @@ export default function ProfilePage() {
                                                 className="w-full"
                                                 onClick={() => router.push(ROUTES.COMMUNITIES.ROOT)}
                                             >
-                                                View all {communities.length} communities
+                                                View all {communities.length} clubs
                                             </Button>
                                         )}
                                     </div>
@@ -146,7 +146,7 @@ export default function ProfilePage() {
                                             onClick={() => setIsCreateCommunityModalOpen(true)}
                                         >
                                             <Plus className="h-4 w-4 mr-2" />
-                                            Create Community
+                                            Create Club
                                         </Button>
                                     </div>
                                 )}

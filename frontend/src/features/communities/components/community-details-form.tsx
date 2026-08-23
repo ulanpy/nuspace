@@ -59,7 +59,7 @@ export function CommunityDetailsForm() {
     <div className="space-y-4">
       <div className="space-y-1">
         <div className="flex justify-between">
-          <Label htmlFor="name">Community Name <span className="text-red-500">*</span></Label>
+          <Label htmlFor="name">Club Name <span className="text-red-500">*</span></Label>
           <span className="text-xs text-gray-500">
             {(formData.name || "").length} / 100
           </span>
@@ -73,12 +73,12 @@ export function CommunityDetailsForm() {
           required
           minLength={3}
           maxLength={100}
-          placeholder="Enter community name (3-100 characters)"
+          placeholder="Enter club name (3-100 characters)"
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="type">Community Type <span className="text-red-500">*</span></Label>
+          <Label htmlFor="type">Club Type <span className="text-red-500">*</span></Label>
           <select
             name="type"
             value={(formData as any).type || ""}
@@ -95,7 +95,7 @@ export function CommunityDetailsForm() {
           </select>
         </div>
         <div>
-          <Label htmlFor="category">Community Category <span className="text-red-500">*</span></Label>
+          <Label htmlFor="category">Club Category <span className="text-red-500">*</span></Label>
           <select
             name="category"
             value={(formData as any).category || ""}

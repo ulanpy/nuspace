@@ -230,14 +230,14 @@ export function CommunityModal({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title={isEditMode ? "Edit Community" : "Create Community"}
+        title={isEditMode ? "Edit Club" : "Create Club"}
         className="max-w-4xl max-h-[90vh] overflow-y-auto"
       >
         <div className="space-y-6">
           {!isEditMode && (
             <div className="rounded-lg border border-amber-200/60 dark:border-amber-700/30 bg-gradient-to-r from-amber-50 to-pink-50 dark:from-amber-900/20 dark:to-pink-900/10 p-4">
               <div className="text-sm md:text-base">
-                <span className="font-semibold">Anyone can create a community.</span> Rally people around your passion — game design, robotics, film nights, creative writing, you name it. Not just registered clubs.
+                <span className="font-semibold">Anyone can create a club.</span> Rally people around your passion — game design, robotics, film nights, creative writing, you name it.
               </div>
             </div>
           )}
@@ -255,7 +255,7 @@ export function CommunityModal({
 
           {/* Delete Confirmation */}
           <DeleteConfirmation
-            title="Community"
+            title="Club"
             isVisible={showDeleteConfirm}
             isDeleting={isDeleting}
             onCancel={() => setShowDeleteConfirm(false)}

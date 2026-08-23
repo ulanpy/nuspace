@@ -265,9 +265,44 @@
     font: inherit;
   }
 
-  html.tg-miniapp body {
-    padding-top: var(--tg-header-padding, env(safe-area-inset-top, 0px));
+html.tg-miniapp body {
+  padding-top: var(--tg-header-padding, env(safe-area-inset-top, 0px));
+}
+
+.community-wiki-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18rem;
+  align-items: start;
+  gap: 1rem;
+}
+
+.community-wiki-article {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.community-wiki-sidebar {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: 1rem;
+}
+
+@media (max-width: 767px) {
+  .community-wiki-layout {
+    grid-template-columns: minmax(0, 1fr);
   }
+
+  .community-wiki-sidebar,
+  .community-wiki-article {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .community-wiki-sidebar {
+    position: static;
+  }
+}
 }
 
 @layer utilities {

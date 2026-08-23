@@ -21,7 +21,7 @@ export function useUpdateCommunity() {
       console.error("Community update failed:", error);
       toast({
         title: "Error",
-        description: "Failed to update community",
+        description: "Failed to update club",
         variant: "destructive",
       });
     },
@@ -40,7 +40,7 @@ export function useUpdateCommunity() {
 
       toast({
         title: "Success",
-        description: "Community details updated successfully!",
+        description: "Club details updated successfully!",
       });
 
       return updatedCommunity;
@@ -48,7 +48,7 @@ export function useUpdateCommunity() {
       console.error("Community update failed:", error);
       toast({
         title: "Error",
-        description: "Failed to update community or upload images",
+        description: "Failed to update club or upload images",
         variant: "destructive",
       });
       throw error;
@@ -63,4 +63,3 @@ export function useUpdateCommunity() {
     uploadProgress,
   };
 }
-

@@ -73,9 +73,9 @@ const features: Feature[] = [
     details: ["Campus calendar", "Recruitment", "Calendar export"],
   },
   {
-    title: "Communities",
+    title: "Club Wiki",
     description:
-      "Find student groups and follow the communities you care about.",
+      "Find student clubs and their contact details.",
     link: ROUTES.COMMUNITIES.ROOT,
     icon: Users,
     className: "md:col-span-1 lg:col-span-2",
@@ -117,7 +117,7 @@ const onboardingSteps = [
     icon: Search,
     title: "Open the tool you need",
     description:
-      "Courses, events, contacts, communities, and requests live in one place.",
+      "Courses, events, contacts, clubs, and requests live in one place.",
   },
   {
     icon: Check,
@@ -284,7 +284,7 @@ export default function LandingPage() {
                   Know what is happening before you miss it
                 </h2>
                 <p className="mt-4 max-w-[60ch] text-lg leading-relaxed text-muted-foreground">
-                  Browse upcoming events, recruitment announcements, and community
+                  Browse upcoming events, recruitment announcements, and club
                   activities in one campus calendar.
                 </p>
                 <ul className="mt-6 space-y-3 text-sm font-medium">

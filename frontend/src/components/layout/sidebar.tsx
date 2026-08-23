@@ -44,7 +44,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: ROUTES.COURSES, label: "Courses", icon: <BookOpen size={20} /> },
   {
     to: ROUTES.COMMUNITIES.ROOT,
-    label: "Communities",
+    label: "Club Wiki",
     icon: <Users size={20} />,
   },
   {

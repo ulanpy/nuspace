@@ -11,14 +11,14 @@ export function useDeleteCommunity() {
       queryClient.invalidateQueries({ queryKey: ["campusCurrent", "communities"] });
       toast({
         title: "Success",
-        description: "Community deleted successfully!",
+        description: "Club deleted successfully!",
       });
     },
     onError: (error) => {
       console.error("Community deletion failed:", error);
       toast({
         title: "Error",
-        description: "Failed to delete community",
+        description: "Failed to delete club",
         variant: "destructive",
       });
     },
@@ -38,4 +38,3 @@ export function useDeleteCommunity() {
     isDeleting: deleteCommunityMutation.isPending,
   };
 }
-

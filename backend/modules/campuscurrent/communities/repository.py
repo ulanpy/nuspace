@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
 from httpx import AsyncClient
-from sqlalchemy import case, func, select
+from sqlalchemy import case, exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -150,8 +150,16 @@ class CommunityRepository:
             count: int = meili_result.get("estimatedTotalHits", 0) if meili_result else 0
         else:
             page_num = max(1, page or 1)
+            has_media = exists(
+                select(Media.id).where(
+                    Media.entity_id == Community.id,
+                    Media.entity_type == EntityType.communities,
+                )
+            )
             stmt = (
-                base_stmt.order_by(Community.name.asc()).offset((page_num - 1) * size).limit(size)
+                base_stmt.order_by(has_media.desc(), Community.name.asc())
+                .offset((page_num - 1) * size)
+                .limit(size)
             )
             result = await self.db_session.execute(stmt)
             communities = list(result.scalars().all())

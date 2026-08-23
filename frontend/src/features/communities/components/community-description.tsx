@@ -97,8 +97,8 @@ export function CommunityDescription() {
 
     const linkLabel =
       selectedText ||
-      window.prompt("Link text", "Community link") ||
-      "Community link";
+      window.prompt("Link text", "Club link") ||
+      "Club link";
     const href = window.prompt("URL (include https://)", "https://");
 
     if (!href) return;
@@ -141,12 +141,11 @@ export function CommunityDescription() {
         required
         rows={4}
         maxLength={MAX_DESCRIPTION_LENGTH}
-        placeholder="Enter community description"
+        placeholder="Enter club description"
       />
       <p className="text-xs text-muted-foreground">
-        Use the toolbar to apply Markdown formatting. Links open in a new tab on the community page.
+        Use the toolbar to apply Markdown formatting. Links open in a new tab on the club page.
       </p>
     </div>
   );
 }
-

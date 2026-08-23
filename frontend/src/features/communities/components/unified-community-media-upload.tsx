@@ -66,9 +66,9 @@ const CommunityMediaUploadBridge = forwardRef<CommunityUploadHandle, { type: 'co
 
     return (
       <UnifiedMediaUploadZone
-        label={type === 'communityProfiles' ? "Community Profile Image" : "Community Banner Image"}
-        title={type === 'communityProfiles' ? "Upload community profile image" : "Upload community banner image"}
-        description={type === 'communityProfiles' ? "Add image to showcase your community" : "Add image to showcase your community"}
+        label={type === 'communityProfiles' ? "Club Profile Image" : "Club Banner Image"}
+        title={type === 'communityProfiles' ? "Upload club profile image" : "Upload club banner image"}
+        description="Add an image to showcase your club"
         layout="vertical"
         columns={3}
         showMainIndicator={true}
