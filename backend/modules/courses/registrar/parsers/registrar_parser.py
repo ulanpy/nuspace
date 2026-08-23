@@ -36,17 +36,17 @@ COURSE_CODE_SEARCH_PATTERN = re.compile(
 def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
     """
     Parse raw registrar schedule data into structured format.
-    
+
     Converts HTML-embedded schedule entries into clean course objects with
     normalized time blocks, course information, and color assignments.
     Handles malformed entries gracefully by skipping them.
-    
+
     Args:
         data: Raw schedule data from registrar API (list or dict with 'data' key)
-        
+
     Returns:
         ScheduleResponse with weekly schedule data and color preferences
-        
+
     Note:
         - Week array uses 0-6 indices (Monday-Sunday)
         - Duplicate entries across time blocks are preserved (registrar behavior)
@@ -118,7 +118,7 @@ def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
         if code_match:
             raw_code = code_match.group("codes")
             course_code = normalize_course_code(raw_code)
-            label = header_stripped[code_match.end():].strip()
+            label = header_stripped[code_match.end() :].strip()
         else:
             course_match = re.match(r"([A-Z]{2,}\s*\d{2,}[A-Z]?)\s*(.*)", header_stripped)
             if course_match:
@@ -129,11 +129,7 @@ def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
                 label = header_stripped
 
         time_line = next(
-            (
-                line
-                for line in lines[1:]
-                if re.search(r"\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}", line)
-            ),
+            (line for line in lines[1:] if re.search(r"\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}", line)),
             "",
         )
         if not time_line:
@@ -184,10 +180,42 @@ def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
             for item in value:
                 scan_online_sections(item, in_online_section=in_online_section)
             return
-        if isinstance(value, str) and (
-            in_online_section or "ONLINE CLASSES" in value.upper()
-        ):
+        if isinstance(value, str) and (in_online_section or "ONLINE CLASSES" in value.upper()):
             parse_online_classes(value)
+
+    def merge_rendered_schedule_table(value: Any) -> None:
+        """Add timed blocks that only drawStudentSchedule exposes during registration."""
+        if not isinstance(value, str):
+            return
+        rendered_text = br_pattern.sub("\n", value)
+        rendered_text = re.sub(r"</(?:tr|td|th|div|p|li)\s*>", "\n", rendered_text, flags=re.I)
+        rendered_text = tag_pattern.sub("", rendered_text)
+        rendered_text = unescape(rendered_text)
+        rendered = _parse_personal_schedule_text(rendered_text)
+
+        for day_idx, rendered_day in enumerate(rendered.data):
+            existing = {
+                (
+                    item["course_code"],
+                    item["time"]["start"]["hh"],
+                    item["time"]["start"]["mm"],
+                    item["time"]["end"]["hh"],
+                    item["time"]["end"]["mm"],
+                )
+                for item in week[day_idx]
+            }
+            for item in rendered_day:
+                key = (
+                    item.course_code,
+                    item.time.start.hh,
+                    item.time.start.mm,
+                    item.time.end.hh,
+                    item.time.end.mm,
+                )
+                if key not in existing:
+                    week[day_idx].append(item.model_dump())
+                    existing.add(key)
+                add_class_preference(item.course_code)
 
     for entry in entries:
         for index, day in enumerate(WEEKDAYS):
@@ -219,6 +247,7 @@ def parse_schedule(data: dict[str, Any]) -> ScheduleResponse:
         # getTimetable, it includes TBA/Online classes; extract their codes for
         # registered-course sync without treating them as timed calendar items.
         parse_online_classes(data["student_schedule_table"])
+        merge_rendered_schedule_table(data["student_schedule_table"])
 
     color_cycle = (color for color in COLORS)
     for course_code in preferences["classes"]:

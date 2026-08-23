@@ -331,6 +331,58 @@ class StudentCourseService:
         return min(starts), max(ends)
 
     @staticmethod
+    def _parse_catalog_time(value: str | None) -> tuple[time, time] | None:
+        """Parse catalog times such as ``03:00 PM-05:50 PM``."""
+        if not value:
+            return None
+        match = re.search(
+            r"(\d{1,2}):(\d{2})\s*(AM|PM)\s*-\s*(\d{1,2}):(\d{2})\s*(AM|PM)",
+            value,
+            flags=re.IGNORECASE,
+        )
+        if not match:
+            return None
+
+        def parse_clock(hour: str, minute: str, marker: str) -> time:
+            parsed_hour = int(hour)
+            if marker.upper() == "PM" and parsed_hour != 12:
+                parsed_hour += 12
+            elif marker.upper() == "AM" and parsed_hour == 12:
+                parsed_hour = 0
+            return time(parsed_hour, int(minute))
+
+        return parse_clock(*match.groups()[:3]), parse_clock(*match.groups()[3:])
+
+    @classmethod
+    def _find_catalog_section(
+        cls,
+        *,
+        hit: dict | None,
+        weekday: int,
+        start_time: time,
+        end_time: time,
+        location: str,
+    ) -> dict | None:
+        """Find the catalog section corresponding to one personal timetable block."""
+        if not hit:
+            return None
+        weekday_tokens = ("M", "T", "W", "R", "F", "S", "U")
+        wanted_day = weekday_tokens[weekday]
+        wanted_room = re.sub(r"\s+", "", location).upper()
+        for section in hit.get("sections") or []:
+            days = str(section.get("days") or "").upper().split()
+            if wanted_day not in days:
+                continue
+            section_time = cls._parse_catalog_time(section.get("time"))
+            if section_time != (start_time, end_time):
+                continue
+            section_room = re.sub(r"\s+", "", str(section.get("room") or "")).upper()
+            if wanted_room and wanted_room not in section_room:
+                continue
+            return section
+        return None
+
+    @staticmethod
     def _first_occurrence(start_date: date, target_weekday: int) -> date:
         """Return first date on/after start_date that falls on target_weekday (0=Mon)."""
         delta_days = (target_weekday - start_date.weekday()) % 7
@@ -727,104 +779,118 @@ class StudentCourseService:
         lookup_results = await asyncio.gather(*lookup_tasks, return_exceptions=True)
 
         course_windows: dict[str, tuple[date, date]] = {}
+        course_titles: dict[str, str] = {}
+        course_catalog_hits: dict[str, dict] = {}
         missing_dates: list[str] = []
         lookup_errors: list[str] = []
         for res in lookup_results:
             if isinstance(res, Exception):
                 lookup_errors.append(str(res))
                 continue
-            normalized_code, window, _chosen_hit = res
+            normalized_code, window, chosen_hit = res
             if window:
                 course_windows[normalized_code] = window
+                title = " ".join(str((chosen_hit or {}).get("title") or "").split())
+                if title:
+                    course_titles[normalized_code] = title
+                if chosen_hit:
+                    course_catalog_hits[normalized_code] = chosen_hit
             else:
                 raw_code = code_lookup.get(normalized_code) or normalized_code
                 missing_dates.append(raw_code)
 
         events: list[dict] = []
-        seen_blocks: set[tuple[str, int, int, int]] = set()
+        blocks: dict[tuple[str, int, int, int, int, str], list[tuple[int, UserScheduleItem]]] = {}
         local_tz = ZoneInfo("Asia/Almaty")
 
         for day_idx, day_entries in enumerate(normalized_week):
             for item in day_entries:
                 normalized_code = self._normalize_course_code_for_lookup(item.course_code)
-                window = course_windows.get(normalized_code)
-                if not window:
-                    continue
-
-                start_date, end_date = window
-                first_occurrence = self._first_occurrence(start_date, day_idx)
-                if first_occurrence > end_date:
-                    continue
-
                 start_time = item.time.start
                 end_time = item.time.end
-                block_key = (normalized_code, day_idx, start_time.hh, start_time.mm)
-                if block_key in seen_blocks:
-                    continue
-                seen_blocks.add(block_key)
+                block_key = (
+                    normalized_code,
+                    start_time.hh,
+                    start_time.mm,
+                    end_time.hh,
+                    end_time.mm,
+                    item.cab or "",
+                )
+                blocks.setdefault(block_key, []).append((day_idx, item))
 
-                event_start = datetime.combine(
-                    first_occurrence, time(start_time.hh, start_time.mm), tzinfo=local_tz
-                )
-                event_end = datetime.combine(
-                    first_occurrence, time(end_time.hh, end_time.mm), tzinfo=local_tz
-                )
-                until_dt = datetime.combine(
-                    end_date, time(end_time.hh, end_time.mm), tzinfo=local_tz
-                )
+        weekday_codes = ("MO", "TU", "WE", "TH", "FR", "SA", "SU")
+        for block_key, occurrences in blocks.items():
+            normalized_code, start_hh, start_mm, end_hh, end_mm, location = block_key
+            window = course_windows.get(normalized_code)
+            if not window:
+                continue
+            start_date, end_date = window
+            valid_occurrences = [
+                (day_idx, item, self._first_occurrence(start_date, day_idx))
+                for day_idx, item in occurrences
+            ]
+            valid_occurrences = [entry for entry in valid_occurrences if entry[2] <= end_date]
+            if not valid_occurrences:
+                continue
 
-                course_name = item.label or item.title or ""
-                summary = (
-                    f"{item.course_code} — {course_name}"
-                    if course_name
-                    else (item.course_code or "")
-                )
-                description_parts = [item.label or item.title or "", item.info or ""]
-                description = "\\n".join([p for p in description_parts if p])
+            first_day_idx, representative, first_occurrence = min(
+                valid_occurrences, key=lambda entry: entry[2]
+            )
+            _ = first_day_idx
+            event_start = datetime.combine(
+                first_occurrence, time(start_hh, start_mm), tzinfo=local_tz
+            )
+            event_end = datetime.combine(first_occurrence, time(end_hh, end_mm), tzinfo=local_tz)
+            until_dt = datetime.combine(end_date, time(end_hh, end_mm), tzinfo=local_tz)
+            byday = ",".join(weekday_codes[day_idx] for day_idx, _, _ in valid_occurrences)
+            recurrence = [
+                "RRULE:FREQ=WEEKLY;BYDAY="
+                f"{byday};UNTIL={until_dt.astimezone(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+            ]
 
-                exdates: list[datetime] = []
-                long_span = (end_date - start_date).days > 90
-                if long_span:
-                    skip_date = first_occurrence + timedelta(weeks=7)
-                    if skip_date <= end_date:
-                        exdates.append(
-                            datetime.combine(
-                                skip_date, time(start_time.hh, start_time.mm), tzinfo=local_tz
-                            )
-                        )
-
-                recurrence: list[str] = [
-                    f"RRULE:FREQ=WEEKLY;UNTIL={until_dt.astimezone(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
-                ]
-                if exdates:
-                    exdate_values = ",".join(dt.strftime("%Y%m%dT%H%M%S") for dt in exdates)
-                    recurrence.append(f"EXDATE;TZID=Asia/Almaty:{exdate_values}")
-
-                event_key = (
-                    f"{normalized_code}-{day_idx}-"
-                    f"{start_time.hh:02d}{start_time.mm:02d}-"
-                    f"{end_time.hh:02d}{end_time.mm:02d}"
-                )
-                events.append(
-                    {
-                        "summary": summary,
-                        "description": description,
-                        "location": item.cab or "",
-                        "start": {"dateTime": event_start.isoformat(), "timeZone": "Asia/Almaty"},
-                        "end": {"dateTime": event_end.isoformat(), "timeZone": "Asia/Almaty"},
-                        "recurrence": recurrence,
-                        "extendedProperties": {
-                            "private": {
-                                "course_code": item.course_code,
-                                "teacher": item.teacher,
-                                "label": item.label,
-                                "nuros_event_key": event_key,
-                                "source": "nuros_schedule",
-                                "term_value": schedule_record.term_value,
-                            }
-                        },
-                    }
-                )
+            course_title = course_titles.get(normalized_code)
+            section = self._find_catalog_section(
+                hit=course_catalog_hits.get(normalized_code),
+                weekday=valid_occurrences[0][0],
+                start_time=time(start_hh, start_mm),
+                end_time=time(end_hh, end_mm),
+                location=location,
+            )
+            section_code = " ".join(str((section or {}).get("section_code") or "").split())
+            faculty = " ".join(str((section or {}).get("faculty") or "").split())
+            title_parts = [
+                (
+                    f"{representative.course_code} — {course_title}"
+                    if course_title
+                    else representative.course_code
+                ),
+                section_code,
+                faculty,
+            ]
+            summary = " · ".join(part for part in title_parts if part)
+            event_key = (
+                f"{normalized_code}-{byday.lower()}-"
+                f"{start_hh:02d}{start_mm:02d}-{end_hh:02d}{end_mm:02d}"
+            )
+            events.append(
+                {
+                    "summary": summary,
+                    "description": "",
+                    "location": location,
+                    "start": {"dateTime": event_start.isoformat(), "timeZone": "Asia/Almaty"},
+                    "end": {"dateTime": event_end.isoformat(), "timeZone": "Asia/Almaty"},
+                    "recurrence": recurrence,
+                    "extendedProperties": {
+                        "private": {
+                            "course_code": representative.course_code,
+                            "teacher": representative.teacher,
+                            "nuros_event_key": event_key,
+                            "source": "nuros_schedule",
+                            "term_value": schedule_record.term_value,
+                        }
+                    },
+                }
+            )
 
         return events, missing_dates, lookup_errors
 

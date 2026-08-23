@@ -108,6 +108,22 @@ def test_rendered_student_schedule_adds_online_course_to_preferences() -> None:
     assert schedule.preferences.classes == ["BIOL 490"]
 
 
+def test_rendered_student_schedule_adds_timed_course_to_week() -> None:
+    data = {
+        "data": [],
+        "student_schedule_table": (
+            "Monday<br>03:00 PM 05:50 PM 7.105 CHEM 432 " "Introduction to Cheminformatics"
+        ),
+    }
+
+    schedule = parse_schedule(data)
+
+    assert len(schedule.data[0]) == 1
+    assert schedule.data[0][0].course_code == "CHEM 432"
+    assert schedule.data[0][0].time.start.hh == 15
+    assert schedule.data[0][0].time.end.hh == 17
+
+
 def test_personal_schedule_pdf_text_keeps_online_classes_as_courses() -> None:
     text = """
 Schedule by days
