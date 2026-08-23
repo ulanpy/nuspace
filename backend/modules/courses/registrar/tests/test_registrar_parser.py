@@ -142,6 +142,20 @@ Online classes
     assert all(item.course_code != "CSCI 299" for day in schedule.data for item in day)
 
 
+def test_personal_schedule_pdf_text_joins_wrapped_course_code() -> None:
+    text = """
+Personal Schedule
+Monday
+03:00 PM 05:50 PM 7.105 CHEM
+432 Introduction to Cheminformatics
+"""
+
+    schedule = _parse_personal_schedule_text(text)
+
+    assert schedule.data[0][0].course_code == "CHEM 432"
+    assert "CHEM 432" in schedule.preferences.classes
+
+
 def test_personal_timetable_text_is_not_accepted_as_schedule() -> None:
     with pytest.raises(ValueError):
         _parse_personal_schedule_text("Personal Timetable\nCSCI 299 Internship I")

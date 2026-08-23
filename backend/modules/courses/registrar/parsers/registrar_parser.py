@@ -289,6 +289,13 @@ def _parse_personal_schedule_text(text: str) -> ScheduleResponse:
         r"(?P<end>\d{1,2}:\d{2})\s*(?P<end_ampm>AM|PM)\s+(?P<body>.+)$",
         re.IGNORECASE,
     )
+    # pdfplumber can wrap an abbreviation and its number into separate lines
+    # (``CHEM\n432``), even though they are one table cell in the PDF.
+    text = re.sub(
+        r"(?P<subject>\b[A-Z]{2,5})\s*\n\s*(?P<number>\d{2,}[A-Z]?)(?!:)",
+        r"\g<subject> \g<number>",
+        text,
+    )
 
     def add_class_preference(course_code: str) -> None:
         if course_code and course_code not in preferences["classes"]:
@@ -299,7 +306,7 @@ def _parse_personal_schedule_text(text: str) -> ScheduleResponse:
 
     def normalize_course_code(raw_code: str) -> str:
         normalized_code = re.sub(r"\s*/\s*", "/", raw_code)
-        return whitespace_pattern.sub(" ", normalized_code).strip()
+        return whitespace_pattern.sub(" ", normalized_code).strip().upper()
 
     def parse_12h(value: str, ampm: str) -> dict[str, int]:
         hours, minutes = map(int, value.split(":"))
