@@ -49,7 +49,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     to: ROUTES.OPPORTUNITIES.ROOT,
-    label: "Opportunities Digest",
+    label: "Opportunities",
     icon: <Briefcase size={20} />,
   },
   { to: ROUTES.CONTACTS, label: "Contacts", icon: <Info size={20} /> },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import {
   Opportunity,
@@ -9,7 +9,7 @@ import {
   formatOpportunityType,
   normalizeOpportunityMajors,
 } from "../types";
-import { Calendar, MapPin, Link2, Bookmark, Building2, GraduationCap, Wallet } from "lucide-react";
+import { Calendar, MapPin, Link2, Building2, GraduationCap, Wallet } from "lucide-react";
 import { MarkdownContent } from '@/components/molecules/markdown-content';
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/toast";
@@ -30,16 +30,6 @@ const formatEligibility = (eligibility?: OpportunityEligibility[] | null) => {
       return range ? `${level} · ${range}` : level;
     })
     .join(" • ");
-};
-
-import { motion } from "framer-motion";
-
-const badgeColors = ["bg-blue-100 text-blue-800", "bg-emerald-100 text-emerald-800", "bg-amber-100 text-amber-800", "bg-indigo-100 text-indigo-800"];
-
-const pickBadge = (seed: string | undefined | null) => {
-  if (!seed) return badgeColors[0];
-  const hash = seed.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  return badgeColors[hash % badgeColors.length];
 };
 
 const formatDeadline = (deadline?: string | null) => {
@@ -76,8 +66,6 @@ export const OpportunityCard = ({
   isDeleting = false,
 }: Props) => {
   const [expanded, setExpanded] = useState(false);
-  const [showAllMajors, setShowAllMajors] = useState(false);
-  const showToggle = useMemo(() => (opportunity.description?.length || 0) > 320, [opportunity.description]);
   const status = deadlineStatus(opportunity.deadline);
   const deadlineLabel =
     status === "Year-round"
@@ -85,8 +73,10 @@ export const OpportunityCard = ({
       : formatDeadline(opportunity.deadline);
   const eligibilityText = formatEligibility(opportunity.eligibility);
   const majors = normalizeOpportunityMajors(opportunity.majors);
-  const displayedMajors = showAllMajors ? majors : majors.slice(0, 5);
-  const hasMoreMajors = majors.length > 5;
+  const displayedMajors = expanded ? majors : majors.slice(0, 3);
+  const hasMoreDetails = Boolean(
+    opportunity.description || opportunity.location || opportunity.funding || majors.length > 3,
+  );
 
   const calendarMutation = useMutation({
     mutationFn: () => addOpportunityToCalendar(opportunity.id),
@@ -139,113 +129,109 @@ export const OpportunityCard = ({
 
   return (
     <article
-      className="rounded-2xl border border-gray-200 bg-white/90 backdrop-blur shadow-sm hover:shadow-lg transition-all duration-200 dark:border-border/60 dark:bg-background/70"
+      className="rounded-lg border border-border bg-card transition-colors hover:bg-muted/20"
     >
-      <div className="p-4 space-y-3">
-        <div className="flex flex-col gap-2 lg:gap-3">
+      <div className="space-y-3 p-4 sm:p-5">
+        <div className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2">
+            <div className="min-w-0 space-y-2">
               {opportunity.type && (
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${pickBadge(opportunity.type)} shadow-sm`}>
+                <span className="inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
                   {formatOpportunityType(opportunity.type)}
                 </span>
               )}
+              <h3 className="text-lg font-semibold leading-tight text-foreground">{opportunity.name}</h3>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3 text-sm text-gray-600 dark:text-gray-300 flex-shrink-0 whitespace-nowrap">
+            <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground sm:text-sm">
               <Calendar className="h-4 w-4" />
               <span>{deadlineLabel}</span>
               <span
-                className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                className={`hidden rounded-full px-2 py-0.5 text-xs font-medium sm:inline-flex ${
                   status === "Expired"
-                    ? "bg-red-100 text-red-800"
+                    ? "bg-destructive/10 text-destructive"
                     : status === "Year-round"
-                    ? "bg-amber-100 text-amber-800"
-                    : "bg-emerald-100 text-emerald-800"
+                    ? "bg-muted text-muted-foreground"
+                    : "bg-primary/10 text-primary"
                 }`}
               >
                 {status}
               </span>
             </div>
           </div>
-          <div className="flex-1 min-w-0 space-y-1">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 leading-tight">
-              {opportunity.name}
-            </h3>
-            {opportunity.host && (
-              <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300 leading-snug min-w-0">
-                <Building2 className="h-4 w-4" />
-                <span className="break-words">{opportunity.host}</span>
-              </div>
-            )}
-          </div>
+          {opportunity.host && (
+            <div className="flex min-w-0 items-start gap-2 text-sm leading-snug text-muted-foreground">
+              <Building2 className="mt-0.5 h-4 w-4 shrink-0" />
+              <span className="break-words">{opportunity.host}</span>
+            </div>
+          )}
         </div>
 
-        {opportunity.description && (
-          <div className="space-y-2">
-            <div className={expanded ? "" : "line-clamp-4"}>
-              <MarkdownContent
-                content={opportunity.description}
-                className="prose prose-sm dark:prose-invert max-w-none [&_*]:text-gray-700 dark:[&_*]:text-gray-200"
-              />
-            </div>
-            {showToggle && (
-              <button
-                onClick={() => setExpanded((v) => !v)}
-                className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
-              >
-                {expanded ? "Show less" : "Show more"}
-              </button>
-            )}
-          </div>
-        )}
-
-        <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-300">
+        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+          {eligibilityText && (
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 font-medium text-primary">
+              {eligibilityText}
+            </span>
+          )}
           {displayedMajors.map((m, idx) => (
             <span
               key={`${m}-${idx}`}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200"
+              className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1"
             >
               <GraduationCap className="h-3 w-3" />
               {m}
             </span>
           ))}
-          {hasMoreMajors && (
+          {!expanded && majors.length > 3 && (
             <button
               type="button"
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-muted text-xs font-medium text-blue-700 dark:text-blue-200 dark:bg-gray-800"
-              onClick={() => setShowAllMajors((v) => !v)}
+              className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs font-medium text-primary"
+              onClick={() => setExpanded(true)}
             >
-              {showAllMajors ? "Show less" : `Show ${majors.length - 5} more`}
+              +{majors.length - 3} more
             </button>
           )}
-          {opportunity.location && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-purple-50 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200">
+          {expanded && opportunity.location && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1">
               <MapPin className="h-3 w-3" />
               {opportunity.location}
             </span>
           )}
-          {opportunity.funding && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
+          {expanded && opportunity.funding && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1">
               <Wallet className="h-3 w-3" />
               Funding: {opportunity.funding}
             </span>
           )}
         </div>
 
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:flex-nowrap pt-2">
+        {expanded && opportunity.description && (
+          <div className="border-t border-border pt-3">
+            <MarkdownContent
+              content={opportunity.description}
+              className="prose prose-sm max-w-none text-muted-foreground dark:prose-invert [&_*]:text-muted-foreground"
+            />
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2 border-t border-border pt-3 md:flex-row md:items-center md:justify-between md:flex-nowrap">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
             {opportunity.link ? (
               <a
                 href={opportunity.link}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 whitespace-nowrap"
+                className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-medium text-primary hover:underline"
               >
                 <Link2 className="h-4 w-4" />
                 Application link
               </a>
             ) : (
-              <span className="text-sm text-gray-500">No application link</span>
+              <span className="text-sm text-muted-foreground">No application link</span>
+            )}
+            {hasMoreDetails && (
+              <Button variant="ghost" size="sm" className="h-auto justify-start px-0 text-primary hover:text-primary" onClick={() => setExpanded((value) => !value)}>
+                {expanded ? "Hide details" : "Details"}
+              </Button>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -286,11 +272,6 @@ export const OpportunityCard = ({
             )}
           </div>
         </div>
-        {eligibilityText && (
-          <div className="pt-2 text-xs text-gray-600 dark:text-gray-300">
-            Eligibility: {eligibilityText}
-          </div>
-        )}
       </div>
     </article>
   );

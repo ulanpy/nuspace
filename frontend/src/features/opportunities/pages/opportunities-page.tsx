@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useMutation, useInfiniteQuery } from "@tanstack/react-query";
-import { Search, Loader2, Plus, Eye, EyeOff } from "lucide-react";
+import { Search, Loader2, Plus, Eye, EyeOff, SlidersHorizontal, X } from "lucide-react";
 import { PageContainer } from "@/components/shared/page-container";
 import { PageHeader } from "@/components/shared/page-header";
 import { createOpportunity, deleteOpportunity, fetchOpportunities, updateOpportunity } from "../api";
@@ -21,15 +21,14 @@ import { OpportunityCard } from '../components/opportunity-card';
 import { Button } from "@/components/ui/button";
 import MotionWrapper from "@/components/shared/motion-wrapper";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { OpportunityForm } from '../components/opportunity-form';
 import { useUser } from "@/hooks/use-user";
-import { useAuthGate } from "@/hooks/use-auth-gate";
-import { AuthWallModal } from "@/components/molecules/auth-wall-modal";
 import { queryClient } from "@/utils/query-client";
 import { Modal } from "@/components/shared/modal";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "@/hooks/toast";
+import { coursesSurface } from "@/features/courses/constants/dashboard-theme";
+import { cn } from "@/utils/utils";
 
 const ALLOWED_OPPORTUNITY_EMAILS = [
   "ministry.innovations@nu.edu.kz",
@@ -140,19 +139,19 @@ const MultiCheckboxDropdown = ({
 
   const allSelected = selected.length === options.length;
 
+  const displayLabel = label ?? placeholder;
   const display =
     selected.length === 0
-      ? placeholder
+      ? displayLabel
       : selected.length === options.length
-        ? "All"
-        : `${selected.length} selected`;
+        ? `${displayLabel} · All`
+        : `${displayLabel} · ${selected.length}`;
 
   return (
-    <div className={`flex h-full flex-col justify-end gap-1 ${className ?? ""}`}>
-      {label ? <Label className="text-xs text-muted-foreground">{label}</Label> : null}
+    <div className={className}>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="w-full justify-between h-11">
+          <Button variant="outline" className="h-10 w-full justify-between">
             <span className="truncate text-left">{display}</span>
           </Button>
         </PopoverTrigger>
@@ -232,7 +231,6 @@ export default function OpportunitiesPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const { user } = useUser();
-  const { requireAuth, isModalOpen, closeModal } = useAuthGate();
 
   const userEmail = user?.email?.toLowerCase();
   const canManage =
@@ -345,6 +343,29 @@ export default function OpportunitiesPage() {
   const filteredCount = visibleData.length;
   const displayTotal = totalCount; // always show backend total for current filters
 
+  const hasActiveFilters = Boolean(
+    filters.q ||
+      filters.type?.length ||
+      filters.majors?.length ||
+      filters.education_level?.length ||
+      filters.min_year ||
+      filters.max_year ||
+      !filters.hide_expired,
+  );
+
+  const clearFilters = () => {
+    setFilters({
+      page: 1,
+      size: 15,
+      hide_expired: true,
+      type: [],
+      majors: [],
+      education_level: [],
+      min_year: undefined,
+      max_year: undefined,
+    });
+  };
+
   const onChange = (field: keyof OpportunityFilters, value: string | number | undefined) => {
     setFilters((prev) => ({
       ...prev,
@@ -395,119 +416,72 @@ export default function OpportunitiesPage() {
   return (
     <MotionWrapper>
       <div className="min-h-screen bg-background">
-        <PageContainer padding="default" className="space-y-8">
+        <PageContainer maxWidth="full" padding="dense" className="space-y-4">
           <PageHeader
-            title="Opportunities Digest"
-            subtitle="Research opportunities, summer internships, forums and summits collected specifically for NU students. Majors listed are not strict requirements — always double-check details on the official program pages. Check this page regularly — MRI keeps updating it."
+            title="Opportunities"
+            subtitle="Research, internships, forums and summits curated for NU students."
+            className="mb-4"
           />
 
-          {/* Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 rounded-2xl bg-card p-4 shadow-sm border border-border">
-            <div className="sm:col-span-2 md:col-span-2 lg:col-span-3">
-              <Label htmlFor="q" className="text-xs text-muted-foreground">
-                Search
-              </Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="q"
-                  value={filters.q || ""}
-                  onChange={(e) => onChange("q", e.target.value)}
-                  placeholder="Search name or description"
-                  className="pl-9 h-11"
-                />
-              </div>
-            </div>
-
-            <MultiCheckboxDropdown
-              label="Type"
-              options={typeOptions}
-              selected={(filters.type as string[]) || []}
-              onChange={(next) => setFilters((prev) => ({ ...prev, type: next, page: 1 }))}
-            />
-
-            <MultiCheckboxDropdown
-              label="Education level"
-              options={levelOptions}
-              selected={(filters.education_level as string[]) || []}
-              onChange={(next) => setFilters((prev) => ({ ...prev, education_level: next, page: 1 }))}
-            />
-
-            <MultiCheckboxDropdown
-              label="Year"
-              options={yearOptions}
-              selected={
-                filters.min_year && filters.max_year
-                  ? Array.from(
-                      new Set(
-                        Array.from(
-                          { length: filters.max_year - filters.min_year + 1 },
-                          (_, i) => String((filters.min_year || 0) + i)
-                        )
-                      )
-                    )
-                  : []
-              }
-              onChange={(next) => {
-                if (next.length === 0) {
-                  setFilters((prev) => ({ ...prev, min_year: undefined, max_year: undefined, page: 1 }));
-                  return;
-                }
-                const nums = next.map((v) => Number(v)).filter((n) => !Number.isNaN(n));
-                const min = Math.min(...nums);
-                const max = Math.max(...nums);
-                setFilters((prev) => ({ ...prev, min_year: min, max_year: max, page: 1 }));
-              }}
-            />
-
-            <MultiCheckboxDropdown
-              label="Majors"
-              options={majorOptions}
-              selected={(filters.majors as string[]) || []}
-              onChange={(next) => setFilters((prev) => ({ ...prev, majors: next, page: 1 }))}
-              className="sm:col-span-2 md:col-span-2 lg:col-span-2"
-            />
-            <div className="flex h-full flex-col justify-end gap-2 sm:col-span-2 md:col-span-2 lg:col-span-2">
-              <div className="flex items-center gap-3">
-                <Button
-                  variant={filters.hide_expired ? "default" : "outline"}
-                  className="flex h-11 items-center gap-2 whitespace-nowrap"
-                  onClick={() => {
-                    setFilters((prev) => ({
-                      ...prev,
-                      hide_expired: !prev.hide_expired,
-                      page: 1,
-                    }));
-                  }}
-                >
-                  {filters.hide_expired ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  {filters.hide_expired ? "Show expired" : "Hide expired"}
-                </Button>
-                <div className="flex h-11 items-center whitespace-nowrap text-sm text-muted-foreground">
-                  <span className="whitespace-nowrap">{displayTotal} results</span>
-                  {isFetching && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)] xl:items-start">
+            <aside className={cn("space-y-4 p-3 xl:sticky xl:top-4", coursesSurface.cardLg)}>
+              <div className="flex items-center justify-between gap-2 px-1">
+                <div className="flex items-center gap-2 font-semibold">
+                  <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+                  Filters
                 </div>
+                {hasActiveFilters && (
+                  <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={clearFilters}>
+                    <X className="mr-1 h-3.5 w-3.5" /> Clear
+                  </Button>
+                )}
               </div>
-            </div>
 
-            {(!user || canManage) && (
-              <div className="flex h-full flex-col justify-end gap-2 sm:col-span-2 md:col-span-2 lg:col-span-1 lg:col-start-6 items-end">
-                <Button
-                  className="flex h-11 w-full items-center justify-center gap-2 whitespace-nowrap text-center"
-                  onClick={() =>
-                    requireAuth(() => {
-                      setSubmitError(null);
-                      setEditing(null);
-                      setIsFormOpen(true);
-                    })
-                  }
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Opportunity
-                </Button>
+              <div className="space-y-3">
+                <MultiCheckboxDropdown label="Type" options={typeOptions} selected={(filters.type as string[]) || []} onChange={(next) => setFilters((prev) => ({ ...prev, type: next, page: 1 }))} />
+                <MultiCheckboxDropdown label="Education level" options={levelOptions} selected={(filters.education_level as string[]) || []} onChange={(next) => setFilters((prev) => ({ ...prev, education_level: next, page: 1 }))} />
+                <MultiCheckboxDropdown
+                  label="Year"
+                  options={yearOptions}
+                  selected={filters.min_year && filters.max_year ? Array.from({ length: filters.max_year - filters.min_year + 1 }, (_, i) => String(filters.min_year! + i)) : []}
+                  onChange={(next) => {
+                    if (next.length === 0) return setFilters((prev) => ({ ...prev, min_year: undefined, max_year: undefined, page: 1 }));
+                    const years = next.map(Number).filter((year) => !Number.isNaN(year));
+                    setFilters((prev) => ({ ...prev, min_year: Math.min(...years), max_year: Math.max(...years), page: 1 }));
+                  }}
+                />
+                <MultiCheckboxDropdown label="Majors" options={majorOptions} selected={(filters.majors as string[]) || []} onChange={(next) => setFilters((prev) => ({ ...prev, majors: next, page: 1 }))} />
               </div>
-            )}
-          </div>
+
+              <Button
+                variant={filters.hide_expired ? "secondary" : "outline"}
+                className="w-full justify-start gap-2"
+                onClick={() => setFilters((prev) => ({ ...prev, hide_expired: !prev.hide_expired, page: 1 }))}
+              >
+                {filters.hide_expired ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                {filters.hide_expired ? "Active opportunities" : "Including expired"}
+              </Button>
+              <p className="px-1 text-xs leading-relaxed text-muted-foreground">Majors are a guide, not a strict requirement. Always check the official programme page.</p>
+            </aside>
+
+            <main className="min-w-0 space-y-4">
+              <section className={cn("flex flex-col gap-3 p-3 sm:flex-row sm:items-center", coursesSurface.cardLg)}>
+                <div className="relative min-w-0 flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input id="q" value={filters.q || ""} onChange={(e) => onChange("q", e.target.value)} placeholder="Search opportunities" className="h-10 pl-9" />
+                </div>
+                <div className="flex items-center justify-between gap-3 sm:justify-end">
+                  <div className="whitespace-nowrap text-sm text-muted-foreground">
+                    {displayTotal} {displayTotal === 1 ? "opportunity" : "opportunities"}
+                    {isFetching && <Loader2 className="ml-2 inline h-4 w-4 animate-spin" />}
+                  </div>
+                  {canManage && (
+                    <Button size="sm" className="gap-2" onClick={() => { setSubmitError(null); setEditing(null); setIsFormOpen(true); }}>
+                      <Plus className="h-4 w-4" /> Add opportunity
+                    </Button>
+                  )}
+                </div>
+              </section>
 
           {canManage && (
             <Modal
@@ -568,7 +542,8 @@ export default function OpportunitiesPage() {
               </>
             ) : (
               <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-10 text-center text-muted-foreground">
-                No opportunities match your filters.
+                <p className="font-medium text-foreground">Your filters have excellent taste — nothing made the cut.</p>
+                <p className="mt-1 text-sm">Try widening them a little; your next plot twist may be one click away.</p>
               </div>
             )}
           </div>
@@ -584,14 +559,10 @@ export default function OpportunitiesPage() {
               )}
             </div>
           )}
+            </main>
+          </div>
         </PageContainer>
       </div>
-
-      <AuthWallModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        message="You need to be logged in to add an opportunity."
-      />
     </MotionWrapper>
   );
 }

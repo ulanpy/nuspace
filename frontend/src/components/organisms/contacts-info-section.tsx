@@ -28,6 +28,14 @@ import {
   type ContactSearchResult,
 } from "@/features/contacts/contact-search";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Accordion,
   AccordionContent,
@@ -383,6 +391,17 @@ const URGENT_CONTACTS = URGENT_CONTACT_IDS.map((contactId) =>
   ),
 ).filter((contact): contact is ContactInfo => Boolean(contact));
 
+const QUICK_SERVICE_IDS = [
+  "it-helpdesk",
+  "academic-advising",
+  "student-housing",
+  "student-advocacy",
+] as const;
+
+const QUICK_SERVICES = QUICK_SERVICE_IDS.map((serviceId) =>
+  SERVICES.find((service) => service.id === serviceId),
+).filter((service): service is ServiceItem => Boolean(service));
+
 function contactToHref(type: ContactType, value: string): string | undefined {
   switch (type) {
     case "phone":
@@ -581,6 +600,66 @@ function UrgentHelp() {
   );
 }
 
+function QuickServices() {
+  return (
+    <section aria-labelledby="quick-services-title">
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <div>
+          <h2 id="quick-services-title" className="text-lg font-semibold">
+            Most used services
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Reach common student services without opening the directory.
+          </p>
+        </div>
+        <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+          <a href="#contact-directory">Browse all</a>
+        </Button>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {QUICK_SERVICES.map((service) => {
+          const primaryContact = service.contacts[0];
+          const href = primaryContact ? contactToHref(primaryContact.type, primaryContact.value) : undefined;
+          const actionLabel = primaryContact?.type === "web" ? "Open service" : "Contact";
+
+          return (
+            <Card key={service.id} className="shadow-none">
+              <CardHeader className="gap-3 p-4 pb-3">
+                <div className="flex items-start gap-3">
+                  <ServiceIcon service={service} />
+                  <div className="min-w-0">
+                    <CardTitle className="text-base">{service.name}</CardTitle>
+                    <CardDescription className="mt-1 line-clamp-2 leading-snug">
+                      {service.description}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                {href ? (
+                  <Button asChild variant="outline" size="sm" className="w-full">
+                    <a
+                      href={href}
+                      target={primaryContact.type === "web" ? "_blank" : undefined}
+                      rel={primaryContact.type === "web" ? "noopener noreferrer" : undefined}
+                    >
+                      {actionLabel}
+                    </a>
+                  </Button>
+                ) : (
+                  <Button asChild variant="outline" size="sm" className="w-full">
+                    <a href="#contact-directory">View contacts</a>
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function ContactRows({
   serviceId,
   contacts,
@@ -672,53 +751,66 @@ export function ContactsInfoSection() {
     0,
   );
 
+  const searchControl = (
+    <div className="relative">
+      <label htmlFor="contact-search" className="sr-only">
+        Search contacts
+      </label>
+      <Search
+        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+        aria-hidden="true"
+      />
+      <Input
+        id="contact-search"
+        type="text"
+        role="searchbox"
+        inputMode="search"
+        value={query}
+        onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+          setQuery(event.target.value)
+        }
+        placeholder="Search a service, person, number or email"
+        className="h-11 pl-9 pr-10"
+        autoComplete="off"
+      />
+      {query && (
+        <button
+          type="button"
+          onClick={() => setQuery("")}
+          className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          aria-label="Clear contact search"
+        >
+          <X className="h-4 w-4" aria-hidden="true" />
+        </button>
+      )}
+    </div>
+  );
+
   return (
-    <div className="flex w-full flex-col gap-8">
-      <UrgentHelp />
-
-      <section aria-labelledby="directory-title" className="flex flex-col gap-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 id="directory-title" className="text-xl font-semibold">
-              Contact directory
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+    <div className="flex w-full flex-col gap-6">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+        <UrgentHelp />
+        <Card className="shadow-none">
+          <CardHeader className="p-4 pb-3">
+            <CardTitle className="text-lg">Find a contact</CardTitle>
+            <CardDescription>
               Search by service, person, phone number, or email.
-            </p>
-          </div>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">{searchControl}</CardContent>
+        </Card>
+      </div>
 
-          <div className="relative w-full sm:max-w-sm">
-            <label htmlFor="contact-search" className="sr-only">
-              Search contacts
-            </label>
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              id="contact-search"
-              type="text"
-              role="searchbox"
-              inputMode="search"
-              value={query}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                setQuery(event.target.value)
-              }
-              placeholder="Search contacts"
-              className="h-11 pl-9 pr-10"
-              autoComplete="off"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-                aria-label="Clear contact search"
-              >
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            )}
-          </div>
+      {!isSearching && <QuickServices />}
+
+      <section id="contact-directory" aria-labelledby="directory-title" className="flex flex-col gap-5">
+        <div>
+          <h2 id="directory-title" className="text-xl font-semibold">
+            Contact directory
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Search by service, person, phone number, or email.
+          </p>
         </div>
 
         <p
