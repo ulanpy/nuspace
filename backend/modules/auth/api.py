@@ -75,10 +75,19 @@ async def bind_tg(
     request: Request,
     sub_param: Sub,
     _: Annotated[None, Depends(_mark_auth_flow)],
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     auth_service: AuthService = Depends(deps.get_auth_service),
 ):
+    """Issue a Telegram deeplink for the authenticated user's own account."""
+    session_sub = user[0].get("sub")
+    if sub_param.sub != session_sub:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot bind Telegram for another user",
+        )
+
     bot: Bot = request.app.state.bot
-    payload = auth_service.build_telegram_bind_payload(sub_param.sub)
+    payload = auth_service.build_telegram_bind_payload(session_sub)
     link = await create_start_link(bot, payload["start_payload"], encode=True)
     return {
         "link": link,
