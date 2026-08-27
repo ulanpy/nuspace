@@ -1,5 +1,4 @@
 import logging
-import random
 import secrets
 from urllib.parse import urljoin, urlparse
 
@@ -373,12 +372,3 @@ class AuthService:
     async def logout(self, refresh_token: str) -> None:
         if not config.MOCK_KEYCLOAK:
             await self.kc_manager.revoke_offline_refresh_token(refresh_token)
-
-    @staticmethod
-    def build_telegram_bind_payload(sub: str) -> dict:
-        correct_number = random.randrange(1, 10)
-        return {
-            "correct_number": correct_number,
-            "sub": sub,
-            "start_payload": f"{sub}&{correct_number}",
-        }

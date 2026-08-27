@@ -17,10 +17,9 @@ async def confirmation_buttons(
 ) -> None:
     """Complete website-initiated Telegram linking after emoji confirmation."""
     linked = await telegram_link_service.confirm_link(
-        callback_data.sub,
+        callback_data.token,
         c.from_user.id,
         picked_number=callback_data.number,
-        expected_number=callback_data.confirmation_number,
     )
     if linked:
         await c.message.answer(_("Телеграм аккаунт успешно привязан!"))

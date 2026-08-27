@@ -22,6 +22,7 @@ from backend.modules.auth.dependencies import (
 )
 from backend.modules.auth.schemas import CurrentUserResponse, Sub
 from backend.modules.auth.service import AuthService
+from backend.modules.bot.utils.telegram_link_tokens import issue_telegram_link_token
 
 router = APIRouter(tags=["Auth Routes"])
 # Auth-flow routes must not call get_creds_* (refresh-token rotation / pre-login).
@@ -76,7 +77,7 @@ async def bind_tg(
     sub_param: Sub,
     _: Annotated[None, Depends(_mark_auth_flow)],
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
-    auth_service: AuthService = Depends(deps.get_auth_service),
+    redis: Redis = Depends(deps.get_redis),
 ):
     """Issue a Telegram deeplink for the authenticated user's own account."""
     session_sub = user[0].get("sub")
@@ -87,12 +88,12 @@ async def bind_tg(
         )
 
     bot: Bot = request.app.state.bot
-    payload = auth_service.build_telegram_bind_payload(session_sub)
-    link = await create_start_link(bot, payload["start_payload"], encode=True)
+    token, correct_number = await issue_telegram_link_token(redis, sub=session_sub)
+    link = await create_start_link(bot, token, encode=True)
     return {
         "link": link,
-        "correct_number": payload["correct_number"],
-        "sub": payload["sub"],
+        "correct_number": correct_number,
+        "sub": session_sub,
     }
 
 

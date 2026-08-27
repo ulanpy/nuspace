@@ -24,20 +24,19 @@ async def user_start_link(
         return
 
     try:
-        payload = decode_payload(command.args)
-        sub, confirmation_number = payload.split("&")
+        token = decode_payload(command.args)
     except (ValueError, UnicodeDecodeError, AttributeError):
         await m.answer(_("Некорректная ссылка"))
         return
 
-    result = await telegram_link_service.handle_deeplink_start(sub, m.from_user.id)
+    result = await telegram_link_service.handle_deeplink_start(token, m.from_user.id)
     if result == DeeplinkStartResult.invalid_sub:
         await m.answer(_("Некорректная ссылка"))
         return
     if result == DeeplinkStartResult.needs_confirmation:
         await m.answer(
             _("Отлично, теперь выбери верный смайлик!"),
-            reply_markup=kb_confirmation(sub=sub, confirmation_number=int(confirmation_number)),
+            reply_markup=kb_confirmation(token=token),
         )
         return
 

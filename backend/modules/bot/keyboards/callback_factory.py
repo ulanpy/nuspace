@@ -6,9 +6,8 @@ from aiogram.filters.callback_data import CallbackData
 class ConfirmTelegramUser(CallbackData, prefix="confirm"):
     """Telegram linking: user picks the emoji shown on the website."""
 
-    sub: str
+    token: str
     number: int
-    confirmation_number: int
 
 
 class CourseGradesPage(CallbackData, prefix="cgr"):

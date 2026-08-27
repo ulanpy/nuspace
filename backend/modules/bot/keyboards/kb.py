@@ -3,7 +3,6 @@
 from random import shuffle
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
 from backend.modules.bot.keyboards.callback_factory import ConfirmTelegramUser
 
 
@@ -14,15 +13,13 @@ def kb_url(url: str) -> InlineKeyboardMarkup:
     )
 
 
-def kb_confirmation(sub: str, confirmation_number: int) -> InlineKeyboardMarkup:
+def kb_confirmation(token: str) -> InlineKeyboardMarkup:
     """Emoji grid for Telegram account linking confirmation."""
     emojis = ["🐬", "🦄", "🐖", "🐉", "🐁", "🐈", "🦍", "🐝", "🐺", "🐥"]
     buttons = [
         InlineKeyboardButton(
             text=emoji,
-            callback_data=ConfirmTelegramUser(
-                sub=sub, number=idx + 1, confirmation_number=confirmation_number
-            ).pack(),
+            callback_data=ConfirmTelegramUser(token=token, number=idx + 1).pack(),
         )
         for idx, emoji in enumerate(emojis)
     ]

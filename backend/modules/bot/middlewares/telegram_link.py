@@ -4,6 +4,7 @@ from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
+from redis.asyncio import Redis
 
 from backend.modules.bot.services.link import TelegramLinkService
 
@@ -16,6 +17,7 @@ class TelegramLinkMiddleware(BaseMiddleware):
         data: dict[str, Any],
     ) -> Any:
         uow = data.get("uow")
-        if uow is not None:
-            data["telegram_link_service"] = TelegramLinkService(uow)
+        redis: Redis | None = data.get("redis")
+        if uow is not None and redis is not None:
+            data["telegram_link_service"] = TelegramLinkService(uow, redis)
         return await handler(event, data)
