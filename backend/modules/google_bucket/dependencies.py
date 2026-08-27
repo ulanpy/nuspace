@@ -1,27 +1,40 @@
 import asyncio
 import json
 
-from fastapi import HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2 import id_token
 
 from backend.core.configs.config import Config
 from backend.modules.auth.dependencies import set_request_access_actor
+from backend.modules.campuscurrent.communities.dependencies import get_community_service
+from backend.modules.campuscurrent.communities.service import CommunityService
+from backend.modules.campuscurrent.events.dependencies import get_event_service
+from backend.modules.campuscurrent.events.service import EventService
 from backend.modules.courses.registrar.service import (
     RegistrarService,
     ScheduleCatalogFinalizeError,
 )
 from backend.modules.google_bucket import schemas
 from backend.modules.google_bucket.interfaces import (
+    MediaUploadAuthorizer,
     ScheduleCatalogFinalizeOutcome,
     ScheduleCatalogOnFinalize,
 )
+from backend.modules.google_bucket.service import CampusCurrentMediaUploadAuthorizer
 from backend.modules.media.models import EntityType, MediaFormat
 from backend.modules.media.schemas import MediaUpsertData
 
 
 class ScheduleCatalogFinalizeFailed(Exception):
     """Port-level failure for catalog finalize; API maps to HTTP 5xx."""
+
+
+async def get_media_upload_authorizer(
+    events: EventService = Depends(get_event_service),
+    communities: CommunityService = Depends(get_community_service),
+) -> MediaUploadAuthorizer:
+    return CampusCurrentMediaUploadAuthorizer(events=events, communities=communities)
 
 
 class _ScheduleCatalogOnFinalizeAdapter:

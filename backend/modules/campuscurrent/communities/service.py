@@ -84,6 +84,18 @@ class CommunityService:
 
         return await self._build_community_response(community, infra, user)
 
+    async def authorize_media_upload(self, community_id: int, user: tuple[dict, dict]) -> None:
+        async with self.uow:
+            repo = self.uow.get_repo(CommunityRepository)
+            community = await repo.get_by_id(community_id)
+            if community is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
+                )
+            await CommunityPolicy(user=user).check_permission(
+                action=ResourceAction.UPDATE, community=community
+            )
+
     async def _delete_community_media(
         self,
         infra: Infra,

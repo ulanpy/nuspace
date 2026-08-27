@@ -80,6 +80,16 @@ class EventPolicy(BasePolicy):
                 detail="Only event creator or admin can delete events",
             )
 
+    def check_manage_media(self, event: Event) -> None:
+        """Media changes require the same ownership as editing an event."""
+        if self.is_admin or self._is_owner(event.creator_sub):
+            return
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only event creator or admin can manage event media",
+        )
+
     def check_rsvp(self, event: Event) -> None:
         """Authenticated users may RSVP on approved or cancelled events they can read."""
         self.check_read_one(event=event)

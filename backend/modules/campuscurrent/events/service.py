@@ -99,6 +99,14 @@ class EventService:
         event_responses = await self._build_event_responses([event], user)
         return event_responses[0]
 
+    async def authorize_media_upload(self, event_id: int, user: tuple[dict, dict]) -> None:
+        async with self.uow:
+            repo = self.uow.get_repo(EventRepository)
+            event = await repo.get_event_by_id(event_id)
+            if event is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+            EventPolicy(user=user).check_manage_media(event)
+
     async def _delete_event_media(
         self,
         event: Event,

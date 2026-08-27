@@ -5,6 +5,28 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
+from backend.modules.media.models import EntityType
+
+
+class MediaUploadAuthorizer(Protocol):
+    """Checks whether a user may attach media to an existing resource."""
+
+    async def authorize_media_upload(
+        self,
+        *,
+        entity_type: EntityType,
+        entity_id: int,
+        user: tuple[dict, dict],
+    ) -> None: ...
+
+
+class EventMediaUploadAccess(Protocol):
+    async def authorize_media_upload(self, event_id: int, user: tuple[dict, dict]) -> None: ...
+
+
+class CommunityMediaUploadAccess(Protocol):
+    async def authorize_media_upload(self, community_id: int, user: tuple[dict, dict]) -> None: ...
+
 
 @dataclass(frozen=True)
 class ScheduleCatalogFinalizeOutcome:

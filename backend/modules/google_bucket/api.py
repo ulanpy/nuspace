@@ -12,7 +12,10 @@ from backend.modules.courses.registrar.schedule_gcs import SCHEDULE_GCS_META_OBJ
 from backend.modules.google_bucket import dependencies as deps
 from backend.modules.google_bucket import schemas
 from backend.modules.google_bucket.dependencies import ScheduleCatalogFinalizeFailed
-from backend.modules.google_bucket.interfaces import ScheduleCatalogOnFinalize
+from backend.modules.google_bucket.interfaces import (
+    MediaUploadAuthorizer,
+    ScheduleCatalogOnFinalize,
+)
 from backend.modules.media.dependencies import get_media_service
 from backend.modules.media.models import EntityType, MediaFormat
 from backend.modules.media.schemas import MediaUpsertData
@@ -27,6 +30,9 @@ async def generate_upload_url(
     request: Request,
     signed_url_request: List[schemas.SignedUrlRequest],
     user: Annotated[dict, Depends(get_creds_or_401)],
+    media_upload_authorizer: Annotated[
+        MediaUploadAuthorizer, Depends(deps.get_media_upload_authorizer)
+    ],
     media_service: MediaService = Depends(get_media_service),
 ):
     """
@@ -37,6 +43,14 @@ async def generate_upload_url(
         raise HTTPException(
             status_code=400,
             detail=f"Cannot generate more than {MAX_UPLOAD_URLS} upload URLs at a time.",
+        )
+
+    upload_targets = {(item.entity_type, item.entity_id) for item in signed_url_request}
+    for entity_type, entity_id in upload_targets:
+        await media_upload_authorizer.authorize_media_upload(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            user=user,
         )
 
     urls = []
