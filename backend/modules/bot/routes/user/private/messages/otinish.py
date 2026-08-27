@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import logging
+
 from aiogram import Bot, F, Router
 from aiogram.dispatcher.event.bases import UNHANDLED
+from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command, CommandObject, CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -23,6 +26,7 @@ from backend.modules.bot.services.otinish_bridge import (
     OtinishBridgeService,
     ticket_hashtag,
 )
+from backend.modules.bot.utils.otinish_claim_access import is_claim_authorized_member
 from backend.modules.sgotinish.models import TicketCategory
 from backend.modules.sgotinish.service import (
     MAX_TICKET_BODY_LENGTH,
@@ -34,6 +38,7 @@ from backend.modules.sgotinish.service import (
 )
 
 router = Router(name="Otinish private router")
+logger = logging.getLogger(__name__)
 
 CATEGORY_LABELS: dict[TicketCategory, str] = {
     TicketCategory.education: "Education",
@@ -56,6 +61,11 @@ class OtinishChannelStates(StatesGroup):
     """Open pipe: student or assignee — all non-command DMs go to the other side."""
 
     active = State()
+
+
+async def _claim_unavailable(message: Message) -> None:
+    # Deliberately neutral: an arbitrary deep-link must not reveal ticket state.
+    await message.answer("This ticket is not available to claim.")
 
 
 def _site_url() -> str:
@@ -166,7 +176,30 @@ async def otinish_claim_deeplink(
 
     ticket_id = parse_claim_deeplink_ticket_id(command.args)
     if ticket_id is None:
-        await message.answer("Invalid ticket link.")
+        await _claim_unavailable(message)
+        return
+
+    authorization_chat_id = await otinish_service.get_claim_authorization_chat_id(ticket_id)
+    if authorization_chat_id is None:
+        await _claim_unavailable(message)
+        return
+
+    try:
+        member = await bot.get_chat_member(
+            chat_id=authorization_chat_id,
+            user_id=message.from_user.id,
+        )
+    except TelegramAPIError:
+        logger.exception(
+            "Failed to verify claim access for Telegram user %s in ministry chat %s",
+            message.from_user.id,
+            authorization_chat_id,
+        )
+        await message.answer("We could not verify your claim access. Please try again later.")
+        return
+
+    if not is_claim_authorized_member(member):
+        await _claim_unavailable(message)
         return
 
     bridge = OtinishBridgeService(bot, otinish_service)
@@ -176,23 +209,19 @@ async def otinish_claim_deeplink(
             telegram_id=message.from_user.id,
         )
     except LookupError:
-        await message.answer("Ticket not found.")
+        await _claim_unavailable(message)
         return
     except ValueError:
-        await message.answer("This ticket is closed.")
+        await _claim_unavailable(message)
         return
     except OpenChannelExistsError as exc:
         await message.answer(
-            f"You already have an open channel ({ticket_hashtag(exc.ticket.id)}).\n"
+            f"You already have an open channel ({ticket_hashtag(exc.ticket_id)}).\n"
             "Send /close there first, then Answer this ticket again."
         )
         return
-    except TicketAlreadyClaimedError as exc:
-        other_id = exc.ticket.assignee_telegram_id
-        await message.answer(
-            f"Ticket #{exc.ticket.id} is already claimed"
-            + (f" by another SG member (id {other_id})." if other_id else ".")
-        )
+    except TicketAlreadyClaimedError:
+        await _claim_unavailable(message)
         return
 
     await _enter_channel(state, ticket.id)
@@ -403,9 +432,9 @@ async def otinish_body_received(
             body=message.text,
         )
     except OpenChannelExistsError as exc:
-        await _enter_channel(state, exc.ticket.id)
+        await _enter_channel(state, exc.ticket_id)
         await message.answer(
-            f"You already have an open channel ({ticket_hashtag(exc.ticket.id)}).\n"
+            f"You already have an open channel ({ticket_hashtag(exc.ticket_id)}).\n"
             "Type freely, or /close to end it."
         )
         return

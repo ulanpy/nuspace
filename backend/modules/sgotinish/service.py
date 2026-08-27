@@ -1,13 +1,13 @@
-import re
 import inspect
+import re
 from functools import wraps
 
 from backend.core.configs.config import config
+from backend.core.database.uow import UnitOfWork
 from backend.modules.sgotinish.models import Ticket, TicketCategory, TicketStatus
 from backend.modules.sgotinish.repository import OtinishRepository
 from backend.modules.sgotinish.schemas import CategoryStat, OtinishPublicStats
 from sqlalchemy.exc import IntegrityError
-from backend.core.database.uow import UnitOfWork
 
 MAX_TICKET_BODY_LENGTH = 3500
 
@@ -48,17 +48,17 @@ def parse_claim_deeplink_ticket_id(args: str | None) -> int | None:
 
 
 class TicketAlreadyClaimedError(Exception):
-    def __init__(self, ticket: Ticket):
-        self.ticket = ticket
-        super().__init__(f"Ticket #{ticket.id} already claimed")
+    def __init__(self, *, ticket_id: int):
+        self.ticket_id = ticket_id
+        super().__init__(f"Ticket #{ticket_id} already claimed")
 
 
 class OpenChannelExistsError(Exception):
     """User already has an open ticket channel (author or assignee)."""
 
-    def __init__(self, ticket: Ticket):
-        self.ticket = ticket
-        super().__init__(f"Open channel already exists for ticket #{ticket.id}")
+    def __init__(self, *, ticket_id: int):
+        self.ticket_id = ticket_id
+        super().__init__(f"Open channel already exists for ticket #{ticket_id}")
 
 
 def uow_scoped(cls):
@@ -108,7 +108,7 @@ class OtinishService:
 
         existing = await self.repository.get_open_ticket_by_author(telegram_id)
         if existing is not None:
-            raise OpenChannelExistsError(existing)
+            raise OpenChannelExistsError(ticket_id=existing.id)
 
         normalized = body.strip()
         if not normalized:
@@ -140,6 +140,19 @@ class OtinishService:
             return int(ministry.telegram_chat_id)
         fallback = config.TELEGRAM_CHAT_ID
         return int(fallback) if fallback is not None else None
+
+    async def get_claim_authorization_chat_id(self, ticket_id: int) -> int | None:
+        """Return the inbox chat whose active members may claim this ticket.
+
+        In development ``TELEGRAM_CHAT_ID`` is the dedicated fallback inbox, so
+        its members may claim tickets for ministries without an assigned chat.
+        Production must keep that fallback restricted to trusted SG members.
+        """
+        ticket = await self.repository.get_ticket_by_id(ticket_id)
+        if ticket is None or not is_ticket_open(ticket):
+            return None
+
+        return await self.resolve_ministry_chat_id(ticket)
 
     async def is_ministry_inbox_chat(self, chat_id: int) -> bool:
         if config.TELEGRAM_CHAT_ID is not None and chat_id == int(config.TELEGRAM_CHAT_ID):
@@ -207,11 +220,11 @@ class OtinishService:
         if is_assignee(ticket, telegram_id):
             return ticket, False
         if ticket.assignee_telegram_id is not None:
-            raise TicketAlreadyClaimedError(ticket)
+            raise TicketAlreadyClaimedError(ticket_id=ticket.id)
 
         other = await self.repository.get_open_ticket_by_assignee(telegram_id)
         if other is not None and other.id != ticket_id:
-            raise OpenChannelExistsError(other)
+            raise OpenChannelExistsError(ticket_id=other.id)
 
         won = await self.repository.try_claim_ticket(ticket_id=ticket_id, telegram_id=telegram_id)
         await self.db_session.commit()
@@ -220,7 +233,7 @@ class OtinishService:
             raise LookupError("Ticket not found.")
         if won or is_assignee(ticket, telegram_id):
             return ticket, bool(won)
-        raise TicketAlreadyClaimedError(ticket)
+        raise TicketAlreadyClaimedError(ticket_id=ticket.id)
 
     async def transfer_ticket(
         self,
