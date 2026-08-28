@@ -63,8 +63,214 @@ groups:
         labels:
           severity: critical
         isPaused: false
-        notification_settings:
-          receiver: Telegram
+
+      # Host capacity — warn before Docker, Postgres, or Loki run out of space.
+      - uid: nuspace_disk_warning
+        title: Host Disk Usage High
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 1800, to: 0}
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: '((100 * (1 - node_filesystem_avail_bytes{job="node_exporter",mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{job="node_exporter",mountpoint="/",fstype!~"tmpfs|overlay"})) >= 80) and ((100 * (1 - node_filesystem_avail_bytes{job="node_exporter",mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{job="node_exporter",mountpoint="/",fstype!~"tmpfs|overlay"})) < 90)'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator: {params: [1], type: gte}
+                  operator: {type: and}
+                  query: {params: [C]}
+                  reducer: {params: [], type: last}
+                  type: query
+              datasource: {type: __expr__, uid: __expr__}
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 30m
+        annotations:
+          summary: Диск VM заполнен более чем на 80%
+          description: Root filesystem держится в диапазоне 80–90% не менее 30 минут. Проверь Docker volumes, Loki и Postgres.
+        labels:
+          severity: warning
+          alert_group: disk
+        isPaused: false
+
+      - uid: nuspace_disk_critical
+        title: Host Disk Usage Critical
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: '100 * (1 - node_filesystem_avail_bytes{job="node_exporter",mountpoint="/",fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{job="node_exporter",mountpoint="/",fstype!~"tmpfs|overlay"}) >= 90'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator: {params: [1], type: gte}
+                  operator: {type: and}
+                  query: {params: [C]}
+                  reducer: {params: [], type: last}
+                  type: query
+              datasource: {type: __expr__, uid: __expr__}
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 15m
+        annotations:
+          summary: Диск VM заполнен более чем на 90%
+          description: Root filesystem держится выше 90% не менее 15 минут. Риск остановки Postgres, Loki или Docker.
+        labels:
+          severity: critical
+          alert_group: disk
+        isPaused: false
+
+      # SQLAlchemy QueuePool capacity is 60 persistent + 20 overflow slots.
+      - uid: nuspace_db_pool_high
+        title: Database Pool Saturation
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: PBFA97CFB590B2093
+            model:
+              editorMode: code
+              expr: '100 * fastapi_db_pool_connections{state="checked_out"} / fastapi_db_pool_connections{state="capacity"}'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator: {params: [90], type: gte}
+                  operator: {type: and}
+                  query: {params: [C]}
+                  reducer: {params: [], type: last}
+                  type: query
+              datasource: {type: __expr__, uid: __expr__}
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: Пул соединений PostgreSQL почти исчерпан
+          description: FastAPI держит ≥90% из 80 допустимых соединений более 5 минут. Проверь slow queries и latency.
+        labels:
+          severity: warning
+          alert_group: database
+        isPaused: false
+
+      # Backup sidecar emits these strings only after a successful GCS upload.
+      - uid: nuspace_pgdump_stale
+        title: pg_dump Backup Stale
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 32400, to: 0}
+            datasourceUid: P8E80F9AEF21F6940
+            model:
+              editorMode: code
+              expr: 'absent_over_time({service_name="backup"} |= "pg_dump backup uploaded" [9h])'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator: {params: [1], type: gte}
+                  operator: {type: and}
+                  query: {params: [C]}
+                  reducer: {params: [], type: last}
+                  type: query
+              datasource: {type: __expr__, uid: __expr__}
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: Нет свежего pg_dump backup
+          description: В Loki нет успешного pg_dump upload за 9 часов; расписание должно выполнять upload каждые 6 часов.
+        labels:
+          severity: critical
+          alert_group: backup
+        isPaused: false
+
+      - uid: nuspace_walg_base_stale
+        title: WAL-G Base Backup Stale
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 100800, to: 0}
+            datasourceUid: P8E80F9AEF21F6940
+            model:
+              editorMode: code
+              expr: 'absent_over_time({service_name="backup"} |= "WAL-G backup-push completed" [28h])'
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              range: false
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator: {params: [1], type: gte}
+                  operator: {type: and}
+                  query: {params: [C]}
+                  reducer: {params: [], type: last}
+                  type: query
+              datasource: {type: __expr__, uid: __expr__}
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: Нет свежего WAL-G base backup
+          description: В Loki нет успешного WAL-G base backup за 28 часов; он должен выполняться ежедневно.
+        labels:
+          severity: critical
+          alert_group: backup
+        isPaused: false
 
       # 2) Sustained 5xx — server-side failures users can see
       # Sliding 15m window: raise threshold so a few registrar/client blips don't page.
@@ -125,8 +331,6 @@ groups:
         labels:
           severity: critical
         isPaused: false
-        notification_settings:
-          receiver: Telegram
 
       # 3) 404 on real FastAPI routes only (excludes scanner noise → [unmatched])
       - uid: nuspace404001
@@ -157,7 +361,7 @@ groups:
               conditions:
                 - evaluator:
                     params:
-                      - 5
+                      - 25
                     type: gte
                   operator:
                     type: and
@@ -181,12 +385,10 @@ groups:
         for: 5m
         annotations:
           summary: Рост 404 на наших ручках
-          description: ≥5 ответов 404 за 15 минут на matched routes (path!="[unmatched]"). Сканеры не считаются. Проверь 4xx by Path на дашборде.
+          description: ≥25 ответов 404 за 15 минут на matched routes (path!="[unmatched]"). Сканеры не считаются. Проверь 4xx by Path на дашборде.
         labels:
           severity: warning
         isPaused: false
-        notification_settings:
-          receiver: Telegram
 
       # 4) Unhandled exceptions in the FastAPI middleware counter
       # ≥1 was too noisy: one registrar login failure pages, then resolves ~10m later
@@ -247,5 +449,3 @@ groups:
         labels:
           severity: critical
         isPaused: false
-        notification_settings:
-          receiver: Telegram

@@ -36,15 +36,16 @@ storage_config:
     cache_location: /loki/index_cache
 
 ingester:
-  chunk_target_size: 1536
+  # Bytes. Keep Loki's 1.5 MiB default; 1536 would mean only 1.5 KiB.
+  chunk_target_size: 1572864
 
 compactor:
   working_directory: /loki/compactor_work
-  compaction_interval: 10m
+  compaction_interval: 1h
   retention_enabled: true
   delete_request_store: filesystem
   retention_delete_delay: 2h
-  retention_delete_worker_count: 50
+  retention_delete_worker_count: 5
 
 pattern_ingester:
   enabled: false

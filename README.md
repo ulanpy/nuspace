@@ -6,24 +6,6 @@
   **The superapp for NU students, offering campus services, announcements, and student essentials in one trusted, convenient platform.**
 </div> 
 
-## Table of Contents
-
-- [Nuspace.kz](#nuspacekz)
-  - [Table of Contents](#table-of-contents)
-  - [Tech Stack](#tech-stack)
-    - [Backend](#backend)
-    - [Frontend](#frontend)
-    - [DevOps \& Infrastructure](#devops--infrastructure)
-  - [Prerequisites](#prerequisites)
-  - [Quick Start](#quick-start)
-    - [1. Clone the Repository](#1-clone-the-repository)
-    - [2. Configure Environment Variables](#2-configure-environment-variables)
-    - [3. Build and Run](#3-build-and-run)
-    - [4. Verify Setup](#4-verify-setup)
-  - [Documentation](#documentation)
-  - [Contributing](#contributing)
-  - [License](#license)
-  - [Contact](#contact)
 
 ## Tech Stack
 

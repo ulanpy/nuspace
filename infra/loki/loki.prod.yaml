@@ -49,9 +49,10 @@ storage_config:
     cache_location: /loki/index_cache
 
 ingester:
-  chunk_target_size: 1536
-  chunk_idle_period: 5m
-  max_chunk_age: 1h
+  # Bytes. Keep Loki's 1.5 MiB default; 1536 would mean only 1.5 KiB.
+  chunk_target_size: 1572864
+  chunk_idle_period: 30m
+  max_chunk_age: 2h
 
 compactor:
   working_directory: /loki/compactor_work

@@ -42,7 +42,50 @@ EXCEPTIONS = Counter(
 )
 APP_INFO = Info("fastapi_app", "FastAPI application info")
 APP_INFO.info({"project": PROJECT, "app": "nuspace"})
+
+# QueuePool state is read lazily by the Prometheus client at scrape time.  This
+# avoids a background sampler and keeps the values current without adding work
+# to every HTTP request.
+DATABASE_POOL_CONNECTIONS = Gauge(
+    "fastapi_db_pool_connections",
+    "Current SQLAlchemy database connection-pool state",
+    ["state", "project"],
+)
+_database_pool: Any | None = None
+_DATABASE_POOL_LOCK = threading.Lock()
+_DATABASE_POOL_STATES = ("checked_out", "idle", "allocated", "capacity")
 metrics_app = make_asgi_app()
+
+
+def configure_database_pool_metrics(pool: Any, *, capacity: int) -> None:
+    """Expose bounded QueuePool state when Prometheus scrapes ``/metrics``.
+
+    ``checkedout`` and ``checkedin`` are SQLAlchemy's synchronous pool
+    counters.  They are safe to read from the Prometheus scrape thread; the
+    resulting four fixed-label series do not create per-request cardinality.
+    """
+
+    global _database_pool
+    with _DATABASE_POOL_LOCK:
+        _database_pool = pool
+
+    def pool_value(state: str) -> float:
+        with _DATABASE_POOL_LOCK:
+            current_pool = _database_pool
+        if current_pool is None:
+            return 0.0
+        if state == "checked_out":
+            return float(current_pool.checkedout())
+        if state == "idle":
+            return float(current_pool.checkedin())
+        if state == "allocated":
+            return float(current_pool.checkedout() + current_pool.checkedin())
+        return float(capacity)
+
+    for state in _DATABASE_POOL_STATES:
+        DATABASE_POOL_CONNECTIONS.labels(state=state, project=PROJECT).set_function(
+            lambda state=state: pool_value(state)
+        )
 
 
 def _should_skip(path: str) -> bool:

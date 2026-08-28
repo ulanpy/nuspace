@@ -59,8 +59,8 @@ prometheus.scrape "application_scrape" {
 		__address__      = "fastapi:8000",
 		__metrics_path__ = "/metrics/",
 	}]
-	forward_to     = [prometheus.remote_write.prometheus_write.receiver]
-	job_name       = "application"
+	forward_to      = [prometheus.remote_write.prometheus_write.receiver]
+	job_name        = "application"
 	scrape_interval = "15s"
 }
 
@@ -105,22 +105,40 @@ loki.source.docker "loki_default" {
 	forward_to = [loki.process.fastapi_json.receiver]
 }
 
+// Backup sidecar logs stay on Docker stdout. Read them through the same
+// socket, without exposing a port or changing the backup container itself.
+discovery.relabel "backup_logs" {
+	targets = discovery.docker.linux.targets
+
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+		regex         = "backup"
+		action        = "keep"
+	}
+}
+
+loki.source.docker "backup" {
+	host    = "unix:///var/run/docker.sock"
+	targets = discovery.relabel.backup_logs.output
+	labels  = {
+		platform     = "docker",
+		service_name = "backup",
+	}
+	forward_to = [loki.write.loki_write.receiver]
+}
+
 // Parse any structured FastAPI error/business log without assuming every
 // process line is JSON (Uvicorn tracebacks remain visible as plain text).
 loki.process "fastapi_json" {
 	stage.json {
 		expressions = {
-			method      = "method",
-			path        = "path",
-			status_code = "status_code",
-			level       = "level",
-			log_type    = "log_type",
+			level    = "level",
+			log_type = "log_type",
 		}
 	}
 
 	stage.labels {
 		values = {
-			method   = "",
 			level    = "",
 			log_type = "",
 		}
@@ -130,7 +148,6 @@ loki.process "fastapi_json" {
 }
 
 local.file_match "nginx_access" {
-
 	path_targets = [{
 		__path__     = "/var/log/nginx/access.log",
 		service_name = "nginx",
@@ -148,7 +165,6 @@ loki.source.file "nginx_access" {
 loki.process "nginx_access_json" {
 	stage.json {
 		expressions = {
-			method   = "method",
 			level    = "level",
 			log_type = "log_type",
 		}
@@ -156,7 +172,6 @@ loki.process "nginx_access_json" {
 
 	stage.labels {
 		values = {
-			method   = "",
 			level    = "",
 			log_type = "",
 		}
@@ -179,6 +194,7 @@ otelcol.receiver.otlp "default" {
 	grpc {
 		endpoint = "0.0.0.0:4317"
 	}
+
 	http {
 		endpoint = "0.0.0.0:4318"
 	}
@@ -197,6 +213,7 @@ otelcol.processor.batch "default" {
 otelcol.exporter.otlphttp "tempo" {
 	client {
 		endpoint = "http://tempo:4318"
+
 		tls {
 			insecure             = true
 			insecure_skip_verify = true

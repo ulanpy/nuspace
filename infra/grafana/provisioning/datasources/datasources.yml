@@ -40,6 +40,10 @@ datasources:
           matcherRegex: '"trace_id":"([a-f0-9]+)"'
           url: "$${__value.raw}"
           urlDisplayLabel: View Trace
+        - name: RequestID
+          matcherRegex: '"request_id":"([^"]+)"'
+          url: "/d/fastapi-observability1?var-request_id=$${__value.raw}"
+          urlDisplayLabel: View request logs
 
   - name: Tempo
     type: tempo

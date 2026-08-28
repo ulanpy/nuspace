@@ -4,6 +4,15 @@ templates:
   - orgId: 1
     name: nuspace
     template: |
-      {{ define "nuspace.telegram.message" }}
-      {{ if eq .Status "firing" }}🔴 Alert firing{{ else }}✅ Alert resolved{{ end }}
+      {{ define "nuspace.telegram.message" -}}
+      {{- range .Alerts }}
+      {{- if eq .Status "firing" }}🔴{{ else }}✅{{ end }} <b>{{ or .Annotations.summary .Labels.alertname }}</b>{{ if eq .Status "resolved" }} — resolved{{ end }}
+      {{- with .Annotations.description }}
+      {{ . }}
+      {{- end }}
+      {{- with (or .DashboardURL .GeneratorURL) }}
+      <a href="{{ . }}">Open in Grafana</a>
+      {{- end }}
+      {{- with .SilenceURL }} · <a href="{{ . }}">Silence</a>{{ end }}{{ "\n" }}
+      {{- end }}
       {{ end }}

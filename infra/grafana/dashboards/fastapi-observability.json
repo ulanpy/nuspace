@@ -2791,7 +2791,7 @@
         "type": "loki",
         "uid": "P8E80F9AEF21F6940"
       },
-      "description": "Access-log event count per level (from JSON field). Filtered by Method/Path. Spike in error/warn \u2192 correlate with RPS and P99 panels above.",
+      "description": "FastAPI access-log event count from Nginx. Filtered by Method/Path. Spike in error/warn \u2192 correlate with RPS and P99 panels above.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2963,7 +2963,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "code",
-          "expr": "sum by(level)(count_over_time({service_name=\"fastapi\"} | json | log_type=\"access\" | method=~\"$method\" | path=~\"$path\" | status_code=~\"$status_code\" | level=~\"$level\" | user_sub=~\"$user_sub\" [$__interval]))",
+          "expr": "sum by(level)(count_over_time({service_name=\"nginx\"} | json | upstream_service=\"fastapi\" | log_type=\"access\" | method=~\"$method\" | path=~\"$path\" | status_code=~\"$status_code\" | level=~\"$level\" | user_sub=~\"$user_sub\" | request_id=~\"$request_id\" [$__interval]))",
           "legendFormat": "{{level}}",
           "queryType": "range",
           "refId": "A"
@@ -2977,7 +2977,7 @@
         "type": "loki",
         "uid": "P8E80F9AEF21F6940"
       },
-      "description": "Structured JSON access logs from the backend. Filtered by Method/Path/User Sub. path is the route template (or [unmatched]); raw_path is the actual URL. Expand a line for status_code, duration_ms, raw_path, user_sub, and TraceID (opens Tempo).",
+      "description": "Structured JSON access logs emitted by Nginx for FastAPI only. path is the route template (or [unmatched]); raw_path is the actual URL. Expand a line for status_code, duration_seconds, raw_path, user_sub, and RequestID to open the matching request.",
       "gridPos": {
         "h": 12,
         "w": 24,
@@ -3005,13 +3005,55 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "code",
-          "expr": "{service_name=\"fastapi\"} | json | log_type=\"access\" | method=~\"$method\" | path=~\"$path\" | status_code=~\"$status_code\" | level=~\"$level\" | user_sub=~\"$user_sub\"",
+          "expr": "{service_name=\"nginx\"} | json | upstream_service=\"fastapi\" | log_type=\"access\" | method=~\"$method\" | path=~\"$path\" | status_code=~\"$status_code\" | level=~\"$level\" | user_sub=~\"$user_sub\" | request_id=~\"$request_id\"",
           "legendFormat": "",
           "queryType": "range",
           "refId": "A"
         }
       ],
       "title": "Log Stream",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "P8E80F9AEF21F6940"
+      },
+      "description": "Unhandled FastAPI exceptions. Click RequestID in a traceback to open this dashboard with the matching Nginx access record filtered in.",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 159
+      },
+      "id": 73,
+      "options": {
+        "dedupStrategy": "none",
+        "enableInfiniteScrolling": false,
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showControls": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "pluginVersion": "12.4.0-20082909961",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P8E80F9AEF21F6940"
+          },
+          "editorMode": "code",
+          "expr": "{service_name=\"fastapi\"} | json | log_type=\"error\" | request_id=~\"$request_id\"",
+          "legendFormat": "",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Unhandled Errors",
       "type": "logs"
     },
     {
@@ -3023,7 +3065,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 159
+        "y": 171
       },
       "panels": [
         {
@@ -3287,7 +3329,27 @@
         "query": "info,warn,error",
         "skipUrlSync": false,
         "type": "custom",
-        "description": "Access-log level from middleware: info (2xx/3xx), warn (4xx), error (5xx). Applies to Logs panels only."
+        "description": "Nginx access-log level: info (2xx/3xx), warn (4xx), error (5xx). Applies to Logs panels only."
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": ".*",
+          "value": ".*"
+        },
+        "description": "Paste a request ID from an access log or traceback to show that request's Nginx access record and unhandled error together. Default .* shows all.",
+        "label": "Request ID",
+        "name": "request_id",
+        "options": [
+          {
+            "selected": true,
+            "text": ".*",
+            "value": ".*"
+          }
+        ],
+        "query": ".*",
+        "skipUrlSync": false,
+        "type": "textbox"
       },
       {
         "current": {
@@ -3319,7 +3381,7 @@
   "timezone": "browser",
   "title": "FastAPI Full Observability",
   "uid": "fastapi-observability1",
-  "version": 4,
+  "version": 5,
   "weekStart": "",
   "gnetId": 25040,
   "description": "FastAPI Full Observability"

@@ -1,7 +1,7 @@
 services:
   postgres:
     container_name: postgres
-    image: postgres:17
+    image: postgres:17.7
     networks:
       - nuros
     restart: always
@@ -78,7 +78,7 @@ services:
       ]
 
   pgadmin:
-    image: dpage/pgadmin4
+    image: dpage/pgadmin4:9.11
     container_name: pgadmindev
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
@@ -96,7 +96,7 @@ services:
       - ./pgadmin/pgpass:/pgpass # Auto-login credentials
 
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2025.11.1
     container_name: cloudflared
     networks:
       - nuros
@@ -119,7 +119,7 @@ services:
     command: redis-server --bind 0.0.0.0 --protected-mode no
 
   gcs:
-    image: fsouza/fake-gcs-server:latest
+    image: fsouza/fake-gcs-server:1.52.3
     container_name: gcs
     networks:
       - nuros
@@ -131,7 +131,7 @@ services:
       - gcs_data:/data
 
   meilisearch:
-    image: getmeili/meilisearch:latest
+    image: getmeili/meilisearch:v1.19.1
     networks:
       - nuros
     container_name: meilisearch
@@ -180,7 +180,7 @@ services:
 
   loki:
     container_name: loki
-    image: grafana/loki:latest
+    image: grafana/loki:3.5.3
     volumes:
       - ./loki/loki.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
@@ -201,7 +201,7 @@ services:
 
   tempo:
     container_name: tempo
-    image: grafana/tempo:latest
+    image: grafana/tempo:3.0.0
     user: "0" # local volume may not match tempo uid on first create
     command: [ "-config.file=/etc/tempo/tempo.yaml" ]
     volumes:
@@ -215,7 +215,7 @@ services:
 
   pyroscope:
     container_name: pyroscope
-    image: grafana/pyroscope:latest
+    image: grafana/pyroscope:2.2.1
     user: "0" # local named volume may be created with a different owner
     command: ["-config.file=/etc/pyroscope/config.yaml", "-retention-period=7d"]
     volumes:
@@ -230,7 +230,7 @@ services:
 
   prometheus:
     container_name: prometheus
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.5.0
     volumes:
       # No need for alerts in development
       # - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -251,7 +251,7 @@ services:
 
   # Creates/updates grafana_ro (SELECT-only) from env. Idempotent — safe on fresh VM or restart.
   grafana-db-init:
-    image: postgres:17
+    image: postgres:17.7
     container_name: grafana-db-init
     networks:
       - nuros
@@ -274,7 +274,7 @@ services:
 
   grafana:
     container_name: grafana
-    image: grafana/grafana:latest
+    image: grafana/grafana:13.1.1
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - DS_PROMETHEUS=prometheus
@@ -296,7 +296,6 @@ services:
       - "./grafana/dashboards/fastapi-observability.json:/var/lib/grafana/dashboards/fastapi-observability.json"
       - "./grafana/dashboards/product-overview.json:/var/lib/grafana/dashboards/product-overview.json"
       - "./grafana/dashboards/node-exporter-full.json:/var/lib/grafana/dashboards/node-exporter-full.json"
-      - "./grafana/provisioning/dashboards/default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
       # No need for alerting in development
       # - "./grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
       # - "./grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"
@@ -324,7 +323,7 @@ services:
 
   alloy:
     container_name: alloy
-    image: grafana/alloy:latest
+    image: grafana/alloy:v1.10.1
     # cAdvisor needs host cgroup tree + docker metadata (privileged + /sys mount).
     privileged: true
     volumes:

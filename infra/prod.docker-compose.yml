@@ -110,7 +110,7 @@ services:
 
   nginx:
     container_name: nginx
-    image: nginx:latest
+    image: nginx:1.29.1-alpine
     networks:
       - nuros
     restart: always
@@ -145,7 +145,7 @@ services:
         exec nginx -g 'daemon off;'"
 
   redis:
-    image: redis:latest
+    image: redis:8.2.1-alpine3.22
     networks:
       - nuros
     container_name: redis
@@ -156,7 +156,7 @@ services:
     command: redis-server --bind 0.0.0.0 --protected-mode no
 
   meilisearch:
-    image: getmeili/meilisearch:latest
+    image: getmeili/meilisearch:v1.19.1
     networks:
       - nuros
     container_name: meilisearch
@@ -185,7 +185,7 @@ services:
 
   loki:
     container_name: loki
-    image: grafana/loki:latest
+    image: grafana/loki:3.5.3
     volumes:
       - ./loki/loki.prod.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
@@ -201,7 +201,7 @@ services:
 
   tempo:
     container_name: tempo
-    image: grafana/tempo:latest
+    image: grafana/tempo:3.0.0
     user: "0"
     command: [ "-config.file=/etc/tempo/tempo.yaml" ]
     volumes:
@@ -213,7 +213,7 @@ services:
 
   pyroscope:
     container_name: pyroscope
-    image: grafana/pyroscope:latest
+    image: grafana/pyroscope:2.2.1
     user: "0" # named volume may be created with a different owner
     command: ["-config.file=/etc/pyroscope/config.yaml", "-retention-period=7d"]
     volumes:
@@ -225,7 +225,7 @@ services:
 
   prometheus:
     container_name: prometheus
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.5.0
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
@@ -262,7 +262,8 @@ services:
 
   grafana:
     container_name: grafana
-    image: grafana/grafana:latest
+    # Grafana 13.1.1, verified locally before this production upgrade.
+    image: grafana/grafana:13.1.1
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - DS_PROMETHEUS=prometheus
@@ -289,6 +290,7 @@ services:
       - "./grafana/provisioning/alerting/contact-points.yaml.tpl:/etc/grafana/provisioning/alerting/contact-points.yaml.tpl"
       - "./grafana/provisioning/alerting/alerting.yaml:/etc/grafana/provisioning/alerting/alerting.yaml"
       - "./grafana/provisioning/alerting/alerts.yaml:/etc/grafana/provisioning/alerting/alerts.yaml"
+      - "./grafana/provisioning/alerting/notification_policies.yaml:/etc/grafana/provisioning/alerting/notification_policies.yaml"
       - "./grafana/provisioning/alerting/notification_templates.yaml:/etc/grafana/provisioning/alerting/notification_templates.yaml"
       - "./scripts/start-grafana.sh:/start-grafana.sh"
     entrypoint: [ "/bin/sh", "/start-grafana.sh" ]
@@ -308,7 +310,7 @@ services:
 
   alloy:
     container_name: alloy
-    image: grafana/alloy:latest
+    image: grafana/alloy:v1.10.1
     # cAdvisor needs host cgroup tree + docker metadata (privileged + /sys mount).
     privileged: true
     volumes:
@@ -333,7 +335,7 @@ services:
       - pyroscope
 
   wg-easy:
-    image: ghcr.io/wg-easy/wg-easy:15
+    image: ghcr.io/wg-easy/wg-easy:15.3.0
     container_name: wg-easy
     cap_add:
       - NET_ADMIN
