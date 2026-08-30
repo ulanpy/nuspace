@@ -214,5 +214,5 @@ variable "schedule_sync_scheduler_account_id" {
 variable "schedule_sync_cron" {
   description = "Cron schedule (UTC) for registrar schedule sync job (hourly during registration; switch back to daily after)"
   type        = string
-  default     = "15 * * * *"
+  default     = "0 5 * * *"
 }
