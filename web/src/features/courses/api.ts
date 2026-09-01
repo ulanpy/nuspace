@@ -153,7 +153,9 @@ export function fetchGradesPage(params: {
           page: params.page,
           size: params.size,
           keyword: params.keyword ?? null,
-          term: params.term ?? null,
+          // dev's /grades takes one or more term codes as a repeatable param,
+          // typed as an array; the page picks a single term, so send a 1-item list.
+          term: params.term ? [params.term] : null,
         },
       },
     })

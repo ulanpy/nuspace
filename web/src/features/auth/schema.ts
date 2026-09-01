@@ -1,7 +1,5 @@
 import { z } from "zod"
 
-import type { components } from "@/api/schema"
-
 /**
  * `/me` is the one endpoint whose payload the generated types cannot describe:
  * the backend declares it as `user: Dict[str, Any]` (CurrentUserResponse in
@@ -11,9 +9,8 @@ import type { components } from "@/api/schema"
  * types instead of writing a schema by hand.
  */
 
-/** Reuses the generated enum so a backend role change surfaces as a type error. */
-type UserRole = components["schemas"]["UserRole"]
-
+/** Mirrors backend UserRole (modules/auth/models.py). The enum is not exposed
+ * in dev's OpenAPI — `/me` is opaque — so it is owned here, not by the schema. */
 const USER_ROLES = [
   "default",
   "admin",
@@ -21,7 +18,9 @@ const USER_ROLES = [
   "capo",
   "soldier",
   "community_admin",
-] as const satisfies readonly UserRole[]
+] as const
+
+export type UserRole = (typeof USER_ROLES)[number]
 
 export const userRoleSchema = z.enum(USER_ROLES)
 
@@ -40,7 +39,7 @@ export const currentUserSchema = z.object({
   role: userRoleSchema.catch("default"),
   /** Community ids this user heads; drives community_admin permissions. */
   communities: z.array(z.number()).default([]),
-  /** Set for Student Government members; scopes ticket delegation. */
+  /** Academic department id from the backend User model. */
   department_id: z.number().nullable().default(null),
 })
 
