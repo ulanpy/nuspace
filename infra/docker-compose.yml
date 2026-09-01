@@ -178,6 +178,23 @@ services:
     depends_on:
       - cloudflared
 
+  # The app. Served at http://localhost since the cutover; `frontend` above is
+  # the previous one, kept for one release as a fallback and not routed to.
+  web:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile.dev
+    restart: always
+    volumes:
+      - ../web:/app # Mount source for HMR
+      - /app/node_modules # Anonymous volume keeps the image's deps
+    environment:
+      # The bind mount makes pnpm's deps-status check want to purge
+      # node_modules, which it refuses to do without a TTY.
+      - CI=true
+    networks:
+      - nuros
+
   loki:
     container_name: loki
     image: grafana/loki:3.5.3
