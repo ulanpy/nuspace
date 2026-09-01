@@ -55,6 +55,26 @@ function fetchEvent(eventId: number) {
   )
 }
 
+/**
+ * A handful of recruitment events for the home page's "Now Recruiting" section.
+ *
+ * dev's announcements bundle returns only `events`, not a separate recruiting
+ * list (the rewrite branch added `recruitment_events`; dev did not), so the
+ * home page pulls these through the normal events list with a recruitment type
+ * filter instead.
+ */
+export function recruitmentEventsQueryOptions(count = 6) {
+  return queryOptions({
+    queryKey: qk.events.list({ type: "recruitment", page: 1, size: count }),
+    queryFn: () =>
+      fetchEventsPage(
+        { time_filter: "upcoming", event_type: "recruitment" },
+        { page: 1, size: count }
+      ),
+    staleTime: 60_000,
+  })
+}
+
 export function eventDetailQueryOptions(eventId: number) {
   return queryOptions({
     queryKey: qk.events.detail(eventId),

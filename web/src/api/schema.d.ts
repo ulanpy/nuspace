@@ -54,7 +54,7 @@ export interface paths {
         put?: never;
         /**
          * Bind Tg
-         * @description Issue a Telegram deeplink binding the caller's own account to a chat.
+         * @description Issue a Telegram deeplink for the authenticated user's own account.
          */
         post: operations["bind_tg_connect_tg_post"];
         delete?: never;
@@ -243,15 +243,155 @@ export interface paths {
         patch: operations["update_event_events__event_id__patch"];
         trace?: never;
     };
-    "/profile": {
+    "/events/{event_id}/going": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Profile */
-        get: operations["get_profile_profile_get"];
+        get?: never;
+        /**
+         * Set Event Going
+         * @description Mark the current user as going to an event (idempotent).
+         *
+         *     **Access Policy:**
+         *     - Authenticated users who can read the event
+         *     - Only for approved or cancelled events
+         */
+        put: operations["set_event_going_events__event_id__going_put"];
+        post?: never;
+        /**
+         * Unset Event Going
+         * @description Remove the current user's going status (idempotent).
+         *
+         *     **Access Policy:**
+         *     - Authenticated users who can read the event
+         *     - Only for approved or cancelled events
+         */
+        delete: operations["unset_event_going_events__event_id__going_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}/attendees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Event Attendees
+         * @description List users who marked themselves as going (paginated).
+         *
+         *     **Access Policy:**
+         *     - Event creator or admin only
+         */
+        get: operations["get_event_attendees_events__event_id__attendees_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}/attendees/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Event Attendees
+         * @description Download full attendance list as CSV or XLSX (print-ready checklist).
+         *
+         *     **Access Policy:**
+         *     - Event creator or admin only
+         */
+        get: operations["export_event_attendees_events__event_id__attendees_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}/access-invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Event Access Invites */
+        get: operations["list_event_access_invites_events__event_id__access_invites_get"];
+        put?: never;
+        /**
+         * Create Event Access Invite
+         * @description Create a secret access link.
+         *
+         *     Choose purpose before generation:
+         *     - transfer: one-time ownership claim
+         *     - co_view: share attendee-list visibility
+         */
+        post: operations["create_event_access_invite_events__event_id__access_invites_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{event_id}/access-invites/{invite_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Event Access Invite */
+        delete: operations["revoke_event_access_invite_events__event_id__access_invites__invite_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/access-invites/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept Event Access Invite */
+        post: operations["accept_event_access_invite_events_access_invites_accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/test_endpoint": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Profile
+         * @description Test endpoint for load testing & benchmarking. Does nothing, returns nothing
+         */
+        get: operations["get_profile_test_endpoint_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -311,7 +451,9 @@ export interface paths {
         put?: never;
         /**
          * Gcs Webhook
-         * @description Processes GCS notifications from Pub/Sub and upserts media records.
+         * @description Pub/Sub push for GCS OBJECT_FINALIZE:
+         *     - registrar schedule catalog JSON → reindex Meilisearch
+         *     - media uploads (routing-prefix + custom metadata) → media upsert
          */
         post: operations["gcs_webhook_bucket_gcs_hook_post"];
         delete?: never;
@@ -639,7 +781,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List registrar semesters for planner dropdowns */
+        /** List current registrar semester */
         get: operations["list_semesters_planner_semesters_get"];
         put?: never;
         post?: never;
@@ -893,7 +1035,7 @@ export interface paths {
          *     - `size`: Number of grade reports per page (default: 20, max: 100)
          *     - `page`: Page number to retrieve (default: 1)
          *     - `keyword`: Search term for course code or course title (optional)
-         *     - `term`: Filter results by semester/term code (optional)
+         *     - `term`: Filter results by one or more semester/term codes (optional)
          *
          *     **Returns:**
          *     - List of grade reports and pagination info
@@ -1087,414 +1229,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/tickets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Tickets
-         * @description Retrieves a paginated list of tickets with flexible filtering.
-         *
-         *     **Access Policy:**
-         *     - SG members and admins can view tickets they have access to
-         *     - Regular users can only view their own tickets
-         *
-         *     **Parameters:**
-         *     - `size`: Number of tickets per page (default: 20, max: 100)
-         *     - `page`: Page number (default: 1)
-         *     - `category`: Filter by ticket category (optional)
-         *     - `author_sub`: Filter by ticket author (optional)
-         *         - If set to "me", returns the current user's tickets
-         *     **Returns:**
-         *     - List of tickets matching the criteria with pagination info
-         */
-        get: operations["get_tickets_tickets_get"];
-        put?: never;
-        /**
-         * Create Ticket
-         * @description Creates a new ticket.
-         *
-         *     **Access Policy:**
-         *     - Any authenticated user can create tickets
-         *     - Users can only create tickets for themselves
-         *
-         *     **Parameters:**
-         *     - `ticket_data`: Ticket data including category, title, body, etc.
-         *
-         *     **Returns:**
-         *     - Created ticket with all its details
-         *
-         *     **Notes:**
-         *     - `author_sub` can be set to "me" to use the current user's sub.
-         */
-        post: operations["create_ticket_tickets_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tickets/{ticket_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Ticket
-         * @description Retrieves a single ticket by its unique ID.
-         *
-         *     **Access Policy:**
-         *     - SG members and admins can view tickets they have access to
-         *     - Regular users can only view their own tickets
-         *
-         *     **Parameters:**
-         *     - `ticket_id`: The unique identifier of the ticket to retrieve
-         *
-         *     **Returns:**
-         *     - A detailed ticket object with all its information
-         */
-        get: operations["get_ticket_tickets__ticket_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Update Ticket
-         * @description Updates a ticket by its unique ID.
-         */
-        patch: operations["update_ticket_tickets__ticket_id__patch"];
-        trace?: never;
-    };
-    "/tickets/by-owner-hash": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get Ticket By Owner Hash */
-        post: operations["get_ticket_by_owner_hash_tickets_by_owner_hash_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/conversations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Conversation
-         * @description Creates a new conversation for a ticket.
-         *
-         *     **Access Policy:**
-         *     - An SG member with at least ASSIGN access can create a conversation.
-         *     - For all SG members, only one conversation per ticket.
-         *     - Admins can always create conversations.
-         *
-         *     **Parameters:**
-         *     - `conversation_data`: Conversation data including ticket_id, sg_member_sub
-         *
-         *     **Returns:**
-         *     - Created conversation with all its details
-         */
-        post: operations["create_conversation_conversations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/conversations/{conversation_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Update Conversation
-         * @description Updates fields of an existing conversation.
-         *
-         *     **Access Policy:**
-         *     - Admin can update any conversation
-         *     - SG members can update conversations they are part of
-         *
-         *     **Parameters:**
-         *     - `conversation_id`: ID of the conversation to update
-         *     - `conversation_data`: Updated conversation data
-         *
-         *     **Returns:**
-         *     - Updated conversation with all its details
-         */
-        patch: operations["update_conversation_conversations__conversation_id__patch"];
-        trace?: never;
-    };
-    "/messages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Messages
-         * @description Retrieves a paginated list of messages with flexible filtering.
-         *
-         *     **Access Policy:**
-         *     - SG members and admins can view all messages
-         *     - Regular users can only view messages in conversations for their tickets
-         *
-         *     **Parameters:**
-         *     - `size`: Number of messages per page (default: 20, max: 100)
-         *     - `page`: Page number (default: 1)
-         *     - `conversation_id`: Filter by specific conversation (required)
-         *
-         *     **Returns:**
-         *     - List of messages matching the criteria with pagination info
-         */
-        get: operations["get_messages_messages_get"];
-        put?: never;
-        /**
-         * Create Message
-         * @description Creates a new message in a conversation.
-         *
-         *     **Access Policy:**
-         *     - The author of the ticket can send messages.
-         *     - SG member with Assign or Delegate permission can send messages.
-         *     - Admins can always send messages.
-         *
-         *     **Parameters:**
-         *     - `message_data`: Message data including conversation_id, sender_sub, body
-         *
-         *     **Returns:**
-         *     - Created message with all its details
-         */
-        post: operations["create_message_messages_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/messages/{message_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Message
-         * @description Retrieves a single message by its unique ID.
-         *
-         *     **Access Policy:**
-         *     - SG members and admins can view all messages
-         *     - Regular users can only view messages in conversations for their tickets
-         *
-         *     **Parameters:**
-         *     - `message_id`: The unique identifier of the message to retrieve
-         *
-         *     **Returns:**
-         *     - A detailed message object with all its information
-         */
-        get: operations["get_message_messages__message_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/messages/{message_id}/read": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Mark Message As Read
-         * @description Marks a message as read by the current user.
-         *
-         *     **Access Policy:**
-         *     - SG members and admins can mark any message as read
-         *     - Regular users can only mark messages in conversations for their tickets
-         *
-         *     **Parameters:**
-         *     - `message_id`: The unique identifier of the message to mark as read
-         *
-         *     **Returns:**
-         *     - Updated message with read status
-         */
-        post: operations["mark_message_as_read_messages__message_id__read_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sg-delegation/departments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Departments */
-        get: operations["get_departments_sg_delegation_departments_get"];
-        put?: never;
-        /** Create Department */
-        post: operations["create_department_sg_delegation_departments_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sg-delegation/departments/{department_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete Department */
-        delete: operations["delete_department_sg_delegation_departments__department_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sg-delegation/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Sg Users */
-        get: operations["get_sg_users_sg_delegation_users_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sg-members/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Search Users For Sg Management */
-        get: operations["search_users_for_sg_management_sg_members_users_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sg-members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Sg Members */
-        get: operations["list_sg_members_sg_members_get"];
-        put?: never;
-        /** Upsert Sg Member */
-        post: operations["upsert_sg_member_sg_members_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sg-members/{target_user_sub}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove Sg Member */
-        delete: operations["remove_sg_member_sg_members__target_user_sub__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/sg-members/withdraw": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Withdraw From Sg */
-        post: operations["withdraw_from_sg_sg_members_withdraw_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/tickets/{ticket_id}/delegate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Delegate Ticket Access */
-        post: operations["delegate_ticket_access_tickets__ticket_id__delegate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/announcements/telegram": {
         parameters: {
             query?: never;
@@ -1526,9 +1260,8 @@ export interface paths {
          * Get Announcements Bundle Route
          * @description Single endpoint for the announcements landing page to reduce initial request fan-out.
          *
-         *     Defaults:
-         *     - events: page=1 size=5 (approved + upcoming)
-         *     - recruitment_events: page=1 size=5 (approved + upcoming + type=recruitment)
+         *     The single list contains approved upcoming events. Recruitment events are ordered by their
+         *     deadline; all other events are ordered by their start time.
          */
         get: operations["get_announcements_bundle_route_announcements_bundle_get"];
         put?: never;
@@ -1636,6 +1369,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sgotinish/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Otinish Public Stats
+         * @description Public aggregate stats (no ticket bodies, no Telegram IDs).
+         *     Used on the website to show that anonymous appeals are active.
+         */
+        get: operations["get_otinish_public_stats_sgotinish_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1646,7 +1400,6 @@ export interface components {
          */
         AnnouncementsBundleResponse: {
             events: components["schemas"]["ListEventResponse"];
-            recruitment_events: components["schemas"]["ListEventResponse"];
         };
         /** AuditProgramResult */
         AuditProgramResult: {
@@ -1784,8 +1537,8 @@ export interface components {
         AutoBuildCourseResult: {
             /** Course Id */
             course_id: number;
-            /** Registrar Course Id */
-            registrar_course_id: string;
+            /** Catalog Id */
+            catalog_id: string;
             /** Course Code */
             course_code: string;
             /** Selected Section Id */
@@ -1824,8 +1577,10 @@ export interface components {
         BaseCourseSchema: {
             /** Id */
             id: number;
-            /** Registrar Id */
-            registrar_id: number;
+            /** Catalog Id */
+            catalog_id: string;
+            /** Catalog Term Id */
+            catalog_term_id: string;
             /** Course Code */
             course_code: string;
             /** Pre Req */
@@ -1838,10 +1593,6 @@ export interface components {
             level: string;
             /** School */
             school: string;
-            /** Description */
-            description: string | null;
-            /** Department */
-            department: string | null;
             /** Title */
             title: string | null;
             /** Credits */
@@ -1931,28 +1682,6 @@ export interface components {
              */
             updated_at: string;
         };
-        /**
-         * Message Read Status Base Schema
-         * @description Base schema for all message read status-related operations
-         */
-        BaseMessageReadStatus: {
-            /**
-             * Message Id
-             * @description ID of the associated message
-             */
-            message_id: number;
-            /**
-             * User Sub
-             * @description User identifier
-             */
-            user_sub: string;
-            /**
-             * Read At
-             * Format: date-time
-             * @description Timestamp when message was read
-             */
-            read_at: string;
-        };
         /** BaseNotification */
         BaseNotification: {
             /** Id */
@@ -2012,6 +1741,15 @@ export interface components {
             year: string;
             /** Majors */
             majors: string[];
+        };
+        /** CategoryStat */
+        CategoryStat: {
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Count */
+            count: number;
         };
         /**
          * CommunityCategory
@@ -2118,6 +1856,8 @@ export interface components {
              * @default {
              *       "can_edit": false,
              *       "can_delete": false,
+             *       "can_view_attendees": false,
+             *       "can_share_access": false,
              *       "editable_fields": []
              *     }
              */
@@ -2171,76 +1911,6 @@ export interface components {
              * @description IDs of media attachments to delete as part of this update
              */
             media_ids_to_delete?: number[] | null;
-        };
-        /**
-         * ConversationCreateDTO
-         * @description Public schema for creating a new conversation.
-         */
-        ConversationCreateDTO: {
-            /**
-             * Ticket Id
-             * @description ID of the ticket this conversation belongs to
-             */
-            ticket_id: number;
-        };
-        /**
-         * Conversation Base Schema
-         * @description Base schema for all conversation-related operations
-         */
-        ConversationResponseDTO: {
-            /**
-             * Id
-             * @description Unique identifier of the conversation
-             */
-            id: number;
-            /**
-             * Ticket Id
-             * @description ID of the associated ticket
-             */
-            ticket_id: number;
-            /**
-             * Sg Member Sub
-             * @description SG member identifier
-             */
-            sg_member_sub?: string | null;
-            /** @description Status of the conversation */
-            status: components["schemas"]["ConversationStatus"];
-            /**
-             * Created At
-             * Format: date-time
-             * @description Creation timestamp
-             */
-            created_at: string;
-            /** @description SG member information */
-            sg_member?: components["schemas"]["ShortUserResponse"] | null;
-            /**
-             * Messages Count
-             * @description Number of messages in the conversation
-             * @default 0
-             */
-            messages_count: number;
-            /**
-             * @description User permissions for this conversation
-             * @default {
-             *       "can_edit": false,
-             *       "can_delete": false,
-             *       "editable_fields": []
-             *     }
-             */
-            permissions: components["schemas"]["ResourcePermissions"];
-        };
-        /**
-         * ConversationStatus
-         * @enum {string}
-         */
-        ConversationStatus: "active" | "archived";
-        /**
-         * ConversationUpdateDTO
-         * @description Schema for updating a conversation.
-         */
-        ConversationUpdateDTO: {
-            /** @description New status of the conversation */
-            status?: components["schemas"]["ConversationStatus"] | null;
         };
         /** CourseItemCreate */
         CourseItemCreate: {
@@ -2322,51 +1992,6 @@ export interface components {
             excepts: string[];
         };
         /**
-         * DelegateAccessPayload
-         * @description Schema for delegating ticket access.
-         */
-        DelegateAccessPayload: {
-            /**
-             * Target User Sub
-             * @description The user sub to grant access to
-             */
-            target_user_sub: string;
-            /** @description The permission level to grant */
-            permission: components["schemas"]["PermissionType"];
-        };
-        /**
-         * DepartmentCreatePayload
-         * @description Payload for creating a new department.
-         */
-        DepartmentCreatePayload: {
-            /**
-             * Name
-             * @description Department name
-             */
-            name: string;
-            /**
-             * Is Special
-             * @description Whether this department is special
-             * @default false
-             */
-            is_special: boolean;
-        };
-        /**
-         * DepartmentResponseDTO
-         * @description DTO for department information.
-         */
-        DepartmentResponseDTO: {
-            /** Id */
-            id: number;
-            /** Name */
-            name: string;
-            /**
-             * Is Special
-             * @default false
-             */
-            is_special: boolean;
-        };
-        /**
          * EducationLevel
          * @enum {string}
          */
@@ -2386,6 +2011,93 @@ export interface components {
          * @enum {string}
          */
         EntityType: "community_events" | "communities" | "grade_reports" | "courses" | "tickets" | "messages";
+        /** EventAccessInviteAcceptRequest */
+        EventAccessInviteAcceptRequest: {
+            /** Token */
+            token: string;
+        };
+        /** EventAccessInviteAcceptResponse */
+        EventAccessInviteAcceptResponse: {
+            /** Event Id */
+            event_id: number;
+            purpose: components["schemas"]["EventAccessPurpose"];
+            /** Action */
+            action: string;
+        };
+        /** EventAccessInviteCreateRequest */
+        EventAccessInviteCreateRequest: {
+            /** @description transfer = one-time ownership claim; co_view = share attendee list access */
+            purpose: components["schemas"]["EventAccessPurpose"];
+        };
+        /** EventAccessInviteCreatedResponse */
+        EventAccessInviteCreatedResponse: {
+            /** Id */
+            id: number;
+            purpose: components["schemas"]["EventAccessPurpose"];
+            /** Token */
+            token: string;
+            /** Url Path */
+            url_path: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** EventAccessInviteResponse */
+        EventAccessInviteResponse: {
+            /** Id */
+            id: number;
+            purpose: components["schemas"]["EventAccessPurpose"];
+            /** Created By Sub */
+            created_by_sub: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Revoked At */
+            revoked_at?: string | null;
+            /** Accepted At */
+            accepted_at?: string | null;
+            /** Accepted By Sub */
+            accepted_by_sub?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /**
+         * EventAccessPurpose
+         * @enum {string}
+         */
+        EventAccessPurpose: "transfer" | "co_view";
+        /** EventAttendeeResponse */
+        EventAttendeeResponse: {
+            /** Sub */
+            sub: string;
+            /** Name */
+            name: string;
+            /** Surname */
+            surname: string;
+            /** Picture */
+            picture: string;
+            /** Email */
+            email: string;
+            /**
+             * Going At
+             * Format: date-time
+             */
+            going_at: string;
+        };
+        /**
+         * EventAttendeesExportFormat
+         * @enum {string}
+         */
+        EventAttendeesExportFormat: "csv" | "xlsx";
         /** EventCreateRequest */
         EventCreateRequest: {
             /**
@@ -2443,6 +2155,13 @@ export interface components {
              */
             registration_link?: string | null;
         };
+        /** EventGoingResponse */
+        EventGoingResponse: {
+            /** Attendees Count */
+            attendees_count: number;
+            /** Is Going */
+            is_going: boolean;
+        };
         /** EventResponse */
         EventResponse: {
             /** Id */
@@ -2485,6 +2204,16 @@ export interface components {
             media?: components["schemas"]["MediaResponse"][];
             creator: components["schemas"]["ShortUserResponse"];
             permissions?: components["schemas"]["ResourcePermissions"];
+            /**
+             * Attendees Count
+             * @default 0
+             */
+            attendees_count: number;
+            /**
+             * Is Going
+             * @default false
+             */
+            is_going: boolean;
         };
         /**
          * EventStatus
@@ -2617,6 +2346,24 @@ export interface components {
             /** Has Next */
             has_next: boolean;
         };
+        /** ListEventAccessInvitesResponse */
+        ListEventAccessInvitesResponse: {
+            /** Items */
+            items?: components["schemas"]["EventAccessInviteResponse"][];
+        };
+        /** ListEventAttendeesResponse */
+        ListEventAttendeesResponse: {
+            /** Items */
+            items?: components["schemas"]["EventAttendeeResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+            /** Has Next */
+            has_next: boolean;
+        };
         /** ListEventResponse */
         ListEventResponse: {
             /** Items */
@@ -2658,42 +2405,6 @@ export interface components {
             /** Terms */
             terms?: string[];
         };
-        /**
-         * ListMessageDTO
-         * @description Response schema for message listings with pagination metadata.
-         */
-        ListMessageDTO: {
-            /**
-             * Items
-             * @description List of messages
-             */
-            items?: components["schemas"]["MessageResponseDTO"][];
-            /**
-             * Total Pages
-             * @description Total number of pages
-             */
-            total_pages: number;
-            /**
-             * Total
-             * @description Total number of messages
-             */
-            total: number;
-            /**
-             * Page
-             * @description Current page number
-             */
-            page: number;
-            /**
-             * Size
-             * @description Page size used for this response
-             */
-            size: number;
-            /**
-             * Has Next
-             * @description Whether another page exists
-             */
-            has_next: boolean;
-        };
         /** ListTemplateDTO */
         ListTemplateDTO: {
             /** Templates */
@@ -2703,42 +2414,6 @@ export interface components {
              * @default 1
              */
             total_pages: number;
-        };
-        /**
-         * ListTicketDTO
-         * @description Response schema for ticket listings with pagination metadata.
-         */
-        ListTicketDTO: {
-            /**
-             * Items
-             * @description List of tickets
-             */
-            items?: components["schemas"]["TicketResponseDTO"][];
-            /**
-             * Total Pages
-             * @description Total number of pages
-             */
-            total_pages: number;
-            /**
-             * Total
-             * @description Total number of tickets
-             */
-            total: number;
-            /**
-             * Page
-             * @description Current page number
-             */
-            page: number;
-            /**
-             * Size
-             * @description Page size used for this response
-             */
-            size: number;
-            /**
-             * Has Next
-             * @description Whether there is another page available
-             */
-            has_next: boolean;
         };
         /**
          * MediaFormat
@@ -2759,79 +2434,6 @@ export interface components {
             media_format: components["schemas"]["MediaFormat"];
             /** Media Order */
             media_order: number;
-        };
-        /**
-         * MessageCreateDTO
-         * @description Schema for creating a new message.
-         */
-        MessageCreateDTO: {
-            /**
-             * Conversation Id
-             * @description ID of the conversation this message belongs to
-             */
-            conversation_id: number;
-            /**
-             * Body
-             * @description Content of the message
-             * @example Thank you for your help with this issue.
-             */
-            body: string;
-        };
-        /**
-         * Message Base Schema
-         * @description Base schema for all message-related operations
-         */
-        MessageResponseDTO: {
-            /**
-             * Id
-             * @description Unique identifier of the message
-             */
-            id: number;
-            /**
-             * Conversation Id
-             * @description ID of the associated conversation
-             */
-            conversation_id: number;
-            /**
-             * Sender Sub
-             * @description Sender identifier
-             */
-            sender_sub?: string | null;
-            /**
-             * Body
-             * @description Content of the message
-             */
-            body: string;
-            /**
-             * Is From Sg Member
-             * @description Whether this message is from an SG member
-             */
-            is_from_sg_member: boolean;
-            /**
-             * Sent At
-             * Format: date-time
-             * @description Timestamp when message was sent
-             */
-            sent_at: string;
-            /**
-             * Message Read Statuses
-             * @description Message read status
-             */
-            message_read_statuses?: components["schemas"]["BaseMessageReadStatus"][];
-            /**
-             * Sender
-             * @description Sender of the message
-             */
-            sender?: components["schemas"]["ShortUserResponse"] | components["schemas"]["SGUserResponse"] | null;
-            /**
-             * @description User permissions for this message
-             * @default {
-             *       "can_edit": false,
-             *       "can_delete": false,
-             *       "editable_fields": []
-             *     }
-             */
-            permissions: components["schemas"]["ResourcePermissions"];
         };
         /**
          * NotificationType
@@ -3008,10 +2610,31 @@ export interface components {
             eligibilities?: components["schemas"]["OpportunityEligibilityUpdateDto"][] | null;
         };
         /**
-         * PermissionType
-         * @enum {string}
+         * OtinishPublicStats
+         * @description Anonymous aggregate stats for the /sgotinish landing page.
          */
-        PermissionType: "view" | "assign" | "delegate";
+        OtinishPublicStats: {
+            /** Total Tickets */
+            total_tickets: number;
+            /**
+             * Answered Tickets
+             * @description Tickets claimed by an SG member
+             */
+            answered_tickets: number;
+            /** Closed Tickets */
+            closed_tickets: number;
+            /** Tickets Last 7 Days */
+            tickets_last_7_days: number;
+            /** Tickets Last 30 Days */
+            tickets_last_30_days: number;
+            /**
+             * Unique Students
+             * @description Distinct anonymous authors
+             */
+            unique_students: number;
+            /** By Category */
+            by_category?: components["schemas"]["CategoryStat"][];
+        };
         /** PlannerAutoBuildResponse */
         PlannerAutoBuildResponse: {
             /** Scheduled */
@@ -3036,8 +2659,8 @@ export interface components {
         PlannerCourseResponse: {
             /** Id */
             id: number;
-            /** Registrar Course Id */
-            registrar_course_id: string;
+            /** Catalog Id */
+            catalog_id: string;
             /** Course Code */
             course_code: string;
             /** Title */
@@ -3285,71 +2908,20 @@ export interface components {
              */
             can_delete: boolean;
             /**
+             * Can View Attendees
+             * @default false
+             */
+            can_view_attendees: boolean;
+            /**
+             * Can Share Access
+             * @default false
+             */
+            can_share_access: boolean;
+            /**
              * Editable Fields
              * @default []
              */
             editable_fields: string[];
-        };
-        /**
-         * SGMemberActionResult
-         * @description Simple status response for SG membership actions.
-         */
-        SGMemberActionResult: {
-            /** Detail */
-            detail: string;
-        };
-        /**
-         * SGMemberResponseDTO
-         * @description Detailed SG member response for management UI.
-         */
-        SGMemberResponseDTO: {
-            user: components["schemas"]["ShortUserResponse"];
-            /** Email */
-            email: string;
-            role: components["schemas"]["UserRole"];
-            department?: components["schemas"]["DepartmentResponseDTO"] | null;
-            /** Sg Assigned At */
-            sg_assigned_at?: string | null;
-            sg_assigned_by?: components["schemas"]["ShortUserResponse"] | null;
-        };
-        /**
-         * SGMemberSearchResponseDTO
-         * @description User option for SG membership management.
-         */
-        SGMemberSearchResponseDTO: {
-            user: components["schemas"]["ShortUserResponse"];
-            /** Email */
-            email: string;
-            role: components["schemas"]["UserRole"];
-            department?: components["schemas"]["DepartmentResponseDTO"] | null;
-        };
-        /**
-         * SGMemberUpsertPayload
-         * @description Create/update SG membership for a Nuspace user.
-         */
-        SGMemberUpsertPayload: {
-            /**
-             * Target User Sub
-             * @description Target user sub to add/update in SG
-             */
-            target_user_sub: string;
-            /** @description SG role to assign */
-            role: components["schemas"]["UserRole"];
-            /**
-             * Department Id
-             * @description Department to assign the user to
-             */
-            department_id: number;
-        };
-        /**
-         * SGUserResponse
-         * @description DTO for SG user information.
-         */
-        SGUserResponse: {
-            user: components["schemas"]["ShortUserResponse"];
-            /** Department Name */
-            department_name: string;
-            role: components["schemas"]["UserRole"];
         };
         /** SchedulePreferences */
         SchedulePreferences: {
@@ -3509,168 +3081,6 @@ export interface components {
             /** Template Items */
             template_items: components["schemas"]["TemplateItemUpdate"][];
         };
-        /** TicketAccessEntryDTO */
-        TicketAccessEntryDTO: {
-            user: components["schemas"]["ShortUserResponse"];
-            permission: components["schemas"]["PermissionType"];
-            granted_by?: components["schemas"]["ShortUserResponse"] | null;
-            /**
-             * Granted At
-             * Format: date-time
-             */
-            granted_at: string;
-        };
-        /**
-         * TicketCategory
-         * @enum {string}
-         */
-        TicketCategory: "academic" | "administrative" | "technical" | "complaint" | "suggestion" | "other";
-        /**
-         * TicketCreateDTO
-         * @description Schema for creating a new ticket.
-         */
-        TicketCreateDTO: {
-            /**
-             * Author Sub
-             * @description Author identifier. Use 'me' for current user, or null if anonymous
-             * @default me
-             * @example me
-             */
-            author_sub: string | null;
-            /**
-             * @description Category of the ticket
-             * @example academic
-             */
-            category: components["schemas"]["TicketCategory"];
-            /**
-             * Title
-             * @description Title of the ticket
-             * @example Need help with course registration
-             */
-            title: string;
-            /**
-             * Body
-             * @description Detailed description of the issue
-             * @example I am having trouble registering for CSCI 152 course...
-             */
-            body: string;
-            /**
-             * Is Anonymous
-             * @description Whether the ticket should be anonymous. If true, author_sub will be ignored.
-             * @default false
-             * @example false
-             */
-            is_anonymous: boolean;
-            /**
-             * Owner Hash
-             * @description SHA256 hash of the client's secret key for anonymous ticket access.
-             * @example 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824
-             */
-            owner_hash?: string | null;
-        };
-        /** TicketOwnerHashDTO */
-        TicketOwnerHashDTO: {
-            /**
-             * Owner Hash
-             * @description SHA256 hash of the client's secret key for anonymous ticket access.
-             */
-            owner_hash: string;
-        };
-        /**
-         * Ticket Base Schema
-         * @description Base schema for all ticket-related operations
-         */
-        TicketResponseDTO: {
-            /**
-             * Id
-             * @description Unique identifier of the ticket
-             */
-            id: number;
-            /**
-             * Author Sub
-             * @description Author identifier
-             */
-            author_sub?: string | null;
-            /** @description Category of the ticket */
-            category: components["schemas"]["TicketCategory"];
-            /**
-             * Title
-             * @description Title of the ticket
-             */
-            title: string;
-            /**
-             * Body
-             * @description Detailed description of the issue
-             */
-            body: string;
-            /** @description Current status of the ticket */
-            status: components["schemas"]["TicketStatus"];
-            /**
-             * Is Anonymous
-             * @description Whether the ticket is anonymous
-             */
-            is_anonymous: boolean;
-            /**
-             * Created At
-             * Format: date-time
-             * @description Creation timestamp
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             * @description Last update timestamp
-             */
-            updated_at: string;
-            /** @description Author information (null if anonymous or deleted user) */
-            author?: components["schemas"]["ShortUserResponse"] | null;
-            /**
-             * @description User permissions for this ticket
-             * @default {
-             *       "can_edit": false,
-             *       "can_delete": false,
-             *       "editable_fields": []
-             *     }
-             */
-            permissions: components["schemas"]["ResourcePermissions"];
-            ticket_access?: components["schemas"]["PermissionType"] | null;
-            /**
-             * Unread Count
-             * @description Number of unread messages in this ticket
-             * @default 0
-             */
-            unread_count: number;
-            /**
-             * Conversations
-             * @description List of conversations
-             * @default []
-             */
-            conversations: components["schemas"]["ConversationResponseDTO"][];
-            /**
-             * Access List
-             * @description SG access list for this ticket
-             */
-            access_list?: components["schemas"]["TicketAccessEntryDTO"][];
-        };
-        /**
-         * TicketStatus
-         * @enum {string}
-         */
-        TicketStatus: "open" | "in_progress" | "closed" | "resolved";
-        /**
-         * TicketUpdateDTO
-         * @description Schema for updating a ticket.
-         */
-        TicketUpdateDTO: {
-            /** @description Current status of the ticket */
-            status?: components["schemas"]["TicketStatus"] | null;
-        };
-        /**
-         * TimeFilter
-         * @description Enum for predefined time filters in event queries.
-         * @enum {string}
-         */
-        TimeFilter: "upcoming" | "today" | "week" | "month";
         /** TimeSchema */
         TimeSchema: {
             /** Hh */
@@ -3678,11 +3088,6 @@ export interface components {
             /** Mm */
             mm: number;
         };
-        /**
-         * UserRole
-         * @enum {string}
-         */
-        UserRole: "default" | "admin" | "boss" | "capo" | "soldier" | "community_admin";
         /** UserScheduleItem */
         UserScheduleItem: {
             /** Label */
@@ -3901,11 +3306,13 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": unknown;
+                };
             };
             /** @description Validation Error */
             422: {
@@ -4112,9 +3519,8 @@ export interface operations {
                 registration_policy?: components["schemas"]["RegistrationPolicy"] | null;
                 event_type?: components["schemas"]["EventType"] | null;
                 event_status?: components["schemas"]["EventStatus"] | null;
-                time_filter?: components["schemas"]["TimeFilter"] | null;
-                start_date?: string | null;
-                end_date?: string | null;
+                from_datetime?: string | null;
+                to_datetime?: string | null;
                 creator_sub?: string | null;
                 keyword?: string | null;
             };
@@ -4292,7 +3698,297 @@ export interface operations {
             };
         };
     };
-    get_profile_profile_get: {
+    set_event_going_events__event_id__going_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventGoingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unset_event_going_events__event_id__going_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventGoingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_event_attendees_events__event_id__attendees_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListEventAttendeesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_event_attendees_events__event_id__attendees_export_get: {
+        parameters: {
+            query?: {
+                format?: components["schemas"]["EventAttendeesExportFormat"];
+            };
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_event_access_invites_events__event_id__access_invites_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListEventAccessInvitesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_event_access_invite_events__event_id__access_invites_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventAccessInviteCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventAccessInviteCreatedResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_event_access_invite_events__event_id__access_invites__invite_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+                invite_id: number;
+            };
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_event_access_invite_events_access_invites_accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventAccessInviteAcceptRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventAccessInviteAcceptResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_test_endpoint_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -4322,7 +4018,11 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -4827,7 +4527,11 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -4856,7 +4560,11 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -4867,6 +4575,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SemesterOption"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -5386,7 +5103,11 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -5399,6 +5120,15 @@ export interface operations {
                     "application/json": components["schemas"]["ListGradeTermsResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     get_grades_grades_get: {
@@ -5408,12 +5138,16 @@ export interface operations {
                 page?: number;
                 /** @description Search keyword for course code or course title */
                 keyword?: string | null;
-                /** @description Filter by semester/term code (e.g., FA2024) */
-                term?: string | null;
+                /** @description Filter by one or more semester/term codes. Repeat the parameter, e.g. ?term=FA2024&term=SP2025. */
+                term?: string[] | null;
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -5871,789 +5605,16 @@ export interface operations {
             };
         };
     };
-    get_tickets_tickets_get: {
-        parameters: {
-            query?: {
-                /** @description Number of tickets to return per page for pagination */
-                size?: number;
-                /** @description Page number for ticket listing pagination */
-                page?: number;
-                /** @description If 'me', returns the current user's tickets */
-                author_sub?: string | null;
-                category?: components["schemas"]["TicketCategory"] | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListTicketDTO"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_ticket_tickets_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TicketCreateDTO"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TicketResponseDTO"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_ticket_tickets__ticket_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                ticket_id: number;
-            };
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TicketResponseDTO"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_ticket_tickets__ticket_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                ticket_id: number;
-            };
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TicketUpdateDTO"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TicketResponseDTO"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_ticket_by_owner_hash_tickets_by_owner_hash_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TicketOwnerHashDTO"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TicketResponseDTO"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_conversation_conversations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConversationCreateDTO"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConversationResponseDTO"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_conversation_conversations__conversation_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                conversation_id: number;
-            };
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConversationUpdateDTO"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConversationResponseDTO"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_messages_messages_get: {
-        parameters: {
-            query: {
-                conversation_id: number;
-                size?: number;
-                page?: number;
-                owner_hash?: string | null;
-            };
-            header?: {
-                "X-Owner-Hash"?: string | null;
-            };
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListMessageDTO"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_message_messages_post: {
-        parameters: {
-            query?: {
-                owner_hash?: string | null;
-            };
-            header?: {
-                "X-Owner-Hash"?: string | null;
-            };
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MessageCreateDTO"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MessageResponseDTO"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_message_messages__message_id__get: {
-        parameters: {
-            query?: {
-                owner_hash?: string | null;
-            };
-            header?: {
-                "X-Owner-Hash"?: string | null;
-            };
-            path: {
-                message_id: number;
-            };
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MessageResponseDTO"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    mark_message_as_read_messages__message_id__read_post: {
-        parameters: {
-            query?: {
-                owner_hash?: string | null;
-            };
-            header?: {
-                "X-Owner-Hash"?: string | null;
-            };
-            path: {
-                message_id: number;
-            };
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MessageResponseDTO"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_departments_sg_delegation_departments_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DepartmentResponseDTO"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_department_sg_delegation_departments_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DepartmentCreatePayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DepartmentResponseDTO"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_department_sg_delegation_departments__department_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                department_id: number;
-            };
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SGMemberActionResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_sg_users_sg_delegation_users_get: {
-        parameters: {
-            query: {
-                department_id: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SGUserResponse"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_users_for_sg_management_sg_members_users_get: {
-        parameters: {
-            query?: {
-                /** @description Search in name, surname, email */
-                q?: string | null;
-                /** @description Maximum number of users to return */
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SGMemberSearchResponseDTO"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_sg_members_sg_members_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SGMemberResponseDTO"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upsert_sg_member_sg_members_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SGMemberUpsertPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SGMemberResponseDTO"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_sg_member_sg_members__target_user_sub__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                target_user_sub: string;
-            };
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SGMemberActionResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    withdraw_from_sg_sg_members_withdraw_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SGMemberActionResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delegate_ticket_access_tickets__ticket_id__delegate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                ticket_id: number;
-            };
-            cookie?: {
-                access_token?: string | null;
-                refresh_token?: string | null;
-                app_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DelegateAccessPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_announcements_from_telegram_announcements_telegram_get: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -6666,6 +5627,15 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     get_announcements_bundle_route_announcements_bundle_get: {
@@ -6673,8 +5643,6 @@ export interface operations {
             query?: {
                 events_page?: number;
                 events_size?: number;
-                recruitment_events_page?: number;
-                recruitment_events_size?: number;
             };
             header?: never;
             path?: never;
@@ -6728,7 +5696,11 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -6796,7 +5768,11 @@ export interface operations {
             path: {
                 id: number;
             };
-            cookie?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -6932,7 +5908,11 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -6945,6 +5925,15 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     get_election_counter_elections_counter_get: {
@@ -6952,7 +5941,11 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -6963,6 +5956,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SurveyResponseCount"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_otinish_public_stats_sgotinish_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                access_token?: string | null;
+                refresh_token?: string | null;
+                app_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OtinishPublicStats"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

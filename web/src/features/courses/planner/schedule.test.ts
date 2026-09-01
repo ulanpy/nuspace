@@ -35,7 +35,7 @@ describe("planner selection snapshot", () => {
 describe("planner cropped schedule", () => {
   const course = {
     id: 1,
-    registrar_course_id: "1",
+    catalog_id: "1",
     course_code: "CSCI 151",
     title: "Programming",
     level: null,

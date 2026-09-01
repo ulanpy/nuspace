@@ -7,6 +7,7 @@ import type { LinkProps } from "@tanstack/react-router"
 
 import { announcementsBundleQueryOptions } from "@/features/announcements/api"
 import { TelegramFeed } from "@/features/announcements/components/telegram-feed"
+import { recruitmentEventsQueryOptions } from "@/features/events/api"
 import { EventCard } from "@/features/events/components/event-card"
 import type { Event } from "@/features/events/types"
 import { useCurrentUser } from "@/features/auth/use-session"
@@ -91,6 +92,9 @@ function EventGrid({
 function Announcements() {
   const user = useCurrentUser()
   const { data: bundle } = useSuspenseQuery(announcementsBundleQueryOptions)
+  const { data: recruitment } = useSuspenseQuery(
+    recruitmentEventsQueryOptions()
+  )
 
   return (
     <div className="space-y-8">
@@ -133,7 +137,7 @@ function Announcements() {
             viewAllSearch={{ time: "upcoming", type: "recruitment" }}
           >
             <EventGrid
-              events={bundle.recruitment_events.items ?? []}
+              events={recruitment.items ?? []}
               icon={UsersIcon}
               emptyLabel="No recruitment events right now"
             />
