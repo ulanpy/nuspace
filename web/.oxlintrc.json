@@ -1,0 +1,34 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": ["dist", "src/api/schema.d.ts", "src/routeTree.gen.ts"],
+  "plugins": ["react", "typescript", "jsx-a11y", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "import/no-unassigned-import": "off"
+  },
+  "overrides": [
+    {
+      "files": ["src/components/ui/**"],
+      "rules": {
+        "jsx-a11y/label-has-associated-control": "off"
+      }
+    },
+    {
+      "files": ["src/**/*.test.ts"],
+      "rules": {
+        "typescript/no-floating-promises": "off"
+      }
+    },
+    {
+      "files": ["src/components/markdown.tsx"],
+      "rules": {
+        "jsx-a11y/anchor-has-content": "off",
+        "jsx-a11y/heading-has-content": "off"
+      }
+    }
+  ]
+}
