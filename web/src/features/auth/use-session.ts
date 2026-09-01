@@ -70,6 +70,5 @@ export function usePermissions() {
       isAdmin ||
       role === "boss" ||
       (user != null && OPPORTUNITY_EMAILS.has(user.email)),
-    canDelegateTickets: isAdmin || role === "boss" || role === "capo",
   }
 }

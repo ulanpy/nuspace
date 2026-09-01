@@ -3,7 +3,7 @@
  *
  * The previous app had 88 inline `queryKey:` literals with no shared
  * convention — ["campusCurrent","communities"] next to ["grade-terms"] next to
- * ["sg-members","list"] — which made targeted invalidation guesswork. Keys are
+ * ["sgotinish","list"] — which made targeted invalidation guesswork. Keys are
  * hierarchical: invalidating `qk.events.all()` clears every events query,
  * including lists and details.
  */
@@ -67,15 +67,7 @@ export const qk = {
 
   sgotinish: {
     all: () => ["sgotinish"] as const,
-    tickets: (filters: Record<string, unknown>) =>
-      ["sgotinish", "tickets", filters] as const,
-    ticket: (id: number) => ["sgotinish", "tickets", id] as const,
-    messages: (conversationId: number) =>
-      ["sgotinish", "messages", conversationId] as const,
-    members: () => ["sgotinish", "members"] as const,
-    list: (filters: Record<string, unknown>) =>
-      ["sgotinish", "tickets", "list", filters] as const,
-    departments: () => ["sgotinish", "departments"] as const,
+    stats: () => ["sgotinish", "stats"] as const,
   },
 
   notifications: {

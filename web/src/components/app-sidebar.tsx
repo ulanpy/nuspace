@@ -9,7 +9,6 @@ import {
   InfoIcon,
   LogOutIcon,
   MenuIcon,
-  ShieldIcon,
   UsersIcon,
 } from "lucide-react"
 import type { LinkProps } from "@tanstack/react-router"
@@ -53,7 +52,6 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/communities", label: "Communities", icon: UsersIcon },
   { to: "/opportunities", label: "Opportunities Digest", icon: BriefcaseIcon },
   { to: "/contacts", label: "Contacts", icon: InfoIcon },
-  { to: "/sgotinish", label: "SG otinish", icon: ShieldIcon },
 ]
 
 function NavLinks({
