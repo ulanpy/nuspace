@@ -11,14 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as PublicRouteImport } from './routes/_public'
-import { Route as TRouteImport } from './routes/t'
 import { Route as AppAnnouncementsRouteImport } from './routes/_app/announcements'
 import { Route as AppContactsRouteImport } from './routes/_app/contacts'
 import { Route as AppCoursesRouteRouteImport } from './routes/_app/courses/route'
 import { Route as AppDegreeAuditInfoRouteImport } from './routes/_app/degree-audit-info'
 import { Route as AppOpportunitiesRouteImport } from './routes/_app/opportunities'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
-import { Route as AppSgotinishRouteRouteImport } from './routes/_app/sgotinish/route'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as PublicAboutRouteImport } from './routes/_public/about'
 import { Route as PublicPrivacyPolicyRouteImport } from './routes/_public/privacy-policy'
@@ -32,11 +30,6 @@ import { Route as AppCoursesStatisticsRouteImport } from './routes/_app/courses/
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
 import { Route as AppEventsEventIdRouteImport } from './routes/_app/events/$eventId'
 import { Route as AppSgotinishIndexRouteImport } from './routes/_app/sgotinish/index'
-import { Route as AppSgotinishMembersRouteImport } from './routes/_app/sgotinish/members'
-import { Route as AppSgotinishSgIndexRouteImport } from './routes/_app/sgotinish/sg/index'
-import { Route as AppSgotinishSgTicketIdRouteImport } from './routes/_app/sgotinish/sg/$ticketId'
-import { Route as AppSgotinishStudentIndexRouteImport } from './routes/_app/sgotinish/student/index'
-import { Route as AppSgotinishStudentTicketIdRouteImport } from './routes/_app/sgotinish/student/$ticketId'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -44,11 +37,6 @@ const AppRoute = AppRouteImport.update({
 } as any)
 const PublicRoute = PublicRouteImport.update({
   id: '/_public',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TRoute = TRouteImport.update({
-  id: '/t',
-  path: '/t',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppAnnouncementsRoute = AppAnnouncementsRouteImport.update({
@@ -79,11 +67,6 @@ const AppOpportunitiesRoute = AppOpportunitiesRouteImport.update({
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSgotinishRouteRoute = AppSgotinishRouteRouteImport.update({
-  id: '/sgotinish',
-  path: '/sgotinish',
   getParentRoute: () => AppRoute,
 } as any)
 const PublicIndexRoute = PublicIndexRouteImport.update({
@@ -148,43 +131,14 @@ const AppEventsEventIdRoute = AppEventsEventIdRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AppSgotinishIndexRoute = AppSgotinishIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppSgotinishRouteRoute,
+  id: '/sgotinish/',
+  path: '/sgotinish/',
+  getParentRoute: () => AppRoute,
 } as any)
-const AppSgotinishMembersRoute = AppSgotinishMembersRouteImport.update({
-  id: '/members',
-  path: '/members',
-  getParentRoute: () => AppSgotinishRouteRoute,
-} as any)
-const AppSgotinishSgIndexRoute = AppSgotinishSgIndexRouteImport.update({
-  id: '/sg/',
-  path: '/sg/',
-  getParentRoute: () => AppSgotinishRouteRoute,
-} as any)
-const AppSgotinishSgTicketIdRoute = AppSgotinishSgTicketIdRouteImport.update({
-  id: '/sg/$ticketId',
-  path: '/sg/$ticketId',
-  getParentRoute: () => AppSgotinishRouteRoute,
-} as any)
-const AppSgotinishStudentIndexRoute =
-  AppSgotinishStudentIndexRouteImport.update({
-    id: '/student/',
-    path: '/student/',
-    getParentRoute: () => AppSgotinishRouteRoute,
-  } as any)
-const AppSgotinishStudentTicketIdRoute =
-  AppSgotinishStudentTicketIdRouteImport.update({
-    id: '/student/$ticketId',
-    path: '/student/$ticketId',
-    getParentRoute: () => AppSgotinishRouteRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
-  '/t': typeof TRoute
   '/courses': typeof AppCoursesRouteRouteWithChildren
-  '/sgotinish': typeof AppSgotinishRouteRouteWithChildren
   '/announcements': typeof AppAnnouncementsRoute
   '/contacts': typeof AppContactsRoute
   '/degree-audit-info': typeof AppDegreeAuditInfoRoute
@@ -198,19 +152,13 @@ export interface FileRoutesByFullPath {
   '/courses/schedule': typeof AppCoursesScheduleRoute
   '/courses/statistics': typeof AppCoursesStatisticsRoute
   '/events/$eventId': typeof AppEventsEventIdRoute
-  '/sgotinish/members': typeof AppSgotinishMembersRoute
   '/communities/': typeof AppCommunitiesIndexRoute
   '/courses/': typeof AppCoursesIndexRoute
   '/events/': typeof AppEventsIndexRoute
   '/sgotinish/': typeof AppSgotinishIndexRoute
-  '/sgotinish/sg/$ticketId': typeof AppSgotinishSgTicketIdRoute
-  '/sgotinish/student/$ticketId': typeof AppSgotinishStudentTicketIdRoute
-  '/sgotinish/sg/': typeof AppSgotinishSgIndexRoute
-  '/sgotinish/student/': typeof AppSgotinishStudentIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
-  '/t': typeof TRoute
   '/announcements': typeof AppAnnouncementsRoute
   '/contacts': typeof AppContactsRoute
   '/degree-audit-info': typeof AppDegreeAuditInfoRoute
@@ -224,23 +172,16 @@ export interface FileRoutesByTo {
   '/courses/schedule': typeof AppCoursesScheduleRoute
   '/courses/statistics': typeof AppCoursesStatisticsRoute
   '/events/$eventId': typeof AppEventsEventIdRoute
-  '/sgotinish/members': typeof AppSgotinishMembersRoute
   '/communities': typeof AppCommunitiesIndexRoute
   '/courses': typeof AppCoursesIndexRoute
   '/events': typeof AppEventsIndexRoute
   '/sgotinish': typeof AppSgotinishIndexRoute
-  '/sgotinish/sg/$ticketId': typeof AppSgotinishSgTicketIdRoute
-  '/sgotinish/student/$ticketId': typeof AppSgotinishStudentTicketIdRoute
-  '/sgotinish/sg': typeof AppSgotinishSgIndexRoute
-  '/sgotinish/student': typeof AppSgotinishStudentIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
-  '/t': typeof TRoute
   '/_app/courses': typeof AppCoursesRouteRouteWithChildren
-  '/_app/sgotinish': typeof AppSgotinishRouteRouteWithChildren
   '/_app/announcements': typeof AppAnnouncementsRoute
   '/_app/contacts': typeof AppContactsRoute
   '/_app/degree-audit-info': typeof AppDegreeAuditInfoRoute
@@ -255,23 +196,16 @@ export interface FileRoutesById {
   '/_app/courses/schedule': typeof AppCoursesScheduleRoute
   '/_app/courses/statistics': typeof AppCoursesStatisticsRoute
   '/_app/events/$eventId': typeof AppEventsEventIdRoute
-  '/_app/sgotinish/members': typeof AppSgotinishMembersRoute
   '/_app/communities/': typeof AppCommunitiesIndexRoute
   '/_app/courses/': typeof AppCoursesIndexRoute
   '/_app/events/': typeof AppEventsIndexRoute
   '/_app/sgotinish/': typeof AppSgotinishIndexRoute
-  '/_app/sgotinish/sg/$ticketId': typeof AppSgotinishSgTicketIdRoute
-  '/_app/sgotinish/student/$ticketId': typeof AppSgotinishStudentTicketIdRoute
-  '/_app/sgotinish/sg/': typeof AppSgotinishSgIndexRoute
-  '/_app/sgotinish/student/': typeof AppSgotinishStudentIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/t'
     | '/courses'
-    | '/sgotinish'
     | '/announcements'
     | '/contacts'
     | '/degree-audit-info'
@@ -285,19 +219,13 @@ export interface FileRouteTypes {
     | '/courses/schedule'
     | '/courses/statistics'
     | '/events/$eventId'
-    | '/sgotinish/members'
     | '/communities/'
     | '/courses/'
     | '/events/'
     | '/sgotinish/'
-    | '/sgotinish/sg/$ticketId'
-    | '/sgotinish/student/$ticketId'
-    | '/sgotinish/sg/'
-    | '/sgotinish/student/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/t'
     | '/announcements'
     | '/contacts'
     | '/degree-audit-info'
@@ -311,22 +239,15 @@ export interface FileRouteTypes {
     | '/courses/schedule'
     | '/courses/statistics'
     | '/events/$eventId'
-    | '/sgotinish/members'
     | '/communities'
     | '/courses'
     | '/events'
     | '/sgotinish'
-    | '/sgotinish/sg/$ticketId'
-    | '/sgotinish/student/$ticketId'
-    | '/sgotinish/sg'
-    | '/sgotinish/student'
   id:
     | '__root__'
     | '/_app'
     | '/_public'
-    | '/t'
     | '/_app/courses'
-    | '/_app/sgotinish'
     | '/_app/announcements'
     | '/_app/contacts'
     | '/_app/degree-audit-info'
@@ -341,21 +262,15 @@ export interface FileRouteTypes {
     | '/_app/courses/schedule'
     | '/_app/courses/statistics'
     | '/_app/events/$eventId'
-    | '/_app/sgotinish/members'
     | '/_app/communities/'
     | '/_app/courses/'
     | '/_app/events/'
     | '/_app/sgotinish/'
-    | '/_app/sgotinish/sg/$ticketId'
-    | '/_app/sgotinish/student/$ticketId'
-    | '/_app/sgotinish/sg/'
-    | '/_app/sgotinish/student/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   PublicRoute: typeof PublicRouteWithChildren
-  TRoute: typeof TRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -372,13 +287,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof PublicRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/t': {
-      id: '/t'
-      path: '/t'
-      fullPath: '/t'
-      preLoaderRoute: typeof TRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/announcements': {
@@ -421,13 +329,6 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof AppProfileRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/sgotinish': {
-      id: '/_app/sgotinish'
-      path: '/sgotinish'
-      fullPath: '/sgotinish'
-      preLoaderRoute: typeof AppSgotinishRouteRouteImport
       parentRoute: typeof AppRoute
     }
     '/_public/': {
@@ -516,45 +417,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/sgotinish/': {
       id: '/_app/sgotinish/'
-      path: '/'
+      path: '/sgotinish'
       fullPath: '/sgotinish/'
       preLoaderRoute: typeof AppSgotinishIndexRouteImport
-      parentRoute: typeof AppSgotinishRouteRoute
-    }
-    '/_app/sgotinish/members': {
-      id: '/_app/sgotinish/members'
-      path: '/members'
-      fullPath: '/sgotinish/members'
-      preLoaderRoute: typeof AppSgotinishMembersRouteImport
-      parentRoute: typeof AppSgotinishRouteRoute
-    }
-    '/_app/sgotinish/sg/': {
-      id: '/_app/sgotinish/sg/'
-      path: '/sg'
-      fullPath: '/sgotinish/sg/'
-      preLoaderRoute: typeof AppSgotinishSgIndexRouteImport
-      parentRoute: typeof AppSgotinishRouteRoute
-    }
-    '/_app/sgotinish/sg/$ticketId': {
-      id: '/_app/sgotinish/sg/$ticketId'
-      path: '/sg/$ticketId'
-      fullPath: '/sgotinish/sg/$ticketId'
-      preLoaderRoute: typeof AppSgotinishSgTicketIdRouteImport
-      parentRoute: typeof AppSgotinishRouteRoute
-    }
-    '/_app/sgotinish/student/': {
-      id: '/_app/sgotinish/student/'
-      path: '/student'
-      fullPath: '/sgotinish/student/'
-      preLoaderRoute: typeof AppSgotinishStudentIndexRouteImport
-      parentRoute: typeof AppSgotinishRouteRoute
-    }
-    '/_app/sgotinish/student/$ticketId': {
-      id: '/_app/sgotinish/student/$ticketId'
-      path: '/student/$ticketId'
-      fullPath: '/sgotinish/student/$ticketId'
-      preLoaderRoute: typeof AppSgotinishStudentTicketIdRouteImport
-      parentRoute: typeof AppSgotinishRouteRoute
+      parentRoute: typeof AppRoute
     }
   }
 }
@@ -577,30 +443,8 @@ const AppCoursesRouteRouteWithChildren = AppCoursesRouteRoute._addFileChildren(
   AppCoursesRouteRouteChildren,
 )
 
-interface AppSgotinishRouteRouteChildren {
-  AppSgotinishMembersRoute: typeof AppSgotinishMembersRoute
-  AppSgotinishIndexRoute: typeof AppSgotinishIndexRoute
-  AppSgotinishSgTicketIdRoute: typeof AppSgotinishSgTicketIdRoute
-  AppSgotinishStudentTicketIdRoute: typeof AppSgotinishStudentTicketIdRoute
-  AppSgotinishSgIndexRoute: typeof AppSgotinishSgIndexRoute
-  AppSgotinishStudentIndexRoute: typeof AppSgotinishStudentIndexRoute
-}
-
-const AppSgotinishRouteRouteChildren: AppSgotinishRouteRouteChildren = {
-  AppSgotinishMembersRoute: AppSgotinishMembersRoute,
-  AppSgotinishIndexRoute: AppSgotinishIndexRoute,
-  AppSgotinishSgTicketIdRoute: AppSgotinishSgTicketIdRoute,
-  AppSgotinishStudentTicketIdRoute: AppSgotinishStudentTicketIdRoute,
-  AppSgotinishSgIndexRoute: AppSgotinishSgIndexRoute,
-  AppSgotinishStudentIndexRoute: AppSgotinishStudentIndexRoute,
-}
-
-const AppSgotinishRouteRouteWithChildren =
-  AppSgotinishRouteRoute._addFileChildren(AppSgotinishRouteRouteChildren)
-
 interface AppRouteChildren {
   AppCoursesRouteRoute: typeof AppCoursesRouteRouteWithChildren
-  AppSgotinishRouteRoute: typeof AppSgotinishRouteRouteWithChildren
   AppAnnouncementsRoute: typeof AppAnnouncementsRoute
   AppContactsRoute: typeof AppContactsRoute
   AppDegreeAuditInfoRoute: typeof AppDegreeAuditInfoRoute
@@ -610,11 +454,11 @@ interface AppRouteChildren {
   AppEventsEventIdRoute: typeof AppEventsEventIdRoute
   AppCommunitiesIndexRoute: typeof AppCommunitiesIndexRoute
   AppEventsIndexRoute: typeof AppEventsIndexRoute
+  AppSgotinishIndexRoute: typeof AppSgotinishIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppCoursesRouteRoute: AppCoursesRouteRouteWithChildren,
-  AppSgotinishRouteRoute: AppSgotinishRouteRouteWithChildren,
   AppAnnouncementsRoute: AppAnnouncementsRoute,
   AppContactsRoute: AppContactsRoute,
   AppDegreeAuditInfoRoute: AppDegreeAuditInfoRoute,
@@ -624,6 +468,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppEventsEventIdRoute: AppEventsEventIdRoute,
   AppCommunitiesIndexRoute: AppCommunitiesIndexRoute,
   AppEventsIndexRoute: AppEventsIndexRoute,
+  AppSgotinishIndexRoute: AppSgotinishIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -648,7 +493,6 @@ const PublicRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   PublicRoute: PublicRouteWithChildren,
-  TRoute: TRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

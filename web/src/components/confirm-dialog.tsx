@@ -30,11 +30,11 @@ interface ConfirmDialogProps {
  * The confirmation step for a destructive action.
  *
  * Replaces `window.confirm`, which the old app used for every delete and, in
- * the SGotinish cabinet withdrawal, stacked three deep. Beyond looking like a
- * browser error, `window.confirm` blocks the event loop, cannot say which
- * record it is about to remove in any readable way, and gives no way to show
- * that the request is in flight — so the second click of an impatient
- * double-click fired a second DELETE.
+ * a cabinet-wide removal, stacked three deep. Beyond looking like a browser
+ * error, `window.confirm` blocks the event loop, cannot say which record it is
+ * about to remove in any readable way, and gives no way to show that the
+ * request is in flight — so the second click of an impatient double-click
+ * fired a second DELETE.
  */
 export function ConfirmDialog({
   open,

@@ -3,7 +3,7 @@ import { useInfiniteQuery } from "@tanstack/react-query"
 
 /**
  * The pagination envelope every list endpoint returns — ListEventResponse,
- * ListCommunity, ListTicketDTO and the rest are all this shape.
+ * ListCommunity and the rest are all this shape.
  *
  * `items` is optional because the backend gives it a default, so it can be
  * absent rather than an empty array.
