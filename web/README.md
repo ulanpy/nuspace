@@ -1,7 +1,7 @@
 # web
 
 The Nuspace frontend. Serves `http://localhost` in development and everything
-CI deploys to production.
+CI packages its static export for deployment.
 
 The previous app in `frontend/` is still in the repository for one release as a
 fallback and is no longer routed to or built. Deleting it is a follow-up.

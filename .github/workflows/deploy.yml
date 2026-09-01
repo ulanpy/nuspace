@@ -122,6 +122,14 @@ jobs:
           cache-to: type=gha,mode=max,scope=nuspace-backup
 
       # --- Frontend static export (Vite SPA) — built on the runner, not on the VM ---
+      # setup-node resolves the pnpm cache by running `pnpm --version`, so pnpm
+      # must be available before this action executes.
+      - name: Set up pnpm
+        if: steps.changes.outputs.frontend == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.15.0
+
       - name: Set up Node.js for frontend build
         if: steps.changes.outputs.frontend == 'true'
         uses: actions/setup-node@v4
@@ -133,7 +141,7 @@ jobs:
       - name: Build frontend static output
         if: steps.changes.outputs.frontend == 'true'
         working-directory: web
-        run: corepack enable && pnpm install --frozen-lockfile && pnpm build
+        run: pnpm install --frozen-lockfile && pnpm build
 
       - name: Pack frontend out/ for Ansible
         if: steps.changes.outputs.frontend == 'true'

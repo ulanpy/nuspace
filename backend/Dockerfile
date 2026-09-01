@@ -1,4 +1,4 @@
-# Use official Python 3.12 slim image
+# Use official Python 3.12 image for the deployable API image.
 FROM python:3.12-alpine3.22
 
 # Set build arguments

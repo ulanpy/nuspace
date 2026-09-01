@@ -1,3 +1,5 @@
+# Production and staging services share this Compose definition; environment values
+# are supplied by the respective Secret Manager project.
 services:
   postgres:
     image: kamikadze24/postgres-walg:latest
