@@ -13,7 +13,7 @@ from backend.modules.auth.app_token import AppTokenManager
 from backend.modules.auth.cookies import set_app_token_cookie, set_kc_auth_cookies
 from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.auth.mock import get_mock_user_by_sub
-from backend.modules.auth.models import UserRole
+from backend.modules.auth.models import UserRole, UserScope
 from backend.modules.auth.service import AuthService
 
 
@@ -174,9 +174,7 @@ async def get_creds_or_401(
             # Most protected reads carry a valid app token and never touch the
             # database. Allocate a UoW only for the rare refresh/issuance path
             # that actually needs a transaction.
-            uow = UnitOfWork(
-                session_factory=request.app.state.db_manager.get_session_maker()
-            )
+            uow = UnitOfWork(session_factory=request.app.state.db_manager.get_session_maker())
             auth_service = AuthService(uow, kc_manager, app_token_manager)
             await auth_service.ensure_user_from_access_token(access_token, kc_principal)
             new_app_token_str, new_app_claims = await app_token_manager.create_app_token(
@@ -200,6 +198,12 @@ async def get_creds_or_401(
             detail="Application access denied: App token could not be established.",
         )
 
+    if app_principal.get("scope") == UserScope.banned.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account has been banned",
+        )
+
     set_request_access_actor(
         request,
         user_sub=kc_principal["sub"],
@@ -220,7 +224,12 @@ async def get_creds_or_guest(
 ) -> tuple[dict, dict]:
     """Like get_creds_or_401, but returns guest principals when unauthenticated."""
     guest_kc = {"sub": "guest"}
-    guest_app = {"role": UserRole.default.value, "communities": [], "is_guest": True}
+    guest_app = {
+        "role": UserRole.default.value,
+        "communities": [],
+        "is_guest": True,
+        "scope": "allowed",
+    }
 
     if not access_token or not refresh_token:
         set_request_access_actor(

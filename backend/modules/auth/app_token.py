@@ -45,6 +45,7 @@ class AppTokenManager:
         claims = {
             "sub": user_sub,
             "role": user_role.value,
+            "scope": user.scope.value,
             "communities": [community.id for community in owned_communities],
             "exp": datetime.now(UTC) + self.token_expiry,
             "tg_id": tg_id,
