@@ -193,13 +193,9 @@ class AuthService:
             user = await user_repo.get_by_sub(kc_principal["sub"])
             if user:
                 return user
-            return await user_repo.upsert(
-                self.user_schema_from_kc_principal(kc_principal)
-            )
+            return await user_repo.upsert(self.user_schema_from_kc_principal(kc_principal))
 
-    async def ensure_user_from_access_token(
-        self, access_token: str, kc_principal: dict
-    ):
+    async def ensure_user_from_access_token(self, access_token: str, kc_principal: dict):
         profile = (
             kc_principal
             if config.MOCK_KEYCLOAK
@@ -228,6 +224,24 @@ class AuthService:
                 detail="User not found",
             )
         return user.role
+
+    async def update_user_scope(
+        self, target_sub: str, new_scope: UserScope, admin_sub: str
+    ) -> User:
+        if target_sub == admin_sub:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Admins cannot change their own scope",
+            )
+        async with self.uow:
+            user_repo = self.uow.get_repo(UserRepository)
+            user = await user_repo.update_scope(target_sub, new_scope)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        return user
 
     async def complete_oauth_callback(
         self,
@@ -298,9 +312,7 @@ class AuthService:
         async with self.uow:
             user_repo = self.uow.get_repo(UserRepository)  # Ensure repository is initialized
             user = await user_repo.upsert(user_schema)
-        app_token_str, _claims = await self.app_token_manager.create_app_token(
-            user.sub, self.uow
-        )
+        app_token_str, _claims = await self.app_token_manager.create_app_token(user.sub, self.uow)
 
         redirect_response = RedirectResponse(url=redirect_url, status_code=303)
         set_kc_auth_cookies(redirect_response, creds)

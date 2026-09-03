@@ -1,7 +1,7 @@
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.modules.auth.models import User
+from backend.modules.auth.models import User, UserScope
 from backend.modules.auth.schemas import UserSchema
 from backend.modules.shared.slug import generate_unique_slug
 
@@ -43,3 +43,14 @@ class UserRepository:
     async def get_by_sub(self, sub: str) -> User | None:
         result = await self.db_session.execute(select(User).where(User.sub == sub))
         return result.scalars().first()
+
+    async def update_scope(self, sub: str, scope: UserScope) -> User | None:
+        user = await self.get_by_sub(sub)
+        if user is None:
+            return None
+        user.scope = scope
+        if scope == UserScope.banned:
+            user.is_page_public = False
+        await self.db_session.flush()
+        await self.db_session.refresh(user)
+        return user

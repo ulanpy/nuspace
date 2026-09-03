@@ -20,7 +20,13 @@ from backend.modules.auth.dependencies import (
     mark_access_actor,
     set_request_access_actor,
 )
-from backend.modules.auth.schemas import CurrentUserResponse, Sub
+from backend.modules.auth.models import UserRole
+from backend.modules.auth.schemas import (
+    CurrentUserResponse,
+    Sub,
+    UserScopeResponse,
+    UserScopeUpdateRequest,
+)
 from backend.modules.auth.service import AuthService
 from backend.modules.bot.utils.telegram_link_tokens import issue_telegram_link_token
 
@@ -176,3 +182,22 @@ async def logout(
     unset_kc_auth_cookies(response)
     response.delete_cookie(key=config.COOKIE_APP_NAME)
     return status.HTTP_200_OK
+
+
+@router.patch("/users/{sub}/scope", response_model=UserScopeResponse)
+async def update_user_scope(
+    sub: str,
+    body: UserScopeUpdateRequest,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    auth_service: AuthService = Depends(deps.get_auth_service),
+) -> UserScopeResponse:
+    """Ban or allow a user. Admin only."""
+    if user[1].get("role") != UserRole.admin.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can change user scope",
+        )
+    updated = await auth_service.update_user_scope(
+        target_sub=sub, new_scope=body.scope, admin_sub=user[0]["sub"]
+    )
+    return UserScopeResponse(sub=updated.sub, scope=updated.scope)

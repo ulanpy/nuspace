@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 from backend.modules.auth.models import UserRole, UserScope
 
@@ -25,3 +25,12 @@ class Sub(BaseModel):
 class CurrentUserResponse(BaseModel):
     user: Dict[str, Any]  # This will store user token data
     tg_id: int | None = None  # Indicates if user exists in the database
+
+
+class UserScopeUpdateRequest(BaseModel):
+    scope: UserScope = Field(..., description="New scope: 'allowed' or 'banned'")
+
+
+class UserScopeResponse(BaseModel):
+    sub: str
+    scope: UserScope
