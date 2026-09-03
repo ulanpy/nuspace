@@ -57,18 +57,18 @@ export function myCommunitiesQueryOptions() {
   })
 }
 
-function fetchCommunity(communityId: number) {
+function fetchCommunity(slug: string) {
   return unwrap(
-    api.GET("/communities/{community_id}", {
-      params: { path: { community_id: communityId } },
+    api.GET("/communities/{slug}", {
+      params: { path: { slug } },
     })
   )
 }
 
-export function communityDetailQueryOptions(communityId: number) {
+export function communityDetailQueryOptions(slug: string) {
   return queryOptions({
-    queryKey: qk.communities.detail(communityId),
-    queryFn: () => fetchCommunity(communityId),
+    queryKey: qk.communities.detail(slug),
+    queryFn: () => fetchCommunity(slug),
   })
 }
 
@@ -82,11 +82,11 @@ export function communityDetailQueryOptions(communityId: number) {
  */
 function refreshWhenMediaLands(
   queryClient: QueryClient,
-  communityId: number,
+  slug: string,
   expected: number
 ) {
   void pollForMedia({
-    fetch: () => fetchCommunity(communityId),
+    fetch: () => fetchCommunity(slug),
     isReady: (community) => community.media.length >= expected,
   }).then(async (community) => {
     if (community) {
@@ -155,7 +155,7 @@ export function useCreateCommunity() {
       if (result.successfulUploadCount > 0) {
         refreshWhenMediaLands(
           queryClient,
-          result.entity.id,
+          result.entity.slug,
           result.successfulUploadCount
         )
       }
@@ -169,10 +169,12 @@ export function useUpdateCommunity() {
 
   return useMutation({
     mutationFn: async ({
+      slug,
       id,
       body,
       items,
     }: {
+      slug: string
       id: number
       /** Removals from both zones ride along as `media_ids_to_delete`. */
       body: CommunityUpdate
@@ -184,8 +186,8 @@ export function useUpdateCommunity() {
         },
         saveEntity: () =>
           unwrap(
-            api.PATCH("/communities/{community_id}", {
-              params: { path: { community_id: id } },
+            api.PATCH("/communities/{slug}", {
+              params: { path: { slug } },
               body,
             })
           ),
@@ -202,14 +204,18 @@ export function useUpdateCommunity() {
             : undefined,
       })
     },
-    onSuccess: async (result, { id }) => {
+    onSuccess: async (result, { slug }) => {
       await queryClient.invalidateQueries({ queryKey: qk.communities.all() })
       if (result.successfulUploadCount > 0) {
+        // The slug may have been edited in the same request, so poll the
+        // entity's current address from the PATCH response, not the stale one
+        // the mutation was called with.
+        const currentSlug = result.entity.slug ?? slug
         // Counted from what survived the PATCH, so images deleted in the same
         // request are not waited for on top of the ones being added.
         refreshWhenMediaLands(
           queryClient,
-          id,
+          currentSlug,
           result.entity.media.length + result.successfulUploadCount
         )
       }
@@ -222,10 +228,10 @@ export function useDeleteCommunity() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: number) =>
+    mutationFn: (slug: string) =>
       unwrap(
-        api.DELETE("/communities/{community_id}", {
-          params: { path: { community_id: id } },
+        api.DELETE("/communities/{slug}", {
+          params: { path: { slug } },
         })
       ),
     onSuccess: async () => {

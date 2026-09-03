@@ -49,8 +49,8 @@ function CommunityRow({ community }: { community: Community }) {
 
   return (
     <Link
-      to="/communities/$communityId"
-      params={{ communityId: String(community.id) }}
+      to="/communities/$slug"
+      params={{ slug: community.slug }}
       className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       <ResilientImage

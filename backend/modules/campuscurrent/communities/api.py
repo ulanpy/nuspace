@@ -16,6 +16,19 @@ from backend.modules.campuscurrent.models.community import (
 
 router = APIRouter(tags=["Community Routes"])
 
+# The only unique, user-writable column on Community is `slug`, so an
+# IntegrityError raised while creating or updating a community means the handle
+# is already taken. Surface that to the caller instead of leaking the raw
+# database message.
+SLUG_TAKEN_DETAIL = "That handle is already taken. Choose a different one."
+
+
+def _raise_slug_taken() -> None:
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail=SLUG_TAKEN_DETAIL,
+    )
+
 
 @router.post("/communities", response_model=schemas.CommunityResponse)
 async def add_community(
@@ -36,11 +49,8 @@ async def add_community(
         return await community_service.create_community(
             infra=infra, community_data=community_data, user=user
         )
-    except IntegrityError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Database integrity error: {str(e.orig)}",
-        )
+    except IntegrityError:
+        _raise_slug_taken()
 
 
 @router.get("/communities", response_model=schemas.ListCommunity)
@@ -72,42 +82,43 @@ async def get_communities(
     )
 
 
-@router.get("/communities/{community_id}", response_model=schemas.CommunityResponse)
+@router.get("/communities/{slug}", response_model=schemas.CommunityResponse)
 async def get_community(
     request: Request,
-    community_id: int,
+    slug: str,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_guest)],
     infra: Infra = Depends(get_infra),
     community_service: CommunityService = Depends(get_community_service),
 ) -> schemas.CommunityResponse:
-    """Retrieves a specific community by ID."""
-    return await community_service.get_community_response(
-        infra=infra, community_id=community_id, user=user
-    )
+    """Retrieves a specific community by slug."""
+    return await community_service.get_community_response(infra=infra, slug=slug, user=user)
 
 
-@router.patch("/communities/{community_id}", response_model=schemas.CommunityResponse)
+@router.patch("/communities/{slug}", response_model=schemas.CommunityResponse)
 async def update_community(
     request: Request,
-    community_id: int,
+    slug: str,
     new_data: schemas.CommunityUpdateRequest,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     infra: Infra = Depends(get_infra),
     community_service: CommunityService = Depends(get_community_service),
 ) -> schemas.CommunityResponse:
     """Updates fields of an existing community. Head or admin only."""
-    return await community_service.update_community(
-        infra=infra, community_id=community_id, new_data=new_data, user=user
-    )
+    try:
+        return await community_service.update_community(
+            infra=infra, slug=slug, new_data=new_data, user=user
+        )
+    except IntegrityError:
+        _raise_slug_taken()
 
 
-@router.delete("/communities/{community_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/communities/{slug}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_community(
     request: Request,
-    community_id: int,
+    slug: str,
     user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
     infra: Infra = Depends(get_infra),
     community_service: CommunityService = Depends(get_community_service),
 ):
     """Deletes a community. Admin only."""
-    await community_service.delete_community(infra=infra, community_id=community_id, user=user)
+    await community_service.delete_community(infra=infra, slug=slug, user=user)

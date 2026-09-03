@@ -29,9 +29,9 @@ class CommunityService:
         self.uow = uow
         self.media_attachment_resolver = media_attachment_resolver
 
-    async def _get_community_or_404(self, community_id: int) -> Community:
+    async def _get_community_or_404(self, slug: str) -> Community:
         async with self.uow:
-            community = await self.uow.get_repo(CommunityRepository).get_by_id(community_id)
+            community = await self.uow.get_repo(CommunityRepository).get_by_slug(slug)
         if community is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Community not found")
         return community
@@ -61,14 +61,14 @@ class CommunityService:
     async def update_community(
         self,
         infra: Infra,
-        community_id: int,
+        slug: str,
         new_data: schemas.CommunityUpdateRequest,
         user: tuple[dict, dict],
     ) -> schemas.CommunityResponse:
         media_ids_to_delete = new_data.media_ids_to_delete or []
         async with self.uow:
             repo = self.uow.get_repo(CommunityRepository)
-            community = await repo.get_by_id(community_id)
+            community = await repo.get_by_slug(slug)
             if community is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
@@ -121,12 +121,10 @@ class CommunityService:
 
         await self.media_attachment_resolver.delete_many(media_objects)
 
-    async def delete_community(
-        self, infra: Infra, community_id: int, user: tuple[dict, dict]
-    ) -> None:
+    async def delete_community(self, infra: Infra, slug: str, user: tuple[dict, dict]) -> None:
         async with self.uow:
             repo = self.uow.get_repo(CommunityRepository)
-            community = await repo.get_by_id(community_id)
+            community = await repo.get_by_slug(slug)
             if community is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
@@ -140,7 +138,7 @@ class CommunityService:
                     status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
                 )
         await self.media_attachment_resolver.delete_many(media_objects)
-        await repo.delete_from_search(infra.meilisearch_client, community_id)
+        await repo.delete_from_search(infra.meilisearch_client, community.id)
 
     async def list_communities(
         self,
@@ -211,9 +209,9 @@ class CommunityService:
         )
 
     async def get_community_response(
-        self, infra: Infra, community_id: int, user: tuple[dict, dict]
+        self, infra: Infra, slug: str, user: tuple[dict, dict]
     ) -> schemas.CommunityResponse:
-        community = await self._get_community_or_404(community_id)
+        community = await self._get_community_or_404(slug)
         await CommunityPolicy(user=user).check_permission(
             action=ResourceAction.READ, community=community
         )

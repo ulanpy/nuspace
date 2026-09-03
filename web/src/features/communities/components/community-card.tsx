@@ -14,8 +14,8 @@ export function CommunityCard({ community }: { community: Community }) {
   return (
     <Card className="h-full p-0 transition-shadow hover:shadow-md">
       <Link
-        to="/communities/$communityId"
-        params={{ communityId: String(community.id) }}
+        to="/communities/$slug"
+        params={{ slug: community.slug }}
         className="flex h-full flex-col focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         <div className="relative aspect-[2/1] bg-community/10">

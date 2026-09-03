@@ -304,7 +304,7 @@ export function CommunityForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1">
-          <Label htmlFor="community-slug">Slug</Label>
+          <Label htmlFor="community-slug">Handle</Label>
           <Input
             id="community-slug"
             placeholder="nu-fencing-club"

@@ -22,7 +22,7 @@ import { Route as PublicAboutRouteImport } from './routes/_public/about'
 import { Route as PublicPrivacyPolicyRouteImport } from './routes/_public/privacy-policy'
 import { Route as PublicTermsOfServiceRouteImport } from './routes/_public/terms-of-service'
 import { Route as AppCommunitiesIndexRouteImport } from './routes/_app/communities/index'
-import { Route as AppCommunitiesCommunityIdRouteImport } from './routes/_app/communities/$communityId'
+import { Route as AppCommunitiesSlugRouteImport } from './routes/_app/communities/$slug'
 import { Route as AppCoursesIndexRouteImport } from './routes/_app/courses/index'
 import { Route as AppCoursesAuditRouteImport } from './routes/_app/courses/audit'
 import { Route as AppCoursesScheduleRouteImport } from './routes/_app/courses/schedule'
@@ -94,12 +94,11 @@ const AppCommunitiesIndexRoute = AppCommunitiesIndexRouteImport.update({
   path: '/communities/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppCommunitiesCommunityIdRoute =
-  AppCommunitiesCommunityIdRouteImport.update({
-    id: '/communities/$communityId',
-    path: '/communities/$communityId',
-    getParentRoute: () => AppRoute,
-  } as any)
+const AppCommunitiesSlugRoute = AppCommunitiesSlugRouteImport.update({
+  id: '/communities/$slug',
+  path: '/communities/$slug',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCoursesIndexRoute = AppCoursesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -147,7 +146,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof PublicAboutRoute
   '/privacy-policy': typeof PublicPrivacyPolicyRoute
   '/terms-of-service': typeof PublicTermsOfServiceRoute
-  '/communities/$communityId': typeof AppCommunitiesCommunityIdRoute
+  '/communities/$slug': typeof AppCommunitiesSlugRoute
   '/courses/audit': typeof AppCoursesAuditRoute
   '/courses/schedule': typeof AppCoursesScheduleRoute
   '/courses/statistics': typeof AppCoursesStatisticsRoute
@@ -167,7 +166,7 @@ export interface FileRoutesByTo {
   '/about': typeof PublicAboutRoute
   '/privacy-policy': typeof PublicPrivacyPolicyRoute
   '/terms-of-service': typeof PublicTermsOfServiceRoute
-  '/communities/$communityId': typeof AppCommunitiesCommunityIdRoute
+  '/communities/$slug': typeof AppCommunitiesSlugRoute
   '/courses/audit': typeof AppCoursesAuditRoute
   '/courses/schedule': typeof AppCoursesScheduleRoute
   '/courses/statistics': typeof AppCoursesStatisticsRoute
@@ -191,7 +190,7 @@ export interface FileRoutesById {
   '/_public/privacy-policy': typeof PublicPrivacyPolicyRoute
   '/_public/terms-of-service': typeof PublicTermsOfServiceRoute
   '/_public/': typeof PublicIndexRoute
-  '/_app/communities/$communityId': typeof AppCommunitiesCommunityIdRoute
+  '/_app/communities/$slug': typeof AppCommunitiesSlugRoute
   '/_app/courses/audit': typeof AppCoursesAuditRoute
   '/_app/courses/schedule': typeof AppCoursesScheduleRoute
   '/_app/courses/statistics': typeof AppCoursesStatisticsRoute
@@ -214,7 +213,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/privacy-policy'
     | '/terms-of-service'
-    | '/communities/$communityId'
+    | '/communities/$slug'
     | '/courses/audit'
     | '/courses/schedule'
     | '/courses/statistics'
@@ -234,7 +233,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/privacy-policy'
     | '/terms-of-service'
-    | '/communities/$communityId'
+    | '/communities/$slug'
     | '/courses/audit'
     | '/courses/schedule'
     | '/courses/statistics'
@@ -257,7 +256,7 @@ export interface FileRouteTypes {
     | '/_public/privacy-policy'
     | '/_public/terms-of-service'
     | '/_public/'
-    | '/_app/communities/$communityId'
+    | '/_app/communities/$slug'
     | '/_app/courses/audit'
     | '/_app/courses/schedule'
     | '/_app/courses/statistics'
@@ -366,11 +365,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCommunitiesIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/communities/$communityId': {
-      id: '/_app/communities/$communityId'
-      path: '/communities/$communityId'
-      fullPath: '/communities/$communityId'
-      preLoaderRoute: typeof AppCommunitiesCommunityIdRouteImport
+    '/_app/communities/$slug': {
+      id: '/_app/communities/$slug'
+      path: '/communities/$slug'
+      fullPath: '/communities/$slug'
+      preLoaderRoute: typeof AppCommunitiesSlugRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/courses/': {
@@ -450,7 +449,7 @@ interface AppRouteChildren {
   AppDegreeAuditInfoRoute: typeof AppDegreeAuditInfoRoute
   AppOpportunitiesRoute: typeof AppOpportunitiesRoute
   AppProfileRoute: typeof AppProfileRoute
-  AppCommunitiesCommunityIdRoute: typeof AppCommunitiesCommunityIdRoute
+  AppCommunitiesSlugRoute: typeof AppCommunitiesSlugRoute
   AppEventsEventIdRoute: typeof AppEventsEventIdRoute
   AppCommunitiesIndexRoute: typeof AppCommunitiesIndexRoute
   AppEventsIndexRoute: typeof AppEventsIndexRoute
@@ -464,7 +463,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDegreeAuditInfoRoute: AppDegreeAuditInfoRoute,
   AppOpportunitiesRoute: AppOpportunitiesRoute,
   AppProfileRoute: AppProfileRoute,
-  AppCommunitiesCommunityIdRoute: AppCommunitiesCommunityIdRoute,
+  AppCommunitiesSlugRoute: AppCommunitiesSlugRoute,
   AppEventsEventIdRoute: AppEventsEventIdRoute,
   AppCommunitiesIndexRoute: AppCommunitiesIndexRoute,
   AppEventsIndexRoute: AppEventsIndexRoute,

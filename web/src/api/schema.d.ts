@@ -142,7 +142,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/communities/{community_id}": {
+    "/communities/{slug}": {
         parameters: {
             query?: never;
             header?: never;
@@ -151,23 +151,23 @@ export interface paths {
         };
         /**
          * Get Community
-         * @description Retrieves a specific community by ID.
+         * @description Retrieves a specific community by slug.
          */
-        get: operations["get_community_communities__community_id__get"];
+        get: operations["get_community_communities__slug__get"];
         put?: never;
         post?: never;
         /**
          * Delete Community
          * @description Deletes a community. Admin only.
          */
-        delete: operations["delete_community_communities__community_id__delete"];
+        delete: operations["delete_community_communities__slug__delete"];
         options?: never;
         head?: never;
         /**
          * Update Community
          * @description Updates fields of an existing community. Head or admin only.
          */
-        patch: operations["update_community_communities__community_id__patch"];
+        patch: operations["update_community_communities__slug__patch"];
         trace?: never;
     };
     "/events": {
@@ -2944,6 +2944,10 @@ export interface components {
             media_order: number;
             /** Mime Type */
             mime_type: string;
+            /** Purpose */
+            purpose?: string | null;
+            /** File Size */
+            file_size?: number | null;
         };
         /** SignedUrlResponse */
         SignedUrlResponse: {
@@ -2962,6 +2966,8 @@ export interface components {
             media_order: number;
             /** Mime Type */
             mime_type: string;
+            /** Purpose */
+            purpose?: string | null;
         };
         /** StudentScheduleResponse */
         StudentScheduleResponse: {
@@ -3377,12 +3383,12 @@ export interface operations {
             };
         };
     };
-    get_community_communities__community_id__get: {
+    get_community_communities__slug__get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                community_id: number;
+                slug: string;
             };
             cookie?: {
                 access_token?: string | null;
@@ -3412,12 +3418,12 @@ export interface operations {
             };
         };
     };
-    delete_community_communities__community_id__delete: {
+    delete_community_communities__slug__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                community_id: number;
+                slug: string;
             };
             cookie?: {
                 access_token?: string | null;
@@ -3445,12 +3451,12 @@ export interface operations {
             };
         };
     };
-    update_community_communities__community_id__patch: {
+    update_community_communities__slug__patch: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                community_id: number;
+                slug: string;
             };
             cookie?: {
                 access_token?: string | null;

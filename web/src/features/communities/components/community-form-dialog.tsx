@@ -90,35 +90,50 @@ export function CommunityFormDialog({
             }
             onCancel={close}
             onSubmit={({ create, update, items }) => {
+              const loading = toast.loading(
+                community ? "Saving community…" : "Creating community…"
+              )
+              const onError = (error: unknown) => {
+                toast.error(
+                  apiErrorMessage(
+                    error,
+                    "Could not save the community. Try again."
+                  ),
+                  { id: loading }
+                )
+              }
+              const onSuccess = (result: {
+                entity: Community
+                mediaStatus?: string
+              }) => {
+                toast.success(
+                  community
+                    ? "Community updated."
+                    : "Community created.",
+                  { id: loading }
+                )
+                onSaved?.(result.entity)
+                close()
+                if (result.mediaStatus === "failed") {
+                  toast.warning(
+                    "Community saved, but one or more images could not be uploaded. You can add them by editing the community."
+                  )
+                }
+              }
               if (community) {
                 updateCommunity.mutate(
-                  { id: community.id, body: update, items },
                   {
-                    onSuccess: (result) => {
-                      onSaved?.(result.entity)
-                      close()
-                      if (result.mediaStatus === "failed") {
-                        toast.warning(
-                          "Community saved, but one or more images could not be uploaded. You can add them by editing the community."
-                        )
-                      }
-                    },
-                  }
+                    slug: community.slug,
+                    id: community.id,
+                    body: update,
+                    items,
+                  },
+                  { onSuccess, onError }
                 )
               } else {
                 createCommunity.mutate(
                   { body: create, items },
-                  {
-                    onSuccess: (result) => {
-                      onSaved?.(result.entity)
-                      close()
-                      if (result.mediaStatus === "failed") {
-                        toast.warning(
-                          "Community saved, but one or more images could not be uploaded. You can add them by editing the community."
-                        )
-                      }
-                    },
-                  }
+                  { onSuccess, onError }
                 )
               }
             }}

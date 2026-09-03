@@ -182,6 +182,15 @@ class CommunityRepository:
         result = await self.db_session.execute(stmt)
         return result.scalars().first()
 
+    async def get_by_slug(self, slug: str) -> Community | None:
+        stmt = (
+            select(Community)
+            .where(Community.slug == slug)
+            .options(selectinload(Community.owner_user))
+        )
+        result = await self.db_session.execute(stmt)
+        return result.scalars().first()
+
     async def get_user_by_sub(self, sub: str) -> User | None:
         stmt = select(User).where(User.sub == sub)
         result = await self.db_session.execute(stmt)

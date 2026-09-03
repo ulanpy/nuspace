@@ -21,7 +21,7 @@ export const qk = {
     all: () => ["communities"] as const,
     list: (filters: Record<string, unknown>) =>
       ["communities", "list", filters] as const,
-    detail: (id: number) => ["communities", "detail", id] as const,
+    detail: (slug: string) => ["communities", "detail", slug] as const,
     mine: () => ["communities", "mine"] as const,
   },
 

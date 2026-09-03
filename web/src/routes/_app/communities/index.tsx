@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 import { PlusIcon } from "lucide-react"
 import { z } from "zod"
 
@@ -39,20 +39,10 @@ const communitiesSearchSchema = z.object({
     .optional(),
   type: z.enum(["club", "university", "organization"]).optional(),
   q: z.string().optional(),
-  /** Legacy /communities?id=123 links, rewritten to the path form below. */
-  id: z.coerce.number().optional(),
 })
 
 export const Route = createFileRoute("/_app/communities/")({
   validateSearch: communitiesSearchSchema,
-  beforeLoad: ({ search }) => {
-    if (search.id !== undefined) {
-      throw redirect({
-        to: "/communities/$communityId",
-        params: { communityId: String(search.id) },
-      })
-    }
-  },
   component: CommunitiesList,
 })
 
@@ -169,8 +159,8 @@ function CommunitiesList() {
         onOpenChange={setIsCreating}
         onSaved={(community) => {
           void navigate({
-            to: "/communities/$communityId",
-            params: { communityId: String(community.id) },
+            to: "/communities/$slug",
+            params: { slug: community.slug },
           })
         }}
       />
