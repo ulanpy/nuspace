@@ -140,6 +140,40 @@ class CommunityService:
         await self.media_attachment_resolver.delete_many(media_objects)
         await repo.delete_from_search(infra.meilisearch_client, community.id)
 
+    async def reassign_owner(
+        self, infra: Infra, slug: str, new_owner_sub: str, user: tuple[dict, dict]
+    ) -> schemas.CommunityResponse:
+        async with self.uow:
+            repo = self.uow.get_repo(CommunityRepository)
+            community = await repo.get_by_slug(slug)
+            if community is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
+                )
+            await CommunityPolicy(user=user).check_admin_only()
+            target_user = await repo.get_user_by_sub(new_owner_sub)
+            if target_user is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Target user not found"
+                )
+            community.owner = new_owner_sub
+        await repo.upsert_search(infra.meilisearch_client, community)
+        return await self._build_community_response(community, infra, user)
+
+    async def toggle_verified(
+        self, infra: Infra, slug: str, verified: bool, user: tuple[dict, dict]
+    ) -> schemas.CommunityResponse:
+        async with self.uow:
+            repo = self.uow.get_repo(CommunityRepository)
+            community = await repo.get_by_slug(slug)
+            if community is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
+                )
+            await CommunityPolicy(user=user).check_admin_only()
+            community.verified = verified
+        return await self._build_community_response(community, infra, user)
+
     async def list_communities(
         self,
         infra: Infra,

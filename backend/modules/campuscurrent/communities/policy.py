@@ -74,7 +74,7 @@ class CommunityPolicy:
             )
 
         elif action == ResourceAction.DELETE:
-            if self.user_role != UserRole.admin.value:
+            if self.user_role != UserRole.admin:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Only admins can delete communities",
@@ -83,3 +83,11 @@ class CommunityPolicy:
 
         # This should never happen as we've handled all enum cases
         raise ValueError(f"Unhandled action type: {action}")
+
+    async def check_admin_only(self) -> bool:
+        if self.user_role == UserRole.admin:
+            return True
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can perform this action",
+        )

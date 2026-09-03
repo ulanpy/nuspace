@@ -131,6 +131,14 @@ class CommunityUpdateRequest(BaseModel):
         from_attributes = True
 
 
+class CommunityOwnerUpdateRequest(BaseModel):
+    owner_sub: str = Field(..., description="Sub of the new owner user")
+
+
+class CommunityVerifiedUpdateRequest(BaseModel):
+    verified: bool = Field(..., description="New verified status")
+
+
 class ListCommunity(BaseModel):
     items: List[CommunityResponse] = Field(default_factory=list)
     total_pages: int = Field(default=1, ge=1)

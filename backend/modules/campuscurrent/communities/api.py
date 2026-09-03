@@ -122,3 +122,33 @@ async def delete_community(
 ):
     """Deletes a community. Admin only."""
     await community_service.delete_community(infra=infra, slug=slug, user=user)
+
+
+@router.patch("/communities/{slug}/owner", response_model=schemas.CommunityResponse)
+async def reassign_community_owner(
+    request: Request,
+    slug: str,
+    body: schemas.CommunityOwnerUpdateRequest,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    infra: Infra = Depends(get_infra),
+    community_service: CommunityService = Depends(get_community_service),
+) -> schemas.CommunityResponse:
+    """Reassign community owner. Admin only."""
+    return await community_service.reassign_owner(
+        infra=infra, slug=slug, new_owner_sub=body.owner_sub, user=user
+    )
+
+
+@router.patch("/communities/{slug}/verified", response_model=schemas.CommunityResponse)
+async def toggle_community_verified(
+    request: Request,
+    slug: str,
+    body: schemas.CommunityVerifiedUpdateRequest,
+    user: Annotated[tuple[dict, dict], Depends(get_creds_or_401)],
+    infra: Infra = Depends(get_infra),
+    community_service: CommunityService = Depends(get_community_service),
+) -> schemas.CommunityResponse:
+    """Toggle community verified status. Admin only."""
+    return await community_service.toggle_verified(
+        infra=infra, slug=slug, verified=body.verified, user=user
+    )
