@@ -9,11 +9,15 @@ from sqlalchemy.dialects.postgresql import JSONB
 class DegreeAuditResult(Base):
     __tablename__ = "degree_audit_results"
     __table_args__ = (
-        UniqueConstraint("student_sub", "admission_year", "major", name="uq_degree_audit_user_year_major"),
+        UniqueConstraint(
+            "student_sub", "admission_year", "major", name="uq_degree_audit_user_year_major"
+        ),
     )
 
     id = Column(Integer, primary_key=True)
-    student_sub = Column(String, ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True)
+    student_sub = Column(
+        String, ForeignKey("users.sub", ondelete="CASCADE"), nullable=False, index=True
+    )
     admission_year = Column(String(16), nullable=False)
     major = Column(String(256), nullable=False)
     results = Column(JSONB, nullable=False)
@@ -21,6 +25,6 @@ class DegreeAuditResult(Base):
     warnings = Column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
     csv_base64 = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=text("NOW()"))
-    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=text("NOW()"), onupdate=utc_now)
-
-
+    updated_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=text("NOW()"), onupdate=utc_now
+    )

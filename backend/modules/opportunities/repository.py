@@ -88,16 +88,12 @@ class OpportunitiesRepository:
             if flt.hide_expired:
                 today = date.today()
                 stmt = stmt.where(
-                    (Opportunity.deadline.is_(None))
-                    | (Opportunity.deadline >= today)
+                    (Opportunity.deadline.is_(None)) | (Opportunity.deadline >= today)
                 )
 
             # preserve Meilisearch relevance order
             order_clause = case(
-                *[
-                    (Opportunity.id == oid, idx)
-                    for idx, oid in enumerate(ids)
-                ],
+                *[(Opportunity.id == oid, idx) for idx, oid in enumerate(ids)],
                 else_=len(ids),
             )
             stmt = stmt.order_by(order_clause)
@@ -107,11 +103,9 @@ class OpportunitiesRepository:
             return items, total
 
         # Fallback: DB filters without keyword search
-        stmt = (
-            select(Opportunity).options(
-                selectinload(Opportunity.eligibilities),
-                selectinload(Opportunity.majors),
-            )
+        stmt = select(Opportunity).options(
+            selectinload(Opportunity.eligibilities),
+            selectinload(Opportunity.majors),
         )
 
         if flt.type:
@@ -150,10 +144,7 @@ class OpportunitiesRepository:
             )
         if flt.hide_expired:
             today = date.today()
-            stmt = stmt.where(
-                (Opportunity.deadline.is_(None))
-                | (Opportunity.deadline >= today)
-            )
+            stmt = stmt.where((Opportunity.deadline.is_(None)) | (Opportunity.deadline >= today))
 
         count_stmt = select(func.count()).select_from(stmt.order_by(None).subquery())
         total_result = await self.db.execute(count_stmt)
@@ -213,9 +204,7 @@ class OpportunitiesRepository:
         majors_data = data.pop("majors", None)
 
         if data:
-            await self.db.execute(
-                update(Opportunity).where(Opportunity.id == id).values(**data)
-            )
+            await self.db.execute(update(Opportunity).where(Opportunity.id == id).values(**data))
 
         if eligibility_data is not None:
             # Replace eligibilities

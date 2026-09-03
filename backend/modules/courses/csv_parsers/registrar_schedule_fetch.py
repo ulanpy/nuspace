@@ -56,7 +56,12 @@ def _get_with_retries(
                 r = client.get(url)
                 r.raise_for_status()
                 return r
-        except (httpx.ReadTimeout, httpx.ConnectTimeout, httpx.ConnectError, httpx.RemoteProtocolError) as e:
+        except (
+            httpx.ReadTimeout,
+            httpx.ConnectTimeout,
+            httpx.ConnectError,
+            httpx.RemoteProtocolError,
+        ) as e:
             last = e
             if attempt + 1 < attempts:
                 time.sleep(min(10.0, 2.0**attempt))
@@ -68,10 +73,8 @@ def term_code_to_registrar_label(term_code: str) -> str:
     t = term_code.strip().upper()
     m = re.fullmatch(r"(FA|SP|SU)(\d{4})", t)
     if not m:
-        raise ValueError(
-            f"Invalid term code {term_code!r}; expected FA####, SP#### or SU####"
-        )
-    
+        raise ValueError(f"Invalid term code {term_code!r}; expected FA####, SP#### or SU####")
+
     code = m.group(1)
     if code == "FA":
         season = "Fall"
@@ -79,7 +82,7 @@ def term_code_to_registrar_label(term_code: str) -> str:
         season = "Spring"
     else:
         season = "Summer"
-        
+
     return f"{season} {m.group(2)}"
 
 
@@ -92,9 +95,7 @@ def _discover_registrar_terms() -> list[dict]:
             season = label.split()[0].capitalize()
             year = int(m.group("year"))
             termid = m.group("termid")
-            candidates.append(
-                {"label": label, "season": season, "year": year, "termid": termid}
-            )
+            candidates.append({"label": label, "season": season, "year": year, "termid": termid})
     if not candidates:
         raise RuntimeError("No registrar term entries found on discovery pages")
     seen: dict[str, dict] = {}

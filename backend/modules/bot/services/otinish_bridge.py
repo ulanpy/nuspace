@@ -25,10 +25,7 @@ _CHANNEL_HINT_STUDENT_WAITING = (
     "then you can type freely.\n\n"
     "Meanwhile /close to cancel appeal."
 )
-_CHANNEL_HINT_ASSIGNEE = (
-    "You're connected — type freely to the student.\n"
-    "/close to end."
-)
+_CHANNEL_HINT_ASSIGNEE = "You're connected — type freely to the student.\n" "/close to end."
 
 
 def ticket_hashtag(ticket_id: int) -> str:
@@ -85,12 +82,7 @@ def format_ticket_card(ticket: Ticket, *, for_dept: bool) -> str:
     status = html.escape(ticket.status.value)
     # Dept: hashtag once in the title line (no footer duplicate).
     if for_dept:
-        return (
-            f"🎫 {tag}\n"
-            f"Category: {category}\n"
-            f"Status: {status}\n\n"
-            f"{body}"
-        )
+        return f"🎫 {tag}\n" f"Category: {category}\n" f"Status: {status}\n\n" f"{body}"
     return (
         f"🎫 {tag}\n"
         f"Category: {category}\n"
@@ -327,9 +319,7 @@ class OtinishBridgeService:
                 ),
             )
         except TelegramAPIError:
-            logger.exception(
-                "Failed to notify student that ticket #%s was claimed", ticket.id
-            )
+            logger.exception("Failed to notify student that ticket #%s was claimed", ticket.id)
 
         ministry_chat_id = await self.otinish.resolve_ministry_chat_id(ticket)
         if ministry_chat_id is None:
@@ -361,9 +351,7 @@ class OtinishBridgeService:
             )
             dept_text = f"🔒 {tag} closed."
         else:
-            student_text = (
-                f"🔒 {tag} closed. You can start a new one with /otinish."
-            )
+            student_text = f"🔒 {tag} closed. You can start a new one with /otinish."
             dept_text = f"🔒 {tag} closed by the student."
 
         try:

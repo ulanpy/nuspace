@@ -200,9 +200,7 @@ class OtinishRepository:
         totals = await self.db_session.execute(
             select(
                 func.count().label("total"),
-                func.count()
-                .filter(Ticket.assignee_telegram_id.is_not(None))
-                .label("answered"),
+                func.count().filter(Ticket.assignee_telegram_id.is_not(None)).label("answered"),
                 func.count().filter(Ticket.status.in_(_CLOSED)).label("closed"),
                 func.count().filter(Ticket.created_at >= week_ago).label("last_7"),
                 func.count().filter(Ticket.created_at >= month_ago).label("last_30"),
@@ -231,9 +229,7 @@ class OtinishRepository:
             "unique_students": int(row.unique_students or 0),
             "by_category": [
                 {
-                    "slug": (
-                        cat.value if isinstance(cat, TicketCategory) else str(cat)
-                    ),
+                    "slug": (cat.value if isinstance(cat, TicketCategory) else str(cat)),
                     "name": name,
                     "count": int(count),
                 }

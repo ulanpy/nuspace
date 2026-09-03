@@ -137,9 +137,7 @@ def parse_course_segment(segment: List[str]) -> Course:
     return _build_course(*match.groups())
 
 
-def _build_course(
-    code: str, title: str, grade: str, credits: str, grade_points_raw: str
-) -> Course:
+def _build_course(code: str, title: str, grade: str, credits: str, grade_points_raw: str) -> Course:
     try:
         grade_points = float(grade_points_raw)
     except Exception:
@@ -206,11 +204,14 @@ def _extract_number(blob: str, pattern: str) -> Optional[float]:
 
 
 def parse_semester_block(name: str, lines: List[str]) -> Semester:
-    gpa_index = next((i for i, line in enumerate(lines) if line.startswith("Semester GPA")), len(lines))
+    gpa_index = next(
+        (i for i, line in enumerate(lines) if line.startswith("Semester GPA")), len(lines)
+    )
     course_lines = [
         line
         for line in lines[:gpa_index]
-        if not is_header_line(line) and not line.strip().lower().startswith("transferred courses from")
+        if not is_header_line(line)
+        and not line.strip().lower().startswith("transferred courses from")
     ]
     courses = parse_courses(course_lines)
     gpa_block = lines[gpa_index:] if gpa_index < len(lines) else []

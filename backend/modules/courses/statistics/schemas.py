@@ -43,4 +43,3 @@ class ListGradeReportResponse(BaseModel):
 
 class ListGradeTermsResponse(BaseModel):
     terms: List[str] = Field(default_factory=list)
-

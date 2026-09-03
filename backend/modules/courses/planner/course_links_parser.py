@@ -57,7 +57,9 @@ def _build_report_link(report_base: str, entity_id: Optional[str]) -> Optional[s
     if not entity_id:
         return None
     # Replace trailing ID in path if present; otherwise append as query.
-    m = re.match(r"^(https?://[^/]+/DynamicReports/AllFieldsReportByEntity/)(\d+)(/?.*)$", report_base)
+    m = re.match(
+        r"^(https?://[^/]+/DynamicReports/AllFieldsReportByEntity/)(\d+)(/?.*)$", report_base
+    )
     if m:
         return f"{m.group(1)}{entity_id}{m.group(3)}"
     sep = "&" if "?" in report_base else "?"
@@ -116,7 +118,9 @@ def _extract_links_from_search_json(data, report_base: str) -> List[CourseLink]:
         if report_href:
             link = urljoin(report_base, report_href)
         if not link:
-            link = _build_report_link(report_base, str(entity_id) if entity_id is not None else None)
+            link = _build_report_link(
+                report_base, str(entity_id) if entity_id is not None else None
+            )
         found.append(
             CourseLink(
                 course_code=code_norm or str(code).strip().upper(),
@@ -282,7 +286,9 @@ def main() -> None:
         )
     except Exception:
         store_path = Path(__file__).resolve().parent / "course_links_store.py"
-        spec = __import__("importlib.util").util.spec_from_file_location("course_links_store_local", store_path)
+        spec = __import__("importlib.util").util.spec_from_file_location(
+            "course_links_store_local", store_path
+        )
         if not spec or not spec.loader:  # pragma: no cover - defensive
             raise
         module = __import__("importlib.util").util.module_from_spec(spec)

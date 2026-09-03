@@ -35,6 +35,7 @@ async def wait_for_task(
             raise TimeoutError(f"Timed out waiting for Meilisearch task {task_uid}")
         await asyncio.sleep(0.1)
 
+
 """
     To search for data, first, you should add key-value pairs to Meilisearch;
     Do not forget to add id parameter to every pair inside the json_values;

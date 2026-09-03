@@ -47,5 +47,3 @@ def test_parse_pdf_keeps_first_row_when_no_header(monkeypatch):
     rows = priority_parser.parse_pdf(b"fake")
     assert rows[0]["abbr"] == "MATH 162"
     assert rows[1]["abbr"] == "MATH 263"
-
-

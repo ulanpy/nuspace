@@ -1,4 +1,3 @@
-
 import logging
 
 import httpx
@@ -22,7 +21,7 @@ async def get_survey_responses_count() -> int:
     ):
         logger.warning("Qualtrics API credentials are not fully configured.")
         return 0
-    
+
     headers = {
         "X-API-TOKEN": config.QUALTRICS_API_TOKEN,
         "Content-Type": "application/json",
@@ -37,12 +36,12 @@ async def get_survey_responses_count() -> int:
             response = await client.get(url, headers=headers)
             response.raise_for_status()
             data = response.json()
-            
+
             # The 'auditable' field in responseCounts represents the number of
             # completed, valid survey responses.
-            if 'result' in data and 'responseCounts' in data['result']:
-                return data['result']['responseCounts'].get('auditable', 0)
-            
+            if "result" in data and "responseCounts" in data["result"]:
+                return data["result"]["responseCounts"].get("auditable", 0)
+
             return 0
         except httpx.HTTPStatusError as e:
             raise HTTPException(

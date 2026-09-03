@@ -38,18 +38,27 @@ async def test_link_token_is_opaque_and_consumed_only_after_correct_confirmation
 
     assert sub not in token
     assert await get_telegram_link_confirmation_number(redis, token=token) == expected_number  # type: ignore[arg-type]
-    assert await consume_telegram_link_token(  # type: ignore[arg-type]
-        redis,
-        token=token,
-        picked_number=(expected_number % 10) + 1,
-    ) is None
-    assert await consume_telegram_link_token(  # type: ignore[arg-type]
-        redis,
-        token=token,
-        picked_number=expected_number,
-    ) == sub
-    assert await consume_telegram_link_token(  # type: ignore[arg-type]
-        redis,
-        token=token,
-        picked_number=expected_number,
-    ) is None
+    assert (
+        await consume_telegram_link_token(  # type: ignore[arg-type]
+            redis,
+            token=token,
+            picked_number=(expected_number % 10) + 1,
+        )
+        is None
+    )
+    assert (
+        await consume_telegram_link_token(  # type: ignore[arg-type]
+            redis,
+            token=token,
+            picked_number=expected_number,
+        )
+        == sub
+    )
+    assert (
+        await consume_telegram_link_token(  # type: ignore[arg-type]
+            redis,
+            token=token,
+            picked_number=expected_number,
+        )
+        is None
+    )

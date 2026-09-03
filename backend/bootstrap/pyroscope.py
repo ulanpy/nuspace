@@ -11,6 +11,7 @@ def setup_pyroscope() -> bool:
     """Start the in-process profiler and configure its export destination."""
     try:
         import pyroscope
+
         address = "http://pyroscope:4040"
         pyroscope.configure(
             application_name=config.OTEL_SERVICE_NAME,

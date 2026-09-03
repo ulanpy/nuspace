@@ -11,9 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 async def send(
     *,
     infra: Infra,
-    notification_data: Union[
-        schemas.RequestNotiification, List[schemas.RequestNotiification]
-    ],
+    notification_data: Union[schemas.RequestNotiification, List[schemas.RequestNotiification]],
     session: AsyncSession,
 ):
     """
@@ -25,7 +23,7 @@ async def send(
         session (AsyncSession): SQLAlchemy async database session
 
     Returns:
-        Union[schemas._RequestNotification, List[schemas._RequestNotification]]: 
+        Union[schemas._RequestNotification, List[schemas._RequestNotification]]:
             Single modified notification or list of modified notifications
 
     The function:
@@ -45,9 +43,7 @@ async def send(
         await session.flush()
         await session.refresh(notification)
 
-        switch: bool = not await infra.redis.exists(
-            f"notification:{notification_data.telegram_id}"
-        )
+        switch: bool = not await infra.redis.exists(f"notification:{notification_data.telegram_id}")
         modified_notification: schemas._RequestNotification = build_schema(
             schemas._RequestNotification,
             schemas.BaseNotification.model_validate(notification),
@@ -79,9 +75,9 @@ async def send(
     await session.flush()
     for notification_instance in notification_instances:
         await session.refresh(notification_instance)
-    
+
     modified_notifications: List[schemas._RequestNotification] = []
-    
+
     # Process each notification schema for Redis check and publishing
     for notification_schema in notification_data:
         if notification_schema.telegram_id is None:
@@ -98,7 +94,7 @@ async def send(
             tg_id=notification_schema.telegram_id,
             type=notification_schema.type,
             url=notification_schema.url,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(timezone.utc),
         )
         modified_notification: schemas._RequestNotification = build_schema(
             schemas._RequestNotification,

@@ -77,7 +77,7 @@ def setup_gcp(app: FastAPI) -> None:
             if isinstance(normalized_private_key, str):
                 cleaned_key = normalized_private_key.strip()
 
-                if cleaned_key.startswith("\"") and cleaned_key.endswith("\""):
+                if cleaned_key.startswith('"') and cleaned_key.endswith('"'):
                     cleaned_key = cleaned_key[1:-1]
 
                 if "\\n" in cleaned_key:
@@ -93,10 +93,7 @@ def setup_gcp(app: FastAPI) -> None:
         try:
             signing_info = _normalize_service_account_info(config.SIGNING_SERVICE_ACCOUNT_INFO)
             base_credentials = service_account.Credentials.from_service_account_info(signing_info)
-            storage_client_project = (
-                signing_info.get("project_id")
-                or config.GCP_PROJECT_ID
-            )
+            storage_client_project = signing_info.get("project_id") or config.GCP_PROJECT_ID
         except Exception as exc:
             print(
                 "⚠️  Warning: Could not create storage credentials from signing service account info. "

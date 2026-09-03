@@ -16,9 +16,7 @@ MAX_SECTION_COMBINATIONS = 200
 MAX_ASSIGNMENT_CANDIDATES = 32
 
 DAY_TO_INDEX = {"M": 0, "T": 1, "W": 2, "R": 3, "F": 4, "S": 5, "U": 6}
-TIME_PATTERN = re.compile(
-    r"(?P<hour>\d{1,2}):(?P<minute>\d{2})\s*(?P<mod>[AP]M)", re.IGNORECASE
-)
+TIME_PATTERN = re.compile(r"(?P<hour>\d{1,2}):(?P<minute>\d{2})\s*(?P<mod>[AP]M)", re.IGNORECASE)
 
 
 @dataclass
@@ -124,8 +122,7 @@ class PlannerAutoBuilder:
         unscheduled = [
             course.course_code
             for course in courses
-            if course.id not in chosen_assignments
-            or not chosen_assignments[course.id]
+            if course.id not in chosen_assignments or not chosen_assignments[course.id]
         ]
         message = (
             "shuffle completed with partial schedule"

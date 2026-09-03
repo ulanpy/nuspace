@@ -4,4 +4,3 @@ class SemesterResolutionError(Exception):
 
 class CourseLookupError(Exception):
     """Raised when a course cannot be found in registrar search."""
-

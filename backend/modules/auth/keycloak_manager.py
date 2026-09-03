@@ -106,7 +106,6 @@ class KeyCloakManager(BaseSettings):
         response.raise_for_status()
         return response.json()
 
-
     async def exchange_token_for_idp(
         self,
         subject_token: str,
@@ -176,9 +175,7 @@ class KeyCloakManager(BaseSettings):
 
     async def fetch_userinfo(self, access_token: str) -> dict:
         """Fetch OpenID user profile; access tokens often omit email/name claims."""
-        userinfo_url = (
-            f"{self.KEYCLOAK_URL}/realms/{self.REALM}/protocol/openid-connect/userinfo"
-        )
+        userinfo_url = f"{self.KEYCLOAK_URL}/realms/{self.REALM}/protocol/openid-connect/userinfo"
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 userinfo_url,

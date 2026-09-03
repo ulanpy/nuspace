@@ -47,6 +47,7 @@ async def create_opportunity(
     record = await service.create(payload)
     return record
 
+
 @router.patch("/{id}", response_model=schemas.OpportunityResponseDto)
 async def update_opportunity(
     id: int,
@@ -93,7 +94,11 @@ async def add_opportunity_to_calendar(
         )
     except ValueError as exc:
         detail = str(exc)
-        status_code = status.HTTP_404_NOT_FOUND if "not found" in detail.lower() else status.HTTP_400_BAD_REQUEST
+        status_code = (
+            status.HTTP_404_NOT_FOUND
+            if "not found" in detail.lower()
+            else status.HTTP_400_BAD_REQUEST
+        )
         raise HTTPException(status_code=status_code, detail=detail)
     except httpx.HTTPStatusError as exc:
         raise HTTPException(status_code=exc.response.status_code, detail=str(exc))

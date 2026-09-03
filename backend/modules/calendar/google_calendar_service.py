@@ -100,6 +100,7 @@ class GoogleCalendarService:
         google_errors: List[str] = []
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
+
             async def push_event(event: dict, token: str):
                 response = await client.post(
                     f"https://www.googleapis.com/calendar/v3/calendars/{self.calendar_id}/events",
@@ -123,8 +124,7 @@ class GoogleCalendarService:
 
             # If we hit Google 401/403, re-fetch via token exchange and retry once
             if any(
-                isinstance(res, httpx.HTTPStatusError)
-                and res.response.status_code in (401, 403)
+                isinstance(res, httpx.HTTPStatusError) and res.response.status_code in (401, 403)
                 for res in push_results
             ):
                 if any(
@@ -134,7 +134,9 @@ class GoogleCalendarService:
                     for res in push_results
                 ):
                     return created, ["insufficient_google_scope"]
-                google_access_token = await self._fetch_google_token(kc_access_token, kc_refresh_token)
+                google_access_token = await self._fetch_google_token(
+                    kc_access_token, kc_refresh_token
+                )
                 push_results = await push_all(google_access_token)
 
         for result in push_results:
@@ -163,11 +165,7 @@ class GoogleCalendarService:
         created = updated = deleted = 0
 
         def _key_of(ev: dict) -> str | None:
-            return (
-                ev.get("extendedProperties", {})
-                .get("private", {})
-                .get("nuros_event_key")
-            )
+            return ev.get("extendedProperties", {}).get("private", {}).get("nuros_event_key")
 
         def _needs_update(current: dict, desired: dict) -> bool:
             fields = ["summary", "description", "start", "end", "recurrence", "location"]
@@ -195,6 +193,7 @@ class GoogleCalendarService:
                 existing_map[k] = ev
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
+
             async def insert(ev: dict):
                 resp = await client.post(
                     f"https://www.googleapis.com/calendar/v3/calendars/{self.calendar_id}/events",
@@ -202,7 +201,9 @@ class GoogleCalendarService:
                     json=ev,
                 )
                 if resp.status_code == 403:
-                    raise httpx.HTTPStatusError("google_scope_missing", request=resp.request, response=resp)
+                    raise httpx.HTTPStatusError(
+                        "google_scope_missing", request=resp.request, response=resp
+                    )
                 resp.raise_for_status()
 
             async def update(ev_id: str, ev: dict):
@@ -212,7 +213,9 @@ class GoogleCalendarService:
                     json=ev,
                 )
                 if resp.status_code == 403:
-                    raise httpx.HTTPStatusError("google_scope_missing", request=resp.request, response=resp)
+                    raise httpx.HTTPStatusError(
+                        "google_scope_missing", request=resp.request, response=resp
+                    )
                 resp.raise_for_status()
 
             async def delete(ev_id: str):
@@ -222,7 +225,9 @@ class GoogleCalendarService:
                 )
                 # Google returns 204; ignore 404 in case already gone
                 if resp.status_code == 403:
-                    raise httpx.HTTPStatusError("google_scope_missing", request=resp.request, response=resp)
+                    raise httpx.HTTPStatusError(
+                        "google_scope_missing", request=resp.request, response=resp
+                    )
                 if resp.status_code not in (200, 204, 404):
                     resp.raise_for_status()
 

@@ -47,10 +47,7 @@ class TemplatePolicy(BasePolicy):
             return
 
         if not self._is_owner(template.student_sub):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Template not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
 
     def check_update(self, template: CourseTemplate, template_data: schemas.TemplateUpdate):
         """Check if user can update a template."""
@@ -58,10 +55,7 @@ class TemplatePolicy(BasePolicy):
             return
 
         if not self._is_owner(template.student_sub):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Template not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
 
     def check_delete(self, template: CourseTemplate):
         """Check if user can delete a template."""
@@ -69,10 +63,7 @@ class TemplatePolicy(BasePolicy):
             return
 
         if not self._is_owner(template.student_sub):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Template not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
 
     def check_import(self, template: CourseTemplate, student_course: StudentCourse):
         """Check if user can import template into a student course."""
@@ -84,7 +75,7 @@ class TemplatePolicy(BasePolicy):
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to import this template into the course.",
             )
-        
+
         if template.course_id != student_course.course_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

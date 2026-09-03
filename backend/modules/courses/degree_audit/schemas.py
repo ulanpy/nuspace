@@ -31,6 +31,7 @@ class AuditProgramResult(BaseModel):
     summary: Optional[AuditSummary] = None
     warnings: List[str] = []
 
+
 class TCMapping(BaseModel):
     original_code: str = Field(
         ...,
@@ -44,10 +45,12 @@ class TCMapping(BaseModel):
     )
     mapped_credits: float
 
+
 class TCCourse(BaseModel):
     code: str
     title: str
     credits: float
+
 
 class AuditResponse(BaseModel):
     year: str
@@ -55,9 +58,8 @@ class AuditResponse(BaseModel):
     minors: List[str] = []
     audits: List[AuditProgramResult] = []
     unmapped_tc_courses: List[TCCourse] = []
-    csv_base64: Optional[str] = Field(
-        None, description="Optional base64 CSV of the audit results"
-    )
+    csv_base64: Optional[str] = Field(None, description="Optional base64 CSV of the audit results")
+
 
 class AuditRequestRegistrar(BaseModel):
     year: str
@@ -66,6 +68,7 @@ class AuditRequestRegistrar(BaseModel):
     username: str
     password: str
     tc_mappings: List[TCMapping] = []
+
 
 class AuditRequestPDF(BaseModel):
     year: str
@@ -85,9 +88,11 @@ class AuditRequestPDF(BaseModel):
             raise ValueError("pdf_file_too_large")
         return value
 
+
 class CatalogYear(BaseModel):
     year: str
     majors: List[str]
+
 
 class CatalogResponse(BaseModel):
     years: List[CatalogYear]

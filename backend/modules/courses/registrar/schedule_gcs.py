@@ -74,7 +74,9 @@ def download_schedule_meta(
             return None
         data = json.loads(blob.download_as_bytes().decode("utf-8"))
     except Exception:
-        logger.exception("Failed to download schedule meta from gs://%s/%s", bucket_name, object_name)
+        logger.exception(
+            "Failed to download schedule meta from gs://%s/%s", bucket_name, object_name
+        )
         return None
     return data if isinstance(data, dict) else None
 

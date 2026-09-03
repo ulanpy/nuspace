@@ -40,12 +40,13 @@ class AccessContextMiddleware:
                 headers = list(message.get("headers", ()))
                 headers.append((_HEADER_PREFIX + b"route", _header_value(route_path)))
                 if state.get("user_sub") is not None:
-                    headers.append(
-                        (_HEADER_PREFIX + b"user-sub", _header_value(state["user_sub"]))
-                    )
+                    headers.append((_HEADER_PREFIX + b"user-sub", _header_value(state["user_sub"])))
                 if state.get("is_guest") is not None:
                     headers.append(
-                        (_HEADER_PREFIX + b"guest", _header_value(str(bool(state["is_guest"])).lower()))
+                        (
+                            _HEADER_PREFIX + b"guest",
+                            _header_value(str(bool(state["is_guest"])).lower()),
+                        )
                     )
                 if state.get("actor") is not None:
                     headers.append((_HEADER_PREFIX + b"actor", _header_value(state["actor"])))

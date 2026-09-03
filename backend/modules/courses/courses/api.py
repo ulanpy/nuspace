@@ -1,10 +1,8 @@
 """
-This module is as a tribute to the creator 
+This module is as a tribute to the creator
 of crashed.nu — @superhooman.
 GitHub: https://github.com/superhooman/crashed.nu
 """
-
-
 
 from typing import Annotated, List
 
@@ -249,9 +247,7 @@ async def update_course_item(
     - Updated course item with all details
 
     """
-    return await service.update_course_item(
-        item_id=item_id, item_update=item_update, user=user
-    )
+    return await service.update_course_item(item_id=item_id, item_update=item_update, user=user)
 
 
 @router.delete("/course_items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -305,6 +301,4 @@ async def get_courses(
     **Returns:**
     - Paginated list of courses with total pages information
     """
-    return await service.get_courses(
-        infra=infra, page=page, size=size, term=term, keyword=keyword
-    )
+    return await service.get_courses(infra=infra, page=page, size=size, term=term, keyword=keyword)

@@ -66,7 +66,7 @@ def run_migrations_online() -> None:
     """
     # Use the database URL from your config and convert to sync
     url = app_config.DATABASE_URL.replace("+asyncpg", "")
-    
+
     # Create sync engine for Alembic
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
@@ -77,7 +77,7 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, 
+            connection=connection,
             target_metadata=target_metadata,
             compare_type=True,
             compare_server_default=True,

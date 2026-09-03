@@ -19,15 +19,16 @@ SCHEDULE_JSON_PATH = "/my-registrar/personal-schedule/json"
 class RegistrarClient:
     """
     HTTP client for interacting with NU registrar system.
-    
+
     Provides async context manager interface for authenticated requests to fetch
     student schedule data. Handles login authentication and session management
     automatically.
-    
+
     Args:
         verify_ssl: Whether to verify SSL certificates (default: False for registrar)
         timeout: Request timeout in seconds (default: 30.0)
     """
+
     def __init__(self, *, verify_ssl: bool = False, timeout: float = 30.0) -> None:
         self.verify_ssl = verify_ssl
         self.timeout = timeout

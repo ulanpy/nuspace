@@ -34,8 +34,7 @@ def resolve_grades_csv_path(csv_arg: str) -> Path:
         resolved.relative_to(csvs)
     except ValueError as e:
         raise ValueError(
-            f"CSV must be inside {csvs} (got {resolved}). "
-            "Pass a basename or a path under csvs/."
+            f"CSV must be inside {csvs} (got {resolved}). " "Pass a basename or a path under csvs/."
         ) from e
 
     if not resolved.is_file():

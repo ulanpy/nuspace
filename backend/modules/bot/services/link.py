@@ -28,9 +28,7 @@ class TelegramLinkService:
         self.uow = uow
         self.redis = redis
 
-    async def handle_deeplink_start(
-        self, token: str, telegram_id: int
-    ) -> DeeplinkStartResult:
+    async def handle_deeplink_start(self, token: str, telegram_id: int) -> DeeplinkStartResult:
         confirmation_number = await get_telegram_link_confirmation_number(self.redis, token=token)
         if confirmation_number is None:
             return DeeplinkStartResult.invalid_sub

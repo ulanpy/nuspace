@@ -10,6 +10,7 @@ from typing import Iterable, List
 def _load_course_link_class():
     try:
         from backend.modules.courses.planner.course_links_parser import CourseLink  # type: ignore
+
         return CourseLink
     except Exception:
         # Fallback when running as a standalone script (avoid importing backend/__init__.py).

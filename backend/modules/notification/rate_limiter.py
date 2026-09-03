@@ -11,7 +11,7 @@ from typing import Deque, Dict
 
 @dataclass
 class _ChatState:
-    """Mutable state for a single chat 
+    """Mutable state for a single chat
     used to enforce per-chat pacing."""
 
     lock: asyncio.Lock
@@ -45,7 +45,7 @@ class TelegramRateLimiter:
         self._chat_states_lock = asyncio.Lock()
 
     async def wait(self, chat_id: int | None) -> None:
-        """Block until sending to ``chat_id`` respects both 
+        """Block until sending to ``chat_id`` respects both
         global and per-chat limits."""
 
         if chat_id is None:
@@ -57,7 +57,7 @@ class TelegramRateLimiter:
             await self._respect_limits(chat_state)
 
     async def _get_chat_state(self, chat_id: int) -> _ChatState:
-        """Return the state associated with ``chat_id``, 
+        """Return the state associated with ``chat_id``,
         creating it if necessary."""
 
         async with self._chat_states_lock:
@@ -68,7 +68,7 @@ class TelegramRateLimiter:
             return state
 
     async def _respect_limits(self, chat_state: _ChatState) -> None:
-        """Wait until both per-chat and global 
+        """Wait until both per-chat and global
         constraints permit sending."""
 
         while True:
@@ -85,14 +85,17 @@ class TelegramRateLimiter:
             return
 
     async def _reserve_global_slot(self) -> float:
-        """Reserve a slot within the global rate limit 
+        """Reserve a slot within the global rate limit
         and return the timestamp of the grant."""
 
         async with self._global_lock:
             while True:
                 now = monotonic()
 
-                while self._global_timestamps and now - self._global_timestamps[0] >= self._global_window_seconds:
+                while (
+                    self._global_timestamps
+                    and now - self._global_timestamps[0] >= self._global_window_seconds
+                ):
                     self._global_timestamps.popleft()
 
                 if len(self._global_timestamps) < self._global_rate_per_sec:
@@ -104,4 +107,3 @@ class TelegramRateLimiter:
                     await asyncio.sleep(wait_time)
                 else:
                     await asyncio.sleep(0)
-

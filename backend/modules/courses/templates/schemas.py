@@ -35,6 +35,7 @@ class TemplateItemCreate(BaseModel):
     item_name: str
     total_weight_pct: float | None
 
+
 class TemplateItemUpdate(BaseModel):
     item_name: str
     total_weight_pct: float
@@ -49,8 +50,10 @@ class TemplateCreate(BaseModel):
 
 class _TemplateCreateData(BaseModel):
     """Schema for creating CourseTemplate model (without template_items)."""
+
     course_id: int
     student_sub: str
+
 
 class _TemplateItemCreateData(TemplateItemCreate):
     template_id: int
@@ -64,6 +67,7 @@ class TemplateResponse(BaseModel):
     template: BaseCourseTemplate
     template_items: List[BaseTemplateItem]
     student: ShortUserResponse
+
 
 class ListTemplateDTO(BaseModel):
     templates: List[TemplateResponse]

@@ -4,9 +4,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-CLIENT_PATH = (
-    Path(__file__).resolve().parents[1] / "clients" / "registrar_client.py"
-)
+CLIENT_PATH = Path(__file__).resolve().parents[1] / "clients" / "registrar_client.py"
 spec = importlib.util.spec_from_file_location("registrar_client", CLIENT_PATH)
 registrar_client = importlib.util.module_from_spec(spec)
 assert spec and spec.loader

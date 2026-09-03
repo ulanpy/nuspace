@@ -14,4 +14,3 @@ class ObjectStorage(Protocol):
 
     async def delete_objects(self, filenames: list[str]) -> None:
         """Delete multiple stored objects."""
-

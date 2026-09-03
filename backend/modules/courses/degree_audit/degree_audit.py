@@ -61,7 +61,7 @@ class RequirementResult:
 def _normalize_major_name(stem: str) -> str:
     prefix = "Degree audit requirments for all majors - "
     if stem.startswith(prefix):
-        stem = stem[len(prefix):]
+        stem = stem[len(prefix) :]
     stem = stem.split("__", 1)[0]
     return stem.replace("_", " ").strip()
 
@@ -81,7 +81,7 @@ def discover_minor_requirements(base: Path = REQUIREMENTS_BASE) -> Dict[str, Pat
     for csv_path in minor_dir.glob("*.csv"):
         stem = csv_path.stem
         if stem.startswith("Minor degree audit_"):
-            name = stem[len("Minor degree audit_"):].strip()
+            name = stem[len("Minor degree audit_") :].strip()
         else:
             name = stem.strip()
         minors[name] = csv_path
@@ -396,7 +396,9 @@ def load_requirements(
             for col in must_cols:
                 must_haves.extend(encode_must_have(raw.get(col) or ""))
 
-            must_grade_cols = [k for k in raw.keys() if k and k.lower().startswith("must have grade")]
+            must_grade_cols = [
+                k for k in raw.keys() if k and k.lower().startswith("must have grade")
+            ]
             must_grade_cols.sort(key=_column_sort_key)
             must_have_grades: List[str] = []
             for col in must_grade_cols:
@@ -419,7 +421,11 @@ def load_requirements(
                     course_id=(lowered.get("course_id") or "").strip(),
                     course_code=course_code,
                     course_name=(lowered.get("course_name") or "").strip(),
-                    credits_need=float(lowered.get("credits_need") or 0) if lowered.get("credits_need") else 0.0,
+                    credits_need=(
+                        float(lowered.get("credits_need") or 0)
+                        if lowered.get("credits_need")
+                        else 0.0
+                    ),
                     min_grade=(lowered.get("grade") or "D").strip(),
                     comments=(lowered.get("comments") or "").strip(),
                     options=options,
@@ -671,18 +677,30 @@ def _match_group(
     # AND explicit course list pre-pooled into one pattern by audit_transcript.
     if len(patterns) == 1 and credits_needed > 0:
         ok, temp_used, total = _fill_bucket(
-            courses, remaining, used_indices,
-            [patterns[0]], credits_needed, min_grade, excluded_patterns, flex_scores,
+            courses,
+            remaining,
+            used_indices,
+            [patterns[0]],
+            credits_needed,
+            min_grade,
+            excluded_patterns,
+            flex_scores,
         )
         if ok:
             return True, temp_used, total, ""
         return False, temp_used, total, "Not enough credits in bucket"
 
-   # Any multi-pattern group with a credit target: OR-bucket across all
+    # Any multi-pattern group with a credit target: OR-bucket across all
     if credits_needed > 0:
         ok, temp_used, total = _fill_bucket(
-            courses, remaining, used_indices,
-            patterns, credits_needed, min_grade, excluded_patterns, flex_scores,
+            courses,
+            remaining,
+            used_indices,
+            patterns,
+            credits_needed,
+            min_grade,
+            excluded_patterns,
+            flex_scores,
         )
         if ok:
             return True, temp_used, total, ""
@@ -697,10 +715,14 @@ def _match_group(
         if _is_pool_pattern(pat):
             # Pool pattern within AND group: pick one course from the pool.
             cand = _candidate_courses(
-                courses, remaining,
+                courses,
+                remaining,
                 used_indices.union({idx for idx, _ in temp_used}),
-                pat, min_grade, excluded_patterns,
-                prefer_latest=True, flex_scores=flex_scores,
+                pat,
+                min_grade,
+                excluded_patterns,
+                prefer_latest=True,
+                flex_scores=flex_scores,
             )
             if not cand:
                 missing.append(pat)
@@ -712,9 +734,12 @@ def _match_group(
             matched_idx = None
             for alias in aliases:
                 cand = _candidate_courses(
-                    courses, remaining,
+                    courses,
+                    remaining,
                     used_indices.union({idx for idx, _ in temp_used}),
-                    alias, min_grade, excluded_patterns,
+                    alias,
+                    min_grade,
+                    excluded_patterns,
                     prefer_latest=not alias.strip().upper().startswith("ANY"),
                     flex_scores=flex_scores,
                 )
@@ -726,7 +751,9 @@ def _match_group(
                 continue
 
         available = remaining[matched_idx]
-        consume = min(available, credits_needed - total_credits) if credits_needed > 0 else available
+        consume = (
+            min(available, credits_needed - total_credits) if credits_needed > 0 else available
+        )
         temp_used.append((matched_idx, consume))
         total_credits += consume
 
@@ -804,7 +831,9 @@ def audit_transcript(
     results: List[RequirementResult] = []
 
     for req in ordered_reqs:
-        options_split = [_split_alternative_group(opt) for opt in req.options] if req.options else []
+        options_split = (
+            [_split_alternative_group(opt) for opt in req.options] if req.options else []
+        )
 
         # Determine how to build alternatives list.
         #
@@ -821,8 +850,12 @@ def audit_transcript(
         # Case 4: Mixed → keep as separate alternatives, each tried independently.
 
         all_single = all(len(group) == 1 for group in options_split)
-        all_buckets = all_single and all(_is_bucket_pattern(p) for group in options_split for p in group)
-        all_explicit = all_single and all(not _is_bucket_pattern(p) for group in options_split for p in group)
+        all_buckets = all_single and all(
+            _is_bucket_pattern(p) for group in options_split for p in group
+        )
+        all_explicit = all_single and all(
+            not _is_bucket_pattern(p) for group in options_split for p in group
+        )
 
         if req.credits_need > 0 and options_split and (all_buckets or all_explicit):
             # Pool all single-pattern options into one combined OR-bucket.
@@ -907,8 +940,7 @@ def audit_transcript(
                     used_indices.add(idx)
 
         used_codes = [
-            f"{courses[i].code} ({format_credit(consumed)} credits)"
-            for i, consumed in best_used
+            f"{courses[i].code} ({format_credit(consumed)} credits)" for i, consumed in best_used
         ]
         results.append(
             RequirementResult(

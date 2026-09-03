@@ -8,6 +8,7 @@ from backend.modules.opportunities.models import EducationLevel, OpportunityMajo
 
 class OpportunityEligibilityBase(BaseModel):
     """orm to pydantic mapping. do not use in create/update requests"""
+
     id: int
     education_level: EducationLevel
     year: int | None
@@ -15,8 +16,10 @@ class OpportunityEligibilityBase(BaseModel):
     class Config:
         from_attributes = True
 
+
 class OpportunityMajorMapBase(BaseModel):
     """orm to pydantic mapping. do not use in create/update requests"""
+
     id: int
     opportunity_id: int
     major: OpportunityMajor
@@ -24,8 +27,10 @@ class OpportunityMajorMapBase(BaseModel):
     class Config:
         from_attributes = True
 
+
 class OpportunityBase(BaseModel):
     """orm to pydantic mapping. do not use in create/update requests"""
+
     id: int
     name: str
     description: str | None = None
@@ -44,6 +49,7 @@ class OpportunityBase(BaseModel):
         from_attributes = True
         extra = "ignore"
 
+
 class OpportunityEligibilityCreateDto(BaseModel):
     education_level: EducationLevel
     year: int | None
@@ -51,8 +57,10 @@ class OpportunityEligibilityCreateDto(BaseModel):
 
 class OpportunityEligibilityUpdateDto(BaseModel):
     """update request of eligibility perform full replacement"""
+
     education_level: EducationLevel | None = None
     year: int | None = None
+
 
 class OpportunityCreateDto(BaseModel):
     name: str
@@ -79,8 +87,10 @@ class OpportunityUpdateDto(BaseModel):
     funding: str | None = None
     eligibilities: List[OpportunityEligibilityUpdateDto] | None = None
 
+
 class OpportunityResponseDto(OpportunityBase):
     pass
+
 
 class OpportunityListResponse(BaseModel):
     items: List[OpportunityResponseDto]
@@ -92,9 +102,13 @@ class OpportunityListResponse(BaseModel):
 
 
 class OpportunityFilter(BaseModel):
-    type: List[OpportunityType] | None = Field(default=None, description="Filter by opportunity types")
+    type: List[OpportunityType] | None = Field(
+        default=None, description="Filter by opportunity types"
+    )
     majors: List[OpportunityMajor] | None = Field(default=None, description="Filter by majors")
-    education_level: List[EducationLevel] | None = Field(default=None, description="Filter by education levels")
+    education_level: List[EducationLevel] | None = Field(
+        default=None, description="Filter by education levels"
+    )
     years: List[int] | None = Field(default=None, description="Study years to match (for UG/GrM)")
     q: str | None = Field(default=None, description="Search in name/description")
     hide_expired: bool = Field(default=False, description="Hide expired opportunities")

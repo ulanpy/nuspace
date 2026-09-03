@@ -25,12 +25,7 @@ from backend.modules.courses.registrar.parsers.schedule_pdf_parser import parse_
 def _normalize_code(value: str | None) -> str:
     if not value:
         return ""
-    return (
-        value.replace("-", "")
-        .replace(" ", "")
-        .strip()
-        .upper()
-    )
+    return value.replace("-", "").replace(" ", "").strip().upper()
 
 
 def merge_priorities_into_schedule(
