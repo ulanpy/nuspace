@@ -13,6 +13,9 @@ class UserSchema(BaseModel):
     surname: str
     picture: str
     sub: str
+    slug: str | None = None
+    page_content: Dict[str, Any] = {}
+    is_page_public: bool = False
 
 
 class Sub(BaseModel):

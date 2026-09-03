@@ -3,8 +3,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import {
   BadgeCheckIcon,
-  CalendarIcon,
-  ExternalLinkIcon,
   MailIcon,
   PencilIcon,
   Trash2Icon,
@@ -18,9 +16,7 @@ import {
 } from "@/features/communities/api"
 import { CommunityFormDialog } from "@/features/communities/components/community-form-dialog"
 import { selectMedia } from "@/features/media/select"
-import { formatCampusDate } from "@/lib/datetime"
 import { ConfirmDialog } from "@/components/confirm-dialog"
-import { Markdown } from "@/components/markdown"
 import { ResilientImage } from "@/components/resilient-image"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -33,20 +29,6 @@ export const Route = createFileRoute("/_app/communities/$communityId")({
     ),
   component: CommunityDetail,
 })
-
-function ExternalLink({ href, label }: { href: string; label: string }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 rounded-md text-sm font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-    >
-      {label}
-      <ExternalLinkIcon className="size-4" aria-hidden />
-    </a>
-  )
-}
 
 function CommunityDetail() {
   const { communityId } = Route.useParams()
@@ -62,7 +44,7 @@ function CommunityDetail() {
   const banner = selectMedia(community.media, "banner")?.url
   const avatar = selectMedia(community.media, "profile")?.url
 
-  // Server-decided. Note that a head gets can_edit but not can_delete —
+  // Server-decided. Note that an owner gets can_edit but not can_delete —
   // removing a community is admin-only.
   const { can_edit: canEdit, can_delete: canDelete } = community.permissions
 
@@ -164,73 +146,39 @@ function CommunityDetail() {
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <Card className="p-6">
           <h2 className="text-xl font-semibold">About us</h2>
-          {community.description ? (
-            <Markdown className="text-muted-foreground">
-              {community.description}
-            </Markdown>
-          ) : (
-            <p className="text-muted-foreground">
-              This community has not added a description yet.
-            </p>
-          )}
+          <p className="text-muted-foreground">
+            This community has not added a page yet.
+          </p>
         </Card>
 
         <Card className="p-5 lg:sticky lg:top-20">
           <h2 className="font-semibold">Community details</h2>
           <dl className="space-y-4 text-sm">
             <div className="flex items-start gap-3">
-              <CalendarIcon
-                className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                aria-hidden
-              />
-              <div>
-                <dt className="font-medium">Established</dt>
-                <dd className="text-muted-foreground">
-                  {formatCampusDate(community.established)}
-                </dd>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
               <UserIcon
                 className="mt-0.5 size-4 shrink-0 text-muted-foreground"
                 aria-hidden
               />
               <div>
-                <dt className="font-medium">Community head</dt>
+                <dt className="font-medium">Community owner</dt>
                 <dd className="text-muted-foreground">
-                  {community.head_user.name} {community.head_user.surname}
+                  {community.owner_user.name} {community.owner_user.surname}
                 </dd>
               </div>
             </div>
           </dl>
 
-          {(community.telegram_url ||
-            community.instagram_url ||
-            community.email) && (
+          {community.email && (
             <div className="space-y-3 border-t border-border pt-4">
               <h3 className="text-sm font-medium">Contact</h3>
               <div className="flex flex-col items-start gap-3">
-                {community.telegram_url && (
-                  <ExternalLink
-                    href={community.telegram_url}
-                    label="Telegram"
-                  />
-                )}
-                {community.instagram_url && (
-                  <ExternalLink
-                    href={community.instagram_url}
-                    label="Instagram"
-                  />
-                )}
-                {community.email && (
-                  <a
-                    href={`mailto:${community.email}`}
-                    className="inline-flex items-center gap-1 rounded-md text-sm font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                  >
-                    <MailIcon className="size-4" aria-hidden />
-                    <span className="break-all">{community.email}</span>
-                  </a>
-                )}
+                <a
+                  href={`mailto:${community.email}`}
+                  className="inline-flex items-center gap-1 rounded-md text-sm font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  <MailIcon className="size-4" aria-hidden />
+                  <span className="break-all">{community.email}</span>
+                </a>
               </div>
             </div>
           )}

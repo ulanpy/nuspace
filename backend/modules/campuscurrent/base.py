@@ -22,5 +22,5 @@ class BasePolicy:
     def _is_owner(self, author_sub: str) -> bool:
         return self.user_sub == author_sub
 
-    def _is_community_head(self, community_id: int) -> bool:
+    def _is_community_owner(self, community_id: int) -> bool:
         return community_id in self.communities

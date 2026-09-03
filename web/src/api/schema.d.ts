@@ -133,7 +133,7 @@ export interface paths {
          *
          *     **Access Policy:**
          *     - Any registered user can create communities
-         *     - Users can only create communities for themselves (head must be "me" or their own sub)
+         *     - Users can only create communities for themselves (owner must be "me" or their own sub)
          */
         post: operations["add_community_communities_post"];
         delete?: never;
@@ -1781,35 +1781,24 @@ export interface components {
              */
             email?: string | null;
             /**
-             * Description
-             * @description The description of the community
-             * @example We are a club that does fencing
+             * Slug
+             * @description URL-friendly unique identifier
+             * @example nu-fencing-club
              */
-            description: string;
+            slug: string;
             /**
-             * Established
-             * Format: date
-             * @description The date the community was established
-             * @example 2025-01-01
+             * Page Content
+             * @description Free-form page content of the community
+             * @example {}
              */
-            established: string;
+            page_content?: {
+                [key: string]: unknown;
+            };
             /**
-             * Head
-             * @description The head of the community (user_sub)
+             * Owner
+             * @description The owner of the community (user_sub)
              */
-            head: string;
-            /**
-             * Telegram Url
-             * @description The Telegram URL of the community
-             * @example https://t.me/nufencingclub
-             */
-            telegram_url?: string | null;
-            /**
-             * Instagram Url
-             * @description The Instagram URL of the community
-             * @example https://www.instagram.com/nufencingclub
-             */
-            instagram_url?: string | null;
+            owner: string;
         };
         /** CommunityResponse */
         CommunityResponse: {
@@ -1823,19 +1812,14 @@ export interface components {
             email?: string | null;
             /** Verified */
             verified: boolean;
-            /** Description */
-            description: string;
-            /**
-             * Established
-             * Format: date
-             */
-            established: string;
-            /** Head */
-            head: string;
-            /** Telegram Url */
-            telegram_url?: string | null;
-            /** Instagram Url */
-            instagram_url?: string | null;
+            /** Slug */
+            slug: string;
+            /** Page Content */
+            page_content: {
+                [key: string]: unknown;
+            };
+            /** Owner */
+            owner: string;
             /**
              * Created At
              * Format: date-time
@@ -1846,7 +1830,7 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
-            head_user: components["schemas"]["ShortUserResponse"];
+            owner_user: components["schemas"]["ShortUserResponse"];
             /**
              * Media
              * @default []
@@ -1883,29 +1867,18 @@ export interface components {
              */
             email?: string | null;
             /**
-             * Established
-             * @description The date the community was established
-             * @example 2025-01-01
+             * Slug
+             * @description URL-friendly unique identifier
+             * @example nu-fencing-club
              */
-            established?: string | null;
+            slug?: string | null;
             /**
-             * Description
-             * @description The description of the community
-             * @example We are a club that does fencing
+             * Page Content
+             * @description Free-form page content of the community
              */
-            description?: string | null;
-            /**
-             * Telegram Url
-             * @description The Telegram URL of the community
-             * @example https://t.me/nufencingclub
-             */
-            telegram_url?: string | null;
-            /**
-             * Instagram Url
-             * @description The Instagram URL of the community
-             * @example https://www.instagram.com/nufencingclub
-             */
-            instagram_url?: string | null;
+            page_content?: {
+                [key: string]: unknown;
+            } | null;
             /**
              * Media Ids To Delete
              * @description IDs of media attachments to delete as part of this update
@@ -3333,8 +3306,8 @@ export interface operations {
                 community_type?: components["schemas"]["CommunityType"] | null;
                 community_category?: components["schemas"]["CommunityCategory"] | null;
                 /** @description if 'me' then current user's sub will be used */
-                head_sub?: string | null;
-                /** @description Search keyword for community name or description */
+                owner_sub?: string | null;
+                /** @description Search keyword for community name */
                 keyword?: string | null;
             };
             header?: never;

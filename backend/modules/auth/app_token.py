@@ -36,16 +36,16 @@ class AppTokenManager:
                 raise RuntimeError(f"User {user_sub} not found while creating app token")
 
             user_role: UserRole = user.role
-            communities_stmt = select(Community).where(Community.head == user_sub)
+            communities_stmt = select(Community).where(Community.owner == user_sub)
             communities_result = await db_session.execute(communities_stmt)
-            headed_communities: List[Community] = list(communities_result.scalars().all())
+            owned_communities: List[Community] = list(communities_result.scalars().all())
 
         tg_id = user.telegram_id
 
         claims = {
             "sub": user_sub,
             "role": user_role.value,
-            "communities": [community.id for community in headed_communities],
+            "communities": [community.id for community in owned_communities],
             "exp": datetime.now(UTC) + self.token_expiry,
             "tg_id": tg_id,
             "department_id": user.department_id,

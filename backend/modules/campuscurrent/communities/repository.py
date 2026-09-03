@@ -26,7 +26,7 @@ class CommunityRepository:
         stmt = (
             select(Community)
             .where(Community.id == community.id)
-            .options(selectinload(Community.head_user))
+            .options(selectinload(Community.owner_user))
         )
         result = await self.db_session.execute(stmt)
         return result.scalars().one()
@@ -41,7 +41,7 @@ class CommunityRepository:
         stmt = (
             select(Community)
             .where(Community.id == community.id)
-            .options(selectinload(Community.head_user))
+            .options(selectinload(Community.owner_user))
         )
         result = await self.db_session.execute(stmt)
         return result.scalars().one()
@@ -69,7 +69,6 @@ class CommunityRepository:
             json_values={
                 "id": community.id,
                 "name": community.name,
-                "description": community.description,
             },
         )
 
@@ -103,7 +102,7 @@ class CommunityRepository:
         size: int,
         community_type: CommunityType | None,
         community_category: CommunityCategory | None,
-        head_sub: str | None,
+        owner_sub: str | None,
         keyword: str | None,
         meilisearch_client: AsyncClient,
     ) -> Tuple[List[Community], int, bool]:
@@ -129,12 +128,12 @@ class CommunityRepository:
             conditions.append(Community.type == community_type)
         if community_category:
             conditions.append(Community.category == community_category)
-        if head_sub:
-            conditions.append(Community.head == head_sub)
+        if owner_sub:
+            conditions.append(Community.owner == owner_sub)
         if keyword:
             conditions.append(Community.id.in_(community_ids))
 
-        base_stmt = select(Community).where(*conditions).options(selectinload(Community.head_user))
+        base_stmt = select(Community).where(*conditions).options(selectinload(Community.owner_user))
 
         if keyword:
             order_clause = case(
@@ -172,13 +171,13 @@ class CommunityRepository:
     async def load_relations(
         self, community: Community, relations: list[str] | None = None
     ) -> None:
-        await self.db_session.refresh(community, relations or ["head_user"])
+        await self.db_session.refresh(community, relations or ["owner_user"])
 
     async def get_by_id(self, community_id: int) -> Community | None:
         stmt = (
             select(Community)
             .where(Community.id == community_id)
-            .options(selectinload(Community.head_user))
+            .options(selectinload(Community.owner_user))
         )
         result = await self.db_session.execute(stmt)
         return result.scalars().first()

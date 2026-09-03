@@ -1,11 +1,11 @@
-from datetime import datetime
-from backend.common.datetime_utils import utc_now
 from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Text
 from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from backend.common.datetime_utils import utc_now
 from backend.core.database.models.base import Base
 
 
@@ -33,6 +33,9 @@ class User(Base):
     name: Mapped[str] = mapped_column(nullable=False, index=True)
     surname: Mapped[str] = mapped_column(nullable=False, index=True)
     picture: Mapped[str] = mapped_column(nullable=True)
+    slug: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    page_content: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    is_page_public: Mapped[bool] = mapped_column(nullable=False, default=False)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
     sg_assigned_at = Column(DateTime(timezone=True), nullable=True, index=True)

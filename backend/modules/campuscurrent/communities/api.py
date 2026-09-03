@@ -30,7 +30,7 @@ async def add_community(
 
     **Access Policy:**
     - Any registered user can create communities
-    - Users can only create communities for themselves (head must be "me" or their own sub)
+    - Users can only create communities for themselves (owner must be "me" or their own sub)
     """
     try:
         return await community_service.create_community(
@@ -51,15 +51,13 @@ async def get_communities(
     page: int = 1,
     community_type: CommunityType | None = None,
     community_category: CommunityCategory | None = None,
-    head_sub: str | None = Query(
+    owner_sub: str | None = Query(
         default=None,
         description=("if 'me' then current user's sub will be used"),
     ),
     infra: Infra = Depends(get_infra),
     community_service: CommunityService = Depends(get_community_service),
-    keyword: str | None = Query(
-        default=None, description="Search keyword for community name or description"
-    ),
+    keyword: str | None = Query(default=None, description="Search keyword for community name"),
 ) -> schemas.ListCommunity:
     """Retrieves a paginated list of communities with flexible filtering."""
     return await community_service.list_communities(
@@ -69,7 +67,7 @@ async def get_communities(
         size=size,
         community_type=community_type,
         community_category=community_category,
-        head_sub=head_sub,
+        owner_sub=owner_sub,
         keyword=keyword,
     )
 
@@ -112,6 +110,4 @@ async def delete_community(
     community_service: CommunityService = Depends(get_community_service),
 ):
     """Deletes a community. Admin only."""
-    await community_service.delete_community(
-        infra=infra, community_id=community_id, user=user
-    )
+    await community_service.delete_community(infra=infra, community_id=community_id, user=user)

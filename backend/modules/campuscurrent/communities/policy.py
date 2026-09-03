@@ -1,9 +1,9 @@
 from fastapi import HTTPException, status
 
 from backend.common.utils.enums import ResourceAction
-from backend.modules.campuscurrent.models.community import Community
 from backend.modules.auth.models import UserRole
 from backend.modules.campuscurrent.communities.schemas import CommunityCreateRequest
+from backend.modules.campuscurrent.models.community import Community
 
 
 class CommunityPolicy:
@@ -47,8 +47,8 @@ class CommunityPolicy:
             # Validate that users can only create communities for themselves
             if (
                 community_data
-                and community_data.head != "me"
-                and community_data.head != self.user_sub
+                and community_data.owner != "me"
+                and community_data.owner != self.user_sub
             ):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -64,13 +64,13 @@ class CommunityPolicy:
 
         elif action == ResourceAction.UPDATE:
 
-            # Check if user is head of community
-            if community.head_user.sub == self.user_sub or community.id in self.user_communities:
+            # Check if user is owner of community
+            if community.owner_user.sub == self.user_sub or community.id in self.user_communities:
                 return True
 
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only admins or community heads can update communities",
+                detail="Only admins or community owners can update communities",
             )
 
         elif action == ResourceAction.DELETE:

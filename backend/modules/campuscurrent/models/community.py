@@ -1,11 +1,11 @@
-from datetime import date, datetime
-from backend.common.datetime_utils import utc_now
 from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, Date, DateTime, ForeignKey
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Text
 from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from backend.common.datetime_utils import utc_now
 from backend.core.database.models.base import Base
 
 
@@ -37,14 +37,12 @@ class Community(Base):
     )
     email: Mapped[str] = mapped_column(nullable=True, unique=False)
     verified: Mapped[bool] = mapped_column(nullable=False, default=False, index=True)
-    description: Mapped[str] = mapped_column(nullable=False)
-    established: Mapped[date] = mapped_column(Date, nullable=False, index=True)
-    head: Mapped[str] = mapped_column(
+    owner: Mapped[str] = mapped_column(
         ForeignKey("users.sub", ondelete="SET NULL"), nullable=True, index=True
     )
-    telegram_url: Mapped[str] = mapped_column(nullable=True, unique=False)
-    instagram_url: Mapped[str] = mapped_column(nullable=True, unique=False)
+    slug: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    page_content: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
-    head_user = relationship("User")
+    owner_user = relationship("User")

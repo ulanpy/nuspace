@@ -1,7 +1,5 @@
-import re
-from datetime import date, datetime
-from typing import List, Literal
-from urllib.parse import SplitResult, urlsplit
+from datetime import datetime
+from typing import List
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -11,58 +9,7 @@ from backend.modules.campuscurrent.models.community import (
     CommunityType,
 )
 from backend.modules.media.schemas import MediaResponse
-
-
-_URL_SCHEME_PATTERN = re.compile(r"^[a-z][a-z\d+.-]*:", re.IGNORECASE)
-_SOCIAL_HOSTS = {
-    "telegram": {"t.me", "telegram.me"},
-    "instagram": {"instagram.com", "instagr.am"},
-}
-
-
-def _normalize_optional_url(value: object) -> str | None:
-    if value is None:
-        return None
-
-    normalized = str(value).strip()
-    if not normalized:
-        return None
-    if not _URL_SCHEME_PATTERN.match(normalized):
-        return f"https://{normalized}"
-    return normalized
-
-
-def _parse_http_url(value: str, error_message: str) -> SplitResult:
-    if value.count("://") != 1:
-        raise ValueError(error_message)
-
-    try:
-        parsed = urlsplit(value)
-        hostname = parsed.hostname
-        _ = parsed.port
-    except ValueError:
-        raise ValueError(error_message) from None
-
-    if parsed.scheme not in {"http", "https"} or not hostname:
-        raise ValueError(error_message)
-    return parsed
-
-
-def _validate_social_url(
-    value: object,
-    *,
-    platform: Literal["telegram", "instagram"],
-    error_message: str,
-) -> str | None:
-    normalized = _normalize_optional_url(value)
-    if normalized is None:
-        return None
-
-    parsed = _parse_http_url(normalized, error_message)
-    hostname = parsed.hostname.lower().removeprefix("www.")
-    if hostname not in _SOCIAL_HOSTS[platform]:
-        raise ValueError(error_message)
-    return normalized
+from backend.modules.shared.slug import validate_slug
 
 
 class CommunityCreateRequest(BaseModel):
@@ -84,44 +31,26 @@ class CommunityCreateRequest(BaseModel):
         description="The email of the community",
         example="nufencingclub@gmail.com",
     )
-    description: str = Field(
+    slug: str = Field(
         ...,
-        max_length=5000,
-        description="The description of the community",
-        example="We are a club that does fencing",
+        min_length=3,
+        max_length=50,
+        description="URL-friendly unique identifier",
+        example="nu-fencing-club",
     )
-    established: date = Field(
-        ..., description="The date the community was established", example=date(2025, 1, 1)
+    page_content: dict = Field(
+        default_factory=dict,
+        description="Free-form page content of the community",
+        example={},
     )
-    head: str = Field(..., description="The head of the community (user_sub)")
-    telegram_url: str | None = Field(
-        default=None,
-        description="The Telegram URL of the community",
-        example="https://t.me/nufencingclub",
-    )
-    instagram_url: str | None = Field(
-        default=None,
-        description="The Instagram URL of the community",
-        example="https://www.instagram.com/nufencingclub",
-    )
+    owner: str = Field(..., description="The owner of the community (user_sub)")
 
-    @field_validator("telegram_url", mode="before")
+    @field_validator("slug", mode="before")
     @classmethod
-    def validate_telegram_url(cls, value: object) -> str | None:
-        return _validate_social_url(
-            value,
-            platform="telegram",
-            error_message="Enter a Telegram URL",
-        )
-
-    @field_validator("instagram_url", mode="before")
-    @classmethod
-    def validate_instagram_url(cls, value: object) -> str | None:
-        return _validate_social_url(
-            value,
-            platform="instagram",
-            error_message="Enter an Instagram URL",
-        )
+    def validate_slug(cls, value: object) -> str:
+        if isinstance(value, str):
+            return validate_slug(value)
+        return validate_slug(str(value))
 
 
 class BaseCommunity(BaseModel):
@@ -131,11 +60,9 @@ class BaseCommunity(BaseModel):
     category: CommunityCategory
     email: EmailStr | None = None
     verified: bool
-    description: str
-    established: date
-    head: str
-    telegram_url: str | None = None
-    instagram_url: str | None = None
+    slug: str
+    page_content: dict
+    owner: str
     created_at: datetime
     updated_at: datetime
 
@@ -144,7 +71,7 @@ class BaseCommunity(BaseModel):
 
 
 class CommunityResponse(BaseCommunity):
-    head_user: ShortUserResponse
+    owner_user: ShortUserResponse
     media: List[MediaResponse] = []
     permissions: ResourcePermissions = ResourcePermissions()
 
@@ -152,7 +79,6 @@ class CommunityResponse(BaseCommunity):
 class ShortCommunityResponse(BaseModel):
     id: int
     name: str
-    description: str
     verified: bool = False
     media: List[MediaResponse] = Field(default_factory=list)
 
@@ -169,24 +95,16 @@ class CommunityUpdateRequest(BaseModel):
         description="The email of the community",
         example="nufencingclub@gmail.com",
     )
-    established: date | None = Field(
-        default=None, description="The date the community was established", example="2025-01-01"
-    )
-    description: str | None = Field(
+    slug: str | None = Field(
         default=None,
-        max_length=5000,
-        description="The description of the community",
-        example="We are a club that does fencing",
+        min_length=3,
+        max_length=50,
+        description="URL-friendly unique identifier",
+        example="nu-fencing-club",
     )
-    telegram_url: str | None = Field(
+    page_content: dict | None = Field(
         default=None,
-        description="The Telegram URL of the community",
-        example="https://t.me/nufencingclub",
-    )
-    instagram_url: str | None = Field(
-        default=None,
-        description="The Instagram URL of the community",
-        example="https://www.instagram.com/nufencingclub",
+        description="Free-form page content of the community",
     )
 
     media_ids_to_delete: list[int] | None = Field(
@@ -194,7 +112,16 @@ class CommunityUpdateRequest(BaseModel):
         description="IDs of media attachments to delete as part of this update",
     )
 
-    @field_validator("name", "description", "telegram_url", "instagram_url")
+    @field_validator("slug", mode="before")
+    @classmethod
+    def validate_slug(cls, value: object) -> object:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return validate_slug(value)
+        return validate_slug(str(value))
+
+    @field_validator("name")
     def validate_emptiness(cls, value):
         if not value or value.strip() == "":
             return None
@@ -202,24 +129,6 @@ class CommunityUpdateRequest(BaseModel):
 
     class Config:
         from_attributes = True
-
-    @field_validator("telegram_url", mode="before")
-    @classmethod
-    def validate_telegram_url(cls, value: object) -> str | None:
-        return _validate_social_url(
-            value,
-            platform="telegram",
-            error_message="Enter a Telegram URL",
-        )
-
-    @field_validator("instagram_url", mode="before")
-    @classmethod
-    def validate_instagram_url(cls, value: object) -> str | None:
-        return _validate_social_url(
-            value,
-            platform="instagram",
-            error_message="Enter an Instagram URL",
-        )
 
 
 class ListCommunity(BaseModel):

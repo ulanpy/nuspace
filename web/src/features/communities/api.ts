@@ -38,9 +38,9 @@ export function fetchCommunitiesPage(
 }
 
 /**
- * Communities the signed-in user heads.
+ * Communities the signed-in user owns.
  *
- * The filter is `head_sub`, and `"me"` resolves to the caller server-side. The
+ * The filter is `owner_sub`, and `"me"` resolves to the caller server-side. The
  * old app sent `head=<sub>` — a parameter the backend does not declare, so
  * FastAPI dropped it and the profile page's "My Communities" was really the
  * first 100 of every community on campus.
@@ -51,7 +51,7 @@ export function myCommunitiesQueryOptions() {
     queryFn: () =>
       unwrap(
         api.GET("/communities", {
-          params: { query: { head_sub: "me", page: 1, size: 100 } },
+          params: { query: { owner_sub: "me", page: 1, size: 100 } },
         })
       ),
   })
@@ -217,7 +217,7 @@ export function useUpdateCommunity() {
   })
 }
 
-/** Admin only, per `CommunityPolicy` — the head cannot delete their own club. */
+/** Admin only, per `CommunityPolicy` — the owner cannot delete their own club. */
 export function useDeleteCommunity() {
   const queryClient = useQueryClient()
 

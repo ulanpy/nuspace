@@ -23,17 +23,14 @@ def get_community_permissions(
             "type",
             "category",
             "email",
-            "description",
-            "established",
-            "head",
-            "telegram_url",
-            "instagram_url",
+            "slug",
+            "page_content",
         ]
         return permissions
 
-    is_head = community.head_user.sub == user_sub
+    is_owner = community.owner_user.sub == user_sub
 
-    if is_head:
+    if is_owner:
         permissions.can_edit = True
         permissions.can_delete = False
         permissions.editable_fields = [
@@ -41,10 +38,8 @@ def get_community_permissions(
             "type",
             "category",
             "email",
-            "description",
-            "established",
-            "telegram_url",
-            "instagram_url",
+            "slug",
+            "page_content",
         ]
 
     return permissions

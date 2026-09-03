@@ -95,7 +95,7 @@ function CommunitiesList() {
         description="Discover clubs, organizations, and campus groups."
         actions={
           // Open to any signed-in user, as on the server: creating a community
-          // makes you its head, and admins verify it afterwards.
+          // makes you its owner, and admins verify it afterwards.
           <Button
             onClick={() => {
               setIsCreating(true)

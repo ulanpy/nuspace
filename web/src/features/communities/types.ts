@@ -29,7 +29,7 @@ export const COMMUNITY_CATEGORIES = [
  * Read `editable_fields` and not a role check — see the equivalent on events.
  *
  * One caveat the server's own list does not capture: it names `type`,
- * `category` and `head` as editable, but `CommunityUpdateRequest` has no such
+ * `category` and `owner` as editable, but `CommunityUpdateRequest` has no such
  * fields, so a PATCH cannot carry them whatever the permissions say. Those
  * three are set at creation and changed nowhere; see COMMUNITY_CREATE_ONLY.
  */
@@ -42,4 +42,4 @@ export function canEditField(community: Community, field: string): boolean {
  * Rendered as read-only text in edit mode rather than as disabled inputs,
  * which would suggest a permission that could be granted.
  */
-export const COMMUNITY_CREATE_ONLY = ["type", "category", "head"] as const
+export const COMMUNITY_CREATE_ONLY = ["type", "category", "owner"] as const

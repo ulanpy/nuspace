@@ -10,7 +10,7 @@ MEILISEARCH_INDEXES = [
     ),
     MeilisearchIndexConfig(
         model=Community,
-        searchable_columns=[Community.name, Community.description],
+        searchable_columns=[Community.name],
         filterable_attributes=None,
         primary_key=Community.id,
     ),

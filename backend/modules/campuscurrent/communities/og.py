@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import HTMLResponse
 
 from backend.common.dependencies import get_infra
-from backend.modules.auth.dependencies import get_creds_or_guest
 from backend.common.schemas import Infra
+from backend.modules.auth.dependencies import get_creds_or_guest
 from backend.modules.campuscurrent.communities.dependencies import get_community_service
 from backend.modules.campuscurrent.communities.service import CommunityService
 
@@ -17,18 +17,12 @@ def _build_public_url(request: Request) -> str:
     host = request.headers.get("x-forwarded-host", request.headers.get("host", ""))
     path = request.url.path
     if path.startswith("/api/og"):
-        path = path[len("/api/og"):] or "/"
+        path = path[len("/api/og") :] or "/"
     if request.url.query:
         path = f"{path}?{request.url.query}"
     if host:
         return f"{scheme}://{host}{path}"
     return f"{request.base_url}".rstrip("/") + path
-
-
-def _truncate(text: str, max_len: int) -> str:
-    if len(text) <= max_len:
-        return text
-    return text[: max_len - 3].rstrip() + "..."
 
 
 def _select_og_image(community_response) -> str | None:
@@ -52,9 +46,7 @@ def _select_og_image(community_response) -> str | None:
 
 def _build_community_html(community_response, request: Request) -> str:
     title = community_response.name or "Community"
-    description = community_response.description or ""
-    description = " ".join(description.split())
-    description = _truncate(description, 220)
+    description = f"Learn about {title} on Nuspace."
     og_image = _select_og_image(community_response)
     public_url = _build_public_url(request)
     site_name = "Nuspace"

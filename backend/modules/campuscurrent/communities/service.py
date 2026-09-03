@@ -48,9 +48,9 @@ class CommunityService:
             action=ResourceAction.CREATE, community_data=community_data
         )
 
-        head_sub = user[0].get("sub") if community_data.head == "me" else community_data.head
-        await self._ensure_user_exists(head_sub)
-        community_data.head = head_sub
+        owner_sub = user[0].get("sub") if community_data.owner == "me" else community_data.owner
+        await self._ensure_user_exists(owner_sub)
+        community_data.owner = owner_sub
 
         async with self.uow:
             repo = self.uow.get_repo(CommunityRepository)
@@ -151,12 +151,12 @@ class CommunityService:
         size: int,
         community_type: CommunityType | None,
         community_category: CommunityCategory | None,
-        head_sub: str | None,
+        owner_sub: str | None,
         keyword: str | None,
     ) -> schemas.ListCommunity:
         await CommunityPolicy(user=user).check_permission(action=ResourceAction.READ)
 
-        head_sub = user[0].get("sub") if head_sub == "me" else head_sub
+        owner_sub = user[0].get("sub") if owner_sub == "me" else owner_sub
 
         async with self.uow:
             repo = self.uow.get_repo(CommunityRepository)
@@ -165,7 +165,7 @@ class CommunityService:
                 size=size,
                 community_type=community_type,
                 community_category=community_category,
-                head_sub=head_sub,
+                owner_sub=owner_sub,
                 keyword=keyword,
                 meilisearch_client=infra.meilisearch_client,
             )
@@ -229,7 +229,7 @@ class CommunityService:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Community not found"
                 )
-            await repo.load_relations(community, ["head_user"])
+            await repo.load_relations(community, ["owner_user"])
             media_objs: List[Media] = await repo.list_media(
                 community_ids=[community.id],
                 media_formats=[MediaFormat.profile, MediaFormat.banner],
@@ -243,7 +243,7 @@ class CommunityService:
         return response_builder.build_schema(
             schemas.CommunityResponse,
             schemas.CommunityResponse.model_validate(community),
-            head_user=ShortUserResponse.model_validate(community.head_user),
+            owner_user=ShortUserResponse.model_validate(community.owner_user),
             media=media_results[0] if media_results else [],
             permissions=get_community_permissions(community, user),
         )

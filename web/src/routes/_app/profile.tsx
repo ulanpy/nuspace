@@ -90,8 +90,8 @@ function MyCommunities() {
       empty={
         <div className="space-y-3">
           <EmptyState
-            title="You don't head any community"
-            description="Communities you lead show up here."
+            title="You don't own any community"
+            description="Communities you own show up here."
           />
           <Button
             variant="outline"

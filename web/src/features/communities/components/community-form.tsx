@@ -1,9 +1,8 @@
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 
-import { MarkdownToolbar } from "@/components/markdown-toolbar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import type { UploadItem } from "@/features/media/use-media-upload"
 import { MediaPicker } from "@/features/media/components/media-picker"
 import { toCommunityUploadItems } from "@/features/communities/api"
@@ -26,44 +24,59 @@ import {
   type CommunityCreate,
   type CommunityUpdate,
 } from "@/features/communities/types"
-import {
-  getInstagramUrlError,
-  getTelegramUrlError,
-  normalizeHttpUrl,
-} from "@/features/communities/url-validation"
+
+/** Reserved words the server rejects as slugs — must match the backend list. */
+const RESERVED_SLUGS: string[] = [
+  "edit",
+  "admin",
+  "new",
+  "create",
+  "api",
+  "settings",
+  "about",
+  "terms-of-service",
+  "privacy-policy",
+  "communities",
+  "users",
+  "events",
+  "courses",
+  "announcements",
+  "contacts",
+  "opportunities",
+  "profile",
+  "sgotinish",
+]
+
+/** Lowercase, digits and single hyphens — the server's `validate_slug` shape. */
+const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
+
+/** Normalises free text so `NU Fencing Club` becomes `nu-fencing-club`. */
+function normalizeSlug(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
 
 const communitySchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   type: z.enum(COMMUNITY_TYPES),
   category: z.enum(COMMUNITY_CATEGORIES),
-  description: z.string().trim().min(1, "Description is required"),
-  established: z.string().min(1, "Establishment date is required"),
   email: z
     .string()
     .trim()
     .refine((value) => value === "" || z.email().safeParse(value).success, {
       message: "Enter a valid email address",
     }),
-  /**
-   * Both social fields are normalised before they are checked, so someone can
-   * type `t.me/nuspace` and have it accepted — see `normalizeHttpUrl`.
-   */
-  telegramUrl: z
+  slug: z
     .string()
     .trim()
-    .refine(
-      (value) =>
-        value === "" || !getTelegramUrlError(normalizeHttpUrl(value) ?? ""),
-      { message: "Enter a Telegram link, like https://t.me/nuspace" }
-    ),
-  instagramUrl: z
-    .string()
-    .trim()
-    .refine(
-      (value) =>
-        value === "" || !getInstagramUrlError(normalizeHttpUrl(value) ?? ""),
-      { message: "Enter an Instagram link, like https://instagram.com/nuspace" }
-    ),
+    .min(3, "Slug must be 3-50 characters")
+    .max(50, "Slug must be 3-50 characters")
+    .regex(SLUG_PATTERN, "Use lowercase letters, digits and single hyphens")
+    .refine((value) => !RESERVED_SLUGS.includes(value), {
+      message: "That slug is reserved",
+    }),
 })
 
 type CommunityFormValues = z.infer<typeof communitySchema>
@@ -73,21 +86,13 @@ function toValues(community?: Community): CommunityFormValues {
     name: community?.name ?? "",
     type: community?.type ?? COMMUNITY_TYPES[0],
     category: community?.category ?? COMMUNITY_CATEGORIES[0],
-    description: community?.description ?? "",
-    established: community?.established ?? "",
     email: community?.email ?? "",
-    telegramUrl: community?.telegram_url ?? "",
-    instagramUrl: community?.instagram_url ?? "",
+    slug: community?.slug ?? "",
   }
 }
 
 function optional(value: string): string | null {
   return value === "" ? null : value
-}
-
-/** A social link is stored with a scheme even when it was typed without one. */
-function optionalUrl(value: string): string | null {
-  return normalizeHttpUrl(value) ?? null
 }
 
 export interface CommunitySubmitPayload {
@@ -136,8 +141,6 @@ export function CommunityForm({
   })
 
   const { errors } = form.formState
-  const descriptionRef = useRef<HTMLTextAreaElement | null>(null)
-  const description = form.watch("description")
 
   const [profileFiles, setProfileFiles] = useState<File[]>([])
   const [bannerFiles, setBannerFiles] = useState<File[]>([])
@@ -164,37 +167,28 @@ export function CommunityForm({
     value: CommunityUpdate[K]
   ): Partial<CommunityUpdate> => (editable(field) ? { [field]: value } : {})
 
-  const descriptionField = form.register("description")
-
   return (
     <form
       id={formId}
       onSubmit={(submitEvent) => {
         void form.handleSubmit((values) => {
           const email = optional(values.email)
-          const telegram = optionalUrl(values.telegramUrl)
-          const instagram = optionalUrl(values.instagramUrl)
 
           onSubmit({
             create: {
               name: values.name,
               type: values.type,
               category: values.category,
-              description: values.description,
-              established: values.established,
+              slug: values.slug,
               email,
-              telegram_url: telegram,
-              instagram_url: instagram,
               // Resolved to the caller server-side, as on events.
-              head: "me",
+              owner: "me",
+              // TODO: page_content editing (block editor) — defaults to {} server-side.
             },
             update: {
               ...ifEditable("name", values.name),
-              ...ifEditable("description", values.description),
-              ...ifEditable("established", values.established),
+              ...ifEditable("slug", values.slug),
               ...ifEditable("email", email),
-              ...ifEditable("telegram_url", telegram),
-              ...ifEditable("instagram_url", instagram),
               media_ids_to_delete:
                 removedMedia.length > 0 ? removedMedia : null,
             },
@@ -308,42 +302,24 @@ export function CommunityForm({
         </div>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="community-description">Description</Label>
-
-        <MarkdownToolbar
-          textareaRef={descriptionRef}
-          value={description}
-          disabled={isPending || !editable("description")}
-          onChange={(next) => {
-            form.setValue("description", next, { shouldValidate: true })
-          }}
-        />
-
-        <Textarea
-          id="community-description"
-          placeholder="What the community does, when it meets, and how to join."
-          className="min-h-30"
-          disabled={isPending || !editable("description")}
-          {...descriptionField}
-          ref={(element) => {
-            descriptionField.ref(element)
-            descriptionRef.current = element
-          }}
-        />
-        <FieldError message={errors.description?.message} />
-      </div>
-
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1">
-          <Label htmlFor="community-established">Established</Label>
+          <Label htmlFor="community-slug">Slug</Label>
           <Input
-            id="community-established"
-            type="date"
-            disabled={isPending || !editable("established")}
-            {...form.register("established")}
+            id="community-slug"
+            placeholder="nu-fencing-club"
+            disabled={isPending || !editable("slug")}
+            {...form.register("slug")}
+            onChange={(event) => {
+              form.setValue("slug", normalizeSlug(event.target.value), {
+                shouldValidate: true,
+              })
+            }}
           />
-          <FieldError message={errors.established?.message} />
+          <FieldError message={errors.slug?.message} />
+          <p className="text-xs text-muted-foreground">
+            Used in the community's URL.
+          </p>
         </div>
 
         <div className="space-y-1">
@@ -356,32 +332,6 @@ export function CommunityForm({
             {...form.register("email")}
           />
           <FieldError message={errors.email?.message} />
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1">
-          <Label htmlFor="community-telegram">Telegram</Label>
-          <Input
-            id="community-telegram"
-            inputMode="url"
-            placeholder="t.me/nuspace"
-            disabled={isPending || !editable("telegram_url")}
-            {...form.register("telegramUrl")}
-          />
-          <FieldError message={errors.telegramUrl?.message} />
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="community-instagram">Instagram</Label>
-          <Input
-            id="community-instagram"
-            inputMode="url"
-            placeholder="instagram.com/nuspace"
-            disabled={isPending || !editable("instagram_url")}
-            {...form.register("instagramUrl")}
-          />
-          <FieldError message={errors.instagramUrl?.message} />
         </div>
       </div>
 
