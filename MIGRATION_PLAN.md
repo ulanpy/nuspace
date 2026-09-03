@@ -295,8 +295,8 @@
 ## Phase 8: Commit
 
 - [x] **8.1** Review all changed files with `git diff --stat` — 23 modified (15 backend + 8 frontend) + migration + `shared/` module + plan; no unrelated churn
-- [ ] **8.2** Commit with conventional commit message: `feat: refactor community/user schema — slug, page_content, owner rename`
-- [ ] **8.3** Push to `f/puck-integration` (fork branch tracking `upstream/dev`, per user instruction)
+- [x] **8.2** Commit with conventional commit message: `feat: refactor community/user schema — slug, page_content, owner rename` (commit `0f05a02`)
+- [x] **8.3** Push to `f/puck-integration` (fork branch tracking `upstream/dev`, per user instruction) — pushed `85a0db2..0f05a02` to `origin`
 
 ---
 
@@ -374,5 +374,5 @@ Update this section as you work:
 [x] Phase 5 (backend verification): ___done — ruff/black clean on changed files, 66 tests pass, app import OK, alembic round-trip verified___
 [x] Phase 6 (frontend): ___done — schema.d.ts regenerated; types/api/form/card/routes/profile updated (head→owner, slug, removed dropped fields)___
 [x] Phase 7 (frontend verification): ___done — tsc/build pass, oxlint+prettier clean, 57 tests pass, api:check in sync___
-[ ] Phase 8 (commit): ___________
+[x] Phase 8 (commit): ___done — commit 0f05a02 pushed to origin/f/puck-integration___
 ```
