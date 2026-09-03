@@ -1,12 +1,10 @@
-from datetime import datetime
-from backend.common.datetime_utils import utc_now
 from enum import Enum as PyEnum
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
-
+from backend.common.datetime_utils import utc_now
 from backend.core.database.models.base import Base
 from backend.modules.media.models import EntityType
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class NotificationType(str, PyEnum):

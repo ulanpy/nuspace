@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 
 import pytest
-
 from backend.common.datetime_utils import almaty_to_utc
 from backend.modules.bot.schemas.event_post import ExtractedEventDraft
 

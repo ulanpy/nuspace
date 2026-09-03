@@ -1,8 +1,7 @@
 """Redis-backed killswitch for dev group anti-spam."""
 
-from redis.asyncio import Redis
-
 from backend.modules.bot.consts import KILLSWITCH_REDIS_KEY
+from redis.asyncio import Redis
 
 
 async def is_killswitch_enabled(redis: Redis) -> bool:

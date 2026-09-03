@@ -1,6 +1,5 @@
 from fastapi import HTTPException, status
 
-from backend.modules.auth.models import UserRole
 from backend.modules.campuscurrent.base import BasePolicy
 
 

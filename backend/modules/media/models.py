@@ -1,12 +1,10 @@
-from datetime import datetime
-from backend.common.datetime_utils import utc_now
 from enum import Enum as PyEnum
 
+from backend.common.datetime_utils import utc_now
+from backend.core.database.models.base import Base
 from sqlalchemy import BigInteger, Column, DateTime, Integer
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
-
-from backend.core.database.models.base import Base
 
 
 class EntityType(str, PyEnum):

@@ -1,6 +1,5 @@
 import httpx
 import pytest
-
 from backend.modules.courses.registrar.errors import RegistrarUnavailableError
 from backend.modules.courses.registrar.http import ensure_registrar_response
 

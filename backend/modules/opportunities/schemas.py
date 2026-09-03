@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
-from backend.modules.opportunities.models import EducationLevel, OpportunityType, OpportunityMajor
+from backend.modules.opportunities.models import EducationLevel, OpportunityMajor, OpportunityType
 
 
 class OpportunityEligibilityBase(BaseModel):

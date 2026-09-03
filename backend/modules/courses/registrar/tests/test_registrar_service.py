@@ -1,6 +1,6 @@
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
 from backend.modules.courses.registrar import service as registrar_service
 from backend.modules.courses.registrar.service import RegistrarService
 

@@ -1,14 +1,13 @@
+from datetime import timedelta
+
+from backend.common.utils import response_builder
 from backend.core.database.uow import UnitOfWork
+from backend.modules.opportunities import schemas
+from backend.modules.opportunities.interfaces import CalendarEventSync
 from backend.modules.opportunities.models import (
     Opportunity,
-    OpportunityEligibility,
-    OpportunityMajorMap,
 )
-from backend.common.utils import response_builder
-from backend.modules.opportunities import schemas
 from backend.modules.opportunities.repository import OpportunitiesRepository
-from backend.modules.opportunities.interfaces import CalendarEventSync
-from datetime import timedelta
 
 
 class OpportunitiesDigestService:

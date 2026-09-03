@@ -16,8 +16,9 @@ from typing import Sequence
 from urllib.parse import parse_qs, urlparse
 
 import httpx
-
-from backend.modules.courses.registrar.parsers.priority_parser import parse_pdf as parse_priority_pdf
+from backend.modules.courses.registrar.parsers.priority_parser import (
+    parse_pdf as parse_priority_pdf,
+)
 from backend.modules.courses.registrar.parsers.schedule_pdf_parser import parse_schedule_pdf
 
 

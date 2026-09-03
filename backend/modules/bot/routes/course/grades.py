@@ -5,8 +5,8 @@ from aiogram import Router
 from aiogram.filters import Command, CommandObject
 from aiogram.types import CallbackQuery, Message
 from redis.asyncio import Redis
-from backend.core.database.uow import UnitOfWork
 
+from backend.core.database.uow import UnitOfWork
 from backend.modules.bot.keyboards.callback_factory import CourseGradesPage
 from backend.modules.bot.services.grades import (
     build_grades_keyboard,

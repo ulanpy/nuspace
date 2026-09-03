@@ -11,7 +11,6 @@ from urllib.parse import urljoin
 
 import requests
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -278,7 +277,9 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
     # Late import to keep the script runnable standalone without importing backend/__init__.
     try:
-        from backend.modules.courses.planner.course_links_store import write_links_csv  # type: ignore
+        from backend.modules.courses.planner.course_links_store import (
+            write_links_csv,  # type: ignore
+        )
     except Exception:
         store_path = Path(__file__).resolve().parent / "course_links_store.py"
         spec = __import__("importlib.util").util.spec_from_file_location("course_links_store_local", store_path)

@@ -1,9 +1,8 @@
-from fastapi import HTTPException, status
-
 from backend.common.schemas import ResourcePermissions
-from backend.modules.courses.models.grade_report import CourseItem, StudentCourse
 from backend.modules.courses.courses.base import BasePolicy
 from backend.modules.courses.courses.schemas import CourseItemUpdate
+from backend.modules.courses.models.grade_report import CourseItem, StudentCourse
+from fastapi import HTTPException, status
 
 
 class StudentCoursePolicy(BasePolicy):

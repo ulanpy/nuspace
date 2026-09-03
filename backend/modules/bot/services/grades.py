@@ -1,16 +1,15 @@
 """Format and paginate /course grade report results."""
 
-import httpx
 from urllib.parse import quote
 
+import httpx
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
-from redis.asyncio import Redis
 from backend.core.database.uow import UnitOfWork
-
 from backend.modules.bot.consts import GRADES_PAGE_SIZE
 from backend.modules.bot.keyboards.callback_factory import CourseGradesPage
 from backend.modules.courses.statistics import schemas
 from backend.modules.courses.statistics.service import list_grade_reports
+from redis.asyncio import Redis
 
 GRADES_CTX_TTL_SECONDS = 3600
 

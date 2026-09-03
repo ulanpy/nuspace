@@ -12,8 +12,6 @@ import os
 import sys
 from datetime import datetime, timezone
 
-from google.cloud import storage
-
 from backend.modules.courses.registrar.schedule_discovery import (
     discover_latest_term,
     is_term_downgrade,
@@ -26,6 +24,7 @@ from backend.modules.courses.registrar.schedule_gcs import (
     upload_schedule_meta,
 )
 from backend.modules.courses.registrar.schedule_sync_worker import build_schedule_documents
+from google.cloud import storage
 
 logger = logging.getLogger(__name__)
 

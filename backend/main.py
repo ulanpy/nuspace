@@ -5,8 +5,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from backend.bootstrap.tracing import tracing_enabled
 from backend.core.configs.config import config
 from backend.lifespan import lifespan
-from backend.middlewares.headers import AccessContextMiddleware
 from backend.middlewares.errors import UnhandledExceptionLoggingMiddleware
+from backend.middlewares.headers import AccessContextMiddleware
 from backend.middlewares.metrics import PrometheusMetricsMiddleware, metrics_app
 from backend.middlewares.tracing import TracingMiddleware
 

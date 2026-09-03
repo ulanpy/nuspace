@@ -6,7 +6,6 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from backend.common.datetime_utils import almaty_to_utc
-
 from backend.modules.campuscurrent.models.events import (
     EventBotSubmissionStatus,
     EventType,

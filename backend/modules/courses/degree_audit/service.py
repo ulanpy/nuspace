@@ -4,7 +4,7 @@ import base64
 import json
 from typing import Dict, List, Optional, Tuple
 
-from backend.modules.courses.models.degree_audit import DegreeAuditResult
+from backend.core.database.uow import UnitOfWork
 from backend.modules.courses.degree_audit.degree_audit import (
     REQUIREMENTS_BASE,
     apply_transfer_credit_mappings,
@@ -30,9 +30,9 @@ from backend.modules.courses.degree_audit.transcript_parser import (
     Transcript,
     parse_transcript_bytes,
 )
+from backend.modules.courses.models.degree_audit import DegreeAuditResult
 from backend.modules.courses.registrar.clients.registrar_client import RegistrarClient
 from backend.modules.courses.registrar.errors import RegistrarUnavailableError
-from backend.core.database.uow import UnitOfWork
 from fastapi import HTTPException, status
 from sqlalchemy import select
 

@@ -1,12 +1,11 @@
-from fastapi import Depends, Request
-
 from backend.common.dependencies import get_infra, get_uow
 from backend.common.schemas import Infra
+from backend.core.database.uow import UnitOfWork
 from backend.modules.auth.keycloak_manager import KeyCloakManager
 from backend.modules.calendar.google_calendar_service import GoogleCalendarService
 from backend.modules.courses.courses.service import StudentCourseService
 from backend.modules.courses.registrar.service import RegistrarService
-from backend.core.database.uow import UnitOfWork
+from fastapi import Depends, Request
 
 
 async def get_student_course_service(

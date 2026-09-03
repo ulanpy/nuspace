@@ -1,13 +1,12 @@
 from typing import Annotated, List
 
+from backend.common.dependencies import get_uow
+from backend.core.database.uow import UnitOfWork
+from backend.modules.auth.dependencies import get_creds_or_401
+from backend.modules.notification import schemas
+from backend.modules.notification.models import Notification
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
-
-from backend.common.dependencies import get_uow
-from backend.modules.auth.dependencies import get_creds_or_401
-from backend.core.database.uow import UnitOfWork
-from backend.modules.notification.models import Notification
-from backend.modules.notification import schemas
 
 router = APIRouter(tags=["Notifications"])
 

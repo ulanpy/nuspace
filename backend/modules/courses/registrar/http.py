@@ -1,5 +1,4 @@
 import httpx
-
 from backend.modules.courses.registrar.errors import RegistrarUnavailableError
 
 

@@ -1,8 +1,5 @@
-from typing import Annotated
 
-from fastapi import APIRouter, Depends
-
-from backend.modules.auth.dependencies import get_creds_or_guest
+from fastapi import APIRouter
 
 router = APIRouter(tags=["Test Endpoint"])
 

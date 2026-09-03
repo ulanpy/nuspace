@@ -1,15 +1,17 @@
 from typing import Annotated
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, status, Cookie
+from fastapi import APIRouter, Cookie, Depends, HTTPException, status
 
+from backend.core.configs.config import config
 from backend.modules.auth.dependencies import get_creds_or_401, get_creds_or_guest
 from backend.modules.opportunities import schemas
+from backend.modules.opportunities.dependencies import (
+    get_opportunities_digest_service,
+    get_opportunity_filters,
+)
 from backend.modules.opportunities.policy import OpportunityPolicy
 from backend.modules.opportunities.service import OpportunitiesDigestService
-from backend.modules.opportunities.dependencies import get_opportunity_filters, get_opportunities_digest_service
-from backend.core.configs.config import config
-
 
 router = APIRouter(prefix="/opportunities", tags=["Opportunities Digest"])
 

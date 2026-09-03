@@ -1,10 +1,10 @@
 from datetime import datetime
-from pydantic import BaseModel, Field
-from typing import List, Optional
-from fastapi import Query
+from typing import List
 
 from backend.common.schemas import ShortUserResponse
 from backend.modules.courses.courses.schemas import BaseCourseItem
+from fastapi import Query
+from pydantic import BaseModel
 
 
 class BaseTemplateItem(BaseModel):

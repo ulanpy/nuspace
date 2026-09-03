@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from backend.modules.courses.registrar.schedule_discovery import (
     _TERM_PATTERN,
     _normalize_html,

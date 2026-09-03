@@ -1,7 +1,5 @@
+from backend.modules.media.models import EntityType, MediaFormat
 from pydantic import BaseModel
-
-from backend.modules.media.models import EntityType
-from backend.modules.media.models import MediaFormat
 
 
 class MediaResponse(BaseModel):

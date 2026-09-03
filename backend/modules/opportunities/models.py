@@ -1,10 +1,11 @@
-from datetime import date, datetime
-from backend.common.datetime_utils import utc_now
+from datetime import date
 from enum import Enum
 
-from sqlalchemy import Column, Date, DateTime, Enum as SAEnum, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from backend.common.datetime_utils import utc_now
 from backend.core.database.models.base import Base
 
 

@@ -11,6 +11,7 @@ from backend.modules.courses.models.grade_report import (
     PlannerScheduleCourse,
     PlannerScheduleSection,
 )
+
 MAX_SECTION_COMBINATIONS = 200
 MAX_ASSIGNMENT_CANDIDATES = 32
 

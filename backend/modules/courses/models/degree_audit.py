@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
 from backend.common.datetime_utils import utc_now
-
+from backend.core.database.models.base import Base
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
-
-from backend.core.database.models.base import Base
 
 
 class DegreeAuditResult(Base):

@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
-from opentelemetry.sdk.trace.sampling import Sampler
 import os
 from threading import Lock
 from time import monotonic
 from typing import TYPE_CHECKING, Any
+
+from opentelemetry.sdk.trace.sampling import Sampler
 
 from backend.core.configs.config import config
 

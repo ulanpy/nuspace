@@ -10,9 +10,9 @@ from typing import Annotated, List
 
 import httpx
 from backend.common.dependencies import get_infra
-from backend.modules.auth.dependencies import get_creds_or_401, get_creds_or_guest
 from backend.common.schemas import Infra
 from backend.core.configs.config import config
+from backend.modules.auth.dependencies import get_creds_or_401, get_creds_or_guest
 from backend.modules.courses.courses import schemas
 from backend.modules.courses.courses.dependencies import get_student_course_service
 from backend.modules.courses.courses.errors import CourseLookupError, SemesterResolutionError

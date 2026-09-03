@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-from typing import List, Tuple, Dict, Any
+from typing import Dict, List, Tuple
 
 import httpx
-
 from backend.modules.auth.keycloak_manager import KeyCloakManager
 
 

@@ -1,14 +1,19 @@
+from datetime import date
 from typing import List, Tuple
 
-from datetime import date
-from sqlalchemy import func, select, update, exists, case, or_, and_
+from httpx import AsyncClient
+from sqlalchemy import and_, case, exists, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from httpx import AsyncClient
 
 from backend.common.utils import meilisearch
-from backend.modules.opportunities.models import Opportunity, OpportunityEligibility, OpportunityMajorMap, EducationLevel
 from backend.modules.opportunities import schemas
+from backend.modules.opportunities.models import (
+    EducationLevel,
+    Opportunity,
+    OpportunityEligibility,
+    OpportunityMajorMap,
+)
 
 
 class OpportunitiesRepository:

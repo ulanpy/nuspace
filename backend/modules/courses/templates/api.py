@@ -1,12 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
-
 from backend.modules.auth.dependencies import get_creds_or_401
 from backend.modules.courses.templates import schemas
 from backend.modules.courses.templates.dependencies import get_template_service
 from backend.modules.courses.templates.service import TemplateService
-
+from fastapi import APIRouter, Depends, Query, status
 
 router = APIRouter(tags=["Course Templates"])
 

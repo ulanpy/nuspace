@@ -1,16 +1,12 @@
-import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-from sqlalchemy.ext.asyncio import create_async_engine
-
 from alembic import context
+from backend.core.configs.config import config as app_config
+from backend.core.database.model_registry import import_models
 
 # Import your models and config
 from backend.core.database.models.base import Base
-from backend.core.database.model_registry import import_models
-from backend.core.configs.config import config as app_config
+from sqlalchemy import engine_from_config, pool
 
 import_models()
 
