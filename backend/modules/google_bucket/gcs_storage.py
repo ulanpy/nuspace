@@ -7,7 +7,6 @@ from google.auth.credentials import Credentials
 from google.cloud import storage
 
 from backend.core.configs.config import Config
-from backend.modules.media.interfaces import ObjectStorage
 
 
 class GcsObjectStorage:

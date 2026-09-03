@@ -45,6 +45,16 @@ async def generate_upload_url(
             detail=f"Cannot generate more than {MAX_UPLOAD_URLS} upload URLs at a time.",
         )
 
+    for item in signed_url_request:
+        if item.file_size is not None and item.file_size > schemas.MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"File size {item.file_size} exceeds maximum of "
+                    f"{schemas.MAX_FILE_SIZE} bytes"
+                ),
+            )
+
     upload_targets = {(item.entity_type, item.entity_id) for item in signed_url_request}
     for entity_type, entity_id in upload_targets:
         await media_upload_authorizer.authorize_media_upload(
@@ -59,7 +69,11 @@ async def generate_upload_url(
     bucket: Bucket = request.app.state.storage_client.bucket(request.app.state.config.BUCKET_NAME)
 
     for item in signed_url_request:
-        filename = f"{config.ROUTING_PREFIX}/{user[0].get('sub')}_{timestamp}_{uuid.uuid4().hex}"
+        purpose = item.purpose or item.media_format.value
+        filename = (
+            f"{config.ROUTING_PREFIX}/{item.entity_type.value}/{item.entity_id}/{purpose}/"
+            f"{user[0].get('sub')}_{timestamp}_{uuid.uuid4().hex}"
+        )
         blob = bucket.blob(filename)
 
         required_headers = {
@@ -108,6 +122,7 @@ async def generate_upload_url(
                 "media_format": item.media_format.value,
                 "media_order": item.media_order,
                 "mime_type": item.mime_type,
+                "purpose": purpose,
             }
         )
 

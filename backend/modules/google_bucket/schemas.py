@@ -3,8 +3,9 @@ from typing import Any, Dict
 
 from pydantic import BaseModel, Field, HttpUrl, computed_field
 
-from backend.modules.media.models import EntityType
-from backend.modules.media.models import MediaFormat
+from backend.modules.media.models import EntityType, MediaFormat
+
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 class SignedUrlRequest(BaseModel):
@@ -13,6 +14,8 @@ class SignedUrlRequest(BaseModel):
     media_format: MediaFormat
     media_order: int
     mime_type: str
+    purpose: str | None = None
+    file_size: int | None = None
 
 
 class SignedUrlResponse(BaseModel):
@@ -23,6 +26,7 @@ class SignedUrlResponse(BaseModel):
     media_format: MediaFormat
     media_order: int
     mime_type: str
+    purpose: str | None = None
 
 
 class ConfirmUploadRequest(BaseModel):
