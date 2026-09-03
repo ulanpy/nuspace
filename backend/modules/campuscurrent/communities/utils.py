@@ -18,6 +18,8 @@ def get_community_permissions(
     if user_role == UserRole.admin.value:
         permissions.can_edit = True
         permissions.can_delete = True
+        permissions.can_change_owner = True
+        permissions.can_toggle_verified = True
         permissions.editable_fields = [
             "name",
             "type",

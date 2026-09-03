@@ -24,6 +24,8 @@ class ResourcePermissions(BaseModel):
     can_delete: bool = False
     can_view_attendees: bool = False
     can_share_access: bool = False
+    can_change_owner: bool = False
+    can_toggle_verified: bool = False
     editable_fields: List[str] = []
 
 
@@ -36,5 +38,6 @@ class Infra(BaseModel):
     signing_credentials: Credentials | None = None
     redis: Redis
     broker: RabbitBroker
+
     class Config:
         arbitrary_types_allowed = True
