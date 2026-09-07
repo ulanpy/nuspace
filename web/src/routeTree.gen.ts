@@ -9,303 +9,296 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AppRouteImport } from './routes/_app'
-import { Route as PublicRouteImport } from './routes/_public'
-import { Route as AppAnnouncementsRouteImport } from './routes/_app/announcements'
-import { Route as AppContactsRouteImport } from './routes/_app/contacts'
+import { Route as AppRouteRouteImport } from './routes/_app/route'
+import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as AppCoursesRouteRouteImport } from './routes/_app/courses/route'
-import { Route as AppDegreeAuditInfoRouteImport } from './routes/_app/degree-audit-info'
-import { Route as AppOpportunitiesRouteImport } from './routes/_app/opportunities'
-import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
-import { Route as PublicAboutRouteImport } from './routes/_public/about'
-import { Route as PublicPrivacyPolicyRouteImport } from './routes/_public/privacy-policy'
-import { Route as PublicTermsOfServiceRouteImport } from './routes/_public/terms-of-service'
+import { Route as AppAnnouncementsIndexRouteImport } from './routes/_app/announcements/index'
 import { Route as AppCommunitiesIndexRouteImport } from './routes/_app/communities/index'
-import { Route as AppCommunitiesSlugRouteImport } from './routes/_app/communities/$slug'
+import { Route as AppContactsIndexRouteImport } from './routes/_app/contacts/index'
 import { Route as AppCoursesIndexRouteImport } from './routes/_app/courses/index'
-import { Route as AppCoursesAuditRouteImport } from './routes/_app/courses/audit'
-import { Route as AppCoursesScheduleRouteImport } from './routes/_app/courses/schedule'
-import { Route as AppCoursesStatisticsRouteImport } from './routes/_app/courses/statistics'
+import { Route as AppDegreeAuditInfoIndexRouteImport } from './routes/_app/degree-audit-info/index'
 import { Route as AppEventsIndexRouteImport } from './routes/_app/events/index'
-import { Route as AppEventsEventIdRouteImport } from './routes/_app/events/$eventId'
+import { Route as AppOpportunitiesIndexRouteImport } from './routes/_app/opportunities/index'
+import { Route as AppProfileIndexRouteImport } from './routes/_app/profile/index'
 import { Route as AppSgotinishIndexRouteImport } from './routes/_app/sgotinish/index'
+import { Route as PublicAboutIndexRouteImport } from './routes/_public/about/index'
+import { Route as PublicPrivacyPolicyIndexRouteImport } from './routes/_public/privacy-policy/index'
+import { Route as PublicTermsOfServiceIndexRouteImport } from './routes/_public/terms-of-service/index'
 import { Route as AppCommunitiesSlugIndexRouteImport } from './routes/_app/communities/$slug/index'
-import { Route as AppCommunitiesSlugEditorRouteImport } from './routes/_app/communities/$slug.editor'
-import { Route as AppCommunitiesSlugSettingsRouteImport } from './routes/_app/communities/$slug.settings'
+import { Route as AppCoursesAuditIndexRouteImport } from './routes/_app/courses/audit/index'
+import { Route as AppCoursesScheduleIndexRouteImport } from './routes/_app/courses/schedule/index'
+import { Route as AppCoursesStatisticsIndexRouteImport } from './routes/_app/courses/statistics/index'
+import { Route as AppEventsEventIdIndexRouteImport } from './routes/_app/events/$event-id/index'
+import { Route as AppCommunitiesSlugEditorIndexRouteImport } from './routes/_app/communities/$slug/editor/index'
+import { Route as AppCommunitiesSlugSettingsIndexRouteImport } from './routes/_app/communities/$slug/settings/index'
 
-const AppRoute = AppRouteImport.update({
+const AppRouteRoute = AppRouteRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PublicRoute = PublicRouteImport.update({
+const PublicRouteRoute = PublicRouteRouteImport.update({
   id: '/_public',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AppAnnouncementsRoute = AppAnnouncementsRouteImport.update({
-  id: '/announcements',
-  path: '/announcements',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppContactsRoute = AppContactsRouteImport.update({
-  id: '/contacts',
-  path: '/contacts',
-  getParentRoute: () => AppRoute,
 } as any)
 const AppCoursesRouteRoute = AppCoursesRouteRouteImport.update({
   id: '/courses',
   path: '/courses',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDegreeAuditInfoRoute = AppDegreeAuditInfoRouteImport.update({
-  id: '/degree-audit-info',
-  path: '/degree-audit-info',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppOpportunitiesRoute = AppOpportunitiesRouteImport.update({
-  id: '/opportunities',
-  path: '/opportunities',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppProfileRoute = AppProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const PublicIndexRoute = PublicIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => PublicRoute,
+  getParentRoute: () => PublicRouteRoute,
 } as any)
-const PublicAboutRoute = PublicAboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => PublicRoute,
-} as any)
-const PublicPrivacyPolicyRoute = PublicPrivacyPolicyRouteImport.update({
-  id: '/privacy-policy',
-  path: '/privacy-policy',
-  getParentRoute: () => PublicRoute,
-} as any)
-const PublicTermsOfServiceRoute = PublicTermsOfServiceRouteImport.update({
-  id: '/terms-of-service',
-  path: '/terms-of-service',
-  getParentRoute: () => PublicRoute,
+const AppAnnouncementsIndexRoute = AppAnnouncementsIndexRouteImport.update({
+  id: '/announcements/',
+  path: '/announcements/',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppCommunitiesIndexRoute = AppCommunitiesIndexRouteImport.update({
   id: '/communities/',
   path: '/communities/',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppCommunitiesSlugRoute = AppCommunitiesSlugRouteImport.update({
-  id: '/communities/$slug',
-  path: '/communities/$slug',
-  getParentRoute: () => AppRoute,
+const AppContactsIndexRoute = AppContactsIndexRouteImport.update({
+  id: '/contacts/',
+  path: '/contacts/',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppCoursesIndexRoute = AppCoursesIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppCoursesRouteRoute,
 } as any)
-const AppCoursesAuditRoute = AppCoursesAuditRouteImport.update({
-  id: '/audit',
-  path: '/audit',
-  getParentRoute: () => AppCoursesRouteRoute,
-} as any)
-const AppCoursesScheduleRoute = AppCoursesScheduleRouteImport.update({
-  id: '/schedule',
-  path: '/schedule',
-  getParentRoute: () => AppCoursesRouteRoute,
-} as any)
-const AppCoursesStatisticsRoute = AppCoursesStatisticsRouteImport.update({
-  id: '/statistics',
-  path: '/statistics',
-  getParentRoute: () => AppCoursesRouteRoute,
+const AppDegreeAuditInfoIndexRoute = AppDegreeAuditInfoIndexRouteImport.update({
+  id: '/degree-audit-info/',
+  path: '/degree-audit-info/',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppEventsIndexRoute = AppEventsIndexRouteImport.update({
   id: '/events/',
   path: '/events/',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppEventsEventIdRoute = AppEventsEventIdRouteImport.update({
-  id: '/events/$eventId',
-  path: '/events/$eventId',
-  getParentRoute: () => AppRoute,
+const AppOpportunitiesIndexRoute = AppOpportunitiesIndexRouteImport.update({
+  id: '/opportunities/',
+  path: '/opportunities/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppProfileIndexRoute = AppProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppSgotinishIndexRoute = AppSgotinishIndexRouteImport.update({
   id: '/sgotinish/',
   path: '/sgotinish/',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => AppRouteRoute,
 } as any)
-const AppCommunitiesSlugIndexRoute = AppCommunitiesSlugIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppCommunitiesSlugRoute,
+const PublicAboutIndexRoute = PublicAboutIndexRouteImport.update({
+  id: '/about/',
+  path: '/about/',
+  getParentRoute: () => PublicRouteRoute,
 } as any)
-const AppCommunitiesSlugEditorRoute =
-  AppCommunitiesSlugEditorRouteImport.update({
-    id: '/editor',
-    path: '/editor',
-    getParentRoute: () => AppCommunitiesSlugRoute,
+const PublicPrivacyPolicyIndexRoute =
+  PublicPrivacyPolicyIndexRouteImport.update({
+    id: '/privacy-policy/',
+    path: '/privacy-policy/',
+    getParentRoute: () => PublicRouteRoute,
   } as any)
-const AppCommunitiesSlugSettingsRoute =
-  AppCommunitiesSlugSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AppCommunitiesSlugRoute,
+const PublicTermsOfServiceIndexRoute =
+  PublicTermsOfServiceIndexRouteImport.update({
+    id: '/terms-of-service/',
+    path: '/terms-of-service/',
+    getParentRoute: () => PublicRouteRoute,
+  } as any)
+const AppCommunitiesSlugIndexRoute = AppCommunitiesSlugIndexRouteImport.update({
+  id: '/communities/$slug/',
+  path: '/communities/$slug/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCoursesAuditIndexRoute = AppCoursesAuditIndexRouteImport.update({
+  id: '/audit/',
+  path: '/audit/',
+  getParentRoute: () => AppCoursesRouteRoute,
+} as any)
+const AppCoursesScheduleIndexRoute = AppCoursesScheduleIndexRouteImport.update({
+  id: '/schedule/',
+  path: '/schedule/',
+  getParentRoute: () => AppCoursesRouteRoute,
+} as any)
+const AppCoursesStatisticsIndexRoute =
+  AppCoursesStatisticsIndexRouteImport.update({
+    id: '/statistics/',
+    path: '/statistics/',
+    getParentRoute: () => AppCoursesRouteRoute,
+  } as any)
+const AppEventsEventIdIndexRoute = AppEventsEventIdIndexRouteImport.update({
+  id: '/events/$event-id/',
+  path: '/events/$event-id/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCommunitiesSlugEditorIndexRoute =
+  AppCommunitiesSlugEditorIndexRouteImport.update({
+    id: '/communities/$slug/editor/',
+    path: '/communities/$slug/editor/',
+    getParentRoute: () => AppRouteRoute,
+  } as any)
+const AppCommunitiesSlugSettingsIndexRoute =
+  AppCommunitiesSlugSettingsIndexRouteImport.update({
+    id: '/communities/$slug/settings/',
+    path: '/communities/$slug/settings/',
+    getParentRoute: () => AppRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/courses': typeof AppCoursesRouteRouteWithChildren
-  '/announcements': typeof AppAnnouncementsRoute
-  '/contacts': typeof AppContactsRoute
-  '/degree-audit-info': typeof AppDegreeAuditInfoRoute
-  '/opportunities': typeof AppOpportunitiesRoute
-  '/profile': typeof AppProfileRoute
-  '/about': typeof PublicAboutRoute
-  '/privacy-policy': typeof PublicPrivacyPolicyRoute
-  '/terms-of-service': typeof PublicTermsOfServiceRoute
-  '/communities/$slug': typeof AppCommunitiesSlugRouteWithChildren
-  '/courses/audit': typeof AppCoursesAuditRoute
-  '/courses/schedule': typeof AppCoursesScheduleRoute
-  '/courses/statistics': typeof AppCoursesStatisticsRoute
-  '/events/$eventId': typeof AppEventsEventIdRoute
+  '/announcements/': typeof AppAnnouncementsIndexRoute
   '/communities/': typeof AppCommunitiesIndexRoute
+  '/contacts/': typeof AppContactsIndexRoute
   '/courses/': typeof AppCoursesIndexRoute
+  '/degree-audit-info/': typeof AppDegreeAuditInfoIndexRoute
   '/events/': typeof AppEventsIndexRoute
+  '/opportunities/': typeof AppOpportunitiesIndexRoute
+  '/profile/': typeof AppProfileIndexRoute
   '/sgotinish/': typeof AppSgotinishIndexRoute
-  '/communities/$slug/editor': typeof AppCommunitiesSlugEditorRoute
-  '/communities/$slug/settings': typeof AppCommunitiesSlugSettingsRoute
+  '/about/': typeof PublicAboutIndexRoute
+  '/privacy-policy/': typeof PublicPrivacyPolicyIndexRoute
+  '/terms-of-service/': typeof PublicTermsOfServiceIndexRoute
   '/communities/$slug/': typeof AppCommunitiesSlugIndexRoute
+  '/courses/audit/': typeof AppCoursesAuditIndexRoute
+  '/courses/schedule/': typeof AppCoursesScheduleIndexRoute
+  '/courses/statistics/': typeof AppCoursesStatisticsIndexRoute
+  '/events/$event-id/': typeof AppEventsEventIdIndexRoute
+  '/communities/$slug/editor/': typeof AppCommunitiesSlugEditorIndexRoute
+  '/communities/$slug/settings/': typeof AppCommunitiesSlugSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
-  '/announcements': typeof AppAnnouncementsRoute
-  '/contacts': typeof AppContactsRoute
-  '/degree-audit-info': typeof AppDegreeAuditInfoRoute
-  '/opportunities': typeof AppOpportunitiesRoute
-  '/profile': typeof AppProfileRoute
-  '/about': typeof PublicAboutRoute
-  '/privacy-policy': typeof PublicPrivacyPolicyRoute
-  '/terms-of-service': typeof PublicTermsOfServiceRoute
-  '/courses/audit': typeof AppCoursesAuditRoute
-  '/courses/schedule': typeof AppCoursesScheduleRoute
-  '/courses/statistics': typeof AppCoursesStatisticsRoute
-  '/events/$eventId': typeof AppEventsEventIdRoute
+  '/announcements': typeof AppAnnouncementsIndexRoute
   '/communities': typeof AppCommunitiesIndexRoute
+  '/contacts': typeof AppContactsIndexRoute
   '/courses': typeof AppCoursesIndexRoute
+  '/degree-audit-info': typeof AppDegreeAuditInfoIndexRoute
   '/events': typeof AppEventsIndexRoute
+  '/opportunities': typeof AppOpportunitiesIndexRoute
+  '/profile': typeof AppProfileIndexRoute
   '/sgotinish': typeof AppSgotinishIndexRoute
-  '/communities/$slug/editor': typeof AppCommunitiesSlugEditorRoute
-  '/communities/$slug/settings': typeof AppCommunitiesSlugSettingsRoute
+  '/about': typeof PublicAboutIndexRoute
+  '/privacy-policy': typeof PublicPrivacyPolicyIndexRoute
+  '/terms-of-service': typeof PublicTermsOfServiceIndexRoute
   '/communities/$slug': typeof AppCommunitiesSlugIndexRoute
+  '/courses/audit': typeof AppCoursesAuditIndexRoute
+  '/courses/schedule': typeof AppCoursesScheduleIndexRoute
+  '/courses/statistics': typeof AppCoursesStatisticsIndexRoute
+  '/events/$event-id': typeof AppEventsEventIdIndexRoute
+  '/communities/$slug/editor': typeof AppCommunitiesSlugEditorIndexRoute
+  '/communities/$slug/settings': typeof AppCommunitiesSlugSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_app': typeof AppRouteWithChildren
-  '/_public': typeof PublicRouteWithChildren
+  '/_app': typeof AppRouteRouteWithChildren
+  '/_public': typeof PublicRouteRouteWithChildren
   '/_app/courses': typeof AppCoursesRouteRouteWithChildren
-  '/_app/announcements': typeof AppAnnouncementsRoute
-  '/_app/contacts': typeof AppContactsRoute
-  '/_app/degree-audit-info': typeof AppDegreeAuditInfoRoute
-  '/_app/opportunities': typeof AppOpportunitiesRoute
-  '/_app/profile': typeof AppProfileRoute
-  '/_public/about': typeof PublicAboutRoute
-  '/_public/privacy-policy': typeof PublicPrivacyPolicyRoute
-  '/_public/terms-of-service': typeof PublicTermsOfServiceRoute
   '/_public/': typeof PublicIndexRoute
-  '/_app/communities/$slug': typeof AppCommunitiesSlugRouteWithChildren
-  '/_app/courses/audit': typeof AppCoursesAuditRoute
-  '/_app/courses/schedule': typeof AppCoursesScheduleRoute
-  '/_app/courses/statistics': typeof AppCoursesStatisticsRoute
-  '/_app/events/$eventId': typeof AppEventsEventIdRoute
+  '/_app/announcements/': typeof AppAnnouncementsIndexRoute
   '/_app/communities/': typeof AppCommunitiesIndexRoute
+  '/_app/contacts/': typeof AppContactsIndexRoute
   '/_app/courses/': typeof AppCoursesIndexRoute
+  '/_app/degree-audit-info/': typeof AppDegreeAuditInfoIndexRoute
   '/_app/events/': typeof AppEventsIndexRoute
+  '/_app/opportunities/': typeof AppOpportunitiesIndexRoute
+  '/_app/profile/': typeof AppProfileIndexRoute
   '/_app/sgotinish/': typeof AppSgotinishIndexRoute
-  '/_app/communities/$slug/editor': typeof AppCommunitiesSlugEditorRoute
-  '/_app/communities/$slug/settings': typeof AppCommunitiesSlugSettingsRoute
+  '/_public/about/': typeof PublicAboutIndexRoute
+  '/_public/privacy-policy/': typeof PublicPrivacyPolicyIndexRoute
+  '/_public/terms-of-service/': typeof PublicTermsOfServiceIndexRoute
   '/_app/communities/$slug/': typeof AppCommunitiesSlugIndexRoute
+  '/_app/courses/audit/': typeof AppCoursesAuditIndexRoute
+  '/_app/courses/schedule/': typeof AppCoursesScheduleIndexRoute
+  '/_app/courses/statistics/': typeof AppCoursesStatisticsIndexRoute
+  '/_app/events/$event-id/': typeof AppEventsEventIdIndexRoute
+  '/_app/communities/$slug/editor/': typeof AppCommunitiesSlugEditorIndexRoute
+  '/_app/communities/$slug/settings/': typeof AppCommunitiesSlugSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/courses'
-    | '/announcements'
-    | '/contacts'
-    | '/degree-audit-info'
-    | '/opportunities'
-    | '/profile'
-    | '/about'
-    | '/privacy-policy'
-    | '/terms-of-service'
-    | '/communities/$slug'
-    | '/courses/audit'
-    | '/courses/schedule'
-    | '/courses/statistics'
-    | '/events/$eventId'
+    | '/announcements/'
     | '/communities/'
+    | '/contacts/'
     | '/courses/'
+    | '/degree-audit-info/'
     | '/events/'
+    | '/opportunities/'
+    | '/profile/'
     | '/sgotinish/'
-    | '/communities/$slug/editor'
-    | '/communities/$slug/settings'
+    | '/about/'
+    | '/privacy-policy/'
+    | '/terms-of-service/'
     | '/communities/$slug/'
+    | '/courses/audit/'
+    | '/courses/schedule/'
+    | '/courses/statistics/'
+    | '/events/$event-id/'
+    | '/communities/$slug/editor/'
+    | '/communities/$slug/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/announcements'
+    | '/communities'
     | '/contacts'
+    | '/courses'
     | '/degree-audit-info'
+    | '/events'
     | '/opportunities'
     | '/profile'
+    | '/sgotinish'
     | '/about'
     | '/privacy-policy'
     | '/terms-of-service'
+    | '/communities/$slug'
     | '/courses/audit'
     | '/courses/schedule'
     | '/courses/statistics'
-    | '/events/$eventId'
-    | '/communities'
-    | '/courses'
-    | '/events'
-    | '/sgotinish'
+    | '/events/$event-id'
     | '/communities/$slug/editor'
     | '/communities/$slug/settings'
-    | '/communities/$slug'
   id:
     | '__root__'
     | '/_app'
     | '/_public'
     | '/_app/courses'
-    | '/_app/announcements'
-    | '/_app/contacts'
-    | '/_app/degree-audit-info'
-    | '/_app/opportunities'
-    | '/_app/profile'
-    | '/_public/about'
-    | '/_public/privacy-policy'
-    | '/_public/terms-of-service'
     | '/_public/'
-    | '/_app/communities/$slug'
-    | '/_app/courses/audit'
-    | '/_app/courses/schedule'
-    | '/_app/courses/statistics'
-    | '/_app/events/$eventId'
+    | '/_app/announcements/'
     | '/_app/communities/'
+    | '/_app/contacts/'
     | '/_app/courses/'
+    | '/_app/degree-audit-info/'
     | '/_app/events/'
+    | '/_app/opportunities/'
+    | '/_app/profile/'
     | '/_app/sgotinish/'
-    | '/_app/communities/$slug/editor'
-    | '/_app/communities/$slug/settings'
+    | '/_public/about/'
+    | '/_public/privacy-policy/'
+    | '/_public/terms-of-service/'
     | '/_app/communities/$slug/'
+    | '/_app/courses/audit/'
+    | '/_app/courses/schedule/'
+    | '/_app/courses/statistics/'
+    | '/_app/events/$event-id/'
+    | '/_app/communities/$slug/editor/'
+    | '/_app/communities/$slug/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AppRoute: typeof AppRouteWithChildren
-  PublicRoute: typeof PublicRouteWithChildren
+  AppRouteRoute: typeof AppRouteRouteWithChildren
+  PublicRouteRoute: typeof PublicRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -314,99 +307,50 @@ declare module '@tanstack/react-router' {
       id: '/_app'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
+      preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_public': {
       id: '/_public'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof PublicRouteImport
+      preLoaderRoute: typeof PublicRouteRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_app/announcements': {
-      id: '/_app/announcements'
-      path: '/announcements'
-      fullPath: '/announcements'
-      preLoaderRoute: typeof AppAnnouncementsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/contacts': {
-      id: '/_app/contacts'
-      path: '/contacts'
-      fullPath: '/contacts'
-      preLoaderRoute: typeof AppContactsRouteImport
-      parentRoute: typeof AppRoute
     }
     '/_app/courses': {
       id: '/_app/courses'
       path: '/courses'
       fullPath: '/courses'
       preLoaderRoute: typeof AppCoursesRouteRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/degree-audit-info': {
-      id: '/_app/degree-audit-info'
-      path: '/degree-audit-info'
-      fullPath: '/degree-audit-info'
-      preLoaderRoute: typeof AppDegreeAuditInfoRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/opportunities': {
-      id: '/_app/opportunities'
-      path: '/opportunities'
-      fullPath: '/opportunities'
-      preLoaderRoute: typeof AppOpportunitiesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/profile': {
-      id: '/_app/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof AppProfileRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppRouteRoute
     }
     '/_public/': {
       id: '/_public/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof PublicIndexRouteImport
-      parentRoute: typeof PublicRoute
+      parentRoute: typeof PublicRouteRoute
     }
-    '/_public/about': {
-      id: '/_public/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof PublicAboutRouteImport
-      parentRoute: typeof PublicRoute
-    }
-    '/_public/privacy-policy': {
-      id: '/_public/privacy-policy'
-      path: '/privacy-policy'
-      fullPath: '/privacy-policy'
-      preLoaderRoute: typeof PublicPrivacyPolicyRouteImport
-      parentRoute: typeof PublicRoute
-    }
-    '/_public/terms-of-service': {
-      id: '/_public/terms-of-service'
-      path: '/terms-of-service'
-      fullPath: '/terms-of-service'
-      preLoaderRoute: typeof PublicTermsOfServiceRouteImport
-      parentRoute: typeof PublicRoute
+    '/_app/announcements/': {
+      id: '/_app/announcements/'
+      path: '/announcements'
+      fullPath: '/announcements/'
+      preLoaderRoute: typeof AppAnnouncementsIndexRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/communities/': {
       id: '/_app/communities/'
       path: '/communities'
       fullPath: '/communities/'
       preLoaderRoute: typeof AppCommunitiesIndexRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppRouteRoute
     }
-    '/_app/communities/$slug': {
-      id: '/_app/communities/$slug'
-      path: '/communities/$slug'
-      fullPath: '/communities/$slug'
-      preLoaderRoute: typeof AppCommunitiesSlugRouteImport
-      parentRoute: typeof AppRoute
+    '/_app/contacts/': {
+      id: '/_app/contacts/'
+      path: '/contacts'
+      fullPath: '/contacts/'
+      preLoaderRoute: typeof AppContactsIndexRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/courses/': {
       id: '/_app/courses/'
@@ -415,155 +359,189 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCoursesIndexRouteImport
       parentRoute: typeof AppCoursesRouteRoute
     }
-    '/_app/courses/audit': {
-      id: '/_app/courses/audit'
-      path: '/audit'
-      fullPath: '/courses/audit'
-      preLoaderRoute: typeof AppCoursesAuditRouteImport
-      parentRoute: typeof AppCoursesRouteRoute
-    }
-    '/_app/courses/schedule': {
-      id: '/_app/courses/schedule'
-      path: '/schedule'
-      fullPath: '/courses/schedule'
-      preLoaderRoute: typeof AppCoursesScheduleRouteImport
-      parentRoute: typeof AppCoursesRouteRoute
-    }
-    '/_app/courses/statistics': {
-      id: '/_app/courses/statistics'
-      path: '/statistics'
-      fullPath: '/courses/statistics'
-      preLoaderRoute: typeof AppCoursesStatisticsRouteImport
-      parentRoute: typeof AppCoursesRouteRoute
+    '/_app/degree-audit-info/': {
+      id: '/_app/degree-audit-info/'
+      path: '/degree-audit-info'
+      fullPath: '/degree-audit-info/'
+      preLoaderRoute: typeof AppDegreeAuditInfoIndexRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/events/': {
       id: '/_app/events/'
       path: '/events'
       fullPath: '/events/'
       preLoaderRoute: typeof AppEventsIndexRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppRouteRoute
     }
-    '/_app/events/$eventId': {
-      id: '/_app/events/$eventId'
-      path: '/events/$eventId'
-      fullPath: '/events/$eventId'
-      preLoaderRoute: typeof AppEventsEventIdRouteImport
-      parentRoute: typeof AppRoute
+    '/_app/opportunities/': {
+      id: '/_app/opportunities/'
+      path: '/opportunities'
+      fullPath: '/opportunities/'
+      preLoaderRoute: typeof AppOpportunitiesIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/profile/': {
+      id: '/_app/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof AppProfileIndexRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/sgotinish/': {
       id: '/_app/sgotinish/'
       path: '/sgotinish'
       fullPath: '/sgotinish/'
       preLoaderRoute: typeof AppSgotinishIndexRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_public/about/': {
+      id: '/_public/about/'
+      path: '/about'
+      fullPath: '/about/'
+      preLoaderRoute: typeof PublicAboutIndexRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/privacy-policy/': {
+      id: '/_public/privacy-policy/'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy/'
+      preLoaderRoute: typeof PublicPrivacyPolicyIndexRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
+    '/_public/terms-of-service/': {
+      id: '/_public/terms-of-service/'
+      path: '/terms-of-service'
+      fullPath: '/terms-of-service/'
+      preLoaderRoute: typeof PublicTermsOfServiceIndexRouteImport
+      parentRoute: typeof PublicRouteRoute
     }
     '/_app/communities/$slug/': {
       id: '/_app/communities/$slug/'
-      path: '/'
+      path: '/communities/$slug'
       fullPath: '/communities/$slug/'
       preLoaderRoute: typeof AppCommunitiesSlugIndexRouteImport
-      parentRoute: typeof AppCommunitiesSlugRoute
+      parentRoute: typeof AppRouteRoute
     }
-    '/_app/communities/$slug/editor': {
-      id: '/_app/communities/$slug/editor'
-      path: '/editor'
-      fullPath: '/communities/$slug/editor'
-      preLoaderRoute: typeof AppCommunitiesSlugEditorRouteImport
-      parentRoute: typeof AppCommunitiesSlugRoute
+    '/_app/courses/audit/': {
+      id: '/_app/courses/audit/'
+      path: '/audit'
+      fullPath: '/courses/audit/'
+      preLoaderRoute: typeof AppCoursesAuditIndexRouteImport
+      parentRoute: typeof AppCoursesRouteRoute
     }
-    '/_app/communities/$slug/settings': {
-      id: '/_app/communities/$slug/settings'
-      path: '/settings'
-      fullPath: '/communities/$slug/settings'
-      preLoaderRoute: typeof AppCommunitiesSlugSettingsRouteImport
-      parentRoute: typeof AppCommunitiesSlugRoute
+    '/_app/courses/schedule/': {
+      id: '/_app/courses/schedule/'
+      path: '/schedule'
+      fullPath: '/courses/schedule/'
+      preLoaderRoute: typeof AppCoursesScheduleIndexRouteImport
+      parentRoute: typeof AppCoursesRouteRoute
+    }
+    '/_app/courses/statistics/': {
+      id: '/_app/courses/statistics/'
+      path: '/statistics'
+      fullPath: '/courses/statistics/'
+      preLoaderRoute: typeof AppCoursesStatisticsIndexRouteImport
+      parentRoute: typeof AppCoursesRouteRoute
+    }
+    '/_app/events/$event-id/': {
+      id: '/_app/events/$event-id/'
+      path: '/events/$event-id'
+      fullPath: '/events/$event-id/'
+      preLoaderRoute: typeof AppEventsEventIdIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/communities/$slug/editor/': {
+      id: '/_app/communities/$slug/editor/'
+      path: '/communities/$slug/editor'
+      fullPath: '/communities/$slug/editor/'
+      preLoaderRoute: typeof AppCommunitiesSlugEditorIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/communities/$slug/settings/': {
+      id: '/_app/communities/$slug/settings/'
+      path: '/communities/$slug/settings'
+      fullPath: '/communities/$slug/settings/'
+      preLoaderRoute: typeof AppCommunitiesSlugSettingsIndexRouteImport
+      parentRoute: typeof AppRouteRoute
     }
   }
 }
 
 interface AppCoursesRouteRouteChildren {
-  AppCoursesAuditRoute: typeof AppCoursesAuditRoute
-  AppCoursesScheduleRoute: typeof AppCoursesScheduleRoute
-  AppCoursesStatisticsRoute: typeof AppCoursesStatisticsRoute
   AppCoursesIndexRoute: typeof AppCoursesIndexRoute
+  AppCoursesAuditIndexRoute: typeof AppCoursesAuditIndexRoute
+  AppCoursesScheduleIndexRoute: typeof AppCoursesScheduleIndexRoute
+  AppCoursesStatisticsIndexRoute: typeof AppCoursesStatisticsIndexRoute
 }
 
 const AppCoursesRouteRouteChildren: AppCoursesRouteRouteChildren = {
-  AppCoursesAuditRoute: AppCoursesAuditRoute,
-  AppCoursesScheduleRoute: AppCoursesScheduleRoute,
-  AppCoursesStatisticsRoute: AppCoursesStatisticsRoute,
   AppCoursesIndexRoute: AppCoursesIndexRoute,
+  AppCoursesAuditIndexRoute: AppCoursesAuditIndexRoute,
+  AppCoursesScheduleIndexRoute: AppCoursesScheduleIndexRoute,
+  AppCoursesStatisticsIndexRoute: AppCoursesStatisticsIndexRoute,
 }
 
 const AppCoursesRouteRouteWithChildren = AppCoursesRouteRoute._addFileChildren(
   AppCoursesRouteRouteChildren,
 )
 
-interface AppCommunitiesSlugRouteChildren {
-  AppCommunitiesSlugEditorRoute: typeof AppCommunitiesSlugEditorRoute
-  AppCommunitiesSlugSettingsRoute: typeof AppCommunitiesSlugSettingsRoute
-  AppCommunitiesSlugIndexRoute: typeof AppCommunitiesSlugIndexRoute
-}
-
-const AppCommunitiesSlugRouteChildren: AppCommunitiesSlugRouteChildren = {
-  AppCommunitiesSlugEditorRoute: AppCommunitiesSlugEditorRoute,
-  AppCommunitiesSlugSettingsRoute: AppCommunitiesSlugSettingsRoute,
-  AppCommunitiesSlugIndexRoute: AppCommunitiesSlugIndexRoute,
-}
-
-const AppCommunitiesSlugRouteWithChildren =
-  AppCommunitiesSlugRoute._addFileChildren(AppCommunitiesSlugRouteChildren)
-
-interface AppRouteChildren {
+interface AppRouteRouteChildren {
   AppCoursesRouteRoute: typeof AppCoursesRouteRouteWithChildren
-  AppAnnouncementsRoute: typeof AppAnnouncementsRoute
-  AppContactsRoute: typeof AppContactsRoute
-  AppDegreeAuditInfoRoute: typeof AppDegreeAuditInfoRoute
-  AppOpportunitiesRoute: typeof AppOpportunitiesRoute
-  AppProfileRoute: typeof AppProfileRoute
-  AppCommunitiesSlugRoute: typeof AppCommunitiesSlugRouteWithChildren
-  AppEventsEventIdRoute: typeof AppEventsEventIdRoute
+  AppAnnouncementsIndexRoute: typeof AppAnnouncementsIndexRoute
   AppCommunitiesIndexRoute: typeof AppCommunitiesIndexRoute
+  AppContactsIndexRoute: typeof AppContactsIndexRoute
+  AppDegreeAuditInfoIndexRoute: typeof AppDegreeAuditInfoIndexRoute
   AppEventsIndexRoute: typeof AppEventsIndexRoute
+  AppOpportunitiesIndexRoute: typeof AppOpportunitiesIndexRoute
+  AppProfileIndexRoute: typeof AppProfileIndexRoute
   AppSgotinishIndexRoute: typeof AppSgotinishIndexRoute
+  AppCommunitiesSlugIndexRoute: typeof AppCommunitiesSlugIndexRoute
+  AppEventsEventIdIndexRoute: typeof AppEventsEventIdIndexRoute
+  AppCommunitiesSlugEditorIndexRoute: typeof AppCommunitiesSlugEditorIndexRoute
+  AppCommunitiesSlugSettingsIndexRoute: typeof AppCommunitiesSlugSettingsIndexRoute
 }
 
-const AppRouteChildren: AppRouteChildren = {
+const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppCoursesRouteRoute: AppCoursesRouteRouteWithChildren,
-  AppAnnouncementsRoute: AppAnnouncementsRoute,
-  AppContactsRoute: AppContactsRoute,
-  AppDegreeAuditInfoRoute: AppDegreeAuditInfoRoute,
-  AppOpportunitiesRoute: AppOpportunitiesRoute,
-  AppProfileRoute: AppProfileRoute,
-  AppCommunitiesSlugRoute: AppCommunitiesSlugRouteWithChildren,
-  AppEventsEventIdRoute: AppEventsEventIdRoute,
+  AppAnnouncementsIndexRoute: AppAnnouncementsIndexRoute,
   AppCommunitiesIndexRoute: AppCommunitiesIndexRoute,
+  AppContactsIndexRoute: AppContactsIndexRoute,
+  AppDegreeAuditInfoIndexRoute: AppDegreeAuditInfoIndexRoute,
   AppEventsIndexRoute: AppEventsIndexRoute,
+  AppOpportunitiesIndexRoute: AppOpportunitiesIndexRoute,
+  AppProfileIndexRoute: AppProfileIndexRoute,
   AppSgotinishIndexRoute: AppSgotinishIndexRoute,
+  AppCommunitiesSlugIndexRoute: AppCommunitiesSlugIndexRoute,
+  AppEventsEventIdIndexRoute: AppEventsEventIdIndexRoute,
+  AppCommunitiesSlugEditorIndexRoute: AppCommunitiesSlugEditorIndexRoute,
+  AppCommunitiesSlugSettingsIndexRoute: AppCommunitiesSlugSettingsIndexRoute,
 }
 
-const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
+)
 
-interface PublicRouteChildren {
-  PublicAboutRoute: typeof PublicAboutRoute
-  PublicPrivacyPolicyRoute: typeof PublicPrivacyPolicyRoute
-  PublicTermsOfServiceRoute: typeof PublicTermsOfServiceRoute
+interface PublicRouteRouteChildren {
   PublicIndexRoute: typeof PublicIndexRoute
+  PublicAboutIndexRoute: typeof PublicAboutIndexRoute
+  PublicPrivacyPolicyIndexRoute: typeof PublicPrivacyPolicyIndexRoute
+  PublicTermsOfServiceIndexRoute: typeof PublicTermsOfServiceIndexRoute
 }
 
-const PublicRouteChildren: PublicRouteChildren = {
-  PublicAboutRoute: PublicAboutRoute,
-  PublicPrivacyPolicyRoute: PublicPrivacyPolicyRoute,
-  PublicTermsOfServiceRoute: PublicTermsOfServiceRoute,
+const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicIndexRoute: PublicIndexRoute,
+  PublicAboutIndexRoute: PublicAboutIndexRoute,
+  PublicPrivacyPolicyIndexRoute: PublicPrivacyPolicyIndexRoute,
+  PublicTermsOfServiceIndexRoute: PublicTermsOfServiceIndexRoute,
 }
 
-const PublicRouteWithChildren =
-  PublicRoute._addFileChildren(PublicRouteChildren)
+const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
+  PublicRouteRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
-  AppRoute: AppRouteWithChildren,
-  PublicRoute: PublicRouteWithChildren,
+  AppRouteRoute: AppRouteRouteWithChildren,
+  PublicRouteRoute: PublicRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
